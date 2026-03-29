@@ -68,6 +68,10 @@ const text = data.content[0].text
 8. Read files before editing them
 9. Single useState object for forms — never per-field state (prevents focus bug)
 10. exec_sql RPC does NOT exist — use Supabase MCP directly for raw SQL
+11. vercel.json rewrites rule is required — all routes must return index.html for SPA routing
+12. Template stored in settings branding.template: bold | clean | modern — always read via useTemplate()
+13. Location pages use ORANGE CTA — never yellow diagonal (that is pest service pages only)
+14. /quote route must appear before /:slug in App.tsx — quotes are not a location
 
 ## KEY FILE PATHS
 src/lib/supabase.ts
@@ -79,6 +83,15 @@ src/pages/admin/Dashboard.tsx
 src/pages/admin/Onboarding.tsx
 src/components/admin/ (all tab components)
 src/App.tsx
+src/pages/Index.tsx                    # Public home page
+src/pages/QuotePage.tsx                # Quote form + lead submission
+src/pages/ContactPage.tsx              # Contact page
+src/pages/SlugRouter.tsx               # Routes /:slug to LocationPage
+src/pages/LocationPage.tsx             # Dynamic location pages
+src/components/Navbar.tsx              # Template-aware nav (mobile hamburger)
+src/components/Footer.tsx              # Template-aware footer
+src/lib/templates.ts                   # Template token definitions
+src/hooks/useTemplate.ts               # Template-aware hook
 scripts/create-admin-user.mjs
 SKILL.md
 TASKS.md
@@ -87,3 +100,4 @@ TASKS.md
 | Session | Date     | Completions |
 |---------|----------|-------------|
 | 1       | Mar 2026 | Scaffold, Supabase migrations, auth, admin shell, onboarding wizard |
+| 2       | Mar 2026 | Vercel config, template system, Navbar, Footer, Home page, QuotePage, ContactPage, SlugRouter, LocationPage, Settings Business Info + Branding |
