@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Bangers&display=swap');
+
+:root {
+  --primary: hsl(28, 100%, 50%);
+  --secondary: hsl(45, 95%, 52%);
+  --admin-teal: hsl(185, 65%, 42%);
+  --admin-bg: #0f1117;
+  --admin-card-bg: #1a1d26;
+  --admin-sidebar-border: #2a2d3a;
+}
