@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { TEMPLATES, Template, TemplateTokens } from '../lib/templates'
+import { TEMPLATES } from '../lib/templates'
+import type { Template, TemplateTokens } from '../lib/templates'
 import { resolveTenantId } from '../lib/tenant'
 
 export function useTemplate(): { tokens: TemplateTokens; template: Template; loading: boolean } {

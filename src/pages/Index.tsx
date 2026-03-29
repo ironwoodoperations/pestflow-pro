@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Shield, Leaf, MapPin, Star, Bug, Rat } from 'lucide-react'
+import { Shield, Leaf, MapPin, Star, Bug } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
 import { useTemplate } from '../hooks/useTemplate'
@@ -40,7 +40,7 @@ const PLACEHOLDER_TESTIMONIALS: Testimonial[] = [
 ]
 
 export default function Index() {
-  const { tokens } = useTemplate()
+  useTemplate()
   const [content, setContent] = useState<PageContent>(DEFAULT_CONTENT)
   const [testimonials, setTestimonials] = useState<Testimonial[]>(PLACEHOLDER_TESTIMONIALS)
 
