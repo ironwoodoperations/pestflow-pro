@@ -1,0 +1,4 @@
+# Vercel auto-deploys on every push to main via GitHub integration.
+# No manual deploy step needed. Connect at: vercel.com/new → import from GitHub.
+#
+# This file is documentation only — actual CI/CD is handled by Vercel's GitHub integration.
