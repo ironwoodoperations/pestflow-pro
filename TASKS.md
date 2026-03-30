@@ -118,7 +118,7 @@
 - [x] SKILL.md + TASKS.md updated
 
 ## Session 10 — Next Up
-- [ ] Client onboarding: custom domain setup guide in admin
+- [x] Client onboarding: custom domain setup guide in admin
 - [ ] Real content seeding — pull from Supabase and populate all page_content rows
 - [ ] Location pages: Google Maps embed (reads google_maps_embed_url from settings)
 - [ ] Location pages: "We Also Serve" section (nearby cities from location_data)
