@@ -13,6 +13,7 @@
 - GitHub: https://github.com/ironwoodoperations/pestflow-pro
 - Stack: React 18 + TypeScript + Vite + Tailwind + Supabase + Vercel
 - Demo admin: admin@pestflowpro.com / pf123demo
+- Demo company: Ironclad Pest Solutions (Tyler, TX — seeded in Supabase)
 - Model: claude-sonnet-4-6 (ALWAYS — never anything else)
 
 ## SUPABASE
@@ -93,6 +94,10 @@ const text = data.content[0].text
 33. seed-page-content.mjs — run once per new tenant: TENANT_ID=xxx node scripts/seed-page-content.mjs
 34. Hero video: set youtube_id in Settings → Hero Media — falls back to gradient if not set
 35. Location pages fetch otherLocations for We Also Serve — needs 2+ live locations to render
+36. Demo company name is "Ironclad Pest Solutions" — never Dang or Apex in this repo
+37. Hero video uses HeroVideoPlayer.tsx component with youtube-nocookie embed + overlay
+38. Footer always shows "Powered by PestFlow Pro" badge — never remove
+39. Testimonials DB column is review_text (NOT content) — all frontend queries must use review_text
 
 ## KEY FILE PATHS
 src/lib/supabase.ts
@@ -171,3 +176,4 @@ To add a new tenant:
 | 6.1     | Mar 2026 | Merged PR, PESTFLOW-SKILL.md created, TASKS.md updated |
 | 7       | Mar 2026 | HeroVideoPlayer (youtube-nocookie background embed), branded 404 page (full chrome), PWA manifest + icons, bulk keyword sync (keyword_tracker → seo_meta) |
 | 8       | Mar 2026 | Remove Pricing page, rustic template (4th option), Pexels stock images script + introImage on all pest pages, Apex Pest Solutions About page, polished onboarding wizard, OnboardingLive screen-share mode |
+| 9       | Mar 2026 | Ironclad rebrand, demo content seed, font fix (Oswald/Raleway/Space Grotesk/Playfair), About rewrite, PestFlow Pro footer badge, review_text column fix, Pexels portraits for team |

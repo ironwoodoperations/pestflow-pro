@@ -105,7 +105,19 @@
 - [x] PESTFLOW-SKILL.md fully updated through Session 8
 - [x] TASKS.md + SKILL.md updated
 
-## Session 9 — Next Up
+## Session 9 (Complete)
+- [x] Seed Ironclad Pest Solutions demo data via Supabase (business_info, branding, social_links, notifications, locations, testimonials, page_content)
+- [x] Fix review_text column mismatch (DB: review_text, frontend was using content — fixed in Index.tsx, ReviewsPage.tsx, TestimonialsTab.tsx)
+- [x] Font fix already applied by remote (Oswald/Raleway/Space Grotesk/Playfair)
+- [x] Powered by PestFlow Pro footer badge (SaaS watermark + Ironwood Operations Group)
+- [x] About page rewrite for Ironclad Pest Solutions (Ryan Carter founder, 3 team members with Pexels portraits, Why Ironclad section)
+- [x] Home page hero text updated ("East Texas's Most Trusted Pest Control")
+- [x] Navbar logo: first word emerald + rest uppercase tracking
+- [x] Location pages seeded with real hero_titles (Tyler, Longview, Jacksonville, Lindale, Bullard, Whitehouse)
+- [x] Build passes with zero TypeScript errors
+- [x] SKILL.md + TASKS.md updated
+
+## Session 10 — Next Up
 - [ ] Client onboarding: custom domain setup guide in admin
 - [ ] Real content seeding — pull from Supabase and populate all page_content rows
 - [ ] Location pages: Google Maps embed (reads google_maps_embed_url from settings)
