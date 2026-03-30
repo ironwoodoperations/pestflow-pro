@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Toaster } from 'sonner'
+import ScrollToTop from './components/ScrollToTop'
 import Login from './pages/admin/Login'
 import Dashboard from './pages/admin/Dashboard'
 import Onboarding from './pages/admin/Onboarding'
@@ -33,6 +34,7 @@ import SlugRouter from './pages/SlugRouter'
 export default function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Toaster richColors position="top-right" />
       <Routes>
         {/* ─── Public marketing pages ─── */}
