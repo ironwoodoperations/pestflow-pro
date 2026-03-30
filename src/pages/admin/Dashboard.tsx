@@ -114,7 +114,7 @@ export default function Dashboard() {
               <p className="text-gray-500 text-sm mt-1">{tabSubtitles[activeTab] || ''}</p>
             </div>
             <div className="flex items-center gap-4">
-              <button onClick={() => setPreviewMode(!previewMode)} className={`flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg transition ${previewMode ? 'bg-amber-100 text-amber-700 border border-amber-300' : 'text-gray-400 hover:text-gray-600 border border-gray-200'}`}>
+              <button onClick={() => setPreviewMode(!previewMode)} title="Show your client a read-only view of the admin panel during screen-share handoff calls" className={`flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg transition ${previewMode ? 'bg-amber-100 text-amber-700 border border-amber-300' : 'text-gray-400 hover:text-gray-600 border border-gray-200'}`}>
                 {previewMode ? <EyeOff size={14} aria-hidden="true" /> : <Eye size={14} aria-hidden="true" />}
                 {previewMode ? 'Exit Preview' : 'Client Preview'}
               </button>
