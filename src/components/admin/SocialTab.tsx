@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { RefreshCw, Edit3, Trash2, Send, Loader2 } from 'lucide-react'
+import { RefreshCw, Edit3, Trash2, Send, Loader2, Copy } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
 import PageHelpBanner from './PageHelpBanner'
@@ -24,6 +24,81 @@ interface PexelsPhoto {
   id: number
   src: { medium: string; large: string }
   alt: string
+}
+
+// ─── Post Templates ────────────────────────────────────────────────────────
+
+interface PostTemplate {
+  id: string
+  icon: string
+  name: string
+  description: string
+  topicPrompt: string
+}
+
+const CURRENT_MONTH = new Date().toLocaleString('en-US', { month: 'long' })
+
+const INDUSTRY_TEMPLATES: Record<string, PostTemplate[]> = {
+  'pest control': [
+    { id: 'pc1', icon: '🌿', name: 'Seasonal Tip', description: 'Pest prevention tips for the current season', topicPrompt: `seasonal pest prevention tips for ${CURRENT_MONTH} from {businessName}` },
+    { id: 'pc2', icon: '⭐', name: 'Review Spotlight', description: 'Share a 5-star customer review', topicPrompt: 'share a 5-star customer review and thank them' },
+    { id: 'pc3', icon: '🐜', name: 'Pest Fact', description: 'Interesting fact about a common pest', topicPrompt: 'interesting fact about a common local pest and how to prevent it' },
+    { id: 'pc4', icon: '💰', name: 'Promotion', description: 'Limited time discount offer', topicPrompt: 'limited time discount offer on our pest control services' },
+    { id: 'pc5', icon: '🏠', name: 'Home Protection', description: 'Why year-round pest protection matters', topicPrompt: 'why homeowners need year-round pest protection' },
+    { id: 'pc6', icon: '👨‍💼', name: 'Meet the Team', description: 'Introduce your technicians', topicPrompt: 'introduce our pest control technicians and their expertise' },
+    { id: 'pc7', icon: '📞', name: 'Free Inspection', description: 'Offer a free home inspection', topicPrompt: 'offer a free home pest inspection to new customers' },
+    { id: 'pc8', icon: '🌡️', name: 'Weather Alert', description: 'Weather-related pest activity warning', topicPrompt: 'hot/wet/cold weather increases pest activity — call us' },
+    { id: 'pc9', icon: '✅', name: 'Before & After', description: 'Customer success story', topicPrompt: 'customer success story — pest problem solved' },
+  ],
+  'hvac': [
+    { id: 'hv1', icon: '🌡️', name: 'Seasonal Tune-Up', description: 'Why now is best for a tune-up', topicPrompt: `why ${CURRENT_MONTH} is the best time for an HVAC tune-up` },
+    { id: 'hv2', icon: '⭐', name: 'Review Spotlight', description: 'Share a 5-star customer review', topicPrompt: 'share a 5-star customer review and thank them' },
+    { id: 'hv3', icon: '🔧', name: 'Filter Reminder', description: 'Air filter change tips', topicPrompt: 'how often homeowners should change their air filter' },
+    { id: 'hv4', icon: '💰', name: 'Promotion', description: 'Limited time HVAC discount', topicPrompt: 'limited time discount on HVAC maintenance or installation' },
+    { id: 'hv5', icon: '🏠', name: 'Home Comfort', description: 'HVAC maintenance saves money', topicPrompt: 'why a well-maintained HVAC system saves money year-round' },
+    { id: 'hv6', icon: '👨‍💼', name: 'Meet the Team', description: 'Introduce your HVAC techs', topicPrompt: 'introduce our HVAC technicians and their certifications' },
+    { id: 'hv7', icon: '📞', name: 'Free Estimate', description: 'Offer a free HVAC estimate', topicPrompt: 'offer a free estimate on HVAC replacement or repair' },
+    { id: 'hv8', icon: '❄️', name: 'Weather Alert', description: 'Extreme weather HVAC warning', topicPrompt: 'extreme heat/cold means your HVAC works harder — call us' },
+    { id: 'hv9', icon: '✅', name: 'Before & After', description: 'Old unit replaced, comfort restored', topicPrompt: 'customer success story — old unit replaced, comfort restored' },
+  ],
+  'plumbing': [
+    { id: 'pl1', icon: '🌿', name: 'Seasonal Tip', description: 'Plumbing tips for the season', topicPrompt: `plumbing tips every homeowner should know in ${CURRENT_MONTH}` },
+    { id: 'pl2', icon: '⭐', name: 'Review Spotlight', description: 'Share a 5-star customer review', topicPrompt: 'share a 5-star customer review and thank them' },
+    { id: 'pl3', icon: '🚿', name: 'Water Saving', description: 'Save water and lower bills', topicPrompt: 'easy ways homeowners can save water and lower their bills' },
+    { id: 'pl4', icon: '💰', name: 'Promotion', description: 'Limited time plumbing discount', topicPrompt: 'limited time discount on plumbing repair or water heater service' },
+    { id: 'pl5', icon: '🏠', name: 'Pipe Protection', description: 'Preventive plumbing matters', topicPrompt: 'why preventive plumbing maintenance matters' },
+    { id: 'pl6', icon: '👨‍💼', name: 'Meet the Team', description: 'Introduce your plumbers', topicPrompt: 'introduce our licensed plumbers and their expertise' },
+    { id: 'pl7', icon: '📞', name: 'Free Estimate', description: 'Offer a free plumbing estimate', topicPrompt: 'offer a free estimate on plumbing repairs' },
+    { id: 'pl8', icon: '🌧️', name: 'Weather Alert', description: 'Cold weather pipe warning', topicPrompt: 'cold weather can freeze pipes — call us before it happens' },
+    { id: 'pl9', icon: '✅', name: 'Before & After', description: 'Leak fixed, damage prevented', topicPrompt: 'customer success story — leak fixed, water damage prevented' },
+  ],
+  'roofing': [
+    { id: 'rf1', icon: '🌿', name: 'Seasonal Tip', description: 'Roof maintenance tips for the season', topicPrompt: `roof maintenance tips every homeowner needs in ${CURRENT_MONTH}` },
+    { id: 'rf2', icon: '⭐', name: 'Review Spotlight', description: 'Share a 5-star customer review', topicPrompt: 'share a 5-star customer review and thank them' },
+    { id: 'rf3', icon: '🔍', name: 'Inspection Tip', description: 'Warning signs your roof needs help', topicPrompt: "warning signs your roof needs attention before it's too late" },
+    { id: 'rf4', icon: '💰', name: 'Promotion', description: 'Limited time roof discount', topicPrompt: 'limited time discount on roof inspection or repair' },
+    { id: 'rf5', icon: '🏠', name: 'Home Protection', description: 'Quality roof protects your home', topicPrompt: 'how a quality roof protects your biggest investment' },
+    { id: 'rf6', icon: '👨‍💼', name: 'Meet the Team', description: 'Introduce your roofing crew', topicPrompt: 'introduce our roofing crew and their certifications' },
+    { id: 'rf7', icon: '📞', name: 'Free Inspection', description: 'Offer a free roof inspection', topicPrompt: 'offer a free roof inspection after recent storms' },
+    { id: 'rf8', icon: '🌩️', name: 'Storm Alert', description: 'Storm damage warning', topicPrompt: 'recent storms can cause hidden roof damage — get inspected' },
+    { id: 'rf9', icon: '✅', name: 'Before & After', description: 'Storm damage repaired', topicPrompt: 'customer success story — storm damage repaired, home protected' },
+  ],
+  'generic': [
+    { id: 'gn1', icon: '🌿', name: 'Seasonal Tip', description: 'Seasonal home maintenance tips', topicPrompt: `seasonal home maintenance tips every homeowner needs in ${CURRENT_MONTH}` },
+    { id: 'gn2', icon: '⭐', name: 'Review Spotlight', description: 'Share a 5-star customer review', topicPrompt: 'share a 5-star customer review and thank them' },
+    { id: 'gn3', icon: '💡', name: 'Pro Tip', description: 'Helpful home services tip', topicPrompt: 'a helpful home services tip from {businessName}' },
+    { id: 'gn4', icon: '💰', name: 'Promotion', description: 'Limited time discount offer', topicPrompt: 'limited time discount on our services — call today' },
+    { id: 'gn5', icon: '🏠', name: 'Home Care', description: 'Regular maintenance saves money', topicPrompt: 'why regular home maintenance saves homeowners money' },
+    { id: 'gn6', icon: '👨‍💼', name: 'Meet the Team', description: 'What makes your team different', topicPrompt: 'introduce our team and what makes us different' },
+    { id: 'gn7', icon: '📞', name: 'Free Estimate', description: 'Offer a free estimate', topicPrompt: 'offer a free estimate or consultation to new customers' },
+    { id: 'gn8', icon: '⚠️', name: 'Seasonal Alert', description: 'Critical time for maintenance', topicPrompt: "this time of year is critical for home maintenance — here's why" },
+    { id: 'gn9', icon: '✅', name: 'Before & After', description: 'Customer success story', topicPrompt: 'customer success story — problem solved, homeowner happy' },
+  ],
+}
+
+function getTemplatesForIndustry(industry: string): PostTemplate[] {
+  const key = industry.toLowerCase().trim()
+  return INDUSTRY_TEMPLATES[key] || INDUSTRY_TEMPLATES['generic']
 }
 
 // ─── Toast system ──────────────────────────────────────────────────────────
@@ -65,7 +140,7 @@ export default function SocialTab() {
     caption: '',
     imageUrl: '',
     pexelsQuery: 'pest control technician',
-    scheduleMode: 'now' as 'now' | 'later',
+    scheduleMode: 'now' as 'now' | 'later' | 'smart',
     scheduledFor: '',
   })
 
@@ -82,9 +157,13 @@ export default function SocialTab() {
   const [publishing, setPublishing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [businessName, setBusinessName] = useState('Your Business')
+  const [industry, setIndustry] = useState('Pest Control')
   const [pexelsApiKey, setPexelsApiKey] = useState('')
   const [loading, setLoading] = useState(true)
   const [editingPostId, setEditingPostId] = useState<string | null>(null)
+  const [templatesOpen, setTemplatesOpen] = useState(false)
+  const [smartSchedule, setSmartSchedule] = useState<{ scheduled_for: string; reasoning: string } | null>(null)
+  const [smartLoading, setSmartLoading] = useState(false)
 
   const [toasts, setToasts] = useState<ToastMsg[]>([])
   const captionRef = useRef<HTMLTextAreaElement>(null)
@@ -109,6 +188,7 @@ export default function SocialTab() {
       supabase.from('social_posts').select('*').eq('tenant_id', tenantId).order('created_at', { ascending: false }),
     ]).then(([bizRes, intgRes, postsRes]) => {
       if (bizRes.data?.value?.name) setBusinessName(bizRes.data.value.name)
+      if (bizRes.data?.value?.industry) setIndustry(bizRes.data.value.industry)
       if (intgRes.data?.value?.pexels_api_key) setPexelsApiKey(intgRes.data.value.pexels_api_key)
       setPosts((postsRes.data as SocialPost[]) || [])
       setLoading(false)
@@ -130,12 +210,12 @@ export default function SocialTab() {
     setAiError('')
     setAiCaptions([])
 
-    const prompt = `You are a social media expert for a pest control company called ${businessName} in East Texas. Generate exactly 3 different Facebook/Instagram captions for a post about: "${aiTopic}".
+    const prompt = `You are a social media expert for a ${industry.toLowerCase()} company called ${businessName} in East Texas. Generate exactly 3 different Facebook/Instagram captions for a post about: "${aiTopic}".
 
 Rules:
 - Each caption must be engaging and friendly, not salesy
 - Include relevant emojis
-- End each with 3-5 relevant hashtags (#PestControl #EastTexas etc.)
+- End each with 3-5 relevant hashtags (e.g. #${industry.replace(/\s+/g, '')} #EastTexas etc.)
 - Keep each under 200 words
 - Separate captions with "---CAPTION---"
 
@@ -170,6 +250,62 @@ Return ONLY the 3 captions separated by "---CAPTION---". No JSON, no preamble.`
       setAiError(msg)
     }
     setAiLoading(false)
+  }
+
+  // ─── AI Smart Scheduling ────────────────────────────────────────────────
+
+  async function getSmartSchedule() {
+    setSmartLoading(true)
+    setSmartSchedule(null)
+    const now = new Date()
+    const todayDayName = now.toLocaleDateString('en-US', { weekday: 'long' })
+    const todayDate = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+
+    const prompt = `You are a social media scheduling expert. A ${industry.toLowerCase()} business wants to post on ${form.platform}. Based on industry best practices and audience behavior for ${industry.toLowerCase()} businesses (typically serving homeowners), recommend the single best day and time to post this week for maximum engagement.
+
+Today is ${todayDayName}, ${todayDate}.
+
+Return ONLY a JSON object, no preamble, no backticks:
+{
+  "scheduled_for": "YYYY-MM-DDTHH:mm:00",
+  "reasoning": "One sentence explaining why this day/time works best for this industry."
+}
+
+The scheduled_for must be a future datetime this week (within the next 7 days).
+Use 24-hour time. Typical best windows for home services: Tue-Thu 7-9am or 6-8pm when homeowners are home. Adjust based on the specific industry.`
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 300,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      })
+      const data = await res.json()
+      if (data.error) {
+        showToast('Smart scheduling failed. Try manual scheduling.', 'error')
+        setForm(p => ({ ...p, scheduleMode: 'later' }))
+        setSmartLoading(false)
+        return
+      }
+      const text = data.content[0].text
+      const clean = text.replace(/```json|```/g, '').trim()
+      const result = JSON.parse(clean)
+      setSmartSchedule(result)
+      setForm(p => ({ ...p, scheduledFor: result.scheduled_for.substring(0, 16) }))
+    } catch {
+      showToast('Smart scheduling failed. Try manual scheduling.', 'error')
+      setForm(p => ({ ...p, scheduleMode: 'later' }))
+    }
+    setSmartLoading(false)
   }
 
   // ─── Pexels Search ─────────────────────────────────────────────────────
@@ -234,7 +370,7 @@ Return ONLY the 3 captions separated by "---CAPTION---". No JSON, no preamble.`
       caption: form.caption,
       image_url: form.imageUrl || null,
       status: 'draft' as const,
-      scheduled_for: form.scheduleMode === 'later' && form.scheduledFor ? new Date(form.scheduledFor).toISOString() : null,
+      scheduled_for: (form.scheduleMode === 'later' || form.scheduleMode === 'smart') && form.scheduledFor ? new Date(form.scheduledFor).toISOString() : null,
     }
 
     if (editingPostId) {
@@ -272,7 +408,7 @@ Return ONLY the 3 captions separated by "---CAPTION---". No JSON, no preamble.`
       caption: form.caption,
       image_url: form.imageUrl || null,
       status: 'draft' as const,
-      scheduled_for: form.scheduleMode === 'later' && form.scheduledFor ? new Date(form.scheduledFor).toISOString() : null,
+      scheduled_for: (form.scheduleMode === 'later' || form.scheduleMode === 'smart') && form.scheduledFor ? new Date(form.scheduledFor).toISOString() : null,
     }
 
     let postId = editingPostId
@@ -398,6 +534,7 @@ Return ONLY the 3 captions separated by "---CAPTION---". No JSON, no preamble.`
     setSelectedPexelsUrl('')
     setAiCaptions([])
     setAiTopic('')
+    setSmartSchedule(null)
   }
 
   // ─── Filter posts ──────────────────────────────────────────────────────
@@ -425,11 +562,44 @@ Return ONLY the 3 captions separated by "---CAPTION---". No JSON, no preamble.`
     return <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${styles[status] || 'bg-gray-100 text-gray-600'}`}>{status}</span>
   }
 
-  // ─── Date display ──────────────────────────────────────────────────────
+  // ─── Date display (human-friendly) ──────────────────────────────────────
+
+  function formatRelativeDate(dateStr: string): string {
+    const date = new Date(dateStr)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffDays = Math.floor(diffMs / 86400000)
+    const diffHours = Math.floor(diffMs / 3600000)
+
+    if (diffMs < 0) {
+      // Future date
+      return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + ' at ' + date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+    }
+    if (diffHours < 1) return 'Just now'
+    if (diffHours < 24) return `${diffHours}h ago`
+    if (diffDays === 1) return 'Yesterday'
+    if (diffDays < 7) return `${diffDays} days ago`
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  }
 
   function postDate(post: SocialPost) {
-    const d = post.published_at || post.scheduled_for || post.created_at
-    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
+    if (post.status === 'published' && post.published_at) {
+      return `Published ${formatRelativeDate(post.published_at)}`
+    }
+    if (post.status === 'scheduled' && post.scheduled_for) {
+      return `Scheduled for ${formatRelativeDate(post.scheduled_for)}`
+    }
+    return `Created ${formatRelativeDate(post.created_at)}`
+  }
+
+  // ─── Copy caption ─────────────────────────────────────────────────────
+
+  function copyCaption(caption: string) {
+    navigator.clipboard.writeText(caption).then(() => {
+      showToast('Caption copied!', 'success')
+    }).catch(() => {
+      showToast('Failed to copy.', 'error')
+    })
   }
 
   const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-400'
@@ -451,6 +621,52 @@ Return ONLY the 3 captions separated by "---CAPTION---". No JSON, no preamble.`
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* ─── LEFT: Composer Panel (60%) ──────────────────────────── */}
         <div className="lg:col-span-3 space-y-6">
+
+          {/* Industry badge */}
+          <div className="flex items-center gap-2 text-xs text-gray-500">
+            <span>🏠 {industry}</span>
+            <span className="text-gray-300">•</span>
+            <span className="text-emerald-600 hover:text-emerald-700 cursor-pointer" onClick={() => showToast('Open Settings tab → Business Info to change industry.', 'success')}>Change in Settings →</span>
+          </div>
+
+          {/* Templates Section (collapsible) */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <button
+              onClick={() => setTemplatesOpen(!templatesOpen)}
+              className="flex items-center gap-2 text-sm font-semibold text-gray-900 hover:text-emerald-600 transition-colors"
+            >
+              📋 Use a Template
+              <span className="text-xs text-gray-400">{templatesOpen ? '▲' : '▼'}</span>
+            </button>
+            {templatesOpen && (
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {getTemplatesForIndustry(industry).map(tmpl => (
+                  <div key={tmpl.id} className="border border-gray-200 rounded-lg p-3 hover:border-emerald-300 transition-colors">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-lg">{tmpl.icon}</span>
+                      <span className="text-sm font-medium text-gray-900">{tmpl.name}</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mb-2">{tmpl.description}</p>
+                    <button
+                      onClick={() => {
+                        const topic = tmpl.topicPrompt.replace(/\{businessName\}/g, businessName)
+                        setAiTopic(topic)
+                        setTemplatesOpen(false)
+                        // Auto-trigger caption generation
+                        setTimeout(() => {
+                          const genBtn = document.getElementById('generate-captions-btn')
+                          if (genBtn) genBtn.click()
+                        }, 100)
+                      }}
+                      className="text-xs font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
+                    >
+                      Use →
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Section B — Platform Selector */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -484,6 +700,7 @@ Return ONLY the 3 captions separated by "---CAPTION---". No JSON, no preamble.`
                 onKeyDown={e => { if (e.key === 'Enter') generateCaptions() }}
               />
               <button
+                id="generate-captions-btn"
                 onClick={generateCaptions}
                 disabled={aiLoading}
                 className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 whitespace-nowrap flex items-center gap-2"
@@ -622,13 +839,13 @@ Return ONLY the 3 captions separated by "---CAPTION---". No JSON, no preamble.`
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h3 className="text-base font-semibold text-gray-900 mb-3">Schedule & Publish</h3>
 
-            <div className="flex gap-4 mb-4">
+            <div className="flex flex-wrap gap-4 mb-4">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="radio"
                   name="scheduleMode"
                   checked={form.scheduleMode === 'now'}
-                  onChange={() => setForm(p => ({ ...p, scheduleMode: 'now' }))}
+                  onChange={() => { setForm(p => ({ ...p, scheduleMode: 'now' })); setSmartSchedule(null) }}
                   className="text-emerald-500 focus:ring-emerald-500"
                 />
                 <span className="text-sm text-gray-700">Post now</span>
@@ -638,10 +855,20 @@ Return ONLY the 3 captions separated by "---CAPTION---". No JSON, no preamble.`
                   type="radio"
                   name="scheduleMode"
                   checked={form.scheduleMode === 'later'}
-                  onChange={() => setForm(p => ({ ...p, scheduleMode: 'later' }))}
+                  onChange={() => { setForm(p => ({ ...p, scheduleMode: 'later' })); setSmartSchedule(null) }}
                   className="text-emerald-500 focus:ring-emerald-500"
                 />
                 <span className="text-sm text-gray-700">Schedule for later</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="scheduleMode"
+                  checked={form.scheduleMode === 'smart'}
+                  onChange={() => setForm(p => ({ ...p, scheduleMode: 'smart' }))}
+                  className="text-emerald-500 focus:ring-emerald-500"
+                />
+                <span className="text-sm text-gray-700">✨ Smart Schedule</span>
               </label>
             </div>
 
@@ -657,10 +884,70 @@ Return ONLY the 3 captions separated by "---CAPTION---". No JSON, no preamble.`
               </div>
             )}
 
-            <p className="text-xs text-gray-400 mb-4">
-              {(form.platform === 'facebook' || form.platform === 'both') && 'Facebook: Requires Facebook Access Token in Settings → Integrations. '}
-              {(form.platform === 'instagram' || form.platform === 'both') && 'Instagram: Publishing requires a connected Business Account.'}
-            </p>
+            {form.scheduleMode === 'smart' && (
+              <div className="mb-4">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  {!smartSchedule && !smartLoading && (
+                    <>
+                      <p className="text-sm text-gray-600 mb-3">
+                        AI will pick the best day and time to post based on your industry.
+                        Click &quot;Get Best Time&quot; to see the recommendation.
+                      </p>
+                      <button
+                        onClick={getSmartSchedule}
+                        className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                      >
+                        ✨ Get Best Time
+                      </button>
+                    </>
+                  )}
+
+                  {smartLoading && (
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <Loader2 size={16} className="animate-spin" />
+                      Thinking about the best time... ✨
+                    </div>
+                  )}
+
+                  {smartSchedule && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 mb-1">
+                        📅 Best time: {new Date(smartSchedule.scheduled_for).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} at {new Date(smartSchedule.scheduled_for).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                      </p>
+                      <p className="text-xs text-gray-500 mb-3">💡 {smartSchedule.reasoning}</p>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="datetime-local"
+                          value={form.scheduledFor}
+                          onChange={e => setForm(p => ({ ...p, scheduledFor: e.target.value }))}
+                          min={new Date().toISOString().substring(0, 16)}
+                          className={`flex-1 ${inputClass}`}
+                        />
+                        <button
+                          onClick={getSmartSchedule}
+                          className="text-sm text-emerald-600 hover:text-emerald-700 font-medium whitespace-nowrap"
+                        >
+                          Try Again
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {(form.platform === 'instagram' || form.platform === 'both') && (
+              <div className="bg-pink-50 border border-pink-200 rounded-lg p-3 mb-4">
+                <p className="text-xs text-pink-700">
+                  📸 Instagram posts are saved as drafts. Connect a Meta Business Account in Settings → Integrations to enable direct publishing.
+                </p>
+              </div>
+            )}
+            {(form.platform === 'facebook' || form.platform === 'both') && (
+              <p className="text-xs text-gray-400 mb-4">
+                Facebook: Requires Facebook Access Token in Settings → Integrations.
+              </p>
+            )}
 
             <div className="flex gap-3">
               <button
@@ -761,6 +1048,13 @@ Return ONLY the 3 captions separated by "---CAPTION---". No JSON, no preamble.`
 
                       {/* Actions */}
                       <div className="flex gap-2 mt-2 ml-0">
+                        <button
+                          onClick={() => copyCaption(post.caption)}
+                          className="text-gray-400 hover:text-gray-600 transition-colors"
+                          title="Copy Caption"
+                        >
+                          <Copy size={14} />
+                        </button>
                         <button
                           onClick={() => editPost(post)}
                           className="text-gray-400 hover:text-blue-500 transition-colors"

@@ -8,6 +8,7 @@ const SUB_TABS = ['Business Info', 'Branding', 'Social Links', 'Notifications', 
 interface BusinessInfoForm {
   name: string; phone: string; email: string; address: string; hours: string
   tagline: string; license: string; after_hours_phone: string; year_founded: string
+  industry: string
 }
 
 interface BrandingForm {
@@ -55,13 +56,13 @@ function BusinessInfoSection() {
   const { tenantId } = useTenant()
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [form, setForm] = useState<BusinessInfoForm>({ name: '', phone: '', email: '', address: '', hours: '', tagline: '', license: '', after_hours_phone: '', year_founded: '' })
+  const [form, setForm] = useState<BusinessInfoForm>({ name: '', phone: '', email: '', address: '', hours: '', tagline: '', license: '', after_hours_phone: '', year_founded: '', industry: 'Pest Control' })
 
   useEffect(() => {
     if (!tenantId) return
     supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle()
       .then(({ data }) => {
-        if (data?.value) setForm(prev => ({ ...prev, name: data.value.name || '', phone: data.value.phone || '', email: data.value.email || '', address: data.value.address || '', hours: data.value.hours || '', tagline: data.value.tagline || '', license: data.value.license || '', after_hours_phone: data.value.after_hours_phone || '', year_founded: data.value.year_founded || '' }))
+        if (data?.value) setForm(prev => ({ ...prev, name: data.value.name || '', phone: data.value.phone || '', email: data.value.email || '', address: data.value.address || '', hours: data.value.hours || '', tagline: data.value.tagline || '', license: data.value.license || '', after_hours_phone: data.value.after_hours_phone || '', year_founded: data.value.year_founded || '', industry: data.value.industry || 'Pest Control' }))
         setLoading(false)
       })
   }, [tenantId])
@@ -86,6 +87,7 @@ function BusinessInfoSection() {
     { label: 'License Number', key: 'license', placeholder: 'TPCL #12345' },
     { label: 'After-Hours Phone', key: 'after_hours_phone', placeholder: '(903) 555-0199' },
     { label: 'Year Founded', key: 'year_founded', placeholder: '2010' },
+    { label: 'Industry / Business Type', key: 'industry', placeholder: 'e.g. Pest Control, HVAC, Plumbing, Roofing' },
   ]
 
   return (
