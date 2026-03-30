@@ -101,6 +101,8 @@
 - [x] About Us populated with Apex Pest Solutions demo company (story, team, values, stats)
 - [x] Polished onboarding wizard — step indicators, larger inputs, skip links, editable review summary
 - [x] OnboardingLive — distraction-free screen-share mode (/admin/onboarding-live, 22 steps, one field per screen)
+- [x] Font overhaul — Bangers removed, replaced with Oswald (bold), Raleway (clean), Space Grotesk (modern), Playfair Display (rustic)
+- [x] PESTFLOW-SKILL.md fully updated through Session 8
 - [x] TASKS.md + SKILL.md updated
 
 ## Session 9 — Next Up
