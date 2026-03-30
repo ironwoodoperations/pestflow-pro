@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
+import StructuredData from '../components/StructuredData'
 
 const FAQ_CATEGORIES = [
   {
@@ -34,6 +35,7 @@ const FAQ_CATEGORIES = [
 export default function FAQPage() {
   return (
     <div className="min-h-screen bg-white">
+      <StructuredData type="WebPage" pageSlug="faq" />
       <Navbar />
 
       <section className="py-20 md:py-28" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>

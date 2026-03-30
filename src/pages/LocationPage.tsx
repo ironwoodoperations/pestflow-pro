@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
+import StructuredData from '../components/StructuredData'
 
 interface LocationData { city: string; hero_title: string; intro_video_url: string }
 interface OtherLocation { slug: string; city: string }
@@ -43,6 +44,7 @@ export default function LocationPage({ slug }: { slug: string }) {
 
   return (
     <div className="min-h-screen bg-white">
+      <StructuredData type="WebPage" pageSlug={slug} />
       <Navbar />
 
       {/* HERO */}

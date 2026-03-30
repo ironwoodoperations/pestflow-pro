@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
+import StructuredData from '../components/StructuredData'
 
 interface BlogPost { id: string; title: string; slug: string; excerpt: string; published_at: string }
 
@@ -26,6 +27,7 @@ export default function BlogPage() {
 
   return (
     <div className="min-h-screen bg-white">
+      <StructuredData type="WebPage" pageSlug="blog" />
       <Navbar />
 
       <section className="py-20 md:py-28" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>

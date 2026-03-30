@@ -2,10 +2,12 @@ import { Link } from 'react-router-dom'
 import { Shield, Home, Bug, Star, Users } from 'lucide-react'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
+import StructuredData from '../components/StructuredData'
 
 export default function About() {
   return (
     <div className="min-h-screen bg-white">
+      <StructuredData type="WebPage" pageSlug="about" />
       <Navbar />
 
       <section className="py-20 md:py-28" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>
