@@ -4,6 +4,7 @@ import Login from './pages/admin/Login'
 import Dashboard from './pages/admin/Dashboard'
 import Onboarding from './pages/admin/Onboarding'
 import ProtectedRoute from './components/ProtectedRoute'
+import OnboardingLive from './pages/admin/OnboardingLive'
 import Index from './pages/Index'
 import QuotePage from './pages/QuotePage'
 import ContactPage from './pages/ContactPage'
@@ -63,6 +64,7 @@ export default function App() {
         {/* ─── Admin routes ─── */}
         <Route path="/admin/login" element={<Login />} />
         <Route path="/admin/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+        <Route path="/admin/onboarding-live" element={<ProtectedRoute><OnboardingLive /></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
 
         {/* ─── Dynamic slug — MUST BE LAST ─── */}
