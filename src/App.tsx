@@ -25,6 +25,7 @@ import BedBugControl from './pages/BedBugControl'
 import PestControlPage from './pages/PestControlPage'
 import TermiteControl from './pages/TermiteControl'
 import TermiteInspections from './pages/TermiteInspections'
+import Sitemap from './pages/Sitemap'
 import SlugRouter from './pages/SlugRouter'
 
 export default function App() {
@@ -42,6 +43,7 @@ export default function App() {
         <Route path="/service-area" element={<ServiceArea />} />
         <Route path="/blog" element={<BlogPage />} />
         <Route path="/blog/:slug" element={<BlogPostPage />} />
+        <Route path="/sitemap.xml" element={<Sitemap />} />
 
         {/* ─── Pest service pages ─── */}
         <Route path="/spider-control" element={<SpiderControl />} />
