@@ -44,17 +44,30 @@
 - [x] Build passes with zero TypeScript errors
 - [x] SKILL.md + TASKS.md updated
 
-## Session 4 — Next Up
-- [ ] SEO meta tags — dynamic <title> and <meta description> per page from seo_meta table
-- [ ] SEOTab admin — functional read/write for seo_meta table
-- [ ] TestimonialsTab admin — CRUD for testimonials (add, edit, delete, toggle featured)
-- [ ] BlogTab admin — CRUD for blog posts (add, edit, publish/unpublish)
-- [ ] LocationsTab admin — CRUD for location_data (add, edit, toggle is_live)
-- [ ] CRMTab admin — leads table view with search, filter, status updates
-- [ ] ReportsTab admin — basic analytics (lead count, page views placeholder)
-- [ ] SocialTab admin — social post scheduling UI
-- [ ] Image upload to Supabase storage for logos, blog images, team photos
-- [ ] Sitemap.xml generation for all public routes
-- [ ] robots.txt
-- [ ] Performance: code-split pest pages with React.lazy
-- [ ] PWA support (manifest.json + service worker)
+## Session 4 (Complete)
+- [x] SEO tab — functional meta editor + SERP preview
+- [x] Testimonials tab — full CRUD with star selector + featured toggle
+- [x] Leads tab — filters + date range + CSV export + detail modal
+- [x] Blog tab — full CRUD with post editor + publish toggle
+- [x] Locations tab — full CRUD + is_live toggle
+- [x] AI keyword research panel (Anthropic API, in SEO tab)
+- [x] Settings: Integrations (Google Place ID, Facebook, Maps embed)
+- [x] Settings: Hero Media (YouTube embed + live preview)
+- [x] StructuredData — added to all pest + static + location pages
+- [x] HolidayBanner component + Holiday Mode settings
+- [x] Reports tab stub — polished placeholder cards
+- [x] Social tab stub — polished placeholder cards
+- [x] Build passes with zero TypeScript errors
+- [x] SKILL.md + TASKS.md updated
+
+## Session 5 — Next Up
+- [ ] Quote/Contact form enhancements — multi-step quote wizard (pest type → property → contact → confirm)
+- [ ] Lead auto-email notification — Resend or Supabase Edge Function sends email on new lead
+- [ ] Google Reviews auto-import — Places API fetch + import to testimonials table
+- [ ] Social posting live — Meta Graph API, post composer, schedule queue
+- [ ] Sitemap generation — /sitemap.xml route that reads all live pages + locations + blog posts
+- [ ] robots.txt — serve via public/robots.txt
+- [ ] PageSpeed audit — optimize images, lazy load, preconnect hints
+- [ ] Multi-tenant onboarding — second demo tenant to prove white-label isolation
+- [ ] Stripe billing stub — pricing page + "Start Free Trial" flow (no real charges)
+- [ ] SKILL.md + TASKS.md updated
