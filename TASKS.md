@@ -60,14 +60,27 @@
 - [x] Build passes with zero TypeScript errors
 - [x] SKILL.md + TASKS.md updated
 
-## Session 5 — Next Up
-- [ ] Quote/Contact form enhancements — multi-step quote wizard (pest type → property → contact → confirm)
-- [ ] Lead auto-email notification — Resend or Supabase Edge Function sends email on new lead
-- [ ] Google Reviews auto-import — Places API fetch + import to testimonials table
-- [ ] Social posting live — Meta Graph API, post composer, schedule queue
-- [ ] Sitemap generation — /sitemap.xml route that reads all live pages + locations + blog posts
-- [ ] robots.txt — serve via public/robots.txt
-- [ ] PageSpeed audit — optimize images, lazy load, preconnect hints
-- [ ] Multi-tenant onboarding — second demo tenant to prove white-label isolation
-- [ ] Stripe billing stub — pricing page + "Start Free Trial" flow (no real charges)
+## Session 5 (Complete)
+- [x] Quote wizard — 4-step multi-step form (pest → property → contact → review)
+- [x] Lead auto-email — Supabase Edge Function + Resend
+- [x] Google Reviews auto-import (Places API → testimonials table)
+- [x] Social posting — Meta Graph API live (post composer + schedule + history)
+- [x] Sitemap.xml + robots.txt
+- [x] PageSpeed optimizations (lazy loading, preconnects, font preload, code splitting)
+- [x] Multi-tenant isolation docs + demo script (create-demo-tenant.mjs)
+- [x] Pricing page (3-tier + comparison table, Stripe stub)
+- [x] Build passes with zero TypeScript errors
+- [x] SKILL.md + TASKS.md updated
+
+## Session 6 — Next Up
+- [ ] Client onboarding: custom domain setup guide in admin
+- [ ] Real content seeding — pull from Supabase and populate all page_content rows
+- [ ] Location pages: Google Maps embed (reads google_maps_embed_url from settings)
+- [ ] Location pages: "We Also Serve" section (nearby cities from location_data)
+- [ ] Admin: AI content writer — generate pest page copy via Anthropic API
+- [ ] Admin: bulk keyword sync — push tracked keywords to page_content SEO fields
+- [ ] Public website: hero video player (reads hero_media settings, YouTube embed)
+- [ ] Mobile PWA manifest + icons
+- [ ] 404 page (custom, branded, links back to home)
+- [ ] Accessibility audit — aria labels, focus states, contrast check
 - [ ] SKILL.md + TASKS.md updated
