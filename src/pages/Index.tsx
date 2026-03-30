@@ -119,7 +119,7 @@ export default function Index() {
       </section>
 
       {/* STATS BAR */}
-      <section className="bg-[#1e293b] py-6">
+      <section id="main-content" className="bg-[#1e293b] py-6">
         <div className="max-w-6xl mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             {[
