@@ -85,15 +85,16 @@ export default function ReportsTab() {
         </button>
         {helpOpen && (
           <div className="mt-3 text-sm text-blue-800 space-y-2">
-            <p>This page shows you how your business is doing online.</p>
+            <p>This page shows you how your business is performing online.</p>
             <ul className="list-none space-y-1">
               <li><strong>TOTAL LEADS</strong> — Everyone who filled out your quote form</li>
-              <li><strong>NEW</strong> — People you haven't contacted yet (call them within 1 hour!)</li>
-              <li><strong>CONVERTED</strong> — People who became paying customers</li>
-              <li><strong>CONVERSION RATE</strong> — The % of leads that become customers. A good rate is 20–40%.</li>
+              <li><strong>NEW</strong> — Haven't been contacted yet. Call within 1 hour — leads contacted in the first hour convert 7x more often.</li>
+              <li><strong>QUOTED</strong> — You sent them a price</li>
+              <li><strong>WON</strong> — They became a customer</li>
+              <li><strong>CONVERSION RATE</strong> — Won divided by total. A healthy rate is 20–40%.</li>
             </ul>
-            <p className="text-blue-700 italic">💡 The bar chart shows you which months are busiest. Use this to plan your advertising and staffing.</p>
-            <p className="text-blue-600 text-xs">Coming soon: Google Analytics traffic data and keyword ranking reports.</p>
+            <p>The bar chart shows leads per month so you can see your busiest seasons and plan staffing and advertising accordingly.</p>
+            <p className="text-blue-700 italic">Coming soon: Google Search Console data showing clicks, impressions, and keyword rankings for every page on your site.</p>
           </div>
         )}
       </div>
