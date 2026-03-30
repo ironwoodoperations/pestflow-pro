@@ -131,5 +131,5 @@
 - [x] Admin: bulk location import (CSV upload → creates location_data rows)
 - [x] Public API endpoint — /api/quote for headless quote form embed on external sites
 - [x] Analytics dashboard — page views, lead sources, conversion tracking (no GA, privacy-first)
-- [ ] Mobile app scaffold — Capacitor wrapper for iOS/Android
+- [x] Mobile app scaffold — Capacitor wrapper for iOS/Android
 - [ ] SKILL.md + TASKS.md updated
