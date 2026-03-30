@@ -73,19 +73,40 @@
 - [x] SKILL.md + TASKS.md updated
 
 ## Session 6 (Complete)
+- [x] Custom domain setup guide (Settings → Domain)
+- [x] seed-page-content.mjs script (default copy for all 20 pages)
+- [x] Location pages: Google Maps embed (reads integrations settings)
+- [x] Location pages: We Also Serve nearby cities (2+ threshold)
+- [x] Admin: AI content writer (ContentTab, Anthropic API)
+- [x] Hero video player (YouTube via hero_media settings)
+- [x] PWA manifest + apple meta tags
+- [x] Custom 404 page (NotFound.tsx — branded, bug emoji, quick links)
+- [x] Accessibility audit + fixes (skip link, aria labels, focus rings, sr-only)
 - [x] Merged PR #4 (saas branch) — resolved src/index.css merge conflict (kept font preload comment)
 - [x] PESTFLOW-SKILL.md created (full autonomy doc through Session 6, rules 1-35, all pages/tabs/scripts)
-- [x] TASKS.md updated — Session 6 complete, Session 7 queue defined
+- [x] Build passes with zero TypeScript errors
+- [x] SKILL.md + TASKS.md updated
 
 ## Session 7 (In Progress)
+- [x] Public website: hero video player (HeroVideoPlayer.tsx — youtube-nocookie background embed)
+- [x] 404 page (NotFound.tsx — HolidayBanner + Navbar + Footer + dark navy hero)
+- [x] Mobile PWA manifest + icons (manifest.json, placeholder PNGs, apple meta tags)
 - [ ] Client onboarding: custom domain setup guide in admin
 - [ ] Real content seeding — pull from Supabase and populate all page_content rows
 - [ ] Location pages: Google Maps embed (reads google_maps_embed_url from settings)
 - [ ] Location pages: "We Also Serve" section (nearby cities from location_data)
 - [ ] Admin: AI content writer — generate pest page copy via Anthropic API
 - [x] Admin: bulk keyword sync — push keyword_tracker to seo_meta fields (SEOTab Bulk Keyword Sync panel)
-- [x] Public website: hero video player (HeroVideoPlayer.tsx — youtube-nocookie background embed)
-- [x] 404 page (NotFound.tsx — HolidayBanner + Navbar + Footer + dark navy hero)
-- [x] Mobile PWA manifest + icons (manifest.json, placeholder PNGs, apple meta tags)
 - [ ] Accessibility audit — aria labels, focus states, contrast check
 - [ ] PESTFLOW-SKILL.md + TASKS.md updated
+
+## Session 8 — Next Up
+- [ ] Client handoff mode — read-only "preview" admin view for client demos
+- [ ] White-label config — swap logo, company name, colors from onboarding wizard output
+- [ ] Email templates — branded HTML emails for lead notifications (logo, colors)
+- [ ] Stripe integration — real checkout for SaaS subscriptions (Starter/Pro/Agency)
+- [ ] Admin: bulk location import (CSV upload → creates location_data rows)
+- [ ] Public API endpoint — /api/quote for headless quote form embed on external sites
+- [ ] Analytics dashboard — page views, lead sources, conversion tracking (no GA, privacy-first)
+- [ ] Mobile app scaffold — Capacitor wrapper for iOS/Android
+- [ ] SKILL.md + TASKS.md updated

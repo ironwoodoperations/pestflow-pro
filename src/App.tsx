@@ -26,9 +26,9 @@ import PestControlPage from './pages/PestControlPage'
 import TermiteControl from './pages/TermiteControl'
 import TermiteInspections from './pages/TermiteInspections'
 import Pricing from './pages/Pricing'
+import NotFound from './pages/NotFound'
 import Sitemap from './pages/Sitemap'
 import SlugRouter from './pages/SlugRouter'
-import NotFound from './pages/NotFound'
 
 export default function App() {
   return (

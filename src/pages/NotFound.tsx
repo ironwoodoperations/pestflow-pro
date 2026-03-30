@@ -20,12 +20,13 @@ export default function NotFound() {
           <div className="text-[10rem] font-black text-emerald-500 opacity-20 select-none leading-none">
             404
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-white -mt-10 mb-4">
-            Page Not Found
+          <div className="text-6xl -mt-8 mb-6">🐛</div>
+          <h1 className="text-3xl md:text-4xl font-bold text-white -mt-2 mb-3">
+            Looks like this page got away
           </h1>
           <p className="text-gray-400 mb-8">
-            The page you're looking for doesn't exist or may have been moved.
-            Let's get you back on track.
+            We couldn't find what you were looking for. The page may have moved
+            or the URL might be wrong.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
             <Link
@@ -40,6 +41,14 @@ export default function NotFound() {
             >
               Get a Free Quote
             </Link>
+          </div>
+
+          <div className="mt-12 flex flex-wrap gap-x-6 gap-y-2 justify-center text-sm text-gray-500">
+            <Link to="/pest-control" className="hover:text-emerald-400 transition-colors">Services</Link>
+            <Link to="/about" className="hover:text-emerald-400 transition-colors">About</Link>
+            <Link to="/blog" className="hover:text-emerald-400 transition-colors">Blog</Link>
+            <Link to="/contact" className="hover:text-emerald-400 transition-colors">Contact</Link>
+            <Link to="/admin" className="hover:text-emerald-400 transition-colors">Admin</Link>
           </div>
         </div>
       </section>

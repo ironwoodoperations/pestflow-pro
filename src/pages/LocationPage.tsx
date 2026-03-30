@@ -23,18 +23,21 @@ export default function LocationPage({ slug }: { slug: string }) {
   const [location, setLocation] = useState<LocationData>({ city: '', hero_title: '', intro_video_url: '' })
   const [otherLocations, setOtherLocations] = useState<OtherLocation[]>([])
   const [phone, setPhone] = useState('(903) 555-0100')
+  const [mapsEmbedUrl, setMapsEmbedUrl] = useState('')
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const [locRes, allLocsRes, settingsRes] = await Promise.all([
+      const [locRes, allLocsRes, settingsRes, intgRes] = await Promise.all([
         supabase.from('location_data').select('city, hero_title, intro_video_url').eq('tenant_id', tenantId).eq('slug', slug).eq('is_live', true).maybeSingle(),
         supabase.from('location_data').select('slug, city').eq('tenant_id', tenantId).eq('is_live', true).neq('slug', slug),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle(),
       ])
       if (locRes.data) setLocation({ city: locRes.data.city || titleCase(slug), hero_title: locRes.data.hero_title || '', intro_video_url: locRes.data.intro_video_url || '' })
       if (allLocsRes.data) setOtherLocations(allLocsRes.data)
       if (settingsRes.data?.value?.phone) setPhone(settingsRes.data.value.phone)
+      if (intgRes.data?.value?.google_maps_embed_url) setMapsEmbedUrl(intgRes.data.value.google_maps_embed_url)
     })
   }, [slug])
 
@@ -128,14 +131,41 @@ export default function LocationPage({ slug }: { slug: string }) {
       </section>
 
       {/* WE ALSO SERVE */}
-      {otherLocations.length > 0 && (
-        <section className="py-16 bg-[#f8fafc]">
-          <div className="max-w-6xl mx-auto px-4">
-            <h2 className="font-bangers tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-8">We Also Serve These East Texas Communities</h2>
-            <div className="flex flex-wrap gap-3 justify-center">
-              {otherLocations.map((loc) => (
-                <Link key={loc.slug} to={`/${loc.slug}`} className="bg-white border border-gray-300 hover:border-emerald-500 text-gray-800 hover:text-emerald-600 rounded-full px-5 py-2 text-sm font-medium transition shadow-sm">{loc.city}</Link>
+      {otherLocations.length >= 2 && (
+        <section className="py-12 bg-gray-50">
+          <div className="max-w-6xl mx-auto px-4 text-center">
+            <h2 className="text-xl font-bold text-gray-900 mb-2">We Also Serve</h2>
+            <p className="text-gray-500 text-sm mb-6">Pest control services throughout East Texas</p>
+            <div className="flex flex-wrap justify-center gap-3">
+              {otherLocations.slice(0, 6).map((loc) => (
+                <Link key={loc.slug} to={`/${loc.slug}`} className="px-4 py-2 rounded-full border border-emerald-200 bg-white text-emerald-700 text-sm font-medium hover:bg-emerald-50 hover:border-emerald-400 transition-colors">
+                  {loc.city} Pest Control
+                </Link>
               ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* GOOGLE MAPS */}
+      {mapsEmbedUrl ? (
+        <section className="py-12 bg-white">
+          <div className="max-w-6xl mx-auto px-4">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Find Us on the Map</h2>
+            <div className="rounded-xl overflow-hidden shadow-sm border border-gray-100" style={{ height: '400px' }}>
+              <iframe src={mapsEmbedUrl} width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade" title="Service area map" />
+            </div>
+          </div>
+        </section>
+      ) : (
+        <section className="py-12 bg-white">
+          <div className="max-w-6xl mx-auto px-4">
+            <div className="rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-center" style={{ height: '300px' }}>
+              <div className="text-center text-gray-400">
+                <div className="text-4xl mb-3">🗺️</div>
+                <p className="font-medium">Map not configured</p>
+                <p className="text-sm mt-1">Add a Google Maps embed URL in Settings → Integrations</p>
+              </div>
             </div>
           </div>
         </section>
