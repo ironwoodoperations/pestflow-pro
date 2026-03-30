@@ -82,6 +82,17 @@ export default function Footer() {
           <span className="text-xs text-gray-600">Powered by PestFlow Pro</span>
         </div>
       </div>
+
+      {/* SaaS watermark */}
+      <div className="bg-[#040810] py-2.5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <span className="text-xs text-gray-600">
+            Website by{' '}
+            <span className="text-[#10b981] font-semibold hover:underline cursor-pointer">PestFlow Pro</span>
+            {' '}· A product of Ironwood Operations Group
+          </span>
+        </div>
+      </div>
     </footer>
   )
 }

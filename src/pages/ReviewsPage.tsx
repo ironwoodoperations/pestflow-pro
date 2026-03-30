@@ -7,15 +7,15 @@ import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import StructuredData from '../components/StructuredData'
 
-interface Review { id: string; author_name: string; content: string; rating: number; source?: string }
+interface Review { id: string; author_name: string; review_text: string; rating: number; source?: string }
 
 const PLACEHOLDER_REVIEWS: Review[] = [
-  { id: '1', author_name: 'Sarah M.', content: 'They showed up same day and solved our ant problem completely. Best pest company in Tyler!', rating: 5, source: 'Google' },
-  { id: '2', author_name: 'James R.', content: 'Professional, on time, and effective. Our mosquito problem is gone. Highly recommend!', rating: 5, source: 'Google' },
-  { id: '3', author_name: 'Linda K.', content: 'We had a serious roach issue and they knocked it out in one treatment. Amazing service.', rating: 5, source: 'Google' },
-  { id: '4', author_name: 'Mike T.', content: 'Great experience from start to finish. Technician was knowledgeable and thorough. No more spiders!', rating: 5, source: 'Facebook' },
-  { id: '5', author_name: 'Jennifer W.', content: 'Affordable, effective, and friendly. They treat my home quarterly and I haven\'t seen a single pest.', rating: 5, source: 'Google' },
-  { id: '6', author_name: 'David L.', content: 'Found scorpions in our new home. They came out the next day and solved it. Excellent service!', rating: 5, source: 'Yelp' },
+  { id: '1', author_name: 'Sarah M.', review_text: 'They showed up same day and solved our ant problem completely. Best pest company in Tyler!', rating: 5, source: 'Google' },
+  { id: '2', author_name: 'James R.', review_text: 'Professional, on time, and effective. Our mosquito problem is gone. Highly recommend!', rating: 5, source: 'Google' },
+  { id: '3', author_name: 'Linda K.', review_text: 'We had a serious roach issue and they knocked it out in one treatment. Amazing service.', rating: 5, source: 'Google' },
+  { id: '4', author_name: 'Mike T.', review_text: 'Great experience from start to finish. Technician was knowledgeable and thorough. No more spiders!', rating: 5, source: 'Facebook' },
+  { id: '5', author_name: 'Jennifer W.', review_text: 'Affordable, effective, and friendly. They treat my home quarterly and I haven\'t seen a single pest.', rating: 5, source: 'Google' },
+  { id: '6', author_name: 'David L.', review_text: 'Found scorpions in our new home. They came out the next day and solved it. Excellent service!', rating: 5, source: 'Yelp' },
 ]
 
 export default function ReviewsPage() {
@@ -24,7 +24,7 @@ export default function ReviewsPage() {
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const { data } = await supabase.from('testimonials').select('id, author_name, content, rating, source').eq('tenant_id', tenantId).order('created_at', { ascending: false }).limit(12)
+      const { data } = await supabase.from('testimonials').select('id, author_name, review_text, rating, source').eq('tenant_id', tenantId).order('created_at', { ascending: false }).limit(12)
       if (data && data.length > 0) setReviews(data)
     })
   }, [])
@@ -55,7 +55,7 @@ export default function ReviewsPage() {
             {reviews.map((r) => (
               <div key={r.id} className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
                 <div className="text-yellow-500 mb-3">{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</div>
-                <p className="text-gray-700 mb-4 italic">"{r.content}"</p>
+                <p className="text-gray-700 mb-4 italic">"{r.review_text}"</p>
                 <div className="flex justify-between items-center">
                   <p className="text-gray-900 font-bold">— {r.author_name}</p>
                   {r.source && <span className="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded">{r.source}</span>}
