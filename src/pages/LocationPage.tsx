@@ -57,7 +57,7 @@ export default function LocationPage({ slug }: { slug: string }) {
             <a href={`tel:${phone}`} className="border-2 border-emerald-500 text-emerald-400 hover:bg-emerald-500 hover:text-white font-bold rounded-lg px-8 py-4 text-lg transition">Call Us Now</a>
           </div>
         </div>
-        <img src="/banner-img.png" alt="" className="absolute bottom-0 left-0 w-full opacity-20 pointer-events-none" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+        <img src="/banner-img.png" alt="" loading="lazy" className="absolute bottom-0 left-0 w-full opacity-20 pointer-events-none" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
       </section>
 
       {/* INTRO */}
@@ -65,7 +65,7 @@ export default function LocationPage({ slug }: { slug: string }) {
         <div className="max-w-6xl mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
             <div className="border-2 border-emerald-500 rounded-lg overflow-hidden bg-[#0a0f1e] h-80 flex items-center justify-center">
-              <img src="/exterior-treatment.jpg" alt={`Pest control in ${city}`} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+              <img src="/exterior-treatment.jpg" alt={`Pest control in ${city}`} loading="lazy" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
             </div>
             <div>
               <h2 className="font-bangers tracking-wide text-3xl md:text-4xl text-gray-900 mb-4">Professional Pest Control in {city}</h2>

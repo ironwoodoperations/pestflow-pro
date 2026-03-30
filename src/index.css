@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Bangers&display=swap');
+/* Fonts loaded via index.html preload for performance */
 
 :root {
   --pf-green: #10b981;
