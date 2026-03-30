@@ -17,7 +17,7 @@ interface PageContent {
 interface Testimonial {
   id: string
   author_name: string
-  content: string
+  review_text: string
   rating: number
 }
 
@@ -36,9 +36,9 @@ const SERVICES = [
 ]
 
 const PLACEHOLDER_TESTIMONIALS: Testimonial[] = [
-  { id: '1', author_name: 'Sarah M.', content: 'They showed up same day and solved our ant problem completely. Best pest company in Tyler!', rating: 5 },
-  { id: '2', author_name: 'James R.', content: 'Professional, on time, and effective. Our mosquito problem is gone. Highly recommend!', rating: 5 },
-  { id: '3', author_name: 'Linda K.', content: 'We had a serious roach issue and they knocked it out in one treatment. Amazing service.', rating: 5 },
+  { id: '1', author_name: 'Sarah M.', review_text: 'They showed up same day and solved our ant problem completely. Best pest company in Tyler!', rating: 5 },
+  { id: '2', author_name: 'James R.', review_text: 'Professional, on time, and effective. Our mosquito problem is gone. Highly recommend!', rating: 5 },
+  { id: '3', author_name: 'Linda K.', review_text: 'We had a serious roach issue and they knocked it out in one treatment. Amazing service.', rating: 5 },
 ]
 
 export default function Index() {
@@ -52,7 +52,7 @@ export default function Index() {
       if (!tenantId) return
       const [pageRes, testimonialsRes, mediaRes] = await Promise.all([
         supabase.from('page_content').select('title, subtitle').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
-        supabase.from('testimonials').select('id, author_name, content, rating').eq('tenant_id', tenantId).eq('featured', true).limit(3),
+        supabase.from('testimonials').select('id, author_name, review_text, rating').eq('tenant_id', tenantId).eq('featured', true).limit(3),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'hero_media').maybeSingle(),
       ])
       if (pageRes.data) {
@@ -217,7 +217,7 @@ export default function Index() {
             {testimonials.map((t) => (
               <div key={t.id} className="flex-shrink-0 w-80 bg-white rounded-xl p-6 shadow-sm border border-gray-200 snap-start">
                 <div className="text-yellow-500 mb-3">{'★'.repeat(t.rating)}{'☆'.repeat(5 - t.rating)}</div>
-                <p className="text-gray-700 mb-4 italic">"{t.content}"</p>
+                <p className="text-gray-700 mb-4 italic">"{t.review_text}"</p>
                 <p className="text-gray-900 font-bold">— {t.author_name}</p>
               </div>
             ))}

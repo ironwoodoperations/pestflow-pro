@@ -5,15 +5,15 @@ import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
 
 interface Testimonial {
-  id: string; author_name: string; content: string; rating: number
+  id: string; author_name: string; review_text: string; rating: number
   source: string; featured: boolean; created_at: string
 }
 
 interface FormState {
-  author_name: string; content: string; rating: number; source: string; featured: boolean
+  author_name: string; review_text: string; rating: number; source: string; featured: boolean
 }
 
-const EMPTY_FORM: FormState = { author_name: '', content: '', rating: 5, source: 'Google', featured: false }
+const EMPTY_FORM: FormState = { author_name: '', review_text: '', rating: 5, source: 'Google', featured: false }
 const SOURCES = ['Google', 'Facebook', 'Direct', 'Yelp']
 
 export default function TestimonialsTab() {
@@ -65,18 +65,18 @@ export default function TestimonialsTab() {
 
   function openNew() { setForm(EMPTY_FORM); setEditingId(null); setModalOpen(true) }
   function openEdit(r: Testimonial) {
-    setForm({ author_name: r.author_name, content: r.content, rating: r.rating, source: r.source || 'Google', featured: r.featured })
+    setForm({ author_name: r.author_name, review_text: r.review_text, rating: r.rating, source: r.source || 'Google', featured: r.featured })
     setEditingId(r.id); setModalOpen(true)
   }
 
   async function handleSave() {
-    if (!tenantId || !form.author_name.trim() || !form.content.trim()) { toast.error('Name and review text are required.'); return }
+    if (!tenantId || !form.author_name.trim() || !form.review_text.trim()) { toast.error('Name and review text are required.'); return }
     setSaving(true)
     if (editingId) {
-      const { error } = await supabase.from('testimonials').update({ author_name: form.author_name, content: form.content, rating: form.rating, source: form.source, featured: form.featured }).eq('id', editingId)
+      const { error } = await supabase.from('testimonials').update({ author_name: form.author_name, review_text: form.review_text, rating: form.rating, source: form.source, featured: form.featured }).eq('id', editingId)
       if (error) toast.error('Failed to update.'); else toast.success('Review updated!')
     } else {
-      const { error } = await supabase.from('testimonials').insert({ tenant_id: tenantId, author_name: form.author_name, content: form.content, rating: form.rating, source: form.source, featured: form.featured })
+      const { error } = await supabase.from('testimonials').insert({ tenant_id: tenantId, author_name: form.author_name, review_text: form.review_text, rating: form.rating, source: form.source, featured: form.featured })
       if (error) toast.error('Failed to add review.'); else toast.success('Review added!')
     }
     setSaving(false); setModalOpen(false); fetchReviews()
@@ -140,7 +140,7 @@ export default function TestimonialsTab() {
                 <div className="flex text-yellow-500 text-sm">{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</div>
               </div>
               <p className={`text-gray-600 text-sm ${expanded.has(r.id) ? '' : 'line-clamp-3'} cursor-pointer`} onClick={() => toggleExpand(r.id)}>
-                {r.content}
+                {r.review_text}
               </p>
               <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
                 <div className="flex gap-2">
@@ -172,7 +172,7 @@ export default function TestimonialsTab() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Review Text *</label>
-                <textarea value={form.content} onChange={e => setForm(p => ({ ...p, content: e.target.value }))} rows={4} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none" />
+                <textarea value={form.review_text} onChange={e => setForm(p => ({ ...p, review_text: e.target.value }))} rows={4} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Rating</label>
