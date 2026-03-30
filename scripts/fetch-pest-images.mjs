@@ -1,64 +1,61 @@
-/**
- * Fetch pest control stock images from Pexels API.
- *
- * Get a free API key at: https://www.pexels.com/api/
- *
- * USAGE:
- *   PEXELS_API_KEY=your-key node scripts/fetch-pest-images.mjs
- *
- * Images are saved to public/images/pests/
- */
-
-import { writeFileSync, mkdirSync } from 'fs'
-import { join, dirname } from 'path'
-import { fileURLToPath } from 'url'
-
-const __dirname = dirname(fileURLToPath(import.meta.url))
-const OUT_DIR = join(__dirname, '..', 'public', 'images', 'pests')
+import fs from 'fs'
+import path from 'path'
+import https from 'https'
 
 const API_KEY = process.env.PEXELS_API_KEY
-if (!API_KEY) {
-  console.error('Set PEXELS_API_KEY env var. Get a free key at https://www.pexels.com/api/')
-  process.exit(1)
-}
+if (!API_KEY) throw new Error('Missing PEXELS_API_KEY in environment')
 
-mkdirSync(OUT_DIR, { recursive: true })
+const OUTPUT_DIR = 'public/images/pests'
+fs.mkdirSync(OUTPUT_DIR, { recursive: true })
 
-const QUERIES = [
-  { name: 'spider', query: 'spider close up' },
-  { name: 'mosquito', query: 'mosquito insect' },
-  { name: 'ant', query: 'ant colony' },
-  { name: 'wasp', query: 'wasp nest' },
-  { name: 'roach', query: 'cockroach insect' },
-  { name: 'flea', query: 'flea insect' },
-  { name: 'rodent', query: 'mouse rodent' },
-  { name: 'scorpion', query: 'scorpion arachnid' },
-  { name: 'bedbug', query: 'bed bug insect' },
-  { name: 'termite', query: 'termite colony' },
-  { name: 'pest-control', query: 'pest control professional' },
-  { name: 'team', query: 'pest control team uniform' },
-  { name: 'exterminator', query: 'professional exterminator' },
-  { name: 'hero-truck', query: 'pest control truck' },
+const images = [
+  { query: 'spider close up macro',           file: 'spider.jpg' },
+  { query: 'mosquito insect macro',           file: 'mosquito.jpg' },
+  { query: 'ant colony insect',               file: 'ant.jpg' },
+  { query: 'wasp nest insect',                file: 'wasp.jpg' },
+  { query: 'cockroach insect',                file: 'roach.jpg' },
+  { query: 'flea insect macro',               file: 'flea.jpg' },
+  { query: 'mouse rodent',                    file: 'rodent.jpg' },
+  { query: 'scorpion arachnid',               file: 'scorpion.jpg' },
+  { query: 'bed bug insect macro',            file: 'bedbug.jpg' },
+  { query: 'termite colony wood',             file: 'termite.jpg' },
+  { query: 'pest control professional spray', file: 'pest-control.jpg' },
+  { query: 'pest control team uniform',       file: 'team.jpg' },
+  { query: 'exterminator professional work',  file: 'exterminator.jpg' },
+  { query: 'pest control truck service',      file: 'hero.jpg' },
+  { query: 'happy family home safe',          file: 'family.jpg' },
+  { query: 'clean modern home interior',      file: 'home.jpg' },
 ]
 
-for (const { name, query } of QUERIES) {
-  try {
-    const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=1&orientation=landscape`
-    const res = await fetch(url, { headers: { Authorization: API_KEY } })
-    const data = await res.json()
-    const photo = data?.photos?.[0]
-    if (!photo) { console.warn(`  ✗ ${name}: no results for "${query}"`); continue }
-
-    const imgUrl = photo.src.large2x || photo.src.large || photo.src.original
-    const imgRes = await fetch(imgUrl)
-    const buffer = Buffer.from(await imgRes.arrayBuffer())
-    const outPath = join(OUT_DIR, `${name}.jpg`)
-    writeFileSync(outPath, buffer)
-    console.log(`  ✓ ${name}.jpg (${(buffer.length / 1024).toFixed(0)}KB) — ${photo.photographer}`)
-  } catch (err) {
-    console.warn(`  ✗ ${name}: ${err.message}`)
-  }
+function download(url, dest) {
+  return new Promise((resolve, reject) => {
+    const file = fs.createWriteStream(dest)
+    https.get(url, res => {
+      if (res.statusCode === 301 || res.statusCode === 302) {
+        https.get(res.headers.location, r => r.pipe(file))
+      } else {
+        res.pipe(file)
+      }
+      file.on('finish', () => { file.close(); resolve() })
+    }).on('error', reject)
+  })
 }
 
-console.log('\nDone! Images saved to public/images/pests/')
-console.log('Note: Pexels images require attribution. See https://www.pexels.com/license/')
+async function fetchImage(query, filename) {
+  const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=1&orientation=landscape`
+  const res = await fetch(url, { headers: { Authorization: API_KEY } })
+  const data = await res.json()
+  if (!data.photos?.length) { console.log(`⚠️  No result for: ${query}`); return }
+  const photo = data.photos[0]
+  const imageUrl = photo.src.large2x || photo.src.large
+  const dest = path.join(OUTPUT_DIR, filename)
+  await download(imageUrl, dest)
+  console.log(`✅  ${filename} — "${photo.alt || query}" by ${photo.photographer}`)
+}
+
+for (const { query, file } of images) {
+  await fetchImage(query, file)
+  await new Promise(r => setTimeout(r, 300)) // gentle rate limit
+}
+
+console.log('\n🎉 All images downloaded to', OUTPUT_DIR)

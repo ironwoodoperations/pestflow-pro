@@ -70,6 +70,9 @@ export default function Index() {
         className="relative flex items-center justify-center overflow-hidden"
         style={{ minHeight: '600px', background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}
       >
+        {/* Hero fallback image — shown behind gradient overlay when no video */}
+        <img src="/images/pests/hero.jpg" alt="" className="absolute inset-0 w-full h-full object-cover opacity-20" loading="eager" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+
         {/* Full-bleed background video — renders behind hero text, falls back to gradient */}
         <HeroVideoPlayer />
 
