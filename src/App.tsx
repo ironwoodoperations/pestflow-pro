@@ -28,6 +28,7 @@ import TermiteInspections from './pages/TermiteInspections'
 import Pricing from './pages/Pricing'
 import Sitemap from './pages/Sitemap'
 import SlugRouter from './pages/SlugRouter'
+import NotFound from './pages/NotFound'
 
 export default function App() {
   return (
@@ -68,7 +69,7 @@ export default function App() {
 
         {/* ─── Dynamic slug — MUST BE LAST ─── */}
         <Route path="/:slug" element={<SlugRouter />} />
-        <Route path="*" element={<div className="min-h-screen bg-gray-950 text-white flex items-center justify-center text-2xl">404 — Page Not Found</div>} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   )
