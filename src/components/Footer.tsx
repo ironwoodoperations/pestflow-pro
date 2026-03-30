@@ -20,6 +20,7 @@ const QUICK_LINKS = [
   { label: 'Blog', href: '/blog' },
   { label: 'Reviews', href: '/reviews' },
   { label: 'Contact', href: '/contact' },
+  { label: 'Pricing', href: '/pricing' },
   { label: 'Get a Quote', href: '/quote' },
   { label: 'Service Area', href: '/service-area' },
 ]

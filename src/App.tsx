@@ -25,6 +25,7 @@ import BedBugControl from './pages/BedBugControl'
 import PestControlPage from './pages/PestControlPage'
 import TermiteControl from './pages/TermiteControl'
 import TermiteInspections from './pages/TermiteInspections'
+import Pricing from './pages/Pricing'
 import Sitemap from './pages/Sitemap'
 import SlugRouter from './pages/SlugRouter'
 
@@ -41,6 +42,7 @@ export default function App() {
         <Route path="/faq" element={<FAQPage />} />
         <Route path="/reviews" element={<ReviewsPage />} />
         <Route path="/service-area" element={<ServiceArea />} />
+        <Route path="/pricing" element={<Pricing />} />
         <Route path="/blog" element={<BlogPage />} />
         <Route path="/blog/:slug" element={<BlogPostPage />} />
         <Route path="/sitemap.xml" element={<Sitemap />} />
