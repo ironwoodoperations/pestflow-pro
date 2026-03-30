@@ -6,6 +6,7 @@ import { resolveTenantId } from '../lib/tenant'
 import Navbar from './Navbar'
 import Footer from './Footer'
 import StructuredData from './StructuredData'
+import HolidayBanner from './HolidayBanner'
 
 export interface TreatmentStep {
   title: string
@@ -64,6 +65,7 @@ export default function PestPageTemplate(props: PestPageProps) {
   return (
     <div className="min-h-screen bg-white">
       <StructuredData type="WebPage" pageSlug={props.pageSlug} />
+      <HolidayBanner />
       <Navbar />
 
       {/* HERO */}

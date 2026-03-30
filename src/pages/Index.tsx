@@ -6,6 +6,7 @@ import { resolveTenantId } from '../lib/tenant'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import StructuredData from '../components/StructuredData'
+import HolidayBanner from '../components/HolidayBanner'
 
 interface PageContent {
   title: string
@@ -60,6 +61,7 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-white">
       <StructuredData type="LocalBusiness" />
+      <HolidayBanner />
       <Navbar />
 
       {/* HERO */}
