@@ -5,19 +5,26 @@ import Footer from '../components/Footer'
 import HolidayBanner from '../components/HolidayBanner'
 import StructuredData from '../components/StructuredData'
 
+// Stripe Payment Link URLs — configure in .env.local or Stripe Dashboard
+const STRIPE_LINKS = {
+  starter: import.meta.env.VITE_STRIPE_STARTER_LINK || '',
+  pro: import.meta.env.VITE_STRIPE_PRO_LINK || '',
+  agency: import.meta.env.VITE_STRIPE_AGENCY_LINK || '',
+}
+
 const PLANS = [
   {
-    name: 'Starter', price: '$99', period: '/month', popular: false,
+    name: 'Starter', price: '$99', period: '/month', popular: false, tier: 'starter' as const,
     features: ['1 location', 'Up to 500 leads/month', 'Public website', 'Quote form', 'Blog (5 posts)', 'Email support'],
     cta: 'Start Free Trial', ctaStyle: 'border-2 border-emerald-500 text-emerald-600 hover:bg-emerald-50',
   },
   {
-    name: 'Professional', price: '$199', period: '/month', popular: true,
+    name: 'Professional', price: '$199', period: '/month', popular: true, tier: 'pro' as const,
     features: ['3 locations', 'Unlimited leads', 'Everything in Starter', 'AI keyword research', 'Google Reviews import', 'Social posting', 'Priority support'],
     cta: 'Start Free Trial', ctaStyle: 'bg-emerald-500 hover:bg-emerald-600 text-white',
   },
   {
-    name: 'Agency', price: '$399', period: '/month', popular: false,
+    name: 'Agency', price: '$399', period: '/month', popular: false, tier: 'agency' as const,
     features: ['Unlimited locations', 'White-label (your branding)', 'Everything in Pro', 'Multi-tenant dashboard', 'PDF reports', 'Dedicated onboarding', 'Phone support'],
     cta: 'Contact Sales', ctaStyle: 'bg-[#0a0f1e] hover:bg-[#1a2744] text-white',
   },
@@ -88,10 +95,16 @@ export default function Pricing() {
                     </li>
                   ))}
                 </ul>
-                <Link to="/admin/onboarding" className={`block text-center font-bold rounded-lg px-6 py-3 transition ${plan.ctaStyle}`}>
-                  {plan.cta}
-                </Link>
-                <p className="text-xs text-gray-400 text-center mt-2">No credit card required</p>
+                {STRIPE_LINKS[plan.tier] ? (
+                  <a href={STRIPE_LINKS[plan.tier]} target="_blank" rel="noopener noreferrer" className={`block text-center font-bold rounded-lg px-6 py-3 transition ${plan.ctaStyle}`}>
+                    {plan.cta}
+                  </a>
+                ) : (
+                  <Link to="/admin/onboarding" className={`block text-center font-bold rounded-lg px-6 py-3 transition ${plan.ctaStyle}`}>
+                    {plan.cta}
+                  </Link>
+                )}
+                <p className="text-xs text-gray-400 text-center mt-2">{STRIPE_LINKS[plan.tier] ? '14-day free trial included' : 'No credit card required'}</p>
               </div>
             ))}
           </div>

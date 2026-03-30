@@ -28,6 +28,7 @@ import TermiteControl from './pages/TermiteControl'
 import TermiteInspections from './pages/TermiteInspections'
 import NotFound from './pages/NotFound'
 import Sitemap from './pages/Sitemap'
+import Pricing from './pages/Pricing'
 import SlugRouter from './pages/SlugRouter'
 
 export default function App() {
@@ -45,6 +46,7 @@ export default function App() {
         <Route path="/service-area" element={<ServiceArea />} />
         <Route path="/blog" element={<BlogPage />} />
         <Route path="/blog/:slug" element={<BlogPostPage />} />
+        <Route path="/pricing" element={<Pricing />} />
         <Route path="/sitemap.xml" element={<Sitemap />} />
 
         {/* ─── Pest service pages ─── */}
