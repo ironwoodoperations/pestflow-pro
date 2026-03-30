@@ -26,7 +26,7 @@ const QUICK_LINKS = [
 
 export default function Footer() {
   const [info, setInfo] = useState<BusinessInfo>({
-    name: 'PestFlow Pro', phone: '', email: '', address: '', hours: '', tagline: '', license: '',
+    name: 'Ironclad Pest Solutions', phone: '', email: '', address: '', hours: '', tagline: '', license: '',
   })
   const [logoUrl, setLogoUrl] = useState('')
 

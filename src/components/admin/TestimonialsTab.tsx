@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { Star, Plus, X, Download } from 'lucide-react'
+import { Star, Plus, X, Download, ChevronDown, ChevronUp } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
 
@@ -26,6 +26,7 @@ export default function TestimonialsTab() {
   const [saving, setSaving] = useState(false)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [importing, setImporting] = useState(false)
+  const [helpOpen, setHelpOpen] = useState(false)
 
   async function importGoogleReviews() {
     if (!tenantId) return
@@ -104,6 +105,25 @@ export default function TestimonialsTab() {
 
   return (
     <div>
+      {/* Help Banner */}
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+        <button onClick={() => setHelpOpen(!helpOpen)} className="flex items-center justify-between w-full text-left">
+          <span className="text-sm font-semibold text-blue-900">⭐ Reviews — How to use this</span>
+          {helpOpen ? <ChevronUp size={16} className="text-blue-600" /> : <ChevronDown size={16} className="text-blue-600" />}
+        </button>
+        {helpOpen && (
+          <div className="mt-3 text-sm text-blue-800 space-y-2">
+            <p>Reviews are one of the most important things for your business. 90% of people read reviews before calling a company.</p>
+            <ul className="list-none space-y-1">
+              <li><strong>IMPORT FROM GOOGLE</strong> — Pulls your real Google reviews automatically</li>
+              <li><strong>ADD MANUALLY</strong> — Type in a review by hand</li>
+              <li><strong>FEATURED</strong> — Toggle ON for your best reviews — they show on the homepage</li>
+            </ul>
+            <p className="text-blue-700 italic">💡 Ask every happy customer to leave a Google review. More reviews = higher rankings.</p>
+          </div>
+        )}
+      </div>
+
       {/* Top bar */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex gap-4">

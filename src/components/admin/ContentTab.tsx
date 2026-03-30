@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { Sparkles } from 'lucide-react'
+import { Sparkles, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
 
@@ -29,6 +29,8 @@ export default function ContentTab() {
   const [aiLoading, setAiLoading] = useState(false)
   const [businessName, setBusinessName] = useState('')
   const [businessCity, setBusinessCity] = useState('')
+  const [helpOpen, setHelpOpen] = useState(false)
+  const [reverting, setReverting] = useState(false)
   const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
 
   useEffect(() => {
@@ -92,6 +94,19 @@ export default function ContentTab() {
   async function handleSave() {
     if (!tenantId) return
     setSaving(true)
+    // Save original snapshot before first edit (if none exists)
+    const { data: existingSnap } = await supabase.from('page_snapshots')
+      .select('id').eq('tenant_id', tenantId).eq('page_slug', selectedSlug).eq('snapshot_type', 'original').maybeSingle()
+    if (!existingSnap) {
+      const { data: current } = await supabase.from('page_content')
+        .select('title, subtitle, intro, video_url').eq('tenant_id', tenantId).eq('page_slug', selectedSlug).maybeSingle()
+      if (current) {
+        await supabase.from('page_snapshots').insert({
+          tenant_id: tenantId, page_slug: selectedSlug, snapshot_type: 'original',
+          snapshot_data: { title: current.title, subtitle: current.subtitle, intro: current.intro, video_url: current.video_url },
+        })
+      }
+    }
     const { error } = await supabase.from('page_content').upsert({
       tenant_id: tenantId, page_slug: selectedSlug, title: form.title, subtitle: form.subtitle, intro: form.intro, video_url: form.video_url,
     }, { onConflict: 'tenant_id,page_slug' })
@@ -99,9 +114,46 @@ export default function ContentTab() {
     if (error) toast.error('Failed to save content.'); else toast.success('Content saved!')
   }
 
+  async function handleRevert() {
+    if (!tenantId) return
+    if (!confirm('Revert this page to its original content? Your current edits will be overwritten.')) return
+    setReverting(true)
+    const { data: snap } = await supabase.from('page_snapshots')
+      .select('snapshot_data').eq('tenant_id', tenantId).eq('page_slug', selectedSlug).eq('snapshot_type', 'original').maybeSingle()
+    if (!snap?.snapshot_data) { toast.error('No original snapshot found for this page.'); setReverting(false); return }
+    const orig = snap.snapshot_data as ContentForm
+    setForm({ title: orig.title || '', subtitle: orig.subtitle || '', intro: orig.intro || '', video_url: orig.video_url || '' })
+    const { error } = await supabase.from('page_content').upsert({
+      tenant_id: tenantId, page_slug: selectedSlug, title: orig.title || '', subtitle: orig.subtitle || '', intro: orig.intro || '', video_url: orig.video_url || '',
+    }, { onConflict: 'tenant_id,page_slug' })
+    setReverting(false)
+    if (error) toast.error('Failed to revert.'); else toast.success('Reverted to original content!')
+  }
+
   const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-400'
 
   return (
+    <div>
+      {/* Help Banner */}
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+        <button onClick={() => setHelpOpen(!helpOpen)} className="flex items-center justify-between w-full text-left">
+          <span className="text-sm font-semibold text-blue-900">📝 Content Editor — How to use this</span>
+          {helpOpen ? <ChevronUp size={16} className="text-blue-600" /> : <ChevronDown size={16} className="text-blue-600" />}
+        </button>
+        {helpOpen && (
+          <div className="mt-3 text-sm text-blue-800 space-y-2">
+            <p>This is where you change the words on your website pages.</p>
+            <ol className="list-decimal list-inside space-y-1">
+              <li><strong>PICK A PAGE</strong> from the list on the left (like Home or Spider Control)</li>
+              <li><strong>EDIT</strong> the Title, Subtitle, or Intro text on the right</li>
+              <li><strong>HIT SAVE</strong> — your website updates instantly</li>
+              <li><strong>MADE A MISTAKE?</strong> Hit Revert to Original to go back to what we set up</li>
+            </ol>
+            <p className="text-blue-700 italic">💡 The Title is the big headline. The Subtitle is the tagline under it. The Intro is the paragraph that explains the page.</p>
+          </div>
+        )}
+      </div>
+
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
       {/* Page list sidebar */}
       <div className="lg:col-span-1">
@@ -160,12 +212,16 @@ export default function ContentTab() {
                 <button onClick={generateAI} disabled={aiLoading || !apiKey} title={!apiKey ? 'Set VITE_ANTHROPIC_API_KEY to enable' : isPestPage ? 'Generate SEO-optimized pest service copy' : 'Generate page copy with AI'} className="flex items-center gap-1.5 border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-40">
                   <Sparkles size={14} /> {aiLoading ? 'Generating...' : isPestPage ? 'AI Write (Pest SEO)' : 'AI Write'}
                 </button>
+                <button onClick={handleRevert} disabled={reverting} className="flex items-center gap-1.5 border border-gray-300 text-gray-500 hover:text-red-600 hover:bg-red-50 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-40">
+                  <RotateCcw size={14} /> {reverting ? 'Reverting...' : 'Revert to Original'}
+                </button>
               </div>
               {aiLoading && <p className="text-xs text-gray-400 mt-2">AI-generated content. Review before saving.</p>}
             </div>
           )}
         </div>
       </div>
+    </div>
     </div>
   )
 }
