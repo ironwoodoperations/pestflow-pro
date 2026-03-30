@@ -16,12 +16,20 @@ export default function ContactPage() {
   const [info, setInfo] = useState<BusinessInfo>({ name: 'PestFlow Pro', phone: '(903) 555-0100', email: '', address: '', hours: '' })
   const [social, setSocial] = useState<SocialLinks>({ facebook: '', instagram: '', google: '' })
   const [form, setForm] = useState<FormState>({ name: '', email: '', phone: '', message: '' })
+  const [heroTitle, setHeroTitle] = useState('Contact Us')
+  const [heroSubtitle, setHeroSubtitle] = useState('')
 
   useEffect(() => {
     resolveTenantId().then(async (tid) => {
       if (!tid) return
       setTenantId(tid)
-      const { data } = await supabase.from('settings').select('key, value').eq('tenant_id', tid).in('key', ['business_info', 'social_links'])
+      const [settingsRes, contentRes] = await Promise.all([
+        supabase.from('settings').select('key, value').eq('tenant_id', tid).in('key', ['business_info', 'social_links']),
+        supabase.from('page_content').select('title, subtitle').eq('tenant_id', tid).eq('page_slug', 'contact').maybeSingle(),
+      ])
+      if (contentRes.data?.title) setHeroTitle(contentRes.data.title)
+      if (contentRes.data?.subtitle) setHeroSubtitle(contentRes.data.subtitle)
+      const { data } = settingsRes
       if (data) {
         for (const row of data) {
           if (row.key === 'business_info' && row.value) setInfo({ name: row.value.name || 'PestFlow Pro', phone: row.value.phone || '(903) 555-0100', email: row.value.email || '', address: row.value.address || '', hours: row.value.hours || '' })
@@ -52,10 +60,10 @@ export default function ContactPage() {
 
       <section className="py-16" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h1 className="font-oswald tracking-wide text-4xl md:text-6xl text-white mb-4">Contact Us</h1>
+          <h1 className="font-oswald tracking-wide text-4xl md:text-6xl text-white mb-4">{heroTitle}</h1>
           <p className="text-gray-400 text-lg">
-            Have a question or need service? Call us at{' '}
-            <a href={`tel:${info.phone}`} className="text-emerald-400 font-bold hover:underline">{info.phone}</a>
+            {heroSubtitle || <>Have a question or need service? Call us at{' '}
+            <a href={`tel:${info.phone}`} className="text-emerald-400 font-bold hover:underline">{info.phone}</a></>}
           </p>
         </div>
       </section>

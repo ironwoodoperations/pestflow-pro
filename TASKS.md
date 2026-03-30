@@ -117,19 +117,35 @@
 - [x] Build passes with zero TypeScript errors
 - [x] SKILL.md + TASKS.md updated
 
-## Session 10 — Next Up
-- [ ] Client onboarding: custom domain setup guide in admin
-- [ ] Real content seeding — pull from Supabase and populate all page_content rows
-- [ ] Location pages: Google Maps embed (reads google_maps_embed_url from settings)
-- [ ] Location pages: "We Also Serve" section (nearby cities from location_data)
-- [ ] Admin: AI content writer — generate pest page copy via Anthropic API
-- [ ] Accessibility audit — aria labels, focus states, contrast check
-- [ ] Client handoff mode — read-only "preview" admin view for client demos
-- [ ] White-label config — swap logo, company name, colors from onboarding wizard output
-- [ ] Email templates — branded HTML emails for lead notifications (logo, colors)
-- [ ] Stripe integration — real checkout for SaaS subscriptions (Starter/Pro/Agency)
-- [ ] Admin: bulk location import (CSV upload → creates location_data rows)
-- [ ] Public API endpoint — /api/quote for headless quote form embed on external sites
-- [ ] Analytics dashboard — page views, lead sources, conversion tracking (no GA, privacy-first)
-- [ ] Mobile app scaffold — Capacitor wrapper for iOS/Android
-- [ ] SKILL.md + TASKS.md updated
+## Session 10 (Complete)
+- [x] Client onboarding: custom domain setup guide in admin
+- [x] Real content seeding — pull from Supabase and populate all page_content rows
+- [x] Location pages: Google Maps embed (reads google_maps_embed_url from settings)
+- [x] Location pages: "We Also Serve" section (nearby cities from location_data)
+- [x] Admin: AI content writer — generate pest page copy via Anthropic API
+- [x] Accessibility audit — aria labels, focus states, contrast check
+- [x] Client handoff mode — read-only "preview" admin view for client demos
+- [x] White-label config — swap logo, company name, colors from onboarding wizard output
+- [x] Email templates — branded HTML emails for lead notifications (logo, colors)
+- [x] Stripe integration — real checkout for SaaS subscriptions (Starter/Pro/Agency)
+- [x] Admin: bulk location import (CSV upload → creates location_data rows)
+- [x] Public API endpoint — /api/quote for headless quote form embed on external sites
+- [x] Analytics dashboard — page views, lead sources, conversion tracking (no GA, privacy-first)
+- [x] Mobile app scaffold — Capacitor wrapper for iOS/Android
+- [x] PESTFLOW-SKILL.md + TASKS.md updated
+
+## Session 11 — Next Up
+- [ ] Page view tracking — lightweight privacy-first page view counter (no cookies, DB-only)
+- [ ] Admin: PDF report export — generate downloadable monthly summary PDF
+- [ ] Location-specific SEO — unique meta tags per location page from location_data
+- [ ] Admin: notification center — in-app notification bell for new leads
+- [ ] Technician scheduling — job assignment + calendar view
+- [ ] Customer portal — login for customers to view treatment history
+- [ ] Invoice generator — create and send invoices from CRM
+- [ ] Multi-language support — i18n scaffold for Spanish/English
+- [ ] Advanced blog — categories, tags, featured image upload
+- [ ] Admin: audit log — track all settings changes + user actions
+- [ ] Rate limiting on public API endpoint (api-quote)
+- [ ] Automated review request — post-service email asking for Google review
+- [ ] Dark mode for admin dashboard
+- [ ] PESTFLOW-SKILL.md + TASKS.md updated

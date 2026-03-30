@@ -27,8 +27,8 @@ export default function HolidayBanner() {
       <span className="text-sm font-medium text-gray-900">
         🎄 {holiday} Hours — {message}
       </span>
-      <button onClick={() => setVisible(false)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-800 hover:text-gray-600" aria-label="Close">
-        <X size={16} />
+      <button onClick={() => setVisible(false)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-800 hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 rounded" aria-label="Close holiday banner">
+        <X size={16} aria-hidden="true" />
       </button>
     </div>
   )

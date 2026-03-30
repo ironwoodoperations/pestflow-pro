@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
-import { Plus, X, Trash2 } from 'lucide-react'
+import { Plus, X, Trash2, Upload } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
 
@@ -23,6 +23,8 @@ export default function LocationsTab() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<LocForm>({ city: '', slug: '', hero_title: '', intro: '', is_live: false })
   const [saving, setSaving] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   async function fetchLocations() {
     if (!tenantId) return
@@ -70,6 +72,49 @@ export default function LocationsTab() {
     setLocations(prev => prev.map(x => x.id === loc.id ? { ...x, is_live: !x.is_live } : x))
   }
 
+  async function handleCSVImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !tenantId) return
+    setImporting(true)
+    try {
+      const text = await file.text()
+      const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
+      if (lines.length < 2) { toast.error('CSV must have a header row and at least one data row.'); setImporting(false); return }
+
+      const headers = lines[0].toLowerCase().split(',').map(h => h.trim().replace(/"/g, ''))
+      const cityIdx = headers.indexOf('city')
+      const slugIdx = headers.indexOf('slug')
+      const heroIdx = headers.indexOf('hero_title')
+      const introIdx = headers.indexOf('intro')
+      const liveIdx = headers.indexOf('is_live')
+
+      if (cityIdx === -1) { toast.error('CSV must have a "city" column.'); setImporting(false); return }
+
+      const rows = lines.slice(1).map(line => {
+        const cols = line.split(',').map(c => c.trim().replace(/^"|"$/g, ''))
+        const city = cols[cityIdx] || ''
+        if (!city) return null
+        return {
+          tenant_id: tenantId,
+          city,
+          slug: (slugIdx >= 0 && cols[slugIdx]) ? cols[slugIdx] : toSlug(city),
+          hero_title: (heroIdx >= 0 && cols[heroIdx]) ? cols[heroIdx] : `${city} Pest Control`,
+          intro: (introIdx >= 0 && cols[introIdx]) ? cols[introIdx] : '',
+          is_live: liveIdx >= 0 ? cols[liveIdx]?.toLowerCase() === 'true' : true,
+        }
+      }).filter(Boolean)
+
+      if (rows.length === 0) { toast.error('No valid rows found in CSV.'); setImporting(false); return }
+
+      const { error } = await supabase.from('location_data').upsert(rows as Array<Record<string, unknown>>, { onConflict: 'tenant_id,slug' })
+      if (error) toast.error(`Import failed: ${error.message}`)
+      else toast.success(`Imported ${rows.length} location${rows.length > 1 ? 's' : ''}!`)
+      fetchLocations()
+    } catch { toast.error('Failed to parse CSV file.') }
+    setImporting(false)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
   const activeCount = locations.filter(l => l.is_live).length
   const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-400'
 
@@ -77,9 +122,15 @@ export default function LocationsTab() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <p className="text-sm text-gray-500">{activeCount} active location{activeCount !== 1 ? 's' : ''} · {locations.length} total</p>
-        <button onClick={openNew} className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-          <Plus size={16} /> Add Location
-        </button>
+        <div className="flex items-center gap-3">
+          <input ref={fileInputRef} type="file" accept=".csv" onChange={handleCSVImport} className="hidden" />
+          <button onClick={() => fileInputRef.current?.click()} disabled={importing} className="flex items-center gap-2 border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
+            <Upload size={16} /> {importing ? 'Importing...' : 'Import CSV'}
+          </button>
+          <button onClick={openNew} className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+            <Plus size={16} /> Add Location
+          </button>
+        </div>
       </div>
 
       {loading ? <p className="text-gray-400 p-4">Loading...</p> : (
@@ -115,6 +166,8 @@ export default function LocationsTab() {
           </table>
         </div>
       )}
+
+      <p className="text-xs text-gray-400 mt-3">CSV format: <code className="bg-gray-100 px-1 py-0.5 rounded text-gray-500">city,slug,hero_title,intro,is_live</code> — only <code className="bg-gray-100 px-1 py-0.5 rounded text-gray-500">city</code> is required.</p>
 
       {/* Modal */}
       {modalOpen && (
