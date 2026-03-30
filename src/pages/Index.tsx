@@ -85,8 +85,8 @@ export default function Index() {
             <Shield className="w-4 h-4" /> Licensed & Insured Professionals
           </div>
           <h1 className="font-oswald tracking-wide text-white text-5xl sm:text-6xl md:text-8xl leading-tight mb-6">
-            Protect Your Home from{' '}
-            <span className="text-emerald-400">Unwanted Pests</span>
+            East Texas's Most Trusted{' '}
+            <span className="text-emerald-400">Pest Control</span>
           </h1>
           <p className="text-gray-300 text-xl md:text-2xl mb-8 max-w-3xl mx-auto">
             {content.subtitle}
@@ -96,7 +96,7 @@ export default function Index() {
               Get a Free Quote
             </Link>
             <Link to="/pest-control" className="border-2 border-white/30 text-white hover:border-white font-bold rounded-lg px-8 py-4 text-lg transition">
-              Our Services
+              See Our Services
             </Link>
           </div>
           <a href="tel:9035550100" className="text-gray-300 text-xl font-semibold hover:text-white transition">
