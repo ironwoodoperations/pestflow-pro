@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
 
@@ -27,6 +28,7 @@ export default function SEOTab() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [activePanel, setActivePanel] = useState<'editor' | 'keywords' | 'sync'>('editor')
+  const [helpOpen, setHelpOpen] = useState(false)
 
   useEffect(() => {
     if (!tenantId) return
@@ -67,6 +69,25 @@ export default function SEOTab() {
 
   return (
     <div>
+      {/* Help Banner */}
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+        <button onClick={() => setHelpOpen(!helpOpen)} className="flex items-center justify-between w-full text-left">
+          <span className="text-sm font-semibold text-blue-900">🔍 SEO — How to use this</span>
+          {helpOpen ? <ChevronUp size={16} className="text-blue-600" /> : <ChevronDown size={16} className="text-blue-600" />}
+        </button>
+        {helpOpen && (
+          <div className="mt-3 text-sm text-blue-800 space-y-2">
+            <p>SEO means "Search Engine Optimization" — it's how Google decides which websites to show when people search.</p>
+            <ul className="list-none space-y-1">
+              <li><strong>META TITLE</strong> — The headline that shows up in Google search results. Keep it under 60 characters. Include your city and service. Example: "Spider Control Tyler TX | Ironclad Pest Solutions"</li>
+              <li><strong>META DESCRIPTION</strong> — The 2-sentence summary under your title in Google. Keep it under 160 characters. Tell people what you do and where.</li>
+              <li><strong>FOCUS KEYWORD</strong> — The main phrase you want to rank for on this page.</li>
+            </ul>
+            <p className="text-blue-700 italic">💡 The most important pages to fill in first: Home, Termite Control, Mosquito Control. These get the most search traffic.</p>
+          </div>
+        )}
+      </div>
+
       {/* Sub-tabs */}
       <div className="flex border-b border-gray-200 bg-white rounded-t-xl px-6 mb-6">
         {([['editor', 'Meta Editor'], ['keywords', '✨ AI Keyword Research'], ['sync', 'Bulk Keyword Sync']] as const).map(([key, label]) => (
