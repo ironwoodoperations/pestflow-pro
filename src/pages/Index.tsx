@@ -7,6 +7,7 @@ import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import StructuredData from '../components/StructuredData'
 import HolidayBanner from '../components/HolidayBanner'
+import HeroVideoPlayer from '../components/HeroVideoPlayer'
 
 interface PageContent {
   title: string
@@ -69,7 +70,10 @@ export default function Index() {
         className="relative flex items-center justify-center overflow-hidden"
         style={{ minHeight: '600px', background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}
       >
-        <div className="relative z-10 text-center px-4 max-w-5xl mx-auto">
+        {/* Full-bleed background video — renders behind hero text, falls back to gradient */}
+        <HeroVideoPlayer />
+
+        <div className="relative z-10 text-center px-4 max-w-5xl mx-auto py-20">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-sm mb-6">
             <Shield className="w-4 h-4" /> Licensed & Insured Professionals
           </div>
