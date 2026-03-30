@@ -160,3 +160,4 @@ To add a new tenant:
 | 5       | Mar 2026 | 4-step quote wizard, lead email notifications, Google Reviews import, Facebook social posting, sitemap.xml, robots.txt, PageSpeed optimizations, Pricing page, multi-tenant docs |
 | 6       | Mar 2026 | Merged PR, PESTFLOW-SKILL.md created, TASKS.md updated |
 | 7       | Mar 2026 | HeroVideoPlayer (youtube-nocookie background embed), branded 404 page (full chrome), PWA manifest + icons, bulk keyword sync (keyword_tracker → seo_meta) |
+| 8       | Mar 2026 | Remove Pricing page, rustic template (4th option), Pexels stock images script + introImage on all pest pages, Apex Pest Solutions About page, polished onboarding wizard, OnboardingLive screen-share mode |

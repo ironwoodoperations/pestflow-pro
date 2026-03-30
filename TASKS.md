@@ -77,15 +77,18 @@
 - [x] PESTFLOW-SKILL.md created (full autonomy doc through Session 6, rules 1-35, all pages/tabs/scripts)
 - [x] TASKS.md updated — Session 6 complete, Session 7 queue defined
 
-## Session 7 (In Progress)
-- [ ] Client onboarding: custom domain setup guide in admin
-- [ ] Real content seeding — pull from Supabase and populate all page_content rows
-- [ ] Location pages: Google Maps embed (reads google_maps_embed_url from settings)
-- [ ] Location pages: "We Also Serve" section (nearby cities from location_data)
-- [ ] Admin: AI content writer — generate pest page copy via Anthropic API
+## Session 7 (Complete)
 - [x] Admin: bulk keyword sync — push keyword_tracker to seo_meta fields (SEOTab Bulk Keyword Sync panel)
 - [x] Public website: hero video player (HeroVideoPlayer.tsx — youtube-nocookie background embed)
 - [x] 404 page (NotFound.tsx — HolidayBanner + Navbar + Footer + dark navy hero)
 - [x] Mobile PWA manifest + icons (manifest.json, placeholder PNGs, apple meta tags)
-- [ ] Accessibility audit — aria labels, focus states, contrast check
-- [ ] PESTFLOW-SKILL.md + TASKS.md updated
+- [x] PESTFLOW-SKILL.md + TASKS.md updated
+
+## Session 8 (Complete)
+- [x] Remove Pricing page route + nav link (file kept for future use)
+- [x] Rustic template — 4th design option (warm brown/amber, Playfair Display serif)
+- [x] Pexels stock image script (scripts/fetch-pest-images.mjs) + introImage prop on all 12 pest pages
+- [x] About Us populated with Apex Pest Solutions demo company (story, team, values, stats)
+- [x] Polished onboarding wizard — step indicators, larger inputs, skip links, editable review summary
+- [x] OnboardingLive — distraction-free screen-share mode (/admin/onboarding-live, 22 steps, one field per screen)
+- [x] TASKS.md + SKILL.md updated
