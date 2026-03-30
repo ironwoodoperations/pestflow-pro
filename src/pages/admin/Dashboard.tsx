@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
+import { PreviewModeContext } from '../../hooks/usePreviewMode'
 import {
   FileText, Search, BookOpen, Share2, Star,
-  MapPin, BarChart3, Users, Settings, LogOut, ExternalLink,
+  MapPin, BarChart3, Users, Settings, LogOut, ExternalLink, Eye, EyeOff,
   DollarSign, Calendar, Wrench, ClipboardList, AlertTriangle, TrendingUp
 } from 'lucide-react'
 import ContentTab from '../../components/admin/ContentTab'
@@ -35,6 +36,7 @@ type TabKey = (typeof TABS)[number]['key']
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<TabKey>('dashboard')
   const [businessName, setBusinessName] = useState('Your Business')
+  const [previewMode, setPreviewMode] = useState(false)
   const { tenantId } = useTenant()
   const navigate = useNavigate()
 
@@ -111,25 +113,42 @@ export default function Dashboard() {
               <h1 className="text-2xl font-bold text-gray-900">{activeLabel}</h1>
               <p className="text-gray-500 text-sm mt-1">{tabSubtitles[activeTab] || ''}</p>
             </div>
-            <a href="/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-emerald-600 transition">
-              View Site <ExternalLink size={14} />
-            </a>
+            <div className="flex items-center gap-4">
+              <button onClick={() => setPreviewMode(!previewMode)} className={`flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg transition ${previewMode ? 'bg-amber-100 text-amber-700 border border-amber-300' : 'text-gray-400 hover:text-gray-600 border border-gray-200'}`}>
+                {previewMode ? <EyeOff size={14} aria-hidden="true" /> : <Eye size={14} aria-hidden="true" />}
+                {previewMode ? 'Exit Preview' : 'Client Preview'}
+              </button>
+              <a href="/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-emerald-600 transition">
+                View Site <ExternalLink size={14} />
+              </a>
+            </div>
           </div>
         </div>
 
+        {/* Preview Mode Banner */}
+        {previewMode && (
+          <div className="bg-amber-50 border-b border-amber-200 px-8 py-3 flex items-center gap-3">
+            <Eye size={16} className="text-amber-600" aria-hidden="true" />
+            <p className="text-sm text-amber-800 font-medium">Client Preview Mode — All editing is disabled. Share this view with your client during handoff.</p>
+            <button onClick={() => setPreviewMode(false)} className="ml-auto text-sm text-amber-600 hover:text-amber-800 font-medium underline">Exit Preview</button>
+          </div>
+        )}
+
         {/* Tab Content */}
-        <div className="p-8">
-          {activeTab === 'dashboard' && <DashboardHome />}
-          {activeTab === 'content' && <ContentTab />}
-          {activeTab === 'seo' && <SEOTab />}
-          {activeTab === 'blog' && <BlogTab />}
-          {activeTab === 'social' && <SocialTab />}
-          {activeTab === 'testimonials' && <TestimonialsTab />}
-          {activeTab === 'locations' && <LocationsTab />}
-          {activeTab === 'reports' && <ReportsTab />}
-          {activeTab === 'crm' && <CRMTab />}
-          {activeTab === 'settings' && <SettingsTab />}
-        </div>
+        <PreviewModeContext.Provider value={previewMode}>
+          <div className={`p-8 ${previewMode ? 'pointer-events-none select-none opacity-90' : ''}`} style={previewMode ? { pointerEvents: 'none' } : undefined}>
+            {activeTab === 'dashboard' && <DashboardHome />}
+            {activeTab === 'content' && <ContentTab />}
+            {activeTab === 'seo' && <SEOTab />}
+            {activeTab === 'blog' && <BlogTab />}
+            {activeTab === 'social' && <SocialTab />}
+            {activeTab === 'testimonials' && <TestimonialsTab />}
+            {activeTab === 'locations' && <LocationsTab />}
+            {activeTab === 'reports' && <ReportsTab />}
+            {activeTab === 'crm' && <CRMTab />}
+            {activeTab === 'settings' && <SettingsTab />}
+          </div>
+        </PreviewModeContext.Provider>
       </main>
     </div>
   )
