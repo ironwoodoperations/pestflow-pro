@@ -1,182 +1,801 @@
-import { useState, useEffect } from 'react'
-import { toast } from 'sonner'
-import { Send, Clock, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { RefreshCw, Edit3, Trash2, Send, Loader2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
+import PageHelpBanner from './PageHelpBanner'
+
+// ─── Types ─────────────────────────────────────────────────────────────────
 
 interface SocialPost {
-  id: string; content: string; platform: string; status: string
-  scheduled_for: string | null; published_at: string | null; created_at: string
+  id: string
+  tenant_id: string
+  platform: 'facebook' | 'instagram' | 'both'
+  caption: string
+  image_url?: string
+  status: 'draft' | 'scheduled' | 'published' | 'failed'
+  scheduled_for?: string
+  published_at?: string
+  fb_post_id?: string
+  error_msg?: string
+  created_at: string
 }
+
+interface PexelsPhoto {
+  id: number
+  src: { medium: string; large: string }
+  alt: string
+}
+
+// ─── Toast system ──────────────────────────────────────────────────────────
+
+interface ToastMsg {
+  id: number
+  text: string
+  type: 'success' | 'error'
+}
+
+let toastId = 0
+
+function ToastContainer({ toasts, onDismiss }: { toasts: ToastMsg[]; onDismiss: (id: number) => void }) {
+  return (
+    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
+      {toasts.map(t => (
+        <div
+          key={t.id}
+          onClick={() => onDismiss(t.id)}
+          className={`px-4 py-3 rounded-lg shadow-lg text-sm font-medium text-white cursor-pointer transition-all ${
+            t.type === 'success' ? 'bg-emerald-500' : 'bg-red-500'
+          }`}
+        >
+          {t.text}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ─── Main Component ────────────────────────────────────────────────────────
 
 export default function SocialTab() {
   const { tenantId } = useTenant()
-  const [posts, setPosts] = useState<SocialPost[]>([])
-  const [loading, setLoading] = useState(true)
-  const [fbPageId, setFbPageId] = useState('')
-  const [fbToken, setFbToken] = useState('')
-  const [configured, setConfigured] = useState(false)
 
-  const [form, setForm] = useState({ content: '', platform: 'facebook', scheduledFor: '' })
-  const [posting, setPosting] = useState(false)
-  const [helpOpen, setHelpOpen] = useState(false)
+  // Form state — single useState object
+  const [form, setForm] = useState({
+    platform: 'facebook' as 'facebook' | 'instagram' | 'both',
+    caption: '',
+    imageUrl: '',
+    pexelsQuery: 'pest control technician',
+    scheduleMode: 'now' as 'now' | 'later',
+    scheduledFor: '',
+  })
+
+  // Other state
+  const [aiTopic, setAiTopic] = useState('')
+  const [aiCaptions, setAiCaptions] = useState<string[]>([])
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError] = useState('')
+  const [pexelsResults, setPexelsResults] = useState<PexelsPhoto[]>([])
+  const [pexelsLoading, setPexelsLoading] = useState(false)
+  const [selectedPexelsUrl, setSelectedPexelsUrl] = useState('')
+  const [posts, setPosts] = useState<SocialPost[]>([])
+  const [historyFilter, setHistoryFilter] = useState<'all' | 'draft' | 'scheduled' | 'published' | 'failed'>('all')
+  const [publishing, setPublishing] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [businessName, setBusinessName] = useState('Your Business')
+  const [pexelsApiKey, setPexelsApiKey] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [editingPostId, setEditingPostId] = useState<string | null>(null)
+
+  const [toasts, setToasts] = useState<ToastMsg[]>([])
+  const captionRef = useRef<HTMLTextAreaElement>(null)
+
+  const showToast = useCallback((text: string, type: 'success' | 'error') => {
+    const id = ++toastId
+    setToasts(prev => [...prev, { id, text, type }])
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000)
+  }, [])
+
+  const dismissToast = useCallback((id: number) => {
+    setToasts(prev => prev.filter(t => t.id !== id))
+  }, [])
+
+  // ─── Load data on mount ────────────────────────────────────────────────
 
   useEffect(() => {
     if (!tenantId) return
     Promise.all([
-      supabase.from('social_posts').select('*').eq('tenant_id', tenantId).order('created_at', { ascending: false }),
+      supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
       supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle(),
-    ]).then(([postsRes, settingsRes]) => {
-      setPosts(postsRes.data || [])
-      const intg = settingsRes.data?.value
-      if (intg?.facebook_page_id && intg?.facebook_access_token) {
-        setFbPageId(intg.facebook_page_id)
-        setFbToken(intg.facebook_access_token)
-        setConfigured(true)
-      }
+      supabase.from('social_posts').select('*').eq('tenant_id', tenantId).order('created_at', { ascending: false }),
+    ]).then(([bizRes, intgRes, postsRes]) => {
+      if (bizRes.data?.value?.name) setBusinessName(bizRes.data.value.name)
+      if (intgRes.data?.value?.pexels_api_key) setPexelsApiKey(intgRes.data.value.pexels_api_key)
+      setPosts((postsRes.data as SocialPost[]) || [])
       setLoading(false)
     })
   }, [tenantId])
 
-  async function publishNow() {
-    if (!form.content.trim()) { toast.error('Enter post content.'); return }
-    if (!configured) { toast.error('Configure Facebook in Settings → Integrations first.'); return }
-    setPosting(true)
+  // ─── Refresh posts ─────────────────────────────────────────────────────
+
+  async function refreshPosts() {
+    const { data } = await supabase.from('social_posts').select('*').eq('tenant_id', tenantId).order('created_at', { ascending: false })
+    setPosts((data as SocialPost[]) || [])
+  }
+
+  // ─── AI Caption Generator ──────────────────────────────────────────────
+
+  async function generateCaptions() {
+    if (!aiTopic.trim()) { showToast('Enter a topic first.', 'error'); return }
+    setAiLoading(true)
+    setAiError('')
+    setAiCaptions([])
+
+    const prompt = `You are a social media expert for a pest control company called ${businessName} in East Texas. Generate exactly 3 different Facebook/Instagram captions for a post about: "${aiTopic}".
+
+Rules:
+- Each caption must be engaging and friendly, not salesy
+- Include relevant emojis
+- End each with 3-5 relevant hashtags (#PestControl #EastTexas etc.)
+- Keep each under 200 words
+- Separate captions with "---CAPTION---"
+
+Return ONLY the 3 captions separated by "---CAPTION---". No JSON, no preamble.`
+
     try {
-      const res = await fetch(`https://graph.facebook.com/v19.0/${fbPageId}/feed`, {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: form.content, access_token: fbToken }),
+        headers: {
+          'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: prompt }],
+        }),
       })
       const data = await res.json()
-      if (data.error) { toast.error(`Facebook error: ${data.error.message}`); setPosting(false); return }
-      await supabase.from('social_posts').insert({
-        tenant_id: tenantId, content: form.content, platform: 'facebook',
-        status: 'published', published_at: new Date().toISOString(),
-      })
-      toast.success('Published to Facebook!')
-      setForm({ content: '', platform: 'facebook', scheduledFor: '' })
-      const { data: refreshed } = await supabase.from('social_posts').select('*').eq('tenant_id', tenantId).order('created_at', { ascending: false })
-      setPosts(refreshed || [])
-    } catch { toast.error('Failed to publish. Check your Facebook integration.') }
-    setPosting(false)
+      if (data.error) {
+        setAiError(data.error.message || 'AI request failed.')
+        setAiLoading(false)
+        return
+      }
+      const text = data.content[0].text
+      const captions = text.split('---CAPTION---').map((c: string) => c.trim()).filter((c: string) => c.length > 0)
+      setAiCaptions(captions.slice(0, 3))
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to generate captions.'
+      setAiError(msg)
+    }
+    setAiLoading(false)
   }
 
-  async function schedulePost() {
-    if (!form.content.trim()) { toast.error('Enter post content.'); return }
-    if (!form.scheduledFor) { toast.error('Select a schedule date/time.'); return }
-    await supabase.from('social_posts').insert({
-      tenant_id: tenantId, content: form.content, platform: form.platform,
-      status: 'scheduled', scheduled_for: new Date(form.scheduledFor).toISOString(),
-    })
-    toast.success('Post scheduled!')
-    setForm({ content: '', platform: 'facebook', scheduledFor: '' })
-    const { data } = await supabase.from('social_posts').select('*').eq('tenant_id', tenantId).order('created_at', { ascending: false })
-    setPosts(data || [])
+  // ─── Pexels Search ─────────────────────────────────────────────────────
+
+  async function searchPexels() {
+    if (!pexelsApiKey) return
+    if (!form.pexelsQuery.trim()) return
+    setPexelsLoading(true)
+    try {
+      const res = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(form.pexelsQuery)}&per_page=9&orientation=landscape`, {
+        headers: { Authorization: pexelsApiKey },
+      })
+      const data = await res.json()
+      setPexelsResults(data.photos || [])
+    } catch {
+      showToast('Pexels search failed.', 'error')
+    }
+    setPexelsLoading(false)
   }
+
+  // ─── Select Pexels photo ───────────────────────────────────────────────
+
+  function selectPexelsPhoto(url: string) {
+    setSelectedPexelsUrl(url)
+    setForm(p => ({ ...p, imageUrl: url }))
+  }
+
+  // ─── Emoji picker ──────────────────────────────────────────────────────
+
+  const emojis = ['🐜', '🦟', '🪳', '🕷️', '🐭', '🐝', '🦂', '🌿', '✅', '🔥', '📞', '⭐']
+
+  function appendEmoji(emoji: string) {
+    const ta = captionRef.current
+    if (ta) {
+      const start = ta.selectionStart
+      const end = ta.selectionEnd
+      const newCaption = form.caption.substring(0, start) + emoji + form.caption.substring(end)
+      setForm(p => ({ ...p, caption: newCaption }))
+      setTimeout(() => { ta.selectionStart = ta.selectionEnd = start + emoji.length; ta.focus() }, 0)
+    } else {
+      setForm(p => ({ ...p, caption: p.caption + emoji }))
+    }
+  }
+
+  // ─── Character limit ──────────────────────────────────────────────────
+
+  function getCharLimit() {
+    if (form.platform === 'instagram') return 2200
+    if (form.platform === 'both') return 2200 // use the lower limit
+    return 63206
+  }
+
+  // ─── Save as draft ─────────────────────────────────────────────────────
+
+  async function saveAsDraft() {
+    if (!form.caption.trim()) { showToast('Write a caption first.', 'error'); return }
+    setSaving(true)
+
+    const postData = {
+      tenant_id: tenantId,
+      platform: form.platform,
+      caption: form.caption,
+      image_url: form.imageUrl || null,
+      status: 'draft' as const,
+      scheduled_for: form.scheduleMode === 'later' && form.scheduledFor ? new Date(form.scheduledFor).toISOString() : null,
+    }
+
+    if (editingPostId) {
+      const { error } = await supabase.from('social_posts').update(postData).eq('id', editingPostId)
+      if (error) { showToast('Failed to update post.', 'error'); setSaving(false); return }
+      showToast('Post updated!', 'success')
+      setEditingPostId(null)
+    } else {
+      const { error } = await supabase.from('social_posts').insert(postData)
+      if (error) { showToast('Failed to save draft.', 'error'); setSaving(false); return }
+      showToast('Draft saved!', 'success')
+    }
+
+    resetForm()
+    await refreshPosts()
+    setSaving(false)
+  }
+
+  // ─── Publish Now ───────────────────────────────────────────────────────
+
+  async function publishNow() {
+    if (!form.caption.trim()) { showToast('Write a caption first.', 'error'); return }
+    setPublishing(true)
+
+    // Load integrations
+    const { data: intgData } = await supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle()
+    const intg = intgData?.value || {}
+    const fbToken = intg.facebook_access_token
+    const fbPageId = intg.facebook_page_id
+
+    // Save post first
+    const postData = {
+      tenant_id: tenantId,
+      platform: form.platform,
+      caption: form.caption,
+      image_url: form.imageUrl || null,
+      status: 'draft' as const,
+      scheduled_for: form.scheduleMode === 'later' && form.scheduledFor ? new Date(form.scheduledFor).toISOString() : null,
+    }
+
+    let postId = editingPostId
+
+    if (editingPostId) {
+      await supabase.from('social_posts').update(postData).eq('id', editingPostId)
+    } else {
+      const { data: inserted } = await supabase.from('social_posts').insert(postData).select('id').single()
+      postId = inserted?.id || null
+    }
+
+    if (!postId) {
+      showToast('Failed to save post.', 'error')
+      setPublishing(false)
+      return
+    }
+
+    // Instagram-only: save as draft with note
+    if (form.platform === 'instagram') {
+      await supabase.from('social_posts').update({ status: 'draft', error_msg: 'Instagram publishing requires a connected Business Account. Post saved as draft.' }).eq('id', postId)
+      showToast('Instagram post saved as draft. Business Account required for auto-publish.', 'error')
+      resetForm()
+      await refreshPosts()
+      setPublishing(false)
+      return
+    }
+
+    // Facebook publish
+    if (form.platform === 'facebook' || form.platform === 'both') {
+      if (!fbToken || !fbPageId) {
+        await supabase.from('social_posts').update({ status: 'draft' }).eq('id', postId)
+        showToast('Add Facebook credentials in Settings → Integrations. Saved as draft.', 'error')
+        resetForm()
+        await refreshPosts()
+        setPublishing(false)
+        return
+      }
+
+      try {
+        let endpoint: string
+        let body: Record<string, string>
+
+        if (form.imageUrl) {
+          endpoint = `https://graph.facebook.com/v18.0/${fbPageId}/photos`
+          body = { url: form.imageUrl, caption: form.caption, access_token: fbToken }
+        } else {
+          endpoint = `https://graph.facebook.com/v18.0/${fbPageId}/feed`
+          body = { message: form.caption, access_token: fbToken }
+        }
+
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        })
+        const data = await res.json()
+
+        if (data.error) {
+          await supabase.from('social_posts').update({ status: 'failed', error_msg: data.error.message }).eq('id', postId)
+          showToast(`Facebook error: ${data.error.message}`, 'error')
+        } else {
+          await supabase.from('social_posts').update({ status: 'published', published_at: new Date().toISOString(), fb_post_id: data.id }).eq('id', postId)
+          showToast('Posted to Facebook! ✅', 'success')
+        }
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Network error'
+        await supabase.from('social_posts').update({ status: 'failed', error_msg: msg }).eq('id', postId)
+        showToast(`Facebook error: ${msg}`, 'error')
+      }
+    }
+
+    resetForm()
+    await refreshPosts()
+    setPublishing(false)
+  }
+
+  // ─── Publish a saved post directly ─────────────────────────────────────
+
+  async function publishPost(post: SocialPost) {
+    setForm({
+      platform: post.platform,
+      caption: post.caption,
+      imageUrl: post.image_url || '',
+      pexelsQuery: 'pest control technician',
+      scheduleMode: 'now',
+      scheduledFor: '',
+    })
+    setEditingPostId(post.id)
+    // Scroll to top of composer
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    showToast('Post loaded into composer. Click Publish to send.', 'success')
+  }
+
+  // ─── Edit post ─────────────────────────────────────────────────────────
+
+  function editPost(post: SocialPost) {
+    setForm({
+      platform: post.platform,
+      caption: post.caption,
+      imageUrl: post.image_url || '',
+      pexelsQuery: 'pest control technician',
+      scheduleMode: post.scheduled_for ? 'later' : 'now',
+      scheduledFor: post.scheduled_for ? post.scheduled_for.substring(0, 16) : '',
+    })
+    setEditingPostId(post.id)
+    setSelectedPexelsUrl(post.image_url || '')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  // ─── Delete post ───────────────────────────────────────────────────────
 
   async function deletePost(id: string) {
-    if (!confirm('Delete this post?')) return
     await supabase.from('social_posts').delete().eq('id', id)
     setPosts(prev => prev.filter(p => p.id !== id))
-    toast.success('Post deleted.')
+    showToast('Post deleted.', 'success')
   }
 
-  const statusBadge: Record<string, string> = {
-    published: 'bg-emerald-100 text-emerald-700', scheduled: 'bg-blue-100 text-blue-700', draft: 'bg-gray-100 text-gray-500',
+  // ─── Reset form ────────────────────────────────────────────────────────
+
+  function resetForm() {
+    setForm({ platform: 'facebook', caption: '', imageUrl: '', pexelsQuery: 'pest control technician', scheduleMode: 'now', scheduledFor: '' })
+    setEditingPostId(null)
+    setSelectedPexelsUrl('')
+    setAiCaptions([])
+    setAiTopic('')
+  }
+
+  // ─── Filter posts ──────────────────────────────────────────────────────
+
+  const filteredPosts = historyFilter === 'all' ? posts : posts.filter(p => p.status === historyFilter)
+
+  // ─── Platform badge ────────────────────────────────────────────────────
+
+  function platformBadge(platform: string) {
+    const styles: Record<string, string> = {
+      facebook: 'bg-blue-100 text-blue-700',
+      instagram: 'bg-pink-100 text-pink-700',
+      both: 'bg-purple-100 text-purple-700',
+    }
+    return <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${styles[platform] || 'bg-gray-100 text-gray-600'}`}>{platform}</span>
+  }
+
+  function statusBadge(status: string) {
+    const styles: Record<string, string> = {
+      draft: 'bg-gray-100 text-gray-600',
+      scheduled: 'bg-yellow-100 text-yellow-700',
+      published: 'bg-emerald-100 text-emerald-700',
+      failed: 'bg-red-100 text-red-700',
+    }
+    return <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${styles[status] || 'bg-gray-100 text-gray-600'}`}>{status}</span>
+  }
+
+  // ─── Date display ──────────────────────────────────────────────────────
+
+  function postDate(post: SocialPost) {
+    const d = post.published_at || post.scheduled_for || post.created_at
+    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
   }
 
   const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-400'
 
   if (loading) return <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"><p className="text-gray-400">Loading...</p></div>
 
+  const charLimit = getCharLimit()
+  const charsRemaining = charLimit - form.caption.length
+
   return (
     <div>
-      {/* Help Banner */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-        <button onClick={() => setHelpOpen(!helpOpen)} className="flex items-center justify-between w-full text-left">
-          <span className="text-sm font-semibold text-blue-900">📱 Social Media — How to use this</span>
-          {helpOpen ? <ChevronUp size={16} className="text-blue-600" /> : <ChevronDown size={16} className="text-blue-600" />}
-        </button>
-        {helpOpen && (
-          <div className="mt-3 text-sm text-blue-800 space-y-2">
-            <p>Post to your Facebook page directly from here — no logging in to Facebook required.</p>
-            <ul className="list-none space-y-1">
-              <li><strong>TYPE YOUR POST</strong> — Write what you want to say or paste a topic</li>
-              <li><strong>ADD IMAGE</strong> — Optional but recommended for better engagement</li>
-              <li><strong>POST NOW</strong> or <strong>SCHEDULE</strong> for later</li>
-            </ul>
-            <p className="text-blue-700 italic">💡 Post 3–4 times per week for best reach. Seasonal tips and before/after results work great.</p>
-          </div>
-        )}
-      </div>
+      {/* Section A — PageHelpBanner */}
+      <PageHelpBanner
+        tab="social"
+        title="📱 Social Media Command Center"
+        body="Create posts for Facebook and Instagram right here — no need to open those apps! Type a topic, let AI write 3 caption options, pick your favorite, add a photo, choose when to post, and hit Publish. Easy as that."
+      />
 
-      {!configured && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
-          <p className="text-sm text-amber-800">Connect your Facebook Page in Settings → Integrations to enable live posting.</p>
-        </div>
-      )}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* ─── LEFT: Composer Panel (60%) ──────────────────────────── */}
+        <div className="lg:col-span-3 space-y-6">
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Composer */}
-        <div className="lg:col-span-1">
+          {/* Section B — Platform Selector */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 className="text-base font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-100">Post Composer</h3>
-            <div className="space-y-4">
-              <textarea value={form.content} onChange={e => setForm(p => ({ ...p, content: e.target.value }))} rows={5} placeholder="Write your social media post..." className={`${inputClass} resize-none`} />
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Platform</label>
-                <select value={form.platform} onChange={e => setForm(p => ({ ...p, platform: e.target.value }))} className={`${inputClass} bg-white`}>
-                  <option value="facebook">Facebook</option>
-                  <option value="instagram">Instagram</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Schedule (optional)</label>
-                <input type="datetime-local" value={form.scheduledFor} onChange={e => setForm(p => ({ ...p, scheduledFor: e.target.value }))} className={inputClass} />
-              </div>
-              <div className="flex gap-2">
-                <button onClick={publishNow} disabled={posting || !configured} className="flex-1 flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
-                  <Send size={14} /> {posting ? 'Publishing...' : 'Publish Now'}
+            <h3 className="text-base font-semibold text-gray-900 mb-3">Platform</h3>
+            <div className="flex gap-2">
+              {(['facebook', 'instagram', 'both'] as const).map(p => (
+                <button
+                  key={p}
+                  onClick={() => setForm(prev => ({ ...prev, platform: p }))}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors capitalize ${
+                    form.platform === p
+                      ? 'bg-emerald-500 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {p === 'both' ? 'Both' : p.charAt(0).toUpperCase() + p.slice(1)}
                 </button>
-                <button onClick={schedulePost} className="flex items-center gap-2 border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                  <Clock size={14} /> Schedule
-                </button>
-              </div>
+              ))}
             </div>
           </div>
-        </div>
 
-        {/* Posts list */}
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="p-4 border-b border-gray-100">
-              <h3 className="text-base font-semibold text-gray-900">Recent Posts</h3>
+          {/* Section C — AI Caption Generator */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h3 className="text-base font-semibold text-gray-900 mb-3">AI Caption Generator</h3>
+            <div className="flex gap-2 mb-4">
+              <input
+                value={aiTopic}
+                onChange={e => setAiTopic(e.target.value)}
+                placeholder="e.g. mosquito season tips"
+                className={`flex-1 ${inputClass}`}
+                onKeyDown={e => { if (e.key === 'Enter') generateCaptions() }}
+              />
+              <button
+                onClick={generateCaptions}
+                disabled={aiLoading}
+                className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 whitespace-nowrap flex items-center gap-2"
+              >
+                {aiLoading ? <><Loader2 size={14} className="animate-spin" /> Asking AI...</> : '✨ Generate 3 Captions'}
+              </button>
             </div>
-            {posts.length === 0 ? (
-              <p className="p-6 text-gray-400 text-sm">No posts yet. Create your first post!</p>
-            ) : (
-              <div>
-                {posts.map(p => (
-                  <div key={p.id} className="p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 mr-4">
-                        <p className="text-sm text-gray-900 whitespace-pre-wrap">{p.content}</p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusBadge[p.status] || 'bg-gray-100 text-gray-500'}`}>{p.status}</span>
-                          <span className="text-xs text-gray-400 capitalize">{p.platform}</span>
-                          <span className="text-xs text-gray-400">{new Date(p.published_at || p.scheduled_for || p.created_at).toLocaleDateString()}</span>
-                        </div>
-                      </div>
-                      <button onClick={() => deletePost(p.id)} className="text-gray-400 hover:text-red-500"><Trash2 size={14} /></button>
-                    </div>
+
+            {aiError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                <p className="text-sm text-red-700">{aiError}</p>
+              </div>
+            )}
+
+            {aiCaptions.length > 0 && (
+              <div className="space-y-3">
+                {aiCaptions.map((caption, i) => (
+                  <div key={i} className="border border-gray-200 rounded-lg p-4 hover:border-emerald-300 transition-colors">
+                    <p className="text-sm text-gray-800 whitespace-pre-wrap mb-3">{caption}</p>
+                    <button
+                      onClick={() => setForm(p => ({ ...p, caption }))}
+                      className="text-xs font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
+                    >
+                      Use This Caption →
+                    </button>
                   </div>
                 ))}
               </div>
             )}
           </div>
+
+          {/* Section D — Caption Composer */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h3 className="text-base font-semibold text-gray-900 mb-3">
+              {editingPostId ? 'Edit Caption' : 'Caption'}
+            </h3>
+            <textarea
+              ref={captionRef}
+              value={form.caption}
+              onChange={e => setForm(p => ({ ...p, caption: e.target.value }))}
+              rows={6}
+              placeholder="Write your caption here or pick one from AI above..."
+              className={`${inputClass} resize-none mb-2`}
+            />
+            <div className="flex items-center justify-between mb-3">
+              <p className={`text-xs ${charsRemaining < 0 ? 'text-red-500 font-medium' : 'text-gray-400'}`}>
+                {charsRemaining.toLocaleString()} characters remaining
+                {form.platform === 'facebook' && ' (Facebook)'}
+                {form.platform === 'instagram' && ' (Instagram)'}
+                {form.platform === 'both' && ' (Instagram limit)'}
+              </p>
+            </div>
+            {/* Emoji picker */}
+            <div className="flex flex-wrap gap-1">
+              {emojis.map(emoji => (
+                <button
+                  key={emoji}
+                  onClick={() => appendEmoji(emoji)}
+                  className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-100 text-lg transition-colors"
+                  title={`Add ${emoji}`}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Section E — Pexels Image Picker */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h3 className="text-base font-semibold text-gray-900 mb-3">Photo</h3>
+
+            {!pexelsApiKey ? (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                <p className="text-sm text-amber-800">
+                  🔑 Add your free Pexels API key in Settings → Integrations to search stock photos.
+                  Get one free at pexels.com/api. Or paste any image URL directly below.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="flex gap-2 mb-4">
+                  <input
+                    value={form.pexelsQuery}
+                    onChange={e => setForm(p => ({ ...p, pexelsQuery: e.target.value }))}
+                    placeholder="Search photos..."
+                    className={`flex-1 ${inputClass}`}
+                    onKeyDown={e => { if (e.key === 'Enter') searchPexels() }}
+                  />
+                  <button
+                    onClick={searchPexels}
+                    disabled={pexelsLoading}
+                    className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 whitespace-nowrap"
+                  >
+                    {pexelsLoading ? 'Searching...' : 'Search Photos'}
+                  </button>
+                </div>
+
+                {pexelsResults.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2 mb-4">
+                    {pexelsResults.map(photo => (
+                      <button
+                        key={photo.id}
+                        onClick={() => selectPexelsPhoto(photo.src.large)}
+                        className={`relative aspect-video rounded-lg overflow-hidden border-2 transition-all ${
+                          selectedPexelsUrl === photo.src.large
+                            ? 'border-emerald-500 ring-2 ring-emerald-500'
+                            : 'border-transparent hover:border-gray-300'
+                        }`}
+                      >
+                        <img src={photo.src.medium} alt={photo.alt} className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Or paste image URL</label>
+              <input
+                value={form.imageUrl}
+                onChange={e => { setForm(p => ({ ...p, imageUrl: e.target.value })); setSelectedPexelsUrl('') }}
+                placeholder="https://example.com/image.jpg"
+                className={inputClass}
+              />
+            </div>
+
+            {form.imageUrl && (
+              <div className="mt-3">
+                <img src={form.imageUrl} alt="Preview" className="w-32 h-24 object-cover rounded-lg border border-gray-200" />
+              </div>
+            )}
+          </div>
+
+          {/* Section F — Schedule / Publish */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h3 className="text-base font-semibold text-gray-900 mb-3">Schedule & Publish</h3>
+
+            <div className="flex gap-4 mb-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="scheduleMode"
+                  checked={form.scheduleMode === 'now'}
+                  onChange={() => setForm(p => ({ ...p, scheduleMode: 'now' }))}
+                  className="text-emerald-500 focus:ring-emerald-500"
+                />
+                <span className="text-sm text-gray-700">Post now</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="scheduleMode"
+                  checked={form.scheduleMode === 'later'}
+                  onChange={() => setForm(p => ({ ...p, scheduleMode: 'later' }))}
+                  className="text-emerald-500 focus:ring-emerald-500"
+                />
+                <span className="text-sm text-gray-700">Schedule for later</span>
+              </label>
+            </div>
+
+            {form.scheduleMode === 'later' && (
+              <div className="mb-4">
+                <input
+                  type="datetime-local"
+                  value={form.scheduledFor}
+                  onChange={e => setForm(p => ({ ...p, scheduledFor: e.target.value }))}
+                  min={new Date().toISOString().substring(0, 16)}
+                  className={inputClass}
+                />
+              </div>
+            )}
+
+            <p className="text-xs text-gray-400 mb-4">
+              {(form.platform === 'facebook' || form.platform === 'both') && 'Facebook: Requires Facebook Access Token in Settings → Integrations. '}
+              {(form.platform === 'instagram' || form.platform === 'both') && 'Instagram: Publishing requires a connected Business Account.'}
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={saveAsDraft}
+                disabled={saving}
+                className="flex-1 border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+              >
+                {saving ? 'Saving...' : 'Save as Draft'}
+              </button>
+              <button
+                onClick={publishNow}
+                disabled={publishing}
+                className="flex-1 flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+              >
+                <Send size={14} />
+                {publishing ? 'Publishing...' : '🚀 Publish Now'}
+              </button>
+            </div>
+
+            {editingPostId && (
+              <button onClick={resetForm} className="mt-3 text-sm text-gray-500 hover:text-gray-700 underline">
+                Cancel editing — start new post
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* ─── RIGHT: Post History Panel (40%) ─────────────────────── */}
+        <div className="lg:col-span-2">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            {/* Header */}
+            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="text-base font-semibold text-gray-900">Post History</h3>
+              <button onClick={refreshPosts} className="text-gray-400 hover:text-gray-600 transition-colors" title="Refresh">
+                <RefreshCw size={16} />
+              </button>
+            </div>
+
+            {/* Filter tabs */}
+            <div className="flex border-b border-gray-100 px-4">
+              {(['all', 'draft', 'scheduled', 'published', 'failed'] as const).map(f => (
+                <button
+                  key={f}
+                  onClick={() => setHistoryFilter(f)}
+                  className={`px-3 py-2 text-xs font-medium border-b-2 transition-colors capitalize ${
+                    historyFilter === f
+                      ? 'border-emerald-500 text-emerald-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+
+            {/* Post list */}
+            <div className="max-h-[calc(100vh-320px)] overflow-y-auto">
+              {filteredPosts.length === 0 ? (
+                <div className="p-8 text-center">
+                  <p className="text-3xl mb-2">📝</p>
+                  <p className="text-sm text-gray-500">
+                    {historyFilter === 'all'
+                      ? 'No posts yet. Create your first post above! ☝️'
+                      : `No ${historyFilter} posts.`}
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  {filteredPosts.map(post => (
+                    <div key={post.id} className="p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-start gap-3">
+                        {/* Thumbnail */}
+                        {post.image_url && (
+                          <img src={post.image_url} alt="" className="w-10 h-10 rounded object-cover flex-shrink-0" />
+                        )}
+
+                        <div className="flex-1 min-w-0">
+                          {/* Badges */}
+                          <div className="flex items-center gap-2 mb-1">
+                            {platformBadge(post.platform)}
+                            {statusBadge(post.status)}
+                          </div>
+
+                          {/* Caption preview */}
+                          <p className="text-sm text-gray-800 line-clamp-2">
+                            {post.caption.length > 100 ? post.caption.substring(0, 100) + '...' : post.caption}
+                          </p>
+
+                          {/* Error message */}
+                          {post.status === 'failed' && post.error_msg && (
+                            <p className="text-xs text-red-500 mt-1">{post.error_msg}</p>
+                          )}
+
+                          {/* Date */}
+                          <p className="text-xs text-gray-400 mt-1">{postDate(post)}</p>
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex gap-2 mt-2 ml-0">
+                        <button
+                          onClick={() => editPost(post)}
+                          className="text-gray-400 hover:text-blue-500 transition-colors"
+                          title="Edit"
+                        >
+                          <Edit3 size={14} />
+                        </button>
+                        <button
+                          onClick={() => deletePost(post.id)}
+                          className="text-gray-400 hover:text-red-500 transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                        {post.status !== 'published' && (
+                          <button
+                            onClick={() => publishPost(post)}
+                            className="text-gray-400 hover:text-emerald-500 transition-colors"
+                            title="Publish Now"
+                          >
+                            <Send size={14} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Toast Container */}
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   )
 }
