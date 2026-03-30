@@ -151,7 +151,7 @@ export default function OnboardingLive() {
             <input
               ref={inputRef}
               type={current.type === 'email' ? 'email' : 'text'}
-              value={(form as Record<string, string>)[current.key] || ''}
+              value={(form as unknown as Record<string, string>)[current.key] || ''}
               onChange={e => updateField(current.key as keyof LiveForm, e.target.value)}
               placeholder={current.placeholder}
               className={inputClass}

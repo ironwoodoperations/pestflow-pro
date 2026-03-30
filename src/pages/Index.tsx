@@ -44,18 +44,22 @@ const PLACEHOLDER_TESTIMONIALS: Testimonial[] = [
 export default function Index() {
   const [content, setContent] = useState<PageContent>(DEFAULT_CONTENT)
   const [testimonials, setTestimonials] = useState<Testimonial[]>(PLACEHOLDER_TESTIMONIALS)
+  const [heroMedia, setHeroMedia] = useState<{ youtube_id?: string; thumbnail_url?: string } | null>(null)
+  const [videoPlaying, setVideoPlaying] = useState(false)
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const [pageRes, testimonialsRes] = await Promise.all([
+      const [pageRes, testimonialsRes, mediaRes] = await Promise.all([
         supabase.from('page_content').select('title, subtitle').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
         supabase.from('testimonials').select('id, author_name, content, rating').eq('tenant_id', tenantId).eq('featured', true).limit(3),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'hero_media').maybeSingle(),
       ])
       if (pageRes.data) {
         setContent({ title: pageRes.data.title || DEFAULT_CONTENT.title, subtitle: pageRes.data.subtitle || DEFAULT_CONTENT.subtitle })
       }
       if (testimonialsRes.data && testimonialsRes.data.length > 0) setTestimonials(testimonialsRes.data)
+      if (mediaRes.data?.value?.youtube_id) setHeroMedia(mediaRes.data.value)
     })
   }, [])
 
@@ -98,11 +102,31 @@ export default function Index() {
           <a href="tel:9035550100" className="text-gray-300 text-xl font-semibold hover:text-white transition">
             (903) 555-0100
           </a>
+
+          {/* Hero Video */}
+          {heroMedia?.youtube_id && (
+            <div className="mt-10 max-w-2xl mx-auto">
+              {!videoPlaying ? (
+                <div className="relative rounded-xl overflow-hidden cursor-pointer shadow-2xl" style={{ paddingBottom: '56.25%' }} onClick={() => setVideoPlaying(true)}>
+                  <img src={heroMedia.thumbnail_url || `https://img.youtube.com/vi/${heroMedia.youtube_id}/maxresdefault.jpg`} alt="Watch our video" className="absolute inset-0 w-full h-full object-cover" />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                    <div className="w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg">
+                      <svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="relative rounded-xl overflow-hidden shadow-2xl" style={{ paddingBottom: '56.25%' }}>
+                  <iframe className="absolute inset-0 w-full h-full" src={`https://www.youtube.com/embed/${heroMedia.youtube_id}?autoplay=1`} allow="autoplay; fullscreen" allowFullScreen title="Hero video" />
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </section>
 
       {/* STATS BAR */}
-      <section className="bg-[#1e293b] py-6">
+      <section id="main-content" className="bg-[#1e293b] py-6">
         <div className="max-w-6xl mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             {[

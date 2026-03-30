@@ -123,7 +123,7 @@ export default function QuotePage() {
           <div className="flex items-center justify-between mb-10 max-w-lg mx-auto">
             {STEPS.map((s, i) => (
               <div key={s.num} className="flex items-center">
-                <div className={`flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold transition ${step >= s.num ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'}`}>
+                <div aria-label={`Step ${s.num} of 4: ${s.label}`} className={`flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold transition ${step >= s.num ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'}`}>
                   {step > s.num ? <CheckCircle className="w-5 h-5" /> : <s.icon className="w-5 h-5" />}
                 </div>
                 {i < STEPS.length - 1 && <div className={`w-12 sm:w-20 h-0.5 mx-1 transition ${step > s.num ? 'bg-emerald-500' : 'bg-gray-200'}`} />}

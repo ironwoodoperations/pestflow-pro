@@ -17,12 +17,17 @@ const FALLBACK_CITIES: LocationItem[] = [
 
 export default function ServiceArea() {
   const [locations, setLocations] = useState<LocationItem[]>(FALLBACK_CITIES)
+  const [mapsEmbedUrl, setMapsEmbedUrl] = useState('')
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const { data } = await supabase.from('location_data').select('slug, city').eq('tenant_id', tenantId).eq('is_live', true)
-      if (data && data.length > 0) setLocations(data)
+      const [locRes, intgRes] = await Promise.all([
+        supabase.from('location_data').select('slug, city').eq('tenant_id', tenantId).eq('is_live', true),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle(),
+      ])
+      if (locRes.data && locRes.data.length > 0) setLocations(locRes.data)
+      if (intgRes.data?.value?.google_maps_embed_url) setMapsEmbedUrl(intgRes.data.value.google_maps_embed_url)
     })
   }, [])
 
@@ -55,12 +60,18 @@ export default function ServiceArea() {
 
       <section className="py-16 bg-[#f8fafc]">
         <div className="max-w-4xl mx-auto px-4">
-          <div className="bg-white border border-gray-200 rounded-xl h-[400px] flex items-center justify-center">
-            <div className="text-center">
-              <MapPin className="w-12 h-12 text-emerald-500 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg">Service Area Map — Configure in Admin</p>
+          {mapsEmbedUrl ? (
+            <div className="rounded-xl overflow-hidden shadow-sm border border-gray-100" style={{ height: '400px' }}>
+              <iframe src={mapsEmbedUrl} width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade" title="Service area map" />
             </div>
-          </div>
+          ) : (
+            <div className="bg-white border border-gray-200 rounded-xl h-[400px] flex items-center justify-center">
+              <div className="text-center">
+                <MapPin className="w-12 h-12 text-emerald-500 mx-auto mb-4" />
+                <p className="text-gray-500 text-lg">Service Area Map — Configure in Admin</p>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 

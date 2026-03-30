@@ -88,6 +88,11 @@ const text = data.content[0].text
 28. Edge function env vars: RESEND_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY — set in Supabase dashboard
 29. Social posting requires facebook_page_id + facebook_access_token in settings.integrations
 30. Google Reviews import requires VITE_GOOGLE_PLACES_API_KEY env var + google_place_id in settings
+31. NotFound.tsx is the * catch-all — always import in App.tsx, never use inline div
+32. PWA icons needed: replace public/icon-192.png + icon-512.png with real branded assets before client launch
+33. seed-page-content.mjs — run once per new tenant: TENANT_ID=xxx node scripts/seed-page-content.mjs
+34. Hero video: set youtube_id in Settings → Hero Media — falls back to gradient if not set
+35. Location pages fetch otherLocations for We Also Serve — needs 2+ live locations to render
 
 ## KEY FILE PATHS
 src/lib/supabase.ts
@@ -134,8 +139,12 @@ src/pages/Pricing.tsx                   # Public pricing page
 src/pages/Sitemap.tsx                   # /sitemap.xml route
 public/robots.txt                       # Search engine directives
 supabase/functions/notify-new-lead/index.ts  # Resend email edge function
+src/pages/NotFound.tsx                  # Branded 404 page
+src/pages/Pricing.tsx                   # Public pricing page
 scripts/create-admin-user.mjs
 scripts/create-demo-tenant.mjs          # Multi-tenant seeding script
+scripts/seed-page-content.mjs           # Seed default page copy
+public/manifest.json                    # PWA manifest
 SKILL.md
 TASKS.md
 
@@ -158,6 +167,7 @@ To add a new tenant:
 | 3       | Mar 2026 | Theme overhaul (orange→dark navy+emerald), all 12 pest pages, About/FAQ/Reviews/ServiceArea/Blog, StructuredData, ContentTab, SocialLinks, Notifications, Navbar dropdown |
 | 4       | Mar 2026 | SEO tab + SERP preview, Testimonials CRUD, Leads tab + CSV export, Blog CRUD, Locations CRUD, AI keyword research, Integrations settings, Hero Media settings, StructuredData all pages, HolidayBanner, Reports + Social stubs |
 | 5       | Mar 2026 | 4-step quote wizard, lead email notifications, Google Reviews import, Facebook social posting, sitemap.xml, robots.txt, PageSpeed optimizations, Pricing page, multi-tenant docs |
-| 6       | Mar 2026 | Merged PR, PESTFLOW-SKILL.md created, TASKS.md updated |
+| 6       | Mar 2026 | Domain setup guide, page content seeding script, Maps embed, We Also Serve, AI content writer, hero video player, PWA manifest, 404 page, accessibility fixes |
+| 6.1     | Mar 2026 | Merged PR, PESTFLOW-SKILL.md created, TASKS.md updated |
 | 7       | Mar 2026 | HeroVideoPlayer (youtube-nocookie background embed), branded 404 page (full chrome), PWA manifest + icons, bulk keyword sync (keyword_tracker → seo_meta) |
 | 8       | Mar 2026 | Remove Pricing page, rustic template (4th option), Pexels stock images script + introImage on all pest pages, Apex Pest Solutions About page, polished onboarding wizard, OnboardingLive screen-share mode |
