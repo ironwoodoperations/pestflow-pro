@@ -180,7 +180,7 @@ function DashboardHome() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         {stats.map((stat) => (
-          <div key={stat.label} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center justify-between">
+          <div key={stat.label} role="region" aria-label={stat.label} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">{stat.label}</p>
               <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
@@ -195,7 +195,7 @@ function DashboardHome() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Revenue Chart Placeholder */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6" aria-label="Revenue overview chart">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue Overview</h3>
           <div className="h-48 flex items-end gap-2 px-4">
             {[40, 65, 45, 80, 55, 90, 70, 85, 60, 95, 75, 88].map((h, i) => (

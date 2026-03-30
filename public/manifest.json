@@ -1,0 +1,37 @@
+{
+  "name": "PestFlow Pro",
+  "short_name": "PestFlow",
+  "description": "Professional pest control management platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0f1e",
+  "theme_color": "#10b981",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Get a Quote",
+      "url": "/quote",
+      "description": "Request a free pest control quote"
+    },
+    {
+      "name": "Admin",
+      "url": "/admin",
+      "description": "Admin dashboard"
+    }
+  ]
+}
