@@ -7,6 +7,7 @@ import Navbar from './Navbar'
 import Footer from './Footer'
 import StructuredData from './StructuredData'
 import HolidayBanner from './HolidayBanner'
+import VideoImage from './VideoImage'
 
 export interface TreatmentStep {
   title: string
@@ -40,6 +41,7 @@ export interface PestPageProps {
   eastTexasCTATitle: string
   pricingCards?: { name: string; price: string; desc: string }[]
   introImage?: string
+  videoUrl?: string
 }
 
 const STEP_COLORS_DEFAULT = ['bg-emerald-500', 'bg-yellow-500', 'bg-teal-500', 'bg-slate-600']
@@ -95,7 +97,7 @@ export default function PestPageTemplate(props: PestPageProps) {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
             <div className="border-2 border-emerald-500 rounded-lg bg-[#0a0f1e] h-72 flex items-center justify-center overflow-hidden">
               {props.introImage ? (
-                <img src={props.introImage} alt={`${props.heroHighlight} pest control treatment`} loading="lazy" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                <VideoImage src={props.introImage} alt={`${props.heroHighlight} pest control treatment`} videoUrl={props.videoUrl} className="w-full h-full" />
               ) : (
                 <span className="text-emerald-400 text-xl font-semibold">{props.heroHighlight}</span>
               )}

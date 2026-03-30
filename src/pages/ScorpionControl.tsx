@@ -1,10 +1,12 @@
 import PestPageTemplate from '../components/PestPageTemplate'
+import { PEST_VIDEOS } from '../data/pestVideos'
 
 export default function ScorpionControl() {
   return (
     <PestPageTemplate
       pageSlug="scorpion-control"
       introImage="https://images.pexels.com/photos/5591664/pexels-photo-5591664.jpeg?w=800"
+      videoUrl={PEST_VIDEOS.scorpion[0]?.url}
       heroTitle="Scorpion Control in East Texas"
       heroHighlight="Scorpion Control"
       heroSubtitle="Protecting East Texas families from scorpion stings."

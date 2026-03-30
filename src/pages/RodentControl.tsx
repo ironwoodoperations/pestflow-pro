@@ -1,10 +1,12 @@
 import PestPageTemplate from '../components/PestPageTemplate'
+import { PEST_VIDEOS } from '../data/pestVideos'
 
 export default function RodentControl() {
   return (
     <PestPageTemplate
       pageSlug="rodent-control"
       introImage="https://images.pexels.com/photos/4591871/pexels-photo-4591871.jpeg?w=800"
+      videoUrl={PEST_VIDEOS.rodent[0]?.url}
       heroTitle="Rodent Control in East Texas"
       heroHighlight="Rodent Control"
       heroSubtitle="Mice and rats eliminated — entry points sealed."

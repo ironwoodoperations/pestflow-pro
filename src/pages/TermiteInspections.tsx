@@ -1,10 +1,12 @@
 import PestPageTemplate from '../components/PestPageTemplate'
+import { PEST_VIDEOS } from '../data/pestVideos'
 
 export default function TermiteInspections() {
   return (
     <PestPageTemplate
       pageSlug="termite-inspections"
       introImage="https://images.pexels.com/photos/6543034/pexels-photo-6543034.jpeg?w=800"
+      videoUrl={PEST_VIDEOS.termite[0]?.url}
       heroTitle="Termite Inspections in East Texas"
       heroHighlight="Termite Inspections"
       heroSubtitle="WDI reports for home sales — fast turnaround."

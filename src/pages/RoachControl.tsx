@@ -1,10 +1,12 @@
 import PestPageTemplate from '../components/PestPageTemplate'
+import { PEST_VIDEOS } from '../data/pestVideos'
 
 export default function RoachControl() {
   return (
     <PestPageTemplate
       pageSlug="roach-control"
       introImage="https://images.pexels.com/photos/4439425/pexels-photo-4439425.jpeg?w=800"
+      videoUrl={PEST_VIDEOS.roach[0]?.url}
       heroTitle="Cockroach Control in East Texas"
       heroHighlight="Cockroach Control"
       heroSubtitle="Complete roach elimination — inside and out."

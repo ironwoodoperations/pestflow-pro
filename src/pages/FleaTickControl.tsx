@@ -1,10 +1,12 @@
 import PestPageTemplate from '../components/PestPageTemplate'
+import { PEST_VIDEOS } from '../data/pestVideos'
 
 export default function FleaTickControl() {
   return (
     <PestPageTemplate
       pageSlug="flea-tick-control"
       introImage="https://images.pexels.com/photos/4239013/pexels-photo-4239013.jpeg?w=800"
+      videoUrl={PEST_VIDEOS.flea[0]?.url}
       heroTitle="Flea & Tick Control in East Texas"
       heroHighlight="Flea & Tick Control"
       heroSubtitle="Protect your family and pets from fleas and ticks."
