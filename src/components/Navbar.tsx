@@ -29,6 +29,7 @@ const NAV_LINKS = [
 
 export default function Navbar() {
   const [businessName, setBusinessName] = useState('PestFlow Pro')
+  const [logoUrl, setLogoUrl] = useState('')
   const [mobileOpen, setMobileOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -38,8 +39,12 @@ export default function Navbar() {
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const { data } = await supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle()
-      if (data?.value?.name) setBusinessName(data.value.name)
+      const [bizRes, brandRes] = await Promise.all([
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
+      ])
+      if (bizRes.data?.value?.name) setBusinessName(bizRes.data.value.name)
+      if (brandRes.data?.value?.logo_url) setLogoUrl(brandRes.data.value.logo_url)
     })
   }, [])
 
@@ -70,9 +75,12 @@ export default function Navbar() {
       </a>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <Link to="/" className="text-[#0a0f1e] font-oswald text-2xl tracking-wide">
-            <span className="text-emerald-500 font-bold">{businessName.split(' ')[0]}</span>{' '}
-            <span className="text-sm tracking-widest uppercase">{businessName.split(' ').slice(1).join(' ')}</span>
+          <Link to="/" className="flex items-center gap-3 text-[#0a0f1e] font-oswald text-2xl tracking-wide">
+            {logoUrl && <img src={logoUrl} alt={`${businessName} logo`} className="h-10 w-auto object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />}
+            <div>
+              <span className="text-emerald-500 font-bold">{businessName.split(' ')[0]}</span>{' '}
+              <span className="text-sm tracking-widest uppercase">{businessName.split(' ').slice(1).join(' ')}</span>
+            </div>
           </Link>
 
           <div className="hidden lg:flex items-center gap-5">
