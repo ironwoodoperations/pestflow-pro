@@ -70,7 +70,10 @@ export default function Navbar() {
       </a>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <Link to="/" className="text-[#0a0f1e] font-bangers text-2xl tracking-wide">{businessName}</Link>
+          <Link to="/" className="text-[#0a0f1e] font-oswald text-2xl tracking-wide">
+            <span className="text-emerald-500 font-bold">{businessName.split(' ')[0]}</span>{' '}
+            <span className="text-sm tracking-widest uppercase">{businessName.split(' ').slice(1).join(' ')}</span>
+          </Link>
 
           <div className="hidden lg:flex items-center gap-5">
             {/* Services dropdown */}

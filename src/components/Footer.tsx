@@ -47,7 +47,7 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
-            <h3 className="text-xl mb-3 text-white font-bangers tracking-wide">{info.name}</h3>
+            <h3 className="text-xl mb-3 text-white font-oswald tracking-wide">{info.name}</h3>
             {info.tagline && <p className="mb-2 text-gray-400">{info.tagline}</p>}
             {info.phone && <p className="mb-1"><a href={`tel:${info.phone}`} className="hover:text-emerald-400 transition">{info.phone}</a></p>}
             {info.license && <p className="text-sm text-gray-500">License #{info.license}</p>}
@@ -80,6 +80,17 @@ export default function Footer() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-2 text-sm text-gray-500">
           <span>&copy; {new Date().getFullYear()} {info.name}. All rights reserved.</span>
           <span className="text-xs text-gray-600">Powered by PestFlow Pro</span>
+        </div>
+      </div>
+
+      {/* SaaS watermark */}
+      <div className="bg-[#040810] py-2.5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <span className="text-xs text-gray-600">
+            Website by{' '}
+            <span className="text-[#10b981] font-semibold hover:underline cursor-pointer">PestFlow Pro</span>
+            {' '}· A product of Ironwood Operations Group
+          </span>
         </div>
       </div>
     </footer>

@@ -72,7 +72,7 @@ export default function PestPageTemplate(props: PestPageProps) {
       {/* HERO */}
       <section className="relative py-20 md:py-28 overflow-hidden" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 60%, #0f3d2e 100%)' }}>
         <div className="relative z-10 max-w-5xl mx-auto px-4 text-center">
-          <h1 className="font-bangers tracking-wide text-white text-5xl md:text-7xl mb-4">
+          <h1 className="font-oswald tracking-wide text-white text-5xl md:text-7xl mb-4">
             {heroTitle.split(props.heroHighlight).map((part, i, arr) => (
               <span key={i}>
                 {part}
@@ -101,7 +101,7 @@ export default function PestPageTemplate(props: PestPageProps) {
               )}
             </div>
             <div>
-              <h2 className="font-bangers tracking-wide text-3xl md:text-4xl text-gray-900 mb-4">{props.introHeading}</h2>
+              <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 mb-4">{props.introHeading}</h2>
               <p className="text-gray-600 mb-4">{content.intro || props.introP1}</p>
               <p className="text-gray-600 mb-4">{props.introP2}</p>
               <p className="text-gray-600 mb-6">{props.introP3}</p>
@@ -117,7 +117,7 @@ export default function PestPageTemplate(props: PestPageProps) {
       {/* TREATMENT STEPS */}
       <section className="py-16 bg-[#f8fafc]">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="font-bangers tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-12">Our Treatment Process</h2>
+          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-12">Our Treatment Process</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {props.steps.map((step, i) => (
               <div key={i} className="bg-white rounded-xl p-6 shadow-sm text-center">
@@ -133,7 +133,7 @@ export default function PestPageTemplate(props: PestPageProps) {
       {/* WHY CHOOSE US */}
       <section className="py-16 bg-white">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="font-bangers tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-10">Why Choose Us</h2>
+          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-10">Why Choose Us</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
               { icon: <Shield className="w-8 h-8 text-emerald-500" />, title: 'Licensed & Certified', desc: 'Fully licensed, bonded, and insured for your protection.' },
@@ -154,7 +154,7 @@ export default function PestPageTemplate(props: PestPageProps) {
       {/* SPECIAL SECTION */}
       <section className="py-16 bg-[#f8fafc]">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="font-bangers tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-10">{props.specialSectionTitle}</h2>
+          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-10">{props.specialSectionTitle}</h2>
           {props.pricingCards ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {props.pricingCards.map((plan) => (
@@ -183,7 +183,7 @@ export default function PestPageTemplate(props: PestPageProps) {
       <section className="py-16" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>
         <div className="max-w-5xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
           <div>
-            <h2 className="font-bangers tracking-wide text-4xl md:text-5xl text-white mb-4">Ready to Be Pest-Free?</h2>
+            <h2 className="font-oswald tracking-wide text-4xl md:text-5xl text-white mb-4">Ready to Be Pest-Free?</h2>
             <p className="text-gray-300 mb-6">Same-day service available. Request your free quote today.</p>
             <Link to="/quote" className="inline-block bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg px-8 py-4 text-lg transition">Get a Free Quote</Link>
           </div>
@@ -196,7 +196,7 @@ export default function PestPageTemplate(props: PestPageProps) {
       {/* FAQ */}
       <section className="py-16 bg-white">
         <div className="max-w-4xl mx-auto px-4">
-          <h2 className="font-bangers tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-10">Frequently Asked Questions</h2>
+          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-10">Frequently Asked Questions</h2>
           <div className="space-y-6">
             {props.faqs.map((faq, i) => (
               <div key={i}>
@@ -211,7 +211,7 @@ export default function PestPageTemplate(props: PestPageProps) {
       {/* EAST TEXAS YELLOW CTA */}
       <section className="relative py-16" style={{ background: '#f5c518', clipPath: 'polygon(0 8%, 100% 0, 100% 100%, 0 100%)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center pt-8">
-          <h2 className="font-bangers tracking-wide text-4xl md:text-5xl text-[#0a0f1e] mb-4">{props.eastTexasCTATitle}</h2>
+          <h2 className="font-oswald tracking-wide text-4xl md:text-5xl text-[#0a0f1e] mb-4">{props.eastTexasCTATitle}</h2>
           <p className="text-[#0a0f1e]/70 text-lg mb-8">Serving Tyler, Longview, and all of East Texas</p>
           <Link to="/quote" className="inline-block bg-[#0a0f1e] hover:bg-[#1a2744] text-white font-bold rounded-lg px-10 py-4 text-lg transition">Request a Free Quote</Link>
         </div>

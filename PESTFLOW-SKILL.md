@@ -1,5 +1,5 @@
 # PestFlow Pro — Claude Code Autonomous Dev Skill
-## Updated through Session 6
+## Updated through Session 8
 
 ## HOW TO USE
 1. Read this file fully before touching any code
@@ -17,6 +17,7 @@
 - Stack: React 19 + TypeScript + Vite + Tailwind CSS + Supabase + Vercel
 - Demo admin: admin@pestflowpro.com / pf123demo
 - Demo Tenant ID: e5d34055-2a35-4e48-8864-d9449cb9da43
+- Demo company: Apex Pest Solutions (East Texas)
 - Model: claude-sonnet-4-6 (ALWAYS — never anything else)
 
 ---
@@ -30,7 +31,7 @@
 
 ---
 
-## DATABASE TABLES (13 total)
+## DATABASE TABLES (14 total)
 | Table              | Key Fields |
 |--------------------|-----------|
 | profiles           | user_id, tenant_id, full_name, role, created_at |
@@ -64,22 +65,40 @@ onboarding_complete: { complete: true | false }
 
 ---
 
-## DESIGN TEMPLATES
-`branding.template` values: `bold` | `clean` | `modern`
-All page components read via `useTemplate()` hook — never hardcode colors.
+## DESIGN TEMPLATES (4 options)
+`branding.template` values: `bold` | `clean` | `modern` | `rustic`
+All page components read via `useTemplate()` hook — never hardcode colors or fonts.
 
-| Template | Hero Font  | Hero Bg       | CTA Bg      | Accent    |
-|----------|------------|---------------|-------------|-----------|
-| bold     | Bangers    | #0a0f1e navy  | emerald-500 | emerald   |
-| clean    | serif      | blue-900      | blue-700    | blue      |
-| modern   | mono       | gray-950      | teal-500    | teal      |
+| Template | Hero Font       | Hero Bg        | CTA Bg      | Accent  |
+|----------|-----------------|----------------|-------------|---------|
+| bold     | Oswald          | #0a0f1e navy   | emerald-500 | emerald |
+| clean    | Raleway         | blue-900       | blue-700    | blue    |
+| modern   | Space Grotesk   | gray-950       | teal-500    | teal    |
+| rustic   | Playfair Display| #1a0f00 brown  | amber-600   | amber   |
+
+### Font Stack (loaded via Google Fonts in index.html)
+- **Oswald** (bold template) — strong, clean condensed sans-serif
+- **Raleway** (clean template) — elegant, refined sans-serif
+- **Space Grotesk** (modern template) — techy geometric sans-serif
+- **Playfair Display** (rustic template) — classic editorial serif
+- **Inter** — body font for all templates (font-sans)
+- **NO Bangers** — removed in Session 8, too cartoonish
+
+### Tailwind Font Classes
+```
+font-oswald         → Oswald (bold heroFont + headingClass)
+font-raleway        → Raleway (clean heroFont + headingClass)
+font-space-grotesk  → Space Grotesk (modern heroFont + headingClass)
+font-playfair       → Playfair Display (rustic heroFont + headingClass)
+```
 
 ---
 
 ## THEME CONSTANTS (do not change)
-- Hero background: `#0a0f1e` (dark navy)
+- Hero background: `#0a0f1e` (dark navy — bold template default)
 - Primary accent: `#10b981` (emerald)
 - East Texas CTA background: `#f5c518` (yellow)
+- Rustic background: `#1a0f00` (warm brown)
 - Admin accent: `hsl(185, 65%, 42%)` (teal)
 - Admin bg: `#0f1117`
 - Admin card bg: `#1a1d26`
@@ -138,8 +157,9 @@ Every Supabase query filters by `tenant_id`. RLS enforces isolation at DB level.
 
 To provision a new tenant:
 1. `node scripts/create-demo-tenant.mjs` — seeds tenants + settings + location_data
-2. Set `VITE_TENANT_ID` to the UUID in `.env`
-3. `node scripts/create-admin-user.mjs email pass` — creates user + assigns tenant
+2. `TENANT_ID=xxx node scripts/seed-page-content.mjs` — seed default page copy for all 20 pages
+3. Set `VITE_TENANT_ID` to the UUID in `.env`
+4. `node scripts/create-admin-user.mjs email pass` — creates user + assigns tenant
 
 Custom domain: stored in `tenants.custom_domain`. Tenant lookup checks `custom_domain` first, then `subdomain`.
 
@@ -151,7 +171,7 @@ Custom domain: stored in `tenants.custom_domain`. Tenant lookup checks `custom_d
 3. `has_role()` checks `user_roles` — always insert there for new admins
 4. New admin users: insert into BOTH `profiles` AND `user_roles`
 5. Tenant ID resolved dynamically — never hardcode beyond `DEMO_TENANT_ID` fallback
-6. Template stored in `branding.template`: bold | clean | modern — always read via `useTemplate()`
+6. Template stored in `branding.template`: bold | clean | modern | rustic — always read via `useTemplate()`
 7. After every task: `git add . && git commit -m "..." && git push`
 8. Read files before editing them
 9. Single `useState` object for forms — never per-field state (prevents focus-loss bug)
@@ -170,17 +190,22 @@ Custom domain: stored in `tenants.custom_domain`. Tenant lookup checks `custom_d
 22. Leads status updates are auto-save on dropdown change — no Save button needed
 23. `QuotePage` is a 4-step wizard — single `useState` object, never lose state between steps
 24. `/sitemap.xml` route MUST appear before `/:slug` in App.tsx
-25. `/pricing` route MUST appear before `/:slug` in App.tsx
-26. Edge function env vars: `RESEND_API_KEY` — set in Supabase dashboard, never in repo
-27. Social posting requires `facebook_page_id` + `facebook_access_token` in `settings.integrations`
-28. Google Reviews import requires `VITE_GOOGLE_PLACES_API_KEY` + `google_place_id` in settings
-29. `StructuredData` must be added to ALL public pages (pest, static, location, blog) — not just home
-30. Location pages: CTA is dark navy — pest pages: CTA is yellow diagonal (`bg-yellow-400`). These are separate templates, never mix.
-31. AI content writer uses the same browser Anthropic API pattern — model always `claude-sonnet-4-6`, strip backticks before JSON.parse
-32. Hero video player reads `hero_media.youtube_id` from settings — always embed via `youtube-nocookie.com` for privacy
-33. `404` page must include `HolidayBanner + Navbar + Footer` — same layout shell as all public pages
-34. PWA `manifest.json` lives in `public/` — link in `index.html` with `<link rel="manifest" href="/manifest.json">`
-35. Custom domain stored in `tenants.custom_domain` — never store in settings; tenant lookup checks `custom_domain` before `subdomain`
+25. Edge function env vars: `RESEND_API_KEY` — set in Supabase dashboard, never in repo
+26. Social posting requires `facebook_page_id` + `facebook_access_token` in `settings.integrations`
+27. Google Reviews import requires `VITE_GOOGLE_PLACES_API_KEY` + `google_place_id` in settings
+28. `StructuredData` must be added to ALL public pages (pest, static, location, blog) — not just home
+29. Location pages: CTA is dark navy — pest pages: CTA is yellow diagonal (`bg-yellow-400`). Never mix.
+30. AI content writer uses the same browser Anthropic API pattern — model always `claude-sonnet-4-6`, strip backticks before JSON.parse
+31. `NotFound.tsx` is the `*` catch-all — always import in App.tsx, never use inline div
+32. PWA icons: replace `public/icons/icon-192.png` + `icon-512.png` with real branded assets before client launch
+33. `seed-page-content.mjs` — run once per new tenant: `TENANT_ID=xxx node scripts/seed-page-content.mjs`
+34. Hero video: set `youtube_id` in Settings → Hero Media — falls back to gradient if not set. Embed via `youtube-nocookie.com`
+35. Location pages fetch `otherLocations` for "We Also Serve" — needs 2+ live locations to render
+36. Pricing page route REMOVED in Session 8 — file kept at `src/pages/Pricing.tsx` for future Stripe integration
+37. Hero fonts: Oswald (bold), Raleway (clean), Space Grotesk (modern), Playfair Display (rustic) — NO Bangers anywhere
+38. `OnboardingLive` is a separate route (`/admin/onboarding-live`) — distraction-free, 22 steps, one field per screen. For screen-share client demos.
+39. Pest pages accept optional `introImage` prop (Pexels stock photos) — passed from each pest page component to `PestPageTemplate`
+40. `404` page must include `HolidayBanner + Navbar + Footer` — same layout shell as all public pages
 
 ---
 
@@ -192,19 +217,20 @@ Custom domain: stored in `tenants.custom_domain`. Tenant lookup checks `custom_d
 | src/pages/Index.tsx | / | Home (7 sections: hero, features, services, testimonials, CTA, etc.) |
 | src/pages/QuotePage.tsx | /quote | 4-step quote wizard → leads table |
 | src/pages/ContactPage.tsx | /contact | Contact form page |
-| src/pages/About.tsx | /about | Company info page |
+| src/pages/About.tsx | /about | Apex Pest Solutions — story, team, values, stats |
 | src/pages/FAQPage.tsx | /faq | FAQ page |
 | src/pages/ReviewsPage.tsx | /reviews | Testimonials (reads testimonials table) |
 | src/pages/ServiceArea.tsx | /service-area | Service area (reads location_data) |
 | src/pages/BlogPage.tsx | /blog | Blog listing (reads blog_posts) |
 | src/pages/BlogPostPage.tsx | /blog/:slug | Blog post detail |
-| src/pages/Pricing.tsx | /pricing | 3-tier pricing + comparison table |
 | src/pages/Sitemap.tsx | /sitemap.xml | XML sitemap route |
+| src/pages/NotFound.tsx | * | Branded 404 — bug emoji, quick links, full chrome |
+| src/pages/Pricing.tsx | (no route) | File kept for future Stripe — route removed Session 8 |
 
-### Pest Service Pages (12 total — all use PestPageTemplate)
+### Pest Service Pages (12 total — all use PestPageTemplate + introImage)
 | File | Route |
 |------|-------|
-| src/pages/SpiderControl.tsx | /spider-control ← MASTER template |
+| src/pages/SpiderControl.tsx | /spider-control (MASTER template) |
 | src/pages/MosquitoControl.tsx | /mosquito-control |
 | src/pages/AntControl.tsx | /ant-control |
 | src/pages/WaspHornetControl.tsx | /wasp-hornet-control |
@@ -228,7 +254,8 @@ Custom domain: stored in `tenants.custom_domain`. Tenant lookup checks `custom_d
 |------|-------|-------------|
 | src/pages/admin/Login.tsx | /admin/login | Admin login |
 | src/pages/admin/Dashboard.tsx | /admin | Dashboard shell + tab nav |
-| src/pages/admin/Onboarding.tsx | /admin/onboarding | 5-step tenant onboarding wizard |
+| src/pages/admin/Onboarding.tsx | /admin/onboarding | 5-step tenant onboarding wizard (polished — step indicators, skip links) |
+| src/pages/admin/OnboardingLive.tsx | /admin/onboarding-live | 22-step screen-share mode — one field per screen, distraction-free |
 
 ---
 
@@ -236,24 +263,26 @@ Custom domain: stored in `tenants.custom_domain`. Tenant lookup checks `custom_d
 
 | Tab | File | Status | Description |
 |-----|------|--------|-------------|
-| Dashboard | (inline in Dashboard.tsx) | ✅ Live | Summary cards |
-| Content | src/components/admin/ContentTab.tsx | ✅ Live | Read/write page_content (sidebar + edit panel) |
-| SEO | src/components/admin/SEOTab.tsx | ✅ Live | Meta editor + SERP preview + AI keyword research |
-| Blog | src/components/admin/BlogTab.tsx | ✅ Live | Full CRUD — title, content, excerpt, slug, publish toggle |
-| Social | src/components/admin/SocialTab.tsx | ✅ Live | Post composer + Meta Graph API + schedule + history |
-| Testimonials | src/components/admin/TestimonialsTab.tsx | ✅ Live | Full CRUD — stars, featured toggle, source |
-| Locations | src/components/admin/LocationsTab.tsx | ✅ Live | Full CRUD — city, slug, hero_title, is_live toggle |
-| Reports | src/components/admin/ReportsTab.tsx | 🔲 Stub | Polished placeholder cards — ready for analytics |
-| CRM | src/components/admin/CRMTab.tsx | ✅ Live | Leads table — filters, date range, CSV export, detail modal, auto-save status |
-| Settings | src/components/admin/settings/SettingsTab.tsx | ✅ Live | 7 sections: Business Info, Branding, Social Links, Notifications, Integrations, Hero Media, Holiday Mode |
+| Dashboard | (inline in Dashboard.tsx) | Live | Summary cards |
+| Content | src/components/admin/ContentTab.tsx | Live | Read/write page_content (sidebar + edit panel) + AI content writer |
+| SEO | src/components/admin/SEOTab.tsx | Live | Meta editor + SERP preview + AI keyword research + bulk keyword sync |
+| Blog | src/components/admin/BlogTab.tsx | Live | Full CRUD — title, content, excerpt, slug, publish toggle |
+| Social | src/components/admin/SocialTab.tsx | Live | Post composer + Meta Graph API + schedule + history |
+| Testimonials | src/components/admin/TestimonialsTab.tsx | Live | Full CRUD — stars, featured toggle, source |
+| Locations | src/components/admin/LocationsTab.tsx | Live | Full CRUD — city, slug, hero_title, is_live toggle |
+| Reports | src/components/admin/ReportsTab.tsx | Stub | Polished placeholder cards — ready for analytics |
+| CRM | src/components/admin/CRMTab.tsx | Live | Leads table — filters, date range, CSV export, detail modal, auto-save status |
+| Settings | src/components/admin/settings/SettingsTab.tsx | Live | 7 sections: Business Info, Branding (4 templates), Social Links, Notifications, Integrations, Hero Media, Holiday Mode |
 
 ---
 
-## ALL SCRIPTS
+## ALL SCRIPTS (4 total)
 | Script | Usage | Description |
 |--------|-------|-------------|
-| scripts/create-admin-user.mjs | `node scripts/create-admin-user.mjs email pass` | Create admin user → inserts profiles + user_roles + seeds default settings |
-| scripts/create-demo-tenant.mjs | `SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... node scripts/create-demo-tenant.mjs` | Seed second demo tenant (Lone Star Pest Control) + settings + location |
+| scripts/create-admin-user.mjs | `node scripts/create-admin-user.mjs email pass` | Create admin user → profiles + user_roles + seeds default settings |
+| scripts/create-demo-tenant.mjs | `SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... node scripts/create-demo-tenant.mjs` | Seed demo tenant (Lone Star Pest Control) + settings + location |
+| scripts/seed-page-content.mjs | `TENANT_ID=xxx node scripts/seed-page-content.mjs` | Seed default page copy for all 20 pages — run once per new tenant |
+| scripts/fetch-pest-images.mjs | `node scripts/fetch-pest-images.mjs` | Download Pexels stock photos for pest pages (intro images) |
 
 ---
 
@@ -271,44 +300,61 @@ Custom domain: stored in `tenants.custom_domain`. Tenant lookup checks `custom_d
 
 ---
 
+## KEY COMPONENTS
+```
+src/components/HeroVideoPlayer.tsx   YouTube embed (youtube-nocookie, reads hero_media settings)
+src/components/PestPageTemplate.tsx  Shared pest page layout (yellow diagonal CTA, introImage prop)
+src/components/StructuredData.tsx    JSON-LD LocalBusiness + WebPage injection
+src/components/HolidayBanner.tsx     Holiday hours banner (reads settings)
+src/components/Navbar.tsx            Template-aware nav (mobile hamburger + services dropdown)
+src/components/Footer.tsx            Template-aware footer (3-column)
+src/components/ProtectedRoute.tsx    Auth guard for admin routes
+src/components/admin/                All admin tab components
+```
+
+---
+
 ## KEY FILE PATHS
 ```
 src/lib/supabase.ts               Supabase client
 src/lib/tenant.ts                 Tenant resolution (localStorage → env fallback)
-src/lib/templates.ts              Template token definitions (bold|clean|modern)
+src/lib/templates.ts              Template token definitions (bold|clean|modern|rustic)
 src/hooks/useTenant.ts            Hook: { tenantId, loading }
 src/hooks/useTemplate.ts          Hook: { tokens, template, loading }
-src/components/ProtectedRoute.tsx Auth guard for admin routes
-src/components/Navbar.tsx         Template-aware nav (mobile hamburger + services dropdown)
-src/components/Footer.tsx         Template-aware footer (3-column)
-src/components/PestPageTemplate.tsx  Shared pest page layout (yellow diagonal CTA)
-src/components/StructuredData.tsx    JSON-LD LocalBusiness + WebPage injection
-src/components/HolidayBanner.tsx     Holiday hours banner (reads settings)
-src/components/admin/             All admin tab components
+src/App.tsx                       All route definitions
 src/pages/admin/Login.tsx
 src/pages/admin/Dashboard.tsx
-src/pages/admin/Onboarding.tsx
-src/pages/Index.tsx               Public home page (7 sections)
+src/pages/admin/Onboarding.tsx    Polished 5-step wizard
+src/pages/admin/OnboardingLive.tsx  22-step screen-share mode
+src/pages/Index.tsx               Home page (7 sections + HeroVideoPlayer)
 src/pages/QuotePage.tsx           4-step quote wizard → leads table
 src/pages/ContactPage.tsx
-src/pages/About.tsx
+src/pages/About.tsx               Apex Pest Solutions company page
 src/pages/FAQPage.tsx
 src/pages/ReviewsPage.tsx         Reads testimonials table
 src/pages/ServiceArea.tsx         Reads location_data table
 src/pages/BlogPage.tsx            Reads blog_posts table
 src/pages/BlogPostPage.tsx        /blog/:slug detail
-src/pages/Pricing.tsx             3-tier pricing + comparison table
+src/pages/Pricing.tsx             File kept — route removed Session 8
 src/pages/Sitemap.tsx             /sitemap.xml route
+src/pages/NotFound.tsx            Branded 404 page (bug emoji, quick links)
 src/pages/LocationPage.tsx        Dynamic /location/:slug pages
 src/pages/SlugRouter.tsx          Catch-all /:slug → LocationPage
 src/pages/SpiderControl.tsx       MASTER pest page template
-src/pages/[12 pest pages]
-src/App.tsx                       All route definitions
+src/pages/[12 pest pages]         All with introImage prop (Pexels stock photos)
 public/robots.txt                 Search engine directives
+public/manifest.json              PWA manifest
+public/icons/icon-192.png         PWA icon (placeholder — replace before launch)
+public/icons/icon-512.png         PWA icon (placeholder — replace before launch)
 supabase/functions/notify-new-lead/index.ts
 scripts/create-admin-user.mjs
 scripts/create-demo-tenant.mjs
+scripts/seed-page-content.mjs
+scripts/fetch-pest-images.mjs
 vercel.json                       Vercel config (SPA rewrite + build settings)
+SKILL.md                          Original skill file (legacy — this file supersedes it)
+TASKS.md                          Task queue
+PESTFLOW-SKILL.md                 This file — primary autonomy doc
 ```
 
 ---
@@ -318,23 +364,28 @@ vercel.json                       Vercel config (SPA rewrite + build settings)
 |---------|------------|-------------|
 | 1 | Mar 2026 | Scaffold repo, Supabase 13-table migration + RLS + storage, Supabase client, auth (Login + ProtectedRoute), admin dashboard shell + tab nav, 5-step onboarding wizard, App.tsx routing, create-admin-user.mjs, demo admin seeded |
 | 2 | Mar 2026 | Vercel config (vercel.json), template system (templates.ts + useTemplate hook), Navbar (mobile hamburger), Footer (3-column), Home page (Index.tsx, 7 sections), QuotePage, ContactPage, App.tsx routes, SlugRouter + LocationPage, Settings: Business Info + Branding |
-| 3 | Mar 2026 | Theme overhaul (orange → dark navy #0a0f1e + emerald #10b981), SpiderControl.tsx as master pest template, all 12 pest pages, PestPageTemplate.tsx, About/FAQ/Reviews/ServiceArea/Blog/BlogPost pages, StructuredData.tsx, ContentTab, Settings: Social Links + Notifications, Navbar services dropdown, zero TS errors |
+| 3 | Mar 2026 | Theme overhaul (orange -> dark navy #0a0f1e + emerald #10b981), SpiderControl.tsx as master pest template, all 12 pest pages, PestPageTemplate.tsx, About/FAQ/Reviews/ServiceArea/Blog/BlogPost pages, StructuredData.tsx, ContentTab, Settings: Social Links + Notifications, Navbar services dropdown |
 | 4 | Mar 2026 | SEO tab + SERP preview + AI keyword research, Testimonials full CRUD, CRM/Leads tab + CSV export + detail modal, Blog full CRUD + publish toggle, Locations full CRUD + is_live toggle, Settings: Integrations + Hero Media, StructuredData on all pages, HolidayBanner + Holiday Mode settings, Reports stub, Social stub |
-| 5 | Mar 2026 | 4-step quote wizard rewrite (single useState), lead auto-email (Edge Function + Resend), Google Reviews auto-import (Places API), Facebook social posting (Meta Graph API — live + schedule), sitemap.xml + robots.txt, PageSpeed optimizations (lazy load, preconnects, font preload, code splitting), multi-tenant docs + create-demo-tenant.mjs, Pricing page (3-tier + comparison table) |
-| 6 | Mar 2026 | Merged PR #4 (saas branch) — resolved src/index.css conflict (kept font preload comment from PR branch), created PESTFLOW-SKILL.md (full autonomy doc through Session 6) |
+| 5 | Mar 2026 | 4-step quote wizard (single useState), lead auto-email (Edge Function + Resend), Google Reviews auto-import (Places API), Facebook social posting (Meta Graph API), sitemap.xml + robots.txt, PageSpeed optimizations, multi-tenant docs + create-demo-tenant.mjs, Pricing page |
+| 6 | Mar 2026 | Domain setup guide, seed-page-content.mjs, Google Maps embed on location pages, We Also Serve section, AI content writer (ContentTab), hero video player, PWA manifest + apple meta tags, custom 404 page, accessibility audit + fixes (focus rings, sr-only, skip link, aria labels), PESTFLOW-SKILL.md created |
+| 7 | Mar 2026 | HeroVideoPlayer component (youtube-nocookie embed), branded 404 page (full chrome — HolidayBanner + Navbar + Footer), PWA manifest + icons, bulk keyword sync (keyword_tracker -> seo_meta in SEOTab) |
+| 8 | Mar 2026 | Removed Pricing page route (file kept), rustic template (4th option — warm brown/amber, Playfair Display), Pexels stock image script (fetch-pest-images.mjs) + introImage prop on all 12 pest pages, About Us populated (Apex Pest Solutions — story, team, values, stats), polished onboarding wizard (step indicators, larger inputs, skip links), OnboardingLive screen-share mode (22 steps, one field per screen), font overhaul (Bangers -> Oswald/Raleway/Space Grotesk/Playfair Display) |
 
 ---
 
-## SESSION 7 QUEUE
-From TASKS.md "Session 6 — Next Up":
+## SESSION 9 QUEUE
 - [ ] Client onboarding: custom domain setup guide in admin
 - [ ] Real content seeding — pull from Supabase and populate all page_content rows
-- [ ] Location pages: Google Maps embed (reads `integrations.google_maps_embed_url` from settings)
-- [ ] Location pages: "We Also Serve" section (nearby cities from location_data where is_live=true)
-- [ ] Admin: AI content writer — generate pest page copy via Anthropic API (browser pattern)
-- [ ] Admin: bulk keyword sync — push tracked keywords to page_content SEO fields
-- [ ] Public website: hero video player (reads `hero_media.youtube_id`, embed via youtube-nocookie.com)
-- [ ] Mobile PWA manifest + icons (public/manifest.json, linked in index.html)
-- [ ] 404 page (custom, branded — HolidayBanner + Navbar + Footer + links back to home)
+- [ ] Location pages: Google Maps embed (reads google_maps_embed_url from settings)
+- [ ] Location pages: "We Also Serve" section (nearby cities from location_data)
+- [ ] Admin: AI content writer — generate pest page copy via Anthropic API
 - [ ] Accessibility audit — aria labels, focus states, contrast check
+- [ ] Client handoff mode — read-only "preview" admin view for client demos
+- [ ] White-label config — swap logo, company name, colors from onboarding wizard output
+- [ ] Email templates — branded HTML emails for lead notifications (logo, colors)
+- [ ] Stripe integration — real checkout for SaaS subscriptions (Starter/Pro/Agency)
+- [ ] Admin: bulk location import (CSV upload -> creates location_data rows)
+- [ ] Public API endpoint — /api/quote for headless quote form embed on external sites
+- [ ] Analytics dashboard — page views, lead sources, conversion tracking (no GA, privacy-first)
+- [ ] Mobile app scaffold — Capacitor wrapper for iOS/Android
 - [ ] PESTFLOW-SKILL.md + TASKS.md updated

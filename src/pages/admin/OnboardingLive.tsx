@@ -134,7 +134,7 @@ export default function OnboardingLive() {
 
       {/* Top bar */}
       <div className="flex items-center justify-between px-6 py-4">
-        <span className="font-bangers text-emerald-500 text-xl tracking-wide">PestFlow Pro</span>
+        <span className="font-oswald text-emerald-500 text-xl tracking-wide">PestFlow Pro</span>
         <span className="px-3 py-1 bg-gray-100 text-gray-500 text-sm font-medium rounded-full">{stepIdx + 1} of {total}</span>
       </div>
 

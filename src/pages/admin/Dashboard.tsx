@@ -68,7 +68,7 @@ export default function Dashboard() {
       {/* Sidebar */}
       <aside className="w-64 flex-shrink-0 flex flex-col" style={{ background: '#1a1f2e' }}>
         <div className="px-6 py-5" style={{ background: '#141922' }}>
-          <h1 className="font-bangers text-xl text-white tracking-wide">PestFlow Pro</h1>
+          <h1 className="font-oswald text-xl text-white tracking-wide">PestFlow Pro</h1>
           <p className="text-gray-400 text-xs uppercase tracking-widest mt-0.5">Operations Platform</p>
         </div>
 
