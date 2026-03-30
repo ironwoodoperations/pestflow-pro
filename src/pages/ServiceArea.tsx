@@ -18,16 +18,21 @@ const FALLBACK_CITIES: LocationItem[] = [
 export default function ServiceArea() {
   const [locations, setLocations] = useState<LocationItem[]>(FALLBACK_CITIES)
   const [mapsEmbedUrl, setMapsEmbedUrl] = useState('')
+  const [heroTitle, setHeroTitle] = useState('Our East Texas <span class="text-emerald-400">Service Area</span>')
+  const [heroSubtitle, setHeroSubtitle] = useState('We proudly serve Tyler, TX and surrounding communities within 50 miles.')
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const [locRes, intgRes] = await Promise.all([
+      const [locRes, intgRes, contentRes] = await Promise.all([
         supabase.from('location_data').select('slug, city').eq('tenant_id', tenantId).eq('is_live', true),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle(),
+        supabase.from('page_content').select('title, subtitle').eq('tenant_id', tenantId).eq('page_slug', 'service-area').maybeSingle(),
       ])
       if (locRes.data && locRes.data.length > 0) setLocations(locRes.data)
       if (intgRes.data?.value?.google_maps_embed_url) setMapsEmbedUrl(intgRes.data.value.google_maps_embed_url)
+      if (contentRes.data?.title) setHeroTitle(contentRes.data.title)
+      if (contentRes.data?.subtitle) setHeroSubtitle(contentRes.data.subtitle)
     })
   }, [])
 
@@ -38,8 +43,8 @@ export default function ServiceArea() {
 
       <section className="py-20 md:py-28" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h1 className="font-oswald tracking-wide text-white text-5xl md:text-7xl mb-4">Our East Texas <span className="text-emerald-400">Service Area</span></h1>
-          <p className="text-gray-300 text-xl">We proudly serve Tyler, TX and surrounding communities within 50 miles.</p>
+          <h1 className="font-oswald tracking-wide text-white text-5xl md:text-7xl mb-4" dangerouslySetInnerHTML={{ __html: heroTitle }} />
+          <p className="text-gray-300 text-xl">{heroSubtitle}</p>
         </div>
       </section>
 

@@ -45,16 +45,23 @@ export default function QuotePage() {
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [heroTitle, setHeroTitle] = useState('Get a Free Quote')
+  const [heroSubtitle, setHeroSubtitle] = useState("Complete these 4 quick steps and we'll get back to you fast.")
 
   useEffect(() => {
     resolveTenantId().then(async (tid) => {
       if (!tid) return
       setTenantId(tid)
-      const { data } = await supabase.from('settings').select('value').eq('tenant_id', tid).eq('key', 'business_info').maybeSingle()
-      if (data?.value) {
-        if (data.value.name) setBusinessName(data.value.name)
-        if (data.value.phone) setBusinessPhone(data.value.phone)
+      const [bizRes, contentRes] = await Promise.all([
+        supabase.from('settings').select('value').eq('tenant_id', tid).eq('key', 'business_info').maybeSingle(),
+        supabase.from('page_content').select('title, subtitle').eq('tenant_id', tid).eq('page_slug', 'quote').maybeSingle(),
+      ])
+      if (bizRes.data?.value) {
+        if (bizRes.data.value.name) setBusinessName(bizRes.data.value.name)
+        if (bizRes.data.value.phone) setBusinessPhone(bizRes.data.value.phone)
       }
+      if (contentRes.data?.title) setHeroTitle(contentRes.data.title)
+      if (contentRes.data?.subtitle) setHeroSubtitle(contentRes.data.subtitle)
     })
   }, [])
 
@@ -116,8 +123,8 @@ export default function QuotePage() {
 
       <section className="py-12 bg-[#f8fafc]">
         <div className="max-w-3xl mx-auto px-4">
-          <h1 className="font-oswald tracking-wide text-4xl md:text-5xl text-gray-900 text-center mb-2">Get a Free Quote</h1>
-          <p className="text-gray-600 text-center mb-8">Complete these 4 quick steps and we'll get back to you fast.</p>
+          <h1 className="font-oswald tracking-wide text-4xl md:text-5xl text-gray-900 text-center mb-2">{heroTitle}</h1>
+          <p className="text-gray-600 text-center mb-8">{heroSubtitle}</p>
 
           {/* Progress */}
           <div className="flex items-center justify-between mb-10 max-w-lg mx-auto">

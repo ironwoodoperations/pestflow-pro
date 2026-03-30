@@ -16,12 +16,19 @@ const PLACEHOLDER_POSTS: BlogPost[] = [
 
 export default function BlogPage() {
   const [posts, setPosts] = useState<BlogPost[]>(PLACEHOLDER_POSTS)
+  const [heroTitle, setHeroTitle] = useState('Pest Control Blog')
+  const [heroSubtitle, setHeroSubtitle] = useState('Tips, guides, and news from our East Texas pest control experts.')
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const { data } = await supabase.from('blog_posts').select('id, title, slug, excerpt, published_at').eq('tenant_id', tenantId).not('published_at', 'is', null).order('published_at', { ascending: false })
-      if (data && data.length > 0) setPosts(data)
+      const [postsRes, contentRes] = await Promise.all([
+        supabase.from('blog_posts').select('id, title, slug, excerpt, published_at').eq('tenant_id', tenantId).not('published_at', 'is', null).order('published_at', { ascending: false }),
+        supabase.from('page_content').select('title, subtitle').eq('tenant_id', tenantId).eq('page_slug', 'blog').maybeSingle(),
+      ])
+      if (postsRes.data && postsRes.data.length > 0) setPosts(postsRes.data)
+      if (contentRes.data?.title) setHeroTitle(contentRes.data.title)
+      if (contentRes.data?.subtitle) setHeroSubtitle(contentRes.data.subtitle)
     })
   }, [])
 
@@ -32,8 +39,8 @@ export default function BlogPage() {
 
       <section className="py-20 md:py-28" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h1 className="font-oswald tracking-wide text-white text-5xl md:text-7xl mb-4">Pest Control Blog</h1>
-          <p className="text-gray-300 text-xl">Tips, guides, and news from our East Texas pest control experts.</p>
+          <h1 className="font-oswald tracking-wide text-white text-5xl md:text-7xl mb-4">{heroTitle}</h1>
+          <p className="text-gray-300 text-xl">{heroSubtitle}</p>
         </div>
       </section>
 

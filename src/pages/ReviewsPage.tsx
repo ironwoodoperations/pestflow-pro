@@ -20,12 +20,19 @@ const PLACEHOLDER_REVIEWS: Review[] = [
 
 export default function ReviewsPage() {
   const [reviews, setReviews] = useState<Review[]>(PLACEHOLDER_REVIEWS)
+  const [heroTitle, setHeroTitle] = useState('What Our Customers Say')
+  const [heroSubtitle, setHeroSubtitle] = useState('Real reviews from real East Texas customers.')
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const { data } = await supabase.from('testimonials').select('id, author_name, review_text, rating, source').eq('tenant_id', tenantId).order('created_at', { ascending: false }).limit(12)
-      if (data && data.length > 0) setReviews(data)
+      const [revRes, contentRes] = await Promise.all([
+        supabase.from('testimonials').select('id, author_name, review_text, rating, source').eq('tenant_id', tenantId).order('created_at', { ascending: false }).limit(12),
+        supabase.from('page_content').select('title, subtitle').eq('tenant_id', tenantId).eq('page_slug', 'reviews').maybeSingle(),
+      ])
+      if (revRes.data && revRes.data.length > 0) setReviews(revRes.data)
+      if (contentRes.data?.title) setHeroTitle(contentRes.data.title)
+      if (contentRes.data?.subtitle) setHeroSubtitle(contentRes.data.subtitle)
     })
   }, [])
 
@@ -36,8 +43,8 @@ export default function ReviewsPage() {
 
       <section className="py-20 md:py-28" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h1 className="font-oswald tracking-wide text-white text-5xl md:text-7xl mb-4">What Our Customers Say</h1>
-          <p className="text-gray-300 text-xl">Real reviews from real East Texas customers.</p>
+          <h1 className="font-oswald tracking-wide text-white text-5xl md:text-7xl mb-4">{heroTitle}</h1>
+          <p className="text-gray-300 text-xl">{heroSubtitle}</p>
         </div>
       </section>
 

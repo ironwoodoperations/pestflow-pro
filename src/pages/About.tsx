@@ -1,5 +1,8 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Shield, Home, Bug, Star, Heart, Eye, Award, Zap } from 'lucide-react'
+import { supabase } from '../lib/supabase'
+import { resolveTenantId } from '../lib/tenant'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import StructuredData from '../components/StructuredData'
@@ -19,6 +22,18 @@ const VALUES = [
 ]
 
 export default function About() {
+  const [heroTitle, setHeroTitle] = useState('About <span class="text-emerald-400">Ironclad Pest Solutions</span>')
+  const [heroSubtitle, setHeroSubtitle] = useState('Family-owned. Science-backed. Trusted since 2009.')
+
+  useEffect(() => {
+    resolveTenantId().then(async (tid) => {
+      if (!tid) return
+      const { data } = await supabase.from('page_content').select('title, subtitle').eq('tenant_id', tid).eq('page_slug', 'about').maybeSingle()
+      if (data?.title) setHeroTitle(data.title)
+      if (data?.subtitle) setHeroSubtitle(data.subtitle)
+    })
+  }, [])
+
   return (
     <div className="min-h-screen bg-white">
       <StructuredData type="WebPage" pageSlug="about" />
@@ -27,8 +42,8 @@ export default function About() {
 
       <section className="py-20 md:py-28" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h1 className="font-oswald tracking-wide text-white text-5xl md:text-7xl mb-4">About <span className="text-emerald-400">Ironclad Pest Solutions</span></h1>
-          <p className="text-gray-300 text-xl">Family-owned. Science-backed. Trusted since 2009.</p>
+          <h1 className="font-oswald tracking-wide text-white text-5xl md:text-7xl mb-4" dangerouslySetInnerHTML={{ __html: heroTitle }} />
+          <p className="text-gray-300 text-xl">{heroSubtitle}</p>
         </div>
       </section>
 

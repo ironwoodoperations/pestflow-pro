@@ -1,4 +1,7 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
+import { resolveTenantId } from '../lib/tenant'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import StructuredData from '../components/StructuredData'
@@ -33,6 +36,18 @@ const FAQ_CATEGORIES = [
 ]
 
 export default function FAQPage() {
+  const [heroTitle, setHeroTitle] = useState('Frequently Asked Questions')
+  const [heroSubtitle, setHeroSubtitle] = useState('Everything you need to know about our pest control services.')
+
+  useEffect(() => {
+    resolveTenantId().then(async (tid) => {
+      if (!tid) return
+      const { data } = await supabase.from('page_content').select('title, subtitle').eq('tenant_id', tid).eq('page_slug', 'faq').maybeSingle()
+      if (data?.title) setHeroTitle(data.title)
+      if (data?.subtitle) setHeroSubtitle(data.subtitle)
+    })
+  }, [])
+
   return (
     <div className="min-h-screen bg-white">
       <StructuredData type="WebPage" pageSlug="faq" />
@@ -40,8 +55,8 @@ export default function FAQPage() {
 
       <section className="py-20 md:py-28" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h1 className="font-oswald tracking-wide text-white text-5xl md:text-7xl mb-4">Frequently Asked Questions</h1>
-          <p className="text-gray-300 text-xl">Everything you need to know about our pest control services.</p>
+          <h1 className="font-oswald tracking-wide text-white text-5xl md:text-7xl mb-4">{heroTitle}</h1>
+          <p className="text-gray-300 text-xl">{heroSubtitle}</p>
         </div>
       </section>
 
