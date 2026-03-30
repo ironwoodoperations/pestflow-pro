@@ -6,7 +6,7 @@ import { PreviewModeContext } from '../../hooks/usePreviewMode'
 import {
   FileText, Search, BookOpen, Share2, Star,
   MapPin, BarChart3, Users, Settings, LogOut, ExternalLink, Eye, EyeOff,
-  DollarSign, Calendar, Wrench, ClipboardList, AlertTriangle, TrendingUp
+  TrendingUp, ArrowUp
 } from 'lucide-react'
 import ContentTab from '../../components/admin/ContentTab'
 import SEOTab from '../../components/admin/SEOTab'
@@ -155,95 +155,141 @@ export default function Dashboard() {
 }
 
 function DashboardHome() {
-  const stats = [
-    { label: 'Revenue', value: '$12,450', trend: '+12.5%', trendUp: true, icon: DollarSign, color: '#10b981' },
-    { label: 'Active Customers', value: '248', trend: '+8 this month', trendUp: true, icon: Users, color: '#3b82f6' },
-    { label: "Today's Jobs", value: '6', trend: '2 remaining', trendUp: true, icon: Calendar, color: '#f97316' },
-    { label: 'Technicians', value: '4', trend: 'All active', trendUp: true, icon: Wrench, color: '#a855f7' },
-    { label: 'Pending Quotes', value: '12', trend: '3 new today', trendUp: true, icon: ClipboardList, color: '#475569' },
-    { label: 'Overdue Invoices', value: '2', trend: '$1,200 total', trendUp: false, icon: AlertTriangle, color: '#ef4444' },
-  ]
+  const { tenantId } = useTenant()
+  const [leads, setLeads] = useState<{ id: string; name: string; status: string; created_at: string; services: string[] | null }[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const recentJobs = [
-    { customer: 'Johnson Residence', service: 'Quarterly Pest Control', date: 'Today, 2:00 PM', status: 'scheduled' },
-    { customer: 'Smith Family Home', service: 'Termite Inspection', date: 'Today, 10:30 AM', status: 'completed' },
-    { customer: 'Davis Commercial', service: 'Mosquito Treatment', date: 'Yesterday, 3:00 PM', status: 'completed' },
-    { customer: 'Wilson Apartments', service: 'Roach Control', date: 'Yesterday, 11:00 AM', status: 'in_progress' },
-    { customer: 'Brown Residence', service: 'Spider Treatment', date: 'Mar 28, 9:00 AM', status: 'completed' },
-  ]
+  useEffect(() => {
+    if (!tenantId) return
+    supabase.from('leads').select('id, name, status, created_at, services').eq('tenant_id', tenantId).order('created_at', { ascending: false })
+      .then(({ data }) => { setLeads(data || []); setLoading(false) })
+  }, [tenantId])
+
+  const now = new Date()
+  const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+  const thisWeek = new Date(now.getTime() - 7 * 86400000)
+
+  const totalLeads = leads.length
+  const newThisMonth = leads.filter(l => new Date(l.created_at) >= thisMonth).length
+  const newThisWeek = leads.filter(l => new Date(l.created_at) >= thisWeek).length
+  const withStatus = leads.filter(l => l.status)
+  const converted = withStatus.filter(l => l.status === 'converted' || l.status === 'won').length
+  const conversionRate = withStatus.length > 0 ? Math.round((converted / withStatus.length) * 100) : 0
+
+  // Leads per month — last 6 months
+  const monthlyLeads: { label: string; count: number }[] = []
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const nextMonth = new Date(d.getFullYear(), d.getMonth() + 1, 1)
+    const count = leads.filter(l => { const c = new Date(l.created_at); return c >= d && c < nextMonth }).length
+    monthlyLeads.push({ label: d.toLocaleDateString('en-US', { month: 'short' }), count })
+  }
+  const maxMonthly = Math.max(...monthlyLeads.map(m => m.count), 1)
+
+  const recentLeads = leads.slice(0, 5)
 
   const statusBadge = (status: string) => {
     const styles: Record<string, string> = {
-      scheduled: 'bg-blue-100 text-blue-700',
-      completed: 'bg-emerald-100 text-emerald-700',
-      in_progress: 'bg-amber-100 text-amber-700',
-      overdue: 'bg-red-100 text-red-700',
-    }
-    const labels: Record<string, string> = {
-      scheduled: 'Scheduled', completed: 'Completed', in_progress: 'In Progress', overdue: 'Overdue',
-    }
-    const dots: Record<string, string> = {
-      scheduled: 'bg-blue-500', completed: 'bg-emerald-500', in_progress: 'bg-amber-500', overdue: 'bg-red-500',
+      new: 'bg-blue-100 text-blue-700', contacted: 'bg-amber-100 text-amber-700',
+      converted: 'bg-emerald-100 text-emerald-700', won: 'bg-emerald-100 text-emerald-700',
+      lost: 'bg-red-100 text-red-700',
     }
     return (
-      <div className="flex items-center gap-2">
-        <div className={`w-2 h-2 rounded-full ${dots[status] || 'bg-gray-400'}`} />
-        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${styles[status] || 'bg-gray-100 text-gray-600'}`}>
-          {labels[status] || status}
-        </span>
-      </div>
+      <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${styles[status] || 'bg-gray-100 text-gray-600'}`}>
+        {status || 'new'}
+      </span>
     )
   }
 
+  if (loading) return <p className="text-gray-400 p-4">Loading dashboard...</p>
+
   return (
     <div>
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-        {stats.map((stat) => (
-          <div key={stat.label} role="region" aria-label={stat.label} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">{stat.label}</p>
-              <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
-              <p className={`text-sm font-medium mt-1 ${stat.trendUp ? 'text-emerald-500' : 'text-red-500'}`}>{stat.trend}</p>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {[
+          { label: 'Total Leads', value: totalLeads, icon: Users, color: '#3b82f6' },
+          { label: 'New This Month', value: newThisMonth, icon: ArrowUp, color: '#10b981' },
+          { label: 'New This Week', value: newThisWeek, icon: TrendingUp, color: '#f59e0b' },
+          { label: 'Conversion Rate', value: `${conversionRate}%`, icon: BarChart3, color: '#a855f7' },
+        ].map(s => (
+          <div key={s.label} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${s.color}18` }}>
+                <s.icon className="w-5 h-5" style={{ color: s.color }} />
+              </div>
             </div>
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: stat.color }}>
-              <stat.icon className="w-6 h-6 text-white" />
-            </div>
+            <p className="text-3xl font-bold text-gray-900">{s.value}</p>
+            <p className="text-sm text-gray-500 mt-1">{s.label}</p>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Revenue Chart Placeholder */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6" aria-label="Revenue overview chart">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue Overview</h3>
-          <div className="h-48 flex items-end gap-2 px-4">
-            {[40, 65, 45, 80, 55, 90, 70, 85, 60, 95, 75, 88].map((h, i) => (
-              <div key={i} className="flex-1 rounded-t-md" style={{ height: `${h}%`, background: `rgba(16, 185, 129, ${0.3 + (h / 150)})` }} />
-            ))}
+      {totalLeads === 0 ? (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
+          <p className="text-4xl mb-3">📋</p>
+          <p className="text-lg font-semibold text-gray-900 mb-1">No leads yet</p>
+          <p className="text-gray-500 text-sm">Your quote form is live and ready! Leads will appear here as they come in.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Leads Per Month Chart */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Leads Per Month</h3>
+            <div className="h-48 flex items-end gap-3 px-2">
+              {monthlyLeads.map((m, i) => (
+                <div key={i} className="flex-1 flex flex-col items-center justify-end h-full">
+                  <span className="text-xs text-gray-500 font-medium mb-1">{m.count}</span>
+                  <div className="w-full rounded-t-md bg-emerald-500" style={{ height: `${(m.count / maxMonthly) * 100}%`, minHeight: m.count > 0 ? '8px' : '2px' }} />
+                  <span className="text-xs text-gray-400 mt-2">{m.label}</span>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="flex justify-between mt-3 text-xs text-gray-400 px-4">
-            <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
-            <span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span>
+
+          {/* Recent Leads */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Leads</h3>
+            <div className="space-y-0">
+              {recentLeads.map((lead, i) => (
+                <div key={lead.id} className={`flex items-center justify-between py-3 ${i < recentLeads.length - 1 ? 'border-b border-gray-50' : ''}`}>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">{lead.name}</p>
+                    <p className="text-xs text-gray-400">
+                      {(lead.services || []).join(', ') || 'General inquiry'} · {new Date(lead.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </p>
+                  </div>
+                  {statusBadge(lead.status)}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
+      )}
 
-        {/* Recent Jobs */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Jobs</h3>
-          <div className="space-y-0">
-            {recentJobs.map((job, i) => (
-              <div key={i} className={`flex items-center justify-between py-3 ${i < recentJobs.length - 1 ? 'border-b border-gray-50' : ''}`}>
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">{job.customer}</p>
-                  <p className="text-xs text-gray-400">{job.service} · {job.date}</p>
-                </div>
-                {statusBadge(job.status)}
-              </div>
-            ))}
-          </div>
+      {/* Quick Links */}
+      <div className="mt-6 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Links</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <QuickLink label="View All Leads" icon="📋" tab="crm" />
+          <QuickLink label="Edit Site Content" icon="📝" tab="content" />
+          <QuickLink label="Manage SEO" icon="🔍" tab="seo" />
+          <a href="/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition text-sm font-medium text-gray-700">
+            🌐 View Live Site
+          </a>
         </div>
       </div>
     </div>
+  )
+}
+
+function QuickLink({ label, icon, tab }: { label: string; icon: string; tab: string }) {
+  return (
+    <button onClick={() => {
+      const btn = document.querySelector(`button[aria-current]`)?.parentElement?.querySelector(`button:nth-child(${tab === 'crm' ? 9 : tab === 'content' ? 2 : tab === 'seo' ? 3 : 1})`) as HTMLButtonElement | null
+      btn?.click()
+    }} className="flex items-center gap-2 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition text-sm font-medium text-gray-700">
+      {icon} {label}
+    </button>
   )
 }
