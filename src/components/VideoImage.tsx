@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 
 interface VideoImageProps {
   src: string
@@ -9,41 +9,40 @@ interface VideoImageProps {
 
 export default function VideoImage({ src, alt, videoUrl, className = '' }: VideoImageProps) {
   const [playing, setPlaying] = useState(false)
-  const videoRef = useRef<HTMLVideoElement>(null)
 
-  function handlePlay() {
-    setPlaying(true)
-    setTimeout(() => videoRef.current?.play(), 50)
+  if (playing && videoUrl) {
+    return (
+      <div className={`relative ${className}`}>
+        <video
+          src={videoUrl}
+          poster={src}
+          autoPlay
+          controls
+          className="w-full h-full object-cover rounded-lg"
+        />
+        <button
+          onClick={() => setPlaying(false)}
+          className="absolute top-2 right-2 bg-black/70 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm hover:bg-black z-10"
+        >✕</button>
+      </div>
+    )
   }
 
   return (
-    <div className={`relative overflow-hidden ${className}`}>
-      {playing && videoUrl ? (
-        <video
-          ref={videoRef}
-          src={videoUrl}
-          controls
-          autoPlay
-          playsInline
-          className="w-full h-full object-cover"
-          onEnded={() => setPlaying(false)}
-        />
-      ) : (
-        <>
-          <img src={src} alt={alt} loading="lazy" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
-          {videoUrl && (
-            <button
-              type="button"
-              aria-label="Play video"
-              onClick={handlePlay}
-              className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/30 transition-colors group"
-            >
-              <div className="w-14 h-14 rounded-full bg-emerald-500 group-hover:bg-emerald-400 flex items-center justify-center shadow-lg transition-colors">
-                <svg className="w-5 h-5 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
-              </div>
-            </button>
-          )}
-        </>
+    <div className={`relative ${className}`}>
+      <img src={src} alt={alt} className="w-full h-full object-cover rounded-lg" />
+      {videoUrl && (
+        <button
+          onClick={() => setPlaying(true)}
+          className="absolute inset-0 flex items-center justify-center group"
+          aria-label="Play video"
+        >
+          <div className="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg group-hover:bg-emerald-400 transition-colors animate-pulse">
+            <svg className="w-7 h-7 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          </div>
+        </button>
       )}
     </div>
   )
