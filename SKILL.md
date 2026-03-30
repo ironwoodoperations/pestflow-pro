@@ -72,6 +72,11 @@ const text = data.content[0].text
 12. Template stored in settings branding.template: bold | clean | modern — always read via useTemplate()
 13. Location pages use ORANGE CTA — never yellow diagonal (that is pest service pages only)
 14. /quote route must appear before /:slug in App.tsx — quotes are not a location
+15. /blog/:slug route MUST appear before /:slug in App.tsx
+16. StructuredData injects JSON-LD via useEffect script tag, not Helmet
+17. ContentTab uses left sidebar (page list) + right panel (edit form) pattern
+18. Pest pages: YELLOW diagonal East Texas CTA | Location pages: dark navy CTA. NEVER swap.
+19. THEME: Hero bg = dark navy #0a0f1e | Primary accent = emerald #10b981 | East Texas CTA = yellow #f5c518 — NO orange in PestFlow Pro templates
 
 ## KEY FILE PATHS
 src/lib/supabase.ts
@@ -92,6 +97,26 @@ src/components/Navbar.tsx              # Template-aware nav (mobile hamburger)
 src/components/Footer.tsx              # Template-aware footer
 src/lib/templates.ts                   # Template token definitions
 src/hooks/useTemplate.ts               # Template-aware hook
+src/pages/SpiderControl.tsx             # MASTER pest page template
+src/pages/MosquitoControl.tsx
+src/pages/AntControl.tsx
+src/pages/WaspHornetControl.tsx
+src/pages/RoachControl.tsx
+src/pages/FleaTickControl.tsx
+src/pages/RodentControl.tsx
+src/pages/ScorpionControl.tsx
+src/pages/BedBugControl.tsx
+src/pages/PestControlPage.tsx
+src/pages/TermiteControl.tsx
+src/pages/TermiteInspections.tsx
+src/pages/About.tsx
+src/pages/FAQPage.tsx
+src/pages/ReviewsPage.tsx
+src/pages/ServiceArea.tsx
+src/pages/BlogPage.tsx
+src/pages/BlogPostPage.tsx
+src/components/PestPageTemplate.tsx     # Shared pest page layout
+src/components/StructuredData.tsx       # JSON-LD injection
 scripts/create-admin-user.mjs
 SKILL.md
 TASKS.md
@@ -101,3 +126,4 @@ TASKS.md
 |---------|----------|-------------|
 | 1       | Mar 2026 | Scaffold, Supabase migrations, auth, admin shell, onboarding wizard |
 | 2       | Mar 2026 | Vercel config, template system, Navbar, Footer, Home page, QuotePage, ContactPage, SlugRouter, LocationPage, Settings Business Info + Branding |
+| 3       | Mar 2026 | Theme overhaul (orange→dark navy+emerald), all 12 pest pages, About/FAQ/Reviews/ServiceArea/Blog, StructuredData, ContentTab, SocialLinks, Notifications, Navbar dropdown |
