@@ -38,14 +38,14 @@ export default function ServiceArea() {
 
       <section className="py-20 md:py-28" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h1 className="font-bangers tracking-wide text-white text-5xl md:text-7xl mb-4">Our East Texas <span className="text-emerald-400">Service Area</span></h1>
+          <h1 className="font-oswald tracking-wide text-white text-5xl md:text-7xl mb-4">Our East Texas <span className="text-emerald-400">Service Area</span></h1>
           <p className="text-gray-300 text-xl">We proudly serve Tyler, TX and surrounding communities within 50 miles.</p>
         </div>
       </section>
 
       <section className="py-16 bg-white">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="font-bangers tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-10">Communities We Serve</h2>
+          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-10">Communities We Serve</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {locations.map((loc) => (
               <Link key={loc.slug} to={`/${loc.slug}`} className="bg-white border-2 border-gray-200 hover:border-emerald-500 rounded-xl p-4 text-center transition group shadow-sm">
@@ -77,7 +77,7 @@ export default function ServiceArea() {
 
       <section className="py-16 bg-white">
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="font-bangers tracking-wide text-3xl md:text-4xl text-gray-900 mb-4">Don't See Your City?</h2>
+          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 mb-4">Don't See Your City?</h2>
           <p className="text-gray-600 mb-8">We may still serve your area. Give us a call to find out.</p>
           <a href="tel:9035550100" className="inline-block bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg px-10 py-4 text-lg transition">Call (903) 555-0100</a>
         </div>

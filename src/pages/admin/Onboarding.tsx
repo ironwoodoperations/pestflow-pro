@@ -17,7 +17,7 @@ const INITIAL_FORM: FormData = {
 }
 
 const TEMPLATES = [
-  { value: 'bold' as const, label: 'Bold', desc: 'Dark navy backgrounds, emerald accents, Bangers display font', colors: 'from-emerald-600 to-gray-900', swatch: '#10b981' },
+  { value: 'bold' as const, label: 'Bold', desc: 'Dark navy backgrounds, emerald accents, Oswald display font', colors: 'from-emerald-600 to-gray-900', swatch: '#10b981' },
   { value: 'clean' as const, label: 'Clean', desc: 'White backgrounds, navy accents, professional serif headings', colors: 'from-white to-blue-900', swatch: '#1d4ed8' },
   { value: 'modern' as const, label: 'Modern', desc: 'Dark backgrounds, teal accents, monospace headings', colors: 'from-gray-800 to-gray-950', swatch: '#14b8a6' },
   { value: 'rustic' as const, label: 'Rustic', desc: 'Warm brown backgrounds, amber accents, serif headings', colors: 'from-amber-600 to-amber-950', swatch: '#d97706' },
@@ -95,7 +95,7 @@ export default function Onboarding() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6">
-        <h1 className="font-bangers text-3xl text-emerald-500 text-center mb-8 tracking-wide">PestFlow Pro</h1>
+        <h1 className="font-oswald text-3xl text-emerald-500 text-center mb-8 tracking-wide">PestFlow Pro</h1>
 
         {/* Step 1 — Welcome */}
         {step === 1 && (

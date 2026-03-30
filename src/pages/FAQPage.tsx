@@ -40,7 +40,7 @@ export default function FAQPage() {
 
       <section className="py-20 md:py-28" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h1 className="font-bangers tracking-wide text-white text-5xl md:text-7xl mb-4">Frequently Asked Questions</h1>
+          <h1 className="font-oswald tracking-wide text-white text-5xl md:text-7xl mb-4">Frequently Asked Questions</h1>
           <p className="text-gray-300 text-xl">Everything you need to know about our pest control services.</p>
         </div>
       </section>
@@ -65,7 +65,7 @@ export default function FAQPage() {
 
       <section className="py-16 bg-[#f8fafc]">
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="font-bangers tracking-wide text-3xl md:text-4xl text-gray-900 mb-4">Still Have Questions?</h2>
+          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 mb-4">Still Have Questions?</h2>
           <p className="text-gray-600 mb-8">We're here to help. Call us or request a quote online.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a href="tel:9035550100" className="border-2 border-emerald-500 text-emerald-600 hover:bg-emerald-50 font-bold rounded-lg px-8 py-4 text-lg transition">Call (903) 555-0100</a>

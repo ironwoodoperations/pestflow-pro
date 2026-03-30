@@ -84,7 +84,7 @@ export default function Index() {
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-sm mb-6">
             <Shield className="w-4 h-4" /> Licensed & Insured Professionals
           </div>
-          <h1 className="font-bangers tracking-wide text-white text-5xl sm:text-6xl md:text-8xl leading-tight mb-6">
+          <h1 className="font-oswald tracking-wide text-white text-5xl sm:text-6xl md:text-8xl leading-tight mb-6">
             Protect Your Home from{' '}
             <span className="text-emerald-400">Unwanted Pests</span>
           </h1>
@@ -147,7 +147,7 @@ export default function Index() {
       {/* SERVICES GRID */}
       <section className="py-16 bg-white">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="font-bangers tracking-wide text-4xl md:text-5xl text-gray-900 text-center mb-12">
+          <h2 className="font-oswald tracking-wide text-4xl md:text-5xl text-gray-900 text-center mb-12">
             Our Pest Control Services
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -165,7 +165,7 @@ export default function Index() {
       {/* HOW IT WORKS */}
       <section className="py-16 bg-[#f8fafc]">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="font-bangers tracking-wide text-4xl md:text-5xl text-gray-900 text-center mb-12">
+          <h2 className="font-oswald tracking-wide text-4xl md:text-5xl text-gray-900 text-center mb-12">
             Simple 3-Step Process
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -175,7 +175,7 @@ export default function Index() {
               { num: '3', color: 'text-teal-500', title: 'Protect', desc: 'We keep them gone' },
             ].map((step) => (
               <div key={step.num} className="text-center">
-                <span className={`font-bangers text-8xl ${step.color} opacity-30 block`}>{step.num}</span>
+                <span className={`font-oswald text-8xl ${step.color} opacity-30 block`}>{step.num}</span>
                 <h3 className="text-2xl font-bold text-gray-900 -mt-4 mb-2">{step.title}</h3>
                 <p className="text-gray-600">{step.desc}</p>
               </div>
@@ -187,7 +187,7 @@ export default function Index() {
       {/* WHY CHOOSE US */}
       <section className="py-16 bg-white">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="font-bangers tracking-wide text-4xl md:text-5xl text-gray-900 text-center mb-12">
+          <h2 className="font-oswald tracking-wide text-4xl md:text-5xl text-gray-900 text-center mb-12">
             Why Choose Us
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -210,7 +210,7 @@ export default function Index() {
       {/* TESTIMONIALS */}
       <section className="py-16 bg-[#f8fafc]">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="font-bangers tracking-wide text-4xl md:text-5xl text-gray-900 text-center mb-12">
+          <h2 className="font-oswald tracking-wide text-4xl md:text-5xl text-gray-900 text-center mb-12">
             What Our Customers Say
           </h2>
           <div className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory">
@@ -228,7 +228,7 @@ export default function Index() {
       {/* CTA BANNER */}
       <section className="py-16" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="font-bangers tracking-wide text-4xl md:text-6xl text-white mb-4">Ready to Be Pest-Free?</h2>
+          <h2 className="font-oswald tracking-wide text-4xl md:text-6xl text-white mb-4">Ready to Be Pest-Free?</h2>
           <p className="text-gray-300 text-lg mb-8">Get your free quote today — same-day service available</p>
           <Link to="/quote" className="inline-block bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg px-10 py-4 text-lg transition">
             Request a Free Quote

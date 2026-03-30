@@ -52,7 +52,7 @@ export default function ContactPage() {
 
       <section className="py-16" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h1 className="font-bangers tracking-wide text-4xl md:text-6xl text-white mb-4">Contact Us</h1>
+          <h1 className="font-oswald tracking-wide text-4xl md:text-6xl text-white mb-4">Contact Us</h1>
           <p className="text-gray-400 text-lg">
             Have a question or need service? Call us at{' '}
             <a href={`tel:${info.phone}`} className="text-emerald-400 font-bold hover:underline">{info.phone}</a>
@@ -64,7 +64,7 @@ export default function ContactPage() {
         <div className="max-w-6xl mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <form onSubmit={handleSubmit} className="lg:col-span-2 bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-              <h2 className="font-bangers tracking-wide text-2xl text-gray-900 mb-6">Send Us a Message</h2>
+              <h2 className="font-oswald tracking-wide text-2xl text-gray-900 mb-6">Send Us a Message</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                 <div><label className="block text-sm font-medium text-gray-700 mb-1">Name *</label><input type="text" value={form.name} onChange={(e) => updateField('name', e.target.value)} className={inputClass} required /></div>
                 <div><label className="block text-sm font-medium text-gray-700 mb-1">Email *</label><input type="email" value={form.email} onChange={(e) => updateField('email', e.target.value)} className={inputClass} required /></div>
@@ -77,7 +77,7 @@ export default function ContactPage() {
             </form>
 
             <div className="bg-[#0a0f1e] text-white rounded-xl p-6">
-              <h3 className="font-bangers tracking-wide text-xl text-emerald-400 mb-4">Get in Touch</h3>
+              <h3 className="font-oswald tracking-wide text-xl text-emerald-400 mb-4">Get in Touch</h3>
               <ul className="space-y-4">
                 {info.phone && <li className="flex items-start gap-3"><Phone className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" /><a href={`tel:${info.phone}`} className="hover:underline">{info.phone}</a></li>}
                 {info.email && <li className="flex items-start gap-3"><Mail className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" /><a href={`mailto:${info.email}`} className="hover:underline">{info.email}</a></li>}

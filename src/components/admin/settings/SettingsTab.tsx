@@ -134,7 +134,7 @@ function BrandingSection() {
   if (loading) return <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"><p className="text-gray-400">Loading...</p></div>
 
   const templates: { value: BrandingForm['template']; label: string; desc: string }[] = [
-    { value: 'bold', label: 'Bold', desc: 'High-energy. Dark navy, emerald accents, Bangers headlines.' },
+    { value: 'bold', label: 'Bold', desc: 'High-energy. Dark navy, emerald accents, Oswald headlines.' },
     { value: 'clean', label: 'Clean', desc: 'Professional. Navy, white backgrounds, serif headings.' },
     { value: 'modern', label: 'Modern', desc: 'Contemporary. Dark, teal accents, monospace headings.' },
     { value: 'rustic', label: 'Rustic', desc: 'Warm & inviting. Brown, amber accents, serif headings.' },

@@ -36,7 +36,7 @@ export default function ReviewsPage() {
 
       <section className="py-20 md:py-28" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h1 className="font-bangers tracking-wide text-white text-5xl md:text-7xl mb-4">What Our Customers Say</h1>
+          <h1 className="font-oswald tracking-wide text-white text-5xl md:text-7xl mb-4">What Our Customers Say</h1>
           <p className="text-gray-300 text-xl">Real reviews from real East Texas customers.</p>
         </div>
       </section>
@@ -68,7 +68,7 @@ export default function ReviewsPage() {
 
       <section className="py-16" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="font-bangers tracking-wide text-4xl md:text-5xl text-white mb-4">Love Our Service?</h2>
+          <h2 className="font-oswald tracking-wide text-4xl md:text-5xl text-white mb-4">Love Our Service?</h2>
           <p className="text-gray-300 text-lg mb-8">Leave us a review on Google — we appreciate your feedback!</p>
           <Link to="/quote" className="inline-block bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg px-10 py-4 text-lg transition">Get a Free Quote</Link>
         </div>

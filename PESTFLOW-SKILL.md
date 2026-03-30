@@ -70,7 +70,7 @@ All page components read via `useTemplate()` hook — never hardcode colors.
 
 | Template | Hero Font  | Hero Bg       | CTA Bg      | Accent    |
 |----------|------------|---------------|-------------|-----------|
-| bold     | Bangers    | #0a0f1e navy  | emerald-500 | emerald   |
+| bold     | Oswald     | #0a0f1e navy  | emerald-500 | emerald   |
 | clean    | serif      | blue-900      | blue-700    | blue      |
 | modern   | mono       | gray-950      | teal-500    | teal      |
 

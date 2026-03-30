@@ -20,7 +20,7 @@ export interface TemplateTokens {
 
 export const TEMPLATES: Record<Template, TemplateTokens> = {
   bold: {
-    heroFont: 'font-bangers tracking-wide',
+    heroFont: 'font-oswald tracking-wide',
     bodyFont: 'font-sans',
     heroBg: 'bg-[#0a0f1e]',
     heroText: 'text-white',
@@ -34,10 +34,10 @@ export const TEMPLATES: Record<Template, TemplateTokens> = {
     cardBg: 'bg-gray-100',
     accentColor: '#10b981',
     buttonClass: 'bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg px-6 py-3 transition',
-    headingClass: 'font-bangers tracking-wide',
+    headingClass: 'font-oswald tracking-wide',
   },
   clean: {
-    heroFont: 'font-serif tracking-tight',
+    heroFont: 'font-raleway tracking-tight',
     bodyFont: 'font-sans',
     heroBg: 'bg-blue-900',
     heroText: 'text-white',
@@ -51,10 +51,10 @@ export const TEMPLATES: Record<Template, TemplateTokens> = {
     cardBg: 'bg-white',
     accentColor: '#1d4ed8',
     buttonClass: 'bg-blue-700 hover:bg-blue-800 text-white font-semibold rounded-md px-6 py-3 transition',
-    headingClass: 'font-serif tracking-tight',
+    headingClass: 'font-raleway tracking-tight',
   },
   modern: {
-    heroFont: 'font-mono tracking-tight',
+    heroFont: 'font-space-grotesk tracking-tight',
     bodyFont: 'font-sans',
     heroBg: 'bg-gray-950',
     heroText: 'text-white',
@@ -68,10 +68,10 @@ export const TEMPLATES: Record<Template, TemplateTokens> = {
     cardBg: 'bg-gray-900',
     accentColor: '#14b8a6',
     buttonClass: 'bg-teal-500 hover:bg-teal-400 text-white font-semibold rounded-sm px-6 py-3 transition',
-    headingClass: 'font-mono tracking-tight',
+    headingClass: 'font-space-grotesk tracking-tight',
   },
   rustic: {
-    heroFont: "font-serif tracking-tight",
+    heroFont: "font-playfair tracking-tight",
     bodyFont: 'font-sans',
     heroBg: 'bg-[#1a0f00]',
     heroText: 'text-amber-50',
@@ -85,6 +85,6 @@ export const TEMPLATES: Record<Template, TemplateTokens> = {
     cardBg: 'bg-amber-50',
     accentColor: '#d97706',
     buttonClass: 'bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-lg px-6 py-3 transition',
-    headingClass: 'font-serif tracking-tight',
+    headingClass: 'font-playfair tracking-tight',
   },
 }

@@ -53,7 +53,7 @@ export default function LocationPage({ slug }: { slug: string }) {
       {/* HERO */}
       <section className="relative py-20 md:py-28 overflow-hidden" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>
         <div className="relative z-10 max-w-5xl mx-auto px-4 text-center">
-          <h1 className="font-bangers tracking-wide text-white text-5xl md:text-7xl mb-4">{heroTitle}</h1>
+          <h1 className="font-oswald tracking-wide text-white text-5xl md:text-7xl mb-4">{heroTitle}</h1>
           <p className="text-gray-300 text-xl mb-8">Protecting East Texas Homes & Businesses</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/quote" className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg px-8 py-4 text-lg transition">Get a Free Quote</Link>
@@ -71,7 +71,7 @@ export default function LocationPage({ slug }: { slug: string }) {
               <img src="/exterior-treatment.jpg" alt={`Pest control in ${city}`} loading="lazy" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
             </div>
             <div>
-              <h2 className="font-bangers tracking-wide text-3xl md:text-4xl text-gray-900 mb-4">Professional Pest Control in {city}</h2>
+              <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 mb-4">Professional Pest Control in {city}</h2>
               <p className="text-gray-600 mb-4">Professional pest control serving {city} and surrounding areas. Our certified technicians use the latest treatments to eliminate pests and keep your home protected year-round.</p>
               <p className="text-gray-600 mb-4">From mosquitoes and spiders to rodents and termites, we handle every type of pest common to East Texas. We offer same-day service and free estimates.</p>
               <p className="text-gray-600 mb-6">Don't let pests take over your property. Contact us today for a thorough inspection and customized treatment plan for your {city} home or business.</p>
@@ -87,7 +87,7 @@ export default function LocationPage({ slug }: { slug: string }) {
       {/* SERVICES GRID */}
       <section className="py-16 bg-white">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="font-bangers tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-10">Our Pest Control Services in {city}</h2>
+          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-10">Our Pest Control Services in {city}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {SERVICES.map((svc) => (
               <Link key={svc.name} to={svc.href} className="bg-white rounded-xl p-6 shadow-sm hover:border-emerald-500 border-2 border-gray-100 transition group">
@@ -103,7 +103,7 @@ export default function LocationPage({ slug }: { slug: string }) {
       {/* WHY CHOOSE US */}
       <section className="py-16 bg-[#f8fafc]">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="font-bangers tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-10">Why Choose Us</h2>
+          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-10">Why Choose Us</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
               { icon: <Shield className="w-8 h-8 text-emerald-500" />, title: 'Licensed & Certified', desc: 'Fully licensed, bonded, and insured for your peace of mind.' },
@@ -124,7 +124,7 @@ export default function LocationPage({ slug }: { slug: string }) {
       {/* CTA — Location pages use dark navy (not yellow diagonal) */}
       <section className="py-16" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="font-bangers tracking-wide text-4xl md:text-6xl text-white mb-4">Ready for a Pest-Free {city}?</h2>
+          <h2 className="font-oswald tracking-wide text-4xl md:text-6xl text-white mb-4">Ready for a Pest-Free {city}?</h2>
           <p className="text-gray-300 text-lg mb-8">Same-day service available. Call or request a quote online.</p>
           <Link to="/quote" className="inline-block bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg px-10 py-4 text-lg transition">Get a Free Quote</Link>
         </div>

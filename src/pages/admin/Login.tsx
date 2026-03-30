@@ -22,7 +22,7 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a1f2e 100%)' }}>
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8">
-        <h1 className="font-bangers text-3xl text-emerald-500 text-center mb-1 tracking-wide">PestFlow Pro</h1>
+        <h1 className="font-oswald text-3xl text-emerald-500 text-center mb-1 tracking-wide">PestFlow Pro</h1>
         <p className="text-gray-500 text-sm text-center mb-8">Admin Portal</p>
         <form onSubmit={handleLogin} className="space-y-4">
           <div>

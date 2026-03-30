@@ -62,7 +62,7 @@ export default function Pricing() {
       {/* Hero */}
       <section className="py-20 md:py-28" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h1 className="font-bangers tracking-wide text-white text-5xl md:text-7xl mb-4">Simple, Transparent <span className="text-emerald-400">Pricing</span></h1>
+          <h1 className="font-oswald tracking-wide text-white text-5xl md:text-7xl mb-4">Simple, Transparent <span className="text-emerald-400">Pricing</span></h1>
           <p className="text-gray-300 text-xl">Everything you need to run your pest control business online.</p>
         </div>
       </section>
@@ -101,7 +101,7 @@ export default function Pricing() {
       {/* Feature Comparison Table */}
       <section className="py-16 bg-white">
         <div className="max-w-4xl mx-auto px-4">
-          <h2 className="font-bangers tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-10">Feature Comparison</h2>
+          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-10">Feature Comparison</h2>
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <table className="w-full">
               <thead>
@@ -130,7 +130,7 @@ export default function Pricing() {
       {/* FAQ */}
       <section className="py-16 bg-[#f8fafc]">
         <div className="max-w-3xl mx-auto px-4">
-          <h2 className="font-bangers tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-10">Billing FAQ</h2>
+          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-10">Billing FAQ</h2>
           <div className="space-y-6">
             {FAQS.map((faq, i) => (
               <div key={i}>
@@ -145,7 +145,7 @@ export default function Pricing() {
       {/* CTA */}
       <section className="py-16" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="font-bangers tracking-wide text-4xl md:text-5xl text-white mb-4">Ready to Get Started?</h2>
+          <h2 className="font-oswald tracking-wide text-4xl md:text-5xl text-white mb-4">Ready to Get Started?</h2>
           <p className="text-gray-300 text-lg mb-8">14-day free trial. No credit card required.</p>
           <Link to="/admin/onboarding" className="inline-block bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg px-10 py-4 text-lg transition">
             Start Your Free Trial

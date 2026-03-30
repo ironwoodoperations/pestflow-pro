@@ -47,7 +47,7 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
-            <h3 className="text-xl mb-3 text-white font-bangers tracking-wide">{info.name}</h3>
+            <h3 className="text-xl mb-3 text-white font-oswald tracking-wide">{info.name}</h3>
             {info.tagline && <p className="mb-2 text-gray-400">{info.tagline}</p>}
             {info.phone && <p className="mb-1"><a href={`tel:${info.phone}`} className="hover:text-emerald-400 transition">{info.phone}</a></p>}
             {info.license && <p className="text-sm text-gray-500">License #{info.license}</p>}

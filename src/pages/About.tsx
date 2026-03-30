@@ -29,7 +29,7 @@ export default function About() {
       {/* Hero */}
       <section className="py-20 md:py-28" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h1 className="font-bangers tracking-wide text-white text-5xl md:text-7xl mb-4">About <span className="text-emerald-400">Apex Pest Solutions</span></h1>
+          <h1 className="font-oswald tracking-wide text-white text-5xl md:text-7xl mb-4">About <span className="text-emerald-400">Apex Pest Solutions</span></h1>
           <p className="text-gray-300 text-xl">Protecting Families. Eliminating Pests. Since 2006.</p>
         </div>
       </section>
@@ -42,7 +42,7 @@ export default function About() {
               <img src="/images/pests/team.jpg" alt="Apex Pest Solutions team" loading="lazy" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
             </div>
             <div>
-              <h2 className="font-bangers tracking-wide text-3xl md:text-4xl text-gray-900 mb-4">Our Story</h2>
+              <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 mb-4">Our Story</h2>
               <p className="text-gray-600 mb-4">
                 Apex Pest Solutions started in 2006 when Marcus and Diana Holt decided their community deserved better pest control. Armed with a truck, a state license, and a commitment to doing things right, they launched the business out of their garage in Tyler, Texas.
               </p>
@@ -80,7 +80,7 @@ export default function About() {
       {/* Values */}
       <section className="py-16 bg-[#f8fafc]">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="font-bangers tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-10">What We Stand For</h2>
+          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-10">What We Stand For</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {VALUES.map((v) => (
               <div key={v.title} className="bg-white rounded-xl p-6 shadow-sm text-center">
@@ -96,7 +96,7 @@ export default function About() {
       {/* Team */}
       <section className="py-16 bg-white">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="font-bangers tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-10">Meet Our Team</h2>
+          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-10">Meet Our Team</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {TEAM.map((member, i) => (
               <div key={member.name} className="bg-[#f8fafc] rounded-xl p-6 text-center">
@@ -119,7 +119,7 @@ export default function About() {
       {/* Certifications */}
       <section className="py-16 bg-[#f8fafc]">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="font-bangers tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-10">Licensed & Certified</h2>
+          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-10">Licensed & Certified</h2>
           <div className="flex flex-wrap gap-6 justify-center">
             {['NPMA Member', 'TPCA Member', 'BBB Accredited', 'TDA Licensed', 'EPA Certified'].map((cert) => (
               <div key={cert} className="bg-white rounded-xl px-8 py-6 text-center text-gray-500 font-medium border border-gray-200 shadow-sm">{cert}</div>
@@ -131,7 +131,7 @@ export default function About() {
       {/* CTA */}
       <section className="py-16" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="font-bangers tracking-wide text-4xl md:text-5xl text-white mb-4">Ready to Be Pest-Free?</h2>
+          <h2 className="font-oswald tracking-wide text-4xl md:text-5xl text-white mb-4">Ready to Be Pest-Free?</h2>
           <p className="text-gray-300 text-lg mb-8">Get your free quote today — same-day service available.</p>
           <Link to="/quote" className="inline-block bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg px-10 py-4 text-lg transition">Get a Free Quote</Link>
         </div>

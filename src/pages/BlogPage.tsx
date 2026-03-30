@@ -32,7 +32,7 @@ export default function BlogPage() {
 
       <section className="py-20 md:py-28" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h1 className="font-bangers tracking-wide text-white text-5xl md:text-7xl mb-4">Pest Control Blog</h1>
+          <h1 className="font-oswald tracking-wide text-white text-5xl md:text-7xl mb-4">Pest Control Blog</h1>
           <p className="text-gray-300 text-xl">Tips, guides, and news from our East Texas pest control experts.</p>
         </div>
       </section>
