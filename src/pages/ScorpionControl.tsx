@@ -4,6 +4,7 @@ export default function ScorpionControl() {
   return (
     <PestPageTemplate
       pageSlug="scorpion-control"
+      introImage="/images/pests/scorpion.jpg"
       heroTitle="Scorpion Control in East Texas"
       heroHighlight="Scorpion Control"
       heroSubtitle="Protecting East Texas families from scorpion stings."

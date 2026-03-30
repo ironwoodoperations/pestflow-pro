@@ -4,6 +4,7 @@ export default function TermiteControl() {
   return (
     <PestPageTemplate
       pageSlug="termite-control"
+      introImage="/images/pests/termite.jpg"
       heroTitle="Termite Control in East Texas"
       heroHighlight="Termite Control"
       heroSubtitle="Stop termites before they destroy your home."
