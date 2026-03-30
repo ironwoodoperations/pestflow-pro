@@ -125,7 +125,7 @@
 - [x] Admin: AI content writer — generate pest page copy via Anthropic API
 - [x] Accessibility audit — aria labels, focus states, contrast check
 - [x] Client handoff mode — read-only "preview" admin view for client demos
-- [ ] White-label config — swap logo, company name, colors from onboarding wizard output
+- [x] White-label config — swap logo, company name, colors from onboarding wizard output
 - [ ] Email templates — branded HTML emails for lead notifications (logo, colors)
 - [ ] Stripe integration — real checkout for SaaS subscriptions (Starter/Pro/Agency)
 - [ ] Admin: bulk location import (CSV upload → creates location_data rows)
