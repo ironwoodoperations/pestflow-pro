@@ -5,7 +5,7 @@ export default function BedBugControl() {
   return (
     <PestPageTemplate
       pageSlug="bed-bug-control"
-      introImage="https://images.pexels.com/photos/6957658/pexels-photo-6957658.jpeg?w=800"
+      introImage="https://images.pexels.com/photos/6957658/pexels-photo-6957658.jpeg?auto=compress&w=800"
       videoUrl={PEST_VIDEOS.bedbugs[0]?.url}
       heroTitle="Bed Bug Extermination in East Texas"
       heroHighlight="Bed Bug Extermination"

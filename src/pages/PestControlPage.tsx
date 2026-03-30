@@ -5,7 +5,7 @@ export default function PestControlPage() {
   return (
     <PestPageTemplate
       pageSlug="pest-control"
-      introImage="https://images.pexels.com/photos/5591664/pexels-photo-5591664.jpeg?w=800"
+      introImage="https://images.pexels.com/photos/5591664/pexels-photo-5591664.jpeg?auto=compress&w=800"
       videoUrl={PEST_VIDEOS.general[0]?.url}
       heroTitle="General Pest Control in East Texas"
       heroHighlight="Pest Control"

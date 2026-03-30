@@ -5,7 +5,7 @@ export default function AntControl() {
   return (
     <PestPageTemplate
       pageSlug="ant-control"
-      introImage="https://images.pexels.com/photos/4518608/pexels-photo-4518608.jpeg?w=800"
+      introImage="https://images.pexels.com/photos/1005763/pexels-photo-1005763.jpeg?auto=compress&w=800"
       videoUrl={PEST_VIDEOS.ant[0]?.url}
       heroTitle="Ant Control in East Texas"
       heroHighlight="Ant Control"

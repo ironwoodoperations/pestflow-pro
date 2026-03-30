@@ -5,7 +5,7 @@ export default function RoachControl() {
   return (
     <PestPageTemplate
       pageSlug="roach-control"
-      introImage="https://images.pexels.com/photos/4439425/pexels-photo-4439425.jpeg?w=800"
+      introImage="https://images.pexels.com/photos/4439425/pexels-photo-4439425.jpeg?auto=compress&w=800"
       videoUrl={PEST_VIDEOS.roach[0]?.url}
       heroTitle="Cockroach Control in East Texas"
       heroHighlight="Cockroach Control"

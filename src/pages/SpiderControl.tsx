@@ -5,7 +5,7 @@ export default function SpiderControl() {
   return (
     <PestPageTemplate
       pageSlug="spider-control"
-      introImage="https://images.pexels.com/photos/8733285/pexels-photo-8733285.jpeg?w=800"
+      introImage="https://images.pexels.com/photos/8733285/pexels-photo-8733285.jpeg?auto=compress&w=800"
       videoUrl={PEST_VIDEOS.spider[0]?.url}
       heroTitle="Spider Control in East Texas"
       heroHighlight="Spider Control"
