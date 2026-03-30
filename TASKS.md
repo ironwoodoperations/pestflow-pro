@@ -120,8 +120,8 @@
 ## Session 10 — Next Up
 - [x] Client onboarding: custom domain setup guide in admin
 - [x] Real content seeding — pull from Supabase and populate all page_content rows
-- [ ] Location pages: Google Maps embed (reads google_maps_embed_url from settings)
-- [ ] Location pages: "We Also Serve" section (nearby cities from location_data)
+- [x] Location pages: Google Maps embed (reads google_maps_embed_url from settings)
+- [x] Location pages: "We Also Serve" section (nearby cities from location_data)
 - [ ] Admin: AI content writer — generate pest page copy via Anthropic API
 - [ ] Accessibility audit — aria labels, focus states, contrast check
 - [ ] Client handoff mode — read-only "preview" admin view for client demos
