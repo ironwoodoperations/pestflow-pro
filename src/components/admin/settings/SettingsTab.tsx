@@ -89,6 +89,24 @@ function BusinessInfoSection() {
   ]
 
   return (
+    <div className="space-y-4">
+      <details className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+        <summary className="text-sm font-semibold text-blue-900 cursor-pointer select-none">🏢 Business Info — How to use this</summary>
+        <div className="mt-3 text-sm text-blue-800 space-y-2">
+          <p>This is your business profile. Everything here appears on your website and helps Google understand who you are and where you operate.</p>
+          <ul className="list-none space-y-1">
+            <li><strong>BUSINESS NAME</strong> — Your company name exactly as you want it to appear</li>
+            <li><strong>PHONE</strong> — Your main customer-facing number. Shows in the header and footer.</li>
+            <li><strong>EMAIL</strong> — Your business contact email</li>
+            <li><strong>ADDRESS</strong> — Your physical or mailing address</li>
+            <li><strong>HOURS</strong> — When you are open. Shows on your contact page and Google listing.</li>
+            <li><strong>TAGLINE</strong> — A short phrase that describes your business (1 sentence max)</li>
+            <li><strong>LICENSE NUMBER</strong> — Your state pest control license number (builds trust)</li>
+          </ul>
+          <p className="text-blue-700 italic">💡 Fill this out completely before sharing your site with anyone. Google uses your business name and address to verify you are a real local business — this helps you rank higher in local searches.</p>
+        </div>
+      </details>
+
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
       <h3 className="text-base font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-100">Business Information</h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -104,6 +122,7 @@ function BusinessInfoSection() {
           {saving ? 'Saving...' : 'Save Business Info'}
         </button>
       </div>
+    </div>
     </div>
   )
 }
@@ -141,6 +160,21 @@ function BrandingSection() {
   ]
 
   return (
+    <div className="space-y-4">
+      <details className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+        <summary className="text-sm font-semibold text-blue-900 cursor-pointer select-none">🎨 Branding — How to use this</summary>
+        <div className="mt-3 text-sm text-blue-800 space-y-2">
+          <p>This controls how your website looks — your colors, logo, and style.</p>
+          <ul className="list-none space-y-1">
+            <li><strong>LOGO</strong> — Upload your company logo. Shows in the top left on every page. Best size: 200x60 pixels, PNG with transparent background.</li>
+            <li><strong>FAVICON</strong> — The tiny icon that appears in browser tabs. Best size: 32x32 pixels.</li>
+            <li><strong>PRIMARY COLOR</strong> — Your main brand color. Used for buttons and accents.</li>
+            <li><strong>TEMPLATE</strong> — The overall look and feel of your site. Bold = high energy | Clean = professional | Modern = dark/sleek | Rustic = warm/established</li>
+          </ul>
+          <p className="text-blue-700 italic">💡 Upload your real logo first — it makes the biggest visual difference and helps customers recognize your brand immediately.</p>
+        </div>
+      </details>
+
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
       <h3 className="text-base font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-100">Branding</h3>
 
@@ -189,6 +223,7 @@ function BrandingSection() {
       <button onClick={handleSave} disabled={saving} className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
         {saving ? 'Saving...' : 'Save Branding'}
       </button>
+    </div>
     </div>
   )
 }
@@ -271,6 +306,20 @@ function NotificationsSection() {
   if (loading) return <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"><p className="text-gray-400">Loading...</p></div>
 
   return (
+    <div className="space-y-4">
+      <details className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+        <summary className="text-sm font-semibold text-blue-900 cursor-pointer select-none">🔔 Notifications — How to use this</summary>
+        <div className="mt-3 text-sm text-blue-800 space-y-2">
+          <p>This controls where you get notified when something happens on your site.</p>
+          <ul className="list-none space-y-1">
+            <li><strong>LEAD EMAIL</strong> — Where new quote requests get emailed. Use the inbox you check most. This fires the moment someone submits the quote form.</li>
+            <li><strong>CC EMAIL</strong> — Optional second email to copy (like an office manager)</li>
+            <li><strong>MONTHLY REPORT EMAIL</strong> — Where your monthly summary report gets sent</li>
+          </ul>
+          <p className="text-blue-700 italic">💡 Set your lead email to a phone-connected inbox or use a service like Gmail so you get a notification the moment a lead comes in. Speed of response is the single biggest factor in converting leads.</p>
+        </div>
+      </details>
+
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
       <h3 className="text-base font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-100">Notifications</h3>
       <div className="space-y-4">
@@ -300,6 +349,7 @@ function NotificationsSection() {
           {saving ? 'Saving...' : 'Save Notifications'}
         </button>
       </div>
+    </div>
     </div>
   )
 }
@@ -408,6 +458,21 @@ function IntegrationsSection() {
   if (loading) return <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"><p className="text-gray-400">Loading...</p></div>
 
   return (
+    <div className="space-y-4">
+      <details className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+        <summary className="text-sm font-semibold text-blue-900 cursor-pointer select-none">🔌 Integrations — How to use this</summary>
+        <div className="mt-3 text-sm text-blue-800 space-y-2">
+          <p>Connect your website to other services you use.</p>
+          <ul className="list-none space-y-1">
+            <li><strong>FACEBOOK ACCESS TOKEN</strong> — Lets you post to your Facebook business page directly from the Social tab. Get this from Facebook Developer Tools.</li>
+            <li><strong>FACEBOOK PAGE ID</strong> — Your Facebook business page ID number. Find it in your page About section or URL.</li>
+            <li><strong>GOOGLE PLACE ID</strong> — Your Google Business Profile ID. Used to import Google reviews automatically and send review request links.</li>
+            <li><strong>GOOGLE MAPS EMBED URL</strong> — Shows a map on your location pages. Get it from Google Maps → Share → Embed.</li>
+          </ul>
+          <p className="text-blue-700 italic">💡 The most valuable integration to set up first is Google Place ID — it lets you import all your existing Google reviews in one click and automatically ask customers for reviews after each job.</p>
+        </div>
+      </details>
+
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
       <h3 className="text-base font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-100">Integrations</h3>
       <div className="space-y-4">
@@ -438,6 +503,7 @@ function IntegrationsSection() {
           {saving ? 'Saving...' : 'Save Integrations'}
         </button>
       </div>
+    </div>
     </div>
   )
 }
