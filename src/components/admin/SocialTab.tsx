@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { Send, Clock, Trash2 } from 'lucide-react'
+import { Send, Clock, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
 
@@ -19,6 +19,7 @@ export default function SocialTab() {
 
   const [form, setForm] = useState({ content: '', platform: 'facebook', scheduledFor: '' })
   const [posting, setPosting] = useState(false)
+  const [helpOpen, setHelpOpen] = useState(false)
 
   useEffect(() => {
     if (!tenantId) return
@@ -91,6 +92,25 @@ export default function SocialTab() {
 
   return (
     <div>
+      {/* Help Banner */}
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+        <button onClick={() => setHelpOpen(!helpOpen)} className="flex items-center justify-between w-full text-left">
+          <span className="text-sm font-semibold text-blue-900">📱 Social Media — How to use this</span>
+          {helpOpen ? <ChevronUp size={16} className="text-blue-600" /> : <ChevronDown size={16} className="text-blue-600" />}
+        </button>
+        {helpOpen && (
+          <div className="mt-3 text-sm text-blue-800 space-y-2">
+            <p>Post to your Facebook page directly from here — no logging in to Facebook required.</p>
+            <ul className="list-none space-y-1">
+              <li><strong>TYPE YOUR POST</strong> — Write what you want to say or paste a topic</li>
+              <li><strong>ADD IMAGE</strong> — Optional but recommended for better engagement</li>
+              <li><strong>POST NOW</strong> or <strong>SCHEDULE</strong> for later</li>
+            </ul>
+            <p className="text-blue-700 italic">💡 Post 3–4 times per week for best reach. Seasonal tips and before/after results work great.</p>
+          </div>
+        )}
+      </div>
+
       {!configured && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
           <p className="text-sm text-amber-800">Connect your Facebook Page in Settings → Integrations to enable live posting.</p>
