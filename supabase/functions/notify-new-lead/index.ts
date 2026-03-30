@@ -1,5 +1,5 @@
 // Supabase Edge Function: notify-new-lead
-// Sends an email notification via Resend when a new lead is inserted.
+// Sends a branded HTML email notification via Resend when a new lead is inserted.
 //
 // SETUP:
 // 1. Set env vars in Supabase Dashboard → Edge Functions → notify-new-lead:
@@ -42,24 +42,37 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'No lead data' }), { status: 400 })
     }
 
-    // Fetch notification settings for this tenant
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-    const { data: settings } = await supabase
-      .from('settings')
-      .select('value')
-      .eq('tenant_id', lead.tenant_id)
-      .eq('key', 'notifications')
-      .maybeSingle()
 
-    const notifyEmail = settings?.value?.lead_email
+    // Fetch notification, branding, and business settings in parallel
+    const [notifRes, brandRes, bizRes] = await Promise.all([
+      supabase.from('settings').select('value').eq('tenant_id', lead.tenant_id).eq('key', 'notifications').maybeSingle(),
+      supabase.from('settings').select('value').eq('tenant_id', lead.tenant_id).eq('key', 'branding').maybeSingle(),
+      supabase.from('settings').select('value').eq('tenant_id', lead.tenant_id).eq('key', 'business_info').maybeSingle(),
+    ])
+
+    const notifyEmail = notifRes.data?.value?.lead_email
     if (!notifyEmail) {
       return new Response(JSON.stringify({ skipped: 'No notification email configured' }), { status: 200 })
     }
 
-    const ccEmail = settings?.value?.cc_email || null
+    const ccEmail = notifRes.data?.value?.cc_email || null
     const services = Array.isArray(lead.services) ? lead.services.join(', ') : (lead.services || 'Not specified')
 
-    // Send email via Resend
+    // Branding
+    const logoUrl = brandRes.data?.value?.logo_url || ''
+    const primaryColor = brandRes.data?.value?.primary_color || '#10b981'
+    const accentColor = brandRes.data?.value?.accent_color || '#f5c518'
+
+    // Business info
+    const businessName = bizRes.data?.value?.name || 'PestFlow Pro'
+    const businessPhone = bizRes.data?.value?.phone || ''
+
+    const logoHtml = logoUrl
+      ? `<img src="${logoUrl}" alt="${businessName}" style="max-height: 40px; width: auto; margin-bottom: 8px;" />`
+      : ''
+
+    // Send branded email via Resend
     const emailRes = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -67,26 +80,61 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'PestFlow Pro <leads@pestflowpro.com>',
+        from: `${businessName} <leads@pestflowpro.com>`,
         to: [notifyEmail],
         cc: ccEmail ? [ccEmail] : undefined,
         subject: `New Lead: ${lead.name} — ${services}`,
         html: `
-          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="background: #0a0f1e; padding: 24px; border-radius: 12px 12px 0 0;">
-              <h1 style="color: #10b981; margin: 0; font-size: 20px;">New Quote Request</h1>
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background: #f8fafc;">
+            <!-- Header -->
+            <div style="background: #0a0f1e; padding: 28px 32px; border-radius: 12px 12px 0 0; text-align: center;">
+              ${logoHtml}
+              <h1 style="color: ${primaryColor}; margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.5px;">${businessName}</h1>
+              <p style="color: #9ca3af; margin: 4px 0 0; font-size: 13px;">New Quote Request</p>
             </div>
-            <div style="background: #ffffff; padding: 24px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
-              <table style="width: 100%; border-collapse: collapse;">
-                <tr><td style="padding: 8px 0; color: #6b7280; font-size: 12px; text-transform: uppercase;">Name</td><td style="padding: 8px 0; font-weight: 600;">${lead.name}</td></tr>
-                <tr><td style="padding: 8px 0; color: #6b7280; font-size: 12px; text-transform: uppercase;">Email</td><td style="padding: 8px 0;"><a href="mailto:${lead.email}">${lead.email}</a></td></tr>
-                <tr><td style="padding: 8px 0; color: #6b7280; font-size: 12px; text-transform: uppercase;">Phone</td><td style="padding: 8px 0;"><a href="tel:${lead.phone}">${lead.phone}</a></td></tr>
-                <tr><td style="padding: 8px 0; color: #6b7280; font-size: 12px; text-transform: uppercase;">Services</td><td style="padding: 8px 0;">${services}</td></tr>
-                ${lead.message ? `<tr><td style="padding: 8px 0; color: #6b7280; font-size: 12px; text-transform: uppercase;">Message</td><td style="padding: 8px 0;">${lead.message.replace(/\n/g, '<br>')}</td></tr>` : ''}
-              </table>
-              <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #f3f4f6;">
-                <p style="color: #9ca3af; font-size: 12px; margin: 0;">Submitted ${new Date(lead.created_at).toLocaleString()}</p>
+
+            <!-- Lead Details -->
+            <div style="background: #ffffff; padding: 28px 32px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">
+              <div style="background: ${primaryColor}10; border-left: 4px solid ${primaryColor}; padding: 12px 16px; border-radius: 0 8px 8px 0; margin-bottom: 20px;">
+                <p style="margin: 0; color: #1f2937; font-weight: 600; font-size: 16px;">${lead.name}</p>
+                <p style="margin: 4px 0 0; color: #6b7280; font-size: 13px;">Submitted ${new Date(lead.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}</p>
               </div>
+
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 12px 0; color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; width: 100px; vertical-align: top;">Name</td>
+                  <td style="padding: 12px 0; color: #1f2937; font-weight: 500;">${lead.name}</td>
+                </tr>
+                <tr style="border-top: 1px solid #f3f4f6;">
+                  <td style="padding: 12px 0; color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; vertical-align: top;">Email</td>
+                  <td style="padding: 12px 0;"><a href="mailto:${lead.email}" style="color: ${primaryColor}; text-decoration: none; font-weight: 500;">${lead.email}</a></td>
+                </tr>
+                <tr style="border-top: 1px solid #f3f4f6;">
+                  <td style="padding: 12px 0; color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; vertical-align: top;">Phone</td>
+                  <td style="padding: 12px 0;"><a href="tel:${lead.phone}" style="color: ${primaryColor}; text-decoration: none; font-weight: 500;">${lead.phone}</a></td>
+                </tr>
+                <tr style="border-top: 1px solid #f3f4f6;">
+                  <td style="padding: 12px 0; color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; vertical-align: top;">Services</td>
+                  <td style="padding: 12px 0; color: #1f2937; font-weight: 500;">${services}</td>
+                </tr>
+                ${lead.message ? `
+                <tr style="border-top: 1px solid #f3f4f6;">
+                  <td style="padding: 12px 0; color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; vertical-align: top;">Message</td>
+                  <td style="padding: 12px 0; color: #374151;">${lead.message.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>')}</td>
+                </tr>` : ''}
+              </table>
+            </div>
+
+            <!-- Action Button -->
+            <div style="background: #ffffff; padding: 0 32px 28px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb; text-align: center;">
+              <a href="mailto:${lead.email}?subject=Re: Your Quote Request" style="display: inline-block; background: ${primaryColor}; color: #ffffff; text-decoration: none; font-weight: 600; padding: 12px 28px; border-radius: 8px; font-size: 14px;">Reply to ${lead.name}</a>
+            </div>
+
+            <!-- Footer -->
+            <div style="background: #0a0f1e; padding: 20px 32px; border-radius: 0 0 12px 12px; text-align: center;">
+              <p style="color: #6b7280; font-size: 12px; margin: 0;">This notification was sent by <strong style="color: #9ca3af;">${businessName}</strong></p>
+              ${businessPhone ? `<p style="color: #6b7280; font-size: 12px; margin: 4px 0 0;"><a href="tel:${businessPhone}" style="color: ${primaryColor}; text-decoration: none;">${businessPhone}</a></p>` : ''}
+              <p style="color: #4b5563; font-size: 11px; margin: 12px 0 0;">Powered by PestFlow Pro</p>
             </div>
           </div>
         `,
