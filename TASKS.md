@@ -72,7 +72,12 @@
 - [x] Build passes with zero TypeScript errors
 - [x] SKILL.md + TASKS.md updated
 
-## Session 6 — Next Up
+## Session 6 (Complete)
+- [x] Merged PR #4 (saas branch) — resolved src/index.css merge conflict (kept font preload comment)
+- [x] PESTFLOW-SKILL.md created (full autonomy doc through Session 6, rules 1-35, all pages/tabs/scripts)
+- [x] TASKS.md updated — Session 6 complete, Session 7 queue defined
+
+## Session 7 — Next Up
 - [ ] Client onboarding: custom domain setup guide in admin
 - [ ] Real content seeding — pull from Supabase and populate all page_content rows
 - [ ] Location pages: Google Maps embed (reads google_maps_embed_url from settings)
@@ -83,4 +88,4 @@
 - [ ] Mobile PWA manifest + icons
 - [ ] 404 page (custom, branded, links back to home)
 - [ ] Accessibility audit — aria labels, focus states, contrast check
-- [ ] SKILL.md + TASKS.md updated
+- [ ] PESTFLOW-SKILL.md + TASKS.md updated
