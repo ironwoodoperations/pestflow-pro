@@ -140,7 +140,7 @@ export default function SocialTab() {
     caption: '',
     imageUrl: '',
     pexelsQuery: 'pest control technician',
-    scheduleMode: 'now' as 'now' | 'later',
+    scheduleMode: 'now' as 'now' | 'later' | 'smart',
     scheduledFor: '',
   })
 
@@ -162,6 +162,8 @@ export default function SocialTab() {
   const [loading, setLoading] = useState(true)
   const [editingPostId, setEditingPostId] = useState<string | null>(null)
   const [templatesOpen, setTemplatesOpen] = useState(false)
+  const [smartSchedule, setSmartSchedule] = useState<{ scheduled_for: string; reasoning: string } | null>(null)
+  const [smartLoading, setSmartLoading] = useState(false)
 
   const [toasts, setToasts] = useState<ToastMsg[]>([])
   const captionRef = useRef<HTMLTextAreaElement>(null)
@@ -250,6 +252,62 @@ Return ONLY the 3 captions separated by "---CAPTION---". No JSON, no preamble.`
     setAiLoading(false)
   }
 
+  // ─── AI Smart Scheduling ────────────────────────────────────────────────
+
+  async function getSmartSchedule() {
+    setSmartLoading(true)
+    setSmartSchedule(null)
+    const now = new Date()
+    const todayDayName = now.toLocaleDateString('en-US', { weekday: 'long' })
+    const todayDate = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+
+    const prompt = `You are a social media scheduling expert. A ${industry.toLowerCase()} business wants to post on ${form.platform}. Based on industry best practices and audience behavior for ${industry.toLowerCase()} businesses (typically serving homeowners), recommend the single best day and time to post this week for maximum engagement.
+
+Today is ${todayDayName}, ${todayDate}.
+
+Return ONLY a JSON object, no preamble, no backticks:
+{
+  "scheduled_for": "YYYY-MM-DDTHH:mm:00",
+  "reasoning": "One sentence explaining why this day/time works best for this industry."
+}
+
+The scheduled_for must be a future datetime this week (within the next 7 days).
+Use 24-hour time. Typical best windows for home services: Tue-Thu 7-9am or 6-8pm when homeowners are home. Adjust based on the specific industry.`
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 300,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      })
+      const data = await res.json()
+      if (data.error) {
+        showToast('Smart scheduling failed. Try manual scheduling.', 'error')
+        setForm(p => ({ ...p, scheduleMode: 'later' }))
+        setSmartLoading(false)
+        return
+      }
+      const text = data.content[0].text
+      const clean = text.replace(/```json|```/g, '').trim()
+      const result = JSON.parse(clean)
+      setSmartSchedule(result)
+      setForm(p => ({ ...p, scheduledFor: result.scheduled_for.substring(0, 16) }))
+    } catch {
+      showToast('Smart scheduling failed. Try manual scheduling.', 'error')
+      setForm(p => ({ ...p, scheduleMode: 'later' }))
+    }
+    setSmartLoading(false)
+  }
+
   // ─── Pexels Search ─────────────────────────────────────────────────────
 
   async function searchPexels() {
@@ -312,7 +370,7 @@ Return ONLY the 3 captions separated by "---CAPTION---". No JSON, no preamble.`
       caption: form.caption,
       image_url: form.imageUrl || null,
       status: 'draft' as const,
-      scheduled_for: form.scheduleMode === 'later' && form.scheduledFor ? new Date(form.scheduledFor).toISOString() : null,
+      scheduled_for: (form.scheduleMode === 'later' || form.scheduleMode === 'smart') && form.scheduledFor ? new Date(form.scheduledFor).toISOString() : null,
     }
 
     if (editingPostId) {
@@ -350,7 +408,7 @@ Return ONLY the 3 captions separated by "---CAPTION---". No JSON, no preamble.`
       caption: form.caption,
       image_url: form.imageUrl || null,
       status: 'draft' as const,
-      scheduled_for: form.scheduleMode === 'later' && form.scheduledFor ? new Date(form.scheduledFor).toISOString() : null,
+      scheduled_for: (form.scheduleMode === 'later' || form.scheduleMode === 'smart') && form.scheduledFor ? new Date(form.scheduledFor).toISOString() : null,
     }
 
     let postId = editingPostId
@@ -476,6 +534,7 @@ Return ONLY the 3 captions separated by "---CAPTION---". No JSON, no preamble.`
     setSelectedPexelsUrl('')
     setAiCaptions([])
     setAiTopic('')
+    setSmartSchedule(null)
   }
 
   // ─── Filter posts ──────────────────────────────────────────────────────
@@ -740,13 +799,13 @@ Return ONLY the 3 captions separated by "---CAPTION---". No JSON, no preamble.`
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h3 className="text-base font-semibold text-gray-900 mb-3">Schedule & Publish</h3>
 
-            <div className="flex gap-4 mb-4">
+            <div className="flex flex-wrap gap-4 mb-4">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="radio"
                   name="scheduleMode"
                   checked={form.scheduleMode === 'now'}
-                  onChange={() => setForm(p => ({ ...p, scheduleMode: 'now' }))}
+                  onChange={() => { setForm(p => ({ ...p, scheduleMode: 'now' })); setSmartSchedule(null) }}
                   className="text-emerald-500 focus:ring-emerald-500"
                 />
                 <span className="text-sm text-gray-700">Post now</span>
@@ -756,10 +815,20 @@ Return ONLY the 3 captions separated by "---CAPTION---". No JSON, no preamble.`
                   type="radio"
                   name="scheduleMode"
                   checked={form.scheduleMode === 'later'}
-                  onChange={() => setForm(p => ({ ...p, scheduleMode: 'later' }))}
+                  onChange={() => { setForm(p => ({ ...p, scheduleMode: 'later' })); setSmartSchedule(null) }}
                   className="text-emerald-500 focus:ring-emerald-500"
                 />
                 <span className="text-sm text-gray-700">Schedule for later</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="scheduleMode"
+                  checked={form.scheduleMode === 'smart'}
+                  onChange={() => setForm(p => ({ ...p, scheduleMode: 'smart' }))}
+                  className="text-emerald-500 focus:ring-emerald-500"
+                />
+                <span className="text-sm text-gray-700">✨ Smart Schedule</span>
               </label>
             </div>
 
@@ -772,6 +841,58 @@ Return ONLY the 3 captions separated by "---CAPTION---". No JSON, no preamble.`
                   min={new Date().toISOString().substring(0, 16)}
                   className={inputClass}
                 />
+              </div>
+            )}
+
+            {form.scheduleMode === 'smart' && (
+              <div className="mb-4">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  {!smartSchedule && !smartLoading && (
+                    <>
+                      <p className="text-sm text-gray-600 mb-3">
+                        AI will pick the best day and time to post based on your industry.
+                        Click &quot;Get Best Time&quot; to see the recommendation.
+                      </p>
+                      <button
+                        onClick={getSmartSchedule}
+                        className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                      >
+                        ✨ Get Best Time
+                      </button>
+                    </>
+                  )}
+
+                  {smartLoading && (
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <Loader2 size={16} className="animate-spin" />
+                      Thinking about the best time... ✨
+                    </div>
+                  )}
+
+                  {smartSchedule && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 mb-1">
+                        📅 Best time: {new Date(smartSchedule.scheduled_for).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} at {new Date(smartSchedule.scheduled_for).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                      </p>
+                      <p className="text-xs text-gray-500 mb-3">💡 {smartSchedule.reasoning}</p>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="datetime-local"
+                          value={form.scheduledFor}
+                          onChange={e => setForm(p => ({ ...p, scheduledFor: e.target.value }))}
+                          min={new Date().toISOString().substring(0, 16)}
+                          className={`flex-1 ${inputClass}`}
+                        />
+                        <button
+                          onClick={getSmartSchedule}
+                          className="text-sm text-emerald-600 hover:text-emerald-700 font-medium whitespace-nowrap"
+                        >
+                          Try Again
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
