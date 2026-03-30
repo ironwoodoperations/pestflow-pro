@@ -96,7 +96,7 @@
 - [ ] Location pages: Google Maps embed (reads google_maps_embed_url from settings)
 - [ ] Location pages: "We Also Serve" section (nearby cities from location_data)
 - [ ] Admin: AI content writer — generate pest page copy via Anthropic API
-- [ ] Admin: bulk keyword sync — push tracked keywords to page_content SEO fields
+- [x] Admin: bulk keyword sync — push keyword_tracker to seo_meta fields (SEOTab Bulk Keyword Sync panel)
 - [ ] Accessibility audit — aria labels, focus states, contrast check
 - [ ] PESTFLOW-SKILL.md + TASKS.md updated
 
