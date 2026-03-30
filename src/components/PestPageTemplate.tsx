@@ -187,8 +187,12 @@ export default function PestPageTemplate(props: PestPageProps) {
             <p className="text-gray-300 mb-6">Same-day service available. Request your free quote today.</p>
             <Link to="/quote" className="inline-block bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg px-8 py-4 text-lg transition">Get a Free Quote</Link>
           </div>
-          <div className="hidden md:flex border-2 border-emerald-500 rounded-lg bg-[#0a0f1e]/50 h-56 items-center justify-center">
-            <span className="text-emerald-400/50 text-lg">Service Photo</span>
+          <div className="hidden md:flex border-2 border-emerald-500 rounded-lg bg-[#0a0f1e]/50 h-56 items-center justify-center overflow-hidden">
+            {props.introImage ? (
+              <img src={props.introImage} alt={`${props.heroHighlight} service`} loading="lazy" className="w-full h-full object-cover rounded-lg shadow-lg" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+            ) : (
+              <span className="text-emerald-400/50 text-lg">Service Photo</span>
+            )}
           </div>
         </div>
       </section>

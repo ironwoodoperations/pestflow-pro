@@ -4,7 +4,7 @@ export default function SpiderControl() {
   return (
     <PestPageTemplate
       pageSlug="spider-control"
-      introImage="/images/pests/spider.jpg"
+      introImage="https://images.pexels.com/photos/8733285/pexels-photo-8733285.jpeg?w=800"
       heroTitle="Spider Control in East Texas"
       heroHighlight="Spider Control"
       heroSubtitle="Fast, effective spider elimination — guaranteed."

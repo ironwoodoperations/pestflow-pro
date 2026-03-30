@@ -4,7 +4,7 @@ export default function WaspHornetControl() {
   return (
     <PestPageTemplate
       pageSlug="wasp-hornet-control"
-      introImage="/images/pests/wasp.jpg"
+      introImage="https://images.pexels.com/photos/5791943/pexels-photo-5791943.jpeg?w=800"
       heroTitle="Wasp & Hornet Control in East Texas"
       heroHighlight="Wasp & Hornet Control"
       heroSubtitle="Safe removal of nests — we handle the dangerous work."
