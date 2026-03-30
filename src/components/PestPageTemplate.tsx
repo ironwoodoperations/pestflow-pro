@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
 import Navbar from './Navbar'
 import Footer from './Footer'
+import StructuredData from './StructuredData'
 
 export interface TreatmentStep {
   title: string
@@ -62,6 +63,7 @@ export default function PestPageTemplate(props: PestPageProps) {
 
   return (
     <div className="min-h-screen bg-white">
+      <StructuredData type="WebPage" pageSlug={props.pageSlug} />
       <Navbar />
 
       {/* HERO */}

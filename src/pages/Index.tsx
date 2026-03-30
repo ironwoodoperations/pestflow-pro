@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
+import StructuredData from '../components/StructuredData'
 
 interface PageContent {
   title: string
@@ -58,6 +59,7 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-white">
+      <StructuredData type="LocalBusiness" />
       <Navbar />
 
       {/* HERO */}
