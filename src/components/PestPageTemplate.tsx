@@ -7,6 +7,7 @@ import Navbar from './Navbar'
 import Footer from './Footer'
 import StructuredData from './StructuredData'
 import HolidayBanner from './HolidayBanner'
+import VideoImage from './VideoImage'
 
 export interface TreatmentStep {
   title: string
@@ -40,6 +41,7 @@ export interface PestPageProps {
   eastTexasCTATitle: string
   pricingCards?: { name: string; price: string; desc: string }[]
   introImage?: string
+  videoUrl?: string
 }
 
 const STEP_COLORS_DEFAULT = ['bg-emerald-500', 'bg-yellow-500', 'bg-teal-500', 'bg-slate-600']
@@ -95,7 +97,7 @@ export default function PestPageTemplate(props: PestPageProps) {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
             <div className="border-2 border-emerald-500 rounded-lg bg-[#0a0f1e] h-72 flex items-center justify-center overflow-hidden">
               {props.introImage ? (
-                <img src={props.introImage} alt={`${props.heroHighlight} pest control treatment`} loading="lazy" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                <VideoImage src={props.introImage} alt={`${props.heroHighlight} pest control treatment`} videoUrl={props.videoUrl} className="w-full h-full" />
               ) : (
                 <span className="text-emerald-400 text-xl font-semibold">{props.heroHighlight}</span>
               )}
@@ -187,8 +189,12 @@ export default function PestPageTemplate(props: PestPageProps) {
             <p className="text-gray-300 mb-6">Same-day service available. Request your free quote today.</p>
             <Link to="/quote" className="inline-block bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg px-8 py-4 text-lg transition">Get a Free Quote</Link>
           </div>
-          <div className="hidden md:flex border-2 border-emerald-500 rounded-lg bg-[#0a0f1e]/50 h-56 items-center justify-center">
-            <span className="text-emerald-400/50 text-lg">Service Photo</span>
+          <div className="hidden md:flex border-2 border-emerald-500 rounded-lg bg-[#0a0f1e]/50 h-56 items-center justify-center overflow-hidden">
+            {props.introImage ? (
+              <img src={props.introImage} alt={`${props.heroHighlight} service`} loading="lazy" className="w-full h-full object-cover rounded-lg shadow-lg" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+            ) : (
+              <span className="text-emerald-400/50 text-lg">Service Photo</span>
+            )}
           </div>
         </div>
       </section>

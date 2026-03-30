@@ -1,10 +1,12 @@
 import PestPageTemplate from '../components/PestPageTemplate'
+import { PEST_VIDEOS } from '../data/pestVideos'
 
 export default function MosquitoControl() {
   return (
     <PestPageTemplate
       pageSlug="mosquito-control"
-      introImage="/images/pests/mosquito.jpg"
+      introImage="https://images.pexels.com/photos/1000067/pexels-photo-1000067.jpeg?w=800"
+      videoUrl={PEST_VIDEOS.mosquito[0]?.url}
       heroTitle="Mosquito Control in East Texas"
       heroHighlight="Mosquito Control"
       heroSubtitle="Take back your yard — guaranteed mosquito reduction."
