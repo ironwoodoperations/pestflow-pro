@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { RefreshCw, Edit3, Trash2, Send, Loader2 } from 'lucide-react'
+import { RefreshCw, Edit3, Trash2, Send, Loader2, Copy } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
 import PageHelpBanner from './PageHelpBanner'
@@ -562,11 +562,44 @@ Use 24-hour time. Typical best windows for home services: Tue-Thu 7-9am or 6-8pm
     return <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${styles[status] || 'bg-gray-100 text-gray-600'}`}>{status}</span>
   }
 
-  // ─── Date display ──────────────────────────────────────────────────────
+  // ─── Date display (human-friendly) ──────────────────────────────────────
+
+  function formatRelativeDate(dateStr: string): string {
+    const date = new Date(dateStr)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffDays = Math.floor(diffMs / 86400000)
+    const diffHours = Math.floor(diffMs / 3600000)
+
+    if (diffMs < 0) {
+      // Future date
+      return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + ' at ' + date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+    }
+    if (diffHours < 1) return 'Just now'
+    if (diffHours < 24) return `${diffHours}h ago`
+    if (diffDays === 1) return 'Yesterday'
+    if (diffDays < 7) return `${diffDays} days ago`
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  }
 
   function postDate(post: SocialPost) {
-    const d = post.published_at || post.scheduled_for || post.created_at
-    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
+    if (post.status === 'published' && post.published_at) {
+      return `Published ${formatRelativeDate(post.published_at)}`
+    }
+    if (post.status === 'scheduled' && post.scheduled_for) {
+      return `Scheduled for ${formatRelativeDate(post.scheduled_for)}`
+    }
+    return `Created ${formatRelativeDate(post.created_at)}`
+  }
+
+  // ─── Copy caption ─────────────────────────────────────────────────────
+
+  function copyCaption(caption: string) {
+    navigator.clipboard.writeText(caption).then(() => {
+      showToast('Caption copied!', 'success')
+    }).catch(() => {
+      showToast('Failed to copy.', 'error')
+    })
   }
 
   const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-400'
@@ -588,6 +621,13 @@ Use 24-hour time. Typical best windows for home services: Tue-Thu 7-9am or 6-8pm
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* ─── LEFT: Composer Panel (60%) ──────────────────────────── */}
         <div className="lg:col-span-3 space-y-6">
+
+          {/* Industry badge */}
+          <div className="flex items-center gap-2 text-xs text-gray-500">
+            <span>🏠 {industry}</span>
+            <span className="text-gray-300">•</span>
+            <span className="text-emerald-600 hover:text-emerald-700 cursor-pointer" onClick={() => showToast('Open Settings tab → Business Info to change industry.', 'success')}>Change in Settings →</span>
+          </div>
 
           {/* Templates Section (collapsible) */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -896,10 +936,18 @@ Use 24-hour time. Typical best windows for home services: Tue-Thu 7-9am or 6-8pm
               </div>
             )}
 
-            <p className="text-xs text-gray-400 mb-4">
-              {(form.platform === 'facebook' || form.platform === 'both') && 'Facebook: Requires Facebook Access Token in Settings → Integrations. '}
-              {(form.platform === 'instagram' || form.platform === 'both') && 'Instagram: Publishing requires a connected Business Account.'}
-            </p>
+            {(form.platform === 'instagram' || form.platform === 'both') && (
+              <div className="bg-pink-50 border border-pink-200 rounded-lg p-3 mb-4">
+                <p className="text-xs text-pink-700">
+                  📸 Instagram posts are saved as drafts. Connect a Meta Business Account in Settings → Integrations to enable direct publishing.
+                </p>
+              </div>
+            )}
+            {(form.platform === 'facebook' || form.platform === 'both') && (
+              <p className="text-xs text-gray-400 mb-4">
+                Facebook: Requires Facebook Access Token in Settings → Integrations.
+              </p>
+            )}
 
             <div className="flex gap-3">
               <button
@@ -1000,6 +1048,13 @@ Use 24-hour time. Typical best windows for home services: Tue-Thu 7-9am or 6-8pm
 
                       {/* Actions */}
                       <div className="flex gap-2 mt-2 ml-0">
+                        <button
+                          onClick={() => copyCaption(post.caption)}
+                          className="text-gray-400 hover:text-gray-600 transition-colors"
+                          title="Copy Caption"
+                        >
+                          <Copy size={14} />
+                        </button>
                         <button
                           onClick={() => editPost(post)}
                           className="text-gray-400 hover:text-blue-500 transition-colors"
