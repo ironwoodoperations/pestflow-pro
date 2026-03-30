@@ -4,6 +4,8 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Fonts loaded via index.html preload for performance */
+
 :root {
   --pf-green: #10b981;
   --pf-green-dark: #059669;

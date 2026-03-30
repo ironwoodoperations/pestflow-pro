@@ -82,6 +82,12 @@ const text = data.content[0].text
 22. Blog slugs are auto-generated from title (kebab-case) — always editable before save
 23. CSV export uses browser-side Blob + URL.createObjectURL — no backend needed
 24. Leads table status updates are auto-save on dropdown change — no Save button
+25. QuotePage is a 4-step wizard — single useState object, never lose state between steps
+26. /sitemap.xml route MUST appear before /:slug in App.tsx
+27. /pricing route MUST appear before /:slug in App.tsx
+28. Edge function env vars: RESEND_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY — set in Supabase dashboard
+29. Social posting requires facebook_page_id + facebook_access_token in settings.integrations
+30. Google Reviews import requires VITE_GOOGLE_PLACES_API_KEY env var + google_place_id in settings
 
 ## KEY FILE PATHS
 src/lib/supabase.ts
@@ -123,9 +129,26 @@ src/pages/BlogPostPage.tsx
 src/components/PestPageTemplate.tsx     # Shared pest page layout
 src/components/StructuredData.tsx       # JSON-LD injection
 src/components/HolidayBanner.tsx        # Holiday hours banner (reads settings)
+src/pages/QuotePage.tsx                 # 4-step quote wizard
+src/pages/Pricing.tsx                   # Public pricing page
+src/pages/Sitemap.tsx                   # /sitemap.xml route
+public/robots.txt                       # Search engine directives
+supabase/functions/notify-new-lead/index.ts  # Resend email edge function
 scripts/create-admin-user.mjs
+scripts/create-demo-tenant.mjs          # Multi-tenant seeding script
 SKILL.md
 TASKS.md
+
+## MULTI-TENANCY
+Tenant resolution (src/lib/tenant.ts):
+1. Check localStorage for 'pf_tenant_id' (set during onboarding via setTenantId())
+2. Fallback to VITE_TENANT_ID env var (demo mode / single-tenant deploy)
+3. Every Supabase query filters by tenant_id — RLS enforces isolation at DB level
+
+To add a new tenant:
+1. Run scripts/create-demo-tenant.mjs (seeds tenants + settings + location_data)
+2. Set VITE_TENANT_ID to the new UUID in .env (or use setTenantId() in browser)
+3. Create admin user: scripts/create-admin-user.mjs (assigns user to tenant)
 
 ## SESSION LOG
 | Session | Date     | Completions |
@@ -134,3 +157,4 @@ TASKS.md
 | 2       | Mar 2026 | Vercel config, template system, Navbar, Footer, Home page, QuotePage, ContactPage, SlugRouter, LocationPage, Settings Business Info + Branding |
 | 3       | Mar 2026 | Theme overhaul (orange→dark navy+emerald), all 12 pest pages, About/FAQ/Reviews/ServiceArea/Blog, StructuredData, ContentTab, SocialLinks, Notifications, Navbar dropdown |
 | 4       | Mar 2026 | SEO tab + SERP preview, Testimonials CRUD, Leads tab + CSV export, Blog CRUD, Locations CRUD, AI keyword research, Integrations settings, Hero Media settings, StructuredData all pages, HolidayBanner, Reports + Social stubs |
+| 5       | Mar 2026 | 4-step quote wizard, lead email notifications, Google Reviews import, Facebook social posting, sitemap.xml, robots.txt, PageSpeed optimizations, Pricing page, multi-tenant docs |
