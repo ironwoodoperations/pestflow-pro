@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { Star, Plus, X } from 'lucide-react'
+import { Star, Plus, X, Download } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
 
@@ -25,6 +25,34 @@ export default function TestimonialsTab() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const [importing, setImporting] = useState(false)
+
+  async function importGoogleReviews() {
+    if (!tenantId) return
+    const apiKey = import.meta.env.VITE_GOOGLE_PLACES_API_KEY
+    if (!apiKey) { toast.error('Set VITE_GOOGLE_PLACES_API_KEY to import Google reviews.'); return }
+    const { data: settings } = await supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle()
+    const placeId = settings?.value?.google_place_id
+    if (!placeId) { toast.error('Set Google Place ID in Settings → Integrations first.'); return }
+    setImporting(true)
+    try {
+      const res = await fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=reviews&key=${apiKey}`)
+      const json = await res.json()
+      const googleReviews = json?.result?.reviews || []
+      if (googleReviews.length === 0) { toast.error('No reviews found for this Place ID.'); setImporting(false); return }
+      let imported = 0
+      for (const r of googleReviews) {
+        const { error } = await supabase.from('testimonials').insert({
+          tenant_id: tenantId, author_name: r.author_name || 'Google User',
+          content: r.text || '', rating: r.rating || 5, source: 'Google', featured: false,
+        })
+        if (!error) imported++
+      }
+      toast.success(`Imported ${imported} Google review${imported !== 1 ? 's' : ''}!`)
+      fetchReviews()
+    } catch { toast.error('Failed to fetch Google reviews. Check API key and Place ID.') }
+    setImporting(false)
+  }
 
   async function fetchReviews() {
     if (!tenantId) return
@@ -86,9 +114,14 @@ export default function TestimonialsTab() {
             </div>
           ))}
         </div>
-        <button onClick={openNew} className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-          <Plus size={16} /> Add Testimonial
-        </button>
+        <div className="flex gap-3">
+          <button onClick={importGoogleReviews} disabled={importing} className="flex items-center gap-2 border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
+            <Download size={16} /> {importing ? 'Importing...' : 'Import Google Reviews'}
+          </button>
+          <button onClick={openNew} className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+            <Plus size={16} /> Add Testimonial
+          </button>
+        </div>
       </div>
 
       {loading ? <p className="text-gray-400">Loading...</p> : reviews.length === 0 ? (
