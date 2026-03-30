@@ -123,7 +123,7 @@
 - [x] Location pages: Google Maps embed (reads google_maps_embed_url from settings)
 - [x] Location pages: "We Also Serve" section (nearby cities from location_data)
 - [x] Admin: AI content writer — generate pest page copy via Anthropic API
-- [ ] Accessibility audit — aria labels, focus states, contrast check
+- [x] Accessibility audit — aria labels, focus states, contrast check
 - [ ] Client handoff mode — read-only "preview" admin view for client demos
 - [ ] White-label config — swap logo, company name, colors from onboarding wizard output
 - [ ] Email templates — branded HTML emails for lead notifications (logo, colors)
