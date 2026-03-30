@@ -1,5 +1,5 @@
 # PestFlow Pro — Claude Code Autonomous Dev Skill
-## Updated through Session 8
+## Updated through Session 10
 
 ## HOW TO USE
 1. Read this file fully before touching any code
@@ -225,7 +225,7 @@ Custom domain: stored in `tenants.custom_domain`. Tenant lookup checks `custom_d
 | src/pages/BlogPostPage.tsx | /blog/:slug | Blog post detail |
 | src/pages/Sitemap.tsx | /sitemap.xml | XML sitemap route |
 | src/pages/NotFound.tsx | * | Branded 404 — bug emoji, quick links, full chrome |
-| src/pages/Pricing.tsx | (no route) | File kept for future Stripe — route removed Session 8 |
+| src/pages/Pricing.tsx | /pricing | 3-tier pricing + Stripe Payment Links (route re-added Session 10) |
 
 ### Pest Service Pages (12 total — all use PestPageTemplate + introImage)
 | File | Route |
@@ -270,7 +270,7 @@ Custom domain: stored in `tenants.custom_domain`. Tenant lookup checks `custom_d
 | Social | src/components/admin/SocialTab.tsx | Live | Post composer + Meta Graph API + schedule + history |
 | Testimonials | src/components/admin/TestimonialsTab.tsx | Live | Full CRUD — stars, featured toggle, source |
 | Locations | src/components/admin/LocationsTab.tsx | Live | Full CRUD — city, slug, hero_title, is_live toggle |
-| Reports | src/components/admin/ReportsTab.tsx | Stub | Polished placeholder cards — ready for analytics |
+| Reports | src/components/admin/ReportsTab.tsx | Live | Analytics dashboard — leads over time, status breakdown, top services, conversion rate, date range selector |
 | CRM | src/components/admin/CRMTab.tsx | Live | Leads table — filters, date range, CSV export, detail modal, auto-save status |
 | Settings | src/components/admin/settings/SettingsTab.tsx | Live | 7 sections: Business Info, Branding (4 templates), Social Links, Notifications, Integrations, Hero Media, Holiday Mode |
 
@@ -341,7 +341,10 @@ src/pages/NotFound.tsx            Branded 404 page (bug emoji, quick links)
 src/pages/LocationPage.tsx        Dynamic /location/:slug pages
 src/pages/SlugRouter.tsx          Catch-all /:slug → LocationPage
 src/pages/SpiderControl.tsx       MASTER pest page template
+src/pages/Pricing.tsx             Pricing page (3 tiers + Stripe Payment Links)
 src/pages/[12 pest pages]         All with introImage prop (Pexels stock photos)
+src/hooks/usePreviewMode.ts       PreviewModeContext + usePreviewMode hook
+capacitor.config.ts               Capacitor mobile app config (iOS/Android)
 public/robots.txt                 Search engine directives
 public/manifest.json              PWA manifest
 public/icons/icon-192.png         PWA icon (placeholder — replace before launch)
@@ -370,22 +373,52 @@ PESTFLOW-SKILL.md                 This file — primary autonomy doc
 | 6 | Mar 2026 | Domain setup guide, seed-page-content.mjs, Google Maps embed on location pages, We Also Serve section, AI content writer (ContentTab), hero video player, PWA manifest + apple meta tags, custom 404 page, accessibility audit + fixes (focus rings, sr-only, skip link, aria labels), PESTFLOW-SKILL.md created |
 | 7 | Mar 2026 | HeroVideoPlayer component (youtube-nocookie embed), branded 404 page (full chrome — HolidayBanner + Navbar + Footer), PWA manifest + icons, bulk keyword sync (keyword_tracker -> seo_meta in SEOTab) |
 | 8 | Mar 2026 | Removed Pricing page route (file kept), rustic template (4th option — warm brown/amber, Playfair Display), Pexels stock image script (fetch-pest-images.mjs) + introImage prop on all 12 pest pages, About Us populated (Apex Pest Solutions — story, team, values, stats), polished onboarding wizard (step indicators, larger inputs, skip links), OnboardingLive screen-share mode (22 steps, one field per screen), font overhaul (Bangers -> Oswald/Raleway/Space Grotesk/Playfair Display) |
+| 9 | Mar 2026 | Seed Ironclad Pest Solutions demo data, fix review_text column mismatch, powered by PestFlow Pro footer badge, About page rewrite (Ryan Carter), Home hero text, Navbar logo styling, location pages seeded with real hero_titles |
+| 10 | Mar 2026 | Custom domain setup guide (domain input + save to tenants + 6-step checklist), all 7 remaining public pages pull from page_content, AI content writer enhanced (pest-specific SEO prompts + business info), accessibility audit (aria labels, focus-visible, role attributes), client handoff mode (preview toggle + pointer-events:none), white-label config (logo in Navbar/Footer + dynamic favicon), branded HTML email templates (logo, colors, CTA button), Stripe integration (Payment Links for 3 tiers + /pricing route re-added), bulk location import (CSV upload), public API endpoint (api-quote Edge Function with CORS), analytics dashboard (leads over time, status breakdown, top services, conversion rate), Capacitor mobile scaffold |
 
 ---
 
-## SESSION 9 QUEUE
-- [ ] Client onboarding: custom domain setup guide in admin
-- [ ] Real content seeding — pull from Supabase and populate all page_content rows
-- [ ] Location pages: Google Maps embed (reads google_maps_embed_url from settings)
-- [ ] Location pages: "We Also Serve" section (nearby cities from location_data)
-- [ ] Admin: AI content writer — generate pest page copy via Anthropic API
-- [ ] Accessibility audit — aria labels, focus states, contrast check
-- [ ] Client handoff mode — read-only "preview" admin view for client demos
-- [ ] White-label config — swap logo, company name, colors from onboarding wizard output
-- [ ] Email templates — branded HTML emails for lead notifications (logo, colors)
-- [ ] Stripe integration — real checkout for SaaS subscriptions (Starter/Pro/Agency)
-- [ ] Admin: bulk location import (CSV upload -> creates location_data rows)
-- [ ] Public API endpoint — /api/quote for headless quote form embed on external sites
-- [ ] Analytics dashboard — page views, lead sources, conversion tracking (no GA, privacy-first)
-- [ ] Mobile app scaffold — Capacitor wrapper for iOS/Android
+## RULES ADDED IN SESSION 10
+41. Pricing page route re-added at `/pricing` — MUST appear before `/:slug` in App.tsx
+42. Stripe Payment Links: `VITE_STRIPE_STARTER_LINK`, `VITE_STRIPE_PRO_LINK`, `VITE_STRIPE_AGENCY_LINK` — set in `.env.local`
+43. `usePreviewMode()` hook — checks `PreviewModeContext` for client handoff read-only mode
+44. `api-quote` Edge Function: POST endpoint for headless quote form embed — validates tenant_id, name, email, phone
+45. CSV location import: requires `city` column, optional `slug`, `hero_title`, `intro`, `is_live`
+46. ReportsTab is now live (not stub) — reads from leads table, no third-party analytics
+
+---
+
+## ALL EDGE FUNCTIONS (updated)
+| Function | Trigger | Description |
+|----------|---------|-------------|
+| supabase/functions/notify-new-lead/index.ts | Webhook on INSERT into leads | Branded HTML email via Resend — reads branding + business_info settings |
+| supabase/functions/api-quote/index.ts | HTTP POST | Public API for headless quote form — CORS-enabled, validates tenant + input |
+
+---
+
+## ALL SCRIPTS (updated — 5 total)
+| Script | Usage | Description |
+|--------|-------|-------------|
+| scripts/create-admin-user.mjs | `node scripts/create-admin-user.mjs email pass` | Create admin user → profiles + user_roles + seeds default settings |
+| scripts/create-demo-tenant.mjs | `SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... node scripts/create-demo-tenant.mjs` | Seed demo tenant + settings + location |
+| scripts/seed-page-content.mjs | `TENANT_ID=xxx node scripts/seed-page-content.mjs` | Seed default page copy for all 20 pages |
+| scripts/fetch-pest-images.mjs | `node scripts/fetch-pest-images.mjs` | Download Pexels stock photos for pest pages |
+| scripts/setup-mobile.sh | `./scripts/setup-mobile.sh` | Install Capacitor, add iOS/Android platforms, sync web assets |
+
+---
+
+## SESSION 11 QUEUE
+- [ ] Page view tracking — lightweight privacy-first page view counter (no cookies, DB-only)
+- [ ] Admin: PDF report export — generate downloadable monthly summary PDF
+- [ ] Location-specific SEO — unique meta tags per location page from location_data
+- [ ] Admin: notification center — in-app notification bell for new leads
+- [ ] Technician scheduling — job assignment + calendar view
+- [ ] Customer portal — login for customers to view treatment history
+- [ ] Invoice generator — create and send invoices from CRM
+- [ ] Multi-language support — i18n scaffold for Spanish/English
+- [ ] Advanced blog — categories, tags, featured image upload
+- [ ] Admin: audit log — track all settings changes + user actions
+- [ ] Rate limiting on public API endpoint (api-quote)
+- [ ] Automated review request — post-service email asking for Google review
+- [ ] Dark mode for admin dashboard
 - [ ] PESTFLOW-SKILL.md + TASKS.md updated

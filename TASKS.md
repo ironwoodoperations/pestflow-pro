@@ -117,7 +117,7 @@
 - [x] Build passes with zero TypeScript errors
 - [x] SKILL.md + TASKS.md updated
 
-## Session 10 — Next Up
+## Session 10 (Complete)
 - [x] Client onboarding: custom domain setup guide in admin
 - [x] Real content seeding — pull from Supabase and populate all page_content rows
 - [x] Location pages: Google Maps embed (reads google_maps_embed_url from settings)
@@ -132,4 +132,20 @@
 - [x] Public API endpoint — /api/quote for headless quote form embed on external sites
 - [x] Analytics dashboard — page views, lead sources, conversion tracking (no GA, privacy-first)
 - [x] Mobile app scaffold — Capacitor wrapper for iOS/Android
-- [ ] SKILL.md + TASKS.md updated
+- [x] PESTFLOW-SKILL.md + TASKS.md updated
+
+## Session 11 — Next Up
+- [ ] Page view tracking — lightweight privacy-first page view counter (no cookies, DB-only)
+- [ ] Admin: PDF report export — generate downloadable monthly summary PDF
+- [ ] Location-specific SEO — unique meta tags per location page from location_data
+- [ ] Admin: notification center — in-app notification bell for new leads
+- [ ] Technician scheduling — job assignment + calendar view
+- [ ] Customer portal — login for customers to view treatment history
+- [ ] Invoice generator — create and send invoices from CRM
+- [ ] Multi-language support — i18n scaffold for Spanish/English
+- [ ] Advanced blog — categories, tags, featured image upload
+- [ ] Admin: audit log — track all settings changes + user actions
+- [ ] Rate limiting on public API endpoint (api-quote)
+- [ ] Automated review request — post-service email asking for Google review
+- [ ] Dark mode for admin dashboard
+- [ ] PESTFLOW-SKILL.md + TASKS.md updated
