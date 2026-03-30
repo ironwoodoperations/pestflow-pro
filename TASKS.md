@@ -77,15 +77,15 @@
 - [x] PESTFLOW-SKILL.md created (full autonomy doc through Session 6, rules 1-35, all pages/tabs/scripts)
 - [x] TASKS.md updated — Session 6 complete, Session 7 queue defined
 
-## Session 7 — Next Up
+## Session 7 (In Progress)
 - [ ] Client onboarding: custom domain setup guide in admin
 - [ ] Real content seeding — pull from Supabase and populate all page_content rows
 - [ ] Location pages: Google Maps embed (reads google_maps_embed_url from settings)
 - [ ] Location pages: "We Also Serve" section (nearby cities from location_data)
 - [ ] Admin: AI content writer — generate pest page copy via Anthropic API
 - [ ] Admin: bulk keyword sync — push tracked keywords to page_content SEO fields
-- [ ] Public website: hero video player (reads hero_media settings, YouTube embed)
-- [ ] Mobile PWA manifest + icons
-- [ ] 404 page (custom, branded, links back to home)
+- [x] Public website: hero video player (HeroVideoPlayer.tsx — youtube-nocookie background embed)
+- [x] 404 page (NotFound.tsx — HolidayBanner + Navbar + Footer + dark navy hero)
+- [x] Mobile PWA manifest + icons (manifest.json, placeholder PNGs, apple meta tags)
 - [ ] Accessibility audit — aria labels, focus states, contrast check
 - [ ] PESTFLOW-SKILL.md + TASKS.md updated
