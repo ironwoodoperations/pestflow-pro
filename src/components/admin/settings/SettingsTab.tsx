@@ -3,7 +3,7 @@ import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../hooks/useTenant'
 
-const SUB_TABS = ['Business Info', 'Branding', 'Social Links', 'Notifications', 'Hero Media', 'Integrations', 'Holiday Mode'] as const
+const SUB_TABS = ['Business Info', 'Branding', 'Social Links', 'Notifications', 'Hero Media', 'Integrations', 'Holiday Mode', 'Domain'] as const
 
 interface BusinessInfoForm {
   name: string; phone: string; email: string; address: string; hours: string
@@ -46,6 +46,7 @@ export default function SettingsTab() {
       {activeSubTab === 'Hero Media' && <HeroMediaSection />}
       {activeSubTab === 'Integrations' && <IntegrationsSection />}
       {activeSubTab === 'Holiday Mode' && <HolidayModeSection />}
+      {activeSubTab === 'Domain' && <DomainSection />}
     </div>
   )
 }
@@ -499,6 +500,53 @@ function HolidayModeSection() {
         <button onClick={() => save()} disabled={saving} className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
           {saving ? 'Saving...' : 'Save Holiday Settings'}
         </button>
+      </div>
+    </div>
+  )
+}
+
+function DomainSection() {
+  const STEPS = [
+    { num: 1, title: 'Purchase your domain', desc: 'Buy a domain from any registrar (Namecheap, GoDaddy, Google Domains, etc.). Example: acmepestcontrol.com' },
+    { num: 2, title: 'Add domain in Vercel', desc: 'Go to your Vercel project → Settings → Domains → Add Domain. Enter your custom domain.' },
+    { num: 3, title: 'Configure DNS records', desc: 'At your domain registrar, add these DNS records:\n\n• A Record: @ → 76.76.21.21\n• CNAME Record: www → cname.vercel-dns.com\n\nThese point your domain to Vercel\'s servers.' },
+    { num: 4, title: 'Wait for SSL', desc: 'Vercel automatically provisions a free SSL certificate. This usually takes 1-5 minutes after DNS propagation.' },
+    { num: 5, title: 'Verify', desc: 'Visit your custom domain in a browser. Your PestFlow Pro site should load with HTTPS.' },
+  ]
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <h3 className="text-base font-semibold text-gray-900 mb-2">Custom Domain Setup</h3>
+      <p className="text-sm text-gray-500 mb-6">Follow these steps to connect your own domain (e.g. acmepestcontrol.com) to your PestFlow Pro website.</p>
+
+      <div className="space-y-6">
+        {STEPS.map(step => (
+          <div key={step.num} className="flex gap-4">
+            <div className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5">{step.num}</div>
+            <div>
+              <h4 className="text-sm font-semibold text-gray-900">{step.title}</h4>
+              <p className="text-sm text-gray-600 mt-1 whitespace-pre-line">{step.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <p className="text-sm text-blue-800 font-medium mb-1">Need help?</p>
+        <p className="text-sm text-blue-700">Domain setup typically takes 5-10 minutes. DNS changes can take up to 48 hours to propagate worldwide, but usually complete within 15 minutes.</p>
+      </div>
+
+      <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">DNS Records Quick Reference</p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead><tr className="text-left text-gray-500"><th className="pr-4 py-1">Type</th><th className="pr-4 py-1">Name</th><th className="py-1">Value</th></tr></thead>
+            <tbody className="text-gray-700 font-mono text-xs">
+              <tr><td className="pr-4 py-1">A</td><td className="pr-4 py-1">@</td><td className="py-1">76.76.21.21</td></tr>
+              <tr><td className="pr-4 py-1">CNAME</td><td className="pr-4 py-1">www</td><td className="py-1">cname.vercel-dns.com</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )
