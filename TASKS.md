@@ -126,7 +126,7 @@
 - [x] Accessibility audit — aria labels, focus states, contrast check
 - [x] Client handoff mode — read-only "preview" admin view for client demos
 - [x] White-label config — swap logo, company name, colors from onboarding wizard output
-- [ ] Email templates — branded HTML emails for lead notifications (logo, colors)
+- [x] Email templates — branded HTML emails for lead notifications (logo, colors)
 - [ ] Stripe integration — real checkout for SaaS subscriptions (Starter/Pro/Agency)
 - [ ] Admin: bulk location import (CSV upload → creates location_data rows)
 - [ ] Public API endpoint — /api/quote for headless quote form embed on external sites
