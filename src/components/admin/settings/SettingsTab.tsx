@@ -4,7 +4,7 @@ import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../hooks/useTenant'
 import PageHelpBanner from '../PageHelpBanner'
 
-const SUB_TABS = ['Business Info', 'Branding', 'Notifications', 'Integrations'] as const
+const SUB_TABS = ['Business Info', 'Branding', 'Social Links', 'Notifications', 'Integrations'] as const
 
 interface BusinessInfoForm {
   name: string
@@ -50,11 +50,8 @@ export default function SettingsTab() {
 
       {activeSubTab === 'Business Info' && <BusinessInfoSection />}
       {activeSubTab === 'Branding' && <BrandingSection />}
-      {activeSubTab === 'Notifications' && (
-        <div className="bg-[var(--admin-card-bg)] rounded-xl p-6 border border-[var(--admin-sidebar-border)]">
-          <p className="text-gray-500">Notifications settings coming soon.</p>
-        </div>
-      )}
+      {activeSubTab === 'Social Links' && <SocialLinksSection />}
+      {activeSubTab === 'Notifications' && <NotificationsSection />}
       {activeSubTab === 'Integrations' && (
         <div className="bg-[var(--admin-card-bg)] rounded-xl p-6 border border-[var(--admin-sidebar-border)]">
           <p className="text-gray-500">Integrations settings coming soon.</p>
@@ -350,6 +347,130 @@ function BrandingSection() {
           className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg px-6 py-3 transition disabled:opacity-50"
         >
           {saving ? 'Saving...' : 'Save Branding'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function SocialLinksSection() {
+  const { tenantId } = useTenant()
+  const [saving, setSaving] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [form, setForm] = useState({ facebook: '', instagram: '', google: '', yelp: '' })
+
+  useEffect(() => {
+    if (!tenantId) return
+    supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'social_links').maybeSingle()
+      .then(({ data }) => {
+        if (data?.value) setForm(prev => ({ ...prev, facebook: data.value.facebook || '', instagram: data.value.instagram || '', google: data.value.google || '', yelp: data.value.yelp || '' }))
+        setLoading(false)
+      })
+  }, [tenantId])
+
+  async function handleSave() {
+    if (!tenantId) return
+    setSaving(true)
+    const { error } = await supabase.from('settings').upsert({ tenant_id: tenantId, key: 'social_links', value: form }, { onConflict: 'tenant_id,key' })
+    setSaving(false)
+    if (error) toast.error('Failed to save social links.'); else toast.success('Social links saved!')
+  }
+
+  if (loading) return <div className="bg-[var(--admin-card-bg)] rounded-xl p-6 border border-[var(--admin-sidebar-border)]"><p className="text-gray-500">Loading...</p></div>
+
+  const fields = [
+    { label: 'Facebook URL', key: 'facebook' as const, placeholder: 'https://facebook.com/yourpage' },
+    { label: 'Instagram URL', key: 'instagram' as const, placeholder: 'https://instagram.com/yourpage' },
+    { label: 'Google Business Profile URL', key: 'google' as const, placeholder: 'https://g.page/yourbusiness' },
+    { label: 'Yelp URL (optional)', key: 'yelp' as const, placeholder: 'https://yelp.com/biz/yourbusiness' },
+  ]
+
+  return (
+    <div className="bg-[var(--admin-card-bg)] rounded-xl p-6 border border-[var(--admin-sidebar-border)]">
+      <h3 className="text-lg font-semibold text-white mb-4">Social Links</h3>
+      <div className="space-y-4">
+        {fields.map(f => (
+          <div key={f.key}>
+            <label className="block text-sm font-medium text-gray-400 mb-1">{f.label}</label>
+            <input type="url" value={form[f.key]} onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))} placeholder={f.placeholder}
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none placeholder-gray-600" />
+          </div>
+        ))}
+      </div>
+      <div className="mt-6">
+        <button onClick={handleSave} disabled={saving} className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg px-6 py-3 transition disabled:opacity-50">
+          {saving ? 'Saving...' : 'Save Social Links'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function NotificationsSection() {
+  const { tenantId } = useTenant()
+  const [saving, setSaving] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [form, setForm] = useState({ lead_email: '', cc_email: '', monthly_report_email: '', notify_new_lead: true, weekly_seo_digest: false })
+
+  useEffect(() => {
+    if (!tenantId) return
+    supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'notifications').maybeSingle()
+      .then(({ data }) => {
+        if (data?.value) setForm(prev => ({
+          ...prev,
+          lead_email: data.value.lead_email || '',
+          cc_email: data.value.cc_email || '',
+          monthly_report_email: data.value.monthly_report_email || '',
+          notify_new_lead: data.value.notify_new_lead !== false,
+          weekly_seo_digest: data.value.weekly_seo_digest === true,
+        }))
+        setLoading(false)
+      })
+  }, [tenantId])
+
+  async function handleSave() {
+    if (!tenantId) return
+    setSaving(true)
+    const { error } = await supabase.from('settings').upsert({ tenant_id: tenantId, key: 'notifications', value: form }, { onConflict: 'tenant_id,key' })
+    setSaving(false)
+    if (error) toast.error('Failed to save notification settings.'); else toast.success('Notification settings saved!')
+  }
+
+  if (loading) return <div className="bg-[var(--admin-card-bg)] rounded-xl p-6 border border-[var(--admin-sidebar-border)]"><p className="text-gray-500">Loading...</p></div>
+
+  return (
+    <div className="bg-[var(--admin-card-bg)] rounded-xl p-6 border border-[var(--admin-sidebar-border)]">
+      <h3 className="text-lg font-semibold text-white mb-4">Notifications</h3>
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-400 mb-1">Lead Notification Email</label>
+          <input type="email" value={form.lead_email} onChange={e => setForm(prev => ({ ...prev, lead_email: e.target.value }))} placeholder="leads@yourbusiness.com"
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none placeholder-gray-600" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-400 mb-1">CC Email (optional)</label>
+          <input type="email" value={form.cc_email} onChange={e => setForm(prev => ({ ...prev, cc_email: e.target.value }))} placeholder="manager@yourbusiness.com"
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none placeholder-gray-600" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-400 mb-1">Monthly Report Email (optional)</label>
+          <input type="email" value={form.monthly_report_email} onChange={e => setForm(prev => ({ ...prev, monthly_report_email: e.target.value }))} placeholder="owner@yourbusiness.com"
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none placeholder-gray-600" />
+        </div>
+        <div className="flex items-center gap-3 pt-2">
+          <input type="checkbox" checked={form.notify_new_lead} onChange={e => setForm(prev => ({ ...prev, notify_new_lead: e.target.checked }))}
+            className="rounded border-gray-600 bg-gray-800 text-emerald-500 focus:ring-emerald-500" />
+          <label className="text-sm text-gray-300">Notify on new lead</label>
+        </div>
+        <div className="flex items-center gap-3">
+          <input type="checkbox" checked={form.weekly_seo_digest} onChange={e => setForm(prev => ({ ...prev, weekly_seo_digest: e.target.checked }))}
+            className="rounded border-gray-600 bg-gray-800 text-emerald-500 focus:ring-emerald-500" />
+          <label className="text-sm text-gray-300">Weekly SEO digest email</label>
+        </div>
+      </div>
+      <div className="mt-6">
+        <button onClick={handleSave} disabled={saving} className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg px-6 py-3 transition disabled:opacity-50">
+          {saving ? 'Saving...' : 'Save Notifications'}
         </button>
       </div>
     </div>
