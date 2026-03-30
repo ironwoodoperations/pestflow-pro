@@ -83,7 +83,7 @@
 - [ ] Location pages: Google Maps embed (reads google_maps_embed_url from settings)
 - [ ] Location pages: "We Also Serve" section (nearby cities from location_data)
 - [ ] Admin: AI content writer — generate pest page copy via Anthropic API
-- [ ] Admin: bulk keyword sync — push tracked keywords to page_content SEO fields
+- [x] Admin: bulk keyword sync — push keyword_tracker to seo_meta fields (SEOTab Bulk Keyword Sync panel)
 - [x] Public website: hero video player (HeroVideoPlayer.tsx — youtube-nocookie background embed)
 - [x] 404 page (NotFound.tsx — HolidayBanner + Navbar + Footer + dark navy hero)
 - [x] Mobile PWA manifest + icons (manifest.json, placeholder PNGs, apple meta tags)
