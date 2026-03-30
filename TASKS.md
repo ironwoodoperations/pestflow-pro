@@ -87,20 +87,29 @@
 - [x] Build passes with zero TypeScript errors
 - [x] SKILL.md + TASKS.md updated
 
-## Session 7 (In Progress)
+## Session 7 (Complete)
+- [x] Admin: bulk keyword sync — push keyword_tracker to seo_meta fields (SEOTab Bulk Keyword Sync panel)
 - [x] Public website: hero video player (HeroVideoPlayer.tsx — youtube-nocookie background embed)
 - [x] 404 page (NotFound.tsx — HolidayBanner + Navbar + Footer + dark navy hero)
 - [x] Mobile PWA manifest + icons (manifest.json, placeholder PNGs, apple meta tags)
+- [x] PESTFLOW-SKILL.md + TASKS.md updated
+
+## Session 8 (Complete)
+- [x] Remove Pricing page route + nav link (file kept for future use)
+- [x] Rustic template — 4th design option (warm brown/amber, Playfair Display serif)
+- [x] Pexels stock image script (scripts/fetch-pest-images.mjs) + introImage prop on all 12 pest pages
+- [x] About Us populated with Apex Pest Solutions demo company (story, team, values, stats)
+- [x] Polished onboarding wizard — step indicators, larger inputs, skip links, editable review summary
+- [x] OnboardingLive — distraction-free screen-share mode (/admin/onboarding-live, 22 steps, one field per screen)
+- [x] TASKS.md + SKILL.md updated
+
+## Session 9 — Next Up
 - [ ] Client onboarding: custom domain setup guide in admin
 - [ ] Real content seeding — pull from Supabase and populate all page_content rows
 - [ ] Location pages: Google Maps embed (reads google_maps_embed_url from settings)
 - [ ] Location pages: "We Also Serve" section (nearby cities from location_data)
 - [ ] Admin: AI content writer — generate pest page copy via Anthropic API
-- [x] Admin: bulk keyword sync — push keyword_tracker to seo_meta fields (SEOTab Bulk Keyword Sync panel)
 - [ ] Accessibility audit — aria labels, focus states, contrast check
-- [ ] PESTFLOW-SKILL.md + TASKS.md updated
-
-## Session 8 — Next Up
 - [ ] Client handoff mode — read-only "preview" admin view for client demos
 - [ ] White-label config — swap logo, company name, colors from onboarding wizard output
 - [ ] Email templates — branded HTML emails for lead notifications (logo, colors)

@@ -4,6 +4,7 @@ export default function PestControlPage() {
   return (
     <PestPageTemplate
       pageSlug="pest-control"
+      introImage="/images/pests/pest-control.jpg"
       heroTitle="General Pest Control in East Texas"
       heroHighlight="Pest Control"
       heroSubtitle="One plan. All pests. Year-round protection."

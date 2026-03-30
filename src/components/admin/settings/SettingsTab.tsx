@@ -12,7 +12,7 @@ interface BusinessInfoForm {
 
 interface BrandingForm {
   logo_url: string; favicon_url: string; primary_color: string; accent_color: string
-  template: 'bold' | 'clean' | 'modern'
+  template: 'bold' | 'clean' | 'modern' | 'rustic'
 }
 
 const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-400'
@@ -137,6 +137,7 @@ function BrandingSection() {
     { value: 'bold', label: 'Bold', desc: 'High-energy. Dark navy, emerald accents, Bangers headlines.' },
     { value: 'clean', label: 'Clean', desc: 'Professional. Navy, white backgrounds, serif headings.' },
     { value: 'modern', label: 'Modern', desc: 'Contemporary. Dark, teal accents, monospace headings.' },
+    { value: 'rustic', label: 'Rustic', desc: 'Warm & inviting. Brown, amber accents, serif headings.' },
   ]
 
   return (

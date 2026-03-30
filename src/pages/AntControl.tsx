@@ -4,6 +4,7 @@ export default function AntControl() {
   return (
     <PestPageTemplate
       pageSlug="ant-control"
+      introImage="/images/pests/ant.jpg"
       heroTitle="Ant Control in East Texas"
       heroHighlight="Ant Control"
       heroSubtitle="Eliminate fire ants, carpenter ants, and more."

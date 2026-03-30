@@ -4,6 +4,7 @@ import Login from './pages/admin/Login'
 import Dashboard from './pages/admin/Dashboard'
 import Onboarding from './pages/admin/Onboarding'
 import ProtectedRoute from './components/ProtectedRoute'
+import OnboardingLive from './pages/admin/OnboardingLive'
 import Index from './pages/Index'
 import QuotePage from './pages/QuotePage'
 import ContactPage from './pages/ContactPage'
@@ -25,7 +26,6 @@ import BedBugControl from './pages/BedBugControl'
 import PestControlPage from './pages/PestControlPage'
 import TermiteControl from './pages/TermiteControl'
 import TermiteInspections from './pages/TermiteInspections'
-import Pricing from './pages/Pricing'
 import NotFound from './pages/NotFound'
 import Sitemap from './pages/Sitemap'
 import SlugRouter from './pages/SlugRouter'
@@ -43,7 +43,6 @@ export default function App() {
         <Route path="/faq" element={<FAQPage />} />
         <Route path="/reviews" element={<ReviewsPage />} />
         <Route path="/service-area" element={<ServiceArea />} />
-        <Route path="/pricing" element={<Pricing />} />
         <Route path="/blog" element={<BlogPage />} />
         <Route path="/blog/:slug" element={<BlogPostPage />} />
         <Route path="/sitemap.xml" element={<Sitemap />} />
@@ -65,6 +64,7 @@ export default function App() {
         {/* ─── Admin routes ─── */}
         <Route path="/admin/login" element={<Login />} />
         <Route path="/admin/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+        <Route path="/admin/onboarding-live" element={<ProtectedRoute><OnboardingLive /></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
 
         {/* ─── Dynamic slug — MUST BE LAST ─── */}

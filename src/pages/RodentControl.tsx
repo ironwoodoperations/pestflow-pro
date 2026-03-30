@@ -4,6 +4,7 @@ export default function RodentControl() {
   return (
     <PestPageTemplate
       pageSlug="rodent-control"
+      introImage="/images/pests/rodent.jpg"
       heroTitle="Rodent Control in East Texas"
       heroHighlight="Rodent Control"
       heroSubtitle="Mice and rats eliminated — entry points sealed."

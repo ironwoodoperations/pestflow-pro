@@ -1,4 +1,4 @@
-export type Template = 'bold' | 'clean' | 'modern'
+export type Template = 'bold' | 'clean' | 'modern' | 'rustic'
 
 export interface TemplateTokens {
   heroFont: string
@@ -69,5 +69,22 @@ export const TEMPLATES: Record<Template, TemplateTokens> = {
     accentColor: '#14b8a6',
     buttonClass: 'bg-teal-500 hover:bg-teal-400 text-white font-semibold rounded-sm px-6 py-3 transition',
     headingClass: 'font-mono tracking-tight',
+  },
+  rustic: {
+    heroFont: "font-serif tracking-tight",
+    bodyFont: 'font-sans',
+    heroBg: 'bg-[#1a0f00]',
+    heroText: 'text-amber-50',
+    ctaBg: 'bg-amber-600',
+    ctaText: 'text-white',
+    ctaHover: 'hover:bg-amber-700',
+    navBg: 'bg-[#1a0f00]',
+    navText: 'text-amber-100',
+    footerBg: 'bg-[#1a0f00]',
+    footerText: 'text-amber-200',
+    cardBg: 'bg-amber-50',
+    accentColor: '#d97706',
+    buttonClass: 'bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-lg px-6 py-3 transition',
+    headingClass: 'font-serif tracking-tight',
   },
 }

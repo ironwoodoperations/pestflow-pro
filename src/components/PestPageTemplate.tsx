@@ -39,6 +39,7 @@ export interface PestPageProps {
   faqs: FAQItem[]
   eastTexasCTATitle: string
   pricingCards?: { name: string; price: string; desc: string }[]
+  introImage?: string
 }
 
 const STEP_COLORS_DEFAULT = ['bg-emerald-500', 'bg-yellow-500', 'bg-teal-500', 'bg-slate-600']
@@ -92,8 +93,12 @@ export default function PestPageTemplate(props: PestPageProps) {
       <section className="py-16 bg-white">
         <div className="max-w-6xl mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-            <div className="border-2 border-emerald-500 rounded-lg bg-[#0a0f1e] h-72 flex items-center justify-center">
-              <span className="text-emerald-400 text-xl font-semibold">{props.heroHighlight}</span>
+            <div className="border-2 border-emerald-500 rounded-lg bg-[#0a0f1e] h-72 flex items-center justify-center overflow-hidden">
+              {props.introImage ? (
+                <img src={props.introImage} alt={props.heroHighlight} loading="lazy" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+              ) : (
+                <span className="text-emerald-400 text-xl font-semibold">{props.heroHighlight}</span>
+              )}
             </div>
             <div>
               <h2 className="font-bangers tracking-wide text-3xl md:text-4xl text-gray-900 mb-4">{props.introHeading}</h2>

@@ -4,6 +4,7 @@ export default function RoachControl() {
   return (
     <PestPageTemplate
       pageSlug="roach-control"
+      introImage="/images/pests/roach.jpg"
       heroTitle="Cockroach Control in East Texas"
       heroHighlight="Cockroach Control"
       heroSubtitle="Complete roach elimination — inside and out."

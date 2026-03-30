@@ -4,6 +4,7 @@ export default function TermiteInspections() {
   return (
     <PestPageTemplate
       pageSlug="termite-inspections"
+      introImage="/images/pests/termite.jpg"
       heroTitle="Termite Inspections in East Texas"
       heroHighlight="Termite Inspections"
       heroSubtitle="WDI reports for home sales — fast turnaround."
