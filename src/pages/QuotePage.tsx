@@ -148,8 +148,8 @@ export default function QuotePage() {
                 <p className="text-gray-500 text-sm mb-6">Select all that apply.</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {PEST_OPTIONS.map(pest => (
-                    <button key={pest} type="button" onClick={() => togglePest(pest)}
-                      className={`px-4 py-3 rounded-lg text-sm font-medium border-2 transition ${form.pests.includes(pest) ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-gray-200 text-gray-700 hover:border-gray-300'}`}>
+                    <button key={pest} type="button" role="checkbox" aria-checked={form.pests.includes(pest)} onClick={() => togglePest(pest)}
+                      className={`px-4 py-3 rounded-lg text-sm font-medium border-2 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 ${form.pests.includes(pest) ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-gray-200 text-gray-700 hover:border-gray-300'}`}>
                       {pest}
                     </button>
                   ))}

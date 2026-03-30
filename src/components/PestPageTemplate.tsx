@@ -86,7 +86,7 @@ export default function PestPageTemplate(props: PestPageProps) {
             <a href={`tel:${phone}`} className="border-2 border-emerald-500 text-emerald-400 hover:bg-emerald-500 hover:text-white font-bold rounded-lg px-8 py-4 text-lg transition">Call Us Now</a>
           </div>
         </div>
-        <img src="/banner-img.png" alt="" loading="lazy" className="absolute bottom-0 left-0 w-full opacity-20 pointer-events-none" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+        <img src="/banner-img.png" alt="" aria-hidden="true" loading="lazy" className="absolute bottom-0 left-0 w-full opacity-20 pointer-events-none" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
       </section>
 
       {/* INTRO */}
@@ -95,7 +95,7 @@ export default function PestPageTemplate(props: PestPageProps) {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
             <div className="border-2 border-emerald-500 rounded-lg bg-[#0a0f1e] h-72 flex items-center justify-center overflow-hidden">
               {props.introImage ? (
-                <img src={props.introImage} alt={props.heroHighlight} loading="lazy" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                <img src={props.introImage} alt={`${props.heroHighlight} pest control treatment`} loading="lazy" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
               ) : (
                 <span className="text-emerald-400 text-xl font-semibold">{props.heroHighlight}</span>
               )}

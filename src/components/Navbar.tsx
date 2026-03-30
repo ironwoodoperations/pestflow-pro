@@ -78,11 +78,11 @@ export default function Navbar() {
           <div className="hidden lg:flex items-center gap-5">
             {/* Services dropdown */}
             <div ref={dropdownRef} className="relative" onMouseEnter={handleDropdownEnter} onMouseLeave={handleDropdownLeave}>
-              <button className="text-sm font-medium text-gray-700 hover:text-emerald-600 transition flex items-center gap-1">
-                Services <ChevronDown className="w-3.5 h-3.5" />
+              <button aria-haspopup="true" aria-expanded={dropdownOpen} className="text-sm font-medium text-gray-700 hover:text-emerald-600 transition flex items-center gap-1">
+                Services <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
               {dropdownOpen && (
-                <div className="absolute top-full left-0 mt-1 w-56 bg-white shadow-lg rounded-lg border border-gray-100 py-2 z-50">
+                <div role="menu" className="absolute top-full left-0 mt-1 w-56 bg-white shadow-lg rounded-lg border border-gray-100 py-2 z-50">
                   {SERVICE_LINKS.map((link) => (
                     <Link key={link.href} to={link.href} onClick={() => setDropdownOpen(false)}
                       className="block px-4 py-2 text-sm text-gray-700 hover:text-emerald-600 hover:bg-emerald-50 transition">
@@ -101,7 +101,7 @@ export default function Navbar() {
           </div>
 
           <button className="lg:hidden p-2 text-gray-700" onClick={() => setMobileOpen(!mobileOpen)} aria-label={mobileOpen ? 'Close menu' : 'Open menu'} aria-expanded={mobileOpen}>
-            {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {mobileOpen ? <X className="w-6 h-6" aria-hidden="true" /> : <Menu className="w-6 h-6" aria-hidden="true" />}
           </button>
         </div>
       </div>

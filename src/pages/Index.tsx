@@ -107,14 +107,14 @@ export default function Index() {
           {heroMedia?.youtube_id && (
             <div className="mt-10 max-w-2xl mx-auto">
               {!videoPlaying ? (
-                <div className="relative rounded-xl overflow-hidden cursor-pointer shadow-2xl" style={{ paddingBottom: '56.25%' }} onClick={() => setVideoPlaying(true)}>
-                  <img src={heroMedia.thumbnail_url || `https://img.youtube.com/vi/${heroMedia.youtube_id}/maxresdefault.jpg`} alt="Watch our video" className="absolute inset-0 w-full h-full object-cover" />
+                <button type="button" aria-label="Play video" className="relative rounded-xl overflow-hidden cursor-pointer shadow-2xl w-full text-left" style={{ paddingBottom: '56.25%' }} onClick={() => setVideoPlaying(true)}>
+                  <img src={heroMedia.thumbnail_url || `https://img.youtube.com/vi/${heroMedia.youtube_id}/maxresdefault.jpg`} alt="Video thumbnail" className="absolute inset-0 w-full h-full object-cover" />
                   <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                     <div className="w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg">
-                      <svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                      <svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
                     </div>
                   </div>
-                </div>
+                </button>
               ) : (
                 <div className="relative rounded-xl overflow-hidden shadow-2xl" style={{ paddingBottom: '56.25%' }}>
                   <iframe className="absolute inset-0 w-full h-full" src={`https://www.youtube.com/embed/${heroMedia.youtube_id}?autoplay=1`} allow="autoplay; fullscreen" allowFullScreen title="Hero video" />

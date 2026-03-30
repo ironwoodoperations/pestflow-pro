@@ -77,13 +77,14 @@ export default function Dashboard() {
             <button
               key={key}
               onClick={() => setActiveTab(key)}
-              className={`w-full flex items-center gap-3 px-4 py-3 mx-0 rounded-lg text-sm font-medium transition-all ${
+              aria-current={activeTab === key ? 'page' : undefined}
+              className={`w-full flex items-center gap-3 px-4 py-3 mx-0 rounded-lg text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
                 activeTab === key
                   ? 'bg-[#1a3d2b] text-white border-l-4 border-emerald-500'
                   : 'text-gray-300 hover:bg-[#22304a] hover:text-white border-l-4 border-transparent'
               }`}
             >
-              <Icon size={20} />
+              <Icon size={20} aria-hidden="true" />
               {label}
             </button>
           ))}
