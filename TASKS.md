@@ -82,10 +82,25 @@
 - [x] PWA manifest + apple meta tags
 - [x] Custom 404 page (NotFound.tsx — branded, bug emoji, quick links)
 - [x] Accessibility audit + fixes (skip link, aria labels, focus rings, sr-only)
+- [x] Merged PR #4 (saas branch) — resolved src/index.css merge conflict (kept font preload comment)
+- [x] PESTFLOW-SKILL.md created (full autonomy doc through Session 6, rules 1-35, all pages/tabs/scripts)
 - [x] Build passes with zero TypeScript errors
 - [x] SKILL.md + TASKS.md updated
 
-## Session 7 — Next Up
+## Session 7 (In Progress)
+- [x] Public website: hero video player (HeroVideoPlayer.tsx — youtube-nocookie background embed)
+- [x] 404 page (NotFound.tsx — HolidayBanner + Navbar + Footer + dark navy hero)
+- [x] Mobile PWA manifest + icons (manifest.json, placeholder PNGs, apple meta tags)
+- [ ] Client onboarding: custom domain setup guide in admin
+- [ ] Real content seeding — pull from Supabase and populate all page_content rows
+- [ ] Location pages: Google Maps embed (reads google_maps_embed_url from settings)
+- [ ] Location pages: "We Also Serve" section (nearby cities from location_data)
+- [ ] Admin: AI content writer — generate pest page copy via Anthropic API
+- [ ] Admin: bulk keyword sync — push tracked keywords to page_content SEO fields
+- [ ] Accessibility audit — aria labels, focus states, contrast check
+- [ ] PESTFLOW-SKILL.md + TASKS.md updated
+
+## Session 8 — Next Up
 - [ ] Client handoff mode — read-only "preview" admin view for client demos
 - [ ] White-label config — swap logo, company name, colors from onboarding wizard output
 - [ ] Email templates — branded HTML emails for lead notifications (logo, colors)

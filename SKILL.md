@@ -168,3 +168,5 @@ To add a new tenant:
 | 4       | Mar 2026 | SEO tab + SERP preview, Testimonials CRUD, Leads tab + CSV export, Blog CRUD, Locations CRUD, AI keyword research, Integrations settings, Hero Media settings, StructuredData all pages, HolidayBanner, Reports + Social stubs |
 | 5       | Mar 2026 | 4-step quote wizard, lead email notifications, Google Reviews import, Facebook social posting, sitemap.xml, robots.txt, PageSpeed optimizations, Pricing page, multi-tenant docs |
 | 6       | Mar 2026 | Domain setup guide, page content seeding script, Maps embed, We Also Serve, AI content writer, hero video player, PWA manifest, 404 page, accessibility fixes |
+| 6.1     | Mar 2026 | Merged PR, PESTFLOW-SKILL.md created, TASKS.md updated |
+| 7       | Mar 2026 | HeroVideoPlayer (youtube-nocookie background embed), branded 404 page (full chrome), PWA manifest + icons |
