@@ -5,8 +5,17 @@
 @tailwind utilities;
 
 :root {
-  --primary: hsl(28, 100%, 50%);
-  --secondary: hsl(45, 95%, 52%);
+  --pf-green: #10b981;
+  --pf-green-dark: #059669;
+  --pf-green-light: #d1fae5;
+  --pf-navy: #0a0f1e;
+  --pf-navy-mid: #1e293b;
+  --pf-yellow: #f5c518;
+  --pf-yellow-dark: #d4a800;
+  --pf-gray-light: #f8fafc;
+  --pf-gray-mid: #f1f5f9;
+  --primary: #10b981;
+  --secondary: #f5c518;
   --admin-teal: hsl(185, 65%, 42%);
   --admin-bg: #0f1117;
   --admin-card-bg: #1a1d26;

@@ -7,6 +7,24 @@ import ProtectedRoute from './components/ProtectedRoute'
 import Index from './pages/Index'
 import QuotePage from './pages/QuotePage'
 import ContactPage from './pages/ContactPage'
+import About from './pages/About'
+import FAQPage from './pages/FAQPage'
+import ReviewsPage from './pages/ReviewsPage'
+import ServiceArea from './pages/ServiceArea'
+import BlogPage from './pages/BlogPage'
+import BlogPostPage from './pages/BlogPostPage'
+import SpiderControl from './pages/SpiderControl'
+import MosquitoControl from './pages/MosquitoControl'
+import AntControl from './pages/AntControl'
+import WaspHornetControl from './pages/WaspHornetControl'
+import RoachControl from './pages/RoachControl'
+import FleaTickControl from './pages/FleaTickControl'
+import RodentControl from './pages/RodentControl'
+import ScorpionControl from './pages/ScorpionControl'
+import BedBugControl from './pages/BedBugControl'
+import PestControlPage from './pages/PestControlPage'
+import TermiteControl from './pages/TermiteControl'
+import TermiteInspections from './pages/TermiteInspections'
 import SlugRouter from './pages/SlugRouter'
 
 export default function App() {
@@ -14,25 +32,39 @@ export default function App() {
     <BrowserRouter>
       <Toaster richColors position="top-right" />
       <Routes>
-        {/* Public routes — MUST be before /:slug */}
+        {/* ─── Public marketing pages ─── */}
         <Route path="/" element={<Index />} />
-        <Route path="/quote" element={<QuotePage />} />
+        <Route path="/about" element={<About />} />
         <Route path="/contact" element={<ContactPage />} />
+        <Route path="/quote" element={<QuotePage />} />
+        <Route path="/faq" element={<FAQPage />} />
+        <Route path="/reviews" element={<ReviewsPage />} />
+        <Route path="/service-area" element={<ServiceArea />} />
+        <Route path="/blog" element={<BlogPage />} />
+        <Route path="/blog/:slug" element={<BlogPostPage />} />
 
-        {/* Admin routes */}
+        {/* ─── Pest service pages ─── */}
+        <Route path="/spider-control" element={<SpiderControl />} />
+        <Route path="/mosquito-control" element={<MosquitoControl />} />
+        <Route path="/ant-control" element={<AntControl />} />
+        <Route path="/wasp-hornet-control" element={<WaspHornetControl />} />
+        <Route path="/roach-control" element={<RoachControl />} />
+        <Route path="/flea-tick-control" element={<FleaTickControl />} />
+        <Route path="/rodent-control" element={<RodentControl />} />
+        <Route path="/scorpion-control" element={<ScorpionControl />} />
+        <Route path="/bed-bug-control" element={<BedBugControl />} />
+        <Route path="/pest-control" element={<PestControlPage />} />
+        <Route path="/termite-control" element={<TermiteControl />} />
+        <Route path="/termite-inspections" element={<TermiteInspections />} />
+
+        {/* ─── Admin routes ─── */}
         <Route path="/admin/login" element={<Login />} />
         <Route path="/admin/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
 
-        {/* Dynamic slug catch-all — MUST be last */}
+        {/* ─── Dynamic slug — MUST BE LAST ─── */}
         <Route path="/:slug" element={<SlugRouter />} />
-
-        {/* 404 */}
-        <Route path="*" element={
-          <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center text-2xl">
-            404 — Page Not Found
-          </div>
-        } />
+        <Route path="*" element={<div className="min-h-screen bg-gray-950 text-white flex items-center justify-center text-2xl">404 — Page Not Found</div>} />
       </Routes>
     </BrowserRouter>
   )

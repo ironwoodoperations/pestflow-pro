@@ -25,19 +25,49 @@
 - [x] Settings: Branding (functional — template selector + color pickers)
 - [x] SKILL.md + TASKS.md updated
 
-## Session 3 — Next Up
-- [ ] Pest service pages — start with SpiderControl.tsx as master template
-  - Hero + Intro + Treatment Process + Why Choose Us + CTA + FAQ + East Texas CTA sections
-  - Read content from page_content table, fall back to hardcoded defaults
-- [ ] All 12 pest pages (Mosquito, Spider, Ant, Wasp, Roach, Flea/Tick, Rodent, Scorpion, Bed Bug, Pest Control, Termite, Termite Inspections)
-- [ ] Blog listing page (BlogPage.tsx) — reads from blog_posts table
-- [ ] Blog post detail page (BlogPostPage.tsx) — dynamic route /blog/:slug
-- [ ] Reviews page (ReviewsPage.tsx) — reads from testimonials table, star ratings
-- [ ] About page (About.tsx)
-- [ ] FAQ page (FAQPage.tsx)
-- [ ] Service Area page (ServiceArea.tsx) — links to all live location pages
-- [ ] Wire all pest + blog + static routes in App.tsx (before /:slug)
-- [ ] ContentTab admin — functional read/write for page_content table
-- [ ] Settings: Social Links (functional)
-- [ ] Settings: Notifications (functional)
-- [ ] StructuredData.tsx — JSON-LD LocalBusiness schema injected on every public page
+## Session 3 (Complete)
+- [x] Theme overhaul: orange → dark navy #0a0f1e + emerald #10b981 system-wide
+- [x] SpiderControl.tsx — master pest page template (PestPageTemplate.tsx)
+- [x] All 12 pest pages (Mosquito, Spider, Ant, Wasp, Roach, Flea/Tick, Rodent, Scorpion, Bed Bug, Pest Control, Termite, Termite Inspections)
+- [x] About page
+- [x] FAQ page
+- [x] Reviews page (reads from testimonials table)
+- [x] Service Area page (reads from location_data table)
+- [x] Blog listing page (reads from blog_posts table)
+- [x] Blog post detail page (/blog/:slug)
+- [x] All routes wired in App.tsx (pest + static + blog before /:slug)
+- [x] StructuredData.tsx — JSON-LD LocalBusiness + WebPage injection
+- [x] ContentTab admin — functional read/write for page_content table
+- [x] Settings: Social Links (functional)
+- [x] Settings: Notifications (functional)
+- [x] Navbar: Services dropdown + full link set
+- [x] Build passes with zero TypeScript errors
+- [x] SKILL.md + TASKS.md updated
+
+## Session 4 (Complete)
+- [x] SEO tab — functional meta editor + SERP preview
+- [x] Testimonials tab — full CRUD with star selector + featured toggle
+- [x] Leads tab — filters + date range + CSV export + detail modal
+- [x] Blog tab — full CRUD with post editor + publish toggle
+- [x] Locations tab — full CRUD + is_live toggle
+- [x] AI keyword research panel (Anthropic API, in SEO tab)
+- [x] Settings: Integrations (Google Place ID, Facebook, Maps embed)
+- [x] Settings: Hero Media (YouTube embed + live preview)
+- [x] StructuredData — added to all pest + static + location pages
+- [x] HolidayBanner component + Holiday Mode settings
+- [x] Reports tab stub — polished placeholder cards
+- [x] Social tab stub — polished placeholder cards
+- [x] Build passes with zero TypeScript errors
+- [x] SKILL.md + TASKS.md updated
+
+## Session 5 — Next Up
+- [ ] Quote/Contact form enhancements — multi-step quote wizard (pest type → property → contact → confirm)
+- [ ] Lead auto-email notification — Resend or Supabase Edge Function sends email on new lead
+- [ ] Google Reviews auto-import — Places API fetch + import to testimonials table
+- [ ] Social posting live — Meta Graph API, post composer, schedule queue
+- [ ] Sitemap generation — /sitemap.xml route that reads all live pages + locations + blog posts
+- [ ] robots.txt — serve via public/robots.txt
+- [ ] PageSpeed audit — optimize images, lazy load, preconnect hints
+- [ ] Multi-tenant onboarding — second demo tenant to prove white-label isolation
+- [ ] Stripe billing stub — pricing page + "Start Free Trial" flow (no real charges)
+- [ ] SKILL.md + TASKS.md updated
