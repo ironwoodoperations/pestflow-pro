@@ -131,13 +131,16 @@ export default function LocationPage({ slug }: { slug: string }) {
       </section>
 
       {/* WE ALSO SERVE */}
-      {otherLocations.length > 0 && (
-        <section className="py-16 bg-[#f8fafc]">
-          <div className="max-w-6xl mx-auto px-4">
-            <h2 className="font-bangers tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-8">We Also Serve These East Texas Communities</h2>
-            <div className="flex flex-wrap gap-3 justify-center">
-              {otherLocations.map((loc) => (
-                <Link key={loc.slug} to={`/${loc.slug}`} className="bg-white border border-gray-300 hover:border-emerald-500 text-gray-800 hover:text-emerald-600 rounded-full px-5 py-2 text-sm font-medium transition shadow-sm">{loc.city}</Link>
+      {otherLocations.length >= 2 && (
+        <section className="py-12 bg-gray-50">
+          <div className="max-w-6xl mx-auto px-4 text-center">
+            <h2 className="text-xl font-bold text-gray-900 mb-2">We Also Serve</h2>
+            <p className="text-gray-500 text-sm mb-6">Pest control services throughout East Texas</p>
+            <div className="flex flex-wrap justify-center gap-3">
+              {otherLocations.slice(0, 6).map((loc) => (
+                <Link key={loc.slug} to={`/${loc.slug}`} className="px-4 py-2 rounded-full border border-emerald-200 bg-white text-emerald-700 text-sm font-medium hover:bg-emerald-50 hover:border-emerald-400 transition-colors">
+                  {loc.city} Pest Control
+                </Link>
               ))}
             </div>
           </div>
