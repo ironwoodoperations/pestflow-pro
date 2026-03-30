@@ -39,7 +39,7 @@ export default function SettingsTab() {
             onClick={() => setActiveSubTab(tab)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
               activeSubTab === tab
-                ? 'bg-orange-500 text-white'
+                ? 'bg-emerald-500 text-white'
                 : 'bg-gray-800 text-gray-400 hover:text-white'
             }`}
           >
@@ -164,7 +164,7 @@ function BusinessInfoSection() {
                 value={form[f.key]}
                 onChange={(e) => updateField(f.key, e.target.value)}
                 placeholder={f.placeholder}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none placeholder-gray-600"
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none placeholder-gray-600"
               />
             </div>
           ))}
@@ -173,7 +173,7 @@ function BusinessInfoSection() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-lg px-6 py-3 transition disabled:opacity-50"
+            className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg px-6 py-3 transition disabled:opacity-50"
           >
             {saving ? 'Saving...' : 'Save Business Info'}
           </button>
@@ -190,7 +190,7 @@ function BrandingSection() {
   const [form, setForm] = useState<BrandingForm>({
     logo_url: '',
     favicon_url: '',
-    primary_color: '#ff6a00',
+    primary_color: '#10b981',
     accent_color: '#f5c518',
     template: 'bold',
   })
@@ -269,7 +269,7 @@ function BrandingSection() {
               value={form.logo_url}
               onChange={(e) => updateField('logo_url', e.target.value)}
               placeholder="https://example.com/logo.png"
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none placeholder-gray-600"
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none placeholder-gray-600"
             />
             {form.logo_url && (
               <img src={form.logo_url} alt="Logo preview" className="mt-2 h-12 object-contain rounded" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
@@ -282,7 +282,7 @@ function BrandingSection() {
               value={form.favicon_url}
               onChange={(e) => updateField('favicon_url', e.target.value)}
               placeholder="https://example.com/favicon.ico"
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none placeholder-gray-600"
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none placeholder-gray-600"
             />
           </div>
         </div>
@@ -301,7 +301,7 @@ function BrandingSection() {
                 type="text"
                 value={form.primary_color}
                 onChange={(e) => updateField('primary_color', e.target.value)}
-                className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none"
+                className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
               />
             </div>
           </div>
@@ -318,7 +318,7 @@ function BrandingSection() {
                 type="text"
                 value={form.accent_color}
                 onChange={(e) => updateField('accent_color', e.target.value)}
-                className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none"
+                className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
               />
             </div>
           </div>
@@ -333,7 +333,7 @@ function BrandingSection() {
                 onClick={() => updateField('template', t.value)}
                 className={`text-left p-4 rounded-xl border-2 transition ${
                   form.template === t.value
-                    ? 'border-orange-500 bg-gray-800'
+                    ? 'border-emerald-500 bg-gray-800'
                     : 'border-gray-700 bg-gray-800/50 hover:border-gray-600'
                 }`}
               >
@@ -347,7 +347,7 @@ function BrandingSection() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-lg px-6 py-3 transition disabled:opacity-50"
+          className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg px-6 py-3 transition disabled:opacity-50"
         >
           {saving ? 'Saving...' : 'Save Branding'}
         </button>
