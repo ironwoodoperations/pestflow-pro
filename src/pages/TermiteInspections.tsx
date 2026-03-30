@@ -5,7 +5,7 @@ export default function TermiteInspections() {
   return (
     <PestPageTemplate
       pageSlug="termite-inspections"
-      introImage="https://images.pexels.com/photos/6543034/pexels-photo-6543034.jpeg?w=800"
+      introImage="https://images.pexels.com/photos/6543034/pexels-photo-6543034.jpeg?auto=compress&w=800"
       videoUrl={PEST_VIDEOS.termite[0]?.url}
       heroTitle="Termite Inspections in East Texas"
       heroHighlight="Termite Inspections"

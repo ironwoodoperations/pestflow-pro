@@ -70,7 +70,7 @@ export default function LocationPage({ slug }: { slug: string }) {
         <div className="max-w-6xl mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
             <div className="border-2 border-emerald-500 rounded-lg overflow-hidden bg-[#0a0f1e] h-80 flex items-center justify-center">
-              <VideoImage src="https://images.pexels.com/photos/280229/pexels-photo-280229.jpeg?w=800" alt={`Pest control in ${city}`} videoUrl={PEST_VIDEOS.general[0]?.url} className="w-full h-full" />
+              <VideoImage src="https://images.pexels.com/photos/280229/pexels-photo-280229.jpeg?auto=compress&w=800" alt={`Pest control in ${city}`} videoUrl={PEST_VIDEOS.general[0]?.url} className="w-full h-full" />
             </div>
             <div>
               <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 mb-4">Professional Pest Control in {city}</h2>

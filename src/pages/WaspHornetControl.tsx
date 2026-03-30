@@ -5,7 +5,7 @@ export default function WaspHornetControl() {
   return (
     <PestPageTemplate
       pageSlug="wasp-hornet-control"
-      introImage="https://images.pexels.com/photos/5791943/pexels-photo-5791943.jpeg?w=800"
+      introImage="https://images.pexels.com/photos/5791943/pexels-photo-5791943.jpeg?auto=compress&w=800"
       videoUrl={PEST_VIDEOS.wasp[0]?.url}
       heroTitle="Wasp & Hornet Control in East Texas"
       heroHighlight="Wasp & Hornet Control"

@@ -6,7 +6,7 @@ import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import StructuredData from '../components/StructuredData'
 
-interface BlogPost { id: string; title: string; slug: string; excerpt: string; published_at: string }
+interface BlogPost { id: string; title: string; slug: string; excerpt: string; published_at: string; intro_image?: string }
 
 const PLACEHOLDER_POSTS: BlogPost[] = [
   { id: '1', title: '5 Signs You Have a Termite Problem', slug: '5-signs-termite-problem', excerpt: 'Learn the early warning signs of termite damage before it becomes costly...', published_at: '2026-03-15' },
@@ -23,7 +23,7 @@ export default function BlogPage() {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
       const [postsRes, contentRes] = await Promise.all([
-        supabase.from('blog_posts').select('id, title, slug, excerpt, published_at').eq('tenant_id', tenantId).not('published_at', 'is', null).order('published_at', { ascending: false }),
+        supabase.from('blog_posts').select('id, title, slug, excerpt, published_at, intro_image').eq('tenant_id', tenantId).not('published_at', 'is', null).order('published_at', { ascending: false }),
         supabase.from('page_content').select('title, subtitle').eq('tenant_id', tenantId).eq('page_slug', 'blog').maybeSingle(),
       ])
       if (postsRes.data && postsRes.data.length > 0) setPosts(postsRes.data)
@@ -49,8 +49,12 @@ export default function BlogPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {posts.map((post) => (
               <Link key={post.id} to={`/blog/${post.slug}`} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition group">
-                <div className="bg-[#0a0f1e] h-40 flex items-center justify-center">
-                  <span className="text-emerald-400/50 text-sm">Blog Image</span>
+                <div className="bg-[#0a0f1e] h-40 overflow-hidden">
+                  <img
+                    src={post.intro_image || 'https://images.pexels.com/photos/5591664/pexels-photo-5591664.jpeg?auto=compress&w=600'}
+                    alt={post.title}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <div className="p-5">
                   <p className="text-sm text-gray-400 mb-2">{new Date(post.published_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>

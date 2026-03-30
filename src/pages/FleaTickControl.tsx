@@ -5,7 +5,7 @@ export default function FleaTickControl() {
   return (
     <PestPageTemplate
       pageSlug="flea-tick-control"
-      introImage="https://images.pexels.com/photos/4239013/pexels-photo-4239013.jpeg?w=800"
+      introImage="https://images.pexels.com/photos/4239013/pexels-photo-4239013.jpeg?auto=compress&w=800"
       videoUrl={PEST_VIDEOS.flea[0]?.url}
       heroTitle="Flea & Tick Control in East Texas"
       heroHighlight="Flea & Tick Control"
