@@ -6,7 +6,7 @@ import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react'
 
 interface FormData {
   businessName: string; phone: string; email: string; address: string; tagline: string; license: string
-  logoUrl: string; primaryColor: string; accentColor: string; template: 'bold' | 'clean' | 'modern'
+  logoUrl: string; primaryColor: string; accentColor: string; template: 'bold' | 'clean' | 'modern' | 'rustic'
   locations: { city: string; slug: string }[]
 }
 
@@ -20,6 +20,7 @@ const TEMPLATES = [
   { value: 'bold' as const, label: 'Bold', desc: 'Dark navy, emerald accents, Bangers headlines', colors: 'from-emerald-600 to-gray-900' },
   { value: 'clean' as const, label: 'Clean', desc: 'White/navy, professional & trustworthy', colors: 'from-white to-blue-900' },
   { value: 'modern' as const, label: 'Modern', desc: 'Dark theme, sleek & contemporary', colors: 'from-gray-800 to-gray-950' },
+  { value: 'rustic' as const, label: 'Rustic', desc: 'Warm brown, amber accents, inviting', colors: 'from-amber-600 to-amber-950' },
 ]
 
 function HelpToggle({ text }: { text: string }) {
@@ -160,7 +161,7 @@ export default function Onboarding() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">Template</label>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 {TEMPLATES.map(t => (
                   <button key={t.value} type="button" onClick={() => updateField('template', t.value)}
                     className={`rounded-xl p-4 border-2 transition text-left ${form.template === t.value ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 hover:border-gray-300'}`}>
