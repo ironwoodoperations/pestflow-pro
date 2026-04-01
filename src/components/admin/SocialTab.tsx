@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { RefreshCw, Edit3, Trash2, Send, Loader2, Copy } from 'lucide-react'
+import { RefreshCw, Edit3, Trash2, Send, Loader2, Copy, ExternalLink } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
 import PageHelpBanner from './PageHelpBanner'
@@ -526,6 +526,24 @@ Use 24-hour time. Typical best windows for home services: Tue-Thu 7-9am or 6-8pm
     showToast('Post deleted.', 'success')
   }
 
+  // ─── Publish scheduled post via edge function ──────────────────────────
+
+  async function publishScheduledNow(postId: string) {
+    try {
+      const { error } = await supabase.functions.invoke('publish-scheduled-posts', {
+        body: { post_id: postId },
+      })
+      if (error) {
+        showToast('Publish failed. Check FB credentials in Settings.', 'error')
+      } else {
+        showToast('Post sent! ✅', 'success')
+        await refreshPosts()
+      }
+    } catch {
+      showToast('Failed to reach publish function.', 'error')
+    }
+  }
+
   // ─── Reset form ────────────────────────────────────────────────────────
 
   function resetForm() {
@@ -1043,6 +1061,21 @@ Use 24-hour time. Typical best windows for home services: Tue-Thu 7-9am or 6-8pm
 
                           {/* Date */}
                           <p className="text-xs text-gray-400 mt-1">{postDate(post)}</p>
+
+                          {/* FB link or no-credentials note */}
+                          {post.status === 'published' && post.fb_post_id && post.fb_post_id !== 'no-credentials' && (
+                            <a
+                              href={`https://www.facebook.com/${post.fb_post_id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-xs text-blue-500 hover:text-blue-600 mt-0.5"
+                            >
+                              <ExternalLink size={11} /> View on Facebook
+                            </a>
+                          )}
+                          {post.status === 'published' && post.fb_post_id === 'no-credentials' && (
+                            <p className="text-xs text-gray-400 mt-0.5">Posted (no FB connected)</p>
+                          )}
                         </div>
                       </div>
 
@@ -1069,7 +1102,16 @@ Use 24-hour time. Typical best windows for home services: Tue-Thu 7-9am or 6-8pm
                         >
                           <Trash2 size={14} />
                         </button>
-                        {post.status !== 'published' && (
+                        {post.status === 'scheduled' && (
+                          <button
+                            onClick={() => publishScheduledNow(post.id)}
+                            className="text-gray-400 hover:text-emerald-500 transition-colors"
+                            title="Publish Now"
+                          >
+                            <Send size={14} />
+                          </button>
+                        )}
+                        {post.status === 'draft' && (
                           <button
                             onClick={() => publishPost(post)}
                             className="text-gray-400 hover:text-emerald-500 transition-colors"
