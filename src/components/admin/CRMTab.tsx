@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { X, Download, Users, Inbox, FileText, CheckCircle } from 'lucide-react'
+import { X, Download, Users, Inbox, FileText, CheckCircle, Phone, Mail } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
 
 interface Lead {
   id: string; name: string; email: string; phone: string; services: string[] | null
-  message: string; status: string; created_at: string
+  message: string; status: string; notes?: string; created_at: string
 }
 
 type Status = 'new' | 'contacted' | 'quoted' | 'won' | 'lost'
@@ -28,6 +28,9 @@ export default function CRMTab() {
   const [dateTo, setDateTo] = useState('')
   const [page, setPage] = useState(0)
   const [detail, setDetail] = useState<Lead | null>(null)
+  const [notesOpenId, setNotesOpenId] = useState<string | null>(null)
+  const [notesDraft, setNotesDraft] = useState<Record<string, string>>({})
+  const [notesSaved, setNotesSaved] = useState<Record<string, boolean>>({})
 
   async function fetchLeads() {
     if (!tenantId) return
@@ -42,6 +45,23 @@ export default function CRMTab() {
     await supabase.from('leads').update({ status }).eq('id', id)
     setLeads(prev => prev.map(l => l.id === id ? { ...l, status } : l))
     toast.success('Status updated')
+  }
+
+  async function handleNotesSave(leadId: string) {
+    const notes = notesDraft[leadId] ?? ''
+    await supabase.from('leads').update({ notes }).eq('id', leadId).eq('tenant_id', tenantId)
+    setLeads(prev => prev.map(l => l.id === leadId ? { ...l, notes } : l))
+    setNotesSaved(prev => ({ ...prev, [leadId]: true }))
+    setTimeout(() => setNotesSaved(prev => ({ ...prev, [leadId]: false })), 2000)
+  }
+
+  function toggleNotes(lead: Lead) {
+    if (notesOpenId === lead.id) {
+      setNotesOpenId(null)
+    } else {
+      setNotesOpenId(lead.id)
+      setNotesDraft(prev => ({ ...prev, [lead.id]: lead.notes || '' }))
+    }
   }
 
   const filtered = leads.filter(l => {
@@ -63,17 +83,21 @@ export default function CRMTab() {
 
   function exportCSV() {
     const csv = [
-      ['ID', 'Name', 'Email', 'Phone', 'Services', 'Message', 'Status', 'Date'],
-      ...filtered.map(l => [l.id, l.name, l.email, l.phone,
+      ['Name', 'Email', 'Phone', 'Services', 'Message', 'Status', 'Notes', 'Date'],
+      ...filtered.map(l => [
+        l.name, l.email, l.phone,
         Array.isArray(l.services) ? l.services.join('; ') : (l.services || ''),
-        l.message?.replace(/,/g, ''), l.status,
-        new Date(l.created_at).toLocaleDateString()])
+        l.message?.replace(/,/g, ';') || '',
+        l.status || '',
+        l.notes?.replace(/,/g, ';') || '',
+        new Date(l.created_at).toLocaleDateString(),
+      ])
     ].map(row => row.map(v => `"${v ?? ''}"`).join(',')).join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `leads-export-${new Date().toISOString().split('T')[0]}.csv`
+    a.download = `leads-${new Date().toISOString().split('T')[0]}.csv`
     a.click()
     URL.revokeObjectURL(url)
     toast.success('CSV exported!')
@@ -131,25 +155,73 @@ export default function CRMTab() {
             </thead>
             <tbody>
               {paginated.map(l => (
-                <tr key={l.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900">{l.name}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">
-                    <div>{l.email}</div>
-                    {l.phone && <div className="text-gray-400">{l.phone}</div>}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-600 max-w-[120px] truncate">{Array.isArray(l.services) ? l.services.join(', ') : (l.services || '—')}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600 max-w-[180px] truncate">{l.message?.slice(0, 60) || '—'}</td>
-                  <td className="px-4 py-3">
-                    <select value={l.status || 'new'} onChange={e => updateStatus(l.id, e.target.value)}
-                      className={`px-2 py-1 rounded-full text-xs font-medium border-0 focus:ring-2 focus:ring-emerald-500 cursor-pointer ${statusBadge[l.status || 'new'] || 'bg-gray-100 text-gray-600'}`}>
-                      {STATUSES.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
-                    </select>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-gray-400">{new Date(l.created_at).toLocaleDateString()}</td>
-                  <td className="px-4 py-3">
-                    <button onClick={() => setDetail(l)} className="text-emerald-600 hover:text-emerald-700 text-sm font-medium">View</button>
-                  </td>
-                </tr>
+                <>
+                  <tr key={l.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900">{l.name}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-col gap-1">
+                        {l.email && (
+                          <a
+                            href={`mailto:${l.email}?subject=Re: Your Pest Control Quote`}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors w-fit"
+                          >
+                            <Mail size={11} /> {l.email}
+                          </a>
+                        )}
+                        {l.phone && (
+                          <a
+                            href={`tel:${l.phone}`}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors w-fit"
+                          >
+                            <Phone size={11} /> {l.phone}
+                          </a>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-600 max-w-[120px] truncate">{Array.isArray(l.services) ? l.services.join(', ') : (l.services || '—')}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600 max-w-[180px] truncate">{l.message?.slice(0, 60) || '—'}</td>
+                    <td className="px-4 py-3">
+                      <select value={l.status || 'new'} onChange={e => updateStatus(l.id, e.target.value)}
+                        className={`px-2 py-1 rounded-full text-xs font-medium border-0 focus:ring-2 focus:ring-emerald-500 cursor-pointer ${statusBadge[l.status || 'new'] || 'bg-gray-100 text-gray-600'}`}>
+                        {STATUSES.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+                      </select>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-gray-400">{new Date(l.created_at).toLocaleDateString()}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => toggleNotes(l)}
+                          className="text-xs text-gray-400 hover:text-gray-600 font-medium transition-colors"
+                          title="Add/view notes"
+                        >
+                          📝
+                        </button>
+                        <button onClick={() => setDetail(l)} className="text-emerald-600 hover:text-emerald-700 text-sm font-medium">View</button>
+                      </div>
+                    </td>
+                  </tr>
+                  {notesOpenId === l.id && (
+                    <tr key={`${l.id}-notes`} className="bg-amber-50 border-b border-amber-100">
+                      <td colSpan={7} className="px-4 py-3">
+                        <div className="flex items-start gap-3">
+                          <div className="flex-1">
+                            <textarea
+                              value={notesDraft[l.id] ?? l.notes ?? ''}
+                              onChange={e => setNotesDraft(prev => ({ ...prev, [l.id]: e.target.value }))}
+                              onBlur={() => handleNotesSave(l.id)}
+                              rows={2}
+                              placeholder="Add a note about this lead..."
+                              className="w-full px-3 py-2 border border-amber-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent placeholder-gray-400 resize-none bg-white"
+                            />
+                            {notesSaved[l.id] && (
+                              <p className="text-xs text-emerald-600 mt-1">Saved ✓</p>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </>
               ))}
               {paginated.length === 0 && (
                 <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">No leads found.</td></tr>
@@ -178,8 +250,22 @@ export default function CRMTab() {
             </div>
             <div className="space-y-3">
               <div><p className="text-xs text-gray-500 uppercase tracking-wider">Name</p><p className="text-gray-900 font-medium">{detail.name}</p></div>
-              <div><p className="text-xs text-gray-500 uppercase tracking-wider">Email</p><a href={`mailto:${detail.email}`} className="text-emerald-600 hover:underline">{detail.email}</a></div>
-              {detail.phone && <div><p className="text-xs text-gray-500 uppercase tracking-wider">Phone</p><a href={`tel:${detail.phone}`} className="text-emerald-600 hover:underline">{detail.phone}</a></div>}
+              <div>
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Email</p>
+                <a href={`mailto:${detail.email}?subject=Re: Your Pest Control Quote`}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
+                  <Mail size={11} /> {detail.email}
+                </a>
+              </div>
+              {detail.phone && (
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Phone</p>
+                  <a href={`tel:${detail.phone}`}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors">
+                    <Phone size={11} /> {detail.phone}
+                  </a>
+                </div>
+              )}
               <div><p className="text-xs text-gray-500 uppercase tracking-wider">Services</p><p className="text-gray-700">{Array.isArray(detail.services) ? detail.services.join(', ') : (detail.services || '—')}</p></div>
               <div><p className="text-xs text-gray-500 uppercase tracking-wider">Message</p><p className="text-gray-700 whitespace-pre-wrap">{detail.message || '—'}</p></div>
               <div className="flex items-center gap-3">
