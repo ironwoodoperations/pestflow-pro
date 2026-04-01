@@ -1,11 +1,13 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { Suspense, lazy } from 'react'
 import { Toaster } from 'sonner'
 import ScrollToTop from './components/ScrollToTop'
 import Login from './pages/admin/Login'
-import Dashboard from './pages/admin/Dashboard'
-import Onboarding from './pages/admin/Onboarding'
 import ProtectedRoute from './components/ProtectedRoute'
-import OnboardingLive from './pages/admin/OnboardingLive'
+
+const Dashboard     = lazy(() => import('./pages/admin/Dashboard'))
+const Onboarding    = lazy(() => import('./pages/admin/Onboarding'))
+const OnboardingLive = lazy(() => import('./pages/admin/OnboardingLive'))
 import Index from './pages/Index'
 import QuotePage from './pages/QuotePage'
 import ContactPage from './pages/ContactPage'
@@ -67,9 +69,21 @@ export default function App() {
 
         {/* ─── Admin routes ─── */}
         <Route path="/admin/login" element={<Login />} />
-        <Route path="/admin/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
-        <Route path="/admin/onboarding-live" element={<ProtectedRoute><OnboardingLive /></ProtectedRoute>} />
-        <Route path="/admin" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/admin/onboarding" element={
+          <Suspense fallback={<div className="flex items-center justify-center h-screen"><div className="text-gray-400 text-sm">Loading...</div></div>}>
+            <ProtectedRoute><Onboarding /></ProtectedRoute>
+          </Suspense>
+        } />
+        <Route path="/admin/onboarding-live" element={
+          <Suspense fallback={<div className="flex items-center justify-center h-screen"><div className="text-gray-400 text-sm">Loading...</div></div>}>
+            <ProtectedRoute><OnboardingLive /></ProtectedRoute>
+          </Suspense>
+        } />
+        <Route path="/admin" element={
+          <Suspense fallback={<div className="flex items-center justify-center h-screen"><div className="text-gray-400 text-sm">Loading...</div></div>}>
+            <ProtectedRoute><Dashboard /></ProtectedRoute>
+          </Suspense>
+        } />
 
         {/* ─── Dynamic slug — MUST BE LAST ─── */}
         <Route path="/:slug" element={<SlugRouter />} />

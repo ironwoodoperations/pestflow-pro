@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
@@ -8,15 +8,15 @@ import {
   MapPin, BarChart3, Users, Settings, LogOut, ExternalLink, Eye, EyeOff,
   TrendingUp, ArrowUp
 } from 'lucide-react'
-import ContentTab from '../../components/admin/ContentTab'
-import SEOTab from '../../components/admin/SEOTab'
-import BlogTab from '../../components/admin/BlogTab'
-import SocialTab from '../../components/admin/SocialTab'
-import TestimonialsTab from '../../components/admin/TestimonialsTab'
-import LocationsTab from '../../components/admin/LocationsTab'
-import ReportsTab from '../../components/admin/ReportsTab'
-import CRMTab from '../../components/admin/CRMTab'
-import SettingsTab from '../../components/admin/settings/SettingsTab'
+const ContentTab    = lazy(() => import('../../components/admin/ContentTab'))
+const SEOTab        = lazy(() => import('../../components/admin/SEOTab'))
+const BlogTab       = lazy(() => import('../../components/admin/BlogTab'))
+const SocialTab     = lazy(() => import('../../components/admin/SocialTab'))
+const TestimonialsTab = lazy(() => import('../../components/admin/TestimonialsTab'))
+const LocationsTab  = lazy(() => import('../../components/admin/LocationsTab'))
+const ReportsTab    = lazy(() => import('../../components/admin/ReportsTab'))
+const CRMTab        = lazy(() => import('../../components/admin/CRMTab'))
+const SettingsTab   = lazy(() => import('../../components/admin/settings/SettingsTab'))
 
 const TABS = [
   { key: 'dashboard', label: 'Dashboard', icon: BarChart3 },
@@ -137,16 +137,22 @@ export default function Dashboard() {
         {/* Tab Content */}
         <PreviewModeContext.Provider value={previewMode}>
           <div className={`p-8 ${previewMode ? 'pointer-events-none select-none opacity-90' : ''}`} style={previewMode ? { pointerEvents: 'none' } : undefined}>
-            {activeTab === 'dashboard' && <DashboardHome />}
-            {activeTab === 'content' && <ContentTab />}
-            {activeTab === 'seo' && <SEOTab />}
-            {activeTab === 'blog' && <BlogTab />}
-            {activeTab === 'social' && <SocialTab />}
-            {activeTab === 'testimonials' && <TestimonialsTab />}
-            {activeTab === 'locations' && <LocationsTab />}
-            {activeTab === 'reports' && <ReportsTab />}
-            {activeTab === 'crm' && <CRMTab />}
-            {activeTab === 'settings' && <SettingsTab />}
+            <Suspense fallback={
+              <div className="flex items-center justify-center h-64">
+                <div className="text-gray-400 text-sm">Loading...</div>
+              </div>
+            }>
+              {activeTab === 'dashboard' && <DashboardHome />}
+              {activeTab === 'content' && <ContentTab />}
+              {activeTab === 'seo' && <SEOTab />}
+              {activeTab === 'blog' && <BlogTab />}
+              {activeTab === 'social' && <SocialTab />}
+              {activeTab === 'testimonials' && <TestimonialsTab />}
+              {activeTab === 'locations' && <LocationsTab />}
+              {activeTab === 'reports' && <ReportsTab />}
+              {activeTab === 'crm' && <CRMTab />}
+              {activeTab === 'settings' && <SettingsTab />}
+            </Suspense>
           </div>
         </PreviewModeContext.Provider>
       </main>
