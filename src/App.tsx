@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Suspense, lazy } from 'react'
 import { Toaster } from 'sonner'
 import ScrollToTop from './components/ScrollToTop'
-import { useGoogleAnalytics } from '@/hooks/useGoogleAnalytics'
+import { useGoogleAnalytics } from './hooks/useGoogleAnalytics'
 import Login from './pages/admin/Login'
 import ProtectedRoute from './components/ProtectedRoute'
 
