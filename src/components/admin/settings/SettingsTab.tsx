@@ -438,13 +438,13 @@ function IntegrationsSection() {
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
   const [showToken, setShowToken] = useState(false)
-  const [form, setForm] = useState({ google_place_id: '', facebook_page_id: '', facebook_access_token: '', google_maps_embed_url: '', pexels_api_key: '', google_analytics_id: '', google_api_key: '' })
+  const [form, setForm] = useState({ google_place_id: '', facebook_page_id: '', facebook_access_token: '', google_maps_embed_url: '', pexels_api_key: '', google_analytics_id: '', google_api_key: '', google_search_console_url: '' })
 
   useEffect(() => {
     if (!tenantId) return
     supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle()
       .then(({ data }) => {
-        if (data?.value) setForm(prev => ({ ...prev, google_place_id: data.value.google_place_id || '', facebook_page_id: data.value.facebook_page_id || '', facebook_access_token: data.value.facebook_access_token || '', google_maps_embed_url: data.value.google_maps_embed_url || '', pexels_api_key: data.value.pexels_api_key || '', google_analytics_id: data.value.google_analytics_id || '', google_api_key: data.value.google_api_key || '' }))
+        if (data?.value) setForm(prev => ({ ...prev, google_place_id: data.value.google_place_id || '', facebook_page_id: data.value.facebook_page_id || '', facebook_access_token: data.value.facebook_access_token || '', google_maps_embed_url: data.value.google_maps_embed_url || '', pexels_api_key: data.value.pexels_api_key || '', google_analytics_id: data.value.google_analytics_id || '', google_api_key: data.value.google_api_key || '', google_search_console_url: data.value.google_search_console_url || '' }))
         setLoading(false)
       })
   }, [tenantId])
@@ -511,6 +511,11 @@ function IntegrationsSection() {
           </div>
           <p className="text-xs text-gray-400 mt-1">Format: G-XXXXXXXXXX — find this in Google Analytics &rarr; Admin &rarr; Data Streams</p>
           <p className="text-xs text-emerald-600 mt-1">Once saved, tracking activates automatically on the next page load. No code changes required.</p>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Google Search Console URL</label>
+          <input value={form.google_search_console_url} onChange={e => setForm(p => ({ ...p, google_search_console_url: e.target.value }))} placeholder="https://yoursite.com" className={inputClass} />
+          <HelpDrop text="Paste your verified property URL from search.google.com/search-console" />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">Google API Key</label>
