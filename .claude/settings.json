@@ -1,4 +1,7 @@
 {
+  "env": {
+    "PESTFLOW_ENV": "development"
+  },
   "permissions": {
     "allow": [
       "Bash(npm *)",
@@ -23,7 +26,8 @@
       "Bash(curl *)",
       "Read(**)",
       "Write(**)",
-      "Edit(**)"
+      "Edit(**)",
+      "mcp__claude_ai_Supabase__apply_migration"
     ],
     "deny": [
       "Bash(git push --force *)",
@@ -32,8 +36,5 @@
       "Bash(vercel deploy --prod)"
     ]
   },
-  "model": "claude-sonnet-4-6",
-  "env": {
-    "PESTFLOW_ENV": "development"
-  }
+  "model": "claude-sonnet-4-6"
 }

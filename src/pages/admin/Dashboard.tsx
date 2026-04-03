@@ -12,6 +12,8 @@ import {
 import TierToggle from '../../components/admin/TierToggle'
 import NotificationBell from '../../components/admin/NotificationBell'
 import DashboardHome from '../../components/admin/dashboard/DashboardHome'
+import DemoBanner from '../../components/admin/DemoBanner'
+import { resetDemoData } from '../../lib/demoSeed'
 
 const ContentTab    = lazy(() => import('../../components/admin/ContentTab'))
 const SEOTab        = lazy(() => import('../../components/admin/SEOTab'))
@@ -22,6 +24,7 @@ const LocationsTab  = lazy(() => import('../../components/admin/LocationsTab'))
 const ReportsTab    = lazy(() => import('../../components/admin/ReportsTab'))
 const CRMTab        = lazy(() => import('../../components/admin/CRMTab'))
 const SettingsTab   = lazy(() => import('../../components/admin/settings/SettingsTab'))
+const TeamTab       = lazy(() => import('../../components/admin/team/TeamTab'))
 
 const TABS = [
   { key: 'dashboard', label: 'Dashboard', icon: BarChart3 },
@@ -33,6 +36,7 @@ const TABS = [
   { key: 'locations', label: 'Locations', icon: MapPin },
   { key: 'reports', label: 'Reports', icon: TrendingUp },
   { key: 'crm', label: 'CRM', icon: Users },
+  { key: 'team', label: 'Team', icon: Users },
   { key: 'settings', label: 'Settings', icon: Settings },
 ] as const
 
@@ -48,6 +52,7 @@ const TAB_SUBTITLES: Record<string, string> = {
   locations: 'Manage service area locations',
   reports: 'Business analytics and reports',
   crm: 'Track leads and customer relationships',
+  team: 'Manage your team members shown on your website',
   settings: 'Configure your business settings',
 }
 
@@ -56,20 +61,32 @@ export default function Dashboard() {
   const [businessName, setBusinessName] = useState('Your Business')
   const [onboardingComplete, setOnboardingComplete] = useState(true)
   const [previewMode, setPreviewMode] = useState(false)
+  const [demoActive, setDemoActive] = useState(false)
   const { tenantId } = useTenant()
   const { canAccess } = usePlan()
   const navigate = useNavigate()
 
-  useEffect(() => {
+  const fetchSettings = () => {
     if (!tenantId) return
     Promise.all([
       supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
       supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'onboarding_complete').maybeSingle(),
-    ]).then(([bizRes, onbRes]) => {
+      supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'demo_mode').maybeSingle(),
+    ]).then(([bizRes, onbRes, demoRes]) => {
       if (bizRes.data?.value?.name) setBusinessName(bizRes.data.value.name)
       setOnboardingComplete(onbRes.data?.value?.complete === true)
+      setDemoActive(demoRes.data?.value?.active === true)
     })
-  }, [tenantId])
+  }
+
+  useEffect(() => { fetchSettings() }, [tenantId])
+
+  const handleGoLive = async () => {
+    if (!tenantId) return
+    if (!window.confirm('This will delete all demo data. Are you sure you want to go live?')) return
+    await resetDemoData(tenantId, supabase)
+    setDemoActive(false)
+  }
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -77,7 +94,9 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex flex-col min-h-screen">
+      {demoActive && <DemoBanner onGoLive={handleGoLive} />}
+      <div className="flex flex-1">
       <aside className="w-64 flex-shrink-0 flex flex-col" style={{ background: '#1a1f2e' }}>
         <div className="px-6 py-5" style={{ background: '#141922' }}>
           <h1 className="font-oswald text-xl text-white tracking-wide">PestFlow Pro</h1>
@@ -140,7 +159,7 @@ export default function Dashboard() {
         <PreviewModeContext.Provider value={previewMode}>
           <div className={`p-8 ${previewMode ? 'pointer-events-none select-none opacity-90' : ''}`} style={previewMode ? { pointerEvents: 'none' } : undefined}>
             <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-gray-400 text-sm">Loading...</div></div>}>
-              {activeTab === 'dashboard' && <DashboardHome onboardingComplete={onboardingComplete} />}
+              {activeTab === 'dashboard' && <DashboardHome onboardingComplete={onboardingComplete} demoActive={demoActive} onDemoSeeded={() => setDemoActive(true)} />}
               {activeTab === 'content' && <ContentTab />}
               {activeTab === 'seo' && <SEOTab />}
               {activeTab === 'blog' && <BlogTab />}
@@ -149,11 +168,13 @@ export default function Dashboard() {
               {activeTab === 'locations' && <LocationsTab />}
               {activeTab === 'reports' && <ReportsTab />}
               {activeTab === 'crm' && <CRMTab />}
+              {activeTab === 'team' && <TeamTab />}
               {activeTab === 'settings' && <SettingsTab />}
             </Suspense>
           </div>
         </PreviewModeContext.Provider>
       </main>
+      </div>
     </div>
   )
 }

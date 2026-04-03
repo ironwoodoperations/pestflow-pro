@@ -3,8 +3,13 @@ import { Users, ArrowUp, TrendingUp, BarChart3 } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../hooks/useTenant'
 import PlanOverviewCard from './PlanOverviewCard'
+import DemoControls from './DemoControls'
 
-interface Props { onboardingComplete: boolean }
+interface Props {
+  onboardingComplete: boolean
+  demoActive: boolean
+  onDemoSeeded: () => void
+}
 
 interface Lead { id: string; name: string; status: string; created_at: string; services: string[] | null }
 
@@ -32,7 +37,7 @@ function QuickLink({ label, icon, tab }: { label: string; icon: string; tab: str
   )
 }
 
-export default function DashboardHome({ onboardingComplete }: Props) {
+export default function DashboardHome({ onboardingComplete, demoActive, onDemoSeeded }: Props) {
   const { tenantId } = useTenant()
   const [leads, setLeads] = useState<Lead[]>([])
   const [loading, setLoading] = useState(true)
@@ -80,6 +85,10 @@ export default function DashboardHome({ onboardingComplete }: Props) {
       )}
 
       <PlanOverviewCard />
+
+      {!demoActive && tenantId && (
+        <DemoControls tenantId={tenantId} onSeeded={onDemoSeeded} />
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
