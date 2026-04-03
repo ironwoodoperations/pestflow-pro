@@ -5,6 +5,7 @@ import ScrollToTop from './components/ScrollToTop'
 import { useGoogleAnalytics } from './hooks/useGoogleAnalytics'
 import Login from './pages/admin/Login'
 import ProtectedRoute from './components/ProtectedRoute'
+import { PlanProvider } from './context/PlanContext'
 
 const Dashboard     = lazy(() => import('./pages/admin/Dashboard'))
 const Onboarding    = lazy(() => import('./pages/admin/Onboarding'))
@@ -40,6 +41,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <PlanProvider>
       <ScrollToTop />
       <Toaster richColors position="top-right" />
       <Routes>
@@ -92,6 +94,7 @@ export default function App() {
         <Route path="/:slug" element={<SlugRouter />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
+      </PlanProvider>
     </BrowserRouter>
   )
 }
