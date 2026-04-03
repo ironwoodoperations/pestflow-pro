@@ -13,6 +13,13 @@ interface BusinessInfo {
   license: string
 }
 
+interface SocialLinks {
+  facebook?: string
+  instagram?: string
+  google?: string
+  youtube?: string
+}
+
 const QUICK_LINKS = [
   { label: 'Home', href: '/' },
   { label: 'Services', href: '/pest-control' },
@@ -29,13 +36,15 @@ export default function Footer() {
     name: 'Ironclad Pest Solutions', phone: '', email: '', address: '', hours: '', tagline: '', license: '',
   })
   const [logoUrl, setLogoUrl] = useState('')
+  const [social, setSocial] = useState<SocialLinks>({})
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const [bizRes, brandRes] = await Promise.all([
+      const [bizRes, brandRes, socialRes] = await Promise.all([
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'social_links').maybeSingle(),
       ])
       if (bizRes.data?.value) {
         const data = bizRes.data
@@ -45,6 +54,7 @@ export default function Footer() {
         }))
       }
       if (brandRes.data?.value?.logo_url) setLogoUrl(brandRes.data.value.logo_url)
+      if (socialRes.data?.value) setSocial(socialRes.data.value)
       if (brandRes.data?.value?.favicon_url) {
         const link = document.querySelector("link[rel='icon']") as HTMLLinkElement | null
         if (link) link.href = brandRes.data.value.favicon_url
@@ -62,6 +72,14 @@ export default function Footer() {
             {info.tagline && <p className="mb-2 text-gray-400">{info.tagline}</p>}
             {info.phone && <p className="mb-1"><a href={`tel:${info.phone}`} className="hover:text-emerald-400 transition">{info.phone}</a></p>}
             {info.license && <p className="text-sm text-gray-500">License #{info.license}</p>}
+            {(social.facebook || social.instagram || social.google || social.youtube) && (
+              <div className="flex gap-3 mt-3">
+                {social.facebook && <a href={social.facebook} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-emerald-400 transition text-sm font-medium">FB</a>}
+                {social.instagram && <a href={social.instagram} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-emerald-400 transition text-sm font-medium">IG</a>}
+                {social.google && <a href={social.google} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-emerald-400 transition text-sm font-medium">G</a>}
+                {social.youtube && <a href={social.youtube} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-emerald-400 transition text-sm font-medium">YT</a>}
+              </div>
+            )}
           </div>
 
           <div>
