@@ -80,7 +80,7 @@ export default function ReportsTab() {
   return (
     <div>
       <PageHelpBanner tab="reports" title="📊 Reports & Insights"
-        body="See how your business is performing: lead funnel, social media stats, and SEO coverage. Use the date range selector to zoom in on specific periods." />
+        body="A snapshot of your social media activity and SEO health. Use this to spot gaps and track progress over time." />
 
       {/* Date Range Selector */}
       <div className="flex items-center gap-2 mb-6">
