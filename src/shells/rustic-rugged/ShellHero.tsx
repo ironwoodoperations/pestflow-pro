@@ -22,9 +22,10 @@ export default function ShellHero() {
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'hero_media').maybeSingle(),
       ])
       if (bizRes.data?.value) {
+        const v = bizRes.data.value
         setInfo(prev => ({
-          tagline: bizRes.data.value.tagline || prev.tagline,
-          founded_year: bizRes.data.value.founded_year,
+          tagline: v.tagline || prev.tagline,
+          founded_year: v.founded_year,
         }))
       }
       if (mediaRes.data?.value) setHeroMedia(mediaRes.data.value)
