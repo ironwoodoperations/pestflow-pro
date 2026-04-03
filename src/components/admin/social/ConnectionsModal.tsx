@@ -14,10 +14,10 @@ interface Props {
 
 type ProviderTab = 'export' | 'diy' | 'buffer' | 'ayrshare'
 const TABS: { id: ProviderTab; label: string }[] = [
-  { id: 'export', label: 'Export Mode' },
+  { id: 'export', label: 'Hands-On' },
   { id: 'diy', label: 'DIY' },
-  { id: 'buffer', label: 'A Little Help' },
-  { id: 'ayrshare', label: 'I Need a Pro' },
+  { id: 'buffer', label: 'Semi-Auto' },
+  { id: 'ayrshare', label: 'Full Autopilot' },
 ]
 
 export default function ConnectionsModal({ integrations, onClose, onSaved }: Props) {
