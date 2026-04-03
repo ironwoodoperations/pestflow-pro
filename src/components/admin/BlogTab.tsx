@@ -135,7 +135,7 @@ export default function BlogTab() {
   return (
     <div>
       <PageHelpBanner tab="blog" title="✍️ Blog" body="Every post you publish is a new page Google can find. Use clear titles that match what people search for, write at least 300 words, and use the AI button for help. Toggle Published when ready to go live. Aim for 2 posts per month." />
-      <FeatureGate tier={2}>
+      <FeatureGate minTier={2}>
       <div className="flex items-center justify-between mb-6">
         <p className="text-sm text-gray-500">{posts.length} post{posts.length !== 1 ? 's' : ''}</p>
         <button onClick={openNew} className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">

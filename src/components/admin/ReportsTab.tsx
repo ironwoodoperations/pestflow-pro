@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
-import { FeatureGate } from './FeatureGate'
+import { FeatureGate } from '../common/FeatureGate'
 import PageHelpBanner from './PageHelpBanner'
 import LeadFunnel from './reports/LeadFunnel'
 import SocialSeoReport from './reports/SocialSeoReport'

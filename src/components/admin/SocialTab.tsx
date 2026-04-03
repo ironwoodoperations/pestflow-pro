@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FeatureGate } from './FeatureGate'
+import { FeatureGate } from '../common/FeatureGate'
 import PageHelpBanner from './PageHelpBanner'
 import { useSocialData } from './social/useSocialData'
 import CampaignsTab from './social/CampaignsTab'

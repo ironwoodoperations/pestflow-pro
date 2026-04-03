@@ -1,6 +1,5 @@
 import PageHelpBanner from './PageHelpBanner'
-import CommonGate from '../common/FeatureGate'
-import { FeatureGate } from './FeatureGate'
+import { FeatureGate } from '../common/FeatureGate'
 import { useSeoTab } from './seo/useSeoTab'
 import SeoOverviewTab from './seo/SeoOverviewTab'
 import SeoPagesTab from './seo/SeoPagesTab'
@@ -34,7 +33,7 @@ export default function SEOTab() {
       <PageHelpBanner tab="seo" title="🔍 SEO Dashboard"
         body="Optimize your search engine rankings. Use the Overview tab to see your site health, Pages to edit meta tags, Keywords for research, and Connect to link data sources." />
 
-      <CommonGate tier={2}>
+      <FeatureGate minTier={2}>
         <div className="flex border-b border-gray-200 mb-6 gap-0">
           {TABS.map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
@@ -81,7 +80,7 @@ export default function SEOTab() {
             connectSaving={connectSaving} onChange={handleConnectChange}
             onSave={handleConnectSave} onRunCheckNow={handleRunCheckNow} />
         )}
-      </CommonGate>
+      </FeatureGate>
     </div>
   )
 }
