@@ -1,20 +1,19 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { Star, Plus, X, Download, ChevronDown, ChevronUp } from 'lucide-react'
+import { Plus, Download } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
-
-interface Testimonial {
-  id: string; author_name: string; review_text: string; rating: number
-  source: string; featured: boolean; created_at: string
-}
+import PageHelpBanner from './PageHelpBanner'
+import TestimonialCard from './TestimonialCard'
+import type { Testimonial } from './TestimonialCard'
+import TestimonialModal from './TestimonialModal'
 
 interface FormState {
-  author_name: string; review_text: string; rating: number; source: string; featured: boolean
+  author_name: string; author_email: string; review_text: string
+  rating: number; source: string; featured: boolean
 }
 
-const EMPTY_FORM: FormState = { author_name: '', review_text: '', rating: 5, source: 'Google', featured: false }
-const SOURCES = ['Google', 'Facebook', 'Direct', 'Yelp']
+const EMPTY_FORM: FormState = { author_name: '', author_email: '', review_text: '', rating: 5, source: 'Google', featured: false }
 
 export default function TestimonialsTab() {
   const { tenantId } = useTenant()
@@ -26,34 +25,7 @@ export default function TestimonialsTab() {
   const [saving, setSaving] = useState(false)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [importing, setImporting] = useState(false)
-  const [helpOpen, setHelpOpen] = useState(false)
-
-  async function importGoogleReviews() {
-    if (!tenantId) return
-    const apiKey = import.meta.env.VITE_GOOGLE_PLACES_API_KEY
-    if (!apiKey) { toast.error('Set VITE_GOOGLE_PLACES_API_KEY to import Google reviews.'); return }
-    const { data: settings } = await supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle()
-    const placeId = settings?.value?.google_place_id
-    if (!placeId) { toast.error('Set Google Place ID in Settings → Integrations first.'); return }
-    setImporting(true)
-    try {
-      const res = await fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=reviews&key=${apiKey}`)
-      const json = await res.json()
-      const googleReviews = json?.result?.reviews || []
-      if (googleReviews.length === 0) { toast.error('No reviews found for this Place ID.'); setImporting(false); return }
-      let imported = 0
-      for (const r of googleReviews) {
-        const { error } = await supabase.from('testimonials').insert({
-          tenant_id: tenantId, author_name: r.author_name || 'Google User',
-          content: r.text || '', rating: r.rating || 5, source: 'Google', featured: false,
-        })
-        if (!error) imported++
-      }
-      toast.success(`Imported ${imported} Google review${imported !== 1 ? 's' : ''}!`)
-      fetchReviews()
-    } catch { toast.error('Failed to fetch Google reviews. Check API key and Place ID.') }
-    setImporting(false)
-  }
+  const [sentIds, setSentIds] = useState<Set<string>>(new Set())
 
   async function fetchReviews() {
     if (!tenantId) return
@@ -65,19 +37,21 @@ export default function TestimonialsTab() {
   useEffect(() => { fetchReviews() }, [tenantId])
 
   function openNew() { setForm(EMPTY_FORM); setEditingId(null); setModalOpen(true) }
+
   function openEdit(r: Testimonial) {
-    setForm({ author_name: r.author_name, review_text: r.review_text, rating: r.rating, source: r.source || 'Google', featured: r.featured })
+    setForm({ author_name: r.author_name, author_email: r.author_email || '', review_text: r.review_text, rating: r.rating, source: r.source || 'Google', featured: r.featured })
     setEditingId(r.id); setModalOpen(true)
   }
 
   async function handleSave() {
     if (!tenantId || !form.author_name.trim() || !form.review_text.trim()) { toast.error('Name and review text are required.'); return }
     setSaving(true)
+    const payload = { author_name: form.author_name, author_email: form.author_email || null, review_text: form.review_text, rating: form.rating, source: form.source, featured: form.featured }
     if (editingId) {
-      const { error } = await supabase.from('testimonials').update({ author_name: form.author_name, review_text: form.review_text, rating: form.rating, source: form.source, featured: form.featured }).eq('id', editingId)
+      const { error } = await supabase.from('testimonials').update(payload).eq('id', editingId)
       if (error) toast.error('Failed to update.'); else toast.success('Review updated!')
     } else {
-      const { error } = await supabase.from('testimonials').insert({ tenant_id: tenantId, author_name: form.author_name, review_text: form.review_text, rating: form.rating, source: form.source, featured: form.featured })
+      const { error } = await supabase.from('testimonials').insert({ tenant_id: tenantId, ...payload })
       if (error) toast.error('Failed to add review.'); else toast.success('Review added!')
     }
     setSaving(false); setModalOpen(false); fetchReviews()
@@ -95,36 +69,54 @@ export default function TestimonialsTab() {
     setReviews(prev => prev.map(x => x.id === r.id ? { ...x, featured: !x.featured } : x))
   }
 
-  const toggleExpand = (id: string) => setExpanded(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
+  async function requestReview(r: Testimonial) {
+    const res = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-review-request`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ tenant_id: tenantId, email_override: r.author_email, name_override: r.author_name }),
+      }
+    )
+    if (!res.ok) { const b = await res.json(); throw new Error(b.error || 'Request failed') }
+    const body = await res.json()
+    if (body.skipped && body.reason === 'no_place_id') { toast.info('Add a Google Place ID in Settings → Integrations to send review requests.'); return }
+    setSentIds(prev => new Set(prev).add(r.id))
+    toast.success(`✅ Review request sent to ${r.author_name}`)
+  }
 
+  async function importGoogleReviews() {
+    if (!tenantId) return
+    const apiKey = import.meta.env.VITE_GOOGLE_PLACES_API_KEY
+    if (!apiKey) { toast.error('Set VITE_GOOGLE_PLACES_API_KEY to import Google reviews.'); return }
+    const { data: settings } = await supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle()
+    const placeId = settings?.value?.google_place_id
+    if (!placeId) { toast.error('Set Google Place ID in Settings → Integrations first.'); return }
+    setImporting(true)
+    try {
+      const res = await fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=reviews&key=${apiKey}`)
+      const json = await res.json()
+      const gReviews = json?.result?.reviews || []
+      if (gReviews.length === 0) { toast.error('No reviews found for this Place ID.'); setImporting(false); return }
+      let imported = 0
+      for (const r of gReviews) {
+        const { error } = await supabase.from('testimonials').insert({ tenant_id: tenantId, author_name: r.author_name || 'Google User', review_text: r.text || '', rating: r.rating || 5, source: 'Google', featured: false })
+        if (!error) imported++
+      }
+      toast.success(`Imported ${imported} Google review${imported !== 1 ? 's' : ''}!`); fetchReviews()
+    } catch { toast.error('Failed to fetch Google reviews. Check API key and Place ID.') }
+    setImporting(false)
+  }
+
+  const toggleExpand = (id: string) => setExpanded(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
   const totalReviews = reviews.length
   const featuredCount = reviews.filter(r => r.featured).length
   const avgRating = totalReviews ? (reviews.reduce((s, r) => s + r.rating, 0) / totalReviews).toFixed(1) : '0'
 
-  const sourceBadge: Record<string, string> = { Google: 'bg-blue-100 text-blue-700', Facebook: 'bg-purple-100 text-purple-700', Direct: 'bg-gray-100 text-gray-600', Yelp: 'bg-red-100 text-red-700' }
-
   return (
     <div>
-      {/* Help Banner */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-        <button onClick={() => setHelpOpen(!helpOpen)} className="flex items-center justify-between w-full text-left">
-          <span className="text-sm font-semibold text-blue-900">⭐ Reviews — How to use this</span>
-          {helpOpen ? <ChevronUp size={16} className="text-blue-600" /> : <ChevronDown size={16} className="text-blue-600" />}
-        </button>
-        {helpOpen && (
-          <div className="mt-3 text-sm text-blue-800 space-y-2">
-            <p>Reviews are one of the most important things for your business. 90% of people read reviews before calling a company.</p>
-            <ul className="list-none space-y-1">
-              <li><strong>IMPORT FROM GOOGLE</strong> — Pulls your real Google reviews automatically</li>
-              <li><strong>ADD MANUALLY</strong> — Type in a review by hand</li>
-              <li><strong>FEATURED</strong> — Toggle ON for your best reviews — they show on the homepage</li>
-            </ul>
-            <p className="text-blue-700 italic">💡 Ask every happy customer to leave a Google review. More reviews = higher rankings.</p>
-          </div>
-        )}
-      </div>
+      <PageHelpBanner tab="testimonials" title="⭐ Reviews — How to use this tab" body="Import your Google reviews automatically, or add them manually. Toggle 'Featured' on your best reviews to show them on the homepage. Add a customer email to enable one-click review request emails." />
 
-      {/* Top bar */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex gap-4">
           {[{ label: 'Total', value: totalReviews }, { label: 'Featured', value: featuredCount }, { label: 'Avg Rating', value: avgRating }].map(s => (
@@ -151,79 +143,17 @@ export default function TestimonialsTab() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {reviews.map(r => (
-            <div key={r.id} className={`bg-white rounded-xl shadow-sm border p-5 transition ${r.featured ? 'border-l-4 border-l-emerald-500 border-t border-r border-b border-gray-100' : 'border-gray-100'}`}>
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <p className="font-semibold text-gray-900">{r.author_name}</p>
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${sourceBadge[r.source] || 'bg-gray-100 text-gray-600'}`}>{r.source}</span>
-                </div>
-                <div className="flex text-yellow-500 text-sm">{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</div>
-              </div>
-              <p className={`text-gray-600 text-sm ${expanded.has(r.id) ? '' : 'line-clamp-3'} cursor-pointer`} onClick={() => toggleExpand(r.id)}>
-                {r.review_text}
-              </p>
-              <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
-                <div className="flex gap-2">
-                  <button onClick={() => toggleFeatured(r)} className={`text-xs font-medium px-2 py-1 rounded ${r.featured ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
-                    {r.featured ? '★ Featured' : 'Feature'}
-                  </button>
-                  <button onClick={() => openEdit(r)} className="text-emerald-600 hover:text-emerald-700 text-xs font-medium">Edit</button>
-                  <button onClick={() => handleDelete(r.id)} className="text-red-500 hover:text-red-600 text-xs font-medium">Delete</button>
-                </div>
-                <p className="text-xs text-gray-400">{new Date(r.created_at).toLocaleDateString()}</p>
-              </div>
-            </div>
+            <TestimonialCard
+              key={r.id} testimonial={r} expanded={expanded.has(r.id)} sent={sentIds.has(r.id)}
+              onToggleExpand={() => toggleExpand(r.id)} onEdit={() => openEdit(r)}
+              onDelete={() => handleDelete(r.id)} onToggleFeatured={() => toggleFeatured(r)}
+              onRequestReview={() => requestReview(r)}
+            />
           ))}
         </div>
       )}
 
-      {/* Modal */}
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">{editingId ? 'Edit' : 'Add'} Testimonial</h3>
-              <button onClick={() => setModalOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Author Name *</label>
-                <input value={form.author_name} onChange={e => setForm(p => ({ ...p, author_name: e.target.value }))} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Review Text *</label>
-                <textarea value={form.review_text} onChange={e => setForm(p => ({ ...p, review_text: e.target.value }))} rows={4} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Rating</label>
-                <div className="flex gap-1">
-                  {[1, 2, 3, 4, 5].map(n => (
-                    <button key={n} type="button" onClick={() => setForm(p => ({ ...p, rating: n }))} className="focus:outline-none">
-                      <Star size={24} className={n <= form.rating ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'} />
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Source</label>
-                <select value={form.source} onChange={e => setForm(p => ({ ...p, source: e.target.value }))} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white">
-                  {SOURCES.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
-              <label className="flex items-center gap-2 text-sm text-gray-700">
-                <input type="checkbox" checked={form.featured} onChange={e => setForm(p => ({ ...p, featured: e.target.checked }))} className="rounded border-gray-300 text-emerald-500 focus:ring-emerald-500" />
-                Featured (shown on homepage)
-              </label>
-            </div>
-            <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setModalOpen(false)} className="border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium transition-colors">Cancel</button>
-              <button onClick={handleSave} disabled={saving} className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
-                {saving ? 'Saving...' : 'Save'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {modalOpen && <TestimonialModal form={form} setForm={setForm} editingId={editingId} saving={saving} onSave={handleSave} onClose={() => setModalOpen(false)} />}
     </div>
   )
 }
