@@ -1,6 +1,7 @@
 import type { SeoStats, SeoCoverage, AuditResult, IntegrationValues } from './seoTypes'
 import SeoStatCards from './SeoStatCards'
 import ScoreRing from './ScoreRing'
+import GSCStatusPanel from './GSCStatusPanel'
 
 interface Props {
   stats: SeoStats
@@ -149,6 +150,9 @@ export default function SeoOverviewTab({
           </p>
         </div>
       )}
+
+      {/* Google Search Console Status */}
+      <GSCStatusPanel gscUrl={integrations.google_search_console_url || null} />
     </div>
   )
 }
