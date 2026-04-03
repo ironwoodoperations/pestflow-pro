@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { X, Download, Users, Inbox, FileText, CheckCircle, Phone, Mail } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
+import PageHelpBanner from './PageHelpBanner'
 
 interface Lead {
   id: string; name: string; email: string; phone: string; services: string[] | null
@@ -107,6 +108,9 @@ export default function CRMTab() {
 
   return (
     <div>
+      <PageHelpBanner tab="crm" title="📋 CRM — Lead Management"
+        body="Track every quote request from your website. Change a lead's status by clicking the badge, click phone/email to contact them instantly, and add notes to keep your team aligned." />
+
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         {[
@@ -162,8 +166,9 @@ export default function CRMTab() {
                       <div className="flex flex-col gap-1">
                         {l.email && (
                           <a
-                            href={`mailto:${l.email}?subject=Re: Your Pest Control Quote`}
+                            href={`mailto:${l.email}?subject=Following up on your quote request&body=Hi ${encodeURIComponent(l.name)},%0A%0A`}
                             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors w-fit"
+                            title={`Email ${l.name}`}
                           >
                             <Mail size={11} /> {l.email}
                           </a>
@@ -172,6 +177,7 @@ export default function CRMTab() {
                           <a
                             href={`tel:${l.phone}`}
                             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors w-fit"
+                            title={`Call ${l.name}`}
                           >
                             <Phone size={11} /> {l.phone}
                           </a>
@@ -211,7 +217,7 @@ export default function CRMTab() {
                               onBlur={() => handleNotesSave(l.id)}
                               rows={2}
                               placeholder="Add a note about this lead..."
-                              className="w-full px-3 py-2 border border-amber-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent placeholder-gray-400 resize-none bg-white"
+                              className="w-full px-3 py-2 border border-amber-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent placeholder-gray-400 resize-none bg-white max-h-[120px] overflow-y-auto"
                             />
                             {notesSaved[l.id] && (
                               <p className="text-xs text-emerald-600 mt-1">Saved ✓</p>
@@ -252,8 +258,9 @@ export default function CRMTab() {
               <div><p className="text-xs text-gray-500 uppercase tracking-wider">Name</p><p className="text-gray-900 font-medium">{detail.name}</p></div>
               <div>
                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Email</p>
-                <a href={`mailto:${detail.email}?subject=Re: Your Pest Control Quote`}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
+                <a href={`mailto:${detail.email}?subject=Following up on your quote request&body=Hi ${encodeURIComponent(detail.name)},%0A%0A`}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+                  title={`Email ${detail.name}`}>
                   <Mail size={11} /> {detail.email}
                 </a>
               </div>
