@@ -1,0 +1,170 @@
+PESTFLOW PRO — SESSION 26 CLAUDE CODE PROMPT
+============================================================
+Read CLAUDE.md and SKILL.md in full before touching any file.
+Commit after every task: git add . && git commit -m "task: description" && git push
+
+RULES (never violate):
+- Model: claude-sonnet-4-6 ALWAYS
+- Relative imports only — NO @/ aliases
+- Single useState object for forms (never per-field)
+- maybeSingle() not single() for settings queries
+- All component files <200 lines — split before editing if at limit
+- Admin tabs remain lazy-loaded with React.lazy()
+- PageHelpBanner on every admin tab — always above FeatureGate, always visible
+- RLS audit before assuming data is missing
+- Tenant ID: 9215b06b-3eb5-49a1-a16e-7ff214bf6783
+- Working directly on main — no PR needed
+- Follow the session roadmap exactly. Do not add unrequested features
+  or refactors. If you encounter a conflict, a broken dependency, or a
+  clearly better technical approach, stop and log it as a note in the
+  commit message rather than deviating silently.
+- Do NOT generate a session 27 context file. End with a plain summary only.
+
+============================================================
+CONTEXT — REPORTS TAB CURRENT STATE
+============================================================
+ReportsTab.tsx is 198 lines — AT THE LIMIT. Read it before touching it.
+If it is over 200 lines, split it before proceeding.
+
+Current reports sections (all inside ReportsTab):
+  - Tier 1 (always visible):
+    - 4 stat cards (Total Leads, Leads This Month, Active Locations, Blog Posts)
+    - Lead Volume bar chart (last 6 months, orange #E87800)
+    - LeadFunnel component (proportional bars, New→Won→Lost)
+  - Tier 2 (FeatureGate minTier={2}):
+    - SocialSeoReport component (social summary + SEO coverage)
+    - BlogAnalyticsSection component (3 stat cards)
+
+Session 26 adds Tier 3 sections below the existing Tier 2 content.
+
+Chart library: Recharts (already in package.json).
+Import: BarChart, LineChart, XAxis, YAxis, CartesianGrid,
+        Tooltip, Legend, ResponsiveContainer from 'recharts'
+
+============================================================
+TASK 1 — LEAD SOURCE BREAKDOWN CHART (Tier 3)
+============================================================
+File to create: src/components/admin/reports/LeadSourceChart.tsx
+
+This chart shows leads grouped by the `services` field over the last
+6 months. Up to 3 service lines rendered as separate colored lines.
+
+DATA QUERY:
+  SELECT services, created_at FROM leads
+  WHERE tenant_id = [tenantId]
+    AND created_at >= now() - interval '6 months'
+  ORDER BY created_at ASC
+
+PROCESSING:
+  1. Get the last 6 calendar months as labels (e.g. ["Nov", "Dec", "Jan", "Feb", "Mar", "Apr"])
+  2. Identify the top 3 most common values in the `services` field
+  3. For each month, count leads per service type
+  4. Build a Recharts-compatible data array:
+     [{ month: "Nov", "General Pest": 2, "Termite": 1, "Rodent": 0 }, ...]
+
+CHART:
+  - Recharts LineChart with ResponsiveContainer (width: "100%", height: 280)
+  - One <Line> per service type (max 3)
+  - Colors: #534AB7 (purple), #10b981 (emerald), #E87800 (orange)
+  - XAxis: month labels
+  - YAxis: integer ticks
+  - CartesianGrid: strokeDasharray="3 3"
+  - Tooltip + Legend
+  - Title above chart: "Lead Source Breakdown — Last 6 Months"
+  - Loading skeleton while fetching
+  - Empty state if fewer than 2 leads total: "Not enough data yet"
+
+COMPONENT RULES:
+  - Single file under 200 lines
+  - Accepts: tenantId: string as prop
+  - Uses supabase client directly (import from relative path)
+  - No per-field useState — use a single state object for any form state
+
+Commit: "feat: LeadSourceChart component — leads by service type, last 6 months"
+
+============================================================
+TASK 2 — SOCIAL POSTS VOLUME CHART (Tier 3)
+============================================================
+File to create: src/components/admin/reports/SocialVolumeChart.tsx
+
+This chart shows the count of social posts scheduled or published per
+month over the last 6 months, as a bar chart.
+
+DATA QUERY:
+  SELECT created_at FROM social_posts
+  WHERE tenant_id = [tenantId]
+    AND created_at >= now() - interval '6 months'
+  ORDER BY created_at ASC
+
+PROCESSING:
+  1. Get the last 6 calendar months as labels
+  2. Count posts per month
+  3. Build: [{ month: "Nov", posts: 3 }, ...]
+
+CHART:
+  - Recharts BarChart with ResponsiveContainer (width: "100%", height: 240)
+  - Single <Bar> dataKey="posts" fill="#534AB7"
+  - XAxis: month labels
+  - YAxis: integer ticks
+  - CartesianGrid: strokeDasharray="3 3"
+  - Tooltip
+  - Title above chart: "Social Posts Scheduled — Last 6 Months"
+  - Loading skeleton while fetching
+  - Empty state if no posts: "No posts scheduled yet"
+
+COMPONENT RULES:
+  - Single file under 200 lines
+  - Accepts: tenantId: string as prop
+
+Commit: "feat: SocialVolumeChart component — posts per month, last 6 months"
+
+============================================================
+TASK 3 — WIRE CHARTS INTO ReportsTab BEHIND TIER 3 GATE
+============================================================
+File: src/components/admin/ReportsTab.tsx
+
+Read the file first. If it is at or over 200 lines, split it before
+proceeding — extract the Tier 1 stat cards into a sub-component first.
+
+Add a new section below the existing Tier 2 content:
+
+  <FeatureGate tier={3}>
+    <div className="mt-8 space-y-6">
+      <h2 className="text-lg font-semibold text-slate-800">
+        Advanced Analytics
+      </h2>
+      <LeadSourceChart tenantId={tenantId} />
+      <SocialVolumeChart tenantId={tenantId} />
+    </div>
+  </FeatureGate>
+
+Import both chart components using relative paths.
+Import FeatureGate from ../../components/common/FeatureGate (or correct
+relative path — check existing imports in the file for the pattern).
+
+The tenantId is already available in ReportsTab — use the existing
+useTenant() hook or however it is currently obtained in that file.
+
+Since the demo tenant is tier 4, both charts will be visible immediately
+for testing. Trigger demo data load first if leads/social_posts are thin.
+
+Commit: "feat: wire LeadSourceChart + SocialVolumeChart into ReportsTab tier 3 gate"
+
+============================================================
+FINAL STEPS (every session — no exceptions)
+============================================================
+1. Run: npm run build
+   - Must complete with 0 TypeScript errors
+   - Main bundle must stay ≤ 450KB
+   - Fix any errors before finishing
+
+2. git add . && git commit -m "session 26 complete" && git push
+
+3. Confirm Vercel auto-deploy triggered from the push
+
+4. Output a plain text summary:
+   - What was completed
+   - Any conflicts or deviations logged
+   - Current build size
+   - Anything skipped and why
+   DO NOT generate a context file. Summary only.
