@@ -3,6 +3,7 @@ import { BarChart3, TrendingUp, Users, Calendar, ArrowUp, ArrowDown } from 'luci
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
 import PageHelpBanner from './PageHelpBanner'
+import LeadFunnel from './reports/LeadFunnel'
 import SocialSeoReport from './reports/SocialSeoReport'
 
 interface LeadRow {
@@ -177,6 +178,11 @@ export default function ReportsTab() {
             <p className="text-sm text-gray-400">No service data yet — leads with services will appear here.</p>
           )}
         </div>
+      </div>
+
+      {/* Lead Funnel */}
+      <div className="mt-6">
+        <LeadFunnel leads={filtered} />
       </div>
 
       <SocialSeoReport />
