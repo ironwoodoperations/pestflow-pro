@@ -4,7 +4,7 @@ import PageHelpBanner from './PageHelpBanner'
 import { useSocialData } from './social/useSocialData'
 import CampaignsTab from './social/CampaignsTab'
 import ContentQueueTab from './social/ContentQueueTab'
-import AnalyticsTab from './social/AnalyticsTab'
+import SocialAnalyticsTab from './social/SocialAnalyticsTab'
 import ConnectionsModal from './social/ConnectionsModal'
 import LegacyComposer from './social/LegacyComposer'
 
@@ -82,12 +82,7 @@ export default function SocialTab() {
           <ContentQueueTab posts={posts} campaigns={campaigns}
             selectedCampaignId={selectedCampaignId} onRefresh={refresh} />
         )}
-        {activeTab === 'analytics' && (
-          <FeatureGate minTier={4} featureName="Social Analytics">
-            <AnalyticsTab posts={posts} integrations={integrations}
-              onOpenConnections={() => setShowConnections(true)} />
-          </FeatureGate>
-        )}
+        {activeTab === 'analytics' && <SocialAnalyticsTab />}
 
         {/* Modals */}
         {showConnections && (
