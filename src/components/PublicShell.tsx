@@ -1,12 +1,14 @@
 import type { ReactNode } from 'react'
 import { useTemplate } from '../context/TemplateContext'
 import HolidayBanner from './HolidayBanner'
-import Navbar from './Navbar'
-import Footer from './Footer'
 import ModernProNavbar from '../shells/modern-pro/ShellNavbar'
 import ModernProFooter from '../shells/modern-pro/ShellFooter'
 import BoldLocalNavbar from '../shells/bold-local/ShellNavbar'
 import BoldLocalFooter from '../shells/bold-local/ShellFooter'
+import CleanFriendlyNavbar from '../shells/clean-friendly/ShellNavbar'
+import CleanFriendlyFooter from '../shells/clean-friendly/ShellFooter'
+import RusticRuggedNavbar from '../shells/rustic-rugged/ShellNavbar'
+import RusticRuggedFooter from '../shells/rustic-rugged/ShellFooter'
 
 interface Props {
   children: ReactNode
@@ -27,10 +29,17 @@ export default function PublicShell({ children }: Props) {
       NavbarComp = BoldLocalNavbar
       FooterComp = BoldLocalFooter
       break
+    case 'clean-friendly':
+      NavbarComp = CleanFriendlyNavbar
+      FooterComp = CleanFriendlyFooter
+      break
+    case 'rustic-rugged':
+      NavbarComp = RusticRuggedNavbar
+      FooterComp = RusticRuggedFooter
+      break
     default:
-      // clean-friendly and rustic-rugged fall back to base components for now
-      NavbarComp = Navbar
-      FooterComp = Footer
+      NavbarComp = ModernProNavbar
+      FooterComp = ModernProFooter
   }
 
   return (
