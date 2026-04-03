@@ -19,13 +19,13 @@ export default function IntegrationsSection() {
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
   const [showToken, setShowToken] = useState(false)
-  const [form, setForm] = useState({ google_place_id: '', facebook_page_id: '', facebook_access_token: '', google_maps_embed_url: '', pexels_api_key: '', google_analytics_id: '', google_api_key: '', google_search_console_url: '' })
+  const [form, setForm] = useState({ google_place_id: '', facebook_page_id: '', facebook_access_token: '', google_maps_embed_url: '', pexels_api_key: '', google_analytics_id: '', google_api_key: '', google_search_console_url: '', textbelt_api_key: '', owner_sms_number: '' })
 
   useEffect(() => {
     if (!tenantId) return
     supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle()
       .then(({ data }) => {
-        if (data?.value) setForm(prev => ({ ...prev, google_place_id: data.value.google_place_id || '', facebook_page_id: data.value.facebook_page_id || '', facebook_access_token: data.value.facebook_access_token || '', google_maps_embed_url: data.value.google_maps_embed_url || '', pexels_api_key: data.value.pexels_api_key || '', google_analytics_id: data.value.google_analytics_id || '', google_api_key: data.value.google_api_key || '', google_search_console_url: data.value.google_search_console_url || '' }))
+        if (data?.value) setForm(prev => ({ ...prev, google_place_id: data.value.google_place_id || '', facebook_page_id: data.value.facebook_page_id || '', facebook_access_token: data.value.facebook_access_token || '', google_maps_embed_url: data.value.google_maps_embed_url || '', pexels_api_key: data.value.pexels_api_key || '', google_analytics_id: data.value.google_analytics_id || '', google_api_key: data.value.google_api_key || '', google_search_console_url: data.value.google_search_console_url || '', textbelt_api_key: data.value.textbelt_api_key || '', owner_sms_number: data.value.owner_sms_number || '' }))
         setLoading(false)
       })
   }, [tenantId])
@@ -105,6 +105,16 @@ export default function IntegrationsSection() {
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Pexels API Key</label>
             <input value={form.pexels_api_key} onChange={e => setForm(p => ({ ...p, pexels_api_key: e.target.value }))} placeholder="Get free key at pexels.com/api" className={inputClass} />
             <HelpDrop text="Free stock photo search. Get your key at pexels.com/api" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Textbelt API Key</label>
+            <input type="password" value={form.textbelt_api_key} onChange={e => setForm(p => ({ ...p, textbelt_api_key: e.target.value }))} placeholder="••••••••" className={inputClass} />
+            <p className="text-xs text-gray-400 mt-1">Get your key at textbelt.com — $25 for 500 texts</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Owner SMS Number</label>
+            <input type="tel" value={form.owner_sms_number} onChange={e => setForm(p => ({ ...p, owner_sms_number: e.target.value }))} placeholder="+19035550100" className={inputClass} />
+            <p className="text-xs text-gray-400 mt-1">Your mobile number to receive new lead alerts</p>
           </div>
           <button onClick={handleSave} disabled={saving} className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
             {saving ? 'Saving...' : 'Save Integrations'}
