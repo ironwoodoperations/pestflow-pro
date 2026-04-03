@@ -35,11 +35,11 @@ export default function BrandingSection() {
 
   if (loading) return <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"><p className="text-gray-400">Loading...</p></div>
 
-  const templates: { value: BrandingForm['template']; label: string; desc: string; preview: string }[] = [
-    { value: 'modern-pro',     label: 'Modern Pro',     desc: 'Dark navy navbar, emerald CTAs, Oswald headlines. Clean & authoritative.',   preview: '#0a0f1e' },
-    { value: 'bold-local',     label: 'Bold & Local',   desc: 'Charcoal background, amber accents. High-energy, community-first feel.',      preview: '#1c1c1c' },
-    { value: 'clean-friendly', label: 'Clean & Friendly', desc: 'White navbar, soft greens, approachable. Great for residential markets.',   preview: '#ffffff' },
-    { value: 'rustic-rugged',  label: 'Rustic & Rugged',  desc: 'Warm browns, amber tones, serif headings. Established & trustworthy.',     preview: '#5c3d1e' },
+  const templates: { value: BrandingForm['template']; label: string; desc: string; bg: string; accent: string }[] = [
+    { value: 'modern-pro',     label: 'Modern Pro',       desc: 'Dark navy navbar, emerald CTAs, Oswald headlines. Clean & authoritative.',   bg: '#0a0f1e', accent: '#10b981' },
+    { value: 'bold-local',     label: 'Bold & Local',     desc: 'Charcoal background, amber accents. High-energy, community-first feel.',      bg: '#1c1c1c', accent: '#d97706' },
+    { value: 'clean-friendly', label: 'Clean & Friendly', desc: 'White navbar, sky-blue accents, Raleway font. Approachable & residential.',   bg: '#ffffff', accent: '#0284c7' },
+    { value: 'rustic-rugged',  label: 'Rustic & Rugged',  desc: 'Warm brown, rust orange accents, Oswald. Established & trustworthy.',        bg: '#3b1f0e', accent: '#c2410c' },
   ]
 
   return (
@@ -52,7 +52,7 @@ export default function BrandingSection() {
             <li><strong>LOGO</strong> — Upload your company logo. Best size: 200x60 pixels, PNG with transparent background.</li>
             <li><strong>FAVICON</strong> — The tiny icon that appears in browser tabs. Best size: 32x32 pixels.</li>
             <li><strong>PRIMARY COLOR</strong> — Your main brand color. Used for buttons and accents.</li>
-            <li><strong>TEMPLATE</strong> — Modern Pro = dark navy/emerald | Bold & Local = charcoal/amber | Clean & Friendly = white/green | Rustic & Rugged = warm brown/amber</li>
+            <li><strong>TEMPLATE</strong> — Modern Pro = dark navy/emerald | Bold & Local = charcoal/amber | Clean & Friendly = white/sky-blue | Rustic & Rugged = brown/rust</li>
           </ul>
           <p className="text-blue-700 italic">💡 Upload your real logo first — it makes the biggest visual difference.</p>
         </div>
@@ -93,7 +93,10 @@ export default function BrandingSection() {
               <button key={t.value} onClick={() => setForm(prev => ({ ...prev, template: t.value }))}
                 className={`text-left p-4 rounded-xl border-2 transition ${form.template === t.value ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 hover:border-gray-300'}`}>
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="w-6 h-6 rounded-full border border-gray-200 flex-shrink-0" style={{ background: t.preview }} />
+                  <div className="flex flex-shrink-0">
+                    <div className="w-5 h-5 rounded-full border border-gray-200" style={{ background: t.bg }} />
+                    <div className="w-5 h-5 rounded-full border border-gray-200 -ml-1.5" style={{ background: t.accent }} />
+                  </div>
                   <h4 className="text-gray-900 font-bold">{t.label}</h4>
                   {form.template === t.value && <span className="ml-auto text-xs font-semibold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">Active</span>}
                 </div>
