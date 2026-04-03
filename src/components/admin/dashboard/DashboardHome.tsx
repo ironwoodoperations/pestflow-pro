@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Users, ArrowUp, TrendingUp, BarChart3 } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../hooks/useTenant'
+import PlanOverviewCard from './PlanOverviewCard'
 
 interface Props { onboardingComplete: boolean }
 
@@ -77,6 +78,8 @@ export default function DashboardHome({ onboardingComplete }: Props) {
           </a>
         </div>
       )}
+
+      <PlanOverviewCard />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
