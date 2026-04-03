@@ -151,7 +151,11 @@ export default function ContentQueueTab({ posts, campaigns, selectedCampaignId, 
       {/* Card grid */}
       {filtered.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 p-10 text-center">
-          <p className="text-sm text-gray-400">No posts match your filters.</p>
+          <p className="text-sm text-gray-400">
+            {posts.length === 0
+              ? 'No posts yet. Click + New Post to get started.'
+              : 'No posts match your filters.'}
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

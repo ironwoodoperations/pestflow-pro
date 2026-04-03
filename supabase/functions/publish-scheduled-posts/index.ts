@@ -127,10 +127,10 @@ serve(async (req) => {
       let body: Record<string, string>
 
       if (post.image_url) {
-        endpoint = `https://graph.facebook.com/v18.0/${fbPageId}/photos`
+        endpoint = `https://graph.facebook.com/v19.0/${fbPageId}/photos`
         body = { url: post.image_url, caption: post.caption, access_token: fbToken }
       } else {
-        endpoint = `https://graph.facebook.com/v18.0/${fbPageId}/feed`
+        endpoint = `https://graph.facebook.com/v19.0/${fbPageId}/feed`
         body = { message: post.caption, access_token: fbToken }
       }
 

@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
 import { FeatureGate } from './FeatureGate'
 import PageHelpBanner from './PageHelpBanner'
+import LeadFunnel from './reports/LeadFunnel'
 import SocialSeoReport from './reports/SocialSeoReport'
 
 interface LeadRow {
@@ -80,7 +81,7 @@ export default function ReportsTab() {
   return (
     <div>
       <PageHelpBanner tab="reports" title="📊 Reports & Insights"
-        body="See how your business is performing: lead funnel, social media stats, and SEO coverage. Use the date range selector to zoom in on specific periods." />
+        body="A snapshot of your social media activity and SEO health. Use this to spot gaps and track progress over time." />
 
       <FeatureGate minTier={2} featureName="Reports">
         {/* Date Range Selector */}
@@ -180,6 +181,11 @@ export default function ReportsTab() {
             )}
           </div>
         </div>
+
+      {/* Lead Funnel */}
+      <div className="mt-6">
+        <LeadFunnel leads={filtered} />
+      </div>
 
         <FeatureGate minTier={3} featureName="Advanced Reports & Trends">
           <SocialSeoReport />

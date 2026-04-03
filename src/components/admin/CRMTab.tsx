@@ -109,7 +109,7 @@ export default function CRMTab() {
   return (
     <div>
       <PageHelpBanner tab="crm" title="📋 CRM — Lead Management"
-        body="Track every quote request from your website. Change a lead's status by clicking the badge, click phone/email to contact them instantly, and add notes to keep your team aligned." />
+        body="Manage incoming quote requests. Click a phone number to call, the email to send a message, or update the status as leads move through your pipeline." />
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -147,7 +147,11 @@ export default function CRMTab() {
       </div>
 
       {/* Table */}
-      {loading ? <p className="text-gray-400 p-4">Loading...</p> : (
+      {loading ? (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 space-y-3">
+          {[1, 2, 3].map(i => <div key={i} className="rounded-lg bg-gray-200 animate-pulse h-16 w-full" />)}
+        </div>
+      ) : (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <table className="w-full">
             <thead>

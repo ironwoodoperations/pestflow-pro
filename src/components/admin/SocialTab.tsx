@@ -30,7 +30,7 @@ export default function SocialTab() {
   return (
     <div>
       <PageHelpBanner tab="social" title="📱 Social Media"
-        body="Manage your social media campaigns, review and approve posts, and connect your preferred publishing platform." />
+        body="Plan campaigns, queue posts for approval, and track your social media performance — all in one place." />
 
       <FeatureGate minTier={2} featureName="Social Media Scheduler">
         {/* Header */}

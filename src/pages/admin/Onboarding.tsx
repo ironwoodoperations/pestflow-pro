@@ -5,13 +5,13 @@ import { useTenant } from '../../hooks/useTenant'
 import { Plus, Trash2, ArrowLeft, Check } from 'lucide-react'
 
 interface FormData {
-  businessName: string; phone: string; email: string; address: string; tagline: string; license: string
+  businessName: string; phone: string; email: string; address: string; tagline: string; license: string; industry: string
   logoUrl: string; primaryColor: string; accentColor: string; template: 'bold' | 'clean' | 'modern' | 'rustic'
   locations: { city: string; slug: string }[]
 }
 
 const INITIAL_FORM: FormData = {
-  businessName: '', phone: '', email: '', address: '', tagline: '', license: '',
+  businessName: '', phone: '', email: '', address: '', tagline: '', license: '', industry: 'Pest Control',
   logoUrl: '', primaryColor: '#10b981', accentColor: '#f5c518', template: 'bold',
   locations: [{ city: '', slug: '' }],
 }
@@ -58,13 +58,13 @@ export default function Onboarding() {
     if (!tenantId) return
     setSaving(true)
     const settingsRows = [
-      { tenant_id: tenantId, key: 'business_info', value: { name: form.businessName, phone: form.phone, email: form.email, address: form.address, tagline: form.tagline, license: form.license } },
+      { tenant_id: tenantId, key: 'business_info', value: { name: form.businessName, phone: form.phone, email: form.email, address: form.address, tagline: form.tagline, license: form.license, industry: form.industry } },
       { tenant_id: tenantId, key: 'branding', value: { logo_url: form.logoUrl, favicon_url: '', primary_color: form.primaryColor, accent_color: form.accentColor, template: form.template } },
       { tenant_id: tenantId, key: 'onboarding_complete', value: { complete: true } },
     ]
     for (const row of settingsRows) { await supabase.from('settings').upsert(row, { onConflict: 'tenant_id,key' }) }
     const locationRows = form.locations.filter(l => l.city && l.slug).map(l => ({ tenant_id: tenantId, city: l.city, slug: l.slug, is_live: false }))
-    if (locationRows.length > 0) { await supabase.from('location_data').insert(locationRows) }
+    if (locationRows.length > 0) { await supabase.from('location_data').upsert(locationRows, { onConflict: 'tenant_id,slug' }) }
     navigate('/admin')
   }
 
@@ -148,6 +148,11 @@ export default function Onboarding() {
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">License Number</label>
                 <input className={inputClass} value={form.license} onChange={e => updateField('license', e.target.value)} placeholder="TPCL-12345" />
               </div>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Industry</label>
+              <input className={inputClass} value={form.industry} onChange={e => updateField('industry', e.target.value)} placeholder="e.g. Pest Control, HVAC, Plumbing" />
+              <p className="text-xs text-gray-400 mt-1">This customizes templates, AI captions, and social media content for your industry.</p>
             </div>
             <div className="flex justify-between pt-4">
               <button onClick={() => setStep(1)} className="flex items-center gap-1.5 text-gray-500 hover:text-gray-700 transition text-sm"><ArrowLeft size={16} /> Back</button>

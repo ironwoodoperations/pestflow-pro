@@ -76,7 +76,7 @@ export default function SocialSeoReport() {
                 </div>
               ))}
             </div>
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto"><table className="w-full text-sm">
               <thead>
                 <tr className="text-xs text-gray-500 border-b">
                   <th className="text-left py-2">Platform</th>
@@ -97,7 +97,7 @@ export default function SocialSeoReport() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           </>
         ) : (
           <p className="text-sm text-gray-400 text-center py-4">No social posts yet.</p>
