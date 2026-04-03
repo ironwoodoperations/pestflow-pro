@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { Plus, ArrowLeft, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
+import { Plus, ArrowLeft, Trash2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
+import PageHelpBanner from './PageHelpBanner'
 
 interface Post {
   id: string; title: string; slug: string; content: string; excerpt: string
@@ -23,7 +24,6 @@ export default function BlogTab() {
   const [editing, setEditing] = useState<string | null>(null) // 'new' or post id
   const [form, setForm] = useState<PostForm>({ title: '', slug: '', content: '', excerpt: '', published: false, published_at: '' })
   const [saving, setSaving] = useState(false)
-  const [helpOpen, setHelpOpen] = useState(false)
 
   async function fetchPosts() {
     if (!tenantId) return
@@ -133,24 +133,7 @@ export default function BlogTab() {
   // Posts list view
   return (
     <div>
-      {/* Help Banner */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-        <button onClick={() => setHelpOpen(!helpOpen)} className="flex items-center justify-between w-full text-left">
-          <span className="text-sm font-semibold text-blue-900">✍️ Blog — How to use this</span>
-          {helpOpen ? <ChevronUp size={16} className="text-blue-600" /> : <ChevronDown size={16} className="text-blue-600" />}
-        </button>
-        {helpOpen && (
-          <div className="mt-3 text-sm text-blue-800 space-y-2">
-            <p>Your blog is one of the best ways to show up on Google. Every article you publish is a new page Google can find.</p>
-            <ul className="list-none space-y-1">
-              <li><strong>TITLE</strong> — Make it sound like what people would type into Google</li>
-              <li><strong>CONTENT</strong> — Write at least 300 words. Use the AI button to help.</li>
-              <li><strong>PUBLISH</strong> — Toggle to Published when it's ready to go live</li>
-            </ul>
-            <p className="text-blue-700 italic">💡 Aim for 2 new posts per month for best results.</p>
-          </div>
-        )}
-      </div>
+      <PageHelpBanner tab="blog" title="✍️ Blog" body="Every post you publish is a new page Google can find. Use clear titles that match what people search for, write at least 300 words, and use the AI button for help. Toggle Published when ready to go live. Aim for 2 posts per month." />
 
       <div className="flex items-center justify-between mb-6">
         <p className="text-sm text-gray-500">{posts.length} post{posts.length !== 1 ? 's' : ''}</p>

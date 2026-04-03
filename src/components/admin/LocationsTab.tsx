@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { Plus, X, Trash2, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react'
+import { Plus, X, Trash2, ExternalLink } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
+import PageHelpBanner from './PageHelpBanner'
 
 interface Location {
   id: string; city: string; slug: string; hero_title: string; intro: string
@@ -27,7 +28,6 @@ export default function LocationsTab() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<LocForm>({ city: '', slug: '', hero_title: '', intro: '', is_live: false })
   const [saving, setSaving] = useState(false)
-  const [helpOpen, setHelpOpen] = useState(false)
 
   async function fetchLocations() {
     if (!tenantId) return
@@ -80,25 +80,7 @@ export default function LocationsTab() {
 
   return (
     <div>
-      {/* Help Banner */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-        <button onClick={() => setHelpOpen(!helpOpen)} className="flex items-center justify-between w-full text-left">
-          <span className="text-sm font-semibold text-blue-900">📍 Locations — How to use this</span>
-          {helpOpen ? <ChevronUp size={16} className="text-blue-600" /> : <ChevronDown size={16} className="text-blue-600" />}
-        </button>
-        {helpOpen && (
-          <div className="mt-3 text-sm text-blue-800 space-y-2">
-            <p>This is where you manage the cities your business serves. Each city gets its own page on your website that shows up in Google when people search for pest control in that city.</p>
-            <ul className="list-none space-y-1">
-              <li><strong>CITY NAME</strong> — The name of the city (e.g. Tyler, Longview)</li>
-              <li><strong>SLUG</strong> — The URL for that city's page (e.g. tyler-tx)</li>
-              <li><strong>LIVE</strong> — Toggle this ON when you're ready for the page to be public</li>
-              <li><strong>VIEW PAGE</strong> — Click to see exactly what the page looks like on your site</li>
-            </ul>
-            <p className="text-blue-700 italic">💡 Add every city you serve. More location pages = more Google traffic.</p>
-          </div>
-        )}
-      </div>
+      <PageHelpBanner tab="locations" title="📍 Service Locations" body="Each city you add gets its own SEO-optimized page. Add the city name and a URL slug (e.g. tyler-tx), then toggle Live when the page is ready to publish. More location pages = more Google traffic." />
 
       <div className="flex items-center justify-between mb-6">
         <p className="text-sm text-gray-500">{activeCount} active location{activeCount !== 1 ? 's' : ''} · {locations.length} total</p>
