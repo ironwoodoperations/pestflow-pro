@@ -7,7 +7,7 @@ import { usePlan } from '../../components/admin/usePlan'
 import {
   FileText, Search, BookOpen, Share2, Star,
   MapPin, BarChart3, Users, Settings, LogOut, ExternalLink, Eye, EyeOff,
-  TrendingUp, Lock
+  TrendingUp, Lock, ClipboardList
 } from 'lucide-react'
 import TierToggle from '../../components/admin/TierToggle'
 import NotificationBell from '../../components/admin/NotificationBell'
@@ -24,7 +24,8 @@ const LocationsTab  = lazy(() => import('../../components/admin/LocationsTab'))
 const ReportsTab    = lazy(() => import('../../components/admin/ReportsTab'))
 const CRMTab        = lazy(() => import('../../components/admin/CRMTab'))
 const SettingsTab   = lazy(() => import('../../components/admin/settings/SettingsTab'))
-const TeamTab       = lazy(() => import('../../components/admin/team/TeamTab'))
+const TeamTab          = lazy(() => import('../../components/admin/team/TeamTab'))
+const ClientSetupPage  = lazy(() => import('../../components/admin/client-setup/ClientSetupPage'))
 
 const TABS = [
   { key: 'dashboard', label: 'Dashboard', icon: BarChart3 },
@@ -37,6 +38,7 @@ const TABS = [
   { key: 'reports', label: 'Reports', icon: TrendingUp },
   { key: 'crm', label: 'CRM', icon: Users },
   { key: 'team', label: 'Team', icon: Users },
+  { key: 'client-setup', label: 'Client Setup', icon: ClipboardList },
   { key: 'settings', label: 'Settings', icon: Settings },
 ] as const
 
@@ -53,6 +55,7 @@ const TAB_SUBTITLES: Record<string, string> = {
   reports: 'Business analytics and reports',
   crm: 'Track leads and customer relationships',
   team: 'Manage your team members shown on your website',
+  'client-setup': 'Collect client info and generate setup files during onboarding calls',
   settings: 'Configure your business settings',
 }
 
@@ -169,6 +172,7 @@ export default function Dashboard() {
               {activeTab === 'reports' && <ReportsTab />}
               {activeTab === 'crm' && <CRMTab />}
               {activeTab === 'team' && <TeamTab />}
+              {activeTab === 'client-setup' && <ClientSetupPage />}
               {activeTab === 'settings' && <SettingsTab />}
             </Suspense>
           </div>
