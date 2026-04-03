@@ -71,12 +71,40 @@ export default function IntegrationsSection() {
             <HelpDrop text="Go to your Facebook Page → About → Page ID. It's a numeric ID." />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Facebook Access Token</label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-sm font-medium text-gray-700">Facebook Access Token</label>
+              <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full ${form.facebook_access_token ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-400'}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${form.facebook_access_token ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+                {form.facebook_access_token ? 'Connected' : 'Not connected'}
+              </span>
+            </div>
             <div className="flex gap-2">
               <input type={showToken ? 'text' : 'password'} value={form.facebook_access_token} onChange={e => setForm(p => ({ ...p, facebook_access_token: e.target.value }))} placeholder="EAAG..." className={`flex-1 ${inputClass}`} />
               <button type="button" onClick={() => setShowToken(!showToken)} className="border border-gray-300 text-gray-500 hover:bg-gray-50 px-3 py-2 rounded-lg text-xs font-medium">{showToken ? 'Hide' : 'Show'}</button>
             </div>
-            <HelpDrop text="Generate a Page Access Token from Meta Business Suite → Settings → Advanced." />
+            {form.facebook_access_token && (
+              <p className="text-xs text-amber-600 mt-1">⚠ Facebook tokens expire every 60 days. If posting stops working, regenerate your token in Meta Business Suite.</p>
+            )}
+            <details className="mt-2">
+              <summary className="text-xs text-amber-800 font-semibold cursor-pointer select-none bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">📘 How to connect Facebook (step-by-step)</summary>
+              <div className="mt-2 bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800 space-y-1.5">
+                <p className="font-semibold">To get your Page Access Token:</p>
+                <ol className="list-decimal list-inside space-y-1">
+                  <li>Go to <strong>Meta Business Suite</strong> (business.facebook.com)</li>
+                  <li>Click <strong>Settings</strong> (gear icon, bottom left)</li>
+                  <li>Under Business Assets, select your <strong>Facebook Page</strong></li>
+                  <li>Go to <strong>Page Settings → Advanced → Page Access Tokens</strong></li>
+                  <li>Click <strong>Generate Token</strong> and copy it here</li>
+                </ol>
+                <p className="font-semibold mt-2">To get your Page ID:</p>
+                <ol className="list-decimal list-inside space-y-1">
+                  <li>Go to your Facebook Page</li>
+                  <li>Click <strong>About</strong> → scroll to the bottom</li>
+                  <li>Copy the <strong>Page ID</strong> (numeric, e.g. 123456789)</li>
+                </ol>
+                <p className="text-amber-700 italic">Tip: Use a <strong>long-lived token</strong> for the best experience — it lasts 60 days vs 1 hour for short-lived tokens.</p>
+              </div>
+            </details>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Google Maps Embed URL</label>

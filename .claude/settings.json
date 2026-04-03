@@ -27,7 +27,8 @@
       "Read(**)",
       "Write(**)",
       "Edit(**)",
-      "mcp__claude_ai_Supabase__apply_migration"
+      "mcp__claude_ai_Supabase__apply_migration",
+      "Bash(git -C /workspaces/pestflow-pro log --oneline -10)"
     ],
     "deny": [
       "Bash(git push --force *)",

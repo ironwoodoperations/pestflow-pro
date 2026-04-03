@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../hooks/useTenant'
+import HeroCustomizationSection from './HeroCustomizationSection'
 
 interface BrandingForm {
   logo_url: string; favicon_url: string; primary_color: string; accent_color: string
   template: 'modern-pro' | 'bold-local' | 'clean-friendly' | 'rustic-rugged'
+  cta_text: string
 }
 
 const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-400'
@@ -14,13 +16,13 @@ export default function BrandingSection() {
   const { tenantId } = useTenant()
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [form, setForm] = useState<BrandingForm>({ logo_url: '', favicon_url: '', primary_color: '#10b981', accent_color: '#f5c518', template: 'modern-pro' })
+  const [form, setForm] = useState<BrandingForm>({ logo_url: '', favicon_url: '', primary_color: '#10b981', accent_color: '#f5c518', template: 'modern-pro', cta_text: '' })
 
   useEffect(() => {
     if (!tenantId) return
     supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle()
       .then(({ data }) => {
-        if (data?.value) setForm(prev => ({ ...prev, logo_url: data.value.logo_url || '', favicon_url: data.value.favicon_url || '', primary_color: data.value.primary_color || '#10b981', accent_color: data.value.accent_color || '#f5c518', template: data.value.template || 'modern-pro' }))
+        if (data?.value) setForm(prev => ({ ...prev, logo_url: data.value.logo_url || '', favicon_url: data.value.favicon_url || '', primary_color: data.value.primary_color || '#10b981', accent_color: data.value.accent_color || '#f5c518', template: data.value.template || 'modern-pro', cta_text: data.value.cta_text || '' }))
         setLoading(false)
       })
   }, [tenantId])
@@ -105,10 +107,16 @@ export default function BrandingSection() {
             ))}
           </div>
         </div>
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">CTA Button Text</label>
+          <input type="text" maxLength={40} value={form.cta_text} onChange={(e) => setForm(prev => ({ ...prev, cta_text: e.target.value }))} placeholder="Get a Free Quote" className={inputClass} />
+          <p className="text-xs text-gray-400 mt-1">The primary call-to-action button on your site</p>
+        </div>
         <button onClick={handleSave} disabled={saving} className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
           {saving ? 'Saving...' : 'Save Branding'}
         </button>
       </div>
+      <HeroCustomizationSection />
     </div>
   )
 }

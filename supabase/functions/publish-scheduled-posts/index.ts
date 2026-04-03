@@ -50,6 +50,7 @@ interface SocialPost {
 interface IntegrationSettings {
   facebook_access_token?: string
   facebook_page_id?: string
+  ayrshare_api_key?: string
 }
 
 serve(async (req) => {
@@ -104,9 +105,44 @@ serve(async (req) => {
       .maybeSingle()
 
     const intg = (settingsData?.value ?? {}) as IntegrationSettings
+    const ayrshareKey = intg.ayrshare_api_key
     const fbToken = intg.facebook_access_token
     const fbPageId = intg.facebook_page_id
 
+    // Route via Ayrshare if API key is configured
+    if (ayrshareKey) {
+      try {
+        const platforms: string[] = post.platform === 'both'
+          ? ['facebook', 'instagram']
+          : [post.platform]
+
+        const ayrBody: Record<string, unknown> = { post: post.caption, platforms }
+        if (post.image_url) ayrBody.mediaUrls = [post.image_url]
+
+        const res = await fetch('https://app.ayrshare.com/api/post', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${ayrshareKey}` },
+          body: JSON.stringify(ayrBody),
+        })
+        const data = await res.json()
+
+        if (data.status === 'error' || data.errors) {
+          const errMsg = data.message || JSON.stringify(data.errors)
+          await supabase.from('social_posts').update({ status: 'failed', error_msg: errMsg }).eq('id', post.id)
+          failed++
+        } else {
+          await supabase.from('social_posts').update({ status: 'published', published_at: new Date().toISOString(), fb_post_id: data.id ?? 'ayrshare' }).eq('id', post.id)
+          published++
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Network error'
+        await supabase.from('social_posts').update({ status: 'failed', error_msg: msg }).eq('id', post.id)
+        failed++
+      }
+      continue
+    }
+
+    // No Ayrshare — fall back to Facebook Graph API
     // Instagram-only or no credentials: mark as published with a note
     if (post.platform === 'instagram' || !fbToken || !fbPageId) {
       await supabase
@@ -121,7 +157,6 @@ serve(async (req) => {
       continue
     }
 
-    // Facebook / Both: post to Graph API
     try {
       let endpoint: string
       let body: Record<string, string>
