@@ -10,6 +10,7 @@ import {
   TrendingUp, ArrowUp, Bell, Lock
 } from 'lucide-react'
 import { useLeadNotifications } from '../../hooks/useLeadNotifications'
+import TierToggle from '../../components/admin/TierToggle'
 const ContentTab    = lazy(() => import('../../components/admin/ContentTab'))
 const SEOTab        = lazy(() => import('../../components/admin/SEOTab'))
 const BlogTab       = lazy(() => import('../../components/admin/BlogTab'))
@@ -99,6 +100,8 @@ export default function Dashboard() {
             )
           })}
         </nav>
+
+        <TierToggle />
 
         <div className="px-2 py-4 border-t border-white/10">
           <p className="px-4 py-1 text-xs text-gray-500 truncate mb-1">{businessName}</p>
