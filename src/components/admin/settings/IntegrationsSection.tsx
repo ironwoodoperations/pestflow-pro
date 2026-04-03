@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../hooks/useTenant'
+import { usePlan } from '../usePlan'
 
 const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-400'
 
@@ -16,16 +17,17 @@ function HelpDrop({ text }: { text: string }) {
 
 export default function IntegrationsSection() {
   const { tenantId } = useTenant()
+  const { canAccess } = usePlan()
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
   const [showToken, setShowToken] = useState(false)
-  const [form, setForm] = useState({ google_place_id: '', facebook_page_id: '', facebook_access_token: '', google_maps_embed_url: '', pexels_api_key: '', google_analytics_id: '', google_api_key: '', google_search_console_url: '', textbelt_api_key: '', owner_sms_number: '' })
+  const [form, setForm] = useState({ google_place_id: '', facebook_page_id: '', facebook_access_token: '', google_maps_embed_url: '', pexels_api_key: '', google_analytics_id: '', google_api_key: '', google_search_console_url: '', textbelt_api_key: '', owner_sms_number: '', ayrshare_api_key: '' })
 
   useEffect(() => {
     if (!tenantId) return
     supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle()
       .then(({ data }) => {
-        if (data?.value) setForm(prev => ({ ...prev, google_place_id: data.value.google_place_id || '', facebook_page_id: data.value.facebook_page_id || '', facebook_access_token: data.value.facebook_access_token || '', google_maps_embed_url: data.value.google_maps_embed_url || '', pexels_api_key: data.value.pexels_api_key || '', google_analytics_id: data.value.google_analytics_id || '', google_api_key: data.value.google_api_key || '', google_search_console_url: data.value.google_search_console_url || '', textbelt_api_key: data.value.textbelt_api_key || '', owner_sms_number: data.value.owner_sms_number || '' }))
+        if (data?.value) setForm(prev => ({ ...prev, google_place_id: data.value.google_place_id || '', facebook_page_id: data.value.facebook_page_id || '', facebook_access_token: data.value.facebook_access_token || '', google_maps_embed_url: data.value.google_maps_embed_url || '', pexels_api_key: data.value.pexels_api_key || '', google_analytics_id: data.value.google_analytics_id || '', google_api_key: data.value.google_api_key || '', google_search_console_url: data.value.google_search_console_url || '', textbelt_api_key: data.value.textbelt_api_key || '', owner_sms_number: data.value.owner_sms_number || '', ayrshare_api_key: data.value.ayrshare_api_key || '' }))
         setLoading(false)
       })
   }, [tenantId])
@@ -106,6 +108,13 @@ export default function IntegrationsSection() {
             <input value={form.pexels_api_key} onChange={e => setForm(p => ({ ...p, pexels_api_key: e.target.value }))} placeholder="Get free key at pexels.com/api" className={inputClass} />
             <HelpDrop text="Free stock photo search. Get your key at pexels.com/api" />
           </div>
+          {canAccess(4) && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Ayrshare API Key</label>
+              <input type="password" value={form.ayrshare_api_key} onChange={e => setForm(p => ({ ...p, ayrshare_api_key: e.target.value }))} placeholder="••••••••" className={inputClass} />
+              <p className="text-xs text-gray-400 mt-1">Connect Ayrshare to post to all platforms at once (Elite plan)</p>
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Textbelt API Key</label>
             <input type="password" value={form.textbelt_api_key} onChange={e => setForm(p => ({ ...p, textbelt_api_key: e.target.value }))} placeholder="••••••••" className={inputClass} />

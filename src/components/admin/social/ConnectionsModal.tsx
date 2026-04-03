@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
+import { usePlan } from '../usePlan'
 import type { IntegrationSettings } from './useSocialData'
 
 const TENANT_ID = import.meta.env.VITE_TENANT_ID
@@ -20,6 +21,7 @@ const TABS: { id: ProviderTab; label: string }[] = [
 ]
 
 export default function ConnectionsModal({ integrations, onClose, onSaved }: Props) {
+  const { canAccess } = usePlan()
   const [activeTab, setActiveTab] = useState<ProviderTab>('export')
   const [form, setForm] = useState({
     active_social_provider: 'export' as string,
@@ -137,8 +139,16 @@ export default function ConnectionsModal({ integrations, onClose, onSaved }: Pro
 
           {activeTab === 'ayrshare' && (
             <div className="space-y-3">
-              <h4 className="font-semibold text-gray-800">Connect via Ayrshare</h4>
+              <div className="flex items-center justify-between">
+                <h4 className="font-semibold text-gray-800">Connect via Ayrshare</h4>
+                {canAccess(4) && (
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${form.ayrshare_api_key ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                    {form.ayrshare_api_key ? '● Connected' : '○ Not connected'}
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-gray-500">Ayrshare supports 10+ platforms including TikTok, LinkedIn, Twitter/X. Plans start at $29/month.</p>
+              <p className="text-xs text-gray-400">Enables posting to FB, IG, Twitter/X, LinkedIn, TikTok, Pinterest</p>
               <a href="https://www.ayrshare.com" target="_blank" rel="noopener noreferrer" className="text-xs text-emerald-600 hover:underline font-medium">Sign up for Ayrshare →</a>
               <div>
                 <label className="text-xs font-medium text-gray-700 block mb-1">API Key</label>
