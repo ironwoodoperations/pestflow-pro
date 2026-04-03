@@ -46,6 +46,32 @@ export default function CRMTab() {
     await supabase.from('leads').update({ status }).eq('id', id)
     setLeads(prev => prev.map(l => l.id === id ? { ...l, status } : l))
     toast.success('Status updated')
+
+    // Send review request email when lead is marked as won
+    if (status === 'won' && tenantId) {
+      const lead = leads.find(l => l.id === id)
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL || 'https://biezzykcgzkrwdgqpsar.supabase.co'}/functions/v1/send-review-request`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ lead_id: id, tenant_id: tenantId }),
+          }
+        )
+        const data = await res.json()
+        if (data.sent) {
+          toast.success(`Review request sent to ${lead?.name || 'customer'}`)
+        } else if (data.skipped && data.reason === 'no_place_id') {
+          toast('Lead marked won. Add a Google Place ID in Settings to enable review request emails.', { icon: 'ℹ️' })
+        }
+      } catch (err) {
+        console.error('Review request failed:', err)
+      }
+    }
   }
 
   async function handleNotesSave(leadId: string) {
