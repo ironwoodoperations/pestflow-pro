@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
-import { BarChart3, TrendingUp, Users, Calendar, ArrowUp, ArrowDown, ChevronDown, ChevronUp } from 'lucide-react'
+import { BarChart3, TrendingUp, Users, Calendar, ArrowUp, ArrowDown } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
+import PageHelpBanner from './PageHelpBanner'
+import SocialSeoReport from './reports/SocialSeoReport'
 
 interface LeadRow {
   id: string
@@ -15,7 +17,6 @@ export default function ReportsTab() {
   const [leads, setLeads] = useState<LeadRow[]>([])
   const [loading, setLoading] = useState(true)
   const [range, setRange] = useState<'7d' | '30d' | '90d' | 'all'>('30d')
-  const [helpOpen, setHelpOpen] = useState(false)
 
   useEffect(() => {
     if (!tenantId) return
@@ -77,27 +78,8 @@ export default function ReportsTab() {
 
   return (
     <div>
-      {/* Help Banner */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-        <button onClick={() => setHelpOpen(!helpOpen)} className="flex items-center justify-between w-full text-left">
-          <span className="text-sm font-semibold text-blue-900">📊 Reports — How to use this</span>
-          {helpOpen ? <ChevronUp size={16} className="text-blue-600" /> : <ChevronDown size={16} className="text-blue-600" />}
-        </button>
-        {helpOpen && (
-          <div className="mt-3 text-sm text-blue-800 space-y-2">
-            <p>This page shows you how your business is performing online.</p>
-            <ul className="list-none space-y-1">
-              <li><strong>TOTAL LEADS</strong> — Everyone who filled out your quote form</li>
-              <li><strong>NEW</strong> — Haven't been contacted yet. Call within 1 hour — leads contacted in the first hour convert 7x more often.</li>
-              <li><strong>QUOTED</strong> — You sent them a price</li>
-              <li><strong>WON</strong> — They became a customer</li>
-              <li><strong>CONVERSION RATE</strong> — Won divided by total. A healthy rate is 20–40%.</li>
-            </ul>
-            <p>The bar chart shows leads per month so you can see your busiest seasons and plan staffing and advertising accordingly.</p>
-            <p className="text-blue-700 italic">Coming soon: Google Search Console data showing clicks, impressions, and keyword rankings for every page on your site.</p>
-          </div>
-        )}
-      </div>
+      <PageHelpBanner tab="reports" title="📊 Reports & Insights"
+        body="See how your business is performing: lead funnel, social media stats, and SEO coverage. Use the date range selector to zoom in on specific periods." />
 
       {/* Date Range Selector */}
       <div className="flex items-center gap-2 mb-6">
@@ -196,6 +178,8 @@ export default function ReportsTab() {
           )}
         </div>
       </div>
+
+      <SocialSeoReport />
 
       <p className="text-xs text-gray-400 mt-6 text-center">Privacy-first analytics — all data stays in your database. No third-party tracking.</p>
     </div>
