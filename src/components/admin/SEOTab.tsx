@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
+import { FeatureGate } from './FeatureGate'
 import PageHelpBanner from './PageHelpBanner'
 import SeoOverviewTab from './seo/SeoOverviewTab'
 import SeoPagesTab from './seo/SeoPagesTab'
@@ -280,45 +281,55 @@ export default function SEOTab() {
       <PageHelpBanner tab="seo" title="🔍 SEO Dashboard"
         body="Optimize your search engine rankings. Use the Overview tab to see your site health, Pages to edit meta tags, Keywords for research, and Connect to link data sources." />
 
-      {/* Tab bar */}
-      <div className="flex border-b border-gray-200 mb-6 gap-0">
-        {TABS.map(tab => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-            className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === tab.id
-                ? 'border-emerald-600 text-emerald-700 bg-white'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-            }`}>
-            {tab.label}
-            {tab.id === 'pages' && stats.issuesFound > 0 && (
-              <span className="ml-1.5 w-2 h-2 bg-red-500 rounded-full inline-block" />
-            )}
-            {tab.id === 'connect' && integrations.google_api_key && (
-              <span className="ml-1.5 w-2 h-2 bg-emerald-500 rounded-full inline-block" />
-            )}
-          </button>
-        ))}
-      </div>
+      <FeatureGate minTier={2} featureName="Full SEO Suite">
+        {/* Tab bar */}
+        <div className="flex border-b border-gray-200 mb-6 gap-0">
+          {TABS.map(tab => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+              className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === tab.id
+                  ? 'border-emerald-600 text-emerald-700 bg-white'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+              }`}>
+              {tab.label}
+              {tab.id === 'pages' && stats.issuesFound > 0 && (
+                <span className="ml-1.5 w-2 h-2 bg-red-500 rounded-full inline-block" />
+              )}
+              {tab.id === 'connect' && integrations.google_api_key && (
+                <span className="ml-1.5 w-2 h-2 bg-emerald-500 rounded-full inline-block" />
+              )}
+            </button>
+          ))}
+        </div>
 
-      {activeTab === 'overview' && (
-        <SeoOverviewTab stats={stats} coverage={coverage} integrations={integrations}
-          lastAudit={lastAudit} auditLoading={auditLoading} auditMode={auditMode}
-          onSetAuditMode={setAuditMode} onRunAudit={runLighthouseAudit}
-          onGoToConnect={() => setActiveTab('connect')} />
-      )}
-      {activeTab === 'pages' && (
-        <SeoPagesTab stats={stats} pages={pages} openEditorSlug={openEditorSlug}
-          editorForm={editorForm} editorSaving={editorSaving}
-          onOpenEditor={handleOpenEditor} onCloseEditor={() => setOpenEditorSlug(null)}
-          onEditorChange={handleEditorChange} onSaveMeta={handleSaveMeta} />
-      )}
-      {activeTab === 'keywords' && <SeoKeywordsTab />}
-      {activeTab === 'aio' && <SeoAioTab />}
-      {activeTab === 'connect' && (
-        <SeoConnectTab integrations={integrations} connectForm={connectForm}
-          connectSaving={connectSaving} onChange={handleConnectChange}
-          onSave={handleConnectSave} onRunCheckNow={handleRunCheckNow} />
-      )}
+        {activeTab === 'overview' && (
+          <SeoOverviewTab stats={stats} coverage={coverage} integrations={integrations}
+            lastAudit={lastAudit} auditLoading={auditLoading} auditMode={auditMode}
+            onSetAuditMode={setAuditMode} onRunAudit={runLighthouseAudit}
+            onGoToConnect={() => setActiveTab('connect')} />
+        )}
+        {activeTab === 'pages' && (
+          <SeoPagesTab stats={stats} pages={pages} openEditorSlug={openEditorSlug}
+            editorForm={editorForm} editorSaving={editorSaving}
+            onOpenEditor={handleOpenEditor} onCloseEditor={() => setOpenEditorSlug(null)}
+            onEditorChange={handleEditorChange} onSaveMeta={handleSaveMeta} />
+        )}
+        {activeTab === 'keywords' && (
+          <FeatureGate minTier={3} featureName="AI Keyword Research">
+            <SeoKeywordsTab />
+          </FeatureGate>
+        )}
+        {activeTab === 'aio' && (
+          <FeatureGate minTier={3} featureName="AIO Structured Data">
+            <SeoAioTab />
+          </FeatureGate>
+        )}
+        {activeTab === 'connect' && (
+          <SeoConnectTab integrations={integrations} connectForm={connectForm}
+            connectSaving={connectSaving} onChange={handleConnectChange}
+            onSave={handleConnectSave} onRunCheckNow={handleRunCheckNow} />
+        )}
+      </FeatureGate>
     </div>
   )
 }

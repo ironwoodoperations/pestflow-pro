@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
 import { PreviewModeContext } from '../../hooks/usePreviewMode'
+import { usePlan } from '../../components/admin/usePlan'
 import {
   FileText, Search, BookOpen, Share2, Star,
   MapPin, BarChart3, Users, Settings, LogOut, ExternalLink, Eye, EyeOff,
-  TrendingUp, ArrowUp, Bell
+  TrendingUp, ArrowUp, Bell, Lock
 } from 'lucide-react'
 import { useLeadNotifications } from '../../hooks/useLeadNotifications'
 const ContentTab    = lazy(() => import('../../components/admin/ContentTab'))
@@ -39,6 +40,7 @@ export default function Dashboard() {
   const [businessName, setBusinessName] = useState('Your Business')
   const [previewMode, setPreviewMode] = useState(false)
   const { tenantId } = useTenant()
+  const { canAccess } = usePlan()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -76,21 +78,26 @@ export default function Dashboard() {
         </div>
 
         <nav className="flex-1 py-4 px-2 space-y-0.5">
-          {TABS.map(({ key, label, icon: Icon }) => (
-            <button
-              key={key}
-              onClick={() => setActiveTab(key)}
-              aria-current={activeTab === key ? 'page' : undefined}
-              className={`w-full flex items-center gap-3 px-4 py-3 mx-0 rounded-lg text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
-                activeTab === key
-                  ? 'bg-[#1a3d2b] text-white border-l-4 border-emerald-500'
-                  : 'text-gray-300 hover:bg-[#22304a] hover:text-white border-l-4 border-transparent'
-              }`}
-            >
-              <Icon size={20} aria-hidden="true" />
-              {label}
-            </button>
-          ))}
+          {TABS.map(({ key, label, icon: Icon }) => {
+            const gatedTabs: Record<string, number> = { blog: 2, seo: 2, social: 2, reports: 2 }
+            const locked = gatedTabs[key] ? !canAccess(gatedTabs[key]) : false
+            return (
+              <button
+                key={key}
+                onClick={() => setActiveTab(key)}
+                aria-current={activeTab === key ? 'page' : undefined}
+                className={`w-full flex items-center gap-3 px-4 py-3 mx-0 rounded-lg text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
+                  activeTab === key
+                    ? 'bg-[#1a3d2b] text-white border-l-4 border-emerald-500'
+                    : 'text-gray-300 hover:bg-[#22304a] hover:text-white border-l-4 border-transparent'
+                } ${locked ? 'opacity-50' : ''}`}
+              >
+                <Icon size={20} aria-hidden="true" />
+                <span className="flex-1 text-left">{label}</span>
+                {locked && <Lock className="w-3.5 h-3.5 shrink-0" />}
+              </button>
+            )
+          })}
         </nav>
 
         <div className="px-2 py-4 border-t border-white/10">
