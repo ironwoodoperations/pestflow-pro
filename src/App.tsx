@@ -6,6 +6,8 @@ import { useGoogleAnalytics } from './hooks/useGoogleAnalytics'
 import Login from './pages/admin/Login'
 import ProtectedRoute from './components/ProtectedRoute'
 import { PlanProvider } from './context/PlanContext'
+import { TemplateProvider } from './context/TemplateContext'
+import PublicShell from './components/PublicShell'
 
 const Dashboard     = lazy(() => import('./pages/admin/Dashboard'))
 const Onboarding    = lazy(() => import('./pages/admin/Onboarding'))
@@ -42,35 +44,36 @@ export default function App() {
   return (
     <BrowserRouter>
       <PlanProvider>
+      <TemplateProvider>
       <ScrollToTop />
       <Toaster richColors position="top-right" />
       <Routes>
         {/* ─── Public marketing pages ─── */}
-        <Route path="/" element={<Index />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/contact" element={<ContactPage />} />
-        <Route path="/quote" element={<QuotePage />} />
-        <Route path="/faq" element={<FAQPage />} />
-        <Route path="/reviews" element={<ReviewsPage />} />
-        <Route path="/service-area" element={<ServiceArea />} />
-        <Route path="/blog" element={<BlogPage />} />
-        <Route path="/blog/:slug" element={<BlogPostPage />} />
-        <Route path="/pricing" element={<Pricing />} />
+        <Route path="/" element={<PublicShell><Index /></PublicShell>} />
+        <Route path="/about" element={<PublicShell><About /></PublicShell>} />
+        <Route path="/contact" element={<PublicShell><ContactPage /></PublicShell>} />
+        <Route path="/quote" element={<PublicShell><QuotePage /></PublicShell>} />
+        <Route path="/faq" element={<PublicShell><FAQPage /></PublicShell>} />
+        <Route path="/reviews" element={<PublicShell><ReviewsPage /></PublicShell>} />
+        <Route path="/service-area" element={<PublicShell><ServiceArea /></PublicShell>} />
+        <Route path="/blog" element={<PublicShell><BlogPage /></PublicShell>} />
+        <Route path="/blog/:slug" element={<PublicShell><BlogPostPage /></PublicShell>} />
+        <Route path="/pricing" element={<PublicShell><Pricing /></PublicShell>} />
         <Route path="/sitemap.xml" element={<Sitemap />} />
 
         {/* ─── Pest service pages ─── */}
-        <Route path="/spider-control" element={<SpiderControl />} />
-        <Route path="/mosquito-control" element={<MosquitoControl />} />
-        <Route path="/ant-control" element={<AntControl />} />
-        <Route path="/wasp-hornet-control" element={<WaspHornetControl />} />
-        <Route path="/roach-control" element={<RoachControl />} />
-        <Route path="/flea-tick-control" element={<FleaTickControl />} />
-        <Route path="/rodent-control" element={<RodentControl />} />
-        <Route path="/scorpion-control" element={<ScorpionControl />} />
-        <Route path="/bed-bug-control" element={<BedBugControl />} />
-        <Route path="/pest-control" element={<PestControlPage />} />
-        <Route path="/termite-control" element={<TermiteControl />} />
-        <Route path="/termite-inspections" element={<TermiteInspections />} />
+        <Route path="/spider-control" element={<PublicShell><SpiderControl /></PublicShell>} />
+        <Route path="/mosquito-control" element={<PublicShell><MosquitoControl /></PublicShell>} />
+        <Route path="/ant-control" element={<PublicShell><AntControl /></PublicShell>} />
+        <Route path="/wasp-hornet-control" element={<PublicShell><WaspHornetControl /></PublicShell>} />
+        <Route path="/roach-control" element={<PublicShell><RoachControl /></PublicShell>} />
+        <Route path="/flea-tick-control" element={<PublicShell><FleaTickControl /></PublicShell>} />
+        <Route path="/rodent-control" element={<PublicShell><RodentControl /></PublicShell>} />
+        <Route path="/scorpion-control" element={<PublicShell><ScorpionControl /></PublicShell>} />
+        <Route path="/bed-bug-control" element={<PublicShell><BedBugControl /></PublicShell>} />
+        <Route path="/pest-control" element={<PublicShell><PestControlPage /></PublicShell>} />
+        <Route path="/termite-control" element={<PublicShell><TermiteControl /></PublicShell>} />
+        <Route path="/termite-inspections" element={<PublicShell><TermiteInspections /></PublicShell>} />
 
         {/* ─── Admin routes ─── */}
         <Route path="/admin/login" element={<Login />} />
@@ -91,9 +94,10 @@ export default function App() {
         } />
 
         {/* ─── Dynamic slug — MUST BE LAST ─── */}
-        <Route path="/:slug" element={<SlugRouter />} />
-        <Route path="*" element={<NotFound />} />
+        <Route path="/:slug" element={<PublicShell><SlugRouter /></PublicShell>} />
+        <Route path="*" element={<PublicShell><NotFound /></PublicShell>} />
       </Routes>
+      </TemplateProvider>
       </PlanProvider>
     </BrowserRouter>
   )

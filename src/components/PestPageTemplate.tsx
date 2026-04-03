@@ -3,10 +3,7 @@ import { Link } from 'react-router-dom'
 import { Shield, Leaf, MapPin, Star } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
-import Navbar from './Navbar'
-import Footer from './Footer'
 import StructuredData from './StructuredData'
-import HolidayBanner from './HolidayBanner'
 import VideoImage from './VideoImage'
 
 export interface TreatmentStep {
@@ -68,8 +65,6 @@ export default function PestPageTemplate(props: PestPageProps) {
   return (
     <div className="min-h-screen bg-white">
       <StructuredData type="WebPage" pageSlug={props.pageSlug} />
-      <HolidayBanner />
-      <Navbar />
 
       {/* HERO */}
       <section className="relative py-20 md:py-28 overflow-hidden" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 60%, #0f3d2e 100%)' }}>
@@ -223,7 +218,6 @@ export default function PestPageTemplate(props: PestPageProps) {
         </div>
       </section>
 
-      <Footer />
     </div>
   )
 }

@@ -2,9 +2,6 @@ import { useState, useEffect } from 'react'
 import { CheckCircle, Bug, Home, User, ClipboardCheck } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
-import Navbar from '../components/Navbar'
-import Footer from '../components/Footer'
-import HolidayBanner from '../components/HolidayBanner'
 import QuoteFormSteps, { type QuoteFormState } from '../components/QuoteFormSteps'
 
 const STEPS = [
@@ -98,15 +95,12 @@ export default function QuotePage() {
   if (submitted) {
     return (
       <div className="min-h-screen bg-white">
-        <HolidayBanner />
-        <Navbar />
         <div className="max-w-2xl mx-auto px-4 py-24 text-center">
           <CheckCircle className="w-16 h-16 text-emerald-500 mx-auto mb-6" />
           <h1 className="font-oswald tracking-wide text-4xl text-gray-900 mb-4">Quote Request Received!</h1>
           <p className="text-gray-600 text-lg mb-2">We'll call you within 2 hours!</p>
           <p className="text-gray-500">Need immediate help? Call <a href={`tel:${businessPhone}`} className="text-emerald-600 font-bold hover:underline">{businessPhone}</a></p>
         </div>
-        <Footer />
       </div>
     )
   }
@@ -115,8 +109,6 @@ export default function QuotePage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <HolidayBanner />
-      <Navbar />
       <section className="py-12 bg-[#f8fafc]">
         <div className="max-w-3xl mx-auto px-4">
           <h1 className="font-oswald tracking-wide text-4xl md:text-5xl text-gray-900 text-center mb-2">{heroTitle}</h1>
@@ -156,7 +148,6 @@ export default function QuotePage() {
           </div>
         </div>
       </section>
-      <Footer />
     </div>
   )
 }

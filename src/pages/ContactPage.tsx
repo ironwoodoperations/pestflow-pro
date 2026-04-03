@@ -3,9 +3,6 @@ import { Phone, Mail, MapPin, Clock } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
-import Navbar from '../components/Navbar'
-import Footer from '../components/Footer'
-import HolidayBanner from '../components/HolidayBanner'
 
 interface BusinessInfo { name: string; phone: string; email: string; address: string; hours: string }
 interface SocialLinks { facebook: string; instagram: string; google: string }
@@ -75,8 +72,6 @@ export default function ContactPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <HolidayBanner />
-      <Navbar />
 
       <section className="py-16" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
@@ -142,7 +137,6 @@ export default function ContactPage() {
           </div>
         </div>
       </section>
-      <Footer />
     </div>
   )
 }

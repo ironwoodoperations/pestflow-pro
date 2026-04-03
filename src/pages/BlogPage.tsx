@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
-import Navbar from '../components/Navbar'
-import Footer from '../components/Footer'
 import StructuredData from '../components/StructuredData'
 
 interface BlogPost { id: string; title: string; slug: string; excerpt: string; published_at: string; intro_image?: string }
@@ -35,7 +33,6 @@ export default function BlogPage() {
   return (
     <div className="min-h-screen bg-white">
       <StructuredData type="WebPage" pageSlug="blog" />
-      <Navbar />
 
       <section className="py-20 md:py-28" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
@@ -79,7 +76,6 @@ export default function BlogPage() {
         </div>
       </section>
 
-      <Footer />
     </div>
   )
 }

@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
-import Navbar from '../components/Navbar'
-import Footer from '../components/Footer'
 import StructuredData from '../components/StructuredData'
 
 const FAQ_CATEGORIES = [
@@ -51,7 +49,6 @@ export default function FAQPage() {
   return (
     <div className="min-h-screen bg-white">
       <StructuredData type="WebPage" pageSlug="faq" />
-      <Navbar />
 
       <section className="py-20 md:py-28" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
@@ -89,7 +86,6 @@ export default function FAQPage() {
         </div>
       </section>
 
-      <Footer />
     </div>
   )
 }

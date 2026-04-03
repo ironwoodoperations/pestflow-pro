@@ -3,10 +3,7 @@ import { Link } from 'react-router-dom'
 import { Shield, Home, Bug, Star, Heart, Eye, Award, Zap } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
-import Navbar from '../components/Navbar'
-import Footer from '../components/Footer'
 import StructuredData from '../components/StructuredData'
-import HolidayBanner from '../components/HolidayBanner'
 
 const TEAM = [
   { name: 'Ryan Carter', title: 'Owner & Founder', desc: 'Founded Ironclad in 2009. NPMA-certified with 18 years in pest management.', img: 'https://images.pexels.com/photos/1212984/pexels-photo-1212984.jpeg?w=300&h=300&fit=crop' },
@@ -37,8 +34,6 @@ export default function About() {
   return (
     <div className="min-h-screen bg-white">
       <StructuredData type="WebPage" pageSlug="about" />
-      <HolidayBanner />
-      <Navbar />
 
       <section className="py-20 md:py-28" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
@@ -143,7 +138,6 @@ export default function About() {
         </div>
       </section>
 
-      <Footer />
     </div>
   )
 }

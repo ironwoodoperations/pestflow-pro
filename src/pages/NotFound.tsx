@@ -1,15 +1,10 @@
 import { Link } from 'react-router-dom'
-import Navbar from '../components/Navbar'
-import Footer from '../components/Footer'
-import HolidayBanner from '../components/HolidayBanner'
 import StructuredData from '../components/StructuredData'
 
 export default function NotFound() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <StructuredData type="WebPage" pageSlug="404" />
-      <HolidayBanner />
-      <Navbar />
 
       {/* Hero-style 404 section */}
       <section
@@ -29,20 +24,13 @@ export default function NotFound() {
             or the URL might be wrong.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
-            <Link
-              to="/"
-              className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-            >
+            <Link to="/" className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">
               ← Back Home
             </Link>
-            <Link
-              to="/quote"
-              className="border border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10 px-6 py-3 rounded-lg font-medium transition-colors"
-            >
+            <Link to="/quote" className="border border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10 px-6 py-3 rounded-lg font-medium transition-colors">
               Get a Free Quote
             </Link>
           </div>
-
           <div className="mt-12 flex flex-wrap gap-x-6 gap-y-2 justify-center text-sm text-gray-500">
             <Link to="/pest-control" className="hover:text-emerald-400 transition-colors">Services</Link>
             <Link to="/about" className="hover:text-emerald-400 transition-colors">About</Link>
@@ -52,8 +40,6 @@ export default function NotFound() {
           </div>
         </div>
       </section>
-
-      <Footer />
     </div>
   )
 }

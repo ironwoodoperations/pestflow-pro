@@ -3,10 +3,7 @@ import { Link } from 'react-router-dom'
 import { Shield, Leaf, MapPin, Star, Bug, Clock } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
-import Navbar from '../components/Navbar'
-import Footer from '../components/Footer'
 import StructuredData from '../components/StructuredData'
-import HolidayBanner from '../components/HolidayBanner'
 import HeroVideoPlayer from '../components/HeroVideoPlayer'
 
 interface PageContent {
@@ -66,8 +63,6 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-white">
       <StructuredData type="LocalBusiness" />
-      <HolidayBanner />
-      <Navbar />
 
       {/* HERO */}
       <section
@@ -236,7 +231,6 @@ export default function Index() {
         </div>
       </section>
 
-      <Footer />
     </div>
   )
 }

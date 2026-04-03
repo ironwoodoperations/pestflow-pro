@@ -1,8 +1,5 @@
 import { Link } from 'react-router-dom'
 import { Check, Minus } from 'lucide-react'
-import Navbar from '../components/Navbar'
-import Footer from '../components/Footer'
-import HolidayBanner from '../components/HolidayBanner'
 import StructuredData from '../components/StructuredData'
 
 // Stripe Payment Link URLs — configure in .env.local or Stripe Dashboard
@@ -63,8 +60,6 @@ export default function Pricing() {
   return (
     <div className="min-h-screen bg-white">
       <StructuredData type="WebPage" pageSlug="pricing" />
-      <HolidayBanner />
-      <Navbar />
 
       {/* Hero */}
       <section className="py-20 md:py-28" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>
@@ -166,7 +161,6 @@ export default function Pricing() {
         </div>
       </section>
 
-      <Footer />
     </div>
   )
 }

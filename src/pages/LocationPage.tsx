@@ -3,8 +3,6 @@ import { Link } from 'react-router-dom'
 import { Shield, Leaf, MapPin, Star } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
-import Navbar from '../components/Navbar'
-import Footer from '../components/Footer'
 import StructuredData from '../components/StructuredData'
 import VideoImage from '../components/VideoImage'
 import { PEST_VIDEOS } from '../data/pestVideos'
@@ -50,7 +48,6 @@ export default function LocationPage({ slug }: { slug: string }) {
   return (
     <div className="min-h-screen bg-white">
       <StructuredData type="WebPage" pageSlug={slug} />
-      <Navbar />
 
       {/* HERO */}
       <section className="relative py-20 md:py-28 overflow-hidden" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>
@@ -173,7 +170,6 @@ export default function LocationPage({ slug }: { slug: string }) {
         </section>
       )}
 
-      <Footer />
     </div>
   )
 }
