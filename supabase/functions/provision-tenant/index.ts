@@ -1,4 +1,4 @@
-// Supabase Edge Function: provision-tenant v4
+// Supabase Edge Function: provision-tenant v5
 // Auto-creates tenant row if tenant_id not supplied.
 // Creates auth user, seeds tenant_users, and provisions all required settings.
 // Called by the Client Setup Wizard using the anon key (CORS-open).
@@ -58,7 +58,7 @@ Deno.serve(async (req: Request) => {
       } else {
         const { data: newTenant, error: tenantError } = await supabase
           .from('tenants')
-          .insert({ slug: resolvedSlug })
+          .insert({ slug: resolvedSlug, name: bi.name || resolvedSlug })
           .select('id')
           .single()
         if (tenantError || !newTenant) {
@@ -69,8 +69,8 @@ Deno.serve(async (req: Request) => {
         tenantId = newTenant.id
       }
     } else {
-      // Ensure slug is set on provided tenant row
-      await supabase.from('tenants').update({ slug: resolvedSlug }).eq('id', tenantId)
+      // Ensure slug and name are set on provided tenant row
+      await supabase.from('tenants').update({ slug: resolvedSlug, name: bi.name || resolvedSlug }).eq('id', tenantId)
     }
 
     // Step 2: Create auth user via Admin API, insert into tenant_users
