@@ -8,9 +8,9 @@ interface Biz { name?: string; phone?: string }
 const HERO_IMAGE = 'https://images.pexels.com/photos/5025639/pexels-photo-5025639.jpeg'
 
 const STRIPS = [
-  { icon: '🏠', title: 'Residential', sub: 'Protecting your home and family' },
-  { icon: '🏢', title: 'Commercial', sub: 'Keeping your business pest-free' },
-  { icon: '🪲', title: 'Termites', sub: 'Full termite inspection & treatment' },
+  { icon: '🏠', title: 'Residential', sub: 'Protecting your home and family', href: '/pest-control' },
+  { icon: '🏢', title: 'Commercial', sub: 'Keeping your business pest-free', href: '/pest-control' },
+  { icon: '🪲', title: 'Termites', sub: 'Full termite inspection & treatment', href: '/termite-control' },
 ]
 
 export default function ShellHero() {
@@ -72,7 +72,7 @@ export default function ShellHero() {
           {STRIPS.map((s, i) => (
             <Link
               key={i}
-              to="/services"
+              to={s.href}
               className="flex flex-col items-start py-6 px-8 cursor-pointer hover:bg-gray-800 transition group"
             >
               <span className="text-3xl mb-2" aria-hidden="true">{s.icon}</span>
