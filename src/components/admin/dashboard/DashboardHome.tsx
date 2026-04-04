@@ -76,7 +76,12 @@ export default function DashboardHome({ onboardingComplete, demoActive, onDemoSe
         </div>
       )}
 
-      {/* Row 1: Stats */}
+      {/* Row 1: Plan card */}
+      <div className="mb-6">
+        <DashboardPlanCard />
+      </div>
+
+      {/* Row 2: Stats */}
       <DashboardStats
         totalLeads={totalLeads}
         newThisMonth={newThisMonth}
@@ -84,15 +89,10 @@ export default function DashboardHome({ onboardingComplete, demoActive, onDemoSe
         conversionRate={conversionRate}
       />
 
-      {/* Row 2: SEO + Social widgets */}
+      {/* Row 3: SEO + Social widgets */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
         <DashboardSeoWidget onNavigate={onNavigate} />
         <DashboardSocialWidget onNavigate={onNavigate} />
-      </div>
-
-      {/* Row 3: Plan card */}
-      <div className="mb-6">
-        <DashboardPlanCard />
       </div>
 
       {!demoActive && tenantId && (
