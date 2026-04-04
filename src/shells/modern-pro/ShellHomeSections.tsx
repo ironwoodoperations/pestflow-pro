@@ -14,7 +14,11 @@ async function fetchPexelsImage(query: string, apiKey: string): Promise<string |
       { headers: { Authorization: apiKey } }
     )
     const data = await r.json()
-    return data.photos?.[0]?.src?.medium || null
+    const url: string | undefined = data.photos?.[0]?.src?.medium
+    if (!url) return null
+    // Force square crop via Pexels/Imgix params so it fills the circular thumbnail cleanly
+    const base = url.split('?')[0]
+    return `${base}?auto=compress&cs=tinysrgb&fit=crop&w=300&h=300`
   } catch { return null }
 }
 
@@ -34,7 +38,7 @@ export default function ShellHomeSections() {
       if (bizRes.data?.value) setBiz(bizRes.data.value)
       if (testRes.data?.length) setTestimonials(testRes.data)
 
-      const apiKey = intRes.data?.value?.pexels_api_key
+      const apiKey = intRes.data?.value?.pexels_api_key || import.meta.env.VITE_PEXELS_API_KEY
       if (apiKey) {
         const results = await Promise.all(
           SERVICES.map(s => fetchPexelsImage(s.query, apiKey).then(url => ({ name: s.name, url })))
