@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { resolveTenantId } from '../../lib/tenant'
 
 export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' })
@@ -12,8 +13,24 @@ export default function Login() {
     e.preventDefault()
     setLoading(true)
     setError('')
-    const { error } = await supabase.auth.signInWithPassword(form)
-    if (error) { setError(error.message); setLoading(false); return }
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword(form)
+    if (authError) { setError(authError.message); setLoading(false); return }
+
+    const tenantId = await resolveTenantId()
+    const { data: membership } = await supabase
+      .from('tenant_users')
+      .select('id')
+      .eq('tenant_id', tenantId)
+      .eq('user_id', authData.user.id)
+      .maybeSingle()
+
+    if (!membership) {
+      await supabase.auth.signOut()
+      setError("You don't have access to this account.")
+      setLoading(false)
+      return
+    }
+
     navigate('/admin')
   }
 

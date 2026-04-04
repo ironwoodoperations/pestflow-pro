@@ -28,7 +28,13 @@
       "Write(**)",
       "Edit(**)",
       "mcp__claude_ai_Supabase__apply_migration",
-      "Bash(git -C /workspaces/pestflow-pro log --oneline -10)"
+      "Bash(git -C /workspaces/pestflow-pro log --oneline -10)",
+      "Bash(wc -l src/shells/*/ShellHomeSections.tsx src/shells/*/ShellHero.tsx)",
+      "Bash(wc -l src/components/admin/seo/*.tsx src/components/admin/seo/*.ts)",
+      "Bash(supabase secrets:*)",
+      "Bash(wc -l src/pages/*Control.tsx src/pages/BedBugControl.tsx src/pages/ScorpionControl.tsx src/pages/PestControlPage.tsx src/pages/TermiteInspections.tsx)",
+      "Bash(wc -l src/shells/*/ShellHomeSections.tsx)",
+      "Bash(nslookup lonestarpest.pestflowpro.com)"
     ],
     "deny": [
       "Bash(git push --force *)",
