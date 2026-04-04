@@ -17,9 +17,9 @@ export default function ClientSetupStep5({ form, setForm }: Props) {
       <p className="text-sm text-gray-500 mb-6">Optional tracking IDs and any extra notes.</p>
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">New Client Tenant ID (from Supabase)</label>
-          <input value={form.tenant_id} onChange={f('tenant_id')} className={INPUT} placeholder="uuid — create row in tenants table first" />
-          <p className="text-xs text-gray-400 mt-1">Insert a row into the <code>tenants</code> table in Supabase, then paste the UUID here.</p>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Tenant ID (optional override)</label>
+          <input value={form.tenant_id} onChange={f('tenant_id')} className={INPUT} placeholder="Leave blank — auto-created from slug" />
+          <p className="text-xs text-gray-400 mt-1">Leave blank to auto-create. Only fill in if you pre-created the tenant row in Supabase.</p>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Admin Password (client login)</label>

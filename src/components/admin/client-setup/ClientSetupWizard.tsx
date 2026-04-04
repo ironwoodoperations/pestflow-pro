@@ -10,15 +10,16 @@ import ClientSetupReview, { ClientSetupSuccess } from './ClientSetupReview'
 
 const STEP_LABELS = ['Plan', 'Business', 'Branding', 'Social', 'Integrations', 'Review']
 
-interface State { form: ClientSetupForm; step: number; sending: boolean; sent: boolean }
+interface ProvisionResult { slug: string; url: string; email: string; password: string }
+interface State { form: ClientSetupForm; step: number; sending: boolean; sent: boolean; result: ProvisionResult | null }
 
 function isStep2Valid(f: ClientSetupForm) {
   return f.biz_name.trim() && f.slug.trim() && f.contact_name.trim() && f.phone.trim() && f.email.trim() && f.address.trim() && f.industry.trim()
 }
 
 export default function ClientSetupWizard() {
-  const [state, setState] = useState<State>({ form: INITIAL_FORM, step: 1, sending: false, sent: false })
-  const { form, step, sending, sent } = state
+  const [state, setState] = useState<State>({ form: INITIAL_FORM, step: 1, sending: false, sent: false, result: null })
+  const { form, step, sending, sent, result } = state
 
   const setForm = (patch: Partial<ClientSetupForm>) =>
     setState(s => ({ ...s, form: { ...s.form, ...patch } }))
@@ -41,6 +42,7 @@ export default function ClientSetupWizard() {
 **Email:** ${form.email}
 **Address:** ${form.address}
 **Industry:** ${form.industry}
+**Template:** ${form.template || 'modern-pro'}
 **Domain:** ${form.domain}
 **Tagline:** ${form.tagline}
 **Logo URL:** ${form.logo_url}
@@ -78,31 +80,35 @@ ${form.notes || '—'}
       })
     } catch { /* silent fail */ }
 
-    if (form.tenant_id.trim()) {
-      const planTierMap: Record<string, number> = { starter: 1, grow: 2, pro: 3, elite: 4 }
-      const planPriceMap: Record<string, number> = { starter: 149, grow: 249, pro: 349, elite: 499 }
-      const tierNum = planTierMap[form.plan] || 1
-      try {
-        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/provision-tenant`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
-          body: JSON.stringify({
-            tenant_id: form.tenant_id.trim(),
-            slug: form.slug.trim(),
-            admin_email: form.email,
-            admin_password: form.admin_password,
-            business_info: { name: form.biz_name, phone: form.phone, email: form.email, address: form.address, tagline: form.tagline, industry: form.industry },
-            branding: { logo_url: form.logo_url, primary_color: form.primary_color, template: 'modern-pro' },
-            social_links: { facebook: form.facebook, instagram: form.instagram, google: form.google, youtube: form.youtube },
-            integrations: { google_place_id: form.google_place_id, ga4_id: form.ga4_id },
-            plan: form.plan,
-            subscription: { tier: tierNum, plan_name: form.plan.charAt(0).toUpperCase() + form.plan.slice(1), monthly_price: planPriceMap[form.plan] || 149 },
-          }),
-        })
-      } catch { console.warn('Tenant provisioning failed — manually configure settings') }
-    }
+    // Always provision — tenant row auto-created if no tenant_id supplied
+    const planTierMap: Record<string, number> = { starter: 1, grow: 2, pro: 3, elite: 4 }
+    const planPriceMap: Record<string, number> = { starter: 99, grow: 149, pro: 249, elite: 499 }
+    const tierNum = planTierMap[form.plan] || 1
+    let provisionResult: ProvisionResult | null = null
+    try {
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/provision-tenant`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({
+          tenant_id: form.tenant_id.trim() || undefined,
+          slug: form.slug.trim(),
+          admin_email: form.email,
+          admin_password: form.admin_password,
+          business_info: { name: form.biz_name, phone: form.phone, email: form.email, address: form.address, tagline: form.tagline, industry: form.industry },
+          branding: { logo_url: form.logo_url, primary_color: form.primary_color, template: form.template || 'modern-pro' },
+          social_links: { facebook: form.facebook, instagram: form.instagram, google: form.google, youtube: form.youtube },
+          integrations: { google_place_id: form.google_place_id, ga4_id: form.ga4_id },
+          plan: form.plan,
+          subscription: { tier: tierNum, plan_name: form.plan.charAt(0).toUpperCase() + form.plan.slice(1), monthly_price: planPriceMap[form.plan] || 99 },
+        }),
+      })
+      const data = await resp.json()
+      if (data.success) {
+        provisionResult = { slug: data.slug, url: data.url, email: form.email, password: form.admin_password }
+      }
+    } catch { console.warn('Tenant provisioning failed — manually configure settings') }
 
-    setState(s => ({ ...s, sending: false, sent: true }))
+    setState(s => ({ ...s, sending: false, sent: true, result: provisionResult }))
   }
 
   return (
@@ -137,7 +143,10 @@ ${form.notes || '—'}
           />
         )}
         {step === 6 && sent && (
-          <ClientSetupSuccess onReset={() => setState({ form: INITIAL_FORM, step: 1, sending: false, sent: false })} />
+          <ClientSetupSuccess
+            result={result}
+            onReset={() => setState({ form: INITIAL_FORM, step: 1, sending: false, sent: false, result: null })}
+          />
         )}
 
         {step < 6 && (

@@ -8,9 +8,9 @@ interface Props {
 }
 
 const PLANS: { key: ClientSetupForm['plan']; name: string; price: string; tagline: string }[] = [
-  { key: 'starter', name: 'Starter', price: '$149/mo', tagline: 'Website + CRM + basic SEO' },
-  { key: 'grow',    name: 'Grow',    price: '$249/mo', tagline: 'Full SEO + Blog + Social scheduling' },
-  { key: 'pro',     name: 'Pro',     price: '$349/mo', tagline: 'AI tools + campaigns + advanced reports' },
+  { key: 'starter', name: 'Starter', price: '$99/mo',  tagline: 'Website + CRM + basic SEO' },
+  { key: 'grow',    name: 'Grow',    price: '$149/mo', tagline: 'Full SEO + Blog + Social scheduling' },
+  { key: 'pro',     name: 'Pro',     price: '$249/mo', tagline: 'AI tools + campaigns + advanced reports' },
   { key: 'elite',   name: 'Elite',   price: '$499/mo', tagline: 'All platforms + live reviews + priority support' },
 ]
 

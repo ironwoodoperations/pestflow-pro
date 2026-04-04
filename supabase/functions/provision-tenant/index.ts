@@ -1,4 +1,5 @@
-// Supabase Edge Function: provision-tenant v3
+// Supabase Edge Function: provision-tenant v4
+// Auto-creates tenant row if tenant_id not supplied.
 // Creates auth user, seeds tenant_users, and provisions all required settings.
 // Called by the Client Setup Wizard using the anon key (CORS-open).
 
@@ -13,7 +14,7 @@ const CORS = {
 }
 
 interface RequestBody {
-  tenant_id: string
+  tenant_id?: string
   slug?: string
   admin_email?: string
   admin_password?: string
@@ -30,19 +31,49 @@ Deno.serve(async (req: Request) => {
 
   try {
     const body: RequestBody = await req.json()
-    const { tenant_id, slug, admin_email, admin_password, business_info: bi,
+    const { slug, admin_email, admin_password, business_info: bi,
             branding, social_links: social, integrations, subscription } = body
 
-    if (!tenant_id) {
-      return new Response(JSON.stringify({ error: 'tenant_id is required' }), {
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+
+    // Resolve slug — prefer explicit, fall back to slugified biz name
+    const resolvedSlug = (slug || bi.name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20)).trim()
+    if (!resolvedSlug) {
+      return new Response(JSON.stringify({ error: 'slug or business_info.name is required' }), {
         status: 400, headers: { 'Content-Type': 'application/json', ...CORS },
       })
     }
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    // Step 1: Resolve or create tenant row
+    let tenantId = body.tenant_id?.trim() || ''
+    if (!tenantId) {
+      // Check if slug already exists (idempotent)
+      const { data: existing } = await supabase
+        .from('tenants')
+        .select('id')
+        .eq('slug', resolvedSlug)
+        .maybeSingle()
+      if (existing) {
+        tenantId = existing.id
+      } else {
+        const { data: newTenant, error: tenantError } = await supabase
+          .from('tenants')
+          .insert({ slug: resolvedSlug })
+          .select('id')
+          .single()
+        if (tenantError || !newTenant) {
+          return new Response(JSON.stringify({ error: 'Failed to create tenant: ' + (tenantError?.message || 'unknown') }), {
+            status: 500, headers: { 'Content-Type': 'application/json', ...CORS },
+          })
+        }
+        tenantId = newTenant.id
+      }
+    } else {
+      // Ensure slug is set on provided tenant row
+      await supabase.from('tenants').update({ slug: resolvedSlug }).eq('id', tenantId)
+    }
 
-    // Fix A + B: Create auth user via Admin API (handles all columns correctly),
-    // then insert into tenant_users so has_role check passes on first login.
+    // Step 2: Create auth user via Admin API, insert into tenant_users
     if (admin_email && admin_password) {
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: admin_email,
@@ -54,29 +85,27 @@ Deno.serve(async (req: Request) => {
       } else if (authData.user) {
         const { error: tuError } = await supabase
           .from('tenant_users')
-          .insert({ tenant_id, user_id: authData.user.id, role: 'admin' })
-          .select()
-          .single()
+          .insert({ tenant_id: tenantId, user_id: authData.user.id, role: 'admin' })
         if (tuError && tuError.code !== '23505') {
           console.error('Failed to insert tenant_users:', tuError.message)
         }
       }
     }
 
-    // Fix C: Seed ALL required settings keys so the dashboard loads without errors.
+    // Step 3: Seed all 11 required settings keys
     const email = bi.email || ''
     const settingsRows = [
-      { tenant_id, key: 'business_info', value: { name: bi.name||'', phone: bi.phone||'', email, address: bi.address||'', tagline: bi.tagline||'', industry: bi.industry||'Pest Control', hours: '', license: '', certifications: '', founded_year: '', num_technicians: '' } },
-      { tenant_id, key: 'branding', value: { logo_url: branding.logo_url||'', favicon_url: '', primary_color: branding.primary_color||'#10b981', accent_color: '#f5c518', template: branding.template||'modern-pro', cta_text: 'Get a Free Inspection' } },
-      { tenant_id, key: 'customization', value: { hero_headline: bi.tagline||'', show_license: true, show_years: true, show_technicians: true, show_certifications: true } },
-      { tenant_id, key: 'social_links', value: { facebook: social.facebook||'', instagram: social.instagram||'', google: social.google||'', youtube: social.youtube||'' } },
-      { tenant_id, key: 'integrations', value: { google_place_id: integrations.google_place_id||'', google_analytics_id: integrations.ga4_id||'', google_maps_api_key: '', pexels_api_key: '', textbelt_api_key: '', owner_sms_number: '', ayrshare_api_key: '', facebook_access_token: '', facebook_page_id: '' } },
-      { tenant_id, key: 'onboarding_complete', value: { complete: true } },
-      { tenant_id, key: 'hero_media', value: { youtube_id: '', thumbnail_url: '' } },
-      { tenant_id, key: 'holiday_mode', value: { enabled: false, holiday: '', message: '', auto_schedule: '' } },
-      { tenant_id, key: 'notifications', value: { cc_email: '', lead_email: email, monthly_report_email: email } },
-      { tenant_id, key: 'demo_mode', value: { active: false, seeded_at: '' } },
-      { tenant_id, key: 'subscription', value: { tier: subscription.tier||1, plan_name: subscription.plan_name||'Starter', monthly_price: subscription.monthly_price||99 } },
+      { tenant_id: tenantId, key: 'business_info', value: { name: bi.name||'', phone: bi.phone||'', email, address: bi.address||'', tagline: bi.tagline||'', industry: bi.industry||'Pest Control', hours: '', license: '', certifications: '', founded_year: '', num_technicians: '' } },
+      { tenant_id: tenantId, key: 'branding', value: { logo_url: branding.logo_url||'', favicon_url: '', primary_color: branding.primary_color||'#10b981', accent_color: '#f5c518', template: branding.template||'modern-pro', cta_text: 'Get a Free Inspection' } },
+      { tenant_id: tenantId, key: 'customization', value: { hero_headline: bi.tagline||'', show_license: true, show_years: true, show_technicians: true, show_certifications: true } },
+      { tenant_id: tenantId, key: 'social_links', value: { facebook: social.facebook||'', instagram: social.instagram||'', google: social.google||'', youtube: social.youtube||'' } },
+      { tenant_id: tenantId, key: 'integrations', value: { google_place_id: integrations.google_place_id||'', google_analytics_id: integrations.ga4_id||'', google_maps_api_key: '', pexels_api_key: '', textbelt_api_key: '', owner_sms_number: '', ayrshare_api_key: '', facebook_access_token: '', facebook_page_id: '' } },
+      { tenant_id: tenantId, key: 'onboarding_complete', value: { complete: true } },
+      { tenant_id: tenantId, key: 'hero_media', value: { youtube_id: '', thumbnail_url: '' } },
+      { tenant_id: tenantId, key: 'holiday_mode', value: { enabled: false, holiday: '', message: '', auto_schedule: '' } },
+      { tenant_id: tenantId, key: 'notifications', value: { cc_email: '', lead_email: email, monthly_report_email: email } },
+      { tenant_id: tenantId, key: 'demo_mode', value: { active: false, seeded_at: '' } },
+      { tenant_id: tenantId, key: 'subscription', value: { tier: subscription.tier||1, plan_name: subscription.plan_name||'Starter', monthly_price: subscription.monthly_price||99 } },
     ]
 
     for (const row of settingsRows) {
@@ -84,15 +113,8 @@ Deno.serve(async (req: Request) => {
       if (error) console.error(`Failed to upsert ${row.key}:`, error.message)
     }
 
-    // Store slug on tenant row so subdomain routing works immediately.
-    const resolvedSlug = slug || bi.name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20)
-    if (resolvedSlug) {
-      const { error: slugError } = await supabase.from('tenants').update({ slug: resolvedSlug }).eq('id', tenant_id)
-      if (slugError) console.error('Failed to set tenant slug:', slugError.message)
-    }
-
-    const liveUrl = resolvedSlug ? `https://${resolvedSlug}.pestflowpro.com` : null
-    return new Response(JSON.stringify({ success: true, slug: resolvedSlug, url: liveUrl }), {
+    const liveUrl = `https://${resolvedSlug}.pestflowpro.com`
+    return new Response(JSON.stringify({ success: true, tenant_id: tenantId, slug: resolvedSlug, url: liveUrl }), {
       headers: { 'Content-Type': 'application/json', ...CORS },
     })
   } catch (err) {

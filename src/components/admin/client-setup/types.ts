@@ -11,6 +11,7 @@ export interface ClientSetupForm {
   // Step 3 — Branding
   logo_url: string
   primary_color: string
+  template: string
   tagline: string
   domain: string
   // Step 4 — Social & Services
@@ -31,13 +32,13 @@ export interface ClientSetupForm {
 export const INITIAL_FORM: ClientSetupForm = {
   plan: '', biz_name: '', contact_name: '', phone: '', email: '',
   address: '', industry: '', logo_url: '', primary_color: '#10b981',
-  tagline: '', domain: '', facebook: '', instagram: '', google: '',
+  template: 'modern-pro', tagline: '', domain: '', facebook: '', instagram: '', google: '',
   youtube: '', services: '', google_place_id: '', ga4_id: '', notes: '', tenant_id: '', slug: '', admin_password: '',
 }
 
 export const PLAN_LABELS: Record<string, string> = {
-  starter: 'Starter — $149/mo — Website + CRM + basic SEO',
-  grow:    'Grow — $249/mo — Full SEO + Blog + Social scheduling',
-  pro:     'Pro — $349/mo — AI tools + campaigns + advanced reports',
+  starter: 'Starter — $99/mo — Website + CRM + basic SEO',
+  grow:    'Grow — $149/mo — Full SEO + Blog + Social scheduling',
+  pro:     'Pro — $249/mo — AI tools + campaigns + advanced reports',
   elite:   'Elite — $499/mo — All platforms + live reviews + priority support',
 }
