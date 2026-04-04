@@ -14,9 +14,9 @@ interface Props {
 
 type ProviderTab = 'export' | 'diy' | 'buffer' | 'ayrshare'
 const TABS: { id: ProviderTab; label: string }[] = [
-  { id: 'export', label: 'Hands-On' },
-  { id: 'diy', label: 'DIY' },
-  { id: 'buffer', label: 'Semi-Auto' },
+  { id: 'export',   label: 'Hands On'      },
+  { id: 'diy',      label: 'DIY'           },
+  { id: 'buffer',   label: 'Semi-Auto'     },
   { id: 'ayrshare', label: 'Full Autopilot' },
 ]
 
@@ -26,7 +26,6 @@ export default function ConnectionsModal({ integrations, onClose, onSaved }: Pro
   const [form, setForm] = useState({
     active_social_provider: 'export' as string,
     facebook_access_token: '', facebook_page_id: '',
-    buffer_access_token: '', ayrshare_api_key: '', ayrshare_profile_key: '',
   })
   const [saving, setSaving] = useState(false)
 
@@ -37,9 +36,6 @@ export default function ConnectionsModal({ integrations, onClose, onSaved }: Pro
       active_social_provider: integrations.active_social_provider || 'export',
       facebook_access_token: integrations.facebook_access_token || '',
       facebook_page_id: integrations.facebook_page_id || '',
-      buffer_access_token: integrations.buffer_access_token || '',
-      ayrshare_api_key: integrations.ayrshare_api_key || '',
-      ayrshare_profile_key: integrations.ayrshare_profile_key || '',
     }))
   }, [integrations])
 
@@ -83,10 +79,15 @@ export default function ConnectionsModal({ integrations, onClose, onSaved }: Pro
         </div>
 
         <div className="p-5 max-h-[60vh] overflow-y-auto">
+
           {activeTab === 'export' && (
             <div className="space-y-3">
-              <h4 className="font-semibold text-gray-800">Export & Schedule Manually</h4>
-              <p className="text-xs text-gray-500">Generate and approve your posts here, then export them as a CSV or copy captions to schedule in any tool you prefer. No API keys required.</p>
+              <h4 className="font-semibold text-gray-800">Hands On</h4>
+              <p className="text-xs text-gray-500">
+                Generate and approve your posts here, then copy the captions to post directly on
+                your Facebook or Instagram account. No accounts to connect, no tools needed — just
+                copy and paste.
+              </p>
               <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-xs text-emerald-700">✓ This mode is always available</div>
               {isActive('export')
                 ? <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">Currently Active</span>
@@ -97,8 +98,11 @@ export default function ConnectionsModal({ integrations, onClose, onSaved }: Pro
 
           {activeTab === 'diy' && (
             <div className="space-y-3">
-              <h4 className="font-semibold text-gray-800">Connect Facebook & Instagram Directly</h4>
-              <p className="text-xs text-gray-500">Use your own Meta developer credentials. Free but requires setup in Meta Business Manager.</p>
+              <h4 className="font-semibold text-gray-800">DIY</h4>
+              <p className="text-xs text-gray-500">
+                You're in control. Use your own social media scheduling tools to manage your posts.
+                We'll help you generate great content — you handle the posting.
+              </p>
               <div>
                 <label className="text-xs font-medium text-gray-700 block mb-1">Facebook Access Token</label>
                 <input value={form.facebook_access_token} onChange={e => setForm(p => ({ ...p, facebook_access_token: e.target.value }))} className={inputCls} />
@@ -120,51 +124,42 @@ export default function ConnectionsModal({ integrations, onClose, onSaved }: Pro
 
           {activeTab === 'buffer' && (
             <div className="space-y-3">
-              <h4 className="font-semibold text-gray-800">Connect via Buffer</h4>
-              <p className="text-xs text-gray-500">Buffer makes it easy to schedule posts across platforms. Plans start around $6/month.</p>
-              <a href="https://buffer.com" target="_blank" rel="noopener noreferrer" className="text-xs text-emerald-600 hover:underline font-medium">Sign up for Buffer →</a>
-              <div>
-                <label className="text-xs font-medium text-gray-700 block mb-1">Buffer Access Token</label>
-                <input type="password" value={form.buffer_access_token} onChange={e => setForm(p => ({ ...p, buffer_access_token: e.target.value }))} className={inputCls} />
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => saveFields({ buffer_access_token: form.buffer_access_token })} disabled={saving} className="text-xs px-3 py-1.5 bg-gray-800 text-white rounded-lg font-medium disabled:opacity-50">{saving ? 'Saving…' : 'Save'}</button>
-                {form.buffer_access_token && !isActive('buffer') && (
-                  <button onClick={() => setActive('buffer')} disabled={saving} className="text-xs px-3 py-1.5 bg-emerald-600 text-white rounded-lg font-medium disabled:opacity-50">Set as Active</button>
-                )}
-                {isActive('buffer') && <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium self-center">Active</span>}
-              </div>
+              <h4 className="font-semibold text-gray-800">Semi-Automated Posting</h4>
+              <p className="text-xs text-gray-500">
+                We set this up for you. Your approved posts will be automatically scheduled and sent
+                to your connected Facebook page on a consistent posting schedule — no extra accounts
+                or tools required on your end.
+              </p>
+              {isActive('buffer')
+                ? <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">Currently Active</span>
+                : <button onClick={() => setActive('buffer')} disabled={saving} className="text-xs px-3 py-1.5 bg-emerald-600 text-white rounded-lg font-medium disabled:opacity-50">Set as Active</button>
+              }
             </div>
           )}
 
           {activeTab === 'ayrshare' && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h4 className="font-semibold text-gray-800">Connect via Ayrshare</h4>
+                <h4 className="font-semibold text-gray-800">Full Autopilot</h4>
                 {canAccess(4) && (
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${form.ayrshare_api_key ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
-                    {form.ayrshare_api_key ? '● Connected' : '○ Not connected'}
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${isActive('ayrshare') ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                    {isActive('ayrshare') ? '● Active' : '○ Not active'}
                   </span>
                 )}
               </div>
-              <p className="text-xs text-gray-500">Ayrshare supports 10+ platforms including TikTok, LinkedIn, Twitter/X. Plans start at $29/month.</p>
-              <p className="text-xs text-gray-400">Enables posting to FB, IG, Twitter/X, LinkedIn, TikTok, Pinterest</p>
-              <a href="https://www.ayrshare.com" target="_blank" rel="noopener noreferrer" className="text-xs text-emerald-600 hover:underline font-medium">Sign up for Ayrshare →</a>
-              <div>
-                <label className="text-xs font-medium text-gray-700 block mb-1">API Key</label>
-                <input type="password" value={form.ayrshare_api_key} onChange={e => setForm(p => ({ ...p, ayrshare_api_key: e.target.value }))} className={inputCls} />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-gray-700 block mb-1">Profile Key</label>
-                <input value={form.ayrshare_profile_key} onChange={e => setForm(p => ({ ...p, ayrshare_profile_key: e.target.value }))} className={inputCls} />
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => saveFields({ ayrshare_api_key: form.ayrshare_api_key, ayrshare_profile_key: form.ayrshare_profile_key })} disabled={saving} className="text-xs px-3 py-1.5 bg-gray-800 text-white rounded-lg font-medium disabled:opacity-50">{saving ? 'Saving…' : 'Save'}</button>
-                {form.ayrshare_api_key && !isActive('ayrshare') && (
-                  <button onClick={() => setActive('ayrshare')} disabled={saving} className="text-xs px-3 py-1.5 bg-emerald-600 text-white rounded-lg font-medium disabled:opacity-50">Set as Active</button>
-                )}
-                {isActive('ayrshare') && <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium self-center">Active</span>}
-              </div>
+              <p className="text-xs text-gray-500">
+                Sit back and let us handle everything. We connect your accounts and manage your
+                posting schedule across Facebook, Instagram, and more. Your posts go out
+                consistently — without you lifting a finger. Included with your Elite plan.
+              </p>
+              <ul className="text-xs text-gray-600 space-y-1">
+                {['Facebook', 'Instagram', 'Google Business Posts', 'Consistent weekly posting schedule', 'AI-generated captions tailored to your business'].map(item => (
+                  <li key={item} className="flex items-center gap-2"><span className="text-emerald-500 font-bold">✓</span>{item}</li>
+                ))}
+              </ul>
+              {!isActive('ayrshare') && (
+                <button onClick={() => setActive('ayrshare')} disabled={saving} className="text-xs px-3 py-1.5 bg-emerald-600 text-white rounded-lg font-medium disabled:opacity-50">Set as Active</button>
+              )}
             </div>
           )}
         </div>
