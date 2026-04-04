@@ -3,66 +3,104 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
 
-interface BusinessInfo { tagline: string; license?: string; founded_year?: string | number; num_technicians?: number; certifications?: string }
-interface Customization { hero_headline?: string; show_license?: boolean; show_years?: boolean; show_technicians?: boolean; show_certifications?: boolean }
-interface HeroMedia { image_url?: string }
+interface BusinessInfo {
+  tagline?: string
+  phone?: string
+  address?: string
+  founded_year?: string | number
+  num_technicians?: number
+}
+interface Customization { hero_headline?: string }
+interface HeroMedia { youtube_id?: string; thumbnail_url?: string }
 
 export default function ShellHero() {
-  const [biz, setBiz] = useState<BusinessInfo>({ tagline: 'Protect Your Home from Pests' })
+  const [biz, setBiz] = useState<BusinessInfo>({})
   const [custom, setCustom] = useState<Customization>({})
-  const [ctaText, setCtaText] = useState('Get Free Quote')
   const [heroMedia, setHeroMedia] = useState<HeroMedia>({})
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const [bizRes, mediaRes, brandRes, custRes] = await Promise.all([
+      const [bizRes, mediaRes, custRes] = await Promise.all([
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'hero_media').maybeSingle(),
-        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'customization').maybeSingle(),
       ])
-      if (bizRes.data?.value) {
-        const v = bizRes.data.value
-        setBiz({ tagline: v.tagline || 'Protect Your Home from Pests', license: v.license, founded_year: v.founded_year, num_technicians: v.num_technicians, certifications: v.certifications })
-      }
+      if (bizRes.data?.value) setBiz(bizRes.data.value)
       if (mediaRes.data?.value) setHeroMedia(mediaRes.data.value)
-      if (brandRes.data?.value?.cta_text) setCtaText(brandRes.data.value.cta_text)
       if (custRes.data?.value) setCustom(custRes.data.value)
     })
   }, [])
 
-  const headline = custom.hero_headline || biz.tagline
+  const headline = custom.hero_headline || 'Professional Pest Control You Can Trust'
 
-  const badges: string[] = []
-  if (custom.show_license && biz.license) badges.push(`License #${biz.license}`)
-  if (custom.show_years && biz.founded_year) badges.push(`Est. ${biz.founded_year}`)
-  if (custom.show_technicians && biz.num_technicians) badges.push(`${biz.num_technicians} Technicians`)
-  if (custom.show_certifications && biz.certifications) badges.push(biz.certifications)
+  // Extract city from address (everything before first comma)
+  const city = biz.address ? biz.address.split(',')[0].trim() : null
+  const subtext = city
+    ? `Serving ${city} and surrounding areas. Licensed, insured, and ready to help.`
+    : 'Licensed, insured, and ready to protect your home.'
 
-  const sectionStyle = heroMedia.image_url
-    ? { backgroundImage: `url(${heroMedia.image_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+  // Trust line — only render fields that exist
+  const trustParts: string[] = []
+  trustParts.push('Licensed & Insured')
+  if (biz.num_technicians) trustParts.push(`${biz.num_technicians}+ Technicians`)
+  if (biz.founded_year) trustParts.push(`Est. ${biz.founded_year}`)
+
+  // Background image: prefer thumbnail_url, then construct from youtube_id
+  const bgImage = heroMedia.thumbnail_url
+    || (heroMedia.youtube_id ? `https://img.youtube.com/vi/${heroMedia.youtube_id}/maxresdefault.jpg` : null)
+
+  const sectionStyle = bgImage
+    ? { backgroundImage: `url(${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }
     : undefined
 
   return (
-    <section className="relative bg-[#0a0f1e] text-white py-24 px-4 overflow-hidden" style={sectionStyle}>
-      {heroMedia.image_url && <div className="absolute inset-0 bg-[#0a0f1e]/70" />}
-      <div className="relative max-w-4xl mx-auto text-center">
-        <h1 className="font-oswald text-5xl md:text-6xl font-bold tracking-wide mb-6 leading-tight">
-          {headline.split(' ').map((word: string, i: number) => (
-            <span key={i}>{i === 0 ? <span className="text-emerald-400">{word}</span> : ` ${word}`}</span>
-          ))}
-        </h1>
-        <Link to="/quote" className="inline-block bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-lg px-8 py-4 rounded-xl transition shadow-lg shadow-emerald-900/40 mb-6">
-          {ctaText}
-        </Link>
-        {badges.length > 0 && (
-          <div className="flex flex-wrap gap-2 justify-center mt-2">
-            {badges.map((b) => (
-              <span key={b} className="bg-emerald-500/20 text-emerald-300 text-xs font-semibold px-3 py-1 rounded-full border border-emerald-500/30">{b}</span>
-            ))}
-          </div>
+    <section
+      className="relative bg-[#0a0f1e] text-white min-h-screen flex items-center justify-center px-4 overflow-hidden"
+      style={sectionStyle}
+    >
+      {bgImage && <div className="absolute inset-0" style={{ background: 'rgba(10,15,30,0.75)' }} />}
+
+      <div className="relative z-10 max-w-3xl mx-auto text-center">
+        {/* Tagline badge */}
+        {biz.tagline && (
+          <span className="inline-block text-emerald-400 border border-emerald-700 text-xs font-semibold px-3 py-1 rounded-full mb-4">
+            {biz.tagline}
+          </span>
         )}
+
+        {/* Headline */}
+        <h1 className="text-4xl md:text-6xl font-bold text-white leading-tight">
+          {headline}
+        </h1>
+
+        {/* Subtext */}
+        <p className="text-lg text-gray-300 mt-4 max-w-xl mx-auto">
+          {subtext}
+        </p>
+
+        {/* CTA buttons */}
+        <div className="flex flex-wrap gap-4 justify-center mt-8">
+          <Link
+            to="/quote"
+            className="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-8 py-3 rounded-lg transition"
+          >
+            Get a Free Quote
+          </Link>
+          {biz.phone && (
+            <a
+              href={`tel:${biz.phone.replace(/\D/g, '')}`}
+              className="border border-white text-white hover:bg-white/10 px-8 py-3 rounded-lg font-semibold transition"
+            >
+              Call Now
+            </a>
+          )}
+        </div>
+
+        {/* Trust line */}
+        <p className="mt-6 text-sm text-gray-400">
+          {trustParts.join(' · ')}
+        </p>
       </div>
     </section>
   )
