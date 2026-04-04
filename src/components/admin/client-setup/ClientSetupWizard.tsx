@@ -89,6 +89,8 @@ ${form.notes || '—'}
           body: JSON.stringify({
             tenant_id: form.tenant_id.trim(),
             slug: form.slug.trim(),
+            admin_email: form.email,
+            admin_password: form.admin_password,
             business_info: { name: form.biz_name, phone: form.phone, email: form.email, address: form.address, tagline: form.tagline, industry: form.industry },
             branding: { logo_url: form.logo_url, primary_color: form.primary_color, template: 'modern-pro' },
             social_links: { facebook: form.facebook, instagram: form.instagram, google: form.google, youtube: form.youtube },

@@ -18,8 +18,13 @@ export default function ClientSetupStep5({ form, setForm }: Props) {
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">New Client Tenant ID (from Supabase)</label>
-          <input value={form.tenant_id} onChange={f('tenant_id')} className={INPUT} placeholder="uuid — create tenant in Supabase first" />
-          <p className="text-xs text-gray-400 mt-1">Create the tenant in Supabase Auth first, then paste their UUID here</p>
+          <input value={form.tenant_id} onChange={f('tenant_id')} className={INPUT} placeholder="uuid — create row in tenants table first" />
+          <p className="text-xs text-gray-400 mt-1">Insert a row into the <code>tenants</code> table in Supabase, then paste the UUID here.</p>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Admin Password (client login)</label>
+          <input value={form.admin_password} onChange={f('admin_password')} className={INPUT} placeholder="auto-generated from slug" />
+          <p className="text-xs text-gray-400 mt-1">Auto-generated from slug. Copy this — it will be the client's first login password.</p>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Google Place ID</label>

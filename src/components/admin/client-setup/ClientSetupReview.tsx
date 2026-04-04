@@ -24,6 +24,8 @@ export default function ClientSetupReview({ form, sending, onExport, onBack }: P
     ['Place ID', form.google_place_id || '—'], ['GA4 ID', form.ga4_id || '—'],
     ['Notes', form.notes || '—'],
     ['Tenant ID', form.tenant_id || '— (not set — provisioning will be skipped)'],
+    ['Admin Email', form.email || '—'],
+    ['Admin Password', form.admin_password || '— (not set — user will not be created)'],
   ]
 
   return (

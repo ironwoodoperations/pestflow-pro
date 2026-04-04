@@ -11,20 +11,24 @@ function toSlug(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20)
 }
 
+function genPassword(slug: string): string {
+  if (!slug) return ''
+  return slug.charAt(0).toUpperCase() + slug.slice(1) + 'Pest26!'
+}
+
 export default function ClientSetupStep2({ form, setForm }: Props) {
   const f = (field: keyof ClientSetupForm) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm({ [field]: e.target.value })
 
   const handleBizName = (e: React.ChangeEvent<HTMLInputElement>) => {
     const name = e.target.value
-    // Only auto-generate slug if user hasn't manually edited it
     const autoSlug = toSlug(name)
-    setForm({ biz_name: name, slug: autoSlug })
+    setForm({ biz_name: name, slug: autoSlug, admin_password: genPassword(autoSlug) })
   }
 
   const handleSlug = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20)
-    setForm({ slug: val })
+    setForm({ slug: val, admin_password: genPassword(val) })
   }
 
   return (
