@@ -26,19 +26,27 @@ export default function ShellHomeSections() {
   return (
     <>
       {/* Services Grid */}
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="font-oswald text-4xl text-gray-900 text-center mb-10 tracking-wide">Our Services</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="text-center mb-10">
+            <h2 className="font-oswald text-4xl text-gray-900 tracking-wide mb-2">Our Services</h2>
+            <p className="text-gray-500 text-base">Professional pest control solutions for your home and business.</p>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
             {SERVICES.map((s) => (
-              <div key={s.name} className="bg-slate-800 rounded-xl overflow-hidden hover:bg-slate-700 transition">
-                <img src={s.img} alt={s.name} loading="lazy" className="w-full h-36 object-cover" />
-                <div className="p-5">
-                  <h3 className="text-white font-bold text-lg mb-1">{s.name}</h3>
-                  <p className="text-slate-400 text-sm">{s.desc}</p>
+              <div key={s.name} className="bg-white rounded-xl border border-gray-200 hover:border-emerald-400 hover:shadow-md transition group p-4 flex flex-col items-center text-center">
+                <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-100 group-hover:border-emerald-200 transition mb-3 flex-shrink-0">
+                  <img src={s.img} alt={s.name} loading="lazy" className="w-full h-full object-cover" />
                 </div>
+                <h3 className="text-gray-900 font-bold text-sm leading-tight mb-1">{s.name}</h3>
+                <p className="text-gray-500 text-xs leading-snug hidden sm:block">{s.desc}</p>
               </div>
             ))}
+          </div>
+          <div className="mt-8 text-center">
+            <Link to="/services" className="inline-block text-emerald-600 font-semibold text-sm hover:text-emerald-700 transition">
+              View all services →
+            </Link>
           </div>
         </div>
       </section>
