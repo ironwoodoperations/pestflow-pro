@@ -78,6 +78,53 @@ ${form.notes || '—'}
         body: JSON.stringify({ business_name: form.biz_name, contact_name: form.contact_name, plan: PLAN_LABELS[form.plan] || form.plan, markdown_content: md }),
       })
     } catch { /* silent fail — file already downloaded */ }
+
+    // Provision the new tenant's settings if a tenant_id was provided
+    if (form.tenant_id.trim()) {
+      const planTierMap: Record<string, number> = { starter: 1, grow: 2, pro: 3, elite: 4 }
+      const planPriceMap: Record<string, number> = { starter: 149, grow: 249, pro: 349, elite: 499 }
+      const tierNum = planTierMap[form.plan] || 1
+      try {
+        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/provision-tenant`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            tenant_id: form.tenant_id.trim(),
+            business_info: {
+              name: form.biz_name, phone: form.phone, email: form.email,
+              address: form.address, tagline: form.tagline, industry: form.industry,
+            },
+            branding: {
+              logo_url: form.logo_url,
+              primary_color: form.primary_color,
+              template: 'modern-pro',
+            },
+            social_links: {
+              facebook: form.facebook, instagram: form.instagram,
+              google: form.google, youtube: form.youtube,
+            },
+            integrations: {
+              google_place_id: form.google_place_id,
+              ga4_id: form.ga4_id,
+            },
+            plan: form.plan,
+            subscription: {
+              tier: tierNum,
+              plan_name: form.plan.charAt(0).toUpperCase() + form.plan.slice(1),
+              monthly_price: planPriceMap[form.plan] || 149,
+            },
+          }),
+        })
+      } catch {
+        console.warn('Tenant provisioning failed — manually configure settings')
+      }
+    } else {
+      console.warn('No tenant_id provided — skipping auto-provisioning. Configure settings manually.')
+    }
+
     setState(s => ({ ...s, sending: false, sent: true }))
   }
 
@@ -93,6 +140,7 @@ ${form.notes || '—'}
     ['Services', form.services || '—'],
     ['Place ID', form.google_place_id || '—'], ['GA4 ID', form.ga4_id || '—'],
     ['Notes', form.notes || '—'],
+    ['Tenant ID', form.tenant_id || '— (not set — provisioning will be skipped)'],
   ]
 
   return (

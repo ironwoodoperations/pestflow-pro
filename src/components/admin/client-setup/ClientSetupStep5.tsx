@@ -17,6 +17,11 @@ export default function ClientSetupStep5({ form, setForm }: Props) {
       <p className="text-sm text-gray-500 mb-6">Optional tracking IDs and any extra notes.</p>
       <div className="space-y-4">
         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">New Client Tenant ID (from Supabase)</label>
+          <input value={form.tenant_id} onChange={f('tenant_id')} className={INPUT} placeholder="uuid — create tenant in Supabase first" />
+          <p className="text-xs text-gray-400 mt-1">Create the tenant in Supabase Auth first, then paste their UUID here</p>
+        </div>
+        <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Google Place ID</label>
           <input value={form.google_place_id} onChange={f('google_place_id')} className={INPUT} placeholder="ChIJ…" />
           <p className="text-xs text-gray-400 mt-1">Find this in Google Maps → Share → embed URL</p>
