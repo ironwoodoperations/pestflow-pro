@@ -2,15 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
-
-const SERVICES = [
-  { name: 'General Pest', desc: 'Comprehensive indoor & outdoor pest elimination.' },
-  { name: 'Termite Control', desc: 'Protect your home from costly termite damage.' },
-  { name: 'Mosquito Control', desc: 'Yard treatments that eliminate mosquitoes at the source.' },
-  { name: 'Rodent Control', desc: 'Exclusion, trapping, and prevention for mice & rats.' },
-  { name: 'Bed Bug Treatment', desc: 'Complete heat and chemical bed bug elimination.' },
-  { name: 'Fire Ant Control', desc: 'Broadcast and mound treatments for fire ant colonies.' },
-]
+import { SERVICES } from './ServicesData'
 
 interface Biz { founded_year?: string | number; num_technicians?: number; phone?: string }
 interface Testimonial { id: string; author_name: string; review_text: string; rating: number }
@@ -39,12 +31,12 @@ export default function ShellHomeSections() {
           <h2 className="font-oswald text-4xl text-gray-900 text-center mb-10 tracking-wide">Our Services</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {SERVICES.map((s) => (
-              <div key={s.name} className="bg-slate-800 rounded-xl p-6 hover:bg-slate-700 transition">
-                <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center mb-4">
-                  <span className="text-emerald-400 text-xl font-bold">✓</span>
+              <div key={s.name} className="bg-slate-800 rounded-xl overflow-hidden hover:bg-slate-700 transition">
+                <img src={s.img} alt={s.name} loading="lazy" className="w-full h-36 object-cover" />
+                <div className="p-5">
+                  <h3 className="text-white font-bold text-lg mb-1">{s.name}</h3>
+                  <p className="text-slate-400 text-sm">{s.desc}</p>
                 </div>
-                <h3 className="text-white font-bold text-lg mb-2">{s.name}</h3>
-                <p className="text-slate-400 text-sm">{s.desc}</p>
               </div>
             ))}
           </div>

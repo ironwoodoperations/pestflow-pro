@@ -1,21 +1,13 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
+import { SERVICES } from './ServicesData'
 
 const STEPS = [
   { num: '1', title: 'Call Us', desc: 'Reach us anytime — same-day available.' },
   { num: '2', title: 'Free Inspection', desc: 'We assess your property at no cost.' },
   { num: '3', title: 'Treatment Plan', desc: 'A custom plan built for your situation.' },
   { num: '4', title: 'Guaranteed', desc: 'We come back if pests return.' },
-]
-
-const SERVICES = [
-  { name: 'General Pest', desc: 'Comprehensive protection for your home.' },
-  { name: 'Termite Control', desc: 'Stop termites before they cause damage.' },
-  { name: 'Mosquito Control', desc: 'Reclaim your outdoor spaces.' },
-  { name: 'Rodent Control', desc: 'Exclusion and elimination, done right.' },
-  { name: 'Bed Bug Treatment', desc: 'Heat and chemical treatment solutions.' },
-  { name: 'Fire Ant Control', desc: 'Colony elimination, not just mound treatment.' },
 ]
 
 interface Biz { phone?: string }
@@ -57,26 +49,23 @@ export default function ShellHomeSections() {
         </div>
       </section>
 
-      {/* Services Typography Grid */}
+      {/* Services Card Grid */}
       <section className="py-16 bg-white">
-        <div className="max-w-5xl mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
+        <div className="max-w-6xl mx-auto px-4">
+          <h2 className="font-oswald text-4xl text-gray-900 text-center mb-10 tracking-wide">Our Services</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {SERVICES.map((s) => (
-              <div
-                key={s.name}
-                className="border-b border-gray-100 py-8 px-4 flex items-start justify-between group"
-              >
-                <div>
-                  <h3 className="text-slate-800 font-bold text-2xl mb-1">{s.name}</h3>
-                  <p className="text-slate-500 text-sm">{s.desc}</p>
+              <a key={s.name} href="/pest-control"
+                className="rounded-xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition group">
+                <img src={s.img} alt={s.name} loading="lazy" className="w-full h-40 object-cover" />
+                <div className="p-4 flex items-start justify-between">
+                  <div>
+                    <h3 className="text-slate-800 font-bold text-lg group-hover:text-emerald-600 transition">{s.name}</h3>
+                    <p className="text-slate-500 text-sm mt-1">{s.desc}</p>
+                  </div>
+                  <span className="text-slate-400 group-hover:text-emerald-600 text-xl font-bold ml-4 mt-1 transition">→</span>
                 </div>
-                <a
-                  href="/services"
-                  className="text-slate-400 group-hover:text-emerald-600 text-xl font-bold ml-4 mt-1 transition"
-                >
-                  →
-                </a>
-              </div>
+              </a>
             ))}
           </div>
         </div>
@@ -104,18 +93,14 @@ export default function ShellHomeSections() {
         </div>
         <div className="flex-1 bg-emerald-600 flex flex-col justify-center items-center px-10 py-16 gap-4">
           {biz.phone && (
-            <a
-              href={`tel:${biz.phone.replace(/\D/g, '')}`}
-              className="text-white font-bold text-3xl hover:text-emerald-200 transition"
-            >
+            <a href={`tel:${biz.phone.replace(/\D/g, '')}`}
+              className="text-white font-bold text-3xl hover:text-emerald-200 transition">
               {biz.phone}
             </a>
           )}
           <span className="text-emerald-300 text-sm">or</span>
-          <a
-            href="/quote"
-            className="border-2 border-white text-white font-bold px-8 py-3 rounded-lg hover:bg-white hover:text-emerald-600 transition"
-          >
+          <a href="/quote"
+            className="border-2 border-white text-white font-bold px-8 py-3 rounded-lg hover:bg-white hover:text-emerald-600 transition">
             Get a Free Quote
           </a>
         </div>

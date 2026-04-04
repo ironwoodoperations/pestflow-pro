@@ -2,12 +2,7 @@ import { useState, useEffect } from 'react'
 import { Shield, Clock, MapPin } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
-
-const STRIPS = [
-  { bg: 'bg-slate-800', label: 'Residential', desc: 'Full-service pest control for your home.' },
-  { bg: 'bg-slate-700', label: 'Commercial', desc: 'Protect your business from pest-related liability.' },
-  { bg: 'bg-slate-900', label: 'Termite Control', desc: 'Annual inspections and targeted termite treatments.' },
-]
+import { SERVICES } from './ServicesData'
 
 interface Biz { founded_year?: string | number; phone?: string; address?: string }
 interface Testimonial { id: string; author_name: string; review_text: string; rating: number }
@@ -32,33 +27,34 @@ export default function ShellHomeSections() {
 
   return (
     <>
-      {/* Service Strips */}
-      <section>
-        {STRIPS.map((s) => (
-          <div
-            key={s.label}
-            className={`${s.bg} py-8 px-6 md:px-12 flex flex-col md:flex-row items-center justify-between gap-4`}
-          >
-            <span className="text-white font-oswald text-2xl font-bold">{s.label}</span>
-            <span className="text-gray-300 text-sm text-center md:text-left">{s.desc}</span>
-            <a href="/services" className="text-sky-400 font-semibold text-sm hover:text-white transition whitespace-nowrap">
-              Learn More →
-            </a>
+      {/* Our Services Cards */}
+      <section className="py-16 bg-white">
+        <div className="max-w-6xl mx-auto px-4">
+          <h2 className="font-oswald text-4xl text-gray-900 text-center mb-10 tracking-wide">Our Services</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {SERVICES.map((s) => (
+              <a key={s.name} href="/pest-control"
+                className="rounded-xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition group">
+                <img src={s.img} alt={s.name} loading="lazy" className="w-full h-36 object-cover" />
+                <div className="p-4">
+                  <h3 className="font-bold text-gray-900 text-base group-hover:text-sky-600 transition">{s.name}</h3>
+                  <p className="text-gray-500 text-sm mt-1">{s.desc}</p>
+                </div>
+              </a>
+            ))}
           </div>
-        ))}
+        </div>
       </section>
 
       {/* Google Reviews Strip */}
       {testimonials.length > 0 && (
-        <section className="py-10 bg-white">
+        <section className="py-10 bg-gray-50">
           <div className="max-w-6xl mx-auto px-4">
             <p className="text-gray-700 font-semibold mb-4">⭐ What Our Customers Are Saying</p>
             <div className="flex gap-4 overflow-x-auto pb-2">
               {testimonials.map((t) => (
-                <div
-                  key={t.id}
-                  className="flex-shrink-0 w-64 bg-white shadow border border-gray-100 rounded-xl p-4 flex items-start gap-3"
-                >
+                <div key={t.id}
+                  className="flex-shrink-0 w-64 bg-white shadow border border-gray-100 rounded-xl p-4 flex items-start gap-3">
                   <div className="w-10 h-10 rounded-full bg-sky-100 flex items-center justify-center text-sky-700 font-bold text-sm flex-shrink-0">
                     {t.author_name.slice(0, 2).toUpperCase()}
                   </div>
@@ -100,18 +96,14 @@ export default function ShellHomeSections() {
       {/* Bottom CTA */}
       <section className="py-16 bg-sky-700 text-center">
         {biz.phone && (
-          <a
-            href={`tel:${biz.phone.replace(/\D/g, '')}`}
-            className="block text-white font-oswald text-5xl font-bold mb-3 hover:text-sky-200 transition"
-          >
+          <a href={`tel:${biz.phone.replace(/\D/g, '')}`}
+            className="block text-white font-oswald text-5xl font-bold mb-3 hover:text-sky-200 transition">
             {biz.phone}
           </a>
         )}
         <p className="text-sky-200 text-lg mb-6">Call today — same-day service available</p>
-        <a
-          href="/quote"
-          className="border-2 border-white text-white font-bold px-8 py-3 rounded-lg hover:bg-white hover:text-sky-700 transition"
-        >
+        <a href="/quote"
+          className="border-2 border-white text-white font-bold px-8 py-3 rounded-lg hover:bg-white hover:text-sky-700 transition">
           Schedule Online
         </a>
       </section>
