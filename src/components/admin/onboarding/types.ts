@@ -5,6 +5,9 @@ export interface FormData {
   template: 'bold' | 'clean' | 'modern' | 'rustic'
   facebook: string; instagram: string; google: string; youtube: string
   locations: { city: string; slug: string }[]
+  acceptedTerms: boolean
+  acceptedPrivacy: boolean
+  acceptedDataUse: boolean
 }
 
 export const INITIAL_FORM: FormData = {
@@ -13,6 +16,9 @@ export const INITIAL_FORM: FormData = {
   logoUrl: '', primaryColor: '#10b981', accentColor: '#f5c518', template: 'bold',
   facebook: '', instagram: '', google: '', youtube: '',
   locations: [{ city: '', slug: '' }],
+  acceptedTerms: false,
+  acceptedPrivacy: false,
+  acceptedDataUse: false,
 }
 
 export const INPUT_CLASS = 'w-full px-4 py-3 border border-gray-300 rounded-lg text-base text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-400'

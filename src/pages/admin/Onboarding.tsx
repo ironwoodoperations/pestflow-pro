@@ -56,6 +56,7 @@ export default function Onboarding() {
       { tenant_id: tenantId, key: 'branding', value: { logo_url: form.logoUrl, favicon_url: '', primary_color: form.primaryColor, accent_color: form.accentColor, template: form.template } },
       { tenant_id: tenantId, key: 'social_links', value: { facebook: form.facebook, instagram: form.instagram, google: form.google, youtube: form.youtube } },
       { tenant_id: tenantId, key: 'onboarding_complete', value: { complete: true } },
+      { tenant_id: tenantId, key: 'legal_acceptance', value: { accepted: true, timestamp: new Date().toISOString(), plan: 'starter', terms_version: '2026-04' } },
     ]
     for (const row of settingsRows) {
       await supabase.from('settings').upsert(row, { onConflict: 'tenant_id,key' })
@@ -99,7 +100,7 @@ export default function Onboarding() {
         {step === 3 && <StepSocialLinks form={form} updateField={updateField} onNext={() => setStep(4)} onBack={() => setStep(2)} />}
         {step === 4 && <StepBranding form={form} updateField={updateField} onNext={() => setStep(5)} onBack={() => setStep(3)} />}
         {step === 5 && <StepLocations form={form} addLocation={addLocation} removeLocation={removeLocation} updateLocation={updateLocation} onNext={() => setStep(6)} onBack={() => setStep(4)} />}
-        {step === 6 && <StepReview form={form} saving={saving} onLaunch={handleLaunch} onBack={() => setStep(5)} goToStep={setStep} />}
+        {step === 6 && <StepReview form={form} saving={saving} onLaunch={handleLaunch} onBack={() => setStep(5)} goToStep={setStep} updateField={updateField} />}
       </div>
     </div>
   )
