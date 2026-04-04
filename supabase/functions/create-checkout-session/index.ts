@@ -1,6 +1,6 @@
-// Edge Function: create-checkout-session v2
-// Creates a Stripe Checkout Session with a subscription + pending invoice item for setup fee.
-// The pending invoice item is bundled automatically into the first subscription invoice by Stripe.
+// Edge Function: create-checkout-session v3
+// Creates a Stripe Checkout Session with a subscription + setup fee as a visible line item.
+// Uses subscription_data.add_invoice_items so the fee appears in the Stripe Checkout UI.
 // Stores provision_data in stripe_payments so the webhook can call provision-tenant after payment.
 
 import Stripe from 'https://esm.sh/stripe@14?target=deno'
@@ -69,34 +69,31 @@ Deno.serve(async (req: Request) => {
 
     console.log(`Customer: ${customer.id} (${client_email})`)
 
-    // Step 1: Create pending invoice item for setup fee
-    // Stripe will automatically include this in the first subscription invoice.
-    if (setup_amount_override && setup_amount_override > 0) {
-      // Custom price — use price_data so it appears descriptively on the invoice
-      const item = await stripe.invoiceItems.create({
-        customer: customer.id,
-        price_data: {
-          currency: 'usd',
-          unit_amount: setup_amount_override,
-          product_data: { name: 'Setup Fee (Custom)' },
-        },
-      })
-      console.log(`Created invoice item (custom override): ${item.id} — $${setup_amount_override / 100}`)
-    } else {
-      // Standard price — use price ID directly
-      const item = await stripe.invoiceItems.create({
-        customer: customer.id,
-        price: setupPriceId,
-      })
-      console.log(`Created invoice item (price): ${item.id} — price ${setupPriceId}`)
-    }
+    // Build the setup fee add_invoice_item entry.
+    // Using subscription_data.add_invoice_items makes the fee appear as a visible
+    // line item in the Stripe Checkout UI (unlike invoiceItems.create which silently
+    // bundles into the first invoice but is not shown on the checkout page).
+    const setupItem = setup_amount_override && setup_amount_override > 0
+      ? {
+          price_data: {
+            currency: 'usd' as const,
+            unit_amount: setup_amount_override,
+            product_data: { name: 'Setup Fee (Custom)' },
+          },
+          quantity: 1,
+        }
+      : { price: setupPriceId, quantity: 1 }
 
-    // Step 2: Create Checkout Session in subscription mode
-    // The pending invoice item above is automatically bundled into the first invoice.
+    console.log(`Setup fee line item: ${JSON.stringify(setupItem)}`)
+
+    // Create Checkout Session — subscription mode with setup fee as an explicit item
     const session = await stripe.checkout.sessions.create({
       customer: customer.id,
       mode: 'subscription',
       line_items: [{ price: subscriptionPriceId, quantity: 1 }],
+      subscription_data: {
+        add_invoice_items: [setupItem],
+      },
       success_url: `https://${slug}.pestflowpro.com/payment-success`,
       cancel_url: `https://pestflowpro.com/admin?payment=cancelled`,
       metadata: { tenant_id: tenant_id || '', slug, client_email },
