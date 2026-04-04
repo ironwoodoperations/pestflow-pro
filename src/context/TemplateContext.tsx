@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from '
 import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
 
-export type TemplateName = 'modern-pro' | 'bold-local' | 'clean-friendly' | 'rustic-rugged'
+export type TemplateName = 'modern-pro' | 'bold-local' | 'clean-friendly' | 'rustic-rugged' | 'youpest'
 
 interface TemplateContextValue {
   template: TemplateName

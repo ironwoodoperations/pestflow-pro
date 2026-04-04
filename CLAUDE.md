@@ -122,6 +122,38 @@ CREATE POLICY "allow_read_anon" ON {table} FOR SELECT TO anon USING (true);
 
 ---
 
+## Migration Workflow (Custom Shell from Existing Site)
+
+Used for the $3,500 Custom Migration and $5,000 Premium Migration packages.
+
+**Step 1: Run the migration script**
+```
+doppler run --config prd -- npx ts-node scripts/migrate-site.ts [client-url] [slug]
+```
+Output: `scripts/output/[slug]-content.md`
+Note: Some sites block crawlers (403). Review output for quality before proceeding.
+
+**Step 2: Review the output file for accuracy**
+Check extracted: company name, phone, address, email, tagline, services, about copy, brand colors.
+Manually fill in any missing fields.
+
+**Step 3: Build shell files in src/shells/[slug]/**
+Files needed: ShellNavbar.tsx, ShellHero.tsx, ShellFooter.tsx, ShellHomeSections.tsx, ServicesData.ts
+Match structure of existing shells exactly.
+Use migration content file as the source for hardcoded copy and brand colors.
+
+**Step 4: Register the shell in the shell switcher**
+- Add `'[slug]'` to `TemplateName` union in `src/context/TemplateContext.tsx`
+- Import and wire the shell in `src/components/PublicShell.tsx` (navbar, footer, sections)
+
+**Step 5: Provision the tenant via Client Setup Wizard**
+- Create a row in the `tenants` table in Supabase (get the UUID)
+- Run the Client Setup Wizard: set slug, paste tenant UUID, set admin email + password
+- Wizard calls `provision-tenant` which creates auth user + seeds all settings
+- Set `branding.template = '[slug]'` in the client's settings row to activate the new shell
+
+---
+
 ## WHEN A SESSION IS DONE
 
 Report back in this format — keep it short:
