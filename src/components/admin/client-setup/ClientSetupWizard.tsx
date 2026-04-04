@@ -6,20 +6,20 @@ import ClientSetupStep2 from './ClientSetupStep2'
 import ClientSetupStep3 from './ClientSetupStep3'
 import ClientSetupStep4 from './ClientSetupStep4'
 import ClientSetupStep5 from './ClientSetupStep5'
-import ClientSetupReview, { ClientSetupSuccess } from './ClientSetupReview'
+import ClientSetupReview from './ClientSetupReview'
+import ClientSetupPayment from './ClientSetupPayment'
 
-const STEP_LABELS = ['Plan', 'Business', 'Branding', 'Social', 'Integrations', 'Review']
+const STEP_LABELS = ['Plan', 'Business', 'Branding', 'Social', 'Integrations', 'Review', 'Payment']
 
-interface ProvisionResult { slug: string; url: string; email: string; password: string }
-interface State { form: ClientSetupForm; step: number; sending: boolean; sent: boolean; result: ProvisionResult | null }
+interface State { form: ClientSetupForm; step: number }
 
 function isStep2Valid(f: ClientSetupForm) {
   return f.biz_name.trim() && f.slug.trim() && f.contact_name.trim() && f.phone.trim() && f.email.trim() && f.address.trim() && f.industry.trim()
 }
 
 export default function ClientSetupWizard() {
-  const [state, setState] = useState<State>({ form: INITIAL_FORM, step: 1, sending: false, sent: false, result: null })
-  const { form, step, sending, sent, result } = state
+  const [state, setState] = useState<State>({ form: INITIAL_FORM, step: 1 })
+  const { form, step } = state
 
   const setForm = (patch: Partial<ClientSetupForm>) =>
     setState(s => ({ ...s, form: { ...s.form, ...patch } }))
@@ -30,86 +30,8 @@ export default function ClientSetupWizard() {
     return true
   }
 
-  async function handleExport() {
-    setState(s => ({ ...s, sending: true }))
-    const md = `# PestFlow Pro Client Setup
-## ${form.biz_name}
-
-**Plan:** ${PLAN_LABELS[form.plan] || form.plan}
-**Slug:** ${form.slug} → ${form.slug}.pestflowpro.com
-**Contact:** ${form.contact_name}
-**Phone:** ${form.phone}
-**Email:** ${form.email}
-**Address:** ${form.address}
-**Industry:** ${form.industry}
-**Template:** ${form.template || 'modern-pro'}
-**Domain:** ${form.domain}
-**Tagline:** ${form.tagline}
-**Logo URL:** ${form.logo_url}
-**Primary Color:** ${form.primary_color}
-
-## Social Links
-- Facebook: ${form.facebook || '—'}
-- Instagram: ${form.instagram || '—'}
-- Google: ${form.google || '—'}
-- YouTube: ${form.youtube || '—'}
-
-## Services Offered
-${form.services || '—'}
-
-## Integrations
-- Google Place ID: ${form.google_place_id || '—'}
-- GA4 ID: ${form.ga4_id || '—'}
-
-## Notes
-${form.notes || '—'}
-`
-    const blob = new Blob([md], { type: 'text/markdown' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${form.biz_name.replace(/\s+/g, '-').toLowerCase()}-pestflow-setup.md`
-    a.click()
-    URL.revokeObjectURL(url)
-
-    try {
-      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-onboarding-email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
-        body: JSON.stringify({ business_name: form.biz_name, contact_name: form.contact_name, plan: PLAN_LABELS[form.plan] || form.plan, markdown_content: md }),
-      })
-    } catch { /* silent fail */ }
-
-    // Always provision — tenant row auto-created if no tenant_id supplied
-    const planTierMap: Record<string, number> = { starter: 1, grow: 2, pro: 3, elite: 4 }
-    const planPriceMap: Record<string, number> = { starter: 99, grow: 149, pro: 249, elite: 499 }
-    const tierNum = planTierMap[form.plan] || 1
-    let provisionResult: ProvisionResult | null = null
-    try {
-      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/provision-tenant`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
-        body: JSON.stringify({
-          tenant_id: form.tenant_id.trim() || undefined,
-          slug: form.slug.trim(),
-          admin_email: form.email,
-          admin_password: form.admin_password,
-          business_info: { name: form.biz_name, phone: form.phone, email: form.email, address: form.address, tagline: form.tagline, industry: form.industry },
-          branding: { logo_url: form.logo_url, primary_color: form.primary_color, template: form.template || 'modern-pro' },
-          social_links: { facebook: form.facebook, instagram: form.instagram, google: form.google, youtube: form.youtube },
-          integrations: { google_place_id: form.google_place_id, ga4_id: form.ga4_id },
-          plan: form.plan,
-          subscription: { tier: tierNum, plan_name: form.plan.charAt(0).toUpperCase() + form.plan.slice(1), monthly_price: planPriceMap[form.plan] || 99 },
-        }),
-      })
-      const data = await resp.json()
-      if (data.success) {
-        provisionResult = { slug: data.slug, url: data.url, email: form.email, password: form.admin_password }
-      }
-    } catch { console.warn('Tenant provisioning failed — manually configure settings') }
-
-    setState(s => ({ ...s, sending: false, sent: true, result: provisionResult }))
-  }
+  const PLAN_MAP: Record<string, string> = { ...PLAN_LABELS }
+  void PLAN_MAP
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -135,18 +57,15 @@ ${form.notes || '—'}
         {step === 3 && <ClientSetupStep3 form={form} setForm={setForm} />}
         {step === 4 && <ClientSetupStep4 form={form} setForm={setForm} />}
         {step === 5 && <ClientSetupStep5 form={form} setForm={setForm} />}
-        {step === 6 && !sent && (
+        {step === 6 && (
           <ClientSetupReview
-            form={form} sending={sending}
-            onExport={handleExport}
+            form={form}
+            onNext={() => setState(s => ({ ...s, step: 7 }))}
             onBack={() => setState(s => ({ ...s, step: 5 }))}
           />
         )}
-        {step === 6 && sent && (
-          <ClientSetupSuccess
-            result={result}
-            onReset={() => setState({ form: INITIAL_FORM, step: 1, sending: false, sent: false, result: null })}
-          />
+        {step === 7 && (
+          <ClientSetupPayment form={form} />
         )}
 
         {step < 6 && (
@@ -158,6 +77,19 @@ ${form.notes || '—'}
             <button onClick={() => setState(s => ({ ...s, step: s.step + 1 }))} disabled={!canNext()}
               className="px-6 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 disabled:opacity-40 transition">
               {step === 5 ? 'Review →' : 'Next →'}
+            </button>
+          </div>
+        )}
+
+        {step === 7 && (
+          <div className="flex justify-between mt-8 pt-4 border-t border-gray-100">
+            <button onClick={() => setState(s => ({ ...s, step: 6 }))}
+              className="px-5 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition">
+              ← Back
+            </button>
+            <button onClick={() => setState({ form: INITIAL_FORM, step: 1 })}
+              className="px-5 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-500 hover:bg-gray-50 transition">
+              Start New Client
             </button>
           </div>
         )}
