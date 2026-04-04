@@ -36,6 +36,8 @@ import TermiteInspections from './pages/TermiteInspections'
 import NotFound from './pages/NotFound'
 import Sitemap from './pages/Sitemap'
 import Pricing from './pages/Pricing'
+import TermsPage from './pages/TermsPage'
+import PrivacyPage from './pages/PrivacyPage'
 import SlugRouter from './pages/SlugRouter'
 
 export default function App() {
@@ -59,6 +61,8 @@ export default function App() {
         <Route path="/blog" element={<PublicShell><BlogPage /></PublicShell>} />
         <Route path="/blog/:slug" element={<PublicShell><BlogPostPage /></PublicShell>} />
         <Route path="/pricing" element={<PublicShell><Pricing /></PublicShell>} />
+        <Route path="/terms" element={<PublicShell><TermsPage /></PublicShell>} />
+        <Route path="/privacy" element={<PublicShell><PrivacyPage /></PublicShell>} />
         <Route path="/sitemap.xml" element={<Sitemap />} />
 
         {/* ─── Pest service pages ─── */}
