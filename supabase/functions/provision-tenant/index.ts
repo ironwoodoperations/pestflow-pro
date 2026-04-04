@@ -16,6 +16,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '
 
 interface RequestBody {
   tenant_id: string
+  slug?: string
   business_info: {
     name: string
     phone: string
@@ -59,7 +60,7 @@ Deno.serve(async (req: Request) => {
 
   try {
     const body: RequestBody = await req.json()
-    const { tenant_id, business_info, branding, social_links, integrations, plan, subscription } = body
+    const { tenant_id, slug, business_info, branding, social_links, integrations, plan, subscription } = body
 
     if (!tenant_id) {
       return new Response(JSON.stringify({ error: 'tenant_id is required' }), {
@@ -138,7 +139,19 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    return new Response(JSON.stringify({ success: true }), {
+    // Store the slug on the tenant row so subdomain routing works immediately
+    const resolvedSlug = slug || business_info.name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20)
+    if (resolvedSlug) {
+      const { error: slugError } = await supabase
+        .from('tenants')
+        .update({ slug: resolvedSlug })
+        .eq('id', tenant_id)
+      if (slugError) console.error('Failed to set tenant slug:', slugError.message)
+    }
+
+    const liveUrl = resolvedSlug ? `https://${resolvedSlug}.pestflowpro.com` : null
+
+    return new Response(JSON.stringify({ success: true, slug: resolvedSlug, url: liveUrl }), {
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
     })
   } catch (err) {

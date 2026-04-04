@@ -7,9 +7,25 @@ interface Props {
   setForm: (patch: Partial<ClientSetupForm>) => void
 }
 
+function toSlug(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20)
+}
+
 export default function ClientSetupStep2({ form, setForm }: Props) {
   const f = (field: keyof ClientSetupForm) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm({ [field]: e.target.value })
+
+  const handleBizName = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const name = e.target.value
+    // Only auto-generate slug if user hasn't manually edited it
+    const autoSlug = toSlug(name)
+    setForm({ biz_name: name, slug: autoSlug })
+  }
+
+  const handleSlug = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20)
+    setForm({ slug: val })
+  }
 
   return (
     <div>
@@ -19,12 +35,33 @@ export default function ClientSetupStep2({ form, setForm }: Props) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Business Name *</label>
-            <input value={form.biz_name} onChange={f('biz_name')} required className={INPUT} placeholder="Ironclad Pest Solutions" />
+            <input value={form.biz_name} onChange={handleBizName} required className={INPUT} placeholder="Ironclad Pest Solutions" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Contact Name *</label>
             <input value={form.contact_name} onChange={f('contact_name')} required className={INPUT} placeholder="Marcus Webb" />
           </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Site Slug *</label>
+          <div className="flex items-center gap-1">
+            <input
+              value={form.slug}
+              onChange={handleSlug}
+              required
+              className={INPUT}
+              placeholder="ironclad"
+              pattern="[a-z0-9]+"
+              maxLength={20}
+            />
+          </div>
+          {form.slug ? (
+            <p className="text-xs text-emerald-600 mt-1">
+              Live at: <span className="font-medium">{form.slug}.pestflowpro.com</span>
+            </p>
+          ) : (
+            <p className="text-xs text-gray-400 mt-1">Lowercase letters and numbers only. Auto-filled from business name.</p>
+          )}
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>

@@ -24,13 +24,14 @@ export interface ClientSetupForm {
   ga4_id: string
   notes: string
   tenant_id: string
+  slug: string
 }
 
 export const INITIAL_FORM: ClientSetupForm = {
   plan: '', biz_name: '', contact_name: '', phone: '', email: '',
   address: '', industry: '', logo_url: '', primary_color: '#10b981',
   tagline: '', domain: '', facebook: '', instagram: '', google: '',
-  youtube: '', services: '', google_place_id: '', ga4_id: '', notes: '', tenant_id: '',
+  youtube: '', services: '', google_place_id: '', ga4_id: '', notes: '', tenant_id: '', slug: '',
 }
 
 export const PLAN_LABELS: Record<string, string> = {
