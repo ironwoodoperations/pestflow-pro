@@ -115,6 +115,43 @@ Deno.serve(async (req: Request) => {
       const provisionData = await provisionResp.json()
       if (provisionData.success) {
         console.log(`Tenant provisioned: ${provisionData.slug} (${provisionData.tenant_id})`)
+
+        // Send onboarding welcome email to the client
+        const clientEmail = meta.client_email || pd.email
+        const companyName = pd.business_info?.name || pd.biz_name || clientEmail
+        const slug = provisionData.slug || meta.slug || pd.slug
+        if (clientEmail && pd.admin_password) {
+          try {
+            const emailResp = await fetch(
+              `${Deno.env.get('SUPABASE_URL')}/functions/v1/send-onboarding-email`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+                },
+                body: JSON.stringify({
+                  to: clientEmail,
+                  company_name: companyName,
+                  live_url: `https://${slug}.pestflowpro.com`,
+                  admin_url: `https://${slug}.pestflowpro.com/admin/login`,
+                  admin_email: clientEmail,
+                  admin_password: pd.admin_password,
+                }),
+              }
+            )
+            const emailData = await emailResp.json()
+            if (emailData.success) {
+              console.log(`Onboarding email sent to ${clientEmail}`)
+            } else {
+              console.error('send-onboarding-email failed:', JSON.stringify(emailData))
+            }
+          } catch (emailErr: any) {
+            console.error('send-onboarding-email fetch error:', emailErr.message)
+          }
+        } else {
+          console.warn('Skipping onboarding email — missing client email or admin_password in provision_data')
+        }
       } else {
         console.error('provision-tenant failed:', JSON.stringify(provisionData))
       }
