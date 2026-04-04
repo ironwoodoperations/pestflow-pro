@@ -81,7 +81,8 @@ Supabase URL:   https://biezzykcgzkrwdgqpsar.supabase.co
 Supabase ID:    biezzykcgzkrwdgqpsar
 Tenant ID:      9215b06b-3eb5-49a1-a16e-7ff214bf6783
 Admin login:    admin@pestflowpro.com / pf123demo
-Dev server:     npm run dev  →  localhost:8080
+Dev server:     doppler run -- npm run dev  →  localhost:8080
+                (NEVER run npm run dev directly — always use Doppler to inject env vars)
 ```
 
 ---
