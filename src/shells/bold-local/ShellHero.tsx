@@ -1,70 +1,117 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
 
-interface BusinessInfo { tagline: string; license?: string; founded_year?: string | number; num_technicians?: number; certifications?: string }
-interface Customization { hero_headline?: string; show_license?: boolean; show_years?: boolean; show_technicians?: boolean; show_certifications?: boolean }
-interface HeroMedia { image_url?: string }
+interface Biz { name?: string; phone?: string }
+interface FormState { name: string; phone: string; service: string }
 
 export default function ShellHero() {
-  const [biz, setBiz] = useState<BusinessInfo>({ tagline: 'Local Pest Control You Can Count On' })
-  const [custom, setCustom] = useState<Customization>({})
-  const [ctaText, setCtaText] = useState('Get a Free Estimate')
-  const [heroMedia, setHeroMedia] = useState<HeroMedia>({})
+  const [headline, setHeadline] = useState('East Texas Pest Control That Gets Results.')
+  const [biz, setBiz] = useState<Biz>({})
+  const [form, setForm] = useState<FormState>({ name: '', phone: '', service: '' })
+  const navigate = useNavigate()
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const [bizRes, mediaRes, brandRes, custRes] = await Promise.all([
+      const [bizRes, custRes] = await Promise.all([
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
-        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'hero_media').maybeSingle(),
-        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'customization').maybeSingle(),
       ])
-      if (bizRes.data?.value) {
-        const v = bizRes.data.value
-        setBiz({ tagline: v.tagline || 'Local Pest Control You Can Count On', license: v.license, founded_year: v.founded_year, num_technicians: v.num_technicians, certifications: v.certifications })
-      }
-      if (mediaRes.data?.value) setHeroMedia(mediaRes.data.value)
-      if (brandRes.data?.value?.cta_text) setCtaText(brandRes.data.value.cta_text)
-      if (custRes.data?.value) setCustom(custRes.data.value)
+      if (bizRes.data?.value) setBiz({ name: bizRes.data.value.name, phone: bizRes.data.value.phone })
+      if (custRes.data?.value?.hero_headline) setHeadline(custRes.data.value.hero_headline)
     })
   }, [])
 
-  const headline = custom.hero_headline || biz.tagline
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    navigate('/quote')
+  }
 
-  const badges: string[] = []
-  if (custom.show_license && biz.license) badges.push(`License #${biz.license}`)
-  if (custom.show_years && biz.founded_year) badges.push(`Est. ${biz.founded_year}`)
-  if (custom.show_technicians && biz.num_technicians) badges.push(`${biz.num_technicians} Technicians`)
-  if (custom.show_certifications && biz.certifications) badges.push(biz.certifications)
+  function setField(key: keyof FormState, val: string) {
+    setForm(prev => ({ ...prev, [key]: val }))
+  }
 
-  const sectionStyle = heroMedia.image_url
-    ? { backgroundImage: `url(${heroMedia.image_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-    : undefined
+  const inputCls = 'w-full rounded px-3 py-2 text-sm bg-white text-black border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-400'
 
   return (
-    <section className="relative bg-[#1c1c1c] text-white py-24 px-4 overflow-hidden" style={sectionStyle}>
-      {heroMedia.image_url && <div className="absolute inset-0 bg-[#1c1c1c]/75" />}
-      <div className="absolute top-0 right-0 w-2 h-full bg-[#d97706]" aria-hidden="true" />
-      <div className="relative max-w-4xl mx-auto text-center">
-        <div className="inline-block bg-[#d97706] text-white text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-6">
-          Local. Trusted. Proven.
-        </div>
-        <h1 className="font-oswald text-5xl md:text-6xl font-bold tracking-wide mb-6 leading-tight text-white">
+    <section className="bg-[#1c1c1c] text-white min-h-[560px] flex flex-col md:flex-row">
+      {/* LEFT — headline + CTA */}
+      <div className="flex-1 md:w-[60%] flex flex-col justify-center px-8 md:px-14 py-16 relative">
+        <div className="absolute top-0 left-0 w-1 h-full bg-amber-500 hidden md:block" aria-hidden="true" />
+        <span className="text-amber-400 text-sm font-bold tracking-widest uppercase mb-4 block">
+          ★★★★★ Rated #1 in Tyler, TX
+        </span>
+        <h1 className="font-oswald text-5xl md:text-6xl font-bold uppercase leading-tight mb-6 text-white">
           {headline}
         </h1>
-        <Link to="/quote" className="inline-block bg-[#d97706] hover:bg-[#b45309] text-white font-bold text-lg px-8 py-4 rounded-xl transition shadow-lg shadow-amber-900/40 mb-6">
-          {ctaText}
-        </Link>
-        {badges.length > 0 && (
-          <div className="flex flex-wrap gap-2 justify-center mt-2">
-            {badges.map((b) => (
-              <span key={b} className="bg-[#d97706]/20 text-amber-300 text-xs font-semibold px-3 py-1 rounded-full border border-amber-500/30">{b}</span>
-            ))}
-          </div>
+        <p className="text-lg text-gray-300 mb-8">Fast. Reliable. Local.</p>
+        <a
+          href="/quote"
+          className="inline-block bg-amber-500 hover:bg-amber-400 text-black font-bold px-8 py-4 text-lg transition w-fit"
+        >
+          Get a Free Estimate
+        </a>
+        {biz.phone && (
+          <a
+            href={`tel:${biz.phone.replace(/\D/g, '')}`}
+            className="mt-4 text-amber-400 font-semibold hover:text-amber-300 transition text-sm inline-block"
+          >
+            Or call: {biz.phone}
+          </a>
         )}
+      </div>
+
+      {/* RIGHT — floating estimate card */}
+      <div className="md:w-[40%] flex items-center justify-center px-6 md:px-10 py-12 md:py-0">
+        <div className="w-full max-w-sm bg-[#141414] border-t-4 border-amber-500 rounded-xl shadow-2xl p-6 md:translate-y-8">
+          <h2 className="text-xl font-bold text-white mb-5">Get a Free Estimate</h2>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs text-gray-400 mb-1 font-semibold uppercase tracking-wide">Your Name</label>
+              <input
+                type="text"
+                value={form.name}
+                onChange={e => setField('name', e.target.value)}
+                placeholder="Your Name"
+                className={inputCls}
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-400 mb-1 font-semibold uppercase tracking-wide">Phone</label>
+              <input
+                type="tel"
+                value={form.phone}
+                onChange={e => setField('phone', e.target.value)}
+                placeholder="(XXX) XXX-XXXX"
+                className={inputCls}
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-400 mb-1 font-semibold uppercase tracking-wide">Service Needed</label>
+              <select
+                value={form.service}
+                onChange={e => setField('service', e.target.value)}
+                className={inputCls}
+              >
+                <option value="">Select a Service</option>
+                <option>Residential Pest Control</option>
+                <option>Commercial Pest Control</option>
+                <option>Termite Treatment</option>
+                <option>Mosquito Control</option>
+                <option>Rodent Control</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <button
+              type="submit"
+              className="w-full bg-amber-500 hover:bg-amber-400 text-black font-bold py-3 rounded transition text-sm"
+            >
+              Get My Free Estimate
+            </button>
+          </form>
+        </div>
       </div>
     </section>
   )
