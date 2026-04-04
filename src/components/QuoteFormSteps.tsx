@@ -102,13 +102,22 @@ export default function QuoteFormSteps({ step, form, setForm, togglePest, inputC
               <input
                 type="checkbox"
                 id="sms_consent"
-                required
                 checked={form.smsConsent}
                 onChange={e => setForm(p => ({ ...p, smsConsent: e.target.checked }))}
-                className="mt-1 h-4 w-4 rounded border-gray-300"
+                className="mt-1 h-4 w-4 rounded border-gray-300 flex-shrink-0"
               />
-              <label htmlFor="sms_consent" className="text-sm text-gray-600">
-                I agree to receive text messages from {businessName} regarding my inquiry. Message and data rates may apply. Reply STOP to opt out.
+              <label htmlFor="sms_consent" className="text-xs text-gray-600 leading-relaxed">
+                I agree to receive automated text messages from <strong>{businessName}</strong> regarding
+                my service request, scheduling updates, and appointment reminders at the phone number
+                provided. Message frequency varies. Message and data rates may apply.
+                <br /><br />
+                By checking this box, you consent to receive recurring automated SMS/MMS messages from{' '}
+                <strong>{businessName}</strong>. Consent is not a condition of purchase. You can opt out
+                at any time by replying <strong>STOP</strong> to any message. For help, reply{' '}
+                <strong>HELP</strong> or contact us. View our{' '}
+                <a href="/privacy" className="text-emerald-600 underline">Privacy Policy</a> and{' '}
+                <a href="/terms" className="text-emerald-600 underline">Terms of Service</a> for more
+                information.
               </label>
             </div>
             <div>

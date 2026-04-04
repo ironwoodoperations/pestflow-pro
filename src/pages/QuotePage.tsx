@@ -56,6 +56,7 @@ export default function QuotePage() {
     if (step === 1 && form.pests.length === 0) { setError('Select at least one pest type.'); return }
     if (step === 2 && !form.propertyType) { setError('Select a property type.'); return }
     if (step === 3 && (!form.name.trim() || !form.phone.trim() || !form.email.trim())) { setError('Name, phone, and email are required.'); return }
+    if (step === 3 && !form.smsConsent) { setError('Please check the SMS consent box to continue.'); return }
     setError('')
     setStep(s => Math.min(s + 1, 4))
   }
