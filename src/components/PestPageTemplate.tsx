@@ -131,16 +131,27 @@ export default function PestPageTemplate(props: PestPageProps) {
       <section className="py-16 bg-[#f8fafc]">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-10">{props.specialSectionTitle}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {(props.pricingCards || props.specialCards).map((card) => (
-              <div key={card.name || (card as SpecialCard).title} className="bg-white rounded-xl p-6 shadow-sm border-t-[3px] border-emerald-500 text-center">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">{card.name || (card as SpecialCard).title}</h3>
-                {'price' in card && <p className="text-3xl font-bold text-emerald-600 mb-2">{card.price}</p>}
-                <p className="text-gray-600 text-sm">{card.desc}</p>
-              </div>
-            ))}
-          </div>
-          {props.pricingCards && <p className="text-center text-gray-500 text-sm mt-4">Call for exact pricing tailored to your property.</p>}
+          {props.pricingCards ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {props.pricingCards.map((plan) => (
+                <div key={plan.name} className="bg-white rounded-xl p-6 shadow-sm border-t-[3px] border-emerald-500 text-center">
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">{plan.name}</h3>
+                  <p className="text-3xl font-bold text-emerald-600 mb-2">{plan.price}</p>
+                  <p className="text-gray-600 text-sm">{plan.desc}</p>
+                </div>
+              ))}
+              <p className="text-center text-gray-500 text-sm col-span-full mt-2">Call for exact pricing tailored to your property.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {props.specialCards.map((card) => (
+                <div key={card.title} className="bg-white rounded-xl p-6 shadow-sm border-t-[3px] border-emerald-500">
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">{card.title}</h3>
+                  <p className="text-gray-600 text-sm">{card.desc}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
