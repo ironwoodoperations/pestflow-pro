@@ -1,7 +1,7 @@
-// Edge Function: send-onboarding-email v2
+// Edge Function: send-onboarding-email v3
 // Supports two modes:
 //   1. Client welcome (triggered by stripe-webhook after provisioning):
-//      { to, company_name, live_url, admin_url, admin_email, admin_password }
+//      { to, company_name, live_url } — no credentials in email
 //   2. Scott's setup notification (triggered by Client Setup wizard):
 //      { business_name, contact_name, plan, markdown_content }
 
@@ -21,51 +21,31 @@ serve(async (req) => {
 
     let emailPayload: Record<string, unknown>
 
-    if (body.to && body.company_name && body.admin_password) {
-      // Mode 1: Client welcome email
-      const { to, company_name, live_url, admin_url, admin_email, admin_password } = body
+    if (body.to && body.company_name) {
+      // Mode 1: Client welcome email — no credentials, team delivers them separately
+      const { to, company_name, live_url } = body
       emailPayload = {
         from: 'PestFlow Pro <onboarding@pestflow.ai>',
         to: [to],
-        subject: `Your PestFlow Pro site is live — ${company_name}`,
+        subject: `Welcome to PestFlow Pro \u2014 ${company_name}`,
         html: `
           <div style="font-family:sans-serif;max-width:600px;margin:0 auto;color:#1a1f2e">
             <div style="background:#1a1f2e;padding:32px;border-radius:12px 12px 0 0;text-align:center">
               <h1 style="color:#10b981;font-size:24px;margin:0">PestFlow Pro</h1>
-              <p style="color:#9ca3af;font-size:14px;margin:8px 0 0">Your new website is ready</p>
+              <p style="color:#9ca3af;font-size:14px;margin:8px 0 0">Your new website platform</p>
             </div>
             <div style="background:#fff;padding:32px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px">
-              <h2 style="font-size:20px;color:#111827;margin:0 0 16px">Welcome, ${company_name}!</h2>
+              <h2 style="font-size:20px;color:#111827;margin:0 0 16px">Thanks for choosing PestFlow Pro, ${company_name}!</h2>
               <p style="color:#374151;line-height:1.6;margin:0 0 24px">
-                Your PestFlow Pro website has been provisioned and is ready to go. Here are your login details:
+                We've received your payment and our team is setting up your site.
+                You'll receive your login details by email within 1&#x2013;2 business days once everything is ready.
+                We're excited to work with you!
               </p>
-
-              <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin-bottom:24px">
-                <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em">Your Login Credentials</p>
-                <p style="margin:0 0 6px;font-size:15px;color:#111827"><strong>Email:</strong> ${admin_email}</p>
-                <p style="margin:0 0 6px;font-size:15px;color:#111827"><strong>Password:</strong> <code style="background:#e5e7eb;padding:2px 6px;border-radius:4px;font-size:14px">${admin_password}</code></p>
-              </div>
-
-              <div style="display:flex;gap:12px;margin-bottom:28px">
-                <a href="${live_url}" style="display:inline-block;background:#10b981;color:#fff;font-weight:600;font-size:14px;padding:12px 20px;border-radius:8px;text-decoration:none">
-                  View Live Site →
-                </a>
-                <a href="${admin_url}" style="display:inline-block;background:#1a1f2e;color:#fff;font-weight:600;font-size:14px;padding:12px 20px;border-radius:8px;text-decoration:none">
-                  Admin Login →
-                </a>
-              </div>
-
-              <p style="color:#6b7280;font-size:13px;line-height:1.6;margin:0 0 8px">
-                <strong>Live URL:</strong> <a href="${live_url}" style="color:#10b981">${live_url}</a>
-              </p>
-              <p style="color:#6b7280;font-size:13px;line-height:1.6;margin:0">
-                <strong>Admin Panel:</strong> <a href="${admin_url}" style="color:#10b981">${admin_url}</a>
-              </p>
-
+              ${live_url ? `<div style="margin-bottom:28px"><a href="${live_url}" style="display:inline-block;background:#10b981;color:#fff;font-weight:600;font-size:14px;padding:12px 20px;border-radius:8px;text-decoration:none">Explore PestFlow Pro</a></div>` : ''}
               <hr style="border:none;border-top:1px solid #e5e7eb;margin:28px 0" />
               <p style="color:#9ca3af;font-size:12px;margin:0">
                 Questions? Reply to this email or contact us at support@pestflowpro.com.<br />
-                Powered by PestFlow Pro — built for home service businesses.
+                Powered by PestFlow Pro &#x2014; built for home service businesses.
               </p>
             </div>
           </div>
@@ -77,7 +57,7 @@ serve(async (req) => {
       emailPayload = {
         from: 'PestFlow Pro <onboarding@pestflow.ai>',
         to: ['scott@ironwoodoperationsgroup.com'],
-        subject: `New Client Setup — ${business_name} (${plan})`,
+        subject: `New Client Setup \u2014 ${business_name} (${plan})`,
         html: `
           <h2>New PestFlow Pro Client Setup</h2>
           <p><strong>Business:</strong> ${business_name}</p>
