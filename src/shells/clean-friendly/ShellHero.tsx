@@ -3,75 +3,85 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
 
-interface BusinessInfo { tagline: string; license?: string; founded_year?: string | number; num_technicians?: number; certifications?: string }
-interface Customization { hero_headline?: string; show_license?: boolean; show_years?: boolean; show_technicians?: boolean; show_certifications?: boolean }
-interface HeroMedia { image_url?: string }
+interface Biz { name?: string; phone?: string }
+
+const HERO_IMAGE = 'https://images.pexels.com/photos/5025639/pexels-photo-5025639.jpeg'
+
+const STRIPS = [
+  { icon: '🏠', title: 'Residential', sub: 'Protecting your home and family' },
+  { icon: '🏢', title: 'Commercial', sub: 'Keeping your business pest-free' },
+  { icon: '🪲', title: 'Termites', sub: 'Full termite inspection & treatment' },
+]
 
 export default function ShellHero() {
-  const [biz, setBiz] = useState<BusinessInfo>({ tagline: 'Professional Service You Can Trust' })
-  const [custom, setCustom] = useState<Customization>({})
-  const [ctaText, setCtaText] = useState('Get Your Free Quote')
-  const [heroMedia, setHeroMedia] = useState<HeroMedia>({})
+  const [biz, setBiz] = useState<Biz>({ phone: '(903) 555-0142' })
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const [bizRes, mediaRes, brandRes, custRes] = await Promise.all([
-        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
-        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'hero_media').maybeSingle(),
-        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
-        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'customization').maybeSingle(),
-      ])
-      if (bizRes.data?.value) {
-        const v = bizRes.data.value
-        setBiz({ tagline: v.tagline || 'Professional Service You Can Trust', license: v.license, founded_year: v.founded_year, num_technicians: v.num_technicians, certifications: v.certifications })
+      const res = await supabase
+        .from('settings')
+        .select('value')
+        .eq('tenant_id', tenantId)
+        .eq('key', 'business_info')
+        .maybeSingle()
+      if (res.data?.value) {
+        setBiz({ name: res.data.value.name, phone: res.data.value.phone || '(903) 555-0142' })
       }
-      if (mediaRes.data?.value) setHeroMedia(mediaRes.data.value)
-      if (brandRes.data?.value?.cta_text) setCtaText(brandRes.data.value.cta_text)
-      if (custRes.data?.value) setCustom(custRes.data.value)
     })
   }, [])
 
-  const headline = custom.hero_headline || biz.tagline
-
-  const badges: string[] = []
-  if (custom.show_license && biz.license) badges.push(`License #${biz.license}`)
-  if (custom.show_years && biz.founded_year) badges.push(`Est. ${biz.founded_year}`)
-  if (custom.show_technicians && biz.num_technicians) badges.push(`${biz.num_technicians} Technicians`)
-  if (custom.show_certifications && biz.certifications) badges.push(biz.certifications)
-
-  const bgStyle = heroMedia.image_url
-    ? { backgroundImage: `linear-gradient(rgba(255,255,255,0.55), rgba(255,255,255,0.55)), url(${heroMedia.image_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-    : undefined
+  const dialPhone = `tel:${(biz.phone || '').replace(/\D/g, '')}`
 
   return (
-    <section className="bg-gradient-to-br from-sky-50 to-white py-24 px-4" style={bgStyle}>
-      <div className="max-w-5xl mx-auto">
-        <div className="text-center md:text-left max-w-3xl">
-          <div className="inline-block bg-sky-100 text-sky-700 text-xs font-raleway font-semibold uppercase tracking-widest px-4 py-1.5 rounded-full mb-6">
-            Trusted Local Experts
-          </div>
-          <h1 className="font-raleway text-4xl md:text-6xl font-bold text-slate-800 leading-tight mb-6">{headline}</h1>
-          <p className="font-raleway text-slate-600 text-lg leading-relaxed mb-8 max-w-xl">
-            Fast, friendly, and effective pest control for your home and family. We make it easy to get the help you need.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start mb-6">
-            <Link to="/quote" className="inline-flex items-center justify-center bg-sky-600 hover:bg-sky-700 text-white font-raleway font-semibold rounded-full px-8 py-3 transition shadow-md shadow-sky-200">
-              {ctaText}
-            </Link>
-            <a href="tel:" className="inline-flex items-center justify-center border-2 border-sky-600 text-sky-600 hover:bg-sky-50 font-raleway font-semibold rounded-full px-8 py-3 transition">
-              Call Us Now
-            </a>
-          </div>
-          {badges.length > 0 && (
-            <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-              {badges.map((b) => (
-                <span key={b} className="bg-sky-100 text-sky-700 text-xs font-raleway font-semibold px-3 py-1 rounded-full border border-sky-200">{b}</span>
-              ))}
-            </div>
+    <>
+      {/* Hero section */}
+      <section
+        className="relative flex items-center justify-center min-h-[65vh] bg-cover bg-center"
+        style={{ backgroundImage: `url(${HERO_IMAGE})` }}
+      >
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-sky-900/80 to-sky-900/60" />
+
+        <div className="relative z-10 text-center px-4 py-16">
+          {biz.name && (
+            <p className="text-xl font-semibold text-sky-200 tracking-widest uppercase mb-2">
+              {biz.name}
+            </p>
           )}
+          <a
+            href={dialPhone}
+            className="block text-6xl md:text-8xl font-black text-white tracking-tight leading-none mb-3 drop-shadow-lg hover:text-sky-100 transition"
+            style={{ textShadow: '0 4px 24px rgba(0,0,0,0.5)' }}
+          >
+            {biz.phone || '(903) 555-0142'}
+          </a>
+          <p className="text-xl text-sky-200 mt-2 mb-6">Call for Same-Day Service</p>
+          <Link
+            to="/quote"
+            className="inline-block bg-sky-500 hover:bg-sky-400 text-white font-bold px-8 py-4 rounded-full transition shadow-lg text-lg"
+          >
+            Get a Free Quote
+          </Link>
+        </div>
+      </section>
+
+      {/* Service strips */}
+      <div className="bg-gray-900">
+        <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-gray-700">
+          {STRIPS.map((s, i) => (
+            <Link
+              key={i}
+              to="/services"
+              className="flex flex-col items-start py-6 px-8 cursor-pointer hover:bg-gray-800 transition group"
+            >
+              <span className="text-3xl mb-2" aria-hidden="true">{s.icon}</span>
+              <span className="text-white font-bold text-lg group-hover:text-sky-400 transition">{s.title}</span>
+              <span className="text-gray-400 text-sm mt-1">{s.sub}</span>
+            </Link>
+          ))}
         </div>
       </div>
-    </section>
+    </>
   )
 }
