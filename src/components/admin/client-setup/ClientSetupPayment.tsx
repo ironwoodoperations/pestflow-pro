@@ -10,27 +10,14 @@ const PLAN_LABELS: Record<string, string> = {
 }
 
 const PACKAGE_OPTIONS = [
-  { value: 'standard', label: 'Standard Build — $2,000', priceEnv: 'VITE_STRIPE_PRICE_STANDARD_SETUP', defaultAmount: 200000 },
-  { value: 'custom', label: 'Custom Migration — $3,500', priceEnv: 'VITE_STRIPE_PRICE_CUSTOM_MIGRATION', defaultAmount: 350000 },
-  { value: 'premium', label: 'Premium Migration — $5,000', priceEnv: 'VITE_STRIPE_PRICE_PREMIUM_MIGRATION', defaultAmount: 500000 },
+  { value: 'standard', label: 'Standard Build — $2,000' },
+  { value: 'custom',   label: 'Custom Migration — $3,500' },
+  { value: 'premium',  label: 'Premium Migration — $5,000' },
 ]
 
-const PLAN_PRICE_ENV: Record<string, string> = {
-  starter: 'VITE_STRIPE_PRICE_STARTER',
-  grow: 'VITE_STRIPE_PRICE_GROW',
-  pro: 'VITE_STRIPE_PRICE_PRO',
-  elite: 'VITE_STRIPE_PRICE_ELITE',
-}
+interface Props { form: ClientSetupForm }
 
-function getEnv(key: string): string {
-  return (import.meta.env as Record<string, string>)[key] || ''
-}
-
-interface Props {
-  form: ClientSetupForm
-}
-
-interface PageState {
+interface S {
   packageType: string
   customAmountDollars: string
   passkey: string
@@ -44,29 +31,19 @@ interface PageState {
 }
 
 export default function ClientSetupPayment({ form }: Props) {
-  const [s, setS] = useState<PageState>({
-    packageType: 'standard',
-    customAmountDollars: '',
-    passkey: '',
-    passkeyError: '',
-    showPasskeyModal: false,
-    customUnlocked: false,
-    loading: false,
-    checkoutUrl: '',
-    copied: false,
-    error: '',
+  const [s, setS] = useState<S>({
+    packageType: 'standard', customAmountDollars: '',
+    passkey: '', passkeyError: '', showPasskeyModal: false, customUnlocked: false,
+    loading: false, checkoutUrl: '', copied: false, error: '',
   })
-
-  const patch = (p: Partial<PageState>) => setS(prev => ({ ...prev, ...p }))
+  const patch = (p: Partial<S>) => setS(prev => ({ ...prev, ...p }))
 
   const selectedPkg = PACKAGE_OPTIONS.find(p => p.value === s.packageType)!
-  const setupPriceId = getEnv(selectedPkg.priceEnv)
-  const subscriptionPriceId = getEnv(PLAN_PRICE_ENV[form.plan] || '')
   const planLabel = PLAN_LABELS[form.plan] || form.plan
 
   function tryUnlockCustom() {
-    const expected = getEnv('VITE_STRIPE_CUSTOM_PRICE_PASSKEY')
-    if (!expected) { patch({ passkeyError: 'Passkey not configured in environment.' }); return }
+    const expected = import.meta.env.VITE_STRIPE_CUSTOM_PRICE_PASSKEY as string
+    if (!expected) { patch({ passkeyError: 'Passkey not configured.' }); return }
     if (s.passkey === expected) {
       patch({ customUnlocked: true, showPasskeyModal: false, passkey: '', passkeyError: '' })
     } else {
@@ -75,13 +52,8 @@ export default function ClientSetupPayment({ form }: Props) {
   }
 
   async function handleGenerateLink() {
-    if (!subscriptionPriceId) {
-      patch({ error: `Subscription price ID not configured for plan: ${form.plan}` }); return
-    }
-
     patch({ loading: true, error: '', checkoutUrl: '', copied: false })
 
-    // Build setup fee params
     const setupAmountOverride = s.customUnlocked && s.customAmountDollars
       ? Math.round(parseFloat(s.customAmountDollars) * 100)
       : undefined
@@ -94,23 +66,12 @@ export default function ClientSetupPayment({ form }: Props) {
       slug: form.slug,
       email: form.email,
       admin_password: form.admin_password,
-      biz_name: form.biz_name,
       plan: form.plan,
-      business_info: {
-        name: form.biz_name, phone: form.phone, email: form.email,
-        address: form.address, tagline: form.tagline, industry: form.industry,
-      },
-      branding: {
-        logo_url: form.logo_url, primary_color: form.primary_color,
-        template: form.template || 'modern-pro',
-      },
+      business_info: { name: form.biz_name, phone: form.phone, email: form.email, address: form.address, tagline: form.tagline, industry: form.industry },
+      branding: { logo_url: form.logo_url, primary_color: form.primary_color, template: form.template || 'modern-pro' },
       social_links: { facebook: form.facebook, instagram: form.instagram, google: form.google, youtube: form.youtube },
       integrations: { google_place_id: form.google_place_id, ga4_id: form.ga4_id },
-      subscription: {
-        tier: planTierMap[form.plan] || 1,
-        plan_name: form.plan.charAt(0).toUpperCase() + form.plan.slice(1),
-        monthly_price: planPriceMap[form.plan] || 99,
-      },
+      subscription: { tier: planTierMap[form.plan] || 1, plan_name: form.plan.charAt(0).toUpperCase() + form.plan.slice(1), monthly_price: planPriceMap[form.plan] || 99 },
     }
 
     try {
@@ -124,9 +85,9 @@ export default function ClientSetupPayment({ form }: Props) {
           tenant_id: form.tenant_id || '',
           client_email: form.email,
           client_name: form.contact_name || form.biz_name,
-          setup_price_id: setupAmountOverride ? '' : setupPriceId,
+          package_type: s.packageType,       // resolved to price ID server-side
+          plan: form.plan,                    // resolved to price ID server-side
           setup_amount_override: setupAmountOverride,
-          subscription_price_id: subscriptionPriceId,
           slug: form.slug,
           provision_data,
         }),
@@ -142,11 +103,6 @@ export default function ClientSetupPayment({ form }: Props) {
     }
   }
 
-  async function handleCopyAgain() {
-    await navigator.clipboard.writeText(s.checkoutUrl).catch(() => {})
-    patch({ copied: true })
-  }
-
   return (
     <div>
       <h2 className="text-lg font-semibold text-gray-900 mb-6">Payment & Setup Fee</h2>
@@ -160,13 +116,11 @@ export default function ClientSetupPayment({ form }: Props) {
             onChange={e => patch({ packageType: e.target.value, customUnlocked: false, customAmountDollars: '' })}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
           >
-            {PACKAGE_OPTIONS.map(p => (
-              <option key={p.value} value={p.value}>{p.label}</option>
-            ))}
+            {PACKAGE_OPTIONS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
           </select>
         </div>
 
-        {/* Setup fee display */}
+        {/* Setup fee row */}
         <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
           <div>
             <span className="text-sm text-gray-500">Setup Fee</span>
@@ -180,20 +134,16 @@ export default function ClientSetupPayment({ form }: Props) {
             onClick={() => patch({ showPasskeyModal: true, passkeyError: '' })}
             className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 border border-gray-300 rounded-md px-2.5 py-1.5 transition"
           >
-            <Lock size={12} />
-            Custom
+            <Lock size={12} /> Custom
           </button>
         </div>
 
-        {/* Custom amount input (unlocked) */}
+        {/* Custom amount input */}
         {s.customUnlocked && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Custom Setup Amount ($)</label>
             <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={s.customAmountDollars}
+              type="number" min="0" step="0.01" value={s.customAmountDollars}
               onChange={e => patch({ customAmountDollars: e.target.value })}
               placeholder="e.g. 2500"
               className="w-full border border-emerald-400 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500"
@@ -207,24 +157,21 @@ export default function ClientSetupPayment({ form }: Props) {
           <div className="text-sm font-semibold text-gray-900">{planLabel}</div>
         </div>
 
-        {/* Client info */}
+        {/* Client summary */}
         <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 space-y-1">
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-500">Client Email</span>
-            <span className="font-medium text-gray-900">{form.email || '—'}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-500">Client Name</span>
-            <span className="font-medium text-gray-900">{form.contact_name || form.biz_name || '—'}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-500">Site Slug</span>
-            <span className="font-mono text-sm font-medium text-gray-900">{form.slug || '—'}.pestflowpro.com</span>
-          </div>
+          {[
+            ['Client Email', form.email || '—'],
+            ['Client Name', form.contact_name || form.biz_name || '—'],
+            ['Site Slug', `${form.slug || '—'}.pestflowpro.com`],
+          ].map(([label, value]) => (
+            <div key={label} className="flex justify-between text-sm">
+              <span className="text-gray-500">{label}</span>
+              <span className="font-medium text-gray-900">{value}</span>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Error */}
       {s.error && (
         <div className="flex items-start gap-2 rounded-lg bg-red-50 border border-red-200 px-4 py-3 mb-4">
           <AlertCircle size={16} className="text-red-500 mt-0.5 flex-shrink-0" />
@@ -232,7 +179,6 @@ export default function ClientSetupPayment({ form }: Props) {
         </div>
       )}
 
-      {/* Generate button or success state */}
       {!s.checkoutUrl ? (
         <button
           onClick={handleGenerateLink}
@@ -244,12 +190,12 @@ export default function ClientSetupPayment({ form }: Props) {
       ) : (
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 space-y-3">
           <div className="flex items-center gap-2 text-emerald-700 font-semibold text-sm">
-            <Check size={16} />
-            Payment link copied to clipboard!
+            <Check size={16} /> Payment link copied to clipboard!
           </div>
           <div className="flex items-center gap-2 rounded-lg bg-white border border-emerald-200 px-3 py-2">
             <span className="flex-1 text-xs font-mono text-gray-700 truncate">{s.checkoutUrl}</span>
-            <button onClick={handleCopyAgain} className="text-emerald-600 hover:text-emerald-800 flex-shrink-0" title="Copy">
+            <button onClick={async () => { await navigator.clipboard.writeText(s.checkoutUrl).catch(() => {}); patch({ copied: true }) }}
+              className="text-emerald-600 hover:text-emerald-800 flex-shrink-0" title="Copy">
               <Copy size={14} />
             </button>
           </div>
@@ -266,26 +212,20 @@ export default function ClientSetupPayment({ form }: Props) {
             <h3 className="text-base font-semibold text-gray-900 mb-1">Custom Price Override</h3>
             <p className="text-sm text-gray-500 mb-4">Enter the admin passkey to override the setup fee.</p>
             <input
-              type="password"
-              value={s.passkey}
+              type="password" value={s.passkey} autoFocus
               onChange={e => patch({ passkey: e.target.value, passkeyError: '' })}
               onKeyDown={e => e.key === 'Enter' && tryUnlockCustom()}
               placeholder="Passkey"
-              autoFocus
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-2 focus:ring-2 focus:ring-emerald-500"
             />
             {s.passkeyError && <p className="text-xs text-red-600 mb-3">{s.passkeyError}</p>}
             <div className="flex gap-2 mt-2">
-              <button
-                onClick={() => patch({ showPasskeyModal: false, passkey: '', passkeyError: '' })}
-                className="flex-1 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
-              >
+              <button onClick={() => patch({ showPasskeyModal: false, passkey: '', passkeyError: '' })}
+                className="flex-1 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition">
                 Cancel
               </button>
-              <button
-                onClick={tryUnlockCustom}
-                className="flex-1 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition"
-              >
+              <button onClick={tryUnlockCustom}
+                className="flex-1 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition">
                 Unlock
               </button>
             </div>
