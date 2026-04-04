@@ -4,6 +4,7 @@ import { MapPin } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
 import StructuredData from '../components/StructuredData'
+import GoogleMapEmbed from '../components/common/GoogleMapEmbed'
 
 interface LocationItem { slug: string; city: string }
 
@@ -15,20 +16,23 @@ const FALLBACK_CITIES: LocationItem[] = [
 
 export default function ServiceArea() {
   const [locations, setLocations] = useState<LocationItem[]>(FALLBACK_CITIES)
-  const [mapsEmbedUrl, setMapsEmbedUrl] = useState('')
+  const [address, setAddress] = useState('')
+  const [mapsApiKey, setMapsApiKey] = useState('')
   const [heroTitle, setHeroTitle] = useState('Our East Texas <span class="text-emerald-400">Service Area</span>')
   const [heroSubtitle, setHeroSubtitle] = useState('We proudly serve Tyler, TX and surrounding communities within 50 miles.')
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const [locRes, intgRes, contentRes] = await Promise.all([
+      const [locRes, bizRes, intgRes, contentRes] = await Promise.all([
         supabase.from('location_data').select('slug, city').eq('tenant_id', tenantId).eq('is_live', true),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle(),
         supabase.from('page_content').select('title, subtitle').eq('tenant_id', tenantId).eq('page_slug', 'service-area').maybeSingle(),
       ])
       if (locRes.data && locRes.data.length > 0) setLocations(locRes.data)
-      if (intgRes.data?.value?.google_maps_embed_url) setMapsEmbedUrl(intgRes.data.value.google_maps_embed_url)
+      if (bizRes.data?.value?.address) setAddress(bizRes.data.value.address)
+      if (intgRes.data?.value?.google_maps_api_key) setMapsApiKey(intgRes.data.value.google_maps_api_key)
       if (contentRes.data?.title) setHeroTitle(contentRes.data.title)
       if (contentRes.data?.subtitle) setHeroSubtitle(contentRes.data.subtitle)
     })
@@ -62,18 +66,7 @@ export default function ServiceArea() {
 
       <section className="py-16 bg-[#f8fafc]">
         <div className="max-w-4xl mx-auto px-4">
-          {mapsEmbedUrl ? (
-            <div className="rounded-xl overflow-hidden shadow-sm border border-gray-100" style={{ height: '400px' }}>
-              <iframe src={mapsEmbedUrl} width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade" title="Service area map" />
-            </div>
-          ) : (
-            <div className="bg-white border border-gray-200 rounded-xl h-[400px] flex items-center justify-center">
-              <div className="text-center">
-                <MapPin className="w-12 h-12 text-emerald-500 mx-auto mb-4" />
-                <p className="text-gray-500 text-lg">Service Area Map — Configure in Admin</p>
-              </div>
-            </div>
-          )}
+          <GoogleMapEmbed address={address || '1204 S. Main Street, Tyler, TX 75701'} apiKey={mapsApiKey || undefined} />
         </div>
       </section>
 

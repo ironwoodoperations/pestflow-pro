@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
 import StructuredData from '../components/StructuredData'
 import VideoImage from '../components/VideoImage'
+import GoogleMapEmbed from '../components/common/GoogleMapEmbed'
 import { PEST_VIDEOS } from '../data/pestVideos'
 
 interface LocationData { city: string; hero_title: string; intro_video_url: string }
@@ -23,7 +24,8 @@ export default function LocationPage({ slug }: { slug: string }) {
   const [location, setLocation] = useState<LocationData>({ city: '', hero_title: '', intro_video_url: '' })
   const [otherLocations, setOtherLocations] = useState<OtherLocation[]>([])
   const [phone, setPhone] = useState('(903) 555-0100')
-  const [mapsEmbedUrl, setMapsEmbedUrl] = useState('')
+  const [bizAddress, setBizAddress] = useState('')
+  const [mapsApiKey, setMapsApiKey] = useState('')
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
@@ -37,7 +39,8 @@ export default function LocationPage({ slug }: { slug: string }) {
       if (locRes.data) setLocation({ city: locRes.data.city || titleCase(slug), hero_title: locRes.data.hero_title || '', intro_video_url: locRes.data.intro_video_url || '' })
       if (allLocsRes.data) setOtherLocations(allLocsRes.data)
       if (settingsRes.data?.value?.phone) setPhone(settingsRes.data.value.phone)
-      if (intgRes.data?.value?.google_maps_embed_url) setMapsEmbedUrl(intgRes.data.value.google_maps_embed_url)
+      if (settingsRes.data?.value?.address) setBizAddress(settingsRes.data.value.address)
+      if (intgRes.data?.value?.google_maps_api_key) setMapsApiKey(intgRes.data.value.google_maps_api_key)
     })
   }, [slug])
 
@@ -147,28 +150,12 @@ export default function LocationPage({ slug }: { slug: string }) {
       )}
 
       {/* GOOGLE MAPS */}
-      {mapsEmbedUrl ? (
-        <section className="py-12 bg-white">
-          <div className="max-w-6xl mx-auto px-4">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Find Us on the Map</h2>
-            <div className="rounded-xl overflow-hidden shadow-sm border border-gray-100" style={{ height: '400px' }}>
-              <iframe src={mapsEmbedUrl} width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade" title="Service area map" />
-            </div>
-          </div>
-        </section>
-      ) : (
-        <section className="py-12 bg-white">
-          <div className="max-w-6xl mx-auto px-4">
-            <div className="rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-center" style={{ height: '300px' }}>
-              <div className="text-center text-gray-400">
-                <div className="text-4xl mb-3">🗺️</div>
-                <p className="font-medium">Map not configured</p>
-                <p className="text-sm mt-1">Add a Google Maps embed URL in Settings → Integrations</p>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
+      <section className="py-12 bg-white">
+        <div className="max-w-6xl mx-auto px-4">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Find Us on the Map</h2>
+          <GoogleMapEmbed address={bizAddress || '1204 S. Main Street, Tyler, TX 75701'} apiKey={mapsApiKey || undefined} />
+        </div>
+      </section>
 
     </div>
   )
