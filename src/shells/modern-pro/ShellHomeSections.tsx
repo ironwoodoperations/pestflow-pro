@@ -7,19 +7,42 @@ import { SERVICES } from './ServicesData'
 interface Biz { founded_year?: string | number; num_technicians?: number; phone?: string }
 interface Testimonial { id: string; author_name: string; review_text: string; rating: number }
 
+async function fetchPexelsImage(query: string, apiKey: string): Promise<string | null> {
+  try {
+    const r = await fetch(
+      `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=1&orientation=square`,
+      { headers: { Authorization: apiKey } }
+    )
+    const data = await r.json()
+    return data.photos?.[0]?.src?.medium || null
+  } catch { return null }
+}
+
 export default function ShellHomeSections() {
   const [biz, setBiz] = useState<Biz>({})
   const [testimonials, setTestimonials] = useState<Testimonial[]>([])
+  const [serviceImgs, setServiceImgs] = useState<Record<string, string>>({})
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const [bizRes, testRes] = await Promise.all([
+      const [bizRes, testRes, intRes] = await Promise.all([
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
         supabase.from('testimonials').select('id,author_name,review_text,rating').eq('tenant_id', tenantId).eq('featured', true).limit(3),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle(),
       ])
       if (bizRes.data?.value) setBiz(bizRes.data.value)
       if (testRes.data?.length) setTestimonials(testRes.data)
+
+      const apiKey = intRes.data?.value?.pexels_api_key
+      if (apiKey) {
+        const results = await Promise.all(
+          SERVICES.map(s => fetchPexelsImage(s.query, apiKey).then(url => ({ name: s.name, url })))
+        )
+        const imgMap: Record<string, string> = {}
+        results.forEach(({ name, url }) => { if (url) imgMap[name] = url })
+        setServiceImgs(imgMap)
+      }
     })
   }, [])
 
@@ -36,7 +59,7 @@ export default function ShellHomeSections() {
             {SERVICES.map((s) => (
               <div key={s.name} className="bg-white rounded-xl border border-gray-200 hover:border-emerald-400 hover:shadow-md transition group p-4 flex flex-col items-center text-center">
                 <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-100 group-hover:border-emerald-200 transition mb-3 flex-shrink-0">
-                  <img src={s.img} alt={s.name} loading="lazy" className="w-full h-full object-cover" />
+                  <img src={serviceImgs[s.name] || s.img} alt={s.name} loading="lazy" className="w-full h-full object-cover" />
                 </div>
                 <h3 className="text-gray-900 font-bold text-sm leading-tight mb-1">{s.name}</h3>
                 <p className="text-gray-500 text-xs leading-snug hidden sm:block">{s.desc}</p>
