@@ -116,7 +116,7 @@ export default function Dashboard() {
                 } ${locked ? 'opacity-50' : ''}`}>
                 <Icon size={20} aria-hidden="true" />
                 <span className="flex-1 text-left">{label}</span>
-                {locked && <Lock className="w-3.5 h-3.5 shrink-0" />}
+                {locked && <Lock className="w-3.5 h-3.5 shrink-0 text-amber-500" title="Upgrade to Grow to unlock" />}
               </button>
             )
           })}
@@ -162,7 +162,7 @@ export default function Dashboard() {
         <PreviewModeContext.Provider value={previewMode}>
           <div className={`p-8 ${previewMode ? 'pointer-events-none select-none opacity-90' : ''}`} style={previewMode ? { pointerEvents: 'none' } : undefined}>
             <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-gray-400 text-sm">Loading...</div></div>}>
-              {activeTab === 'dashboard' && <DashboardHome onboardingComplete={onboardingComplete} demoActive={demoActive} onDemoSeeded={() => setDemoActive(true)} />}
+              {activeTab === 'dashboard' && <DashboardHome onboardingComplete={onboardingComplete} demoActive={demoActive} onDemoSeeded={() => setDemoActive(true)} onNavigate={(tab) => setActiveTab(tab as TabKey)} />}
               {activeTab === 'content' && <ContentTab />}
               {activeTab === 'seo' && <SEOTab />}
               {activeTab === 'blog' && <BlogTab />}

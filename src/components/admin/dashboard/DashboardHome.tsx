@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react'
-import { Users, ArrowUp, TrendingUp, BarChart3 } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../hooks/useTenant'
-import PlanOverviewCard from './PlanOverviewCard'
+import DashboardStats from './DashboardStats'
+import DashboardSeoWidget from './DashboardSeoWidget'
+import DashboardSocialWidget from './DashboardSocialWidget'
+import DashboardPlanCard from './DashboardPlanCard'
 import DemoControls from './DemoControls'
 
 interface Props {
   onboardingComplete: boolean
   demoActive: boolean
   onDemoSeeded: () => void
+  onNavigate: (tab: string) => void
 }
 
 interface Lead { id: string; name: string; status: string; created_at: string; services: string[] | null }
@@ -26,18 +29,7 @@ const statusBadge = (status: string) => {
   )
 }
 
-function QuickLink({ label, icon, tab }: { label: string; icon: string; tab: string }) {
-  return (
-    <button onClick={() => {
-      const btn = document.querySelector(`button[aria-current]`)?.parentElement?.querySelector(`button:nth-child(${tab === 'crm' ? 9 : tab === 'content' ? 2 : tab === 'seo' ? 3 : 1})`) as HTMLButtonElement | null
-      btn?.click()
-    }} className="flex items-center gap-2 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition text-sm font-medium text-gray-700">
-      {icon} {label}
-    </button>
-  )
-}
-
-export default function DashboardHome({ onboardingComplete, demoActive, onDemoSeeded }: Props) {
+export default function DashboardHome({ onboardingComplete, demoActive, onDemoSeeded, onNavigate }: Props) {
   const { tenantId } = useTenant()
   const [leads, setLeads] = useState<Lead[]>([])
   const [loading, setLoading] = useState(true)
@@ -84,30 +76,28 @@ export default function DashboardHome({ onboardingComplete, demoActive, onDemoSe
         </div>
       )}
 
-      <PlanOverviewCard />
+      {/* Row 1: Stats */}
+      <DashboardStats
+        totalLeads={totalLeads}
+        newThisMonth={newThisMonth}
+        newThisWeek={newThisWeek}
+        conversionRate={conversionRate}
+      />
+
+      {/* Row 2: SEO + Social widgets */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <DashboardSeoWidget onNavigate={onNavigate} />
+        <DashboardSocialWidget onNavigate={onNavigate} />
+      </div>
+
+      {/* Row 3: Plan card */}
+      <div className="mb-6">
+        <DashboardPlanCard />
+      </div>
 
       {!demoActive && tenantId && (
         <DemoControls tenantId={tenantId} onSeeded={onDemoSeeded} />
       )}
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {[
-          { label: 'Total Leads', value: totalLeads, icon: Users, color: '#3b82f6' },
-          { label: 'New This Month', value: newThisMonth, icon: ArrowUp, color: '#10b981' },
-          { label: 'New This Week', value: newThisWeek, icon: TrendingUp, color: '#f59e0b' },
-          { label: 'Conversion Rate', value: `${conversionRate}%`, icon: BarChart3, color: '#a855f7' },
-        ].map(s => (
-          <div key={s.label} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${s.color}18` }}>
-                <s.icon className="w-5 h-5" style={{ color: s.color }} />
-              </div>
-            </div>
-            <p className="text-3xl font-bold text-gray-900">{s.value}</p>
-            <p className="text-sm text-gray-500 mt-1">{s.label}</p>
-          </div>
-        ))}
-      </div>
 
       {totalLeads === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
@@ -151,12 +141,10 @@ export default function DashboardHome({ onboardingComplete, demoActive, onDemoSe
       <div className="mt-6 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Links</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <QuickLink label="View All Leads" icon="📋" tab="crm" />
-          <QuickLink label="Edit Site Content" icon="📝" tab="content" />
-          <QuickLink label="Manage SEO" icon="🔍" tab="seo" />
-          <a href="/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition text-sm font-medium text-gray-700">
-            🌐 View Live Site
-          </a>
+          <button onClick={() => onNavigate('crm')} className="flex items-center gap-2 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition text-sm font-medium text-gray-700">📋 View All Leads</button>
+          <button onClick={() => onNavigate('content')} className="flex items-center gap-2 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition text-sm font-medium text-gray-700">📝 Edit Site Content</button>
+          <button onClick={() => onNavigate('seo')} className="flex items-center gap-2 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition text-sm font-medium text-gray-700">🔍 Manage SEO</button>
+          <a href="/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition text-sm font-medium text-gray-700">🌐 View Live Site</a>
         </div>
       </div>
     </div>
