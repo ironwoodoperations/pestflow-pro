@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Suspense, lazy } from 'react'
 import { Toaster } from 'sonner'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import ScrollToTop from './components/ScrollToTop'
 import { useGoogleAnalytics } from './hooks/useGoogleAnalytics'
 import Login from './pages/admin/Login'
@@ -62,6 +63,7 @@ export default function App() {
       <TemplateProvider>
       <ScrollToTop />
       <Toaster richColors position="top-right" />
+      <ErrorBoundary>
       <Routes>
         {/* ─── Public marketing pages ─── */}
         <Route path="/" element={<PublicShell><Index /></PublicShell>} />
@@ -111,6 +113,7 @@ export default function App() {
         <Route path="/:slug" element={<PublicShell><SlugRouter /></PublicShell>} />
         <Route path="*" element={<PublicShell><NotFound /></PublicShell>} />
       </Routes>
+      </ErrorBoundary>
       </TemplateProvider>
       </PlanProvider>
     </BrowserRouter>
