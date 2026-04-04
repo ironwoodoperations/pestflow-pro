@@ -116,7 +116,7 @@ export default function Dashboard() {
                 } ${locked ? 'opacity-50' : ''}`}>
                 <Icon size={20} aria-hidden="true" />
                 <span className="flex-1 text-left">{label}</span>
-                {locked && <Lock className="w-3.5 h-3.5 shrink-0 text-amber-500" title="Upgrade to Grow to unlock" />}
+                {locked && <span title="Upgrade to Grow to unlock"><Lock className="w-3.5 h-3.5 shrink-0 text-amber-500" /></span>}
               </button>
             )
           })}
