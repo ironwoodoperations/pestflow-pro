@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: `${businessName} <leads@pestflowpro.com>`,
+        from: `PestFlow Pro <no-reply@pestflow.ai>`,
         to: [notifyEmail],
         cc: ccEmail ? [ccEmail] : undefined,
         subject: `New Lead: ${lead.name} — ${services}`,
