@@ -7,7 +7,7 @@ import { usePlan } from '../../components/admin/usePlan'
 import {
   FileText, Search, BookOpen, Share2, Star,
   MapPin, BarChart3, Users, Settings, LogOut, ExternalLink, Eye, EyeOff,
-  TrendingUp, Lock, ClipboardList
+  TrendingUp, Lock, ClipboardList, CreditCard
 } from 'lucide-react'
 import TierToggle from '../../components/admin/TierToggle'
 import NotificationBell from '../../components/admin/NotificationBell'
@@ -26,6 +26,7 @@ const CRMTab        = lazy(() => import('../../components/admin/CRMTab'))
 const SettingsTab   = lazy(() => import('../../components/admin/settings/SettingsTab'))
 const TeamTab          = lazy(() => import('../../components/admin/team/TeamTab'))
 const ClientSetupPage  = lazy(() => import('../../components/admin/client-setup/ClientSetupPage'))
+const BillingTab       = lazy(() => import('../../components/admin/BillingTab'))
 
 const TABS = [
   { key: 'dashboard', label: 'Dashboard', icon: BarChart3 },
@@ -39,6 +40,7 @@ const TABS = [
   { key: 'crm', label: 'CRM', icon: Users },
   { key: 'team', label: 'Team', icon: Users },
   { key: 'client-setup', label: 'Client Setup', icon: ClipboardList },
+  { key: 'billing', label: 'Billing', icon: CreditCard },
   { key: 'settings', label: 'Settings', icon: Settings },
 ] as const
 
@@ -56,6 +58,7 @@ const TAB_SUBTITLES: Record<string, string> = {
   crm: 'Track leads and customer relationships',
   team: 'Manage your team members shown on your website',
   'client-setup': 'Collect client info and generate setup files during onboarding calls',
+  billing: 'Your current plan and payment history',
   settings: 'Configure your business settings',
 }
 
@@ -173,6 +176,7 @@ export default function Dashboard() {
               {activeTab === 'crm' && <CRMTab />}
               {activeTab === 'team' && <TeamTab />}
               {activeTab === 'client-setup' && <ClientSetupPage />}
+              {activeTab === 'billing' && <BillingTab />}
               {activeTab === 'settings' && <SettingsTab />}
             </Suspense>
           </div>
