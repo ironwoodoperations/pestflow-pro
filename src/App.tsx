@@ -17,6 +17,9 @@ import NotFound from './pages/NotFound'
 import Sitemap from './pages/Sitemap'
 import SlugRouter from './pages/SlugRouter'
 
+// Payment success — public, no shell needed
+import PaymentSuccess from './pages/PaymentSuccess'
+
 // Secondary marketing pages — lazy
 const About           = lazy(() => import('./pages/About'))
 const FAQPage         = lazy(() => import('./pages/FAQPage'))
@@ -100,6 +103,9 @@ export default function App() {
         <Route path="/admin" element={
           <Suspense fallback={LOADING}><ProtectedRoute><Dashboard /></ProtectedRoute></Suspense>
         } />
+
+        {/* ─── Post-payment landing — must be before /:slug ─── */}
+        <Route path="/payment-success" element={<PaymentSuccess />} />
 
         {/* ─── Dynamic slug — MUST BE LAST ─── */}
         <Route path="/:slug" element={<PublicShell><SlugRouter /></PublicShell>} />
