@@ -9,6 +9,20 @@ import CleanFriendlyNavbar from '../shells/clean-friendly/ShellNavbar'
 import CleanFriendlyFooter from '../shells/clean-friendly/ShellFooter'
 import RusticRuggedNavbar from '../shells/rustic-rugged/ShellNavbar'
 import RusticRuggedFooter from '../shells/rustic-rugged/ShellFooter'
+import ModernProSections from '../shells/modern-pro/ShellHomeSections'
+import BoldLocalSections from '../shells/bold-local/ShellHomeSections'
+import CleanFriendlySections from '../shells/clean-friendly/ShellHomeSections'
+import RusticRuggedSections from '../shells/rustic-rugged/ShellHomeSections'
+
+export function useShellSections(): React.ComponentType {
+  const { template } = useTemplate()
+  switch (template) {
+    case 'bold-local': return BoldLocalSections
+    case 'clean-friendly': return CleanFriendlySections
+    case 'rustic-rugged': return RusticRuggedSections
+    default: return ModernProSections
+  }
+}
 
 interface Props {
   children: ReactNode
