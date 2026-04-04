@@ -12,8 +12,8 @@ const PAGE_SLUGS = [
   'quote', 'reviews', 'service-area', 'blog',
 ]
 
-interface ContentForm { title: string; subtitle: string; intro: string; video_url: string }
-const EMPTY_FORM: ContentForm = { title: '', subtitle: '', intro: '', video_url: '' }
+interface ContentForm { title: string; subtitle: string; intro: string; video_url: string; image_url: string }
+const EMPTY_FORM: ContentForm = { title: '', subtitle: '', intro: '', video_url: '', image_url: '' }
 
 const PEST_SLUGS = ['spider-control', 'mosquito-control', 'ant-control', 'wasp-hornet-control', 'roach-control', 'flea-tick-control', 'rodent-control', 'scorpion-control', 'bed-bug-control', 'pest-control', 'termite-control', 'termite-inspections']
 
@@ -27,26 +27,32 @@ export default function ContentTab() {
   const [businessName, setBusinessName] = useState('')
   const [businessCity, setBusinessCity] = useState('')
   const [reverting, setReverting] = useState(false)
+  const [pexelsApiKey, setPexelsApiKey] = useState('')
   const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
 
+  // Load business info + Pexels key once
   useEffect(() => {
     if (!tenantId) return
-    supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle()
-      .then(({ data }) => {
-        if (data?.value?.name) setBusinessName(data.value.name)
-        if (data?.value?.address) {
-          const match = data.value.address.match(/,\s*([^,]+),?\s*[A-Z]{2}/)
-          if (match) setBusinessCity(match[1].trim())
-        }
-      })
+    Promise.all([
+      supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
+      supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle(),
+    ]).then(([bizRes, intgRes]) => {
+      if (bizRes.data?.value?.name) setBusinessName(bizRes.data.value.name)
+      if (bizRes.data?.value?.address) {
+        const match = bizRes.data.value.address.match(/,\s*([^,]+),?\s*[A-Z]{2}/)
+        if (match) setBusinessCity(match[1].trim())
+      }
+      if (intgRes.data?.value?.pexels_api_key) setPexelsApiKey(intgRes.data.value.pexels_api_key)
+    })
   }, [tenantId])
 
+  // Load page content when slug changes
   useEffect(() => {
     if (!tenantId) return
     setLoading(true)
-    supabase.from('page_content').select('title, subtitle, intro, video_url').eq('tenant_id', tenantId).eq('page_slug', selectedSlug).maybeSingle()
+    supabase.from('page_content').select('title, subtitle, intro, video_url, image_url').eq('tenant_id', tenantId).eq('page_slug', selectedSlug).maybeSingle()
       .then(({ data }) => {
-        setForm({ title: data?.title || '', subtitle: data?.subtitle || '', intro: data?.intro || '', video_url: data?.video_url || '' })
+        setForm({ title: data?.title || '', subtitle: data?.subtitle || '', intro: data?.intro || '', video_url: data?.video_url || '', image_url: data?.image_url || '' })
         setLoading(false)
       })
   }, [tenantId, selectedSlug])
@@ -87,8 +93,8 @@ export default function ContentTab() {
     setSaving(true)
     const { data: existingSnap } = await supabase.from('page_snapshots').select('id').eq('tenant_id', tenantId).eq('page_slug', selectedSlug).eq('snapshot_type', 'original').maybeSingle()
     if (!existingSnap) {
-      const { data: current } = await supabase.from('page_content').select('title, subtitle, intro, video_url').eq('tenant_id', tenantId).eq('page_slug', selectedSlug).maybeSingle()
-      if (current) await supabase.from('page_snapshots').insert({ tenant_id: tenantId, page_slug: selectedSlug, snapshot_type: 'original', snapshot_data: { title: current.title, subtitle: current.subtitle, intro: current.intro, video_url: current.video_url } })
+      const { data: current } = await supabase.from('page_content').select('title, subtitle, intro, video_url, image_url').eq('tenant_id', tenantId).eq('page_slug', selectedSlug).maybeSingle()
+      if (current) await supabase.from('page_snapshots').insert({ tenant_id: tenantId, page_slug: selectedSlug, snapshot_type: 'original', snapshot_data: current })
     }
     const { error } = await supabase.from('page_content').upsert({ tenant_id: tenantId, page_slug: selectedSlug, ...form }, { onConflict: 'tenant_id,page_slug' })
     setSaving(false)
@@ -101,15 +107,15 @@ export default function ContentTab() {
     const { data: snap } = await supabase.from('page_snapshots').select('snapshot_data').eq('tenant_id', tenantId).eq('page_slug', selectedSlug).eq('snapshot_type', 'original').maybeSingle()
     if (!snap?.snapshot_data) { toast.error('No original snapshot found for this page.'); setReverting(false); return }
     const orig = snap.snapshot_data as ContentForm
-    setForm({ title: orig.title || '', subtitle: orig.subtitle || '', intro: orig.intro || '', video_url: orig.video_url || '' })
-    const { error } = await supabase.from('page_content').upsert({ tenant_id: tenantId, page_slug: selectedSlug, title: orig.title || '', subtitle: orig.subtitle || '', intro: orig.intro || '', video_url: orig.video_url || '' }, { onConflict: 'tenant_id,page_slug' })
+    setForm({ title: orig.title || '', subtitle: orig.subtitle || '', intro: orig.intro || '', video_url: orig.video_url || '', image_url: orig.image_url || '' })
+    const { error } = await supabase.from('page_content').upsert({ tenant_id: tenantId, page_slug: selectedSlug, ...orig }, { onConflict: 'tenant_id,page_slug' })
     setReverting(false)
     if (error) toast.error('Failed to revert.'); else toast.success('Reverted to original content!')
   }
 
   return (
     <div>
-      <PageHelpBanner tab="content" title="📝 Content Editor" body="Pick a page from the left, then edit the Title, Subtitle, or Intro text. Hit Save — your website updates instantly. Made a mistake? Use Revert to Original. Use AI Write to generate SEO-optimized copy automatically." />
+      <PageHelpBanner tab="content" title="📝 Content Editor" body="Pick a page from the left, then edit the Title, Subtitle, or Intro text. For pest pages, choose a photo from the auto-loaded image search. Hit Save — your website updates instantly." />
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-1">
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -128,7 +134,8 @@ export default function ContentTab() {
         <div className="lg:col-span-3">
           <ContentPageForm
             selectedSlug={selectedSlug} form={form} loading={loading} saving={saving}
-            aiLoading={aiLoading} reverting={reverting} isPestPage={isPestPage} apiKey={apiKey}
+            aiLoading={aiLoading} reverting={reverting} isPestPage={isPestPage}
+            apiKey={apiKey} pexelsApiKey={pexelsApiKey}
             updateField={updateField} onSave={handleSave} onGenerateAI={generateAI} onRevert={handleRevert}
           />
         </div>

@@ -33,7 +33,7 @@ const WHY = [
 ]
 
 export default function PestPageTemplate(props: PestPageProps) {
-  const [content, setContent] = useState({ title: '', subtitle: '', intro: '' })
+  const [content, setContent] = useState({ title: '', subtitle: '', intro: '', image_url: '' })
   const [phone, setPhone] = useState('(903) 555-0100')
   const [template, setTemplate] = useState('modern-pro')
 
@@ -41,11 +41,11 @@ export default function PestPageTemplate(props: PestPageProps) {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
       const [pageRes, settingsRes, brandRes] = await Promise.all([
-        supabase.from('page_content').select('title, subtitle, intro').eq('tenant_id', tenantId).eq('page_slug', props.pageSlug).maybeSingle(),
+        supabase.from('page_content').select('title, subtitle, intro, image_url').eq('tenant_id', tenantId).eq('page_slug', props.pageSlug).maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
       ])
-      if (pageRes.data) setContent({ title: pageRes.data.title || '', subtitle: pageRes.data.subtitle || '', intro: pageRes.data.intro || '' })
+      if (pageRes.data) setContent({ title: pageRes.data.title || '', subtitle: pageRes.data.subtitle || '', intro: pageRes.data.intro || '', image_url: pageRes.data.image_url || '' })
       if (settingsRes.data?.value?.phone) setPhone(settingsRes.data.value.phone)
       if (brandRes.data?.value?.template) setTemplate(brandRes.data.value.template)
     })
@@ -53,7 +53,7 @@ export default function PestPageTemplate(props: PestPageProps) {
 
   const heroTitle = content.title || props.heroTitle
   const stepColors = props.stepColors || STEP_COLORS_DEFAULT
-  const pestImg = PEST_PAGE_IMG[props.pageSlug] || props.introImage || FALLBACK_PEST_IMG
+  const pestImg = content.image_url || PEST_PAGE_IMG[props.pageSlug] || props.introImage || FALLBACK_PEST_IMG
   const ctaBgClass = CTA_COLORS[template] || 'bg-yellow-500'
 
   return (
