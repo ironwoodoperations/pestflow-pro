@@ -12,6 +12,7 @@ interface Props {
   auditMode: 'mobile' | 'desktop'
   onSetAuditMode: (m: 'mobile' | 'desktop') => void
   onRunAudit: () => void
+  onRefreshScore: () => void
   onGoToConnect: () => void
 }
 
@@ -38,7 +39,7 @@ function CoverageCard({ emoji, label, total, live }: {
 
 export default function SeoOverviewTab({
   stats, coverage, integrations, lastAudit,
-  auditLoading, auditMode, onSetAuditMode, onRunAudit, onGoToConnect
+  auditLoading, auditMode, onSetAuditMode, onRunAudit, onRefreshScore, onGoToConnect
 }: Props) {
   const { google_api_key } = integrations
 
@@ -80,7 +81,10 @@ export default function SeoOverviewTab({
               ))}
             </div>
             {lastAudit && (
-              <span className="text-xs text-gray-400">Checked {fmtTime(lastAudit.run_at)}</span>
+              <button onClick={onRefreshScore} disabled={auditLoading}
+                className="px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-50 disabled:opacity-50">
+                🔄 Refresh Score
+              </button>
             )}
             <button onClick={onRunAudit} disabled={auditLoading || !google_api_key}
               className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-medium hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-1">
@@ -129,6 +133,9 @@ export default function SeoOverviewTab({
                     ))}
                   </div>
                 )}
+                <p className="text-xs text-gray-400 text-center mt-3 border-t pt-3">
+                  Last checked: {fmtTime(lastAudit.run_at)}
+                </p>
               </div>
             )}
             {!auditLoading && !lastAudit && (

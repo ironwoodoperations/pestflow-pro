@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../hooks/useTenant'
-import { useSeoAudit } from './useSeoAudit'
+import { useSeoAudit, getCachedAudit } from './useSeoAudit'
 import type {
   SeoTabId, SeoPageRow, SeoStats, SeoCoverage,
   IntegrationValues, EditorForm, ConnectForm,
@@ -85,8 +85,11 @@ export function useSeoTab() {
       setIntegrations({ google_api_key: intVal.google_api_key || '', google_analytics_id: intVal.google_analytics_id || '', google_search_console_url: intVal.google_search_console_url || '' })
       setConnectForm({ google_search_console_url: intVal.google_search_console_url || '', google_analytics_id: intVal.google_analytics_id || '' })
 
+      // Load from localStorage first (instant), then fall back to Supabase
+      const cached = getCachedAudit(tenantId)
       const auditVal = auditRes.data?.value
-      if (auditVal) audit.setLastAudit({ ...auditVal, webVitals: auditVal.webVitals || { lcp: null, tbt: null, cls: null } })
+      const resolved = cached || auditVal
+      if (resolved) audit.setLastAudit({ ...resolved, webVitals: resolved.webVitals || { lcp: null, tbt: null, cls: null } })
     } finally {
       setLoading(false)
     }
@@ -150,5 +153,6 @@ export function useSeoTab() {
     handleOpenEditor, handleCloseEditor, handleEditorChange, handleSaveMeta,
     handleConnectChange, handleConnectSave, handleRunCheckNow,
     ...audit,
+    handleRefreshScore: () => { audit.clearCacheAndRefresh(); setTimeout(() => audit.runLighthouseAudit(), 50) },
   }
 }

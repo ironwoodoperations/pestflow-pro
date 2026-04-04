@@ -23,7 +23,7 @@ export default function SEOTab() {
     lastAudit, auditLoading, auditMode, pages,
     handleOpenEditor, handleCloseEditor, handleEditorChange, handleSaveMeta,
     handleConnectChange, handleConnectSave, handleRunCheckNow,
-    setAuditMode, runLighthouseAudit,
+    setAuditMode, runLighthouseAudit, handleRefreshScore,
   } = useSeoTab()
 
   if (loading) return <div className="p-8 text-center text-gray-400">Loading SEO data…</div>
@@ -56,7 +56,7 @@ export default function SEOTab() {
         {activeTab === 'overview' && (
           <SeoOverviewTab stats={stats} coverage={coverage} integrations={integrations}
             lastAudit={lastAudit} auditLoading={auditLoading} auditMode={auditMode}
-            onSetAuditMode={setAuditMode} onRunAudit={runLighthouseAudit}
+            onSetAuditMode={setAuditMode} onRunAudit={runLighthouseAudit} onRefreshScore={handleRefreshScore}
             onGoToConnect={() => setActiveTab('connect')} />
         )}
         {activeTab === 'pages' && (

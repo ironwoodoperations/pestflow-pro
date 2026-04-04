@@ -3,10 +3,28 @@ import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
 import type { AuditResult, IntegrationValues } from './seoTypes'
 
+function lsKey(tenantId: string) { return `lighthouse_score_${tenantId}` }
+function lsFetchedKey(tenantId: string) { return `lighthouse_fetched_at_${tenantId}` }
+
+export function getCachedAudit(tenantId: string): AuditResult | null {
+  try {
+    const raw = localStorage.getItem(lsKey(tenantId))
+    return raw ? JSON.parse(raw) : null
+  } catch { return null }
+}
+
 export function useSeoAudit(tenantId: string, integrations: IntegrationValues) {
   const [auditMode, setAuditMode] = useState<'mobile' | 'desktop'>('mobile')
   const [auditLoading, setAuditLoading] = useState(false)
-  const [lastAudit, setLastAudit] = useState<AuditResult | null>(null)
+  const [lastAudit, setLastAudit] = useState<AuditResult | null>(() => getCachedAudit(tenantId))
+
+  const clearCacheAndRefresh = useCallback(() => {
+    if (tenantId) {
+      localStorage.removeItem(lsKey(tenantId))
+      localStorage.removeItem(lsFetchedKey(tenantId))
+    }
+    setLastAudit(null)
+  }, [tenantId])
 
   const runLighthouseAudit = useCallback(async () => {
     if (!integrations.google_api_key) return
@@ -48,6 +66,12 @@ export function useSeoAudit(tenantId: string, integrations: IntegrationValues) {
         url: siteUrl, run_at: new Date().toISOString(), strategy: auditMode,
       }
       setLastAudit(result)
+      // Persist to localStorage for instant display on next load
+      try {
+        localStorage.setItem(lsKey(tenantId), JSON.stringify(result))
+        localStorage.setItem(lsFetchedKey(tenantId), result.run_at)
+      } catch { /* storage quota exceeded — non-fatal */ }
+      // Also persist to Supabase
       await supabase.from('settings').upsert(
         { tenant_id: tenantId, key: 'last_lighthouse_audit', value: result },
         { onConflict: 'tenant_id,key' }
@@ -60,5 +84,5 @@ export function useSeoAudit(tenantId: string, integrations: IntegrationValues) {
     }
   }, [integrations.google_api_key, auditMode, tenantId])
 
-  return { auditMode, setAuditMode, auditLoading, lastAudit, setLastAudit, runLighthouseAudit }
+  return { auditMode, setAuditMode, auditLoading, lastAudit, setLastAudit, runLighthouseAudit, clearCacheAndRefresh }
 }
