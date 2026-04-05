@@ -139,7 +139,7 @@ Deno.serve(async (req: Request) => {
         google:    pd?.social_links?.google    || social.google    || '',
         youtube:   pd?.social_links?.youtube   || social.youtube   || '',
       }},
-      { tenant_id: tenantId, key: 'integrations', value: { google_place_id: integrations?.google_place_id||'', google_analytics_id: integrations?.ga4_id||'', google_maps_api_key: '', pexels_api_key: '', textbelt_api_key: '', owner_sms_number: '', ayrshare_api_key: '', facebook_access_token: '', facebook_page_id: '' } },
+      { tenant_id: tenantId, key: 'integrations', value: { google_place_id: integrations?.google_place_id||'', google_analytics_id: integrations?.ga4_id||'', google_maps_api_key: '', pexels_api_key: '', textbelt_api_key: '', owner_sms_number: (pd?.business_info?.phone || bi.phone || '').replace(/\D/g, ''), ayrshare_api_key: '', facebook_access_token: '', facebook_page_id: '' } },
       { tenant_id: tenantId, key: 'onboarding_complete', value: { complete: false } },
       { tenant_id: tenantId, key: 'hero_media', value: { youtube_id: '', thumbnail_url: '' } },
       { tenant_id: tenantId, key: 'holiday_mode', value: { enabled: false, holiday: '', message: '', auto_schedule: '' } },
