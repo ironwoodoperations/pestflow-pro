@@ -1,104 +1,90 @@
 import { useState } from 'react'
-import { ChevronDown, ChevronUp } from 'lucide-react'
-import { usePlan } from '../../../hooks/usePlan'
+import { Check } from 'lucide-react'
 
-const TIERS = [
-  {
-    tier: 1, name: 'Starter', price: 99,
-    badge: 'bg-gray-100 text-gray-700',
-    features: 'Branded website, CRM & lead management, Basic SEO tools, up to 3 locations, Team access',
-  },
-  {
-    tier: 2, name: 'Grow', price: 149,
-    badge: 'bg-blue-100 text-blue-700',
-    features: 'Everything in Starter + Full SEO suite, Blog management, Social scheduling',
-  },
-  {
-    tier: 3, name: 'Pro', price: 249,
-    badge: 'bg-purple-100 text-purple-700',
-    features: 'Everything in Grow + AI content tools, Advanced reports, Campaign management',
-  },
-  {
-    tier: 4, name: 'Elite', price: 499,
-    badge: 'bg-amber-100 text-amber-700',
-    features: 'Everything in Pro + Social analytics, Autopilot posting, Live review management',
-  },
-]
+interface Props {
+  tier: number
+  name: string
+  price: number
+  subtitle: string
+  features: string[]
+  currentTier: number
+  onNavigate: (tab: string) => void
+}
 
-export default function DashboardPlanCard() {
-  const { tier, loading } = usePlan()
-  const [expanded, setExpanded] = useState(false)
+const CURRENT_BORDER: Record<number, string> = {
+  1: 'border-gray-400',
+  2: 'border-blue-400',
+  3: 'border-purple-400',
+  4: 'border-amber-400',
+}
+const CURRENT_HEADER: Record<number, string> = {
+  1: 'bg-gray-50',
+  2: 'bg-blue-50',
+  3: 'bg-purple-50',
+  4: 'bg-amber-50',
+}
 
-  if (loading) return null
-
-  const current = TIERS.find(t => t.tier === tier) || TIERS[0]
+export default function DashboardPlanCard({ tier, name, price, subtitle, features, currentTier, onNavigate }: Props) {
+  const [showTooltip, setShowTooltip] = useState(false)
+  const isCurrent = tier === currentTier
+  const isUpgrade = tier > currentTier
+  const borderCls = isCurrent ? `border-2 ${CURRENT_BORDER[tier]}` : 'border border-gray-200'
+  const headerCls = isCurrent ? CURRENT_HEADER[tier] : 'bg-white'
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-      {/* Header row */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className={`px-3 py-1 rounded-full text-sm font-semibold ${current.badge}`}>
-            {current.name}
-          </span>
-          <span className="text-gray-900 font-bold">
-            ${current.price}<span className="text-sm font-normal text-gray-500">/mo</span>
-          </span>
+    <div className={`relative bg-white rounded-xl ${borderCls} overflow-hidden flex flex-col`}>
+      <div className={`p-4 ${headerCls}`}>
+        <div className="flex items-start justify-between mb-1">
+          <p className="font-bold text-gray-900 text-sm">{name}</p>
+          {isCurrent && (
+            <span className="text-xs font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center gap-1 flex-shrink-0">
+              <Check size={11} />Current Plan
+            </span>
+          )}
         </div>
-        <button
-          onClick={() => setExpanded(e => !e)}
-          className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition"
-        >
-          What&apos;s included
-          {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-        </button>
+        <p className="text-2xl font-bold text-gray-900">
+          ${price}<span className="text-sm font-normal text-gray-400">/mo</span>
+        </p>
+        <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>
       </div>
 
-      {/* Expanded: full tier comparison */}
-      {expanded && (
-        <div className="mt-4 border-t border-gray-100 pt-4 space-y-2">
-          {TIERS.map(t => {
-            const isCurrent = t.tier === tier
-            const isUpgrade = t.tier > tier
-            return (
-              <div
-                key={t.tier}
-                className={`flex items-center justify-between rounded-lg px-4 py-3 gap-4 ${
-                  isCurrent ? 'bg-gray-50 border border-gray-200' : 'hover:bg-gray-50'
-                }`}
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 ${t.badge}`}>
-                    {t.name}
-                  </span>
-                  <span className="text-sm font-semibold text-gray-800 flex-shrink-0">
-                    ${t.price}<span className="text-xs font-normal text-gray-400">/mo</span>
-                  </span>
-                  <span className="text-xs text-gray-500 truncate hidden sm:block">{t.features}</span>
-                </div>
-                <div className="flex-shrink-0">
-                  {isCurrent ? (
-                    <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
-                      Current Plan
-                    </span>
-                  ) : (
-                    <a
-                      href={`mailto:scott@ironwoodoperationsgroup.com?subject=${isUpgrade ? 'Upgrade' : 'Downgrade'} Request — ${t.name}`}
-                      className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition ${
-                        isUpgrade
-                          ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-                          : 'border border-gray-300 text-gray-500 hover:bg-gray-100'
-                      }`}
-                    >
-                      {isUpgrade ? 'Upgrade →' : 'Downgrade'}
-                    </a>
-                  )}
-                </div>
+      <div className="p-4 flex-1 space-y-1.5">
+        {features.map((f, i) => (
+          <div key={i} className="flex items-start gap-2">
+            <Check size={13} className="text-emerald-500 mt-0.5 flex-shrink-0" />
+            <span className="text-xs text-gray-600">{f}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="p-4 pt-0">
+        {isCurrent ? (
+          <div className="h-8" />
+        ) : isUpgrade ? (
+          <button
+            onClick={() => onNavigate('billing')}
+            className="w-full py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-lg transition"
+          >
+            Upgrade to {name}
+          </button>
+        ) : (
+          <div className="relative">
+            <button
+              onClick={() => setShowTooltip(t => !t)}
+              onBlur={() => setTimeout(() => setShowTooltip(false), 150)}
+              className="w-full py-2 border border-gray-300 text-gray-500 text-sm font-medium rounded-lg hover:bg-gray-50 transition"
+            >
+              Downgrade
+            </button>
+            {showTooltip && (
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg whitespace-nowrap shadow-lg z-10">
+                To change your plan, contact support@pestflow.ai
+                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
               </div>
-            )
-          })}
-        </div>
-      )}
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

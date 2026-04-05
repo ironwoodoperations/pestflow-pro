@@ -4,7 +4,7 @@ import { useTenant } from '../../../hooks/useTenant'
 import DashboardStats from './DashboardStats'
 import DashboardSeoWidget from './DashboardSeoWidget'
 import DashboardSocialWidget from './DashboardSocialWidget'
-import DashboardPlanCard from './DashboardPlanCard'
+import DashboardPlanSection from './DashboardPlanSection'
 import DemoControls from './DemoControls'
 
 interface Props {
@@ -76,9 +76,9 @@ export default function DashboardHome({ onboardingComplete, demoActive, onDemoSe
         </div>
       )}
 
-      {/* Row 1: Plan card */}
+      {/* Row 1: Plan card section */}
       <div className="mb-6">
-        <DashboardPlanCard />
+        <DashboardPlanSection onNavigate={onNavigate} />
       </div>
 
       {/* Row 2: Stats */}
