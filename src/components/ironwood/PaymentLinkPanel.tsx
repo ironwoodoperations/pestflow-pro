@@ -2,12 +2,6 @@ import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { Prospect } from './types'
 
-const PKG_TYPE: Record<string, string> = {
-  'template-launch': 'template-launch',
-  'growth-setup':    'growth-setup',
-  'site-migration':  'site-migration',
-  'custom-rebuild':  'custom-rebuild',
-}
 
 interface Props {
   prospect: Partial<Prospect>

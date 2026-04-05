@@ -25,10 +25,11 @@ function initials(name: string | null) {
 }
 
 export default function PipelineBoard() {
-  const [prospects, setProspects]     = useState<Prospect[]>([])
-  const [salespeople, setSalespeople] = useState<Salesperson[]>([])
-  const [selectedId, setSelectedId]   = useState<string | null>(undefined as any)
-  const [showNew, setShowNew]         = useState(false)
+  const [prospects, setProspects]       = useState<Prospect[]>([])
+  const [salespeople, setSalespeople]   = useState<Salesperson[]>([])
+  const [selectedId, setSelectedId]     = useState<string | null>(undefined as any)
+  const [showNew, setShowNew]           = useState(false)
+  const [churnedOpen, setChurnedOpen]   = useState(false)
 
   const load = useCallback(async () => {
     const [{ data: p }, { data: s }] = await Promise.all([
@@ -63,49 +64,65 @@ export default function PipelineBoard() {
       </div>
 
       <div className="flex-1 overflow-x-auto">
-        <div className="flex gap-3 p-4 h-full" style={{ minWidth: `${STAGES.length * 200}px` }}>
-          {STAGES.map(stage => (
-            <div key={stage} className="flex flex-col w-48 shrink-0">
+        <div className="flex gap-3 p-4 h-full" style={{ minWidth: `${(STAGES.length - 1) * 200 + 60}px` }}>
+          {STAGES.map(stage => {
+            const isChurned = stage === 'churned'
+            return (
+            <div key={stage} className={`flex flex-col shrink-0 ${isChurned ? (churnedOpen ? 'w-48' : 'w-14') : 'w-48'}`}>
               <div className="flex items-center gap-2 mb-2">
-                <span className={`text-xs font-semibold px-2 py-0.5 rounded capitalize ${STAGE_COLORS[stage]} text-white`}>
-                  {stage}
-                </span>
-                <span className="text-xs text-gray-500">{grouped[stage].length}</span>
+                {isChurned ? (
+                  <button
+                    onClick={() => setChurnedOpen(o => !o)}
+                    className={`text-xs font-semibold px-2 py-0.5 rounded capitalize ${STAGE_COLORS[stage]} text-white flex items-center gap-1`}
+                  >
+                    {churnedOpen ? '◂' : '▸'} {churnedOpen ? 'Churned' : ''} ({grouped[stage].length})
+                  </button>
+                ) : (
+                  <>
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded capitalize ${STAGE_COLORS[stage]} text-white`}>
+                      {stage}
+                    </span>
+                    <span className="text-xs text-gray-500">{grouped[stage].length}</span>
+                  </>
+                )}
               </div>
-              <div className="flex-1 space-y-2 overflow-y-auto">
-                {grouped[stage].map(p => {
-                  const sp = p.salesperson_id ? spMap[p.salesperson_id] : null
-                  return (
-                    <button
-                      key={p.id}
-                      onClick={() => { setSelectedId(p.id); setShowNew(false) }}
-                      className="w-full text-left bg-gray-800 hover:bg-gray-750 border border-gray-700 rounded-lg p-3 space-y-1.5"
-                    >
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-semibold text-white text-sm leading-tight">{p.company_name}</span>
-                        {p.tenant_id && !p.provisioned_at && (
-                          <span className="text-xs px-1 py-0.5 rounded bg-purple-800/60 text-purple-300 shrink-0">From Wizard</span>
-                        )}
-                      </div>
-                      {p.contact_name && <div className="text-xs text-gray-400">{p.contact_name}</div>}
-                      {p.phone && <a href={`tel:${p.phone}`} onClick={e => e.stopPropagation()} className="block text-xs text-blue-400 hover:underline">{p.phone}</a>}
-                      <div className="flex items-center justify-between mt-1">
-                        {p.plan_name && (
-                          <span className={`text-xs px-1.5 py-0.5 rounded text-white ${PLAN_BADGE[p.plan_name] || 'bg-gray-600'}`}>
-                            {p.plan_name}
-                          </span>
-                        )}
-                        <div className="flex items-center gap-1 ml-auto">
-                          {sp && <span className="text-xs bg-emerald-800 text-emerald-200 rounded-full w-5 h-5 flex items-center justify-center font-bold">{initials(sp.name)}</span>}
-                          <span className="text-xs text-gray-500">D{daysSince(p.updated_at)}</span>
+              {(!isChurned || churnedOpen) && (
+                <div className="flex-1 space-y-2 overflow-y-auto">
+                  {grouped[stage].map(p => {
+                    const sp = p.salesperson_id ? spMap[p.salesperson_id] : null
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => { setSelectedId(p.id); setShowNew(false) }}
+                        className="w-full text-left bg-gray-800 hover:bg-gray-750 border border-gray-700 rounded-lg p-3 space-y-1.5"
+                      >
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-semibold text-white text-sm leading-tight">{p.company_name}</span>
+                          {p.tenant_id && !p.provisioned_at && (
+                            <span className="text-xs px-1 py-0.5 rounded bg-purple-800/60 text-purple-300 shrink-0">From Wizard</span>
+                          )}
                         </div>
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
+                        {p.contact_name && <div className="text-xs text-gray-400">{p.contact_name}</div>}
+                        {p.phone && <a href={`tel:${p.phone}`} onClick={e => e.stopPropagation()} className="block text-xs text-blue-400 hover:underline">{p.phone}</a>}
+                        <div className="flex items-center justify-between mt-1">
+                          {p.plan_name && (
+                            <span className={`text-xs px-1.5 py-0.5 rounded text-white ${PLAN_BADGE[p.plan_name] || 'bg-gray-600'}`}>
+                              {p.plan_name}
+                            </span>
+                          )}
+                          <div className="flex items-center gap-1 ml-auto">
+                            {sp && <span className="text-xs bg-emerald-800 text-emerald-200 rounded-full w-5 h-5 flex items-center justify-center font-bold">{initials(sp.name)}</span>}
+                            <span className="text-xs text-gray-500">D{daysSince(p.updated_at)}</span>
+                          </div>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
             </div>
-          ))}
+            )
+          })}
         </div>
       </div>
 
