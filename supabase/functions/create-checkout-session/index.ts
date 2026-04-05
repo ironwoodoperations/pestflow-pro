@@ -87,14 +87,27 @@ Deno.serve(async (req: Request) => {
 
     console.log(`Setup fee line item: ${JSON.stringify(setupItem)}`)
 
-    // Create Checkout Session — subscription mode with setup fee as an explicit item
+    // Create invoice item on customer BEFORE session — Stripe bundles it into first invoice
+    // and shows it as a visible line item on the checkout page
+    if (setup_amount_override && setup_amount_override > 0) {
+      await stripe.invoiceItems.create({
+        customer: customer.id,
+        amount: setup_amount_override,
+        currency: 'usd',
+        description: 'Setup Fee (Custom)',
+      })
+    } else if (setupPriceId) {
+      await stripe.invoiceItems.create({
+        customer: customer.id,
+        price: setupPriceId,
+      })
+    }
+    // Create Checkout Session — subscription mode, invoice item above appears automatically
     const session = await stripe.checkout.sessions.create({
       customer: customer.id,
       mode: 'subscription',
       line_items: [{ price: subscriptionPriceId, quantity: 1 }],
-      subscription_data: {
-        add_invoice_items: [setupItem],
-      },
+      subscription_data: {},
       success_url: `https://${slug}.pestflowpro.com/payment-success`,
       cancel_url: `https://pestflowpro.com/admin?payment=cancelled`,
       metadata: { tenant_id: tenant_id || '', slug, client_email },
