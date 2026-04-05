@@ -1,4 +1,4 @@
-import { usePlan } from './usePlan'
+import { usePlan } from '../../hooks/usePlan'
 
 const TIERS = [
   { value: 1, label: 'S', name: 'Starter' },

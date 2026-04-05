@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# AI session context files
+pestflow-pro-context-s*.md
+*-context-session*.md

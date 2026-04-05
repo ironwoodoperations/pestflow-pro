@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
 import { PreviewModeContext } from '../../hooks/usePreviewMode'
-import { usePlan } from '../../components/admin/usePlan'
+import { usePlan } from '../../hooks/usePlan'
 import {
   FileText, Search, BookOpen, Share2, Star,
   MapPin, BarChart3, Users, Settings, LogOut, ExternalLink, Eye, EyeOff,

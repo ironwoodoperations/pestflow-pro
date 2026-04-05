@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
-import { usePlan } from '../usePlan'
+import { usePlan } from '../../../hooks/usePlan'
 
 const TIERS = [
   {
