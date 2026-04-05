@@ -65,6 +65,16 @@ export default function Onboarding() {
     if (locationRows.length > 0) {
       await supabase.from('location_data').upsert(locationRows, { onConflict: 'tenant_id,slug' })
     }
+    // Bridge to Ironwood CRM — upsert prospect so it appears in pipeline
+    await supabase.from('prospects').upsert({
+      status: 'onboarding',
+      company_name: form.businessName || '',
+      phone: form.phone || null,
+      email: form.email || null,
+      tenant_id: tenantId,
+      business_info: { name: form.businessName, phone: form.phone, email: form.email, address: form.address, hours: form.hours, tagline: form.tagline, industry: form.industry, license: form.license },
+      branding: { logo_url: form.logoUrl, primary_color: form.primaryColor, accent_color: form.accentColor, template: form.template },
+    }, { onConflict: 'tenant_id' })
     navigate('/admin/dashboard')
   }
 

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { Prospect } from './types'
+import CredentialField from './CredentialField'
 
 interface Props {
   form: Partial<Prospect>
@@ -9,10 +10,14 @@ interface Props {
 }
 
 export default function ProvisioningSection({ form, prospectId, onProvisioned }: Props) {
-  const [confirming, setConfirming] = useState(false)
+  const [confirming, setConfirming]   = useState(false)
   const [provisioning, setProvisioning] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError]             = useState<string | null>(null)
+  const [fbSaved, setFbSaved]         = useState(false)
+  const [gbSaved, setGbSaved]         = useState(false)
+  const [skipCreds, setSkipCreds]     = useState(false)
   const canCreate = !!form.slug && !!form.admin_email
+  const canReveal = skipCreds || (fbSaved && gbSaved)
 
   const handleReveal = async () => {
     if (!prospectId) return
@@ -67,7 +72,7 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
 
   if (form.provisioned_at) {
     return (
-      <div className="space-y-3">
+      <div className="space-y-4">
         <h3 className="font-semibold text-gray-200 border-b border-gray-700 pb-1">Provisioning</h3>
         <span className="inline-flex items-center gap-1 text-xs bg-green-800/60 text-green-300 px-2 py-1 rounded">
           ✓ Provisioned {new Date(form.provisioned_at).toLocaleDateString()}
@@ -80,11 +85,66 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
             🔑 {form.slug}.pestflowpro.com/admin
           </a>
         </div>
-        {!form.site_revealed_at && (
-          <button onClick={handleReveal} className="px-4 py-2 bg-amber-600 text-white text-sm rounded hover:bg-amber-500">
-            Mark as Revealed →
-          </button>
+
+        {/* Reveal Call Checklist */}
+        {!form.site_revealed_at && form.tenant_id && (
+          <div className="border border-gray-700 rounded-lg p-4 space-y-4 bg-gray-900/40">
+            <h4 className="font-semibold text-amber-300 text-sm">Reveal Call Checklist</h4>
+
+            <CredentialField
+              label="Facebook Page Access Token"
+              hint="Client authorizes during reveal call. Walk them to facebook.com/developers → their app → Access Token."
+              tenantId={form.tenant_id}
+              settingKey="facebook_access_token"
+              onSaved={() => setFbSaved(true)}
+            />
+
+            <CredentialField
+              label="Google Business Profile Token"
+              hint="Client authorizes via Google OAuth during reveal call."
+              tenantId={form.tenant_id}
+              settingKey="google_business_token"
+              onSaved={() => setGbSaved(true)}
+            />
+
+            <div className="space-y-1.5 pt-1">
+              <div className="flex items-center gap-2 text-sm text-gray-300">
+                <span className={fbSaved ? 'text-emerald-400' : 'text-gray-600'}>
+                  {fbSaved ? '☑' : '☐'}
+                </span>
+                Facebook token collected and saved
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-300">
+                <span className={gbSaved ? 'text-emerald-400' : 'text-gray-600'}>
+                  {gbSaved ? '☑' : '☐'}
+                </span>
+                Google Business token collected and saved
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-300">
+                <span className="text-gray-600">☐</span>
+                Site URL confirmed working
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-300">
+                <span className="text-gray-600">☐</span>
+                Admin login confirmed working
+              </div>
+            </div>
+
+            <label className="flex items-center gap-2 text-xs text-gray-500">
+              <input type="checkbox" checked={skipCreds} onChange={e => setSkipCreds(e.target.checked)} />
+              Skip credentials for now (override)
+            </label>
+
+            <button
+              onClick={handleReveal}
+              disabled={!canReveal}
+              className="px-4 py-2 bg-amber-600 text-white text-sm rounded hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Mark as Revealed →
+            </button>
+          </div>
         )}
+
         {form.site_revealed_at && (
           <p className="text-xs text-gray-500">Revealed {new Date(form.site_revealed_at).toLocaleDateString()}</p>
         )}

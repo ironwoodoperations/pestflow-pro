@@ -7,8 +7,8 @@ const SHELLS = [
   { id: 'rustic-rugged',   name: 'Rustic & Rugged' },
   { id: 'youpest',         name: 'YouPest' },
 ]
+// name, phone, email are auto-populated from Contact section — read-only here
 const BI_FIELDS: [string, string][] = [
-  ['name','Business Name'],['phone','Phone'],['email','Email'],
   ['address','Address'],['hours','Hours'],['tagline','Tagline'],
   ['industry','Industry'],['license','License #'],
   ['certifications','Certifications'],['founded_year','Founded Year'],
@@ -58,6 +58,20 @@ export default function SiteSetupSection({ form, setField, onBlur }: Props) {
       </div>
 
       <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wide pt-1">Business Info</h4>
+      {/* Name, Phone, Email are synced from Contact section above */}
+      <div className="grid grid-cols-3 gap-2 mb-2">
+        {([['company_name','Business Name'],['phone','Phone'],['email','Email']] as [keyof typeof form, string][]).map(([k, lbl]) => (
+          <div key={String(k)}>
+            <label className="text-xs text-gray-400">{lbl}</label>
+            <div className="flex items-center gap-1">
+              <span className="block w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm text-gray-400 truncate">
+                {(form as any)[k] || <span className="italic text-gray-600">from contact</span>}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+      <p className="text-xs text-gray-600 italic -mt-1 mb-2">Name, phone, and email sync automatically from the Contact section.</p>
       <div className="grid grid-cols-2 gap-2">
         {BI_FIELDS.map(([k, lbl]) => (
           <div key={k}>

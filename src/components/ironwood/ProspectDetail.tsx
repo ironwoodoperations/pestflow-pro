@@ -17,11 +17,12 @@ function slugify(name: string) {
 }
 
 export default function ProspectDetail({ prospectId, salespeople, onClose }: Props) {
-  const [form, setForm]       = useState<Partial<Prospect>>({ status: 'prospect', business_info: {}, branding: {}, customization: {} })
-  const [saved, setSaved]     = useState(false)
-  const [loading, setLoading] = useState(!!prospectId)
-  const [id, setId]           = useState<string | null>(prospectId)
-  const timer                 = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const [form, setForm]             = useState<Partial<Prospect>>({ status: 'prospect', business_info: {}, branding: {}, customization: {} })
+  const [saved, setSaved]           = useState(false)
+  const [loading, setLoading]       = useState(!!prospectId)
+  const [id, setId]                 = useState<string | null>(prospectId)
+  const [slugEdited, setSlugEdited] = useState(false)
+  const timer                       = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   useEffect(() => {
     if (!prospectId) return
@@ -38,15 +39,23 @@ export default function ProspectDetail({ prospectId, salespeople, onClose }: Pro
   const save = useCallback(async (latest?: Partial<Prospect>) => {
     const data = latest ?? form
     if (!data.company_name?.trim()) return
+    // Sync contact fields into business_info so provisioning uses the right values
+    const syncedBi = {
+      ...(data.business_info || {}),
+      name:  data.company_name || (data.business_info as any)?.name || '',
+      phone: data.phone        || (data.business_info as any)?.phone || '',
+      email: data.email        || (data.business_info as any)?.email || '',
+    }
+    const dataToSave = { ...data, business_info: syncedBi }
     let saved_id = id
     if (!saved_id) {
       const { data: row, error } = await supabase.from('prospects').insert({
-        ...data,
-        status: data.status || 'prospect',
+        ...dataToSave,
+        status: dataToSave.status || 'prospect',
       }).select('id').single()
       if (!error && row) { saved_id = row.id; setId(row.id) }
     } else {
-      await supabase.from('prospects').update({ ...data, updated_at: new Date().toISOString() }).eq('id', saved_id)
+      await supabase.from('prospects').update({ ...dataToSave, updated_at: new Date().toISOString() }).eq('id', saved_id)
     }
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
@@ -57,15 +66,13 @@ export default function ProspectDetail({ prospectId, salespeople, onClose }: Pro
     timer.current = setTimeout(() => save(), 800)
   }, [save])
 
-  // Auto-generate slug when company name changes
+  // Auto-generate slug when company name changes (stops once user manually edits slug)
   const handleCompanyName = (v: string) => {
     setField('company_name', v)
-    if (!form.slug) {
+    if (!slugEdited) {
       setField('slug', slugify(v))
-      const bi = form.business_info || {}
-      if (!bi.name) setField('business_info', { ...bi, name: v })
     }
-    // suggest admin password
+    // suggest admin password on new prospects
     if (!form.admin_password && v) {
       const word = v.replace(/[^A-Za-z]/g, '').slice(0, 10)
       setField('admin_password', `${word}2026!`)
@@ -74,8 +81,13 @@ export default function ProspectDetail({ prospectId, salespeople, onClose }: Pro
 
   const wrappedSetField = useCallback((k: string, v: any) => {
     if (k === 'company_name') handleCompanyName(v)
-    else setField(k, v)
-  }, [form, setField]) // eslint-disable-line
+    else if (k === 'slug') {
+      setSlugEdited(true)
+      setField('slug', v)
+    } else {
+      setField(k, v)
+    }
+  }, [form, setField, slugEdited]) // eslint-disable-line
 
   const onUpdate = useCallback((updates: Partial<Prospect>) => {
     setForm(f => ({ ...f, ...updates }))

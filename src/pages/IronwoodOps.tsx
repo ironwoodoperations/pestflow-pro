@@ -2,18 +2,20 @@ import { useState, useEffect, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
-const TeamTab      = lazy(() => import('../components/ironwood/TeamTab'))
-const PipelineBoard = lazy(() => import('../components/ironwood/PipelineBoard'))
-const ReportsTab   = lazy(() => import('../components/ironwood/ReportsTab'))
-const ProspectList = lazy(() => import('../components/ironwood/ProspectList'))
+const TeamTab         = lazy(() => import('../components/ironwood/TeamTab'))
+const PipelineBoard   = lazy(() => import('../components/ironwood/PipelineBoard'))
+const ReportsTab      = lazy(() => import('../components/ironwood/ReportsTab'))
+const ProspectList    = lazy(() => import('../components/ironwood/ProspectList'))
+const IntegrationsTab = lazy(() => import('../components/ironwood/IntegrationsTab'))
 
-type Tab = 'pipeline' | 'prospects' | 'reports' | 'team'
+type Tab = 'pipeline' | 'prospects' | 'reports' | 'integrations' | 'team'
 
 const NAV: { id: Tab; label: string; icon: string }[] = [
-  { id: 'pipeline',  label: 'Pipeline',  icon: '📋' },
-  { id: 'prospects', label: 'Prospects', icon: '👤' },
-  { id: 'reports',   label: 'Reports',   icon: '📊' },
-  { id: 'team',      label: 'Team',      icon: '👥' },
+  { id: 'pipeline',     label: 'Pipeline',     icon: '📋' },
+  { id: 'prospects',    label: 'Prospects',    icon: '👤' },
+  { id: 'reports',      label: 'Reports',      icon: '📊' },
+  { id: 'integrations', label: 'Integrations', icon: '🔑' },
+  { id: 'team',         label: 'Team',         icon: '👥' },
 ]
 
 const SPIN = <div className="p-8 text-gray-500 text-sm">Loading...</div>
@@ -73,10 +75,11 @@ export default function IronwoodOps() {
       {/* Main content */}
       <main className="flex-1 overflow-auto min-w-0">
         <Suspense fallback={SPIN}>
-          {tab === 'pipeline'  && <PipelineBoard />}
-          {tab === 'prospects' && <ProspectList />}
-          {tab === 'reports'   && <ReportsTab />}
-          {tab === 'team'      && <TeamTab />}
+          {tab === 'pipeline'     && <PipelineBoard />}
+          {tab === 'prospects'    && <ProspectList />}
+          {tab === 'reports'      && <ReportsTab />}
+          {tab === 'integrations' && <IntegrationsTab />}
+          {tab === 'team'         && <TeamTab />}
         </Suspense>
       </main>
     </div>

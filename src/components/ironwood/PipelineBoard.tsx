@@ -81,7 +81,12 @@ export default function PipelineBoard() {
                       onClick={() => { setSelectedId(p.id); setShowNew(false) }}
                       className="w-full text-left bg-gray-800 hover:bg-gray-750 border border-gray-700 rounded-lg p-3 space-y-1.5"
                     >
-                      <div className="font-semibold text-white text-sm leading-tight">{p.company_name}</div>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-semibold text-white text-sm leading-tight">{p.company_name}</span>
+                        {p.tenant_id && !p.provisioned_at && (
+                          <span className="text-xs px-1 py-0.5 rounded bg-purple-800/60 text-purple-300 shrink-0">From Wizard</span>
+                        )}
+                      </div>
                       {p.contact_name && <div className="text-xs text-gray-400">{p.contact_name}</div>}
                       {p.phone && <a href={`tel:${p.phone}`} onClick={e => e.stopPropagation()} className="block text-xs text-blue-400 hover:underline">{p.phone}</a>}
                       <div className="flex items-center justify-between mt-1">

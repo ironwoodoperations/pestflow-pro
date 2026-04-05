@@ -14,6 +14,8 @@ export default function TeamTab() {
   const [form, setForm]         = useState<Partial<Salesperson> | null>(null)
   const [saving, setSaving]     = useState(false)
   const [isNew, setIsNew]       = useState(false)
+  const [inviting, setInviting] = useState<string | null>(null)
+  const [inviteErr, setInviteErr] = useState<string | null>(null)
 
   const load = async () => {
     const { data } = await supabase.from('salespeople').select('*').order('name')
@@ -40,6 +42,33 @@ export default function TeamTab() {
   const toggleActive = async (id: string, active: boolean) => {
     await supabase.from('salespeople').update({ active }).eq('id', id)
     load()
+  }
+
+  const sendInvite = async (p: Salesperson) => {
+    if (!p.email) { setInviteErr('Rep has no email address.'); return }
+    setInviting(p.id)
+    setInviteErr(null)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invite-salesperson`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ email: p.email, name: p.name }),
+      })
+      const data = await res.json()
+      if (!data.success) { setInviteErr(data.error || 'Invite failed'); return }
+      const now = new Date().toISOString()
+      await supabase.from('salespeople').update({ invited_at: now }).eq('id', p.id)
+      load()
+    } catch (e: any) {
+      setInviteErr(e.message || 'Network error')
+    } finally {
+      setInviting(null)
+    }
   }
 
   const BADGE = (active: boolean) =>
@@ -73,10 +102,16 @@ export default function TeamTab() {
             <div><label className="text-xs text-gray-400">Cal.com Booking URL</label>
               <input className={inp} value={form.cal_booking_url || ''} onChange={e => sf('cal_booking_url', e.target.value)} placeholder="https://cal.com/..." /></div>
             <div className="grid grid-cols-2 gap-3">
-              <div><label className="text-xs text-gray-400">Setup Commission %</label>
-                <input type="number" className={inp} value={form.commission_setup_pct ?? 10} onChange={e => sf('commission_setup_pct', parseFloat(e.target.value))} /></div>
-              <div><label className="text-xs text-gray-400">Recurring Commission %</label>
-                <input type="number" className={inp} value={form.commission_recurring_pct ?? 5} onChange={e => sf('commission_recurring_pct', parseFloat(e.target.value))} /></div>
+              <div>
+                <label className="text-xs text-gray-400">One-Time Fee Commission %</label>
+                <p className="text-xs text-gray-600 mb-0.5">% of setup fee paid on deal close</p>
+                <input type="number" className={inp} value={form.commission_setup_pct ?? 10} onChange={e => sf('commission_setup_pct', parseFloat(e.target.value))} />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400">Monthly Recurring Commission %</label>
+                <p className="text-xs text-gray-600 mb-0.5">% of monthly plan, paid each month client is active</p>
+                <input type="number" className={inp} value={form.commission_recurring_pct ?? 5} onChange={e => sf('commission_recurring_pct', parseFloat(e.target.value))} />
+              </div>
             </div>
             <label className="flex items-center gap-2 text-sm text-gray-300">
               <input type="checkbox" checked={form.active ?? true} onChange={e => sf('active', e.target.checked)} /> Active
@@ -89,6 +124,10 @@ export default function TeamTab() {
             </div>
           </div>
         </div>
+      )}
+
+      {inviteErr && (
+        <p className="text-red-400 text-xs bg-red-900/20 border border-red-800 rounded px-3 py-2 mb-3">{inviteErr}</p>
       )}
 
       {/* Table */}
@@ -110,10 +149,17 @@ export default function TeamTab() {
                 <td className="py-2 text-gray-300">{p.commission_setup_pct}%</td>
                 <td className="py-2 text-gray-300">{p.commission_recurring_pct}%</td>
                 <td className="py-2"><span className={`text-xs px-2 py-0.5 rounded ${BADGE(p.active)}`}>{p.active ? 'Active' : 'Inactive'}</span></td>
-                <td className="py-2 flex gap-2">
+                <td className="py-2 flex gap-2 flex-wrap">
                   {p.cal_booking_url && <a href={p.cal_booking_url} target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:underline">📅 Book</a>}
                   <button onClick={() => { setForm({ ...p }); setIsNew(false) }} className="text-xs text-emerald-400 hover:underline">Edit</button>
                   <button onClick={() => toggleActive(p.id, !p.active)} className="text-xs text-gray-400 hover:underline">{p.active ? 'Deactivate' : 'Activate'}</button>
+                  {p.invited_at ? (
+                    <span className="text-xs text-gray-500">Invited ✓ {new Date(p.invited_at).toLocaleDateString()}</span>
+                  ) : (
+                    <button onClick={() => sendInvite(p)} disabled={inviting === p.id} className="text-xs text-amber-400 hover:underline disabled:opacity-50">
+                      {inviting === p.id ? 'Inviting…' : 'Invite'}
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}

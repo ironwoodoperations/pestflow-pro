@@ -77,6 +77,15 @@ export default function ReportsTab() {
     }
   }).filter(r => r.deals > 0)
 
+  // Onboarding payouts — $100 per completed onboarding (provisioned or active)
+  const onboardedStatuses: string[] = ['provisioned', 'active']
+  const onboardingRows = salespeople.map(sp => {
+    const count = prospects.filter(p =>
+      (p as any).onboarding_rep_id === sp.id && onboardedStatuses.includes(p.status)
+    ).length
+    return { sp, count, payout: count * 100 }
+  }).filter(r => r.count > 0)
+
   return (
     <div className="p-6 space-y-8">
       <h2 className="text-xl font-bold text-white">Reports</h2>
@@ -134,6 +143,36 @@ export default function ReportsTab() {
                       <td className="py-2 text-gray-300">{fmt(r.mrr)}/mo</td>
                       <td className="py-2 text-emerald-400">{fmt(r.setupComm)}</td>
                       <td className="py-2 text-emerald-400">{fmt(r.recurComm)}/mo</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+      </section>
+
+      {/* Onboarding Payouts */}
+      <section>
+        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-1">Onboarding Payouts</h3>
+        <p className="text-xs text-gray-600 mb-3">Onboarding is paid at $100 flat per completed onboarding (provisioned or active status).</p>
+        {onboardingRows.length === 0
+          ? <p className="text-gray-600 text-sm">No completed onboardings with assigned reps.</p>
+          : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-gray-400 border-b border-gray-800">
+                    <th className="pb-2">Rep</th>
+                    <th className="pb-2">Onboardings Completed</th>
+                    <th className="pb-2">Onboarding Payout</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {onboardingRows.map(r => (
+                    <tr key={r.sp.id} className="border-b border-gray-800/50">
+                      <td className="py-2 font-medium text-white">{r.sp.name}</td>
+                      <td className="py-2 text-gray-300">{r.count}</td>
+                      <td className="py-2 text-emerald-400">{fmt(r.payout)}</td>
                     </tr>
                   ))}
                 </tbody>

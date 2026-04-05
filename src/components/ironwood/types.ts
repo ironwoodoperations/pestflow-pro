@@ -11,6 +11,7 @@ export interface Salesperson {
   active: boolean
   commission_setup_pct: number
   commission_recurring_pct: number
+  invited_at?: string | null
   created_at?: string
 }
 
@@ -51,4 +52,5 @@ export interface Prospect {
   provisioned_at: string | null
   site_revealed_at: string | null
   salesperson_id: string | null
+  onboarding_rep_id: string | null
 }

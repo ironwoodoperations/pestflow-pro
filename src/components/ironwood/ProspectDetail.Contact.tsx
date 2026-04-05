@@ -50,6 +50,17 @@ export default function ContactSection({ form, setField, onBlur, salespeople }: 
           </select>
         </div>
         <div>
+          <label className="text-xs text-gray-400">Onboarding Rep</label>
+          <p className="text-xs text-gray-600 mb-0.5">Flat $100 per completed onboarding</p>
+          <select className={inp} value={form.onboarding_rep_id || ''}
+            onChange={e => { setField('onboarding_rep_id', e.target.value || null); onBlur() }}>
+            <option value="">— None —</option>
+            {salespeople.filter(s => s.active).map(s => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+        </div>
+        <div>
           <label className="text-xs text-gray-400">Status</label>
           <select className={inp} value={form.status || 'prospect'}
             onChange={e => { setField('status', e.target.value); onBlur() }}>
