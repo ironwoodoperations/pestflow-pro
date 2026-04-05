@@ -81,6 +81,7 @@ export default function LegacyComposer({ onClose, onPosted }: Props) {
           saving={c.saving}
           editingPostId={c.editingPostId}
           schedulingDayCap={c.schedulingDayCap}
+          isStarter={c.tier < 2}
           onScheduleModeChange={m => c.setForm(prev => ({ ...prev, scheduleMode: m }))}
           onScheduledForChange={v => c.setForm(prev => ({ ...prev, scheduledFor: v }))}
           onGetSmartSchedule={c.getSmartSchedule}

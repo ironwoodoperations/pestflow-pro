@@ -15,6 +15,8 @@ export interface SocialPost {
   published_at: string | null
   fb_post_id: string | null
   error_msg: string | null
+  ai_generated: boolean | null
+  campaign_title: string | null
   created_at: string
 }
 

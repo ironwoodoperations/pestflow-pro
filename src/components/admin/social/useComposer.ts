@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../hooks/useTenant'
 import { usePlan } from '../../../context/PlanContext'
@@ -138,6 +139,20 @@ export function useComposer(onPosted?: () => void) {
   async function publishNow() {
     if (!form.caption.trim() || !tenantId) return
     setPublishing(true)
+
+    // Starter (tier 1): save as 'sent' draft and prompt copy-paste
+    if (tier < 2) {
+      const postData = {
+        tenant_id: tenantId, platform: form.platform, caption: form.caption,
+        image_url: form.imageUrl || null, status: 'sent' as const, ai_generated: aiCaptions.length > 0,
+        scheduled_for: null,
+      }
+      if (editingPostId) { await supabase.from('social_posts').update(postData).eq('id', editingPostId) }
+      else { await supabase.from('social_posts').insert(postData) }
+      toast.info('Post saved! Copy this post and paste it to your Facebook page.')
+      resetForm(); setPublishing(false); onPosted?.(); return
+    }
+
     const { data: intgData } = await supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle()
     const intg = intgData?.value || {}
     const postData = {
@@ -157,6 +172,7 @@ export function useComposer(onPosted?: () => void) {
     const fbToken = intg.facebook_access_token; const fbPageId = intg.facebook_page_id
     if (!fbToken || !fbPageId) {
       await supabase.from('social_posts').update({ status: 'draft' }).eq('id', postId)
+      toast.info('Connect Facebook in Settings → Integrations to post directly.')
       resetForm(); setPublishing(false); onPosted?.(); return
     }
     try {
@@ -193,7 +209,7 @@ export function useComposer(onPosted?: () => void) {
     aiDailyCount, aiDailyLimit, schedulingDayCap,
     pexelsResults, pexelsLoading, selectedPexelsUrl, publishing, saving,
     businessName, industry, pexelsApiKey, loading, editingPostId, smartSchedule,
-    smartLoading, captionRef, charLimit,
+    smartLoading, captionRef, charLimit, tier,
     generateCaptions, searchPexels, selectPexelsPhoto, getSmartSchedule,
     saveAsDraft, publishNow, appendEmoji, resetForm,
   }

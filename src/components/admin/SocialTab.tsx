@@ -108,7 +108,7 @@ export default function SocialTab({ onNavigate }: Props) {
           <div className="max-w-md w-full bg-white rounded-xl shadow-xl p-6" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-semibold text-gray-900 mb-1">What would you like to create?</h3>
             <p className="text-sm text-gray-500 mb-5">Choose a post type to get started.</p>
-            <div className="grid grid-cols-2 gap-4 mb-5">
+            <div className={`grid gap-4 mb-5 ${canAccess(3) ? 'grid-cols-2' : 'grid-cols-1'}`}>
               <button onClick={() => setPostFlow('single')}
                 className="border-2 border-gray-200 rounded-xl p-5 text-left hover:border-emerald-500 hover:bg-emerald-50 transition group">
                 <FileText className="w-8 h-8 text-gray-400 group-hover:text-emerald-500 mb-3 transition" />
@@ -116,14 +116,19 @@ export default function SocialTab({ onNavigate }: Props) {
                 <p className="text-xs text-gray-500 mt-1">Create and schedule one post for a specific date.</p>
                 <span className="mt-3 inline-block text-xs font-medium text-emerald-600">Create Single Post →</span>
               </button>
-              <button onClick={() => setPostFlow('campaign')}
-                className="border-2 border-gray-200 rounded-xl p-5 text-left hover:border-emerald-500 hover:bg-emerald-50 transition group">
-                <LayoutGrid className="w-8 h-8 text-gray-400 group-hover:text-emerald-500 mb-3 transition" />
-                <p className="font-semibold text-gray-900 text-sm">Campaign</p>
-                <p className="text-xs text-gray-500 mt-1">Plan a series of posts around a theme or promotion.</p>
-                <span className="mt-3 inline-block text-xs font-medium text-emerald-600">Start a Campaign →</span>
-              </button>
+              {canAccess(3) && (
+                <button onClick={() => setPostFlow('campaign')}
+                  className="border-2 border-gray-200 rounded-xl p-5 text-left hover:border-emerald-500 hover:bg-emerald-50 transition group">
+                  <LayoutGrid className="w-8 h-8 text-gray-400 group-hover:text-emerald-500 mb-3 transition" />
+                  <p className="font-semibold text-gray-900 text-sm">Campaign</p>
+                  <p className="text-xs text-gray-500 mt-1">Plan a series of posts around a theme or promotion.</p>
+                  <span className="mt-3 inline-block text-xs font-medium text-emerald-600">Start a Campaign →</span>
+                </button>
+              )}
             </div>
+            {!canAccess(3) && (
+              <p className="text-xs text-gray-400 mb-4 text-center">Upgrade to Pro to unlock AI Campaign creation.</p>
+            )}
             <button onClick={() => setPostFlow('none')} className="text-sm text-gray-400 hover:text-gray-600 w-full text-center">Cancel</button>
           </div>
         </div>
