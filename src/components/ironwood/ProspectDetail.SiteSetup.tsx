@@ -2,7 +2,7 @@ import type { Prospect } from './types'
 
 const SHELLS = [
   { id: 'modern-pro',      name: 'Modern Pro' },
-  { id: 'bold-local',      name: 'Bold Local' },
+  { id: 'bold-local',      name: 'Bold & Local' },
   { id: 'clean-friendly',  name: 'Clean & Friendly' },
   { id: 'rustic-rugged',   name: 'Rustic & Rugged' },
   { id: 'youpest',         name: 'YouPest' },
