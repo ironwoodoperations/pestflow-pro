@@ -14,7 +14,7 @@ const STEP_LABELS = ['Business', 'Branding', 'Domain', 'Social', 'Plan', 'Review
 interface State { form: ClientSetupForm; step: number }
 
 function canAdvance(step: number, form: ClientSetupForm): boolean {
-  if (step === 1) return !!(form.biz_name.trim() && form.slug.trim() && form.phone.trim() && form.email.trim() && form.address.trim())
+  if (step === 1) return !!(form.biz_name.trim() && form.slug.trim() && form.phone.trim() && form.email.trim() && form.address.trim() && form.admin_password.trim())
   if (step === 2) return !!form.package_type
   if (step === 5) return !!form.plan
   return true

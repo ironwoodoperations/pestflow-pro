@@ -26,14 +26,15 @@ const PLAN_PRICE_MAP: Record<string, string> = {
 }
 
 interface RequestBody {
-  tenant_id: string
+  tenant_id?: string
   client_email: string
   client_name: string
   package_type: 'template-launch' | 'growth-setup' | 'site-migration' | 'custom-rebuild'
-  setup_amount_override?: number  // in cents — only when custom price passkey used
+  setup_amount_override?: number  // in cents
   plan: 'starter' | 'grow' | 'pro' | 'elite'
   slug: string
-  provision_data: Record<string, unknown>
+  onboarding_session_id: string
+  provision_data?: Record<string, unknown> // legacy — kept for backwards compat
 }
 
 Deno.serve(async (req: Request) => {
@@ -44,7 +45,7 @@ Deno.serve(async (req: Request) => {
 
   try {
     const body: RequestBody = await req.json()
-    const { tenant_id, client_email, client_name, package_type, setup_amount_override, plan, slug, provision_data } = body
+    const { tenant_id, client_email, client_name, package_type, setup_amount_override, plan, slug, onboarding_session_id, provision_data } = body
 
     if (!client_email || !slug) return json({ error: 'client_email and slug are required' }, 400)
     if (!package_type) return json({ error: 'package_type is required' }, 400)
@@ -110,7 +111,7 @@ Deno.serve(async (req: Request) => {
       subscription_data: {},
       success_url: `https://${slug}.pestflowpro.com/payment-success`,
       cancel_url: `https://pestflowpro.com/admin?payment=cancelled`,
-      metadata: { tenant_id: tenant_id || '', slug, client_email },
+      metadata: { tenant_id: tenant_id || '', slug, client_email, onboarding_session_id: onboarding_session_id || '' },
     })
 
     console.log(`Checkout session created: ${session.id}`)

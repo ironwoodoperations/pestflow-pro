@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Copy, Check, AlertCircle } from 'lucide-react'
+import { supabase } from '../../../lib/supabase'
 import { type ClientSetupForm } from './types'
 import { IMPLEMENTATION_PACKAGES } from '../../../lib/pricingConfig'
 
@@ -14,48 +15,102 @@ const PACKAGE_LABELS: Record<string, string> = Object.fromEntries(
   IMPLEMENTATION_PACKAGES.map(p => [p.id, `${p.label} — ${p.badge}`])
 )
 
+const PLAN_TIER_MAP:  Record<string, number> = { starter: 1, grow: 2, pro: 3, elite: 4 }
+const PLAN_PRICE_MAP: Record<string, number> = { starter: 149, grow: 249, pro: 349, elite: 499 }
+
 interface Props { form: ClientSetupForm }
 
 interface S {
-  customAmountDollars: string
   loading: boolean
   checkoutUrl: string
   error: string
 }
 
 export default function ClientSetupPayment({ form }: Props) {
-  const [s, setS] = useState<S>({
-    customAmountDollars: '', loading: false, checkoutUrl: '', error: '',
-  })
+  const [s, setS] = useState<S>({ loading: false, checkoutUrl: '', error: '' })
   const patch = (p: Partial<S>) => setS(prev => ({ ...prev, ...p }))
-
-  const planPriceMap: Record<string, number> = { starter: 149, grow: 249, pro: 349, elite: 499 }
-  const planTierMap: Record<string, number>  = { starter: 1, grow: 2, pro: 3, elite: 4 }
 
   async function handleGenerateLink() {
     patch({ loading: true, error: '', checkoutUrl: '' })
 
-    const setupAmountOverride = s.customAmountDollars
-      ? Math.round(parseFloat(s.customAmountDollars) * 100)
-      : undefined
-
-    const provision_data = {
-      email: form.email, slug: form.slug,
-      business_info: { name: form.biz_name, phone: form.phone, email: form.email, address: form.address, hours: form.hours, tagline: form.tagline },
-      branding: { logo_url: form.logo_url, template: form.template || 'modern-pro', primary_color: form.primary_color, accent_color: form.accent_color },
-      social_links: { facebook: form.facebook, google: form.google, instagram: form.instagram, youtube: form.youtube },
-      subscription: { tier: planTierMap[form.plan] || 1, plan_name: form.plan ? form.plan.charAt(0).toUpperCase() + form.plan.slice(1) : '', monthly_price: planPriceMap[form.plan] || 99 },
-      domain: form.domain, registrar: form.domain_registrar, current_website_url: form.current_website_url, package: form.package_type,
-    }
-
     try {
+      // Step 1: Save all wizard data to onboarding_sessions bridge table
+      const wizardData = {
+        business_info: {
+          name:            form.biz_name,
+          phone:           form.phone,
+          email:           form.email,
+          address:         form.address,
+          hours:           form.hours,
+          tagline:         form.tagline,
+          industry:        'Pest Control',
+          license:         '',
+          certifications:  '',
+          founded_year:    '',
+          num_technicians: '',
+        },
+        branding: {
+          logo_url:      form.logo_url,
+          primary_color: form.primary_color,
+          accent_color:  form.accent_color,
+          template:      form.template || 'modern-pro',
+          cta_text:      'Get a Free Quote',
+          favicon_url:   '',
+        },
+        customization: {
+          hero_headline:        form.tagline,
+          show_license:         true,
+          show_years:           true,
+          show_technicians:     true,
+          show_certifications:  true,
+        },
+        social_links: {
+          facebook:  form.facebook,
+          instagram: form.instagram,
+          google:    form.google,
+          youtube:   form.youtube,
+        },
+        subscription: {
+          tier:          PLAN_TIER_MAP[form.plan]  || 1,
+          plan_name:     form.plan ? form.plan.charAt(0).toUpperCase() + form.plan.slice(1) : 'Starter',
+          monthly_price: PLAN_PRICE_MAP[form.plan] || 149,
+        },
+        slug:             form.slug,
+        admin_password:   form.admin_password,
+        setup_fee_amount: Math.round(form.setup_fee_amount * 100), // to cents
+      }
+
+      const { data: session, error: sessionError } = await supabase
+        .from('onboarding_sessions')
+        .insert({ slug: form.slug, wizard_data: wizardData })
+        .select('id')
+        .single()
+
+      if (sessionError || !session) {
+        throw new Error('Failed to save onboarding session: ' + (sessionError?.message || 'unknown'))
+      }
+
+      // Step 2: Create Stripe checkout session, passing onboarding_session_id
       const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
-        body: JSON.stringify({ client_email: form.email, client_name: form.biz_name, package_type: form.package_type, plan: form.plan, setup_amount_override: setupAmountOverride, slug: form.slug, provision_data }),
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          client_email:          form.email,
+          client_name:           form.biz_name,
+          package_type:          form.package_type,
+          plan:                  form.plan,
+          setup_amount_override: form.setup_fee_amount > 0 ? Math.round(form.setup_fee_amount * 100) : undefined,
+          slug:                  form.slug,
+          onboarding_session_id: session.id,
+        }),
       })
+
       const data = await resp.json()
       if (data.error) { patch({ loading: false, error: data.error }); return }
+
       await navigator.clipboard.writeText(data.url).catch(() => {})
       patch({ loading: false, checkoutUrl: data.url })
     } catch (err: unknown) {
@@ -71,23 +126,15 @@ export default function ClientSetupPayment({ form }: Props) {
         <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
           <span className="text-xs text-gray-500 block">Package</span>
           <span className="text-sm font-semibold text-gray-900">
-            {s.customAmountDollars
-              ? `Custom — $${parseFloat(s.customAmountDollars).toLocaleString()}`
-              : PACKAGE_LABELS[form.package_type] || '—'}
+            {PACKAGE_LABELS[form.package_type] || '—'}
           </span>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Custom Setup Amount <span className="text-gray-400 font-normal">(optional — overrides package default)</span>
-          </label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
-            <input type="number" min="0" step="0.01" value={s.customAmountDollars}
-              onChange={e => patch({ customAmountDollars: e.target.value })}
-              placeholder="Leave blank to use package default"
-              className="w-full border border-gray-300 rounded-lg pl-7 pr-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" />
-          </div>
+        <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+          <span className="text-xs text-gray-500 block">Setup Fee</span>
+          <span className="text-sm font-semibold text-gray-900">
+            {form.setup_fee_amount > 0 ? `$${form.setup_fee_amount.toLocaleString()}` : 'Waived'}
+          </span>
         </div>
 
         <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
@@ -96,7 +143,11 @@ export default function ClientSetupPayment({ form }: Props) {
         </div>
 
         <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 space-y-1">
-          {[['Client Email', form.email || '—'], ['Business', form.biz_name || '—'], ['Site', `${form.slug || '—'}.pestflowpro.com`]].map(([label, value]) => (
+          {[
+            ['Client Email', form.email || '—'],
+            ['Business',     form.biz_name || '—'],
+            ['Site',         `${form.slug || '—'}.pestflowpro.com`],
+          ].map(([label, value]) => (
             <div key={label} className="flex justify-between text-sm">
               <span className="text-gray-500">{label}</span>
               <span className="font-medium text-gray-900">{value}</span>
@@ -113,9 +164,11 @@ export default function ClientSetupPayment({ form }: Props) {
       )}
 
       {!s.checkoutUrl ? (
-        <button onClick={handleGenerateLink}
+        <button
+          onClick={handleGenerateLink}
           disabled={s.loading || !form.email || !form.slug || !form.plan || !form.package_type}
-          className="w-full py-3 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 disabled:opacity-50 transition text-sm">
+          className="w-full py-3 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 disabled:opacity-50 transition text-sm"
+        >
           {s.loading ? 'Generating…' : 'Generate Payment Link'}
         </button>
       ) : (
@@ -125,8 +178,11 @@ export default function ClientSetupPayment({ form }: Props) {
           </div>
           <div className="flex items-center gap-2 rounded-lg bg-white border border-emerald-200 px-3 py-2">
             <span className="flex-1 text-xs font-mono text-gray-700 truncate">{s.checkoutUrl}</span>
-            <button onClick={async () => { await navigator.clipboard.writeText(s.checkoutUrl).catch(() => {}) }}
-              className="text-emerald-600 hover:text-emerald-800 flex-shrink-0" title="Copy">
+            <button
+              onClick={async () => { await navigator.clipboard.writeText(s.checkoutUrl).catch(() => {}) }}
+              className="text-emerald-600 hover:text-emerald-800 flex-shrink-0"
+              title="Copy"
+            >
               <Copy size={14} />
             </button>
           </div>

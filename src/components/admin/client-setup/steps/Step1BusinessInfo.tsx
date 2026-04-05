@@ -73,6 +73,11 @@ export default function Step1BusinessInfo({ form, setForm }: Props) {
           <label className="block text-sm font-medium text-gray-700 mb-1">Tagline</label>
           <input value={form.tagline} onChange={f('tagline')} className={INPUT} placeholder="East Texas's Most Trusted Pest Control" />
         </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Admin Password *</label>
+          <input type="password" value={form.admin_password} onChange={f('admin_password')} required className={INPUT} placeholder="Temporary password for client login" />
+          <p className="text-xs text-gray-400 mt-1">Client will use this to log in to their admin dashboard.</p>
+        </div>
       </div>
     </div>
   )

@@ -24,8 +24,11 @@ export interface ClientSetupForm {
   google: string
   instagram: string
   youtube: string
-  // Step 5 — Plan
+  // Step 5 — Plan + Setup Fee
   plan: 'starter' | 'grow' | 'pro' | 'elite' | ''
+  setup_fee_amount: number // dollars
+  // Step 1 — Admin credentials
+  admin_password: string
 }
 
 export const INITIAL_FORM: ClientSetupForm = {
@@ -51,6 +54,8 @@ export const INITIAL_FORM: ClientSetupForm = {
   instagram: '',
   youtube: '',
   plan: '',
+  setup_fee_amount: 0,
+  admin_password: '',
 }
 
 export const PLAN_LABELS: Record<string, string> = {

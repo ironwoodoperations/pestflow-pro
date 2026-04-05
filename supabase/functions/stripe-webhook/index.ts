@@ -80,19 +80,20 @@ Deno.serve(async (req: Request) => {
       const pd: Record<string, any> = payment.provision_data || {}
 
       const provisionBody = {
-        tenant_id: meta.tenant_id || pd.tenant_id || undefined,
-        slug: meta.slug || pd.slug,
-        admin_email: meta.client_email || pd.email,
-        admin_password: pd.admin_password,
+        tenant_id:             meta.tenant_id || pd.tenant_id || undefined,
+        slug:                  meta.slug || pd.slug,
+        admin_email:           meta.client_email || pd.email,
+        admin_password:        pd.admin_password,
+        onboarding_session_id: meta.onboarding_session_id || undefined,
         business_info: pd.business_info || {
           name: pd.biz_name || '', phone: pd.phone || '',
           email: meta.client_email || '', address: '', tagline: '', industry: 'Pest Control',
         },
-        branding: pd.branding || { logo_url: '', primary_color: '#10b981', template: 'modern-pro' },
+        branding:     pd.branding     || { logo_url: '', primary_color: '#10b981', template: 'modern-pro' },
         social_links: pd.social_links || { facebook: '', instagram: '', google: '', youtube: '' },
         integrations: pd.integrations || { google_place_id: '', ga4_id: '' },
-        plan: pd.plan || 'starter',
-        subscription: pd.subscription || { tier: 1, plan_name: 'Starter', monthly_price: 99 },
+        plan:         pd.plan         || 'starter',
+        subscription: pd.subscription || { tier: 1, plan_name: 'Starter', monthly_price: 149 },
       }
 
       if (!provisionBody.slug) {
