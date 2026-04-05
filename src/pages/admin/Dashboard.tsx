@@ -170,7 +170,7 @@ export default function Dashboard() {
               {activeTab === 'content' && <ContentTab />}
               {activeTab === 'seo' && <SEOTab />}
               {activeTab === 'blog' && <BlogTab />}
-              {activeTab === 'social' && <SocialTab />}
+              {activeTab === 'social' && <SocialTab onNavigate={(t) => setActiveTab(t as TabKey)} />}
               {activeTab === 'testimonials' && <TestimonialsTab />}
               {activeTab === 'locations' && <LocationsTab />}
               {activeTab === 'reports' && <ReportsTab />}
