@@ -15,11 +15,137 @@ function getSlug(): string {
   return ''
 }
 
+// ── American Cockroach SVG ──────────────────────────────────────────────────
+function CockroachSvg({ angle }: { angle: number }) {
+  return (
+    <svg
+      width="44" height="20" viewBox="0 0 44 20"
+      style={{ transform: `rotate(${angle}deg)`, transformOrigin: '22px 10px', display: 'block' }}
+      aria-hidden="true"
+    >
+      {/* Antennae */}
+      <line x1="38" y1="7"  x2="44" y2="1"  stroke="#5C2A0A" strokeWidth="0.8" />
+      <line x1="38" y1="9"  x2="44" y2="6"  stroke="#5C2A0A" strokeWidth="0.8" />
+      {/* Body */}
+      <ellipse cx="22" cy="10" rx="20" ry="8" fill="#8B3A0F" />
+      {/* Wing lines */}
+      <line x1="8" y1="10" x2="36" y2="10" stroke="#6B2D0A" strokeWidth="0.9" />
+      <line x1="10" y1="7"  x2="34" y2="7"  stroke="#6B2D0A" strokeWidth="0.7" opacity="0.6" />
+      {/* Pronotum */}
+      <ellipse cx="35" cy="10" rx="8" ry="6" fill="#A0522D" />
+      {/* Pronotum shield mark */}
+      <ellipse cx="35" cy="10" rx="4" ry="3" fill="#D4A017" opacity="0.7" />
+      {/* Head */}
+      <ellipse cx="41" cy="10" rx="3" ry="2.5" fill="#7A3010" />
+      {/* Legs — 3 per side */}
+      <line x1="16" y1="9"  x2="10" y2="4"  stroke="#5C2A0A" strokeWidth="0.9" />
+      <line x1="22" y1="9"  x2="16" y2="3"  stroke="#5C2A0A" strokeWidth="0.9" />
+      <line x1="28" y1="9"  x2="24" y2="3"  stroke="#5C2A0A" strokeWidth="0.9" />
+      <line x1="16" y1="11" x2="10" y2="16" stroke="#5C2A0A" strokeWidth="0.9" />
+      <line x1="22" y1="11" x2="16" y2="17" stroke="#5C2A0A" strokeWidth="0.9" />
+      <line x1="28" y1="11" x2="24" y2="17" stroke="#5C2A0A" strokeWidth="0.9" />
+    </svg>
+  )
+}
+
+// ── Roach canvas animation ──────────────────────────────────────────────────
+interface Roach {
+  x: number; y: number; vx: number; vy: number; angle: number; opacity: number
+}
+
+function useRoaches(count: number, confirmed: boolean) {
+  const [roaches, setRoaches] = useState<Roach[]>([])
+  const animRef = useRef<number | null>(null)
+  const confirmedRef = useRef(false)
+  const scatterStartRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    const W = window.innerWidth
+    const H = window.innerHeight
+    const initial: Roach[] = Array.from({ length: count }, () => {
+      // Spawn on the edges, outside the center card zone
+      const side = Math.floor(Math.random() * 4)
+      let x: number, y: number
+      if (side === 0) { x = Math.random() * W;      y = Math.random() * 80 }
+      else if (side === 1) { x = W - 60;            y = Math.random() * H }
+      else if (side === 2) { x = Math.random() * W; y = H - 40 }
+      else                 { x = 0;                 y = Math.random() * H }
+      const speed = 0.4 + Math.random() * 0.4
+      const dir = Math.random() * Math.PI * 2
+      return { x, y, vx: Math.cos(dir) * speed, vy: Math.sin(dir) * speed, angle: 0, opacity: 1 }
+    })
+    setRoaches(initial)
+
+    function tick() {
+      setRoaches(prev => prev.map(r => {
+        const W = window.innerWidth
+        const H = window.innerHeight
+        // Safe zone around center card: 350×280
+        const cx = W / 2, cy = H / 2
+        const safeW = 175, safeH = 140
+
+        if (confirmedRef.current) {
+          // Scatter toward nearest edge
+          if (scatterStartRef.current === null) scatterStartRef.current = performance.now()
+          const elapsed = performance.now() - (scatterStartRef.current || 0)
+          const speed = 3 + (elapsed / 200)
+          const angle = Math.atan2(r.vy, r.vx)
+          const nx = r.x + Math.cos(angle) * speed
+          const ny = r.y + Math.sin(angle) * speed
+          const fadeOpacity = Math.max(0, r.opacity - 0.012)
+          return { ...r, x: nx, y: ny, opacity: fadeOpacity }
+        }
+
+        // Random walk with slight wobble
+        const wobble = (Math.random() - 0.5) * 0.15
+        let vx = r.vx + wobble
+        let vy = r.vy + wobble
+        const speed = Math.sqrt(vx * vx + vy * vy)
+        if (speed > 0.8) { vx = (vx / speed) * 0.8; vy = (vy / speed) * 0.8 }
+        if (speed < 0.3) { vx *= 1.1; vy *= 1.1 }
+
+        let nx = r.x + vx
+        let ny = r.y + vy
+
+        // Bounce off walls
+        if (nx < 0 || nx > W - 44) vx = -vx
+        if (ny < 0 || ny > H - 20) vy = -vy
+
+        // Steer away from center safe zone
+        if (nx > cx - safeW && nx < cx + safeW && ny > cy - safeH && ny < cy + safeH) {
+          vx = nx < cx ? -0.8 : 0.8
+          vy = ny < cy ? -0.8 : 0.8
+        }
+
+        nx = Math.max(0, Math.min(W - 44, r.x + vx))
+        ny = Math.max(0, Math.min(H - 20, r.y + vy))
+
+        const angle = Math.atan2(vy, vx) * (180 / Math.PI)
+        return { ...r, x: nx, y: ny, vx, vy, angle, opacity: r.opacity }
+      }))
+      animRef.current = requestAnimationFrame(tick)
+    }
+
+    animRef.current = requestAnimationFrame(tick)
+    return () => { if (animRef.current) cancelAnimationFrame(animRef.current) }
+  }, [count])
+
+  useEffect(() => {
+    confirmedRef.current = confirmed
+  }, [confirmed])
+
+  return roaches
+}
+
+// ── Main page ───────────────────────────────────────────────────────────────
 export default function PaymentSuccess() {
   const [elapsed, setElapsed] = useState(0)
   const [status, setStatus] = useState<Status>('waiting')
   const slug = useRef(getSlug())
   const [email] = useState(getEmail)
+
+  const confirmed = status === 'ready' || status === 'slow'
+  const roaches = useRoaches(5, confirmed)
 
   async function poll(isCancelled: () => boolean) {
     setStatus('checking')
@@ -59,8 +185,21 @@ export default function PaymentSuccess() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-white flex flex-col items-center justify-center px-4">
-      <div className="w-full max-w-md text-center">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-white flex flex-col items-center justify-center px-4 overflow-hidden relative">
+
+      {/* Cockroaches */}
+      <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }}>
+        {roaches.map((r, i) => (
+          <div
+            key={i}
+            style={{ position: 'absolute', left: r.x, top: r.y, opacity: r.opacity, transition: 'opacity 0.1s' }}
+          >
+            <CockroachSvg angle={r.angle} />
+          </div>
+        ))}
+      </div>
+
+      <div className="w-full max-w-md text-center relative" style={{ zIndex: 1 }}>
         <div className="mb-8">
           <span className="text-2xl font-bold text-emerald-700 tracking-tight">
             Pest<span className="text-gray-900">Flow</span> Pro
