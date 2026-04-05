@@ -25,8 +25,8 @@ export default function LogoUpload({ value, onChange }: LogoUploadProps) {
       if (uploadError) throw uploadError
       const { data } = supabase.storage.from('logos').getPublicUrl(path)
       onChange(data.publicUrl)
-    } catch (err: any) {
-      setError(err.message || 'Upload failed')
+    } catch (err: unknown) {
+      setError((err as Error).message || 'Upload failed')
     } finally {
       setUploading(false)
     }

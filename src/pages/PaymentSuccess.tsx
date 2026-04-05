@@ -19,7 +19,23 @@ export default function PaymentSuccess() {
   const [elapsed, setElapsed] = useState(0)
   const [status, setStatus] = useState<Status>('waiting')
   const slug = useRef(getSlug())
-  const email = useRef(getEmail())
+  const [email] = useState(getEmail)
+
+  async function poll(isCancelled: () => boolean) {
+    setStatus('checking')
+    const s = slug.current
+    if (!s) { setStatus('ready'); return }
+
+    for (let i = 0; i < 4; i++) {
+      if (isCancelled()) return
+      try {
+        const { data } = await supabase.from('tenants').select('id').eq('slug', s).maybeSingle()
+        if (data) { setStatus('ready'); return }
+      } catch { /* retry */ }
+      await new Promise(r => setTimeout(r, 5000))
+    }
+    setStatus('slow')
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -42,22 +58,6 @@ export default function PaymentSuccess() {
     return () => { cancelled = true; clearInterval(tick); clearTimeout(kickoff) }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function poll(isCancelled: () => boolean) {
-    setStatus('checking')
-    const s = slug.current
-    if (!s) { setStatus('ready'); return }
-
-    for (let i = 0; i < 4; i++) {
-      if (isCancelled()) return
-      try {
-        const { data } = await supabase.from('tenants').select('id').eq('slug', s).maybeSingle()
-        if (data) { setStatus('ready'); return }
-      } catch { /* retry */ }
-      await new Promise(r => setTimeout(r, 5000))
-    }
-    setStatus('slow')
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-white flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-md text-center">
@@ -75,9 +75,9 @@ export default function PaymentSuccess() {
           <p className="text-gray-500 text-sm mb-2">
             Our team is setting up your site. This typically takes 1–2 business days.
           </p>
-          {email.current && (
+          {email && (
             <p className="text-gray-400 text-xs mb-6">
-              We'll send your login details to <strong className="text-gray-600">{email.current}</strong> once setup is complete.
+              We'll send your login details to <strong className="text-gray-600">{email}</strong> once setup is complete.
             </p>
           )}
 

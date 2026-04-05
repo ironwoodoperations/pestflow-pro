@@ -75,8 +75,8 @@ export default function ClientSetupPayment({ form }: Props) {
       if (data.error) { patch({ loading: false, error: data.error }); return }
       await navigator.clipboard.writeText(data.url).catch(() => {})
       patch({ loading: false, checkoutUrl: data.url })
-    } catch (err: any) {
-      patch({ loading: false, error: err.message || 'Failed to generate payment link' })
+    } catch (err: unknown) {
+      patch({ loading: false, error: (err as Error).message || 'Failed to generate payment link' })
     }
   }
 

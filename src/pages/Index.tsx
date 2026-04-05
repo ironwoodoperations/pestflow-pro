@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
 import StructuredData from '../components/StructuredData'
 import HeroVideoPlayer from '../components/HeroVideoPlayer'
-import { useShellSections } from '../components/PublicShell'
+import { ShellSectionsRenderer } from '../components/PublicShell'
 
 interface PageContent {
   title: string
@@ -21,7 +21,6 @@ export default function Index() {
   const [content, setContent] = useState<PageContent>(DEFAULT_CONTENT)
   const [heroMedia, setHeroMedia] = useState<{ youtube_id?: string; thumbnail_url?: string } | null>(null)
   const [videoPlaying, setVideoPlaying] = useState(false)
-  const ShellSections = useShellSections()
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
@@ -97,7 +96,7 @@ export default function Index() {
         </div>
       </section>
 
-      <ShellSections />
+      <ShellSectionsRenderer />
 
     </div>
   )

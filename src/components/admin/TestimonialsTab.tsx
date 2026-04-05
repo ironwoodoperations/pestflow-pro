@@ -108,7 +108,7 @@ export default function TestimonialsTab() {
     setImporting(false)
   }
 
-  const toggleExpand = (id: string) => setExpanded(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
+  const toggleExpand = (id: string) => setExpanded(prev => { const n = new Set(prev); if (n.has(id)) { n.delete(id) } else { n.add(id) } return n })
   const totalReviews = reviews.length
   const featuredCount = reviews.filter(r => r.featured).length
   const avgRating = totalReviews ? (reviews.reduce((s, r) => s + r.rating, 0) / totalReviews).toFixed(1) : '0'

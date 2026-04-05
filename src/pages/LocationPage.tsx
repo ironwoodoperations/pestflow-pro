@@ -27,6 +27,8 @@ export default function LocationPage({ slug }: { slug: string }) {
   const [bizAddress, setBizAddress] = useState('')
   const [mapsApiKey, setMapsApiKey] = useState('')
 
+  function titleCase(s: string) { return s.replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()) }
+
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
@@ -44,7 +46,6 @@ export default function LocationPage({ slug }: { slug: string }) {
     })
   }, [slug])
 
-  function titleCase(s: string) { return s.replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()) }
   const city = location.city || titleCase(slug)
   const heroTitle = location.hero_title || `${city} Pest Control`
 

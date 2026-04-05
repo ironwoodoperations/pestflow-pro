@@ -17,14 +17,14 @@ import CleanFriendlySections from '../shells/clean-friendly/ShellHomeSections'
 import RusticRuggedSections from '../shells/rustic-rugged/ShellHomeSections'
 import YouPestSections from '../shells/youpest/ShellHomeSections'
 
-export function useShellSections(): React.ComponentType {
+export function ShellSectionsRenderer() {
   const { template } = useTemplate()
   switch (template) {
-    case 'bold-local': return BoldLocalSections
-    case 'clean-friendly': return CleanFriendlySections
-    case 'rustic-rugged': return RusticRuggedSections
-    case 'youpest': return YouPestSections
-    default: return ModernProSections
+    case 'bold-local': return <BoldLocalSections />
+    case 'clean-friendly': return <CleanFriendlySections />
+    case 'rustic-rugged': return <RusticRuggedSections />
+    case 'youpest': return <YouPestSections />
+    default: return <ModernProSections />
   }
 }
 
