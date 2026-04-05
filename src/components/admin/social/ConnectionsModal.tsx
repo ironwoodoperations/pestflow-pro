@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
-import { usePlan } from '../../hooks/usePlan'
+import { usePlan } from '../../../hooks/usePlan'
 import type { IntegrationSettings } from './useSocialData'
 
 const TENANT_ID = import.meta.env.VITE_TENANT_ID
