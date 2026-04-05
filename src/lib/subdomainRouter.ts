@@ -25,6 +25,16 @@ function getSubdomain(): string | null {
 export async function resolveTenantId(): Promise<string> {
   const fallback = (import.meta.env.VITE_TENANT_ID as string) || ''
 
+  // ?tenant=<slug> query param — for dev/preview testing of specific tenants
+  const params = new URLSearchParams(window.location.search)
+  const tenantSlug = params.get('tenant')
+  if (tenantSlug) {
+    try {
+      const { data } = await supabase.from('tenants').select('id').eq('slug', tenantSlug).maybeSingle()
+      if (data?.id) return data.id
+    } catch { /* fall through */ }
+  }
+
   const subdomain = getSubdomain()
   if (!subdomain) return fallback
 

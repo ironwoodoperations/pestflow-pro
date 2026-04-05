@@ -13,8 +13,8 @@ interface PageContent {
 }
 
 const DEFAULT_CONTENT: PageContent = {
-  title: 'Protect Your Home from Unwanted Pests',
-  subtitle: 'Licensed & insured professionals serving East Texas with fast, effective pest control.',
+  title: 'Professional Pest Control You Can Trust',
+  subtitle: 'Licensed & insured professionals. Fast, effective results.',
 }
 
 export default function Index() {
@@ -56,8 +56,7 @@ export default function Index() {
             <Shield className="w-4 h-4" /> Licensed & Insured Professionals
           </div>
           <h1 className="font-oswald tracking-wide text-white text-5xl sm:text-6xl md:text-8xl leading-tight mb-6">
-            East Texas's Most Trusted{' '}
-            <span className="text-emerald-400">Pest Control</span>
+            {content.title}
           </h1>
           <p className="text-gray-300 text-xl md:text-2xl mb-8 max-w-3xl mx-auto">
             {content.subtitle}
