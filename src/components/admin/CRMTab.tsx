@@ -23,14 +23,11 @@ export default function CRMTab() {
   const [notesDraft, setNotesDraft] = useState<Record<string, string>>({})
   const [notesSaved, setNotesSaved] = useState<Record<string, boolean>>({})
 
-  async function fetchLeads() {
+  useEffect(() => {
     if (!tenantId) return
-    const { data } = await supabase.from('leads').select('*').eq('tenant_id', tenantId).order('created_at', { ascending: false })
-    setLeads(data || [])
-    setLoading(false)
-  }
-
-  useEffect(() => { fetchLeads() }, [tenantId])
+    supabase.from('leads').select('*').eq('tenant_id', tenantId).order('created_at', { ascending: false })
+      .then(({ data }) => { setLeads(data || []); setLoading(false) })
+  }, [tenantId])
 
   async function updateStatus(id: string, status: string) {
     await supabase.from('leads').update({ status }).eq('id', id)

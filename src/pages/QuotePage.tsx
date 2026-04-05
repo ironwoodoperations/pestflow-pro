@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { CheckCircle, Bug, Home, User, ClipboardCheck } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
-import QuoteFormSteps, { type QuoteFormState, validateContactFields } from '../components/QuoteFormSteps'
+import QuoteFormSteps, { type QuoteFormState } from '../components/QuoteFormSteps'
+import { validateContactFields } from '../components/quoteFormUtils'
 
 const STEPS = [
   { num: 1, label: 'Pest Type', icon: Bug },

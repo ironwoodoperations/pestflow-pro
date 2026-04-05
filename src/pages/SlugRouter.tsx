@@ -7,10 +7,10 @@ import { resolveTenantId } from '../lib/tenant'
 
 export default function SlugRouter() {
   const { slug } = useParams<{ slug: string }>()
-  const [type, setType] = useState<'location' | 'not-found' | 'loading'>('loading')
+  const [type, setType] = useState<'location' | 'not-found' | 'loading'>(() => slug ? 'loading' : 'not-found')
 
   useEffect(() => {
-    if (!slug) { setType('not-found'); return }
+    if (!slug) return
     resolveTenantId().then(async (tenantId) => {
       const { data } = await supabase
         .from('location_data')

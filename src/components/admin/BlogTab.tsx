@@ -33,7 +33,11 @@ export default function BlogTab() {
     setLoading(false)
   }
 
-  useEffect(() => { fetchPosts() }, [tenantId])
+  useEffect(() => {
+    if (!tenantId) return
+    supabase.from('blog_posts').select('*').eq('tenant_id', tenantId).order('created_at', { ascending: false })
+      .then(({ data }) => { setPosts(data || []); setLoading(false) })
+  }, [tenantId])
 
   function openNew() {
     setForm({ title: '', slug: '', content: '', excerpt: '', published: false, published_at: new Date().toISOString().split('T')[0] })

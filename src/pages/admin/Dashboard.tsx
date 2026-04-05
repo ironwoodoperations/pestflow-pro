@@ -72,7 +72,7 @@ export default function Dashboard() {
   const { canAccess } = usePlan()
   const navigate = useNavigate()
 
-  const fetchSettings = () => {
+  useEffect(() => {
     if (!tenantId) return
     Promise.all([
       supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
@@ -83,9 +83,7 @@ export default function Dashboard() {
       setOnboardingComplete(onbRes.data?.value?.complete === true)
       setDemoActive(demoRes.data?.value?.active === true)
     })
-  }
-
-  useEffect(() => { fetchSettings() }, [tenantId])
+  }, [tenantId])
 
   const handleGoLive = async () => {
     if (!tenantId) return
