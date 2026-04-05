@@ -27,7 +27,11 @@ export default function ProspectDetail({ prospectId, salespeople, onClose }: Pro
   useEffect(() => {
     if (!prospectId) return
     supabase.from('prospects').select('*').eq('id', prospectId).maybeSingle().then(({ data }) => {
-      if (data) setForm(data)
+      if (data) {
+        setForm(data)
+        // Existing prospects with a slug should never have it overwritten by auto-gen
+        if (data.slug) setSlugEdited(true)
+      }
       setLoading(false)
     })
   }, [prospectId])
