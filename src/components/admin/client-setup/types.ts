@@ -54,8 +54,8 @@ export const INITIAL_FORM: ClientSetupForm = {
 }
 
 export const PLAN_LABELS: Record<string, string> = {
-  starter: 'Starter — $99/mo',
-  grow:    'Grow — $149/mo',
-  pro:     'Pro — $249/mo',
+  starter: 'Starter — $149/mo',
+  grow:    'Grow — $249/mo',
+  pro:     'Pro — $349/mo',
   elite:   'Elite — $499/mo',
 }

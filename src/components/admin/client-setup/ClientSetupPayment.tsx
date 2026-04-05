@@ -4,9 +4,9 @@ import { type ClientSetupForm } from './types'
 import { IMPLEMENTATION_PACKAGES } from '../../../lib/pricingConfig'
 
 const PLAN_LABELS: Record<string, string> = {
-  starter: 'Starter — $99/mo',
-  grow:    'Grow — $149/mo',
-  pro:     'Pro — $249/mo',
+  starter: 'Starter — $149/mo',
+  grow:    'Grow — $249/mo',
+  pro:     'Pro — $349/mo',
   elite:   'Elite — $499/mo',
 }
 
@@ -29,7 +29,7 @@ export default function ClientSetupPayment({ form }: Props) {
   })
   const patch = (p: Partial<S>) => setS(prev => ({ ...prev, ...p }))
 
-  const planPriceMap: Record<string, number> = { starter: 99, grow: 149, pro: 249, elite: 499 }
+  const planPriceMap: Record<string, number> = { starter: 149, grow: 249, pro: 349, elite: 499 }
   const planTierMap: Record<string, number>  = { starter: 1, grow: 2, pro: 3, elite: 4 }
 
   async function handleGenerateLink() {

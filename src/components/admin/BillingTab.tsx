@@ -22,9 +22,9 @@ interface SubscriptionSettings {
 
 const PLAN_PRICE_LABELS: Record<string, string> = {
   'price_1TIZ6DCZBM0TUusSaC2UdcYG': 'Tier 1 — Starter',
-  'price_1TIZA1CZBM0TUusSJfld1aNT': 'Tier 2 — Grow',
-  'price_1TIZE2CZBM0TUusSPFZZVDQk': 'Tier 3 — Pro',
-  'price_1TIZF1CZBM0TUusSuoAbLJZT': 'Tier 4 — Elite',
+  'price_1TIrvGCZBM0TUusSNBntvS6l': 'Tier 2 — Grow',
+  'price_1TIrvcCZBM0TUusS4BJt8oQi': 'Tier 3 — Pro',
+  'price_1TIrw3CZBM0TUusSomA1hsT4': 'Tier 4 — Elite',
 }
 
 function statusBadge(status: string) {

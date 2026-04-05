@@ -3,7 +3,7 @@ export const MONTHLY_PLANS = [
   {
     tier: 1,
     name: 'Starter',
-    price: 99,
+    price: 149,
     features: [
       'Branded website',
       'CRM & lead management',
@@ -16,7 +16,7 @@ export const MONTHLY_PLANS = [
   {
     tier: 2,
     name: 'Grow',
-    price: 149,
+    price: 249,
     features: [
       'Everything in Starter',
       'Full SEO suite',
@@ -28,7 +28,7 @@ export const MONTHLY_PLANS = [
   {
     tier: 3,
     name: 'Pro',
-    price: 249,
+    price: 349,
     features: [
       'Everything in Grow',
       'AI content tools',
