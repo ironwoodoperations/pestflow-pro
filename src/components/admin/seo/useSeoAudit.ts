@@ -30,7 +30,7 @@ export function useSeoAudit(tenantId: string, integrations: IntegrationValues) {
     if (!integrations.google_api_key) return
     setAuditLoading(true)
     try {
-      const siteUrl = 'https://pestflow-pro.vercel.app'
+      const siteUrl = import.meta.env.VITE_SITE_URL || 'https://dangpestcontrol.com'
       const res = await fetch(
         `https://www.googleapis.com/pagespeedonline/v5/runPagespeed` +
         `?url=${encodeURIComponent(siteUrl)}&strategy=${auditMode}&key=${integrations.google_api_key}`

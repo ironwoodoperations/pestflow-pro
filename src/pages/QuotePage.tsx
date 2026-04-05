@@ -92,7 +92,7 @@ export default function QuotePage() {
       fetch(fnUrl, { method: 'POST', headers, body: JSON.stringify({ tenant_id: tenantId, to: form.phone, message: `Hi ${form.name}, thanks for reaching out to ${businessName}! We received your quote request and will be in touch shortly.`, type: 'customer' }) }).catch(() => {})
     }
     if (ownerSmsNumber) {
-      fetch(fnUrl, { method: 'POST', headers, body: JSON.stringify({ tenant_id: tenantId, to: ownerSmsNumber, message: `📋 New quote from ${form.name} — ${form.phone} — Service: ${form.pests.join(', ')}. Check CRM: https://pestflow-pro.vercel.app/admin`, type: 'owner' }) }).catch(() => {})
+      fetch(fnUrl, { method: 'POST', headers, body: JSON.stringify({ tenant_id: tenantId, to: ownerSmsNumber, message: `📋 New quote from ${form.name} — ${form.phone} — Service: ${form.pests.join(', ')}. Check CRM: https://dangpestcontrol.com/admin`, type: 'owner' }) }).catch(() => {})
     }
 
     setSubmitted(true)
