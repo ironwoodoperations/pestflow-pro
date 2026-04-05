@@ -111,7 +111,7 @@ Deno.serve(async (req: Request) => {
       subscription_data: {},
       success_url: `https://${slug}.pestflowpro.com/payment-success`,
       cancel_url: `https://pestflowpro.com/admin?payment=cancelled`,
-      metadata: { tenant_id: tenant_id || '', slug, client_email, onboarding_session_id: onboarding_session_id || '' },
+      metadata: { tenant_id: tenant_id || '', slug, client_email, onboarding_session_id: onboarding_session_id || '', setup_fee_amount: String(setup_amount_override || 0) },
     })
 
     console.log(`Checkout session created: ${session.id}`)

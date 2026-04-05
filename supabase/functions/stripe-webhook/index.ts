@@ -97,8 +97,8 @@ Deno.serve(async (req: Request) => {
       }
 
       if (!provisionBody.slug) {
-        console.error('Cannot provision — no slug in payment or metadata')
-        return ok()
+        console.error('[stripe-webhook] FATAL: no slug in metadata or provision_data — returning 500 so Stripe retries')
+        return new Response('Missing slug', { status: 500 })
       }
 
       const provisionResp = await fetch(
