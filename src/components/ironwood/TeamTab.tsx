@@ -10,12 +10,13 @@ const EMPTY: Partial<Salesperson> = {
 const inp = 'w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-white'
 
 export default function TeamTab() {
-  const [people, setPeople]     = useState<Salesperson[]>([])
-  const [form, setForm]         = useState<Partial<Salesperson> | null>(null)
-  const [saving, setSaving]     = useState(false)
-  const [isNew, setIsNew]       = useState(false)
-  const [inviting, setInviting] = useState<string | null>(null)
+  const [people, setPeople]       = useState<Salesperson[]>([])
+  const [form, setForm]           = useState<Partial<Salesperson> | null>(null)
+  const [saving, setSaving]       = useState(false)
+  const [isNew, setIsNew]         = useState(false)
+  const [inviting, setInviting]   = useState<string | null>(null)
   const [inviteErr, setInviteErr] = useState<string | null>(null)
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null)
 
   const load = async () => {
     const { data } = await supabase.from('salespeople').select('*').order('name')
@@ -63,6 +64,7 @@ export default function TeamTab() {
       if (!data.success) { setInviteErr(data.error || 'Invite failed'); return }
       const now = new Date().toISOString()
       await supabase.from('salespeople').update({ invited_at: now }).eq('id', p.id)
+      if (data.invite_url) setInviteUrl(data.invite_url)
       load()
     } catch (e: any) {
       setInviteErr(e.message || 'Network error')
@@ -128,6 +130,24 @@ export default function TeamTab() {
 
       {inviteErr && (
         <p className="text-red-400 text-xs bg-red-900/20 border border-red-800 rounded px-3 py-2 mb-3">{inviteErr}</p>
+      )}
+
+      {/* Invite URL modal */}
+      {inviteUrl && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 max-w-md w-full space-y-3">
+            <h3 className="font-bold text-white">Invite Sent</h3>
+            <p className="text-sm text-gray-300">Email invite sent. If they don't receive it, share this link directly:</p>
+            <div className="bg-gray-800 border border-gray-700 rounded px-3 py-2 text-xs text-emerald-300 break-all">{inviteUrl}</div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { navigator.clipboard.writeText(inviteUrl); }}
+                className="px-3 py-2 bg-emerald-600 text-white text-sm rounded hover:bg-emerald-500"
+              >Copy Link</button>
+              <button onClick={() => setInviteUrl(null)} className="px-3 py-2 bg-gray-700 text-white text-sm rounded hover:bg-gray-600">Close</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Table */}
