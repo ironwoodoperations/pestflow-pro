@@ -23,6 +23,11 @@ dist-ssr
 *.sln
 *.sw?
 
+# Environment files
+.env
+.env.local
+.env.*.local
+
 # AI session context files
 pestflow-pro-context-s*.md
 *-context-session*.md
