@@ -35,11 +35,11 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
         body: JSON.stringify({
           client_email:          prospect.email,
           client_name:           prospect.contact_name || prospect.company_name || '',
-          package_type:          PKG_TYPE[prospect.package_id || ''] || 'template-launch',
           setup_amount_override: (prospect.setup_fee_amount || 0) * 100,
           plan:                  prospect.plan_name!.toLowerCase(),
           slug:                  prospect.slug || 'placeholder',
-          onboarding_session_id: '',
+          prospect_id:           prospect.id || '',
+          tenant_id:             prospect.tenant_id || '',
         }),
       })
       const data = await res.json()
