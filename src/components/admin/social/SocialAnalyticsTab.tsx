@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../hooks/useTenant'
+import { usePlan } from '../../../context/PlanContext'
 import PageHelpBanner from '../PageHelpBanner'
-import { FeatureGate } from '../../common/FeatureGate'
 import SocialVolumeChart from '../reports/SocialVolumeChart'
 
 interface SocialPost {
@@ -22,6 +22,7 @@ function platformBadgeClass(platform: string) {
 
 export default function SocialAnalyticsTab() {
   const { tenantId } = useTenant()
+  const { tier } = usePlan()
   const [posts, setPosts] = useState<SocialPost[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -70,9 +71,8 @@ export default function SocialAnalyticsTab() {
       <PageHelpBanner tab="social-analytics" title="📊 Social Analytics"
         body="Track your social media output and identify your best-performing content." />
 
-      <FeatureGate minTier={4} featureName="Social Analytics">
-        {/* 1. Summary Stat Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      {/* Summary Stat Cards — Pro and above */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           {[
             { label: 'Total Posts Published', value: published.length, color: 'text-emerald-600' },
             { label: 'Posts This Month', value: thisMonth, color: 'text-purple-600' },
@@ -107,34 +107,35 @@ export default function SocialAnalyticsTab() {
           )}
         </div>
 
-        {/* 3. Best Performing Posts */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-          <h3 className="text-base font-semibold text-gray-900 mb-1">Best Performing Posts</h3>
-          <p className="text-xs text-gray-400 mb-4">Connect Facebook to see reach &amp; engagement data</p>
-          {bestPosts.length === 0 ? (
-            <p className="text-sm text-gray-400">No published posts yet.</p>
-          ) : (
-            <div className="space-y-3">
-              {bestPosts.map(p => (
-                <div key={p.id} className="flex items-start gap-3 py-2 border-b border-gray-50 last:border-0">
-                  <span className={`text-xs px-1.5 py-0.5 rounded capitalize font-medium flex-shrink-0 ${platformBadgeClass(p.platform)}`}>
-                    {p.platform}
-                  </span>
-                  <p className="text-sm text-gray-700 flex-1 min-w-0 truncate">
-                    {p.caption.length > 80 ? p.caption.slice(0, 80) + '…' : p.caption}
-                  </p>
-                  <span className="text-xs text-gray-400 whitespace-nowrap flex-shrink-0">
-                    {p.published_at ? new Date(p.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}
-                  </span>
+        {/* 3. Best Performing Posts + Volume — Elite only */}
+        {tier >= 4 && (
+          <>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+              <h3 className="text-base font-semibold text-gray-900 mb-1">Best Performing Posts</h3>
+              <p className="text-xs text-gray-400 mb-4">Connect Facebook to see reach &amp; engagement data</p>
+              {bestPosts.length === 0 ? (
+                <p className="text-sm text-gray-400">No published posts yet.</p>
+              ) : (
+                <div className="space-y-3">
+                  {bestPosts.map(p => (
+                    <div key={p.id} className="flex items-start gap-3 py-2 border-b border-gray-50 last:border-0">
+                      <span className={`text-xs px-1.5 py-0.5 rounded capitalize font-medium flex-shrink-0 ${platformBadgeClass(p.platform)}`}>
+                        {p.platform}
+                      </span>
+                      <p className="text-sm text-gray-700 flex-1 min-w-0 truncate">
+                        {p.caption.length > 80 ? p.caption.slice(0, 80) + '…' : p.caption}
+                      </p>
+                      <span className="text-xs text-gray-400 whitespace-nowrap flex-shrink-0">
+                        {p.published_at ? new Date(p.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
-          )}
-        </div>
-
-        {/* 4. Monthly Post Volume */}
-        {tenantId && <SocialVolumeChart tenantId={tenantId} />}
-      </FeatureGate>
+            {tenantId && <SocialVolumeChart tenantId={tenantId} />}
+          </>
+        )}
     </div>
   )
 }

@@ -11,6 +11,8 @@ interface Props {
   aiCaptions: string[]
   aiLoading: boolean
   aiError: string
+  aiDailyCount: number
+  aiDailyLimit: number
   onGenerate: () => void
   onSelectCaption: (c: string) => void
   onAppendEmoji: (e: string) => void
@@ -24,8 +26,10 @@ const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm
 export default function ComposerCaptionEditor({
   caption, onCaptionChange, captionRef, charLimit,
   aiTopic, onAiTopicChange, aiCaptions, aiLoading, aiError,
+  aiDailyCount, aiDailyLimit,
   onGenerate, onSelectCaption, onAppendEmoji, editingPostId,
 }: Props) {
+  const atLimit = aiDailyLimit !== Infinity && aiDailyCount >= aiDailyLimit
   const charsRemaining = charLimit - caption.length
 
   return (
@@ -36,12 +40,17 @@ export default function ComposerCaptionEditor({
         <div className="flex gap-2 mb-4">
           <input value={aiTopic} onChange={e => onAiTopicChange(e.target.value)}
             placeholder="e.g. mosquito season tips" className={`flex-1 ${inputClass}`}
-            onKeyDown={e => { if (e.key === 'Enter') onGenerate() }} />
-          <button onClick={onGenerate} disabled={aiLoading}
+            onKeyDown={e => { if (e.key === 'Enter' && !atLimit) onGenerate() }} />
+          <button onClick={onGenerate} disabled={aiLoading || atLimit}
             className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 whitespace-nowrap flex items-center gap-2">
             {aiLoading ? <><Loader2 size={14} className="animate-spin" /> Asking AI...</> : 'Generate 3 Captions'}
           </button>
         </div>
+        {atLimit && (
+          <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
+            AI post limit reached for today ({aiDailyCount}/{aiDailyLimit}). You can still write and save posts manually.
+          </p>
+        )}
         {aiError && <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4"><p className="text-sm text-red-700">{aiError}</p></div>}
         {aiCaptions.length > 0 && (
           <div className="space-y-3">

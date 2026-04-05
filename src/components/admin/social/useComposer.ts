@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../hooks/useTenant'
+import { usePlan } from '../../../context/PlanContext'
 
 export interface ComposerForm {
   platform: 'facebook' | 'instagram' | 'both'
@@ -19,6 +20,8 @@ export interface PexelsPhoto {
 
 export function useComposer(onPosted?: () => void) {
   const { tenantId } = useTenant()
+  const { tier } = usePlan()
+  const aiDailyLimit = tier <= 2 ? 2 : tier === 3 ? 5 : Infinity; const schedulingDayCap = tier === 3 ? 5 : undefined
   const [form, setForm] = useState<ComposerForm>({
     platform: 'facebook', caption: '', imageUrl: '',
     pexelsQuery: 'pest control technician', scheduleMode: 'now', scheduledFor: '',
@@ -39,6 +42,7 @@ export function useComposer(onPosted?: () => void) {
   const [editingPostId, setEditingPostId] = useState<string | null>(null)
   const [smartSchedule, setSmartSchedule] = useState<{ scheduled_for: string; reasoning: string } | null>(null)
   const [smartLoading, setSmartLoading] = useState(false)
+  const [aiDailyCount, setAiDailyCount] = useState(0)
   const captionRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
@@ -46,14 +50,15 @@ export function useComposer(onPosted?: () => void) {
     Promise.all([
       supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
       supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle(),
-    ]).then(([bizRes, intgRes]) => {
+      supabase.from('social_posts').select('*', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('ai_generated', true).gte('created_at', new Date().toISOString().split('T')[0]),
+    ]).then(([bizRes, intgRes, countRes]) => {
       if (bizRes.data?.value?.name) setBusinessName(bizRes.data.value.name)
       if (bizRes.data?.value?.industry) setIndustry(bizRes.data.value.industry)
       if (intgRes.data?.value?.pexels_api_key) setPexelsApiKey(intgRes.data.value.pexels_api_key)
+      setAiDailyCount(countRes.count || 0)
       setLoading(false)
     })
   }, [tenantId])
-
   function resetForm() {
     setForm({ platform: 'facebook', caption: '', imageUrl: '', pexelsQuery: 'pest control technician', scheduleMode: 'now', scheduledFor: '' })
     setEditingPostId(null)
@@ -62,9 +67,9 @@ export function useComposer(onPosted?: () => void) {
     setAiTopic('')
     setSmartSchedule(null)
   }
-
   const generateCaptions = useCallback(async () => {
     if (!aiTopic.trim()) return
+    if (aiDailyLimit !== Infinity && aiDailyCount >= aiDailyLimit) return
     setAiLoading(true); setAiError(''); setAiCaptions([])
     const prompt = `You are a social media expert for a ${industry.toLowerCase()} company called ${businessName} in East Texas. Generate exactly 3 different Facebook/Instagram captions for a post about: "${aiTopic}".\n\nRules:\n- Each caption must be engaging and friendly, not salesy\n- Include relevant emojis\n- End each with 3-5 relevant hashtags\n- Keep each under 200 words\n- Separate captions with "---CAPTION---"\n\nReturn ONLY the 3 captions separated by "---CAPTION---". No JSON, no preamble.`
     try {
@@ -78,12 +83,12 @@ export function useComposer(onPosted?: () => void) {
       const text = data.content[0].text
       const captions = text.split('---CAPTION---').map((c: string) => c.trim()).filter((c: string) => c.length > 0)
       setAiCaptions(captions.slice(0, 3))
+      setAiDailyCount(c => c + 1)
     } catch (err: unknown) {
       setAiError(err instanceof Error ? err.message : 'Failed to generate captions.')
     }
     setAiLoading(false)
   }, [aiTopic, industry, businessName])
-
   async function searchPexels() {
     if (!pexelsApiKey || !form.pexelsQuery.trim()) return
     setPexelsLoading(true)
@@ -94,9 +99,7 @@ export function useComposer(onPosted?: () => void) {
     } catch { /* ignore */ }
     setPexelsLoading(false)
   }
-
   function selectPexelsPhoto(url: string) { setSelectedPexelsUrl(url); setForm(p => ({ ...p, imageUrl: url })) }
-
   async function getSmartSchedule() {
     setSmartLoading(true); setSmartSchedule(null)
     const now = new Date()
@@ -117,13 +120,12 @@ export function useComposer(onPosted?: () => void) {
     } catch { setForm(p => ({ ...p, scheduleMode: 'later' })) }
     setSmartLoading(false)
   }
-
   async function saveAsDraft() {
     if (!form.caption.trim() || !tenantId) return
     setSaving(true)
     const postData = {
       tenant_id: tenantId, platform: form.platform, caption: form.caption,
-      image_url: form.imageUrl || null, status: 'draft' as const,
+      image_url: form.imageUrl || null, status: 'draft' as const, ai_generated: aiCaptions.length > 0,
       scheduled_for: (form.scheduleMode === 'later' || form.scheduleMode === 'smart') && form.scheduledFor ? new Date(form.scheduledFor).toISOString() : null,
     }
     if (editingPostId) {
@@ -133,7 +135,6 @@ export function useComposer(onPosted?: () => void) {
     }
     resetForm(); setSaving(false); onPosted?.()
   }
-
   async function publishNow() {
     if (!form.caption.trim() || !tenantId) return
     setPublishing(true)
@@ -141,7 +142,7 @@ export function useComposer(onPosted?: () => void) {
     const intg = intgData?.value || {}
     const postData = {
       tenant_id: tenantId, platform: form.platform, caption: form.caption,
-      image_url: form.imageUrl || null, status: 'draft' as const,
+      image_url: form.imageUrl || null, status: 'draft' as const, ai_generated: aiCaptions.length > 0,
       scheduled_for: (form.scheduleMode === 'later' || form.scheduleMode === 'smart') && form.scheduledFor ? new Date(form.scheduledFor).toISOString() : null,
     }
     let postId = editingPostId
@@ -175,7 +176,6 @@ export function useComposer(onPosted?: () => void) {
     }
     resetForm(); setPublishing(false); onPosted?.()
   }
-
   function appendEmoji(emoji: string) {
     const ta = captionRef.current
     if (ta) {
@@ -190,6 +190,7 @@ export function useComposer(onPosted?: () => void) {
 
   return {
     form, setForm, aiTopic, setAiTopic, aiCaptions, aiLoading, aiError,
+    aiDailyCount, aiDailyLimit, schedulingDayCap,
     pexelsResults, pexelsLoading, selectedPexelsUrl, publishing, saving,
     businessName, industry, pexelsApiKey, loading, editingPostId, smartSchedule,
     smartLoading, captionRef, charLimit,

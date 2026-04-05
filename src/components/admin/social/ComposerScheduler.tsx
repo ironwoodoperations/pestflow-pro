@@ -9,6 +9,7 @@ interface Props {
   publishing: boolean
   saving: boolean
   editingPostId: string | null
+  schedulingDayCap?: number   // Pro: 5, Elite: unlimited (undefined)
   onScheduleModeChange: (m: 'now' | 'later' | 'smart') => void
   onScheduledForChange: (v: string) => void
   onGetSmartSchedule: () => void
@@ -21,10 +22,13 @@ const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm
 
 export default function ComposerScheduler({
   platform, scheduleMode, scheduledFor, smartSchedule, smartLoading,
-  publishing, saving, editingPostId,
+  publishing, saving, editingPostId, schedulingDayCap,
   onScheduleModeChange, onScheduledForChange, onGetSmartSchedule,
   onSaveAsDraft, onPublishNow, onResetForm,
 }: Props) {
+  const maxDate = schedulingDayCap
+    ? new Date(Date.now() + schedulingDayCap * 86400000).toISOString().substring(0, 16)
+    : undefined
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
       <h3 className="text-base font-semibold text-gray-900 mb-3">Schedule & Publish</h3>
@@ -43,7 +47,10 @@ export default function ComposerScheduler({
         <div className="mb-4">
           <input type="datetime-local" value={scheduledFor}
             onChange={e => onScheduledForChange(e.target.value)}
-            min={new Date().toISOString().substring(0, 16)} className={inputClass} />
+            min={new Date().toISOString().substring(0, 16)} max={maxDate} className={inputClass} />
+          {schedulingDayCap && (
+            <p className="text-xs text-gray-400 mt-1">Pro plan scheduling limited to {schedulingDayCap} days. Upgrade to Elite for unlimited scheduling.</p>
+          )}
         </div>
       )}
 
@@ -71,7 +78,7 @@ export default function ComposerScheduler({
               <p className="text-xs text-gray-500 mb-3">{smartSchedule.reasoning}</p>
               <div className="flex items-center gap-3">
                 <input type="datetime-local" value={scheduledFor} onChange={e => onScheduledForChange(e.target.value)}
-                  min={new Date().toISOString().substring(0, 16)} className={`flex-1 ${inputClass}`} />
+                  min={new Date().toISOString().substring(0, 16)} max={maxDate} className={`flex-1 ${inputClass}`} />
                 <button onClick={onGetSmartSchedule} className="text-sm text-emerald-600 hover:text-emerald-700 font-medium whitespace-nowrap">Try Again</button>
               </div>
             </div>

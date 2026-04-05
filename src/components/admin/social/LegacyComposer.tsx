@@ -50,6 +50,8 @@ export default function LegacyComposer({ onClose, onPosted }: Props) {
           aiCaptions={c.aiCaptions}
           aiLoading={c.aiLoading}
           aiError={c.aiError}
+          aiDailyCount={c.aiDailyCount}
+          aiDailyLimit={c.aiDailyLimit}
           onGenerate={c.generateCaptions}
           onSelectCaption={cap => c.setForm(prev => ({ ...prev, caption: cap }))}
           onAppendEmoji={c.appendEmoji}
@@ -78,6 +80,7 @@ export default function LegacyComposer({ onClose, onPosted }: Props) {
           publishing={c.publishing}
           saving={c.saving}
           editingPostId={c.editingPostId}
+          schedulingDayCap={c.schedulingDayCap}
           onScheduleModeChange={m => c.setForm(prev => ({ ...prev, scheduleMode: m }))}
           onScheduledForChange={v => c.setForm(prev => ({ ...prev, scheduledFor: v }))}
           onGetSmartSchedule={c.getSmartSchedule}
