@@ -13,7 +13,7 @@ const CORS = {
 
 // Price ID map — read from edge function env (set via supabase secrets set)
 const SETUP_PRICE_MAP: Record<string, string> = {
-  standard: Deno.env.get('STRIPE_PRICE_STANDARD_SETUP') || '',
+  template-launch': Deno.env.get('STRIPE_PRICE_STANDARD_SETUP') || '',
   custom:   Deno.env.get('STRIPE_PRICE_CUSTOM_MIGRATION') || '',
   premium:  Deno.env.get('STRIPE_PRICE_PREMIUM_MIGRATION') || '',
 }
@@ -28,7 +28,7 @@ interface RequestBody {
   tenant_id: string
   client_email: string
   client_name: string
-  package_type: 'standard' | 'custom' | 'premium'
+  package_type: 'template-launch' | 'growth-setup' | 'site-migration' | 'custom-rebuild'
   setup_amount_override?: number  // in cents — only when custom price passkey used
   plan: 'starter' | 'grow' | 'pro' | 'elite'
   slug: string
@@ -46,7 +46,7 @@ Deno.serve(async (req: Request) => {
     const { tenant_id, client_email, client_name, package_type, setup_amount_override, plan, slug, provision_data } = body
 
     if (!client_email || !slug) return json({ error: 'client_email and slug are required' }, 400)
-    if (!package_type) return json({ error: 'package_type is required (standard | custom | premium)' }, 400)
+    if (!package_type) return json({ error: 'package_type is required' }, 400)
     if (!plan) return json({ error: 'plan is required (starter | grow | pro | elite)' }, 400)
 
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY')
