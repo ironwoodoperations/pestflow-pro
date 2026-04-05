@@ -1,4 +1,4 @@
-// Supabase Edge Function: provision-tenant v5
+// Supabase Edge Function: provision-tenant v6
 // Auto-creates tenant row if tenant_id not supplied.
 // Creates auth user, seeds tenant_users, and provisions all required settings.
 // Called by the Client Setup Wizard using the anon key (CORS-open).
@@ -13,6 +13,19 @@ const CORS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+interface ProvisionData {
+  email?: string
+  slug?: string
+  business_info?: { name?: string; phone?: string; email?: string; address?: string; hours?: string; tagline?: string }
+  branding?: { logo_url?: string; primary_color?: string; accent_color?: string; template?: string }
+  social_links?: { facebook?: string; instagram?: string; google?: string; youtube?: string }
+  subscription?: { tier?: number; plan_name?: string; monthly_price?: number }
+  domain?: string
+  registrar?: string
+  current_website_url?: string
+  package?: string
+}
+
 interface RequestBody {
   tenant_id?: string
   slug?: string
@@ -24,6 +37,7 @@ interface RequestBody {
   integrations: { google_place_id: string; ga4_id: string }
   plan: string
   subscription: { tier: number; plan_name: string; monthly_price: number }
+  provision_data?: ProvisionData
 }
 
 Deno.serve(async (req: Request) => {
@@ -32,7 +46,8 @@ Deno.serve(async (req: Request) => {
   try {
     const body: RequestBody = await req.json()
     const { slug, admin_email, admin_password, business_info: bi,
-            branding, social_links: social, integrations, subscription } = body
+            branding, social_links: social, integrations, subscription,
+            provision_data: pd } = body
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
@@ -93,19 +108,48 @@ Deno.serve(async (req: Request) => {
     }
 
     // Step 3: Seed all 11 required settings keys
-    const email = bi.email || ''
+    // provision_data (from wizard) takes priority over legacy top-level fields
+    const email = pd?.business_info?.email || pd?.email || bi.email || ''
     const settingsRows = [
-      { tenant_id: tenantId, key: 'business_info', value: { name: bi.name||'', phone: bi.phone||'', email, address: bi.address||'', tagline: bi.tagline||'', industry: bi.industry||'Pest Control', hours: '', license: '', certifications: '', founded_year: '', num_technicians: '' } },
-      { tenant_id: tenantId, key: 'branding', value: { logo_url: branding.logo_url||'', favicon_url: '', primary_color: branding.primary_color||'#10b981', accent_color: '#f5c518', template: branding.template||'modern-pro', cta_text: 'Get a Free Inspection' } },
-      { tenant_id: tenantId, key: 'customization', value: { hero_headline: bi.tagline||'', show_license: true, show_years: true, show_technicians: true, show_certifications: true } },
-      { tenant_id: tenantId, key: 'social_links', value: { facebook: social.facebook||'', instagram: social.instagram||'', google: social.google||'', youtube: social.youtube||'' } },
-      { tenant_id: tenantId, key: 'integrations', value: { google_place_id: integrations.google_place_id||'', google_analytics_id: integrations.ga4_id||'', google_maps_api_key: '', pexels_api_key: '', textbelt_api_key: '', owner_sms_number: '', ayrshare_api_key: '', facebook_access_token: '', facebook_page_id: '' } },
-      { tenant_id: tenantId, key: 'onboarding_complete', value: { complete: true } },
+      { tenant_id: tenantId, key: 'business_info', value: {
+        name:            pd?.business_info?.name    || bi.name    || '',
+        phone:           pd?.business_info?.phone   || bi.phone   || '',
+        email,
+        address:         pd?.business_info?.address || bi.address || '',
+        hours:           pd?.business_info?.hours   || '',
+        tagline:         pd?.business_info?.tagline || bi.tagline || '',
+        industry:        'Pest Control',
+        license:         '',
+        certifications:  '',
+        founded_year:    '',
+        num_technicians: '',
+      }},
+      { tenant_id: tenantId, key: 'branding', value: {
+        logo_url:      pd?.branding?.logo_url      || branding.logo_url      || '',
+        favicon_url:   '',
+        primary_color: pd?.branding?.primary_color || branding.primary_color || '#10b981',
+        accent_color:  pd?.branding?.accent_color  || '#0a0f1e',
+        template:      pd?.branding?.template      || branding.template      || 'modern-pro',
+        cta_text:      'Get a Free Quote',
+      }},
+      { tenant_id: tenantId, key: 'customization', value: { hero_headline: pd?.business_info?.tagline || bi.tagline || '', show_license: true, show_years: true, show_technicians: true, show_certifications: true } },
+      { tenant_id: tenantId, key: 'social_links', value: {
+        facebook:  pd?.social_links?.facebook  || social.facebook  || '',
+        instagram: pd?.social_links?.instagram || social.instagram || '',
+        google:    pd?.social_links?.google    || social.google    || '',
+        youtube:   pd?.social_links?.youtube   || social.youtube   || '',
+      }},
+      { tenant_id: tenantId, key: 'integrations', value: { google_place_id: integrations?.google_place_id||'', google_analytics_id: integrations?.ga4_id||'', google_maps_api_key: '', pexels_api_key: '', textbelt_api_key: '', owner_sms_number: '', ayrshare_api_key: '', facebook_access_token: '', facebook_page_id: '' } },
+      { tenant_id: tenantId, key: 'onboarding_complete', value: { complete: false } },
       { tenant_id: tenantId, key: 'hero_media', value: { youtube_id: '', thumbnail_url: '' } },
       { tenant_id: tenantId, key: 'holiday_mode', value: { enabled: false, holiday: '', message: '', auto_schedule: '' } },
       { tenant_id: tenantId, key: 'notifications', value: { cc_email: '', lead_email: email, monthly_report_email: email } },
       { tenant_id: tenantId, key: 'demo_mode', value: { active: false, seeded_at: '' } },
-      { tenant_id: tenantId, key: 'subscription', value: { tier: subscription.tier||1, plan_name: subscription.plan_name||'Starter', monthly_price: subscription.monthly_price||99 } },
+      { tenant_id: tenantId, key: 'subscription', value: {
+        tier:          pd?.subscription?.tier          || subscription?.tier          || 1,
+        plan_name:     pd?.subscription?.plan_name    || subscription?.plan_name    || 'Starter',
+        monthly_price: pd?.subscription?.monthly_price || subscription?.monthly_price || 99,
+      }},
     ]
 
     for (const row of settingsRows) {
