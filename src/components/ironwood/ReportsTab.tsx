@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { Prospect, Salesperson } from './types'
+import { Stat, fmt } from './ReportsStat'
 
 interface MrrData {
   totalMRR: number; newMRR: number; churnedMRR: number; netChange: number; activeCount: number; monthLabel: string
@@ -8,17 +9,6 @@ interface MrrData {
 interface CommRow {
   sp: Salesperson; deals: number; setupRev: number; mrr: number; setupComm: number; recurComm: number
 }
-
-function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  return (
-    <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
-      <div className="text-xs text-gray-400 mb-1">{label}</div>
-      <div className="text-2xl font-bold text-white">{value}</div>
-      {sub && <div className="text-xs text-gray-500 mt-0.5">{sub}</div>}
-    </div>
-  )
-}
-function fmt(n: number) { return `$${n.toLocaleString()}` }
 
 export default function ReportsTab() {
   const [prospects, setProspects]   = useState<Prospect[]>([])
@@ -65,26 +55,39 @@ export default function ReportsTab() {
   const paidSetup   = paid.reduce((s, p) => s + (p.setup_fee_amount || 0), 0)
   const activeMRR   = active.reduce((s, p) => s + (p.monthly_price || 0), 0)
 
+  // Setup commission: prospects paid this month (payment_confirmed_at in current month)
+  const paidThisMonth = prospects.filter(p =>
+    p.payment_confirmed_at && new Date(p.payment_confirmed_at) >= monthStart
+  )
   // Commission table
   const commRows: CommRow[] = salespeople.map(sp => {
-    const deals = active.filter(p => p.salesperson_id === sp.id)
-    const setupRev = deals.reduce((s, p) => s + (p.setup_fee_amount || 0), 0)
-    const recurring = deals.reduce((s, p) => s + (p.monthly_price || 0), 0)
+    const setupDeals  = paidThisMonth.filter(p => p.salesperson_id === sp.id)
+    const activeDeals = active.filter(p => p.salesperson_id === sp.id)
+    const setupRev  = setupDeals.reduce((s, p) => s + (p.setup_fee_amount || 0), 0)
+    const recurring = activeDeals.reduce((s, p) => s + (p.monthly_price || 0), 0)
     return {
-      sp, deals: deals.length, setupRev, mrr: recurring,
-      setupComm: Math.round(setupRev * sp.commission_setup_pct / 100 * 100) / 100,
-      recurComm: Math.round(recurring * sp.commission_recurring_pct / 100 * 100) / 100,
+      sp, deals: activeDeals.length, setupRev, mrr: recurring,
+      setupComm:  Math.round(setupRev  * sp.commission_setup_pct     / 100 * 100) / 100,
+      recurComm:  Math.round(recurring * sp.commission_recurring_pct / 100 * 100) / 100,
     }
-  }).filter(r => r.deals > 0)
+  }).filter(r => r.deals > 0 || r.setupRev > 0)
 
-  // Onboarding payouts — $100 per completed onboarding (provisioned or active)
-  const onboardedStatuses: string[] = ['provisioned', 'active']
+  // Onboarding payouts — $100 per completed onboarding provisioned this month
+  const provisionedThisMonth = prospects.filter(p =>
+    p.provisioned_at && new Date(p.provisioned_at) >= monthStart
+  )
   const onboardingRows = salespeople.map(sp => {
-    const count = prospects.filter(p =>
-      (p as any).onboarding_rep_id === sp.id && onboardedStatuses.includes(p.status)
+    const count = provisionedThisMonth.filter(p =>
+      (p as any).onboarding_rep_id === sp.id
     ).length
     return { sp, count, payout: count * 100 }
   }).filter(r => r.count > 0)
+
+  // Total Payroll this month
+  const totalSetupComm    = commRows.reduce((s, r) => s + r.setupComm, 0)
+  const totalRecurComm    = commRows.reduce((s, r) => s + r.recurComm, 0)
+  const totalOnboarding   = onboardingRows.reduce((s, r) => s + r.payout, 0)
+  const totalPayroll      = totalSetupComm + totalRecurComm + totalOnboarding
 
   return (
     <div className="p-6 space-y-8">
@@ -154,17 +157,15 @@ export default function ReportsTab() {
       {/* Onboarding Payouts */}
       <section>
         <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-1">Onboarding Payouts</h3>
-        <p className="text-xs text-gray-600 mb-3">Onboarding is paid at $100 flat per completed onboarding (provisioned or active status).</p>
+        <p className="text-xs text-gray-600 mb-3">$100 flat per completed onboarding (provisioned this month).</p>
         {onboardingRows.length === 0
-          ? <p className="text-gray-600 text-sm">No completed onboardings with assigned reps.</p>
+          ? <p className="text-gray-600 text-sm">No onboardings provisioned this month.</p>
           : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-gray-400 border-b border-gray-800">
-                    <th className="pb-2">Rep</th>
-                    <th className="pb-2">Onboardings Completed</th>
-                    <th className="pb-2">Onboarding Payout</th>
+                    <th className="pb-2">Rep</th><th className="pb-2">Onboardings</th><th className="pb-2">Payout</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -179,6 +180,20 @@ export default function ReportsTab() {
               </table>
             </div>
           )}
+      </section>
+
+      {/* Total Payroll */}
+      <section className="bg-gray-800 border border-emerald-700/50 rounded-lg p-5">
+        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">Total Payroll — This Month</h3>
+        <div className="grid grid-cols-3 gap-4 mb-4">
+          <div><div className="text-xs text-gray-500 mb-1">Setup Commissions</div><div className="text-lg font-semibold text-white">{fmt(totalSetupComm)}</div></div>
+          <div><div className="text-xs text-gray-500 mb-1">Monthly Residuals</div><div className="text-lg font-semibold text-white">{fmt(totalRecurComm)}/mo</div></div>
+          <div><div className="text-xs text-gray-500 mb-1">Onboarding Payouts</div><div className="text-lg font-semibold text-white">{fmt(totalOnboarding)}</div></div>
+        </div>
+        <div className="border-t border-gray-700 pt-3 flex items-center justify-between">
+          <span className="text-sm text-gray-400">Total to pay out this month</span>
+          <span className="text-2xl font-bold text-emerald-400">{fmt(totalPayroll)}</span>
+        </div>
       </section>
     </div>
   )
