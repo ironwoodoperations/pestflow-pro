@@ -9,11 +9,11 @@ const PLAN_LABELS: Record<string, string> = {
   elite:   'Elite — $499/mo',
 }
 
-const PACKAGE_LABELS: Record<string, string> = {
-  standard: 'Standard Build — $2,000',
-  custom:   'Custom Migration — $3,500',
-  premium:  'Premium Migration — $5,000',
-}
+import { IMPLEMENTATION_PACKAGES } from '../../../lib/pricingConfig'
+
+const PACKAGE_LABELS: Record<string, string> = Object.fromEntries(
+  IMPLEMENTATION_PACKAGES.map(p => [p.id, `${p.label} — ${p.badge}`])
+)
 
 interface Props { form: ClientSetupForm }
 

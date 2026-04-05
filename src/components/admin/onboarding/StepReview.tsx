@@ -113,7 +113,7 @@ export default function StepReview({ form, saving, onLaunch, onBack, goToStep, u
             className="mt-1 h-4 w-4 rounded border-slate-300"
           />
           <label htmlFor="acceptedDataUse" className="text-sm text-slate-700">
-            I understand that my subscription will continue on a month-to-month basis until cancelled with 30 days written notice, and that the $2,000 setup fee is non-refundable.
+            I understand that my subscription will continue on a month-to-month basis until cancelled with 30 days written notice, and that any setup fee is non-refundable.
           </label>
         </div>
       </div>

@@ -1,10 +1,5 @@
 import { PLAN_LABELS, type ClientSetupForm } from '../types'
-
-const PACKAGE_NAMES: Record<string, string> = {
-  standard: 'Standard Build — $2,000 setup',
-  custom:   'Custom Migration — $3,500 setup',
-  premium:  'Premium Migration — $5,000 setup',
-}
+import { IMPLEMENTATION_PACKAGES } from '../../../../lib/pricingConfig'
 
 const SHELL_NAMES: Record<string, string> = {
   'modern-pro':     'Modern Pro',
@@ -29,6 +24,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 export default function Step6Review({ form, onNext, onBack }: Props) {
+  const pkg = IMPLEMENTATION_PACKAGES.find(p => p.id === form.package_type)
   const domainDisplay = form.no_domain
     ? 'No domain yet'
     : form.domain
@@ -47,8 +43,11 @@ export default function Step6Review({ form, onNext, onBack }: Props) {
         <Row label="Site URL" value={form.slug ? <span className="text-emerald-600 font-medium">{form.slug}.pestflowpro.com</span> : '— not set'} />
         <Row label="Contact" value={`${form.phone || '—'} · ${form.email || '—'}`} />
         <Row label="Address" value={form.address || '—'} />
-        <Row label="Package" value={PACKAGE_NAMES[form.package_type] || '— not selected'} />
-        {form.package_type === 'standard' && (
+        <Row label="Package" value={pkg
+          ? <span>{pkg.label} <span className="text-gray-400 text-xs">{pkg.badge}</span></span>
+          : '— not selected'
+        } />
+        {pkg && !pkg.requiresCurrentSite && (
           <>
             <Row label="Template" value={SHELL_NAMES[form.template] || form.template || '—'} />
             <Row label="Palette" value={
@@ -62,7 +61,7 @@ export default function Step6Review({ form, onNext, onBack }: Props) {
             } />
           </>
         )}
-        {(form.package_type === 'custom' || form.package_type === 'premium') && (
+        {pkg?.requiresCurrentSite && (
           <Row label="Source site" value={form.current_website_url || '—'} />
         )}
         <Row label="Logo" value={form.logo_url ? '✅ Uploaded' : 'Will add later'} />

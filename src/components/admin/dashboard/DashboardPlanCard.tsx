@@ -6,22 +6,22 @@ const TIERS = [
   {
     tier: 1, name: 'Starter', price: 99,
     badge: 'bg-gray-100 text-gray-700',
-    features: 'Website, CRM, Basic SEO, up to 3 locations, Team access',
+    features: 'Branded website, CRM & lead management, Basic SEO tools, up to 3 locations, Team access',
   },
   {
     tier: 2, name: 'Grow', price: 149,
     badge: 'bg-blue-100 text-blue-700',
-    features: 'All Starter + Full SEO suite, Blog, Social scheduling',
+    features: 'Everything in Starter + Full SEO suite, Blog management, Social scheduling',
   },
   {
     tier: 3, name: 'Pro', price: 249,
     badge: 'bg-purple-100 text-purple-700',
-    features: 'All Grow + AI tools, Advanced reports, Campaigns',
+    features: 'Everything in Grow + AI content tools, Advanced reports, Campaign management',
   },
   {
     tier: 4, name: 'Elite', price: 499,
     badge: 'bg-amber-100 text-amber-700',
-    features: 'All Pro + Social analytics, Ayrshare autopilot, Live reviews',
+    features: 'Everything in Pro + Social analytics, Autopilot posting, Live review management',
   },
 ]
 

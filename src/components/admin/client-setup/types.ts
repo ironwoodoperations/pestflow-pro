@@ -8,7 +8,7 @@ export interface ClientSetupForm {
   hours: string
   tagline: string
   // Step 2 — Package + Branding
-  package_type: 'standard' | 'custom' | 'premium' | ''
+  package_type: 'template-launch' | 'growth-setup' | 'site-migration' | 'custom-rebuild' | ''
   template: string
   palette_id: string
   primary_color: string
