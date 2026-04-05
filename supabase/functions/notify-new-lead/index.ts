@@ -44,11 +44,12 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
-    // Fetch notification, branding, and business settings in parallel
-    const [notifRes, brandRes, bizRes] = await Promise.all([
+    // Fetch notification, branding, business, and integrations settings in parallel
+    const [notifRes, brandRes, bizRes, intRes] = await Promise.all([
       supabase.from('settings').select('value').eq('tenant_id', lead.tenant_id).eq('key', 'notifications').maybeSingle(),
       supabase.from('settings').select('value').eq('tenant_id', lead.tenant_id).eq('key', 'branding').maybeSingle(),
       supabase.from('settings').select('value').eq('tenant_id', lead.tenant_id).eq('key', 'business_info').maybeSingle(),
+      supabase.from('settings').select('value').eq('tenant_id', lead.tenant_id).eq('key', 'integrations').maybeSingle(),
     ])
 
     const notifyEmail = notifRes.data?.value?.lead_email
@@ -142,7 +143,32 @@ Deno.serve(async (req) => {
     })
 
     const emailData = await emailRes.json()
-    return new Response(JSON.stringify({ success: true, emailId: emailData.id }), { status: 200 })
+
+    // Send SMS notification if owner_sms_number is configured
+    const ownerSms = intRes.data?.value?.owner_sms_number
+    let smsResult = null
+    if (ownerSms) {
+      const smsServices = Array.isArray(lead.services) ? lead.services.join(', ') : (lead.services || 'quote')
+      const smsMessage = `New lead from ${lead.name} — ${smsServices}. Phone: ${lead.phone}. Check your admin dashboard for details.`
+      try {
+        const smsRes = await fetch(`${SUPABASE_URL}/functions/v1/send-sms`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ to: ownerSms, message: smsMessage, type: 'lead-notification' }),
+        })
+        smsResult = await smsRes.json()
+        console.log('[notify-new-lead] SMS result:', JSON.stringify(smsResult))
+      } catch (smsErr) {
+        console.error('[notify-new-lead] SMS error:', String(smsErr))
+      }
+    } else {
+      console.log('[notify-new-lead] No owner_sms_number configured — skipping SMS')
+    }
+
+    return new Response(JSON.stringify({ success: true, emailId: emailData.id, sms: smsResult }), { status: 200 })
   } catch (err) {
     return new Response(JSON.stringify({ error: String(err) }), { status: 500 })
   }
