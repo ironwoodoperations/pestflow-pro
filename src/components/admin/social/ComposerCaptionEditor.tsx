@@ -13,6 +13,7 @@ interface Props {
   aiError: string
   aiDailyCount: number
   aiDailyLimit: number
+  postsPerGeneration?: number
   onGenerate: () => void
   onSelectCaption: (c: string) => void
   onAppendEmoji: (e: string) => void
@@ -26,10 +27,11 @@ const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm
 export default function ComposerCaptionEditor({
   caption, onCaptionChange, captionRef, charLimit,
   aiTopic, onAiTopicChange, aiCaptions, aiLoading, aiError,
-  aiDailyCount, aiDailyLimit,
+  aiDailyCount, aiDailyLimit, postsPerGeneration = 3,
   onGenerate, onSelectCaption, onAppendEmoji, editingPostId,
 }: Props) {
   const atLimit = aiDailyLimit !== Infinity && aiDailyCount >= aiDailyLimit
+  const generateLabel = postsPerGeneration === 1 ? 'Generate Caption' : `Generate ${postsPerGeneration} Captions`
   const charsRemaining = charLimit - caption.length
 
   return (
@@ -43,12 +45,12 @@ export default function ComposerCaptionEditor({
             onKeyDown={e => { if (e.key === 'Enter' && !atLimit) onGenerate() }} />
           <button onClick={onGenerate} disabled={aiLoading || atLimit}
             className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 whitespace-nowrap flex items-center gap-2">
-            {aiLoading ? <><Loader2 size={14} className="animate-spin" /> Asking AI...</> : 'Generate 3 Captions'}
+            {aiLoading ? <><Loader2 size={14} className="animate-spin" /> Asking AI...</> : generateLabel}
           </button>
         </div>
         {atLimit && (
           <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
-            AI post limit reached for today ({aiDailyCount}/{aiDailyLimit}). You can still write and save posts manually.
+            AI generation limit reached for today ({aiDailyCount}/{aiDailyLimit}). You can still write posts manually.
           </p>
         )}
         {aiError && <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4"><p className="text-sm text-red-700">{aiError}</p></div>}

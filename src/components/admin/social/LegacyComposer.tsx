@@ -52,6 +52,7 @@ export default function LegacyComposer({ onClose, onPosted }: Props) {
           aiError={c.aiError}
           aiDailyCount={c.aiDailyCount}
           aiDailyLimit={c.aiDailyLimit}
+          postsPerGeneration={c.postsPerGeneration}
           onGenerate={c.generateCaptions}
           onSelectCaption={cap => c.setForm(prev => ({ ...prev, caption: cap }))}
           onAppendEmoji={c.appendEmoji}

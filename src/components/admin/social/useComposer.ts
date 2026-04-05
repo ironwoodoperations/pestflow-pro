@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../hooks/useTenant'
 import { usePlan } from '../../../context/PlanContext'
+import { usePublishPost } from './usePublishPost'
+import { AI_DAILY_LIMITS, POSTS_PER_GENERATION, SCHEDULING_DAY_CAP } from './socialLimits'
 
 export interface ComposerForm {
   platform: 'facebook' | 'instagram' | 'both'
@@ -22,7 +23,10 @@ export interface PexelsPhoto {
 export function useComposer(onPosted?: () => void) {
   const { tenantId } = useTenant()
   const { tier } = usePlan()
-  const aiDailyLimit = tier <= 2 ? 2 : tier === 3 ? 5 : Infinity; const schedulingDayCap = tier === 3 ? 5 : undefined
+  const aiDailyLimit = AI_DAILY_LIMITS[tier] ?? 2
+  const postsPerGeneration = POSTS_PER_GENERATION[tier] ?? 1
+  const schedulingDayCap = SCHEDULING_DAY_CAP[tier] ?? 0
+
   const [form, setForm] = useState<ComposerForm>({
     platform: 'facebook', caption: '', imageUrl: '',
     pexelsQuery: 'pest control technician', scheduleMode: 'now', scheduledFor: '',
@@ -34,8 +38,6 @@ export function useComposer(onPosted?: () => void) {
   const [pexelsResults, setPexelsResults] = useState<PexelsPhoto[]>([])
   const [pexelsLoading, setPexelsLoading] = useState(false)
   const [selectedPexelsUrl, setSelectedPexelsUrl] = useState('')
-  const [publishing, setPublishing] = useState(false)
-  const [saving, setSaving] = useState(false)
   const [businessName, setBusinessName] = useState('Your Business')
   const [industry, setIndustry] = useState('Pest Control')
   const [pexelsApiKey, setPexelsApiKey] = useState('')
@@ -60,19 +62,18 @@ export function useComposer(onPosted?: () => void) {
       setLoading(false)
     })
   }, [tenantId])
+
   function resetForm() {
     setForm({ platform: 'facebook', caption: '', imageUrl: '', pexelsQuery: 'pest control technician', scheduleMode: 'now', scheduledFor: '' })
-    setEditingPostId(null)
-    setSelectedPexelsUrl('')
-    setAiCaptions([])
-    setAiTopic('')
-    setSmartSchedule(null)
+    setEditingPostId(null); setSelectedPexelsUrl(''); setAiCaptions([]); setAiTopic(''); setSmartSchedule(null)
   }
+
   const generateCaptions = useCallback(async () => {
     if (!aiTopic.trim()) return
     if (aiDailyLimit !== Infinity && aiDailyCount >= aiDailyLimit) return
     setAiLoading(true); setAiError(''); setAiCaptions([])
-    const prompt = `You are a social media expert for a ${industry.toLowerCase()} company called ${businessName} in East Texas. Generate exactly 3 different Facebook/Instagram captions for a post about: "${aiTopic}".\n\nRules:\n- Each caption must be engaging and friendly, not salesy\n- Include relevant emojis\n- End each with 3-5 relevant hashtags\n- Keep each under 200 words\n- Separate captions with "---CAPTION---"\n\nReturn ONLY the 3 captions separated by "---CAPTION---". No JSON, no preamble.`
+    const count = postsPerGeneration
+    const prompt = `You are a social media expert for a ${industry.toLowerCase()} company called ${businessName} in East Texas. Generate exactly ${count} different Facebook/Instagram captions for a post about: "${aiTopic}".\n\nRules:\n- Each caption must be engaging and friendly, not salesy\n- Include relevant emojis\n- End each with 3-5 relevant hashtags\n- Keep each under 200 words\n- Separate captions with "---CAPTION---"\n\nReturn ONLY the ${count} captions separated by "---CAPTION---". No JSON, no preamble.`
     try {
       const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
@@ -83,13 +84,14 @@ export function useComposer(onPosted?: () => void) {
       if (data.error) { setAiError(data.error.message || 'AI request failed.'); setAiLoading(false); return }
       const text = data.content[0].text
       const captions = text.split('---CAPTION---').map((c: string) => c.trim()).filter((c: string) => c.length > 0)
-      setAiCaptions(captions.slice(0, 3))
+      setAiCaptions(captions.slice(0, count))
       setAiDailyCount(c => c + 1)
     } catch (err: unknown) {
       setAiError(err instanceof Error ? err.message : 'Failed to generate captions.')
     }
     setAiLoading(false)
-  }, [aiTopic, industry, businessName])
+  }, [aiTopic, industry, businessName, aiDailyLimit, aiDailyCount, postsPerGeneration])
+
   async function searchPexels() {
     if (!pexelsApiKey || !form.pexelsQuery.trim()) return
     setPexelsLoading(true)
@@ -100,7 +102,9 @@ export function useComposer(onPosted?: () => void) {
     } catch { /* ignore */ }
     setPexelsLoading(false)
   }
+
   function selectPexelsPhoto(url: string) { setSelectedPexelsUrl(url); setForm(p => ({ ...p, imageUrl: url })) }
+
   async function getSmartSchedule() {
     setSmartLoading(true); setSmartSchedule(null)
     const now = new Date()
@@ -121,77 +125,7 @@ export function useComposer(onPosted?: () => void) {
     } catch { setForm(p => ({ ...p, scheduleMode: 'later' })) }
     setSmartLoading(false)
   }
-  async function saveAsDraft() {
-    if (!form.caption.trim() || !tenantId) return
-    setSaving(true)
-    const postData = {
-      tenant_id: tenantId, platform: form.platform, caption: form.caption,
-      image_url: form.imageUrl || null, status: 'draft' as const, ai_generated: aiCaptions.length > 0,
-      scheduled_for: (form.scheduleMode === 'later' || form.scheduleMode === 'smart') && form.scheduledFor ? new Date(form.scheduledFor).toISOString() : null,
-    }
-    if (editingPostId) {
-      await supabase.from('social_posts').update(postData).eq('id', editingPostId)
-    } else {
-      await supabase.from('social_posts').insert(postData)
-    }
-    resetForm(); setSaving(false); onPosted?.()
-  }
-  async function publishNow() {
-    if (!form.caption.trim() || !tenantId) return
-    setPublishing(true)
 
-    // Starter (tier 1): save as 'sent' draft and prompt copy-paste
-    if (tier < 2) {
-      const postData = {
-        tenant_id: tenantId, platform: form.platform, caption: form.caption,
-        image_url: form.imageUrl || null, status: 'sent' as const, ai_generated: aiCaptions.length > 0,
-        scheduled_for: null,
-      }
-      if (editingPostId) { await supabase.from('social_posts').update(postData).eq('id', editingPostId) }
-      else { await supabase.from('social_posts').insert(postData) }
-      toast.info('Post saved! Copy this post and paste it to your Facebook page.')
-      resetForm(); setPublishing(false); onPosted?.(); return
-    }
-
-    const { data: intgData } = await supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle()
-    const intg = intgData?.value || {}
-    const postData = {
-      tenant_id: tenantId, platform: form.platform, caption: form.caption,
-      image_url: form.imageUrl || null, status: 'draft' as const, ai_generated: aiCaptions.length > 0,
-      scheduled_for: (form.scheduleMode === 'later' || form.scheduleMode === 'smart') && form.scheduledFor ? new Date(form.scheduledFor).toISOString() : null,
-    }
-    let postId = editingPostId
-    if (editingPostId) { await supabase.from('social_posts').update(postData).eq('id', editingPostId) }
-    else { const { data: inserted } = await supabase.from('social_posts').insert(postData).select('id').single(); postId = inserted?.id || null }
-    if (!postId) { setPublishing(false); return }
-
-    if (form.platform === 'instagram') {
-      await supabase.from('social_posts').update({ status: 'draft', error_msg: 'Instagram requires connected Business Account.' }).eq('id', postId)
-      resetForm(); setPublishing(false); onPosted?.(); return
-    }
-    const fbToken = intg.facebook_access_token; const fbPageId = intg.facebook_page_id
-    if (!fbToken || !fbPageId) {
-      await supabase.from('social_posts').update({ status: 'draft' }).eq('id', postId)
-      toast.info('Connect Facebook in Settings → Integrations to post directly.')
-      resetForm(); setPublishing(false); onPosted?.(); return
-    }
-    try {
-      const endpoint = form.imageUrl
-        ? `https://graph.facebook.com/v18.0/${fbPageId}/photos`
-        : `https://graph.facebook.com/v18.0/${fbPageId}/feed`
-      const body = form.imageUrl
-        ? { url: form.imageUrl, caption: form.caption, access_token: fbToken }
-        : { message: form.caption, access_token: fbToken }
-      const res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-      const data = await res.json()
-      if (data.error) { await supabase.from('social_posts').update({ status: 'failed', error_msg: data.error.message }).eq('id', postId) }
-      else { await supabase.from('social_posts').update({ status: 'published', published_at: new Date().toISOString(), fb_post_id: data.id }).eq('id', postId) }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Network error'
-      await supabase.from('social_posts').update({ status: 'failed', error_msg: msg }).eq('id', postId)
-    }
-    resetForm(); setPublishing(false); onPosted?.()
-  }
   function appendEmoji(emoji: string) {
     const ta = captionRef.current
     if (ta) {
@@ -204,9 +138,13 @@ export function useComposer(onPosted?: () => void) {
 
   const charLimit = form.platform === 'instagram' || form.platform === 'both' ? 2200 : 63206
 
+  const { publishNow, saveAsDraft, publishing, saving } = usePublishPost({
+    tenantId, tier, form, aiCaptions, editingPostId, onPosted, resetForm,
+  })
+
   return {
     form, setForm, aiTopic, setAiTopic, aiCaptions, aiLoading, aiError,
-    aiDailyCount, aiDailyLimit, schedulingDayCap,
+    aiDailyCount, aiDailyLimit, postsPerGeneration, schedulingDayCap,
     pexelsResults, pexelsLoading, selectedPexelsUrl, publishing, saving,
     businessName, industry, pexelsApiKey, loading, editingPostId, smartSchedule,
     smartLoading, captionRef, charLimit, tier,
