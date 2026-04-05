@@ -2,30 +2,12 @@ import { CheckCircle } from 'lucide-react'
 import type { ClientSetupForm } from '../types'
 import { MONTHLY_PLANS } from '../../../../lib/pricingConfig'
 
-const PACKAGE_FEE_DEFAULTS: Record<string, number> = {
-  'template-launch': 0,
-  'growth-setup':    1000,
-  'site-migration':  2750,
-  'custom-rebuild':  0,
-}
-
 interface Props {
   form: ClientSetupForm
   setForm: (patch: Partial<ClientSetupForm>) => void
 }
 
 export default function Step5PlanSelection({ form, setForm }: Props) {
-  function handlePlanClick(key: ClientSetupForm['plan']) {
-    const patch: Partial<ClientSetupForm> = { plan: key }
-    // Pre-fill setup fee if not yet customised
-    if (form.setup_fee_amount === 0 && form.package_type && PACKAGE_FEE_DEFAULTS[form.package_type] !== undefined) {
-      patch.setup_fee_amount = PACKAGE_FEE_DEFAULTS[form.package_type]
-    }
-    setForm(patch)
-  }
-
-  const defaultFee = form.package_type ? (PACKAGE_FEE_DEFAULTS[form.package_type] ?? 0) : 0
-
   return (
     <div>
       <h2 className="text-lg font-semibold text-gray-900 mb-1">Select Plan</h2>
@@ -38,7 +20,7 @@ export default function Step5PlanSelection({ form, setForm }: Props) {
             <button
               key={p.tier}
               type="button"
-              onClick={() => handlePlanClick(key)}
+              onClick={() => setForm({ plan: key })}
               className={`relative text-left rounded-xl border-2 p-5 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
                 selected ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 bg-white hover:border-gray-300'
               }`}
@@ -64,25 +46,6 @@ export default function Step5PlanSelection({ form, setForm }: Props) {
         })}
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Setup Fee to Charge ($)
-        </label>
-        <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
-          <input
-            type="number"
-            min="0"
-            step="50"
-            value={form.setup_fee_amount}
-            onChange={e => setForm({ setup_fee_amount: Math.max(0, parseFloat(e.target.value) || 0) })}
-            className="w-full border border-gray-300 rounded-lg pl-7 pr-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-          />
-        </div>
-        <p className="text-xs text-gray-400 mt-1">
-          Default for this package: ${defaultFee.toLocaleString()}. Enter 0 to waive the setup fee.
-        </p>
-      </div>
     </div>
   )
 }

@@ -4,6 +4,13 @@ import ShellSelector from '../components/ShellSelector'
 import PaletteSelector from '../components/PaletteSelector'
 import LogoUpload from '../components/LogoUpload'
 
+const PACKAGE_FEE_DEFAULTS: Record<string, number> = {
+  'template-launch': 0,
+  'growth-setup':    1000,
+  'site-migration':  2750,
+  'custom-rebuild':  0,
+}
+
 const INPUT = 'w-full border border-slate-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500'
 
 interface Props {
@@ -13,6 +20,17 @@ interface Props {
 
 export default function Step2PackageBranding({ form, setForm }: Props) {
   const selectedPkg = IMPLEMENTATION_PACKAGES.find(p => p.id === form.package_type)
+
+  function handlePackageClick(id: ClientSetupForm['package_type']) {
+    const patch: Partial<ClientSetupForm> = { package_type: id }
+    // Pre-fill setup fee with package default when user picks a package and hasn't customised it yet
+    if (PACKAGE_FEE_DEFAULTS[id] !== undefined) {
+      patch.setup_fee_amount = PACKAGE_FEE_DEFAULTS[id]
+    }
+    setForm(patch)
+  }
+
+  const defaultFee = form.package_type ? (PACKAGE_FEE_DEFAULTS[form.package_type] ?? 0) : 0
 
   return (
     <div>
@@ -27,7 +45,7 @@ export default function Step2PackageBranding({ form, setForm }: Props) {
             <button
               key={p.id}
               type="button"
-              onClick={() => setForm({ package_type: p.id })}
+              onClick={() => handlePackageClick(p.id)}
               className={`w-full text-left rounded-xl border-2 px-5 py-4 transition ${selected ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 hover:border-gray-300 bg-white'}`}
             >
               <div className="flex items-center justify-between">
@@ -40,10 +58,31 @@ export default function Step2PackageBranding({ form, setForm }: Props) {
         })}
       </div>
 
-      <p className="text-sm text-gray-400 mb-6 text-center">
+      <p className="text-sm text-gray-400 mb-4 text-center">
         Most Starter accounts can launch with little or no setup fee.
         Migration and custom work are quoted based on complexity.
       </p>
+
+      {/* Setup fee — lives here so it's visible alongside the package cards */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Setup Fee to Charge ($)
+        </label>
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
+          <input
+            type="number"
+            min="0"
+            step="50"
+            value={form.setup_fee_amount}
+            onChange={e => setForm({ setup_fee_amount: Math.max(0, parseFloat(e.target.value) || 0) })}
+            className={`${INPUT} pl-7`}
+          />
+        </div>
+        <p className="text-xs text-gray-400 mt-1">
+          Default for this package: ${defaultFee.toLocaleString()}. Enter 0 to waive.
+        </p>
+      </div>
 
       {/* Template-based packages: shell + palette + logo */}
       {selectedPkg && !selectedPkg.requiresCurrentSite && (
