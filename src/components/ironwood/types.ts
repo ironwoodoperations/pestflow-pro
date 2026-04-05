@@ -1,0 +1,54 @@
+export type ProspectStatus =
+  | 'prospect' | 'quoted' | 'paid' | 'onboarding'
+  | 'provisioned' | 'active' | 'churned'
+
+export interface Salesperson {
+  id: string
+  name: string
+  email: string | null
+  phone: string | null
+  cal_booking_url: string | null
+  active: boolean
+  commission_setup_pct: number
+  commission_recurring_pct: number
+  created_at?: string
+}
+
+export interface Prospect {
+  id: string
+  created_at: string
+  updated_at: string
+  status: ProspectStatus
+  contact_name: string | null
+  company_name: string
+  phone: string | null
+  email: string | null
+  website_url: string | null
+  notes: string | null
+  call_date: string | null
+  social_facebook: string | null
+  social_instagram: string | null
+  social_google: string | null
+  social_youtube: string | null
+  social_tiktok: string | null
+  has_existing_social: boolean | null
+  package_id: string | null
+  setup_fee_amount: number | null
+  plan_tier: number | null
+  plan_name: string | null
+  monthly_price: number | null
+  payment_link_url: string | null
+  stripe_customer_id: string | null
+  payment_sent_at: string | null
+  payment_confirmed_at: string | null
+  slug: string | null
+  admin_email: string | null
+  admin_password: string | null
+  business_info: Record<string, any> | null
+  branding: Record<string, any> | null
+  customization: Record<string, any> | null
+  tenant_id: string | null
+  provisioned_at: string | null
+  site_revealed_at: string | null
+  salesperson_id: string | null
+}
