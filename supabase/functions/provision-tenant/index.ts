@@ -148,7 +148,7 @@ Deno.serve(async (req: Request) => {
       { tenant_id: tenantId, key: 'subscription', value: {
         tier:          pd?.subscription?.tier          || subscription?.tier          || 1,
         plan_name:     pd?.subscription?.plan_name    || subscription?.plan_name    || 'Starter',
-        monthly_price: pd?.subscription?.monthly_price || subscription?.monthly_price || 99,
+        monthly_price: pd?.subscription?.monthly_price || subscription?.monthly_price || 149,
       }},
     ]
 
