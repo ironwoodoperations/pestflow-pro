@@ -31,13 +31,15 @@ export default function TeamMemberModal({ tenantId, member, onClose, onSaved }: 
 
   useEffect(() => {
     if (member) {
-      setForm({
-        name: member.name,
-        title: member.title || '',
-        bio: member.bio || '',
-        photo_url: member.photo_url || '',
-        display_order: String(member.display_order),
-      })
+      void (async () => {
+        setForm({
+          name: member.name,
+          title: member.title || '',
+          bio: member.bio || '',
+          photo_url: member.photo_url || '',
+          display_order: String(member.display_order),
+        })
+      })()
     }
   }, [member])
 

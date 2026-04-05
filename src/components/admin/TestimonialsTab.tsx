@@ -34,7 +34,11 @@ export default function TestimonialsTab() {
     setLoading(false)
   }
 
-  useEffect(() => { fetchReviews() }, [tenantId])
+  useEffect(() => {
+    if (!tenantId) return
+    supabase.from('testimonials').select('*').eq('tenant_id', tenantId).order('created_at', { ascending: false })
+      .then(({ data }) => { setReviews(data || []); setLoading(false) })
+  }, [tenantId])
 
   function openNew() { setForm(EMPTY_FORM); setEditingId(null); setModalOpen(true) }
 

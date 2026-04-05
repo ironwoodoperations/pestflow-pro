@@ -31,21 +31,21 @@ export default function PestImagePicker({ pageSlug, pexelsApiKey, selectedUrl, o
 
   useEffect(() => {
     const query = PEST_QUERIES[pageSlug]
-    if (!query || !pexelsApiKey) { setPhotos([]); return }
-
     let cancelled = false
-    setLoading(true)
-    setPhotos([])
-
-    fetch(
-      `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=6&orientation=landscape`,
-      { headers: { Authorization: pexelsApiKey } }
-    )
-      .then(r => r.json())
-      .then(data => { if (!cancelled) setPhotos(data.photos || []) })
-      .catch(() => { if (!cancelled) setPhotos([]) })
-      .finally(() => { if (!cancelled) setLoading(false) })
-
+    async function run() {
+      if (!query || !pexelsApiKey) { setPhotos([]); return }
+      setLoading(true)
+      setPhotos([])
+      fetch(
+        `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=6&orientation=landscape`,
+        { headers: { Authorization: pexelsApiKey } }
+      )
+        .then(r => r.json())
+        .then(data => { if (!cancelled) setPhotos(data.photos || []) })
+        .catch(() => { if (!cancelled) setPhotos([]) })
+        .finally(() => { if (!cancelled) setLoading(false) })
+    }
+    run()
     return () => { cancelled = true }
   }, [pageSlug, pexelsApiKey])
 

@@ -36,7 +36,11 @@ export default function LocationsTab() {
     setLoading(false)
   }
 
-  useEffect(() => { fetchLocations() }, [tenantId])
+  useEffect(() => {
+    if (!tenantId) return
+    supabase.from('location_data').select('*').eq('tenant_id', tenantId).order('city')
+      .then(({ data }) => { setLocations(data || []); setLoading(false) })
+  }, [tenantId])
 
   function openNew() {
     setForm({ city: '', slug: '', hero_title: '', intro: '', is_live: false })

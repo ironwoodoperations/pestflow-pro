@@ -28,7 +28,14 @@ export function useLeadNotifications() {
   }
 
   useEffect(() => {
-    fetchNewLeads()
+    supabase
+      .from('leads')
+      .select('id, name, services, created_at')
+      .eq('tenant_id', TENANT_ID)
+      .eq('status', 'new')
+      .order('created_at', { ascending: false })
+      .limit(5)
+      .then(({ data }) => { setNewLeads(data || []); setCount(data?.length || 0) })
     const interval = setInterval(fetchNewLeads, 60000)
     return () => clearInterval(interval)
   }, [])

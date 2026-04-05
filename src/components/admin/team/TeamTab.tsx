@@ -37,7 +37,11 @@ export default function TeamTab() {
     setLoading(false)
   }
 
-  useEffect(() => { fetchMembers() }, [tenantId])
+  useEffect(() => {
+    if (!tenantId) return
+    supabase.from('team_members').select('*').eq('tenant_id', tenantId).order('display_order', { ascending: true })
+      .then(({ data }) => { setMembers(data || []); setLoading(false) })
+  }, [tenantId])
 
   const handleEdit = (member: TeamMember) => {
     setEditTarget(member)

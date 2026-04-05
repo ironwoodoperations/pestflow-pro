@@ -26,7 +26,11 @@ export default function ContentQueueTab({ posts, campaigns, selectedCampaignId, 
   })
 
   useEffect(() => {
-    if (selectedCampaignId) setState(p => ({ ...p, filterCampaign: selectedCampaignId }))
+    if (selectedCampaignId) {
+      void (async () => {
+        setState(p => ({ ...p, filterCampaign: selectedCampaignId }))
+      })()
+    }
   }, [selectedCampaignId])
 
   const filtered = posts.filter(p => {

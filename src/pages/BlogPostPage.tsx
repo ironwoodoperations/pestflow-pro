@@ -11,13 +11,16 @@ export default function BlogPostPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!slug) { setLoading(false); return }
-    resolveTenantId().then(async (tenantId) => {
-      if (!tenantId) { setLoading(false); return }
+    let cancelled = false
+    async function run() {
+      if (!slug) { if (!cancelled) setLoading(false); return }
+      const tenantId = await resolveTenantId()
+      if (!tenantId) { if (!cancelled) setLoading(false); return }
       const { data } = await supabase.from('blog_posts').select('title, content, published_at').eq('tenant_id', tenantId).eq('slug', slug).maybeSingle()
-      if (data) setPost(data)
-      setLoading(false)
-    })
+      if (!cancelled) { if (data) setPost(data); setLoading(false) }
+    }
+    run()
+    return () => { cancelled = true }
   }, [slug])
 
   if (loading) {

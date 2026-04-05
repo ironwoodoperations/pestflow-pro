@@ -49,12 +49,17 @@ export default function ContentTab() {
   // Load page content when slug changes
   useEffect(() => {
     if (!tenantId) return
-    setLoading(true)
-    supabase.from('page_content').select('title, subtitle, intro, video_url, image_url').eq('tenant_id', tenantId).eq('page_slug', selectedSlug).maybeSingle()
-      .then(({ data }) => {
+    let cancelled = false
+    async function run() {
+      setLoading(true)
+      const { data } = await supabase.from('page_content').select('title, subtitle, intro, video_url, image_url').eq('tenant_id', tenantId).eq('page_slug', selectedSlug).maybeSingle()
+      if (!cancelled) {
         setForm({ title: data?.title || '', subtitle: data?.subtitle || '', intro: data?.intro || '', video_url: data?.video_url || '', image_url: data?.image_url || '' })
         setLoading(false)
-      })
+      }
+    }
+    run()
+    return () => { cancelled = true }
   }, [tenantId, selectedSlug])
 
   const updateField = (field: keyof ContentForm, value: string) => setForm(prev => ({ ...prev, [field]: value }))

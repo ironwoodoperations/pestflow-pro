@@ -31,12 +31,14 @@ export default function ConnectionsModal({ integrations, onClose, onSaved }: Pro
 
   useEffect(() => {
     if (!integrations) return
-    setForm(prev => ({
-      ...prev,
-      active_social_provider: integrations.active_social_provider || 'export',
-      facebook_access_token: integrations.facebook_access_token || '',
-      facebook_page_id: integrations.facebook_page_id || '',
-    }))
+    void (async () => {
+      setForm(prev => ({
+        ...prev,
+        active_social_provider: integrations.active_social_provider || 'export',
+        facebook_access_token: integrations.facebook_access_token || '',
+        facebook_page_id: integrations.facebook_page_id || '',
+      }))
+    })()
   }, [integrations])
 
   async function saveFields(fields: Record<string, string>) {
