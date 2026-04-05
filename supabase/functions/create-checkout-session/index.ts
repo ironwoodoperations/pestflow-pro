@@ -1,7 +1,7 @@
-// Edge Function: create-checkout-session v3
-// Creates a Stripe Checkout Session with a subscription + setup fee as a visible line item.
-// Uses subscription_data.add_invoice_items so the fee appears in the Stripe Checkout UI.
-// Stores provision_data in stripe_payments so the webhook can call provision-tenant after payment.
+// Edge Function: create-checkout-session v15
+// mode: 'subscription' with initial_invoice_items for setup fee.
+// Setup fee appears as a visible line item on the first invoice.
+// Recurring price IDs (price_1TIZ6D..., etc.) work correctly in subscription mode.
 
 import Stripe from 'https://esm.sh/stripe@14?target=deno'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -11,30 +11,24 @@ const CORS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Price ID map — read from edge function env (set via supabase secrets set)
-const SETUP_PRICE_MAP: Record<string, string> = {
-  'template-launch': Deno.env.get('STRIPE_PRICE_STANDARD_SETUP') || '',
-  'growth-setup':    Deno.env.get('STRIPE_PRICE_STANDARD_SETUP') || '',
-  'site-migration':  Deno.env.get('STRIPE_PRICE_CUSTOM_MIGRATION') || '',
-  'custom-rebuild':  Deno.env.get('STRIPE_PRICE_PREMIUM_MIGRATION') || '',
-}
 const PLAN_PRICE_MAP: Record<string, string> = {
-  starter: Deno.env.get('STRIPE_PRICE_STARTER') || '',
-  grow:    Deno.env.get('STRIPE_PRICE_GROW') || '',
-  pro:     Deno.env.get('STRIPE_PRICE_PRO') || '',
-  elite:   Deno.env.get('STRIPE_PRICE_ELITE') || '',
+  starter: 'price_1TIZ6DCZBM0TUusSaC2UdcYG',
+  grow:    'price_1TIrvGCZBM0TUusSNBntvS6l',
+  pro:     'price_1TIrvcCZBM0TUusS4BJt8oQi',
+  elite:   'price_1TIrw3CZBM0TUusSomA1hsT4',
 }
 
 interface RequestBody {
   tenant_id?: string
   client_email: string
-  client_name: string
-  package_type: 'template-launch' | 'growth-setup' | 'site-migration' | 'custom-rebuild'
+  client_name?: string
+  package_type?: string
   setup_amount_override?: number  // in cents
-  plan: 'starter' | 'grow' | 'pro' | 'elite'
+  plan: string
   slug: string
-  onboarding_session_id: string
-  provision_data?: Record<string, unknown> // legacy — kept for backwards compat
+  prospect_id?: string
+  onboarding_session_id?: string
+  provision_data?: Record<string, unknown>
 }
 
 Deno.serve(async (req: Request) => {
@@ -45,25 +39,21 @@ Deno.serve(async (req: Request) => {
 
   try {
     const body: RequestBody = await req.json()
-    const { tenant_id, client_email, client_name, package_type, setup_amount_override, plan, slug, onboarding_session_id, provision_data } = body
+    const { tenant_id, client_email, client_name, setup_amount_override,
+            plan, slug, prospect_id, onboarding_session_id, provision_data } = body
 
     if (!client_email || !slug) return json({ error: 'client_email and slug are required' }, 400)
-    if (!package_type) return json({ error: 'package_type is required' }, 400)
     if (!plan) return json({ error: 'plan is required (starter | grow | pro | elite)' }, 400)
 
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY')
     if (!stripeKey) return json({ error: 'STRIPE_SECRET_KEY not configured' }, 500)
 
-    // Resolve price IDs from server-side env — never trust frontend for price IDs
-    const setupPriceId = SETUP_PRICE_MAP[package_type]
-    const subscriptionPriceId = PLAN_PRICE_MAP[plan]
-
-    if (!subscriptionPriceId) return json({ error: `Subscription price ID not configured for plan: ${plan}` }, 500)
-    if (!setup_amount_override && !setupPriceId) return json({ error: `Setup price ID not configured for package: ${package_type}` }, 500)
+    const recurringPriceId = PLAN_PRICE_MAP[plan.toLowerCase()]
+    if (!recurringPriceId) return json({ error: `Price ID not configured for plan: ${plan}` }, 500)
 
     const stripe = new Stripe(stripeKey, { apiVersion: '2023-10-16' as any })
 
-    // Create or retrieve Stripe customer by email
+    // Create or retrieve Stripe customer
     const existing = await stripe.customers.list({ email: client_email, limit: 1 })
     const customer = existing.data.length > 0
       ? existing.data[0]
@@ -71,68 +61,64 @@ Deno.serve(async (req: Request) => {
 
     console.log(`Customer: ${customer.id} (${client_email})`)
 
-    // Build the setup fee add_invoice_item entry.
-    // Using subscription_data.add_invoice_items makes the fee appear as a visible
-    // line item in the Stripe Checkout UI (unlike invoiceItems.create which silently
-    // bundles into the first invoice but is not shown on the checkout page).
-    const setupItem = setup_amount_override && setup_amount_override > 0
-      ? {
-          price_data: {
-            currency: 'usd' as const,
-            unit_amount: setup_amount_override,
-            product_data: { name: 'Setup Fee (Custom)' },
-          },
-          quantity: 1,
-        }
-      : { price: setupPriceId, quantity: 1 }
+    const setupFeeCents = setup_amount_override ?? 0
 
-    console.log(`Setup fee line item: ${JSON.stringify(setupItem)}`)
-
-    // Create invoice item on customer BEFORE session — Stripe bundles it into first invoice
-    // and shows it as a visible line item on the checkout page
-    if (setup_amount_override && setup_amount_override > 0) {
-      await stripe.invoiceItems.create({
-        customer: customer.id,
-        amount: setup_amount_override,
-        currency: 'usd',
-        description: 'Setup Fee (Custom)',
-      })
-    } else if (setupPriceId) {
-      await stripe.invoiceItems.create({
-        customer: customer.id,
-        price: setupPriceId,
-      })
+    // Build subscription_data — only include initial_invoice_items when fee > 0
+    // (empty array causes Stripe validation error)
+    const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {
+      metadata: {
+        prospect_id:           prospect_id           || '',
+        tenant_id:             tenant_id             || '',
+        slug,
+        onboarding_session_id: onboarding_session_id || '',
+      },
+      ...(setupFeeCents > 0 ? {
+        invoice_settings: {
+          initial_invoice_items: [{
+            price_data: {
+              currency: 'usd' as const,
+              product_data: { name: 'One-Time Setup Fee' },
+              unit_amount: setupFeeCents,
+            },
+          }],
+        },
+      } : {}),
     }
-    // Create Checkout Session — subscription mode, invoice item above appears automatically
+
     const session = await stripe.checkout.sessions.create({
-      customer: customer.id,
-      mode: 'subscription',
-      line_items: [{ price: subscriptionPriceId, quantity: 1 }],
-      subscription_data: {},
-      success_url: `https://${slug}.pestflowpro.com/payment-success`,
-      cancel_url: `https://pestflowpro.com/admin?payment=cancelled`,
-      metadata: { tenant_id: tenant_id || '', slug, client_email, onboarding_session_id: onboarding_session_id || '', setup_fee_amount: String(setup_amount_override || 0) },
+      customer:          customer.id,
+      mode:              'subscription',
+      line_items:        [{ price: recurringPriceId, quantity: 1 }],
+      subscription_data: subscriptionData,
+      metadata: {
+        prospect_id:           prospect_id           || '',
+        tenant_id:             tenant_id             || '',
+        slug,
+        client_email,
+        setup_fee_amount:      String(setupFeeCents),
+        onboarding_session_id: onboarding_session_id || '',
+      },
+      success_url: 'https://pestflowpro.com/ironwood?payment=success',
+      cancel_url:  'https://pestflowpro.com/ironwood?payment=cancelled',
     })
 
     console.log(`Checkout session created: ${session.id}`)
 
-    // Store payment record with provision_data for webhook use
+    // Store payment record
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') || '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
     )
-    const { error: insertError } = await supabase.from('stripe_payments').insert({
-      tenant_id: tenant_id || null,
-      stripe_customer_id: customer.id,
-      stripe_session_id: session.id,
-      setup_price_id: setup_amount_override ? null : setupPriceId,
-      subscription_price_id: subscriptionPriceId,
-      setup_amount: setup_amount_override || null,
-      status: 'pending',
-      payment_type: 'setup_plus_subscription',
-      provision_data: provision_data || null,
+    await supabase.from('stripe_payments').insert({
+      tenant_id:             tenant_id || null,
+      stripe_customer_id:    customer.id,
+      stripe_session_id:     session.id,
+      subscription_price_id: recurringPriceId,
+      setup_amount:          setupFeeCents || null,
+      status:                'pending',
+      payment_type:          'setup_plus_subscription',
+      provision_data:        provision_data || null,
     })
-    if (insertError) console.error('stripe_payments insert error:', insertError.message)
 
     return json({ url: session.url, session_id: session.id })
   } catch (err: any) {
