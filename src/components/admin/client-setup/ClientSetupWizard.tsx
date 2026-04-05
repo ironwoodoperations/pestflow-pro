@@ -67,15 +67,22 @@ export default function ClientSetupWizard() {
         {step === 7 && <ClientSetupPayment form={form} />}
 
         {step >= 1 && step <= 5 && (
-          <div className="flex justify-between mt-8 pt-4 border-t border-gray-100">
-            <button onClick={goBack} disabled={step === 1}
-              className="px-5 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40 transition">
-              ← Back
-            </button>
-            <button onClick={goNext} disabled={!canAdvance(step, form)}
-              className="px-6 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 disabled:opacity-40 transition">
-              {step === 5 ? 'Review →' : 'Next →'}
-            </button>
+          <div className="mt-8 pt-4 border-t border-gray-100">
+            {!canAdvance(step, form) && (step === 1 || step === 2 || step === 5) && (
+              <p className="text-xs text-amber-600 mb-3 text-center">
+                {step === 1 ? 'Fill in all required fields (*) to continue.' : step === 2 ? 'Select a setup package to continue.' : 'Select a plan to continue.'}
+              </p>
+            )}
+            <div className="flex justify-between">
+              <button onClick={goBack} disabled={step === 1}
+                className="px-5 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40 transition">
+                ← Back
+              </button>
+              <button onClick={goNext} disabled={!canAdvance(step, form)}
+                className="px-6 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 disabled:opacity-40 transition">
+                {step === 5 ? 'Review →' : 'Next →'}
+              </button>
+            </div>
           </div>
         )}
 
