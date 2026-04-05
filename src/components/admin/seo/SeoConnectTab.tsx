@@ -85,7 +85,7 @@ export default function SeoConnectTab({
           status={google_search_console_url ? 'connected' : 'not-connected'}
           actionLabel={google_search_console_url ? 'Open Search Console' : undefined}
           actionUrl="https://search.google.com/search-console">
-          <FieldRow value={connectForm.google_search_console_url} placeholder="https://pestflow-pro.vercel.app"
+          <FieldRow value={connectForm.google_search_console_url} placeholder="https://dangpestcontrol.com"
             helper="Go to search.google.com/search-console → Add Property"
             saving={connectSaving === 'google_search_console_url'}
             onChange={v => onChange('google_search_console_url', v)}
