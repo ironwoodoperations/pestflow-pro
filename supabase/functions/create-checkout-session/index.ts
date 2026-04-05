@@ -13,9 +13,10 @@ const CORS = {
 
 // Price ID map — read from edge function env (set via supabase secrets set)
 const SETUP_PRICE_MAP: Record<string, string> = {
-  template-launch': Deno.env.get('STRIPE_PRICE_STANDARD_SETUP') || '',
-  custom:   Deno.env.get('STRIPE_PRICE_CUSTOM_MIGRATION') || '',
-  premium:  Deno.env.get('STRIPE_PRICE_PREMIUM_MIGRATION') || '',
+  'template-launch': Deno.env.get('STRIPE_PRICE_STANDARD_SETUP') || '',
+  'growth-setup':    Deno.env.get('STRIPE_PRICE_STANDARD_SETUP') || '',
+  'site-migration':  Deno.env.get('STRIPE_PRICE_CUSTOM_MIGRATION') || '',
+  'custom-rebuild':  Deno.env.get('STRIPE_PRICE_PREMIUM_MIGRATION') || '',
 }
 const PLAN_PRICE_MAP: Record<string, string> = {
   starter: Deno.env.get('STRIPE_PRICE_STARTER') || '',
