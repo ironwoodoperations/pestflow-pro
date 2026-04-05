@@ -25,12 +25,12 @@ export default function Step5PlanSelection({ form, setForm }: Props) {
                 selected ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 bg-white hover:border-gray-300'
               }`}
             >
-              {selected && <CheckCircle className="absolute top-3 right-3 w-5 h-5 text-emerald-500" />}
-              {p.badge && (
-                <span className="absolute top-3 right-3 text-xs font-semibold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
-                  {p.badge}
-                </span>
-              )}
+              {selected
+                ? <CheckCircle className="absolute top-3 right-3 w-5 h-5 text-emerald-500" />
+                : p.badge
+                  ? <span className="absolute top-3 right-3 text-xs font-semibold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">{p.badge}</span>
+                  : null
+              }
               <p className={`text-base font-bold mb-0.5 ${selected ? 'text-emerald-700' : 'text-gray-900'}`}>{p.name}</p>
               <p className={`text-lg font-semibold mb-2 ${selected ? 'text-emerald-600' : 'text-gray-700'}`}>${p.price}/mo</p>
               <ul className="space-y-1">

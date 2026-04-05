@@ -70,7 +70,7 @@ export default function ClientSetupWizard() {
           <div className="flex justify-between mt-8 pt-4 border-t border-gray-100">
             <button onClick={goBack} disabled={step === 1}
               className="px-5 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40 transition">
-              Back
+              ← Back
             </button>
             <button onClick={goNext} disabled={!canAdvance(step, form)}
               className="px-6 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 disabled:opacity-40 transition">

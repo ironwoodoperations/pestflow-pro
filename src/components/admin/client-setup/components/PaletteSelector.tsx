@@ -41,7 +41,7 @@ export default function PaletteSelector({ shell, selectedId, onChange }: Palette
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-2">Color Palette</label>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {palettes.map(p => {
           const selected = selectedId === p.id
           return (
