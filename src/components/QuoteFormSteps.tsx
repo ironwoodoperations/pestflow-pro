@@ -11,6 +11,16 @@ export interface QuoteFormState {
   referral: string
   message: string
   smsConsent: boolean
+  fieldErrors: Record<string, string>
+}
+
+export function validateContactFields(data: { name: string; email: string; phone: string }) {
+  const errors: Record<string, string> = {}
+  if (!data.name.trim()) errors.name = 'Name is required'
+  if (!data.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) errors.email = 'Enter a valid email address'
+  const digits = data.phone.replace(/\D/g, '')
+  if (digits.length < 10) errors.phone = 'Enter a valid phone number'
+  return errors
 }
 
 const PEST_OPTIONS = [
@@ -91,11 +101,13 @@ export default function QuoteFormSteps({ step, form, setForm, togglePest, inputC
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
-                <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} className={inputClass} required />
+                <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value, fieldErrors: { ...p.fieldErrors, name: '' } }))} className={inputClass} required />
+                {form.fieldErrors.name && <p className="text-red-400 text-sm mt-1">{form.fieldErrors.name}</p>}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
-                <input type="tel" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} className={inputClass} required />
+                <input type="tel" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value, fieldErrors: { ...p.fieldErrors, phone: '' } }))} className={inputClass} required />
+                {form.fieldErrors.phone && <p className="text-red-400 text-sm mt-1">{form.fieldErrors.phone}</p>}
               </div>
             </div>
             <div className="flex items-start gap-3 mt-2">
@@ -122,7 +134,8 @@ export default function QuoteFormSteps({ step, form, setForm, togglePest, inputC
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Email Address *</label>
-              <input type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} className={inputClass} required />
+              <input type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value, fieldErrors: { ...p.fieldErrors, email: '' } }))} className={inputClass} required />
+              {form.fieldErrors.email && <p className="text-red-400 text-sm mt-1">{form.fieldErrors.email}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">How did you hear about us?</label>

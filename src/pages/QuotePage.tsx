@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { CheckCircle, Bug, Home, User, ClipboardCheck } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
-import QuoteFormSteps, { type QuoteFormState } from '../components/QuoteFormSteps'
+import QuoteFormSteps, { type QuoteFormState, validateContactFields } from '../components/QuoteFormSteps'
 
 const STEPS = [
   { num: 1, label: 'Pest Type', icon: Bug },
@@ -14,6 +14,7 @@ const STEPS = [
 const INITIAL: QuoteFormState = {
   pests: [], propertyType: '', urgency: '', address: '',
   name: '', phone: '', email: '', referral: '', message: '', smsConsent: false,
+  fieldErrors: {},
 }
 
 export default function QuotePage() {
@@ -55,8 +56,11 @@ export default function QuotePage() {
   function next() {
     if (step === 1 && form.pests.length === 0) { setError('Select at least one pest type.'); return }
     if (step === 2 && !form.propertyType) { setError('Select a property type.'); return }
-    if (step === 3 && (!form.name.trim() || !form.phone.trim() || !form.email.trim())) { setError('Name, phone, and email are required.'); return }
-    if (step === 3 && !form.smsConsent) { setError('Please check the SMS consent box to continue.'); return }
+    if (step === 3) {
+      const errors = validateContactFields({ name: form.name, email: form.email, phone: form.phone })
+      if (Object.keys(errors).length > 0) { setForm(prev => ({ ...prev, fieldErrors: errors })); return }
+      if (!form.smsConsent) { setError('Please check the SMS consent box to continue.'); return }
+    }
     setError('')
     setStep(s => Math.min(s + 1, 4))
   }
