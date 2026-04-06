@@ -247,6 +247,8 @@ Deno.serve(async (req: Request) => {
       { tenant_id: tenantId, page_slug: 'flea-tick-control',   title: 'Flea & Tick Control', subtitle: 'Protect your family and pets.', intro: '' },
       { tenant_id: tenantId, page_slug: 'rodent-control',      title: 'Rodent Control', subtitle: 'Exclusion and elimination, done right.', intro: '' },
       { tenant_id: tenantId, page_slug: 'scorpion-control',    title: 'Scorpion Control', subtitle: 'Safe, effective scorpion treatments.', intro: '' },
+      { tenant_id: tenantId, page_slug: 'spider-control',     title: 'Spider Control', subtitle: 'Fast, effective spider elimination.', intro: '' },
+      { tenant_id: tenantId, page_slug: 'wasp-hornet-control', title: 'Wasp & Hornet Control', subtitle: 'Safe removal of nests — we handle the dangerous work.', intro: '' },
       { tenant_id: tenantId, page_slug: 'contact',             title: 'Contact Us', subtitle: "We're here to help.", intro: '' },
       { tenant_id: tenantId, page_slug: 'faq',                 title: 'Frequently Asked Questions', subtitle: 'Answers to common questions.', intro: '' },
       { tenant_id: tenantId, page_slug: 'quote',               title: 'Get a Free Quote', subtitle: 'Fast response, honest pricing.', intro: '' },
