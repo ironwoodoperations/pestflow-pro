@@ -36,7 +36,7 @@ export default function ShellHero() {
   const inputCls = 'w-full rounded px-3 py-2 text-sm bg-white text-black border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-400'
 
   return (
-    <section className="bg-[#1c1c1c] text-white min-h-[560px] flex flex-col md:flex-row">
+    <section style={{ backgroundColor: 'var(--color-bg-hero)' }} className="text-white min-h-[560px] flex flex-col md:flex-row">
       {/* LEFT — headline + CTA */}
       <div className="flex-1 md:w-[60%] flex flex-col justify-center px-8 md:px-14 py-16 relative">
         <div className="absolute top-0 left-0 w-1 h-full bg-amber-500 hidden md:block" aria-hidden="true" />
@@ -49,7 +49,7 @@ export default function ShellHero() {
         <p className="text-lg text-gray-300 mb-8">Fast. Reliable. Local.</p>
         <a
           href="/quote"
-          className="inline-block bg-amber-500 hover:bg-amber-400 text-black font-bold px-8 py-4 text-lg transition w-fit"
+          style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }} className="inline-block font-bold px-8 py-4 text-lg transition w-fit"
         >
           Get a Free Estimate
         </a>
@@ -106,7 +106,7 @@ export default function ShellHero() {
             </div>
             <button
               type="submit"
-              className="w-full bg-amber-500 hover:bg-amber-400 text-black font-bold py-3 rounded transition text-sm"
+              style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }} className="w-full font-bold py-3 rounded transition text-sm"
             >
               Get My Free Estimate
             </button>

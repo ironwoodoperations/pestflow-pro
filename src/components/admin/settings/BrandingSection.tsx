@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../hooks/useTenant'
 import HeroCustomizationSection from './HeroCustomizationSection'
+import { applyShellTheme } from '../../../lib/shellThemes'
 
 interface BrandingForm {
   logo_url: string; favicon_url: string; primary_color: string; accent_color: string
@@ -32,7 +33,13 @@ export default function BrandingSection() {
     setSaving(true)
     const { error } = await supabase.from('settings').upsert({ tenant_id: tenantId, key: 'branding', value: form }, { onConflict: 'tenant_id,key' })
     setSaving(false)
-    if (error) toast.error('Failed to save branding settings.'); else toast.success('Branding settings saved!')
+    if (error) {
+      toast.error('Failed to save branding settings.')
+    } else {
+      applyShellTheme(form.template, form.primary_color, form.accent_color)
+      localStorage.setItem('pfp_template', form.template)
+      toast.success('Branding settings saved!')
+    }
   }
 
   if (loading) return <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"><p className="text-gray-400">Loading...</p></div>

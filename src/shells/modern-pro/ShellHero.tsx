@@ -56,8 +56,8 @@ export default function ShellHero() {
 
   return (
     <section
-      className="relative bg-[#0a0f1e] text-white min-h-screen flex items-center justify-center px-4 overflow-hidden"
-      style={sectionStyle}
+      className="relative text-white min-h-screen flex items-center justify-center px-4 overflow-hidden"
+      style={{ backgroundColor: 'var(--color-bg-hero)', ...sectionStyle }}
     >
       {bgImage && <div className="absolute inset-0" style={{ background: 'rgba(10,15,30,0.75)' }} />}
 
@@ -83,7 +83,8 @@ export default function ShellHero() {
         <div className="flex flex-wrap gap-4 justify-center mt-8">
           <Link
             to="/quote"
-            className="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-8 py-3 rounded-lg transition"
+            style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}
+            className="font-semibold px-8 py-3 rounded-lg transition"
           >
             Get a Free Quote
           </Link>

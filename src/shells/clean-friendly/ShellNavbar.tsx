@@ -63,7 +63,7 @@ export default function ShellNavbar() {
   function onLeave() { closeTimer.current = setTimeout(() => setDropdownOpen(false), 150) }
 
   return (
-    <nav className="bg-white shadow-sm sticky top-0 z-50">
+    <nav style={{ backgroundColor: 'var(--color-nav-bg)' }} className="shadow-sm sticky top-0 z-50">
       <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-sky-600 text-white px-4 py-2 rounded-lg z-[60]">
         Skip to main content
       </a>
@@ -93,7 +93,7 @@ export default function ShellNavbar() {
             {NAV_LINKS.map((link) => (
               <Link key={link.href} to={link.href} className="font-raleway text-sm font-medium text-slate-700 hover:text-sky-600 transition">{link.label}</Link>
             ))}
-            <Link to="/quote" className="bg-sky-600 hover:bg-sky-700 text-white font-raleway font-semibold rounded-full px-5 py-2 transition text-sm">Get a Quote</Link>
+            <Link to="/quote" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }} className="font-raleway font-semibold rounded-full px-5 py-2 transition text-sm">Get a Quote</Link>
           </div>
 
           <button className="lg:hidden p-2 text-slate-700" onClick={() => setMobileOpen(!mobileOpen)} aria-label={mobileOpen ? 'Close menu' : 'Open menu'} aria-expanded={mobileOpen}>
@@ -103,7 +103,7 @@ export default function ShellNavbar() {
       </div>
 
       {mobileOpen && (
-        <div ref={menuRef} className="lg:hidden bg-white border-t border-gray-100 max-h-[80vh] overflow-y-auto">
+        <div ref={menuRef} style={{ backgroundColor: 'var(--color-nav-bg)' }} className="lg:hidden border-t border-gray-100 max-h-[80vh] overflow-y-auto">
           <div className="px-4 py-4 space-y-1">
             <p className="text-xs font-semibold text-gray-400 uppercase px-2 pt-2 pb-1">Services</p>
             {SERVICE_LINKS.map((link) => (
@@ -113,7 +113,7 @@ export default function ShellNavbar() {
             {NAV_LINKS.map((link) => (
               <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} className="block px-2 py-2 font-raleway text-base font-medium text-slate-700 hover:text-sky-600 transition">{link.label}</Link>
             ))}
-            <Link to="/quote" onClick={() => setMobileOpen(false)} className="block text-center bg-sky-600 hover:bg-sky-700 text-white font-raleway font-semibold rounded-full px-5 py-2.5 transition mt-3">Get a Quote</Link>
+            <Link to="/quote" onClick={() => setMobileOpen(false)} style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }} className="block text-center font-raleway font-semibold rounded-full px-5 py-2.5 transition mt-3">Get a Quote</Link>
           </div>
         </div>
       )}

@@ -31,7 +31,7 @@ export default function ShellHero() {
   const dialPhone = `tel:${(biz.phone || '').replace(/\D/g, '')}`
 
   return (
-    <section style={{ backgroundColor: BROWN }} className="flex flex-col md:flex-row min-h-[540px]">
+    <section style={{ backgroundColor: 'var(--color-bg-hero)' }} className="flex flex-col md:flex-row min-h-[540px]">
       {/* LEFT — text */}
       <div className="md:w-1/2 flex flex-col justify-center px-10 py-16 relative z-10">
         {/* Est. badge */}
@@ -55,7 +55,7 @@ export default function ShellHero() {
         <Link
           to="/quote"
           className="inline-block font-bold px-8 py-4 text-white text-lg transition w-fit hover:opacity-90"
-          style={{ backgroundColor: RUST, borderRadius: '2px' }}
+          style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)', borderRadius: '2px' }}
         >
           Get a Free Estimate
         </Link>

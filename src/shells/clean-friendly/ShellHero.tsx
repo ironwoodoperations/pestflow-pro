@@ -59,7 +59,7 @@ export default function ShellHero() {
           <p className="text-xl text-sky-200 mt-2 mb-6">Call for Same-Day Service</p>
           <Link
             to="/quote"
-            className="inline-block bg-sky-500 hover:bg-sky-400 text-white font-bold px-8 py-4 rounded-full transition shadow-lg text-lg"
+            style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }} className="inline-block font-bold px-8 py-4 rounded-full transition shadow-lg text-lg"
           >
             Get a Free Quote
           </Link>

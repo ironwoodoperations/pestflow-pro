@@ -68,7 +68,7 @@ export default function ShellNavbar() {
   }
 
   return (
-    <nav className="bg-[#1c1c1c] border-b border-white/10 sticky top-0 z-50">
+    <nav style={{ backgroundColor: 'var(--color-nav-bg)' }} className="border-b border-white/10 sticky top-0 z-50">
       <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-[#d97706] text-white px-4 py-2 rounded-lg z-[60]">
         Skip to main content
       </a>
@@ -101,7 +101,7 @@ export default function ShellNavbar() {
             {NAV_LINKS.map((link) => (
               <Link key={link.href} to={link.href} className="text-sm font-medium text-gray-300 hover:text-[#d97706] transition">{link.label}</Link>
             ))}
-            <Link to="/quote" className="bg-[#d97706] hover:bg-[#b45309] text-white font-bold rounded-lg px-5 py-2.5 transition">Get Free Quote</Link>
+            <Link to="/quote" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }} className="font-bold rounded-lg px-5 py-2.5 transition">Get Free Quote</Link>
           </div>
 
           <button className="lg:hidden p-2 text-gray-300" onClick={() => setMobileOpen(!mobileOpen)} aria-label={mobileOpen ? 'Close menu' : 'Open menu'} aria-expanded={mobileOpen}>
@@ -111,7 +111,7 @@ export default function ShellNavbar() {
       </div>
 
       {mobileOpen && (
-        <div ref={menuRef} className="lg:hidden bg-[#1c1c1c] border-t border-white/10 max-h-[80vh] overflow-y-auto">
+        <div ref={menuRef} style={{ backgroundColor: 'var(--color-nav-bg)' }} className="lg:hidden border-t border-white/10 max-h-[80vh] overflow-y-auto">
           <div className="px-4 py-4 space-y-1">
             <p className="text-xs font-semibold text-gray-500 uppercase px-2 pt-2 pb-1">Services</p>
             {SERVICE_LINKS.map((link) => (
@@ -121,7 +121,7 @@ export default function ShellNavbar() {
             {NAV_LINKS.map((link) => (
               <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} className="block px-2 py-2 text-base font-medium text-gray-300 hover:text-[#d97706] transition">{link.label}</Link>
             ))}
-            <Link to="/quote" onClick={() => setMobileOpen(false)} className="block text-center bg-[#d97706] hover:bg-[#b45309] text-white font-bold rounded-lg px-5 py-2.5 transition mt-3">Get Free Quote</Link>
+            <Link to="/quote" onClick={() => setMobileOpen(false)} style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }} className="block text-center font-bold rounded-lg px-5 py-2.5 transition mt-3">Get Free Quote</Link>
           </div>
         </div>
       )}

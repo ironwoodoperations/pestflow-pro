@@ -32,7 +32,7 @@ export default function ShellNavbar() {
   }, [])
 
   return (
-    <nav style={{ background: BG }} className="sticky top-0 z-50 shadow-lg">
+    <nav style={{ background: 'var(--color-nav-bg)' }} className="sticky top-0 z-50 shadow-lg">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
         <Link to="/" className="font-bold text-xl tracking-tight" style={{ color: ACCENT }}>
           {businessName}
@@ -55,7 +55,7 @@ export default function ShellNavbar() {
         </button>
       </div>
       {mobileOpen && (
-        <div style={{ background: BG }} className="md:hidden border-t border-gray-700 px-4 pb-4">
+        <div style={{ background: 'var(--color-nav-bg)' }} className="md:hidden border-t border-gray-700 px-4 pb-4">
           {NAV.map(n => (
             <Link key={n.label} to={n.href} onClick={() => setMobileOpen(false)}
               className="block py-2 text-gray-300 text-sm font-medium border-b border-gray-800">

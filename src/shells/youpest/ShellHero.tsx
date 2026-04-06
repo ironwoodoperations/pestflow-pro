@@ -23,7 +23,7 @@ export default function ShellHero() {
   }, [])
 
   return (
-    <section style={{ background: BG }} className="py-24 px-4">
+    <section style={{ background: 'var(--color-bg-hero)' }} className="py-24 px-4">
       <div className="max-w-4xl mx-auto text-center">
         <span style={{ background: ACCENT + '22', color: ACCENT }}
           className="inline-block text-xs font-bold tracking-widest uppercase px-4 py-1.5 rounded-full mb-6">
@@ -34,8 +34,8 @@ export default function ShellHero() {
         </h1>
         <p className="text-gray-400 text-lg mb-10 max-w-xl mx-auto">{sub}</p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link to="/contact" style={{ background: ACCENT }}
-            className="px-8 py-4 rounded-xl text-white font-bold text-lg hover:opacity-90 transition shadow-lg">
+          <Link to="/contact" style={{ background: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}
+            className="px-8 py-4 rounded-xl font-bold text-lg hover:opacity-90 transition shadow-lg">
             {cta}
           </Link>
           <Link to="/pest-control"

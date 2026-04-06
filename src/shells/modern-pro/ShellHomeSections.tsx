@@ -123,11 +123,11 @@ export default function ShellHomeSections() {
       )}
 
       {/* CTA Banner */}
-      <section className="py-14 bg-[#0a0f1e]">
+      <section style={{ backgroundColor: 'var(--color-bg-cta)' }} className="py-14">
         <div className="max-w-5xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-6">
           <h2 className="text-white font-oswald text-3xl md:text-4xl tracking-wide">Ready to protect your home?</h2>
           <div className="flex items-center gap-6 flex-wrap">
-            <Link to="/quote" className="bg-emerald-500 hover:bg-emerald-400 text-white font-bold px-8 py-3 rounded-lg transition">
+            <Link to="/quote" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }} className="font-bold px-8 py-3 rounded-lg transition">
               Get a Free Quote
             </Link>
             {biz.phone && (

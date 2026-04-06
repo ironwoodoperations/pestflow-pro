@@ -45,7 +45,7 @@ export default function ShellFooter() {
   }, [])
 
   return (
-    <footer className="bg-[#0a0f1e] text-gray-300">
+    <footer style={{ backgroundColor: 'var(--color-footer-bg)', color: 'var(--color-footer-text)' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>

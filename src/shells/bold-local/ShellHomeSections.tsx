@@ -116,11 +116,11 @@ export default function ShellHomeSections() {
       </section>
 
       {/* Bottom CTA Band */}
-      <section className="py-16 bg-[#1c1c1c] text-center">
+      <section style={{ backgroundColor: 'var(--color-bg-cta)' }} className="py-16 text-center">
         <h2 className="font-oswald text-4xl text-white mb-6 tracking-wide">Ready to Get Started?</h2>
         <a
           href="/quote"
-          className="inline-block bg-amber-500 hover:bg-amber-400 text-black font-bold px-10 py-4 rounded-lg text-lg transition mb-4"
+          style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }} className="inline-block font-bold px-10 py-4 rounded-lg text-lg transition mb-4"
         >
           Get a Free Estimate
         </a>
