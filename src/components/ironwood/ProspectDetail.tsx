@@ -19,12 +19,14 @@ function slugify(name: string) {
 }
 
 export default function ProspectDetail({ prospectId, salespeople, onClose }: Props) {
-  const [form, setForm]             = useState<Partial<Prospect>>({ status: 'prospect', business_info: {}, branding: {}, customization: {} })
-  const [saved, setSaved]           = useState(false)
-  const [loading, setLoading]       = useState(!!prospectId)
-  const [id, setId]                 = useState<string | null>(prospectId)
-  const [slugEdited, setSlugEdited] = useState(false)
-  const timer                       = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const [form, setForm]               = useState<Partial<Prospect>>({ status: 'prospect', business_info: {}, branding: {}, customization: {} })
+  const [saved, setSaved]             = useState(false)
+  const [loading, setLoading]         = useState(!!prospectId)
+  const [id, setId]                   = useState<string | null>(prospectId)
+  const [slugEdited, setSlugEdited]   = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting]       = useState(false)
+  const timer                         = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   useEffect(() => {
     if (!prospectId) return
@@ -101,6 +103,14 @@ export default function ProspectDetail({ prospectId, salespeople, onClose }: Pro
     setTimeout(() => setSaved(false), 2000)
   }, [])
 
+  async function handleDelete() {
+    if (!id) return
+    setDeleting(true)
+    await supabase.from('prospects').delete().eq('id', id)
+    // intake_tokens cascade-deletes via FK ON DELETE CASCADE
+    onClose(true)
+  }
+
   if (loading) return null
 
   return (
@@ -124,6 +134,36 @@ export default function ProspectDetail({ prospectId, salespeople, onClose }: Pro
           <SiteSetupSection form={form} setField={wrappedSetField} onBlur={onBlur} />
           <IntegrationsSection prospectId={id} form={form} />
           <ProvisionSection form={form} prospectId={id} onProvisioned={onUpdate} />
+
+          {id && (
+            <div className="pt-2 border-t border-gray-800">
+              {!confirmDelete ? (
+                <button onClick={() => setConfirmDelete(true)}
+                  className="text-xs text-red-500 hover:text-red-400 transition">
+                  Delete this prospect
+                </button>
+              ) : (
+                <div className="bg-gray-900 rounded-lg p-4 space-y-3">
+                  {form.tenant_id && (
+                    <p className="text-xs text-amber-400">This prospect has an active site. Deleting the prospect record will not affect the live site.</p>
+                  )}
+                  <p className="text-sm text-gray-300">
+                    Delete <span className="font-medium text-white">{form.company_name || 'this prospect'}</span>? This cannot be undone.
+                  </p>
+                  <div className="flex gap-2">
+                    <button onClick={handleDelete} disabled={deleting}
+                      className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-lg transition disabled:opacity-50">
+                      {deleting ? 'Deleting…' : 'Delete'}
+                    </button>
+                    <button onClick={() => setConfirmDelete(false)}
+                      className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-lg transition">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
