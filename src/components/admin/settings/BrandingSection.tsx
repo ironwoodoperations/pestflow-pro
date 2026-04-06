@@ -17,6 +17,7 @@ export default function BrandingSection() {
   const { tenantId } = useTenant()
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [uploading, setUploading] = useState(false)
   const [form, setForm] = useState<BrandingForm>({ logo_url: '', favicon_url: '', primary_color: '#10b981', accent_color: '#f5c518', template: 'modern-pro', cta_text: '' })
 
   useEffect(() => {
@@ -27,6 +28,20 @@ export default function BrandingSection() {
         setLoading(false)
       })
   }, [tenantId])
+
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    if (!tenantId || !e.target.files?.length) return
+    const file = e.target.files[0]
+    const ext = file.name.split('.').pop()?.toLowerCase() || 'png'
+    const path = `${tenantId}/logo.${ext}`
+    setUploading(true)
+    const { error } = await supabase.storage.from('logos').upload(path, file, { upsert: true })
+    if (error) { toast.error('Logo upload failed: ' + error.message); setUploading(false); return }
+    const { data: urlData } = supabase.storage.from('logos').getPublicUrl(path)
+    setForm(prev => ({ ...prev, logo_url: urlData.publicUrl }))
+    setUploading(false)
+    toast.success('Logo uploaded! Save branding to apply.')
+  }
 
   async function handleSave() {
     if (!tenantId) return
@@ -71,8 +86,15 @@ export default function BrandingSection() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Logo URL</label>
-            <input type="text" value={form.logo_url} onChange={(e) => setForm(prev => ({ ...prev, logo_url: e.target.value }))} placeholder="https://example.com/logo.png" className={inputClass} />
-            {form.logo_url && <img src={form.logo_url} alt="Logo preview" className="mt-2 h-12 object-contain rounded" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />}
+            <div className="flex gap-2 mb-1.5">
+              <input type="text" value={form.logo_url} onChange={(e) => setForm(prev => ({ ...prev, logo_url: e.target.value }))} placeholder="https://example.com/logo.png" className={`flex-1 ${inputClass}`} />
+              <label className="cursor-pointer px-3 py-2.5 bg-emerald-50 border border-emerald-300 rounded-lg text-sm font-medium text-emerald-700 hover:bg-emerald-100 transition whitespace-nowrap">
+                {uploading ? 'Uploading...' : 'Upload Logo'}
+                <input type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" className="hidden" onChange={handleLogoUpload} disabled={uploading} />
+              </label>
+            </div>
+            <p className="text-xs text-gray-400 mb-1">Best: PNG with transparent bg, 200×60px</p>
+            {form.logo_url && <img src={form.logo_url} alt="Logo preview" className="mt-1 h-12 object-contain rounded border border-gray-100" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Favicon URL</label>

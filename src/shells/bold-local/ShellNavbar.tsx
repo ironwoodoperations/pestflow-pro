@@ -76,12 +76,11 @@ export default function ShellNavbar() {
       </a>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center gap-3 font-oswald text-2xl tracking-wide">
-            {logoUrl && <img src={logoUrl} alt={`${businessName} logo`} className="h-10 w-auto object-contain brightness-200" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />}
-            <div>
-              <span className="text-[#d97706] font-bold">{businessName.split(' ')[0]}</span>{' '}
-              <span className="text-white text-sm tracking-widest uppercase">{businessName.split(' ').slice(1).join(' ')}</span>
-            </div>
+          <Link to="/" className="flex items-center gap-3 text-2xl tracking-wide">
+            {logoUrl
+              ? <img src={logoUrl} alt={businessName} style={{ height: '40px', objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+              : <span style={{ color: 'var(--color-nav-text)', fontFamily: 'var(--font-heading)', fontWeight: 700 }}>{businessName}</span>
+            }
           </Link>
 
           <div className="hidden lg:flex items-center gap-5">
