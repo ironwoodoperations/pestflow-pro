@@ -34,6 +34,12 @@ export default function SiteSetupSection({ form, setField, onBlur }: Props) {
   const br = (form.branding || {}) as Record<string, any>
   const cu = (form.customization || {}) as Record<string, any>
 
+  const fallbackEmail =
+    form.email?.trim() ||
+    bi.email?.trim() ||
+    (form as any).intake_data?.business?.email?.trim() ||
+    ''
+
   const setBi = (k: string, v: any) => setField('business_info', { ...bi, [k]: v })
   const setBr = (k: string, v: any) => setField('branding', { ...br, [k]: v })
   const setCu = (k: string, v: any) => setField('customization', { ...cu, [k]: v })
@@ -56,7 +62,14 @@ export default function SiteSetupSection({ form, setField, onBlur }: Props) {
           {form.admin_email && !isValidEmail(form.admin_email) && (
             <p className="text-xs text-red-400 mt-0.5">Must be a valid email (e.g. admin@company.com)</p>
           )}
-          {form.slug && !form.admin_email && (
+          {!form.admin_email && fallbackEmail && (
+            <button type="button"
+              onClick={() => { setField('admin_email', fallbackEmail); onBlur() }}
+              className="text-xs text-emerald-400 hover:text-emerald-300 mt-0.5 underline text-left">
+              Use {fallbackEmail}
+            </button>
+          )}
+          {!form.admin_email && !fallbackEmail && form.slug && (
             <p className="text-xs text-gray-600 mt-0.5">Suggested: admin@{form.slug}.com</p>
           )}
         </div>

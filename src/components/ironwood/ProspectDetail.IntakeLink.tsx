@@ -7,9 +7,14 @@ interface Props {
   prospectId: string | null
   adminEmail?: string
   companyName?: string
+  onImportSuccess?: (data: Record<string, any>) => void
 }
 
-export default function IntakeLinkSection({ prospectId, adminEmail, companyName }: Props) {
+function mergeIfBlank(existing: string | undefined, incoming: string | undefined): string {
+  return existing?.trim() ? existing : (incoming?.trim() || existing || '')
+}
+
+export default function IntakeLinkSection({ prospectId, adminEmail, companyName, onImportSuccess }: Props) {
   const [tokenRow, setTokenRow]       = useState<any>(null)
   const [loading, setLoading]         = useState(true)
   const [creating, setCreating]       = useState(false)
@@ -17,6 +22,8 @@ export default function IntakeLinkSection({ prospectId, adminEmail, companyName 
   const [showData, setShowData]       = useState(false)
   const [confirmRegen, setConfirmRegen] = useState(false)
   const [regenerating, setRegenerating] = useState(false)
+  const [importing, setImporting]     = useState(false)
+  const [importMsg, setImportMsg]     = useState<string | null>(null)
 
   useEffect(() => {
     if (!prospectId) { setLoading(false); return }
@@ -57,6 +64,77 @@ export default function IntakeLinkSection({ prospectId, adminEmail, companyName 
       `Hi${companyName ? ` ${companyName}` : ''},\n\nHere is your PestFlow Pro setup link:\n\n${link}\n\nThis link will expire in 14 days. Fill out the short form so we can get your site ready!\n\nTalk soon,\nScott`
     )
     window.open(`mailto:${adminEmail || ''}?subject=${subject}&body=${body}`)
+  }
+
+  async function importFromIntake() {
+    if (!prospectId) return
+    setImporting(true)
+    setImportMsg(null)
+    try {
+      const { data: prospect } = await supabase
+        .from('prospects')
+        .select('*')
+        .eq('id', prospectId)
+        .maybeSingle()
+      if (!prospect) throw new Error('Prospect not found')
+      const d = prospect.intake_data || {}
+      const biz = d.business || {}
+      const brand = d.branding || {}
+      const social = d.social || {}
+
+      const address = [biz.address, biz.city, biz.state, biz.zip].filter(Boolean).join(', ')
+
+      const updates: Record<string, any> = {}
+
+      // Contact fields
+      if (!prospect.email?.trim() && biz.email?.trim())   updates.email = biz.email.trim()
+      if (!prospect.phone?.trim() && biz.phone?.trim())   updates.phone = biz.phone.trim()
+
+      // business_info merge
+      const existingBi = prospect.business_info || {}
+      updates.business_info = {
+        ...existingBi,
+        name:    mergeIfBlank(existingBi.name,    biz.name),
+        phone:   mergeIfBlank(existingBi.phone,   biz.phone),
+        email:   mergeIfBlank(existingBi.email,   biz.email),
+        address: mergeIfBlank(existingBi.address, address),
+        hours:   mergeIfBlank(existingBi.hours,   biz.hours),
+        tagline: mergeIfBlank(existingBi.tagline, biz.tagline),
+      }
+
+      // branding merge
+      const existingBr = prospect.branding || {}
+      updates.branding = {
+        ...existingBr,
+        template:      mergeIfBlank(existingBr.template,      brand.template),
+        primary_color: mergeIfBlank(existingBr.primary_color, brand.primary_color),
+        accent_color:  mergeIfBlank(existingBr.accent_color,  brand.accent_color),
+        logo_url:      mergeIfBlank(existingBr.logo_url,      brand.logo_url),
+      }
+      if (brand.palette_id && !existingBr.palette_id) updates.branding.palette_id = brand.palette_id
+
+      // social_links merge
+      const existingSl = prospect.social_links || {}
+      updates.social_links = {
+        ...existingSl,
+        facebook:  mergeIfBlank(existingSl.facebook,  social.facebook_url),
+        instagram: mergeIfBlank(existingSl.instagram, social.instagram_url),
+        google:    mergeIfBlank(existingSl.google,    social.google_business_url),
+        youtube:   mergeIfBlank(existingSl.youtube,   social.youtube_url),
+      }
+
+      await supabase.from('prospects').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', prospectId)
+
+      // Reload fresh prospect record
+      const { data: refreshed } = await supabase.from('prospects').select('*').eq('id', prospectId).maybeSingle()
+      if (refreshed && onImportSuccess) onImportSuccess(refreshed)
+      setImportMsg('Intake data imported successfully.')
+      setTimeout(() => setImportMsg(null), 4000)
+    } catch (e: any) {
+      setImportMsg(`Import failed: ${e.message}`)
+    } finally {
+      setImporting(false)
+    }
   }
 
   if (!prospectId) return null
@@ -127,10 +205,21 @@ export default function IntakeLinkSection({ prospectId, adminEmail, companyName 
             <span className="text-emerald-400">✓</span>
             <span className="text-sm text-emerald-400 font-medium">Client submitted on {new Date(submitted).toLocaleDateString()}</span>
           </div>
-          <button onClick={() => setShowData(d => !d)}
-            className="text-xs text-gray-400 hover:text-white underline transition">
-            {showData ? 'Hide submitted data' : 'View submitted data'}
-          </button>
+          <div className="flex gap-2 flex-wrap items-center">
+            <button onClick={() => setShowData(d => !d)}
+              className="text-xs text-gray-400 hover:text-white underline transition">
+              {showData ? 'Hide submitted data' : 'View submitted data'}
+            </button>
+            <button onClick={importFromIntake} disabled={importing}
+              className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-medium rounded-lg transition disabled:opacity-50">
+              {importing ? 'Importing…' : '↓ Import from Intake'}
+            </button>
+          </div>
+          {importMsg && (
+            <p className={`text-xs ${importMsg.startsWith('Import failed') ? 'text-red-400' : 'text-emerald-400'}`}>
+              {importMsg}
+            </p>
+          )}
           {showData && <SubmittedDataViewer prospectId={prospectId} />}
         </div>
       )}

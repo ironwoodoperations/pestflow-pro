@@ -15,10 +15,20 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
 
   const setupFeeAmount = prospect.setup_fee_amount || 0
   const hasSetupFee    = setupFeeAmount > 0
+  const resolvedEmail  =
+    prospect.email?.trim() ||
+    (prospect as any).business_info?.email?.trim() ||
+    (prospect as any).intake_data?.business?.email?.trim() ||
+    ''
 
   // SECTION 1 — Setup Invoice
   async function generateInvoice() {
-    if (!prospect.email || !prospect.company_name || !prospect.id) return
+    if (!prospect.company_name || !prospect.id) return
+
+    if (!resolvedEmail) {
+      setError('No email address found. Add an email in the Contact section or import intake data first.')
+      return
+    }
 
     // $0 fee: show waive confirmation instead of calling Stripe
     if (!hasSetupFee) {
@@ -43,7 +53,7 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
         },
         body: JSON.stringify({
           amountCents,
-          clientEmail: prospect.email,
+          clientEmail: resolvedEmail,
           companyName: prospect.company_name,
           prospectId:  prospect.id,
         }),
@@ -81,8 +91,8 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
 
   // SECTION 2 — Subscription Link
   async function generateSubscriptionLink() {
-    if (!prospect.email || !prospect.plan_name) {
-      setError('Email and plan are required.'); return
+    if (!resolvedEmail || !prospect.plan_name) {
+      setError(resolvedEmail ? 'Plan is required.' : 'Email and plan are required.'); return
     }
     setLoadingLink(true); setError(null)
     try {
@@ -100,7 +110,7 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
           'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
-          client_email:          prospect.email,
+          client_email:          resolvedEmail,
           client_name:           prospect.contact_name || prospect.company_name || '',
           setup_amount_override: 0, // Setup fee handled separately via invoice
           plan:                  prospect.plan_name.toLowerCase(),
@@ -176,7 +186,7 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
                   className="text-xs text-emerald-400 hover:underline shrink-0">Copy</button>
               </div>
               <div className="flex gap-2 flex-wrap">
-                <a href={`mailto:${prospect.email}?subject=${mailSubjectInvoice}&body=${setupMailBody}`}
+                <a href={`mailto:${resolvedEmail}?subject=${mailSubjectInvoice}&body=${setupMailBody}`}
                   className="px-3 py-1.5 bg-indigo-700 text-white text-xs rounded hover:bg-indigo-600">✉ Send Invoice</a>
                 {!prospect.payment_confirmed_at && (
                   <button onClick={markSetupPaid}
@@ -211,7 +221,7 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
                 className="text-xs text-emerald-400 hover:underline shrink-0">Copy</button>
             </div>
             <div className="flex gap-2 flex-wrap">
-              <a href={`mailto:${prospect.email}?subject=${mailSubjectSub}&body=${subMailBody}`}
+              <a href={`mailto:${resolvedEmail}?subject=${mailSubjectSub}&body=${subMailBody}`}
                 className="px-3 py-1.5 bg-indigo-700 text-white text-xs rounded hover:bg-indigo-600">✉ Send Link</a>
               {prospect.status !== 'active' && (
                 <button onClick={markSubscriptionActive}

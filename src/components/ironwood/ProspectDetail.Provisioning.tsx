@@ -18,7 +18,15 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
   const [fbSaved, setFbSaved]         = useState(false)
   const [gbSaved, setGbSaved]         = useState(false)
   const [skipCreds, setSkipCreds]     = useState(false)
-  const canCreate = !!form.slug && !!form.admin_email && isValidEmail(form.admin_email)
+
+  const resolvedAdminEmail =
+    form.admin_email?.trim() ||
+    form.email?.trim() ||
+    (form.business_info as any)?.email?.trim() ||
+    (form as any).intake_data?.business?.email?.trim() ||
+    ''
+
+  const canCreate = !!form.slug && !!resolvedAdminEmail && isValidEmail(resolvedAdminEmail)
   const canReveal = skipCreds || (fbSaved && gbSaved)
 
   const handleReveal = async () => {
@@ -29,6 +37,10 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
   }
 
   const doProvision = async () => {
+    if (!resolvedAdminEmail) {
+      setError('Admin email is required. Add it in Site Setup or import intake data first.')
+      return
+    }
     setConfirming(false)
     setProvisioning(true)
     setError(null)
@@ -48,7 +60,7 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
         body: JSON.stringify({
           prospect_id: prospectId,
           slug: form.slug,
-          admin_email: form.admin_email,
+          admin_email: resolvedAdminEmail,
           admin_password: form.admin_password,
           business_info: {
             name:    bi.name    || form.company_name || '',
@@ -185,8 +197,8 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
       {!canCreate && (
         <p className="text-xs text-yellow-400">
           {!form.slug ? 'Fill slug to enable. ' : ''}
-          {!form.admin_email ? 'Fill admin email to enable.' : ''}
-          {form.admin_email && !isValidEmail(form.admin_email) ? 'Admin email must be a valid address (e.g. admin@company.com)' : ''}
+          {!resolvedAdminEmail ? 'Fill admin email to enable (or import intake data).' : ''}
+          {resolvedAdminEmail && !isValidEmail(resolvedAdminEmail) ? 'Admin email must be a valid address (e.g. admin@company.com)' : ''}
         </p>
       )}
       <button disabled={!canCreate || provisioning} onClick={() => setConfirming(true)}
