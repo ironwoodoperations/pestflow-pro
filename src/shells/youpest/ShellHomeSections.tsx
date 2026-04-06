@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { ShieldCheck, Clock, Star } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
-import { SERVICES } from './ServicesData'
+import ServicesGrid from '../../components/public/ServicesGrid'
 
 const ACCENT = '#22c55e'
 const DARK   = '#1a1a1a'
@@ -49,24 +49,7 @@ export default function ShellHomeSections() {
         </div>
       </section>
 
-      {/* Services grid */}
-      <section className="py-16 px-4 bg-gray-950">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="text-white font-black text-3xl text-center mb-2">Our Services</h2>
-          <p className="text-gray-400 text-center mb-10">Professional solutions for every pest problem.</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {SERVICES.map(s => (
-              <div key={s.name} className="bg-gray-900 rounded-2xl overflow-hidden hover:scale-[1.02] transition-transform">
-                {s.img && <img src={s.img} alt={s.name} className="w-full h-40 object-cover" loading="lazy" />}
-                <div className="p-5">
-                  <p style={{ color: ACCENT }} className="font-bold mb-1">{s.name}</p>
-                  <p className="text-gray-400 text-sm">{s.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <ServicesGrid />
 
       {/* CTA */}
       <section style={{ background: ACCENT }} className="py-16 px-4 text-center">

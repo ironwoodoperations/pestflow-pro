@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
-import { SERVICES } from './ServicesData'
+import ServicesGrid from '../../components/public/ServicesGrid'
 
 interface Biz { founded_year?: string | number; num_technicians?: number; phone?: string; address?: string }
 interface Testimonial { id: string; author_name: string; review_text: string; rating: number }
@@ -29,24 +29,7 @@ export default function ShellHomeSections() {
 
   return (
     <>
-      {/* Our Services Cards */}
-      <section className="py-16 bg-[#1c1c1c]">
-        <div className="max-w-6xl mx-auto px-6">
-          <h2 className="font-oswald text-4xl text-white text-center mb-10 tracking-wide">Our Services</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {SERVICES.map((s) => (
-              <a key={s.name} href="/pest-control"
-                className="bg-[#282828] rounded-xl overflow-hidden hover:bg-[#333] transition group">
-                <img src={s.img} alt={s.name} loading="lazy" className="w-full h-36 object-cover" />
-                <div className="p-4">
-                  <h3 className="font-oswald text-white text-lg group-hover:text-amber-400 transition">{s.name}</h3>
-                  <p className="text-gray-400 text-sm mt-1">{s.desc}</p>
-                </div>
-              </a>
-            ))}
-          </div>
-        </div>
-      </section>
+      <ServicesGrid ctaText={ctaText} />
 
       {/* Trust Strip */}
       <section className="py-16 bg-[#f5f5f5]">
