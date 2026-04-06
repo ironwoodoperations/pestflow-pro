@@ -1,0 +1,2 @@
+[functions.provision-tenant]
+verify_jwt = false
