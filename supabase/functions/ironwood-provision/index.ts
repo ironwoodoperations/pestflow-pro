@@ -64,7 +64,17 @@ Deno.serve(async (req: Request) => {
       },
       body: JSON.stringify(payload),
     })
-    const result = await provRes.json()
+    const rawText = await provRes.text()
+    let result: any
+    try {
+      result = JSON.parse(rawText)
+    } catch {
+      console.error('provision-tenant returned non-JSON:', rawText.slice(0, 500))
+      return json({ error: 'provision-tenant returned an unexpected response. Check edge function logs.' }, 500)
+    }
+
+    console.log('provision-tenant result:', JSON.stringify(result))
+
     if (!result.success) return json({ error: result.error || 'Provision failed' }, 500)
 
     // Update prospect record
@@ -78,8 +88,8 @@ Deno.serve(async (req: Request) => {
     }
 
     return json({ success: true, tenant_id: result.tenant_id, slug: result.slug, url: result.url })
-  } catch (err) {
-    console.error('ironwood-provision error:', err)
-    return json({ error: 'Internal server error' }, 500)
+  } catch (err: any) {
+    console.error('ironwood-provision error:', err?.message)
+    return json({ error: err?.message || 'Internal server error' }, 500)
   }
 })
