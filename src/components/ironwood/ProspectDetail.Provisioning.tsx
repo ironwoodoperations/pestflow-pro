@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import type { Prospect } from './types'
 import CredentialField from './CredentialField'
@@ -12,12 +13,13 @@ interface Props {
 }
 
 export default function ProvisioningSection({ form, prospectId, onProvisioned }: Props) {
-  const [confirming, setConfirming]   = useState(false)
-  const [provisioning, setProvisioning] = useState(false)
-  const [error, setError]             = useState<string | null>(null)
-  const [fbSaved, setFbSaved]         = useState(false)
-  const [gbSaved, setGbSaved]         = useState(false)
-  const [skipCreds, setSkipCreds]     = useState(false)
+  const [confirming, setConfirming]       = useState(false)
+  const [provisioning, setProvisioning]   = useState(false)
+  const [error, setError]                 = useState<string | null>(null)
+  const [fbSaved, setFbSaved]             = useState(false)
+  const [gbSaved, setGbSaved]             = useState(false)
+  const [skipCreds, setSkipCreds]         = useState(false)
+  const [sendingCreds, setSendingCreds]   = useState(false)
 
   const resolvedAdminEmail =
     form.admin_email?.trim() ||
@@ -28,6 +30,41 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
 
   const canCreate = !!form.slug && !!resolvedAdminEmail && isValidEmail(resolvedAdminEmail)
   const canReveal = skipCreds || (fbSaved && gbSaved)
+
+  const sendCredentialsEmail = async () => {
+    const adminEmail = form.admin_email?.trim() || form.email?.trim() || ''
+    if (!adminEmail || !form.slug) { toast.error('Admin email and slug are required.'); return }
+    setSendingCreds(true)
+    try {
+      let { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        const { data: r } = await supabase.auth.refreshSession()
+        session = r.session
+      }
+      if (!session) { toast.error('Session expired — please refresh.'); return }
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-credentials-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({
+          adminEmail,
+          adminPassword: form.admin_password || '',
+          slug:          form.slug,
+          businessName:  form.company_name || '',
+        }),
+      })
+      const data = await res.json()
+      if (data.success) toast.success(`Credentials sent to ${adminEmail}`)
+      else toast.error(data.error || 'Failed to send credentials email')
+    } catch (e: any) {
+      toast.error(e.message || 'Network error')
+    } finally {
+      setSendingCreds(false)
+    }
+  }
 
   const handleReveal = async () => {
     if (!prospectId) return
@@ -134,6 +171,10 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
             🔑 {form.slug}.pestflowpro.com/admin
           </a>
         </div>
+        <button onClick={sendCredentialsEmail} disabled={sendingCreds}
+          className="px-3 py-1.5 bg-indigo-700 hover:bg-indigo-600 text-white text-xs font-medium rounded-lg transition disabled:opacity-50">
+          {sendingCreds ? 'Sending…' : '📧 Send Login Credentials'}
+        </button>
 
         {/* Reveal Call Checklist */}
         {!form.site_revealed_at && form.tenant_id && (
