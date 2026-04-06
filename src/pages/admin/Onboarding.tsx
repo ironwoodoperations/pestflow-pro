@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Check } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
@@ -25,8 +25,15 @@ export default function Onboarding() {
   const [step, setStep] = useState(1)
   const [form, setForm] = useState<FormData>(INITIAL_FORM)
   const [saving, setSaving] = useState(false)
+  const [businessName, setBusinessName] = useState('')
   const { tenantId } = useTenant()
   const navigate = useNavigate()
+
+  useEffect(() => {
+    if (!tenantId) return
+    supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle()
+      .then(({ data }) => { if (data?.value?.name) setBusinessName(data.value.name) })
+  }, [tenantId])
 
   const totalSteps = STEPS.length
   const progress = (step / totalSteps) * 100
@@ -105,7 +112,7 @@ export default function Onboarding() {
       <div className="max-w-2xl mx-auto px-4 py-6">
         <h1 className="font-oswald text-3xl text-emerald-500 text-center mb-8 tracking-wide">PestFlow Pro</h1>
 
-        {step === 1 && <StepWelcome onNext={() => setStep(2)} />}
+        {step === 1 && <StepWelcome businessName={businessName || 'Your New Website'} onNext={() => setStep(2)} />}
         {step === 2 && <StepBusinessInfo form={form} updateField={updateField} onNext={() => setStep(3)} onBack={() => setStep(1)} />}
         {step === 3 && <StepSocialLinks form={form} updateField={updateField} onNext={() => setStep(4)} onBack={() => setStep(2)} />}
         {step === 4 && <StepBranding form={form} updateField={updateField} onNext={() => setStep(5)} onBack={() => setStep(3)} />}
