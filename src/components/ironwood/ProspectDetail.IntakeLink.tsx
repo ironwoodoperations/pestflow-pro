@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 
 const BASE_URL = 'https://pestflowpro.com'
@@ -24,6 +25,7 @@ export default function IntakeLinkSection({ prospectId, adminEmail, companyName,
   const [regenerating, setRegenerating] = useState(false)
   const [importing, setImporting]     = useState(false)
   const [importMsg, setImportMsg]     = useState<string | null>(null)
+  const [sendingEmail, setSendingEmail] = useState(false)
 
   useEffect(() => {
     if (!prospectId) { setLoading(false); return }
@@ -64,6 +66,41 @@ export default function IntakeLinkSection({ prospectId, adminEmail, companyName,
       `Hi${companyName ? ` ${companyName}` : ''},\n\nHere is your PestFlow Pro setup link:\n\n${link}\n\nThis link will expire in 14 days. Fill out the short form so we can get your site ready!\n\nTalk soon,\nScott`
     )
     window.open(`mailto:${adminEmail || ''}?subject=${subject}&body=${body}`)
+  }
+
+  async function sendIntakeEmail() {
+    if (!tokenRow || !adminEmail) { toast.error('No email address on file for this prospect.'); return }
+    setSendingEmail(true)
+    try {
+      let { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        const { data: r } = await supabase.auth.refreshSession()
+        session = r.session
+      }
+      if (!session) { toast.error('Session expired — please refresh.'); return }
+      const link = `${BASE_URL}/intake/${tokenRow.token}`
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-intake-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({
+          prospectEmail: adminEmail,
+          prospectName:  companyName || '',
+          intakeUrl:     link,
+          businessName:  companyName || 'your business',
+        }),
+      })
+      const data = await res.json()
+      if (data.success) toast.success(`Intake link sent to ${adminEmail}`)
+      else toast.error(data.error || 'Failed to send email')
+    } catch (e: any) {
+      toast.error(e.message || 'Network error')
+    } finally {
+      setSendingEmail(false)
+    }
   }
 
   async function importFromIntake() {
@@ -172,8 +209,11 @@ export default function IntakeLinkSection({ prospectId, adminEmail, companyName,
             <button onClick={copyLink} className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-lg transition">
               {copied ? '✓ Copied' : 'Copy Link'}
             </button>
+            <button onClick={sendIntakeEmail} disabled={sendingEmail} className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-medium rounded-lg transition disabled:opacity-50">
+              {sendingEmail ? 'Sending…' : '📧 Send Intake Email'}
+            </button>
             <button onClick={openEmail} className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-lg transition">
-              Open Email
+              Open mailto
             </button>
             {!confirmRegen && (
               <button onClick={() => setConfirmRegen(true)} className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-amber-400 text-xs rounded-lg transition">
