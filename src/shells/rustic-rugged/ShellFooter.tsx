@@ -20,7 +20,6 @@ const QUICK_LINKS = [
 
 const CREAM = '#f5e6d3'
 const RUST = '#c2410c'
-const BROWN = '#3b1f0e'
 
 export default function ShellFooter() {
   const [info, setInfo] = useState<BusinessInfo>({ name: 'Ironclad Pest Solutions', phone: '', email: '', address: '', hours: '', tagline: '', license: '' })

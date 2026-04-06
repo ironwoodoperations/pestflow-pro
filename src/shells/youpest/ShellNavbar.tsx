@@ -13,7 +13,6 @@ const NAV = [
 ]
 
 // Brand: dark charcoal + bright green — from You Pest Control identity
-const BG   = '#1a1a1a'
 const ACCENT = '#22c55e'
 
 export default function ShellNavbar() {

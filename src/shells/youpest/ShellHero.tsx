@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
 
-const BG    = '#1a1a1a'
 const ACCENT = '#22c55e'
 
 export default function ShellHero() {

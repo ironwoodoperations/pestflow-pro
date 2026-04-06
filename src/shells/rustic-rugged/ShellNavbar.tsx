@@ -29,7 +29,6 @@ const NAV_LINKS = [
 
 const CREAM = '#f5e6d3'
 const RUST = '#c2410c'
-const BROWN = '#3b1f0e'
 
 export default function ShellNavbar() {
   const [businessName, setBusinessName] = useState('Ironclad Pest Solutions')
