@@ -25,19 +25,43 @@ export default function IntakePage() {
 
   useEffect(() => {
     if (!token) { setStatus('invalid'); return }
-    supabase.from('intake_tokens').select('*, prospects(intake_data)').eq('token', token).maybeSingle()
+    supabase.from('intake_tokens')
+      .select('*, prospects(id, name, company_name, phone, email, admin_email, business_info, branding, customization, social_facebook, social_instagram, social_google, intake_data)')
+      .eq('token', token)
+      .maybeSingle()
       .then(({ data }) => {
         if (!data) { setStatus('invalid'); return }
         if (data.submitted_at) { setStatus('submitted'); return }
         if (new Date(data.expires_at) < new Date()) { setStatus('expired'); return }
         setTokenRow(data)
-        // Pre-fill from existing intake_data if any
-        const d = data.prospects?.intake_data || {}
+        const p = data.prospects || {}
+        const d = p.intake_data || {}
+        const bi = p.business_info || {}
+        const br = p.branding || {}
+        // Pre-fill Step 1 from prospect record fields, fall back to existing intake_data
         setForm({
-          business: d.business || {},
-          branding: d.branding || { primary_color: '#E87800' },
-          domain:   d.domain   || {},
-          social:   d.social   || {},
+          business: d.business || {
+            business_name: bi.name   || p.company_name || p.name || '',
+            phone:         bi.phone  || p.phone        || '',
+            email:         bi.email  || p.email        || p.admin_email || '',
+            address:       bi.address || '',
+            city:          bi.city   || '',
+            state:         bi.state  || '',
+            zip:           bi.zip    || '',
+            hours:         bi.hours  || '',
+            tagline:       bi.tagline || '',
+          },
+          branding: d.branding || {
+            template:      br.template      || 'modern-pro',
+            primary_color: br.primary_color || '#E87800',
+            accent_color:  br.accent_color  || '#1a1a1a',
+          },
+          domain:   d.domain  || {},
+          social:   d.social  || {
+            facebook:  p.social_facebook  || '',
+            instagram: p.social_instagram || '',
+            google:    p.social_google    || '',
+          },
         })
         setStatus('form')
       })
@@ -48,8 +72,28 @@ export default function IntakePage() {
     setSubmitting(true)
     const intakeData = { business: form.business, branding: form.branding, domain: form.domain, social: form.social }
     const now = new Date().toISOString()
+    const b = form.business
+    const br = form.branding
+    const existingBr = tokenRow.prospects?.branding || {}
     await Promise.all([
-      supabase.from('prospects').update({ intake_data: intakeData, intake_submitted_at: now }).eq('id', tokenRow.prospect_id),
+      supabase.from('prospects').update({
+        intake_data: intakeData,
+        intake_submitted_at: now,
+        business_info: {
+          name:    b.business_name || '',
+          phone:   b.phone         || '',
+          email:   b.email         || '',
+          address: [b.address, b.city, b.state, b.zip].filter(Boolean).join(', '),
+          hours:   b.hours         || '',
+          tagline: b.tagline       || '',
+        },
+        branding: {
+          ...existingBr,
+          template:      br.template      || existingBr.template      || 'modern-pro',
+          primary_color: br.primary_color || existingBr.primary_color || '#E87800',
+          accent_color:  br.accent_color  || existingBr.accent_color  || '#1a1a1a',
+        },
+      }).eq('id', tokenRow.prospect_id),
       supabase.from('intake_tokens').update({ submitted_at: now }).eq('token', token!),
     ])
     setSubmitting(false)
