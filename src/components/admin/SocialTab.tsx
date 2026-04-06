@@ -37,6 +37,17 @@ export default function SocialTab({ onNavigate }: Props) {
 
   if (loading) return <div className="p-8 text-center text-gray-400">Loading social data…</div>
 
+  // Tier 1 (Starter): entire Social tab is locked
+  if (!canAccess(2)) {
+    return (
+      <div>
+        <PageHelpBanner tab="social" title="📱 Social Media"
+          body="Plan campaigns, queue posts for approval, and track your social media performance — all in one place." />
+        <SocialUpgradeNudge planName="Grow" price="$249" onNavigate={onNavigate} />
+      </div>
+    )
+  }
+
   return (
     <div>
       <PageHelpBanner tab="social" title="📱 Social Media"

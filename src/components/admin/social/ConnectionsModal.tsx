@@ -1,11 +1,7 @@
-import { useState, useEffect } from 'react'
-import { toast } from 'sonner'
+import { useState } from 'react'
 import { Lock } from 'lucide-react'
-import { supabase } from '../../../lib/supabase'
 import { usePlan } from '../../../hooks/usePlan'
 import type { IntegrationSettings } from './useSocialData'
-
-const TENANT_ID = import.meta.env.VITE_TENANT_ID
 
 interface Props {
   integrations: IntegrationSettings | null
@@ -30,37 +26,10 @@ const PLAN_INFO: Record<number, { name: string; price: number }> = {
   4: { name: 'Elite',   price: 499 },
 }
 
-export default function ConnectionsModal({ integrations, onClose, onSaved, onNavigate }: Props) {
+export default function ConnectionsModal({ integrations, onClose, onNavigate }: Props) {
   const { tier } = usePlan()
   const [activeTab, setActiveTab] = useState<ProviderTab>('export')
-  const [form, setForm] = useState({ facebook_access_token: '', facebook_page_id: '' })
-  const [saving, setSaving] = useState(false)
-
   const activeProvider = TIER_PROVIDER[tier] || 'export'
-
-  useEffect(() => {
-    if (!integrations) return
-    setForm({
-      facebook_access_token: integrations.facebook_access_token || '',
-      facebook_page_id: integrations.facebook_page_id || '',
-    })
-  }, [integrations])
-
-  async function saveFbCredentials() {
-    setSaving(true)
-    const { data: current } = await supabase.from('settings').select('value')
-      .eq('tenant_id', TENANT_ID).eq('key', 'integrations').maybeSingle()
-    const { error } = await supabase.from('settings').upsert(
-      { tenant_id: TENANT_ID, key: 'integrations', value: { ...(current?.value || {}), facebook_access_token: form.facebook_access_token, facebook_page_id: form.facebook_page_id } },
-      { onConflict: 'tenant_id,key' }
-    )
-    setSaving(false)
-    if (error) { toast.error('Failed to save.'); return }
-    toast.success('Saved!')
-    onSaved()
-  }
-
-  const inputCls = 'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm'
 
   function ActiveBadge() {
     return <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">✓ Your Active Mode</span>
@@ -115,22 +84,20 @@ export default function ConnectionsModal({ integrations, onClose, onSaved, onNav
           {activeTab === 'diy' && (
             <div className="space-y-3">
               <h4 className="font-semibold text-gray-800">DIY</h4>
-              <p className="text-xs text-gray-500">You're in control. Use your own social media scheduling tools to manage your posts. We'll help you generate great content — you handle the posting.</p>
+              <p className="text-xs text-gray-500">You're in control. Use your own social media scheduling tools — Buffer, Hootsuite, Later, or any tool you prefer. We generate the content; you handle the posting.</p>
               {tier < 2 ? <LockedBadge tabTier={2} /> : (
                 <>
-                  <div>
-                    <label className="text-xs font-medium text-gray-700 block mb-1">Facebook Access Token</label>
-                    <input value={form.facebook_access_token} onChange={e => setForm(p => ({ ...p, facebook_access_token: e.target.value }))} className={inputCls} />
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700 space-y-1">
+                    <p className="font-semibold">How to use DIY mode:</p>
+                    <ol className="list-decimal list-inside space-y-1 text-blue-600">
+                      <li>Write or generate posts in the Content Queue</li>
+                      <li>Copy the caption text from each approved post</li>
+                      <li>Paste into Buffer, Hootsuite, or your preferred tool</li>
+                      <li>Schedule and publish from there</li>
+                    </ol>
                   </div>
-                  <div>
-                    <label className="text-xs font-medium text-gray-700 block mb-1">Facebook Page ID</label>
-                    <input value={form.facebook_page_id} onChange={e => setForm(p => ({ ...p, facebook_page_id: e.target.value }))} className={inputCls} />
-                  </div>
-                  <p className="text-xs text-gray-400">Instagram posting requires a connected Facebook Business Page.</p>
-                  <div className="flex items-center gap-2">
-                    <button onClick={saveFbCredentials} disabled={saving} className="text-xs px-3 py-1.5 bg-gray-800 text-white rounded-lg font-medium disabled:opacity-50">{saving ? 'Saving…' : 'Save DIY Settings'}</button>
-                    {activeProvider === 'diy' && <ActiveBadge />}
-                  </div>
+                  <p className="text-xs text-gray-400">Your social media account credentials are managed by PestFlow Pro — contact your account manager if you need to update your connected accounts.</p>
+                  {activeProvider === 'diy' && <ActiveBadge />}
                 </>
               )}
             </div>
