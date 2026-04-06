@@ -49,6 +49,10 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
         return
       }
       const accessToken = session.access_token
+      console.log('SESSION EMAIL:', session?.user?.email)
+      console.log('TOKEN PREFIX:', accessToken?.slice(0, 30))
+      console.log('TOKEN LENGTH:', accessToken?.length)
+      console.log('EXPIRES AT:', session?.expires_at, '| NOW:', Math.floor(Date.now() / 1000))
       const amountCents = Math.round(setupFeeAmount * 100)
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-setup-invoice`, {
         method: 'POST',
@@ -112,6 +116,10 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
         return
       }
       const accessToken = session.access_token
+      console.log('SESSION EMAIL:', session?.user?.email)
+      console.log('TOKEN PREFIX:', accessToken?.slice(0, 30))
+      console.log('TOKEN LENGTH:', accessToken?.length)
+      console.log('EXPIRES AT:', session?.expires_at, '| NOW:', Math.floor(Date.now() / 1000))
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`, {
         method: 'POST',
         headers: {
