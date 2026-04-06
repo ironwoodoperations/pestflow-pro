@@ -21,6 +21,13 @@ interface RequestBody {
   onboarding_session_id?: string
   business_info: { name: string; phone: string; email: string; address: string; tagline: string; industry: string }
   branding: { logo_url: string; primary_color: string; template: string }
+  customization?: {
+    hero_headline?: string
+    show_license?: boolean
+    show_years?: boolean
+    show_technicians?: boolean
+    show_certifications?: boolean
+  }
   social_links: { facebook: string; instagram: string; google: string; youtube: string }
   integrations: { google_place_id: string; ga4_id: string }
   plan: string
@@ -116,14 +123,22 @@ Deno.serve(async (req: Request) => {
 
     // Step 2: Create auth user
     if (resolvedAdminEmail && resolvedAdminPassword) {
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      const { data: authData, error: createUserError } = await supabase.auth.admin.createUser({
         email:         resolvedAdminEmail,
         password:      resolvedAdminPassword,
         email_confirm: true,
       })
-      if (authError) {
-        console.error('Failed to create auth user:', authError.message)
-      } else if (authData.user) {
+      if (createUserError) {
+        if (createUserError.message?.includes('already been registered') || createUserError.message?.includes('already exists')) {
+          console.warn('Auth user already exists for email:', resolvedAdminEmail, '— proceeding with existing user')
+        } else {
+          console.error('createUser failed:', createUserError.message)
+          return new Response(JSON.stringify({ success: false, error: `Failed to create admin user: ${createUserError.message}` }), {
+            status: 500, headers: { 'Content-Type': 'application/json', ...CORS },
+          })
+        }
+      }
+      if (!createUserError && authData?.user) {
         const companyName = wbi.name || bi?.name || resolvedSlug
         // tenant_users
         const { error: tuError } = await supabase
@@ -253,9 +268,9 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ success: true, tenant_id: tenantId, slug: resolvedSlug, url: liveUrl }), {
       headers: { 'Content-Type': 'application/json', ...CORS },
     })
-  } catch (err) {
-    console.error('provision-tenant error:', err)
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+  } catch (err: any) {
+    console.error('provision-tenant error:', err?.message)
+    return new Response(JSON.stringify({ success: false, error: err?.message || 'Internal server error' }), {
       status: 500, headers: { 'Content-Type': 'application/json', ...CORS },
     })
   }
