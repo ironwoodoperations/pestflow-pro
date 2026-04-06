@@ -33,8 +33,8 @@ Deno.serve(async (req: Request) => {
   try {
     const body: RequestBody = await req.json()
     const { slug, admin_email, admin_password, onboarding_session_id,
-            business_info: bi, branding, social_links: social,
-            integrations, subscription } = body
+            business_info: bi, branding, customization: bodyCustomization,
+            social_links: social, integrations, subscription } = body
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
@@ -170,18 +170,18 @@ Deno.serve(async (req: Request) => {
       }},
       { tenant_id: tenantId, key: 'branding', value: {
         logo_url:      wbr.logo_url      || branding?.logo_url      || '',
-        favicon_url:   wbr.favicon_url   || '',
-        primary_color: wbr.primary_color || branding?.primary_color || '#10b981',
-        accent_color:  wbr.accent_color  || '#0a0f1e',
+        favicon_url:   wbr.favicon_url   || branding?.favicon_url   || '',
+        primary_color: wbr.primary_color || branding?.primary_color || '#E87800',
+        accent_color:  wbr.accent_color  || branding?.accent_color  || '#1a1a1a',
         template:      wbr.template      || branding?.template      || 'modern-pro',
-        cta_text:      wbr.cta_text      || 'Get a Free Quote',
+        cta_text:      wbr.cta_text      || branding?.cta_text      || 'Get a Free Quote',
       }},
       { tenant_id: tenantId, key: 'customization', value: {
-        hero_headline:        wcu.hero_headline        ?? (wbi.tagline || bi.tagline || ''),
-        show_license:         wcu.show_license         ?? true,
-        show_years:           wcu.show_years           ?? true,
-        show_technicians:     wcu.show_technicians     ?? true,
-        show_certifications:  wcu.show_certifications  ?? true,
+        hero_headline:        wcu.hero_headline        ?? bodyCustomization?.hero_headline ?? (wbi.tagline || bi?.tagline || ''),
+        show_license:         wcu.show_license         ?? bodyCustomization?.show_license         ?? true,
+        show_years:           wcu.show_years           ?? bodyCustomization?.show_years           ?? true,
+        show_technicians:     wcu.show_technicians     ?? bodyCustomization?.show_technicians     ?? true,
+        show_certifications:  wcu.show_certifications  ?? bodyCustomization?.show_certifications  ?? true,
       }},
       { tenant_id: tenantId, key: 'social_links', value: {
         facebook:  wsl.facebook  || social?.facebook  || '',

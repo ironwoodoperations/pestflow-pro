@@ -35,25 +35,49 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) throw new Error('Not authenticated')
-      const bi = form.business_info || {}
-      const br = form.branding || {}
-      const cu = form.customization || {}
+      const bi = (form.business_info || {}) as Record<string, any>
+      const br = (form.branding || {}) as Record<string, any>
+      const cu = (form.customization || {}) as Record<string, any>
 
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ironwood-provision`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`,
-          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
         },
         body: JSON.stringify({
           prospect_id: prospectId,
           slug: form.slug,
           admin_email: form.admin_email,
           admin_password: form.admin_password,
-          business_info: bi,
-          branding: br,
-          customization: cu,
+          business_info: {
+            name:    bi.name    || form.company_name || '',
+            phone:   bi.phone   || form.phone        || '',
+            email:   bi.email   || form.admin_email  || '',
+            address: bi.address || '',
+            tagline: bi.tagline || '',
+            hours:   bi.hours   || '',
+            industry:        bi.industry        || 'Pest Control',
+            license:         bi.license         || '',
+            certifications:  bi.certifications  || '',
+            founded_year:    bi.founded_year    || '',
+            num_technicians: bi.num_technicians || '',
+          },
+          branding: {
+            primary_color: br.primary_color || '#E87800',
+            accent_color:  br.accent_color  || '#1a1a1a',
+            template:      br.template      || 'modern-pro',
+            cta_text:      br.cta_text      || 'Get a Free Quote',
+            logo_url:      br.logo_url      || null,
+            favicon_url:   br.favicon_url   || null,
+          },
+          customization: {
+            hero_headline:       cu.hero_headline       || (form.company_name ? `${form.company_name} — Professional Pest Control` : ''),
+            show_license:        cu.show_license        ?? true,
+            show_years:          cu.show_years          ?? true,
+            show_technicians:    cu.show_technicians    ?? true,
+            show_certifications: cu.show_certifications ?? true,
+          },
           social: {
             facebook: form.social_facebook, instagram: form.social_instagram,
             google: form.social_google, youtube: form.social_youtube,
