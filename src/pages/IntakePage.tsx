@@ -26,11 +26,11 @@ export default function IntakePage() {
   useEffect(() => {
     if (!token) { setStatus('invalid'); return }
     supabase.from('intake_tokens')
-      .select('*, prospects(id, name, company_name, phone, email, admin_email, business_info, branding, customization, social_facebook, social_instagram, social_google, intake_data)')
+      .select('*, prospects(id, contact_name, company_name, phone, email, admin_email, business_info, branding, customization, social_facebook, social_instagram, social_google, social_youtube, intake_data)')
       .eq('token', token)
       .maybeSingle()
-      .then(({ data }) => {
-        if (!data) { setStatus('invalid'); return }
+      .then(({ data, error }) => {
+        if (error || !data) { setStatus('invalid'); return }
         if (data.submitted_at) { setStatus('submitted'); return }
         if (new Date(data.expires_at) < new Date()) { setStatus('expired'); return }
         setTokenRow(data)
@@ -41,15 +41,15 @@ export default function IntakePage() {
         // Pre-fill Step 1 from prospect record fields, fall back to existing intake_data
         setForm({
           business: d.business || {
-            business_name: bi.name   || p.company_name || p.name || '',
-            phone:         bi.phone  || p.phone        || '',
-            email:         bi.email  || p.email        || p.admin_email || '',
-            address:       bi.address || '',
-            city:          bi.city   || '',
-            state:         bi.state  || '',
-            zip:           bi.zip    || '',
-            hours:         bi.hours  || '',
-            tagline:       bi.tagline || '',
+            business_name: p.company_name  || bi.name   || '',
+            phone:         p.phone         || bi.phone  || '',
+            email:         p.email         || bi.email  || '',
+            address:       bi.address      || '',
+            city:          bi.city         || '',
+            state:         bi.state        || '',
+            zip:           bi.zip          || '',
+            hours:         bi.hours        || '',
+            tagline:       bi.tagline      || '',
           },
           branding: d.branding || {
             template:      br.template      || 'modern-pro',
@@ -61,6 +61,7 @@ export default function IntakePage() {
             facebook:  p.social_facebook  || '',
             instagram: p.social_instagram || '',
             google:    p.social_google    || '',
+            youtube:   p.social_youtube   || '',
           },
         })
         setStatus('form')
