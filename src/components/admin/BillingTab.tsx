@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
 import PageHelpBanner from './PageHelpBanner'
@@ -26,6 +27,17 @@ const PLAN_PRICE_LABELS: Record<string, string> = {
   'price_1TIrvcCZBM0TUusS4BJt8oQi': 'Tier 3 — Pro',
   'price_1TIrw3CZBM0TUusSomA1hsT4': 'Tier 4 — Elite',
 }
+
+const TIERS = [
+  { tier: 1, name: 'Starter', price: 149, priceId: 'price_1TIZ6DCZBM0TUusSaC2UdcYG',
+    features: ['Website + hosting', 'Lead capture form', 'Content editor', 'SEO tools', 'Blog'] },
+  { tier: 2, name: 'Grow', price: 249, priceId: 'price_1TIrvGCZBM0TUusSNBntvS6l',
+    features: ['Everything in Starter', 'Social media posts', 'Review requests', 'CRM tools', 'Priority support'] },
+  { tier: 3, name: 'Pro', price: 349, priceId: 'price_1TIrvcCZBM0TUusS4BJt8oQi',
+    features: ['Everything in Grow', 'SMS notifications', 'Advanced analytics', 'Google Business sync', 'Team accounts'] },
+  { tier: 4, name: 'Elite', price: 499, priceId: 'price_1TIrw3CZBM0TUusSomA1hsT4',
+    features: ['Everything in Pro', 'White-glove onboarding', 'Custom integrations', 'Dedicated support line', 'Monthly strategy call'] },
+]
 
 function statusBadge(status: string) {
   if (status === 'paid') return <span className="inline-flex items-center gap-1 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5"><CheckCircle size={11} /> Paid</span>
@@ -55,6 +67,7 @@ export default function BillingTab() {
   const [payments, setPayments] = useState<PaymentRow[]>([])
   const [subscription, setSubscription] = useState<SubscriptionSettings | null>(null)
   const [loading, setLoading] = useState(true)
+  const [upgrading, setUpgrading] = useState<number | null>(null)
 
   useEffect(() => {
     if (!tenantId) return
@@ -77,6 +90,24 @@ export default function BillingTab() {
     })
   }, [tenantId])
 
+  async function handleUpgrade(tier: typeof TIERS[number]) {
+    if (!tenantId) return
+    setUpgrading(tier.tier)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) { toast.error('Not authenticated'); return }
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify({ plan: tier.name.toLowerCase(), tenant_id: tenantId, client_email: session.user.email, client_name: '' }),
+      })
+      const data = await res.json()
+      if (data.url) { window.location.href = data.url }
+      else { toast.error(data.error || 'Failed to start checkout') }
+    } catch (e: any) { toast.error(e.message || 'Network error') }
+    finally { setUpgrading(null) }
+  }
+
   return (
     <div>
       <PageHelpBanner
@@ -84,6 +115,53 @@ export default function BillingTab() {
         title="Billing & Subscription"
         body="View your current plan and full payment history. To upgrade, downgrade, or request a plan change, use the link below to contact support."
       />
+
+      {/* Tier upgrade cards */}
+      {subscription && (
+        <div className="mb-6">
+          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Plans</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {TIERS.map(tier => {
+              const isCurrent = subscription.tier === tier.tier
+              const isUpgrade = tier.tier > subscription.tier
+              const isDowngrade = tier.tier < subscription.tier
+              return (
+                <div key={tier.tier}
+                  className={`bg-white rounded-xl border-2 p-5 flex flex-col ${isCurrent ? 'border-emerald-500 shadow-md' : 'border-gray-200'}`}>
+                  {isCurrent && <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full self-start mb-2">Current Plan</span>}
+                  <h3 className="font-bold text-gray-900 text-lg">{tier.name}</h3>
+                  <p className="text-2xl font-bold text-gray-900 mb-3">${tier.price}<span className="text-sm font-normal text-gray-500">/mo</span></p>
+                  <ul className="space-y-1 mb-4 flex-1">
+                    {tier.features.map(f => (
+                      <li key={f} className="flex items-start gap-1.5 text-xs text-gray-600">
+                        <span className="text-emerald-500 mt-0.5 shrink-0">✓</span> {f}
+                      </li>
+                    ))}
+                  </ul>
+                  {isCurrent ? (
+                    <button disabled className="w-full py-2 rounded-lg text-sm font-medium bg-emerald-50 text-emerald-600 cursor-default">Current Plan</button>
+                  ) : isUpgrade ? (
+                    <button
+                      onClick={() => handleUpgrade(tier)}
+                      disabled={upgrading === tier.tier}
+                      className="w-full py-2 rounded-lg text-sm font-medium bg-emerald-500 text-white hover:bg-emerald-600 disabled:opacity-50 transition"
+                    >
+                      {upgrading === tier.tier ? 'Redirecting...' : 'Upgrade'}
+                    </button>
+                  ) : isDowngrade ? (
+                    <a
+                      href="mailto:support@pestflowpro.com?subject=Downgrade Request"
+                      className="w-full py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition text-center block"
+                    >
+                      Contact us to downgrade
+                    </a>
+                  ) : null}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Current plan card */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
