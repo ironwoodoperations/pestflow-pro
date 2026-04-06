@@ -6,29 +6,32 @@ import { resolveTenantId } from '../lib/tenant'
 import StructuredData from '../components/StructuredData'
 import HeroVideoPlayer from '../components/HeroVideoPlayer'
 import { ShellSectionsRenderer } from '../components/PublicShell'
+import { PAGE_DEFAULTS } from '../lib/pageDefaults'
 
-interface PageContent {
+interface IndexContent {
   title: string
   subtitle: string
   heroImageUrl?: string
 }
 
-const DEFAULT_CONTENT: PageContent = {
-  title: 'Professional Pest Control You Can Trust',
-  subtitle: 'Licensed & insured professionals. Fast, effective results.',
+const DEFAULT_CONTENT: IndexContent = {
+  title: PAGE_DEFAULTS['home'].title,
+  subtitle: PAGE_DEFAULTS['home'].subtitle,
 }
 
 export default function Index() {
-  const [content, setContent] = useState<PageContent>(DEFAULT_CONTENT)
+  const [content, setContent] = useState<IndexContent>(DEFAULT_CONTENT)
   const [heroMedia, setHeroMedia] = useState<{ youtube_id?: string; thumbnail_url?: string } | null>(null)
   const [videoPlaying, setVideoPlaying] = useState(false)
+  const [phone, setPhone] = useState('')
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const [pageRes, mediaRes] = await Promise.all([
+      const [pageRes, mediaRes, bizRes] = await Promise.all([
         supabase.from('page_content').select('title, subtitle, image_urls').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'hero_media').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
       ])
       if (pageRes.data) {
         setContent({
@@ -38,6 +41,7 @@ export default function Index() {
         })
       }
       if (mediaRes.data?.value?.youtube_id) setHeroMedia(mediaRes.data.value)
+      if (bizRes.data?.value?.phone) setPhone(bizRes.data.value.phone)
     })
   }, [])
 
@@ -74,9 +78,11 @@ export default function Index() {
               See Our Services
             </Link>
           </div>
-          <a href="tel:9035550100" className="text-gray-300 text-xl font-semibold hover:text-white transition">
-            (903) 555-0100
-          </a>
+          {phone && (
+            <a href={`tel:${phone.replace(/\D/g, '')}`} className="text-gray-300 text-xl font-semibold hover:text-white transition">
+              {phone}
+            </a>
+          )}
 
           {/* Hero Video */}
           {heroMedia?.youtube_id && (

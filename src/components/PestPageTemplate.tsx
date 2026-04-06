@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
 import StructuredData from './StructuredData'
 import { PEST_PAGE_IMG, FALLBACK_PEST_IMG } from '../data/pestImages'
+import { PAGE_DEFAULTS } from '../lib/pageDefaults'
 
 export interface TreatmentStep { title: string; desc: string }
 export interface SpecialCard { title: string; desc: string }
@@ -51,7 +52,8 @@ export default function PestPageTemplate(props: PestPageProps) {
     })
   }, [props.pageSlug])
 
-  const heroTitle = content.title || props.heroTitle
+  const defaults = PAGE_DEFAULTS[props.pageSlug]
+  const heroTitle = content.title || defaults?.title || props.heroTitle
   const stepColors = props.stepColors || STEP_COLORS_DEFAULT
   const pestImg = content.image_urls?.[0] || content.image_url || PEST_PAGE_IMG[props.pageSlug] || props.introImage || FALLBACK_PEST_IMG
   const ctaBgClass = CTA_COLORS[template] || 'bg-yellow-500'
@@ -68,7 +70,7 @@ export default function PestPageTemplate(props: PestPageProps) {
               <span key={i}>{part}{i < arr.length - 1 && <span className="text-emerald-400">{props.heroHighlight}</span>}</span>
             ))}
           </h1>
-          <p className="text-gray-300 text-xl mb-8">{content.subtitle || props.heroSubtitle}</p>
+          <p className="text-gray-300 text-xl mb-8">{content.subtitle || defaults?.subtitle || props.heroSubtitle}</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/quote" className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg px-8 py-4 text-lg transition">Get a Free Quote</Link>
             <a href={`tel:${phone}`} className="border-2 border-emerald-500 text-emerald-400 hover:bg-emerald-500 hover:text-white font-bold rounded-lg px-8 py-4 text-lg transition">Call Us Now</a>
@@ -84,7 +86,7 @@ export default function PestPageTemplate(props: PestPageProps) {
           </div>
           <div>
             <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 mb-4">{props.introHeading}</h2>
-            <p className="text-gray-600 mb-4">{content.intro || props.introP1}</p>
+            <p className="text-gray-600 mb-4">{content.intro || defaults?.intro || props.introP1}</p>
             <p className="text-gray-600 mb-4">{props.introP2}</p>
             <p className="text-gray-600 mb-6">{props.introP3}</p>
             <div className="flex flex-col sm:flex-row gap-3">

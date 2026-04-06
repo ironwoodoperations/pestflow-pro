@@ -4,6 +4,7 @@ import { Shield, Home, Bug, Star, Heart, Eye, Award, Zap } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
 import StructuredData from '../components/StructuredData'
+import { PAGE_DEFAULTS } from '../lib/pageDefaults'
 
 interface TeamMember { id: string; name: string; title?: string; bio?: string; photo_url?: string }
 
@@ -15,21 +16,27 @@ const VALUES = [
 ]
 
 export default function About() {
-  const [heroTitle, setHeroTitle] = useState('About <span class="text-emerald-400">Ironclad Pest Solutions</span>')
-  const [heroSubtitle, setHeroSubtitle] = useState('Family-owned. Science-backed. Trusted since 2009.')
+  const [heroTitle, setHeroTitle] = useState(PAGE_DEFAULTS['about'].title)
+  const [heroSubtitle, setHeroSubtitle] = useState(PAGE_DEFAULTS['about'].subtitle)
   const [aboutImage, setAboutImage] = useState<string | null>(null)
+  const [aboutIntro, setAboutIntro] = useState(PAGE_DEFAULTS['about'].intro)
   const [team, setTeam] = useState<TeamMember[] | null>(null)
+  const [businessName, setBusinessName] = useState('')
 
   useEffect(() => {
     resolveTenantId().then(async (tid) => {
       if (!tid) return
-      const [pageRes, teamRes] = await Promise.all([
-        supabase.from('page_content').select('title, subtitle, image_urls').eq('tenant_id', tid).eq('page_slug', 'about').maybeSingle(),
+      const [pageRes, teamRes, bizRes] = await Promise.all([
+        supabase.from('page_content').select('title, subtitle, intro, image_url, image_urls').eq('tenant_id', tid).eq('page_slug', 'about').maybeSingle(),
         supabase.from('team_members').select('id, name, title, bio, photo_url').eq('tenant_id', tid).order('display_order'),
+        supabase.from('settings').select('value').eq('tenant_id', tid).eq('key', 'business_info').maybeSingle(),
       ])
       if (pageRes.data?.title) setHeroTitle(pageRes.data.title)
       if (pageRes.data?.subtitle) setHeroSubtitle(pageRes.data.subtitle)
+      if (pageRes.data?.intro) setAboutIntro(pageRes.data.intro)
       if (pageRes.data?.image_urls?.[0]) setAboutImage(pageRes.data.image_urls[0])
+      else if (pageRes.data?.image_url) setAboutImage(pageRes.data.image_url)
+      if (bizRes.data?.value?.name) setBusinessName(bizRes.data.value.name)
       setTeam(teamRes.data || [])
     })
   }, [])
@@ -53,9 +60,10 @@ export default function About() {
             </div>
             <div>
               <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 mb-4">Our Story</h2>
-              <p className="text-gray-600 mb-4">Ironclad Pest Solutions was founded in 2009 by Ryan Carter in Tyler, Texas. After a decade working for national chains, Ryan saw an opportunity to do things differently — with better products, honest pricing, and genuine commitment to every customer.</p>
-              <p className="text-gray-600 mb-4">What started as a one-truck operation has grown into one of East Texas's most trusted pest control companies. Today, Ironclad employs 12 licensed technicians and serves Tyler, Longview, Jacksonville, and surrounding communities.</p>
-              <p className="text-gray-600">We are fully licensed, bonded, and insured. Every technician is EPA-certified and trained in the latest integrated pest management techniques. We are proud members of the NPMA and TPCA.</p>
+              {aboutIntro.split('\n').filter(Boolean).map((p, i) => (
+                <p key={i} className="text-gray-600 mb-4">{p}</p>
+              ))}
+              {!aboutIntro && <p className="text-gray-600">We are fully licensed, bonded, and insured professionals dedicated to protecting your home and business.</p>}
             </div>
           </div>
         </div>
@@ -89,7 +97,7 @@ export default function About() {
 
       <section className="py-16 bg-white">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-10">Why Ironclad?</h2>
+          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-10">Why Choose {businessName || 'Us'}?</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {VALUES.map((v) => (
               <div key={v.title} className="bg-[#f8fafc] rounded-xl p-6 flex gap-4">

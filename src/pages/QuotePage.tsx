@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
 import QuoteFormSteps, { type QuoteFormState } from '../components/QuoteFormSteps'
 import { validateContactFields } from '../components/quoteFormUtils'
+import { PAGE_DEFAULTS } from '../lib/pageDefaults'
 
 const STEPS = [
   { num: 1, label: 'Pest Type', icon: Bug },
@@ -23,13 +24,13 @@ export default function QuotePage() {
   const [form, setForm] = useState<QuoteFormState>(INITIAL)
   const [tenantId, setTenantId] = useState('')
   const [businessName, setBusinessName] = useState('PestFlow Pro')
-  const [businessPhone, setBusinessPhone] = useState('(903) 555-0100')
+  const [businessPhone, setBusinessPhone] = useState('')
   const [ownerSmsNumber, setOwnerSmsNumber] = useState('')
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [heroTitle, setHeroTitle] = useState('Get a Free Quote')
-  const [heroSubtitle, setHeroSubtitle] = useState("Complete these 4 quick steps and we'll get back to you fast.")
+  const [heroTitle, setHeroTitle] = useState(PAGE_DEFAULTS['quote'].title)
+  const [heroSubtitle, setHeroSubtitle] = useState(PAGE_DEFAULTS['quote'].subtitle)
 
   useEffect(() => {
     resolveTenantId().then(async (tid) => {

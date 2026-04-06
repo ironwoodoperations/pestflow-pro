@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
+import { PAGE_DEFAULTS } from '../../lib/pageDefaults'
 
 interface Biz { phone?: string; founded_year?: string | number }
 
@@ -10,7 +11,7 @@ const BROWN = '#2c1a0e'
 const RUST  = '#b5451b'
 
 export default function ShellHero() {
-  const [headline, setHeadline] = useState('Built Tough. Built Local. Built for East Texas.')
+  const [headline, setHeadline] = useState(PAGE_DEFAULTS['home'].title)
   const [heroSubtext, setHeroSubtext] = useState('')
   const [biz, setBiz] = useState<Biz>({})
   const [ctaText, setCtaText] = useState('Get a Free Estimate')

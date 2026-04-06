@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
+import { PAGE_DEFAULTS } from '../../lib/pageDefaults'
 
 const ACCENT = '#22c55e'
 
 export default function ShellHero() {
-  const [headline, setHeadline] = useState('Your Home. Protected.')
-  const [sub, setSub] = useState('Fast, effective pest control you can trust.')
+  const [headline, setHeadline] = useState(PAGE_DEFAULTS['home'].title)
+  const [sub, setSub] = useState(PAGE_DEFAULTS['home'].subtitle)
   const [cta, setCta] = useState('Get a Free Quote')
 
   useEffect(() => {

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
+import { PAGE_DEFAULTS } from '../../lib/pageDefaults'
 
 interface Biz { name?: string; phone?: string }
 
@@ -15,9 +16,9 @@ const STRIPS = [
 
 export default function ShellHero() {
   const [biz, setBiz] = useState<Biz>({})
-  const [headline, setHeadline] = useState('Professional Pest Control You Can Trust')
+  const [headline, setHeadline] = useState(PAGE_DEFAULTS['home'].title)
   const [ctaText, setCtaText] = useState('Get a Free Quote')
-  const [heroSubtext, setHeroSubtext] = useState('Call for Same-Day Service')
+  const [heroSubtext, setHeroSubtext] = useState(PAGE_DEFAULTS['home'].subtitle)
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {

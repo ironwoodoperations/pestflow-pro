@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
+import { PAGE_DEFAULTS } from '../../lib/pageDefaults'
 
 interface Biz { name?: string; phone?: string }
 interface FormState { name: string; phone: string; service: string }
 
 export default function ShellHero() {
-  const [headline, setHeadline] = useState('East Texas Pest Control That Gets Results.')
-  const [heroSubtext, setHeroSubtext] = useState('Fast. Reliable. Local.')
+  const [headline, setHeadline] = useState(PAGE_DEFAULTS['home'].title)
+  const [heroSubtext, setHeroSubtext] = useState(PAGE_DEFAULTS['home'].subtitle)
   const [biz, setBiz] = useState<Biz>({})
   const [ctaText, setCtaText] = useState('Get a Free Estimate')
   const [form, setForm] = useState<FormState>({ name: '', phone: '', service: '' })

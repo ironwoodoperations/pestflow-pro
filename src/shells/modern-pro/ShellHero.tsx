@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
+import { PAGE_DEFAULTS } from '../../lib/pageDefaults'
 
 interface BusinessInfo {
   tagline?: string
@@ -38,13 +39,13 @@ export default function ShellHero() {
     })
   }, [])
 
-  const headline = custom.hero_headline || 'Professional Pest Control You Can Trust'
+  const headline = custom.hero_headline || PAGE_DEFAULTS['home'].title
 
   // Subtitle: use page_content.home.subtitle, fall back to city-based text
   const city = biz.address ? biz.address.split(',')[0].trim() : null
   const fallbackSubtext = city
-    ? `Serving ${city} and surrounding areas. Licensed, insured, and ready to help.`
-    : 'Licensed, insured, and ready to protect your home.'
+    ? `Serving ${city} and surrounding areas.`
+    : PAGE_DEFAULTS['home'].subtitle
   const subtext = heroSubtext || fallbackSubtext
 
   // Trust line — only render fields that exist

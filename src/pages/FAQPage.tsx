@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
 import StructuredData from '../components/StructuredData'
+import { PAGE_DEFAULTS } from '../lib/pageDefaults'
 
 const FAQ_CATEGORIES = [
   {
@@ -36,20 +37,23 @@ const FAQ_CATEGORIES = [
 interface FaqItem { id: string; question: string; answer: string; sort_order: number }
 
 export default function FAQPage() {
-  const [heroTitle, setHeroTitle] = useState('Frequently Asked Questions')
-  const [heroSubtitle, setHeroSubtitle] = useState('Everything you need to know about our pest control services.')
+  const [heroTitle, setHeroTitle] = useState(PAGE_DEFAULTS['faq'].title)
+  const [heroSubtitle, setHeroSubtitle] = useState(PAGE_DEFAULTS['faq'].subtitle)
   const [faqItems, setFaqItems] = useState<FaqItem[]>([])
+  const [phone, setPhone] = useState('')
 
   useEffect(() => {
     resolveTenantId().then(async (tid) => {
       if (!tid) return
-      const [pageRes, itemsRes] = await Promise.all([
+      const [pageRes, itemsRes, bizRes] = await Promise.all([
         supabase.from('page_content').select('title, subtitle').eq('tenant_id', tid).eq('page_slug', 'faq').maybeSingle(),
         supabase.from('faq_items').select('id, question, answer, sort_order').eq('tenant_id', tid).order('sort_order'),
+        supabase.from('settings').select('value').eq('tenant_id', tid).eq('key', 'business_info').maybeSingle(),
       ])
       if (pageRes.data?.title) setHeroTitle(pageRes.data.title)
       if (pageRes.data?.subtitle) setHeroSubtitle(pageRes.data.subtitle)
       if (itemsRes.data?.length) setFaqItems(itemsRes.data)
+      if (bizRes.data?.value?.phone) setPhone(bizRes.data.value.phone)
     })
   }, [])
 
@@ -98,7 +102,7 @@ export default function FAQPage() {
           <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 mb-4">Still Have Questions?</h2>
           <p className="text-gray-600 mb-8">We're here to help. Call us or request a quote online.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="tel:9035550100" className="border-2 border-emerald-500 text-emerald-600 hover:bg-emerald-50 font-bold rounded-lg px-8 py-4 text-lg transition">Call (903) 555-0100</a>
+            {phone && <a href={`tel:${phone.replace(/\D/g, '')}`} className="border-2 border-emerald-500 text-emerald-600 hover:bg-emerald-50 font-bold rounded-lg px-8 py-4 text-lg transition">Call {phone}</a>}
             <Link to="/quote" className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg px-8 py-4 text-lg transition">Get a Free Quote</Link>
           </div>
         </div>
