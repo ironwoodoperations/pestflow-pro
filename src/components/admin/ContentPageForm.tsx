@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
 import { Sparkles, RotateCcw } from 'lucide-react'
-import PestImagePicker from './PestImagePicker'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
 import { toast } from 'sonner'
@@ -17,7 +16,7 @@ interface Props {
   selectedSlug: string
   form: ContentForm
   loading: boolean; saving: boolean; aiLoading: boolean; reverting: boolean
-  isPestPage: boolean; apiKey: string; pexelsApiKey: string
+  isPestPage: boolean; apiKey: string
   updateField: (field: keyof ContentForm, value: string) => void
   onSave: () => void
   onGenerateAI: () => void
@@ -87,7 +86,7 @@ function PageImageUpload({ slug }: { slug: string }) {
 
 const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-400'
 
-export default function ContentPageForm({ selectedSlug, form, loading, saving, aiLoading, reverting, isPestPage, apiKey, pexelsApiKey, updateField, onSave, onGenerateAI, onRevert }: Props) {
+export default function ContentPageForm({ selectedSlug, form, loading, saving, aiLoading, reverting, isPestPage, apiKey, updateField, onSave, onGenerateAI, onRevert }: Props) {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
       <h3 className="text-base font-semibold text-gray-900 mb-1">Editing: <span className="text-emerald-600">{selectedSlug}</span></h3>
@@ -115,15 +114,6 @@ export default function ContentPageForm({ selectedSlug, form, loading, saving, a
 
           {PAGES_WITH_IMAGES.has(selectedSlug) && (
             <PageImageUpload slug={selectedSlug} />
-          )}
-
-          {isPestPage && (
-            <PestImagePicker
-              pageSlug={selectedSlug}
-              pexelsApiKey={pexelsApiKey}
-              selectedUrl={form.image_url}
-              onSelect={url => updateField('image_url', url)}
-            />
           )}
 
           <div className="flex items-center gap-3 pt-1">

@@ -30,23 +30,19 @@ export default function ContentTab() {
   const [businessName, setBusinessName] = useState('')
   const [businessCity, setBusinessCity] = useState('')
   const [reverting, setReverting] = useState(false)
-  const [pexelsApiKey, setPexelsApiKey] = useState('')
   const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
 
-  // Load business info + Pexels key once
+  // Load business info once
   useEffect(() => {
     if (!tenantId) return
-    Promise.all([
-      supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
-      supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle(),
-    ]).then(([bizRes, intgRes]) => {
-      if (bizRes.data?.value?.name) setBusinessName(bizRes.data.value.name)
-      if (bizRes.data?.value?.address) {
-        const match = bizRes.data.value.address.match(/,\s*([^,]+),?\s*[A-Z]{2}/)
-        if (match) setBusinessCity(match[1].trim())
-      }
-      if (intgRes.data?.value?.pexels_api_key) setPexelsApiKey(intgRes.data.value.pexels_api_key)
-    })
+    supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle()
+      .then(({ data }) => {
+        if (data?.value?.name) setBusinessName(data.value.name)
+        if (data?.value?.address) {
+          const match = data.value.address.match(/,\s*([^,]+),?\s*[A-Z]{2}/)
+          if (match) setBusinessCity(match[1].trim())
+        }
+      })
   }, [tenantId])
 
   // Load page content when slug changes
@@ -146,7 +142,7 @@ export default function ContentTab() {
             <ContentPageForm
               selectedSlug={selectedSlug} form={form} loading={loading} saving={saving}
               aiLoading={aiLoading} reverting={reverting} isPestPage={isPestPage}
-              apiKey={apiKey} pexelsApiKey={pexelsApiKey}
+              apiKey={apiKey}
               updateField={updateField} onSave={handleSave} onGenerateAI={generateAI} onRevert={handleRevert}
             />
           )}
