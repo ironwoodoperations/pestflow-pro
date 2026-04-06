@@ -10,11 +10,13 @@ interface Props {
 }
 
 export default function IntakeLinkSection({ prospectId, adminEmail, companyName }: Props) {
-  const [tokenRow, setTokenRow]   = useState<any>(null)
-  const [loading, setLoading]     = useState(true)
-  const [creating, setCreating]   = useState(false)
-  const [copied, setCopied]       = useState(false)
-  const [showData, setShowData]   = useState(false)
+  const [tokenRow, setTokenRow]       = useState<any>(null)
+  const [loading, setLoading]         = useState(true)
+  const [creating, setCreating]       = useState(false)
+  const [copied, setCopied]           = useState(false)
+  const [showData, setShowData]       = useState(false)
+  const [confirmRegen, setConfirmRegen] = useState(false)
+  const [regenerating, setRegenerating] = useState(false)
 
   useEffect(() => {
     if (!prospectId) { setLoading(false); return }
@@ -28,6 +30,16 @@ export default function IntakeLinkSection({ prospectId, adminEmail, companyName 
     const { data, error } = await supabase.from('intake_tokens').insert({ prospect_id: prospectId }).select().single()
     if (!error && data) setTokenRow(data)
     setCreating(false)
+  }
+
+  async function regenerateToken() {
+    if (!prospectId) return
+    setRegenerating(true)
+    await supabase.from('intake_tokens').delete().eq('prospect_id', prospectId)
+    const { data, error } = await supabase.from('intake_tokens').insert({ prospect_id: prospectId }).select().single()
+    if (!error && data) setTokenRow(data)
+    setConfirmRegen(false)
+    setRegenerating(false)
   }
 
   function copyLink() {
@@ -85,7 +97,27 @@ export default function IntakeLinkSection({ prospectId, adminEmail, companyName 
             <button onClick={openEmail} className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-lg transition">
               Open Email
             </button>
+            {!confirmRegen && (
+              <button onClick={() => setConfirmRegen(true)} className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-amber-400 text-xs rounded-lg transition">
+                Regenerate Link
+              </button>
+            )}
           </div>
+          {confirmRegen && (
+            <div className="border border-amber-700 rounded-lg p-3 space-y-2">
+              <p className="text-xs text-amber-300">Regenerate link? The old link will stop working.</p>
+              <div className="flex gap-2">
+                <button onClick={regenerateToken} disabled={regenerating}
+                  className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded-lg transition disabled:opacity-50">
+                  {regenerating ? 'Regenerating…' : 'Confirm'}
+                </button>
+                <button onClick={() => setConfirmRegen(false)}
+                  className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-lg transition">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
