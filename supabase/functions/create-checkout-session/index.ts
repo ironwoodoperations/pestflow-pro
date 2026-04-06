@@ -93,19 +93,23 @@ Deno.serve(async (req: Request) => {
       Deno.env.get('SUPABASE_URL') || '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
     )
-    await supabase.from('stripe_payments').insert({
-      tenant_id:             tenant_id || null,
-      stripe_customer_id:    customer.id,
-      stripe_session_id:     session.id,
-      subscription_price_id: recurringPriceId,
-      status:                'pending',
-      payment_type:          'setup_plus_subscription',
-      provision_data:        provision_data || null,
-    })
+    try {
+      await supabase.from('stripe_payments').insert({
+        tenant_id:             tenant_id || null,
+        stripe_customer_id:    customer.id,
+        stripe_session_id:     session.id,
+        subscription_price_id: recurringPriceId,
+        status:                'pending',
+        payment_type:          'setup_plus_subscription',
+        provision_data:        provision_data || null,
+      })
+    } catch (insertErr: any) {
+      console.error('stripe_payments insert failed (non-fatal):', insertErr.message)
+    }
 
     return json({ url: session.url, session_id: session.id })
   } catch (err: any) {
-    console.error('create-checkout-session error:', err)
-    return json({ error: err.message || 'Internal server error' }, 500)
+    console.error('create-checkout-session error:', err?.message, err?.type, err?.code)
+    return json({ error: err?.message || 'Internal server error' }, 500)
   }
 })
