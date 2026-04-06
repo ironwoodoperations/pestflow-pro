@@ -68,6 +68,15 @@ export default function BillingTab() {
   const [subscription, setSubscription] = useState<SubscriptionSettings | null>(null)
   const [loading, setLoading] = useState(true)
   const [upgrading, setUpgrading] = useState<number | null>(null)
+  const [clientEmail, setClientEmail] = useState('')
+  const [upgradeError, setUpgradeError] = useState<string | null>(null)
+
+  // Slug from hostname: cypress-creek-pest-control.pestflowpro.com → "cypress-creek-pest-control"
+  const clientSlug = (() => {
+    const parts = window.location.hostname.split('.')
+    if (parts.length >= 3 && window.location.hostname.endsWith('.pestflowpro.com')) return parts[0]
+    return ''
+  })()
 
   useEffect(() => {
     if (!tenantId) return
@@ -77,34 +86,61 @@ export default function BillingTab() {
         .select('id, created_at, payment_type, status, setup_amount, subscription_amount, subscription_price_id')
         .eq('tenant_id', tenantId)
         .order('created_at', { ascending: false }),
-      supabase
-        .from('settings')
-        .select('value')
-        .eq('tenant_id', tenantId)
-        .eq('key', 'subscription')
-        .maybeSingle(),
-    ]).then(([paymentsRes, settingsRes]) => {
+      supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'subscription').maybeSingle(),
+      supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'notifications').maybeSingle(),
+      supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
+    ]).then(([paymentsRes, subRes, notifRes, bizRes]) => {
       setPayments(paymentsRes.data || [])
-      if (settingsRes.data?.value) setSubscription(settingsRes.data.value as SubscriptionSettings)
+      if (subRes.data?.value) setSubscription(subRes.data.value as SubscriptionSettings)
+      const email =
+        notifRes.data?.value?.lead_email ||
+        bizRes.data?.value?.email ||
+        ''
+      setClientEmail(email)
       setLoading(false)
     })
   }, [tenantId])
 
   async function handleUpgrade(tier: typeof TIERS[number]) {
     if (!tenantId) return
+    setUpgradeError(null)
+
+    if (!clientEmail) {
+      setUpgradeError('Could not find your email address — please update it in Settings → Business Info.')
+      return
+    }
+
     setUpgrading(tier.tier)
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { toast.error('Not authenticated'); return }
+      let { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        const { data: refreshData } = await supabase.auth.refreshSession()
+        session = refreshData.session
+      }
+      if (!session) { setUpgradeError('Session expired. Please refresh the page.'); return }
+      const accessToken = session.access_token
+
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-        body: JSON.stringify({ plan: tier.name.toLowerCase(), tenant_id: tenantId, client_email: session.user.email, client_name: '' }),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({
+          plan:         tier.name.toLowerCase(),
+          tenant_id:    tenantId,
+          client_email: clientEmail,
+          client_name:  '',
+          slug:         clientSlug,
+          setup_amount_override: 0,
+          prospect_id:  '',
+        }),
       })
       const data = await res.json()
       if (data.url) { window.location.href = data.url }
-      else { toast.error(data.error || 'Failed to start checkout') }
-    } catch (e: any) { toast.error(e.message || 'Network error') }
+      else { setUpgradeError(data.error || 'Failed to start checkout') }
+    } catch (e: any) { setUpgradeError(e.message || 'Network error') }
     finally { setUpgrading(null) }
   }
 
@@ -115,6 +151,10 @@ export default function BillingTab() {
         title="Billing & Subscription"
         body="View your current plan and full payment history. To upgrade, downgrade, or request a plan change, use the link below to contact support."
       />
+
+      {upgradeError && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{upgradeError}</div>
+      )}
 
       {/* Tier upgrade cards */}
       {subscription && (
