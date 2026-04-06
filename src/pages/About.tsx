@@ -5,11 +5,7 @@ import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
 import StructuredData from '../components/StructuredData'
 
-const TEAM = [
-  { name: 'Ryan Carter', title: 'Owner & Founder', desc: 'Founded Ironclad in 2009. NPMA-certified with 18 years in pest management.', img: '/images/pests/tech_1.jpg' },
-  { name: 'Michelle Tran', title: 'Lead Technician', desc: 'Certified WDI inspector and termite specialist. 10 years in the field.', img: '/images/pests/tech_1.jpg' },
-  { name: 'Laura Medina', title: 'Office Manager', desc: 'Runs scheduling, customer service, and billing. Every call answered.', img: '/images/pests/tech_1.jpg' },
-]
+interface TeamMember { id: string; name: string; title?: string; bio?: string; photo_url?: string }
 
 const VALUES = [
   { icon: <Shield className="w-7 h-7 text-emerald-500" />, title: 'Science-Backed Solutions', desc: 'Every treatment plan is based on Integrated Pest Management (IPM) principles. We target the root cause, not just the symptoms.' },
@@ -21,13 +17,18 @@ const VALUES = [
 export default function About() {
   const [heroTitle, setHeroTitle] = useState('About <span class="text-emerald-400">Ironclad Pest Solutions</span>')
   const [heroSubtitle, setHeroSubtitle] = useState('Family-owned. Science-backed. Trusted since 2009.')
+  const [team, setTeam] = useState<TeamMember[] | null>(null)
 
   useEffect(() => {
     resolveTenantId().then(async (tid) => {
       if (!tid) return
-      const { data } = await supabase.from('page_content').select('title, subtitle').eq('tenant_id', tid).eq('page_slug', 'about').maybeSingle()
-      if (data?.title) setHeroTitle(data.title)
-      if (data?.subtitle) setHeroSubtitle(data.subtitle)
+      const [pageRes, teamRes] = await Promise.all([
+        supabase.from('page_content').select('title, subtitle').eq('tenant_id', tid).eq('page_slug', 'about').maybeSingle(),
+        supabase.from('team_members').select('id, name, title, bio, photo_url').eq('tenant_id', tid).order('display_order'),
+      ])
+      if (pageRes.data?.title) setHeroTitle(pageRes.data.title)
+      if (pageRes.data?.subtitle) setHeroSubtitle(pageRes.data.subtitle)
+      setTeam(teamRes.data || [])
     })
   }, [])
 
@@ -104,18 +105,29 @@ export default function About() {
       <section className="py-16 bg-[#f8fafc]">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-10">Meet Our Team</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {TEAM.map((member) => (
-              <div key={member.name} className="bg-white rounded-xl p-6 text-center shadow-sm">
-                <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-4 overflow-hidden">
-                  <img src={member.img} alt={member.name} loading="lazy" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+          {team === null ? null : team.length === 0 ? (
+            <p className="text-center text-gray-400 text-base">Our team will be featured here.</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {team.map((member) => (
+                <div key={member.id} className="bg-white rounded-xl p-6 text-center shadow-sm">
+                  <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-4 overflow-hidden flex items-center justify-center">
+                    {member.photo_url ? (
+                      <img src={member.photo_url} alt={member.name} loading="lazy" className="w-full h-full object-cover"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                    ) : (
+                      <span className="text-2xl font-bold text-gray-400 select-none">
+                        {member.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900">{member.name}</h3>
+                  {member.title && <p className="text-emerald-600 text-sm font-medium">{member.title}</p>}
+                  {member.bio && <p className="text-gray-500 text-sm mt-2">{member.bio}</p>}
                 </div>
-                <h3 className="text-lg font-bold text-gray-900">{member.name}</h3>
-                <p className="text-emerald-600 text-sm font-medium">{member.title}</p>
-                <p className="text-gray-500 text-sm mt-2">{member.desc}</p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
