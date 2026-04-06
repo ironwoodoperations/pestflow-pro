@@ -1,4 +1,5 @@
 import type { Prospect } from './types'
+import PaletteSwatches from './PaletteSwatches'
 
 const isValidEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)
 
@@ -105,6 +106,14 @@ export default function SiteSetupSection({ form, setField, onBlur }: Props) {
           <label className="text-xs text-gray-400">CTA Button Text</label>
           <input className={inp} value={br.cta_text || ''} onChange={e => setBr('cta_text', e.target.value)} onBlur={onBlur} />
         </div>
+        {br.template && (
+          <PaletteSwatches
+            shell={br.template}
+            primary={br.primary_color || ''}
+            accent={br.accent_color || ''}
+            onSelect={(p, a) => { setBr('primary_color', p); setBr('accent_color', a); onBlur() }}
+          />
+        )}
         <div>
           <label className="text-xs text-gray-400">Primary Color</label>
           <div className="flex gap-2">
