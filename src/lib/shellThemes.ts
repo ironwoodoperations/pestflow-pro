@@ -1,3 +1,30 @@
+export type ShellPalette = {
+  id: string
+  name: string
+  primary: string
+  accent: string
+  shell: 'modern-pro' | 'bold-local' | 'clean-friendly' | 'rustic-rugged'
+}
+
+export const PALETTES: ShellPalette[] = [
+  { id: 'mp-1', name: 'Navy & Gold',    primary: '#1e3a5f', accent: '#f59e0b', shell: 'modern-pro' },
+  { id: 'mp-2', name: 'Forest & Cream', primary: '#2d6a4f', accent: '#fef3c7', shell: 'modern-pro' },
+  { id: 'mp-3', name: 'Slate & Orange', primary: '#334155', accent: '#E87800', shell: 'modern-pro' },
+  { id: 'bl-1', name: 'Orange & Black', primary: '#E87800', accent: '#1a1a1a', shell: 'bold-local' },
+  { id: 'bl-2', name: 'Red & Dark',     primary: '#b91c1c', accent: '#1a1a1a', shell: 'bold-local' },
+  { id: 'bl-3', name: 'Green & Black',  primary: '#15803d', accent: '#1a1a1a', shell: 'bold-local' },
+  { id: 'cf-1', name: 'Sky & White',    primary: '#0ea5e9', accent: '#ffffff', shell: 'clean-friendly' },
+  { id: 'cf-2', name: 'Teal & Light',   primary: '#0d9488', accent: '#f0fdfa', shell: 'clean-friendly' },
+  { id: 'cf-3', name: 'Purple & Soft',  primary: '#7c3aed', accent: '#faf5ff', shell: 'clean-friendly' },
+  { id: 'rr-1', name: 'Brown & Tan',    primary: '#78350f', accent: '#fef3c7', shell: 'rustic-rugged' },
+  { id: 'rr-2', name: 'Green & Earth',  primary: '#365314', accent: '#fef9c3', shell: 'rustic-rugged' },
+  { id: 'rr-3', name: 'Rust & Cream',   primary: '#9a3412', accent: '#fff7ed', shell: 'rustic-rugged' },
+]
+
+export function getPalettesForShell(shell: string): ShellPalette[] {
+  return PALETTES.filter(p => p.shell === shell)
+}
+
 export const SHELL_THEMES: Record<string, Record<string, string>> = {
   'modern-pro': {
     '--color-primary':      '#10b981',
