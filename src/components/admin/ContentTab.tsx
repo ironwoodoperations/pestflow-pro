@@ -6,10 +6,12 @@ import PageHelpBanner from './PageHelpBanner'
 import ContentPageForm from './ContentPageForm'
 
 const PAGE_SLUGS = [
-  'home', 'spider-control', 'mosquito-control', 'ant-control', 'wasp-hornet-control',
-  'roach-control', 'flea-tick-control', 'rodent-control', 'scorpion-control', 'bed-bug-control',
-  'pest-control', 'termite-control', 'termite-inspections', 'about', 'faq', 'contact',
-  'quote', 'reviews', 'service-area', 'blog',
+  'home', 'about',
+  'pest-control', 'termite-control', 'termite-inspections',
+  'spider-control', 'roach-control', 'ant-control', 'mosquito-control',
+  'scorpion-control', 'bed-bug-control', 'flea-tick-control', 'rodent-control',
+  'wasp-hornet-control',
+  'faq',
 ]
 
 interface ContentForm { title: string; subtitle: string; intro: string; video_url: string; image_url: string }
