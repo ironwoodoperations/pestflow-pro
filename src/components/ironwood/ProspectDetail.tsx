@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { Prospect, Salesperson } from './types'
-import ContactSection    from './ProspectDetail.Contact'
-import IntakeLinkSection from './ProspectDetail.IntakeLink'
-import OnboardingSection from './ProspectDetail.Onboarding'
-import SiteSetupSection  from './ProspectDetail.SiteSetup'
-import ProvisionSection  from './ProspectDetail.Provisioning'
+import ContactSection       from './ProspectDetail.Contact'
+import IntakeLinkSection    from './ProspectDetail.IntakeLink'
+import OnboardingSection    from './ProspectDetail.Onboarding'
+import SiteSetupSection     from './ProspectDetail.SiteSetup'
+import IntegrationsSection  from './ProspectDetail.Integrations'
+import ProvisionSection     from './ProspectDetail.Provisioning'
 
 interface Props {
   prospectId: string | null   // null = new prospect
@@ -121,6 +122,7 @@ export default function ProspectDetail({ prospectId, salespeople, onClose }: Pro
           <IntakeLinkSection prospectId={id} adminEmail={form.admin_email} companyName={form.company_name} />
           <OnboardingSection form={form} setField={wrappedSetField} onBlur={onBlur} prospect={form} onUpdate={onUpdate} />
           <SiteSetupSection form={form} setField={wrappedSetField} onBlur={onBlur} />
+          <IntegrationsSection prospectId={id} form={form} />
           <ProvisionSection form={form} prospectId={id} onProvisioned={onUpdate} />
         </div>
       </div>
