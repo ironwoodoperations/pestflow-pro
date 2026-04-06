@@ -58,9 +58,9 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
           'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
-          prospect_id: prospectId,
-          slug: form.slug,
-          admin_email: resolvedAdminEmail,
+          prospect_id:  prospectId,
+          slug:         form.slug,
+          admin_email:  resolvedAdminEmail,
           admin_password: form.admin_password,
           business_info: {
             name:    bi.name    || form.company_name || '',
@@ -97,6 +97,10 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
           subscription: { tier: form.plan_tier || 1, plan_name: form.plan_name || 'Starter', monthly_price: form.monthly_price || 149 },
         }),
       })
+      if (res.status === 401) {
+        setError('Session expired — please refresh the page and try again.')
+        return
+      }
       const result = await res.json()
       if (!result.success) { setError(result.error || 'Provision failed'); return }
       const now = new Date().toISOString()
