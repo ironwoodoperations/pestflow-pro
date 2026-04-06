@@ -1,5 +1,6 @@
 // S67 - force rebuild
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import type { Prospect } from './types'
 
@@ -13,6 +14,7 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
   const [loadingLink, setLoadingLink]       = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [confirmWaive, setConfirmWaive]     = useState(false)
+  const [sendingInvoice, setSendingInvoice] = useState(false)
 
   const setupFeeAmount = prospect.setup_fee_amount || 0
   const hasSetupFee    = setupFeeAmount > 0
@@ -93,6 +95,41 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
     const updates: Partial<Prospect> = { payment_confirmed_at: now, status: 'paid' }
     if (prospect.id) await supabase.from('prospects').update(updates).eq('id', prospect.id)
     onUpdate(updates)
+  }
+
+  async function sendInvoiceEmail() {
+    if (!resolvedEmail || !prospect.setup_invoice_url) return
+    setSendingInvoice(true)
+    try {
+      let { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        const { data: r } = await supabase.auth.refreshSession()
+        session = r.session
+      }
+      if (!session) { toast.error('Session expired — please refresh.'); return }
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-invoice-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({
+          prospectEmail: resolvedEmail,
+          prospectName:  prospect.contact_name || prospect.company_name || '',
+          businessName:  prospect.company_name || '',
+          invoiceUrl:    prospect.setup_invoice_url,
+          amount:        setupFeeAmount,
+        }),
+      })
+      const data = await res.json()
+      if (data.success) toast.success(`Invoice sent to ${resolvedEmail}`)
+      else toast.error(data.error || 'Failed to send invoice email')
+    } catch (e: any) {
+      toast.error(e.message || 'Network error')
+    } finally {
+      setSendingInvoice(false)
+    }
   }
 
   // SECTION 2 — Subscription Link
@@ -196,8 +233,10 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
                   className="text-xs text-emerald-400 hover:underline shrink-0">Copy</button>
               </div>
               <div className="flex gap-2 flex-wrap">
-                <a href={`mailto:${resolvedEmail}?subject=${mailSubjectInvoice}&body=${setupMailBody}`}
-                  className="px-3 py-1.5 bg-indigo-700 text-white text-xs rounded hover:bg-indigo-600">✉ Send Invoice</a>
+                <button onClick={sendInvoiceEmail} disabled={sendingInvoice}
+                  className="px-3 py-1.5 bg-indigo-700 text-white text-xs rounded hover:bg-indigo-600 disabled:opacity-50">
+                  {sendingInvoice ? 'Sending…' : '✉ Send Invoice'}
+                </button>
                 {!prospect.payment_confirmed_at && (
                   <button onClick={markSetupPaid}
                     className="px-3 py-1.5 bg-green-700 text-white text-xs rounded hover:bg-green-600">
