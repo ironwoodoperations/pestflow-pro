@@ -61,15 +61,7 @@ export default function LegacyComposer({ onClose, onPosted }: Props) {
 
         <ComposerImagePicker
           imageUrl={c.form.imageUrl}
-          pexelsQuery={c.form.pexelsQuery}
           onImageUrlChange={v => c.setForm(prev => ({ ...prev, imageUrl: v }))}
-          onPexelsQueryChange={v => c.setForm(prev => ({ ...prev, pexelsQuery: v }))}
-          pexelsApiKey={c.pexelsApiKey}
-          pexelsResults={c.pexelsResults}
-          pexelsLoading={c.pexelsLoading}
-          selectedPexelsUrl={c.selectedPexelsUrl}
-          onSearchPexels={c.searchPexels}
-          onSelectPhoto={c.selectPexelsPhoto}
         />
 
         <ComposerScheduler

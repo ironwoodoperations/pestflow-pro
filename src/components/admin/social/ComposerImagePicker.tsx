@@ -1,63 +1,75 @@
-import type { PexelsPhoto } from './useComposer'
+import { useRef } from 'react'
 
 interface Props {
   imageUrl: string
-  pexelsQuery: string
   onImageUrlChange: (v: string) => void
-  onPexelsQueryChange: (v: string) => void
-  pexelsApiKey: string
-  pexelsResults: PexelsPhoto[]
-  pexelsLoading: boolean
-  selectedPexelsUrl: string
-  onSearchPexels: () => void
-  onSelectPhoto: (url: string) => void
+  onFileUpload?: (file: File) => void
 }
 
 const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-400'
 
-export default function ComposerImagePicker({
-  imageUrl, pexelsQuery, onImageUrlChange, onPexelsQueryChange,
-  pexelsApiKey, pexelsResults, pexelsLoading, selectedPexelsUrl,
-  onSearchPexels, onSelectPhoto,
-}: Props) {
+function generateTemplateImage(): string {
+  const canvas = document.createElement('canvas')
+  canvas.width = 1200
+  canvas.height = 630
+  const ctx = canvas.getContext('2d')!
+  ctx.fillStyle = '#E87800'
+  ctx.fillRect(0, 0, 1200, 630)
+  ctx.fillStyle = 'rgba(0,0,0,0.2)'
+  ctx.fillRect(0, 540, 1200, 90)
+  ctx.fillStyle = '#ffffff'
+  ctx.font = 'bold 72px Arial, sans-serif'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText('Your Post Here', 600, 285)
+  ctx.fillStyle = 'rgba(255,255,255,0.9)'
+  ctx.font = '32px Arial, sans-serif'
+  ctx.fillText('Replace with your photo or design', 600, 370)
+  return canvas.toDataURL('image/png')
+}
+
+export default function ComposerImagePicker({ imageUrl, onImageUrlChange, onFileUpload }: Props) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  function handleDownloadTemplate() {
+    const dataUrl = generateTemplateImage()
+    const a = document.createElement('a')
+    a.href = dataUrl
+    a.download = 'post-template.png'
+    a.click()
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (onFileUpload) {
+      onFileUpload(file)
+    } else {
+      const url = URL.createObjectURL(file)
+      onImageUrlChange(url)
+    }
+    e.target.value = ''
+  }
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
       <h3 className="text-base font-semibold text-gray-900 mb-3">Photo</h3>
 
-      {!pexelsApiKey ? (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
-          <p className="text-sm text-amber-800">
-            Add your free Pexels API key in Settings to search stock photos.
-            Or paste any image URL directly below.
-          </p>
-        </div>
-      ) : (
-        <>
-          <div className="flex gap-2 mb-4">
-            <input value={pexelsQuery} onChange={e => onPexelsQueryChange(e.target.value)}
-              placeholder="Search photos..." className={`flex-1 ${inputClass}`}
-              onKeyDown={e => { if (e.key === 'Enter') onSearchPexels() }} />
-            <button onClick={onSearchPexels} disabled={pexelsLoading}
-              className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 whitespace-nowrap">
-              {pexelsLoading ? 'Searching...' : 'Search Photos'}
-            </button>
-          </div>
-          {pexelsResults.length > 0 && (
-            <div className="grid grid-cols-3 gap-2 mb-4">
-              {pexelsResults.map(photo => (
-                <button key={photo.id} onClick={() => onSelectPhoto(photo.src.large)}
-                  className={`relative aspect-video rounded-lg overflow-hidden border-2 transition-all ${
-                    selectedPexelsUrl === photo.src.large
-                      ? 'border-emerald-500 ring-2 ring-emerald-500'
-                      : 'border-transparent hover:border-gray-300'
-                  }`}>
-                  <img src={photo.src.medium} alt={photo.alt} className="w-full h-full object-cover" />
-                </button>
-              ))}
-            </div>
-          )}
-        </>
-      )}
+      <div className="flex gap-2 mb-4">
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition"
+        >
+          📁 Upload Photo
+        </button>
+        <button
+          onClick={handleDownloadTemplate}
+          className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition"
+        >
+          ⬇ Download Template
+        </button>
+        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+      </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1.5">Or paste image URL</label>
