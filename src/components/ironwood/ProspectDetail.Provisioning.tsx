@@ -46,7 +46,7 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
     setError(null)
     try {
       // Get a fresh session token at click time — never use a cached token
-      const { data: { session: freshSession }, error: sessionError } = await supabase.auth.getSession()
+      const { data: { session: freshSession }, error: sessionError } = await supabase.auth.refreshSession()
       if (!freshSession || sessionError) {
         setError('Your session has expired. Please sign out and sign back in.')
         return

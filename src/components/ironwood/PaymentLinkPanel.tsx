@@ -38,7 +38,7 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
 
     setLoadingInvoice(true); setError(null)
     try {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      const { data: { session }, error: sessionError } = await supabase.auth.refreshSession()
       if (sessionError || !session?.access_token) {
         setError('Authentication error — please refresh and try again.')
         setLoadingInvoice(false)
@@ -96,7 +96,7 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
     }
     setLoadingLink(true); setError(null)
     try {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      const { data: { session }, error: sessionError } = await supabase.auth.refreshSession()
       if (sessionError || !session?.access_token) {
         console.error('No valid session', sessionError)
         setError('Authentication error — please refresh and try again.')
