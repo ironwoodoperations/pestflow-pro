@@ -62,6 +62,7 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${accessToken}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
         },
         body: JSON.stringify({
           prospect_id:  prospectId,
