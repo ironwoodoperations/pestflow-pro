@@ -48,7 +48,7 @@ export default function BlogPage() {
               <Link key={post.id} to={`/blog/${post.slug}`} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition group">
                 <div className="bg-[#0a0f1e] h-40 overflow-hidden">
                   <img
-                    src={post.intro_image || 'https://images.pexels.com/photos/5591664/pexels-photo-5591664.jpeg?auto=compress&w=600'}
+                    src={post.intro_image || '/images/pests/pest_control.jpg'}
                     alt={post.title}
                     className="w-full h-full object-cover"
                   />

@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
 
-interface Post { title: string; content: string; published_at: string }
+interface Post { title: string; content: string; published_at: string; intro_image?: string }
 
 export default function BlogPostPage() {
   const { slug } = useParams<{ slug: string }>()
@@ -16,7 +16,7 @@ export default function BlogPostPage() {
       if (!slug) { if (!cancelled) setLoading(false); return }
       const tenantId = await resolveTenantId()
       if (!tenantId) { if (!cancelled) setLoading(false); return }
-      const { data } = await supabase.from('blog_posts').select('title, content, published_at').eq('tenant_id', tenantId).eq('slug', slug).maybeSingle()
+      const { data } = await supabase.from('blog_posts').select('title, content, published_at, intro_image').eq('tenant_id', tenantId).eq('slug', slug).maybeSingle()
       if (!cancelled) { if (data) setPost(data); setLoading(false) }
     }
     run()
@@ -45,6 +45,13 @@ export default function BlogPostPage() {
 
   return (
     <div className="min-h-screen bg-white">
+      <div className="w-full h-64 md:h-96 overflow-hidden bg-gray-900">
+        <img
+          src={post.intro_image || '/images/pests/pest_control.jpg'}
+          alt={post.title}
+          className="w-full h-full object-cover opacity-80"
+        />
+      </div>
       <article className="max-w-3xl mx-auto px-4 py-16">
         <Link to="/blog" className="text-emerald-500 font-medium hover:underline text-sm mb-6 block">← Back to Blog</Link>
         <h1 className="text-4xl font-bold text-gray-900 mb-4">{post.title}</h1>
