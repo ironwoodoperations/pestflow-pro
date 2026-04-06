@@ -5,6 +5,7 @@ import { useTenant } from '../../hooks/useTenant'
 import PageHelpBanner from './PageHelpBanner'
 import ContentPageForm from './ContentPageForm'
 import FaqTab from './FaqTab'
+import { PAGE_DEFAULTS } from '../../lib/pageDefaults'
 
 const PAGE_SLUGS = [
   'home', 'about',
@@ -12,7 +13,7 @@ const PAGE_SLUGS = [
   'spider-control', 'roach-control', 'ant-control', 'mosquito-control',
   'scorpion-control', 'bed-bug-control', 'flea-tick-control', 'rodent-control',
   'wasp-hornet-control',
-  'faq',
+  'contact', 'faq', 'quote',
 ]
 
 interface ContentForm { title: string; subtitle: string; intro: string; video_url: string; image_url: string }
@@ -48,7 +49,7 @@ export default function ContentTab() {
       .then(({ data }) => { if (data?.value?.hero_headline) setHeroHeadline(data.value.hero_headline) })
   }, [tenantId])
 
-  // Load page content when slug changes
+  // Load page content when slug changes — fall back to PAGE_DEFAULTS if no DB row
   useEffect(() => {
     if (!tenantId) return
     let cancelled = false
@@ -56,7 +57,14 @@ export default function ContentTab() {
       setLoading(true)
       const { data } = await supabase.from('page_content').select('title, subtitle, intro, video_url, image_url').eq('tenant_id', tenantId).eq('page_slug', selectedSlug).maybeSingle()
       if (!cancelled) {
-        setForm({ title: data?.title || '', subtitle: data?.subtitle || '', intro: data?.intro || '', video_url: data?.video_url || '', image_url: data?.image_url || '' })
+        const defaults = PAGE_DEFAULTS[selectedSlug]
+        setForm({
+          title: data?.title || defaults?.title || '',
+          subtitle: data?.subtitle || defaults?.subtitle || '',
+          intro: data?.intro || defaults?.intro || '',
+          video_url: data?.video_url || '',
+          image_url: data?.image_url || defaults?.image_url || '',
+        })
         setLoading(false)
       }
     }
