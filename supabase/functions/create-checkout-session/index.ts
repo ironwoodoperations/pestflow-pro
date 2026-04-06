@@ -1,7 +1,7 @@
-// Edge Function: create-checkout-session v15
-// mode: 'subscription' with initial_invoice_items for setup fee.
-// Setup fee appears as a visible line item on the first invoice.
-// Recurring price IDs (price_1TIZ6D..., etc.) work correctly in subscription mode.
+// Edge Function: create-checkout-session v16
+// mode: 'subscription' — recurring only.
+// Setup fee is handled separately by create-setup-invoice.
+// No initial_invoice_items — Stripe rejects that param in checkout sessions.
 
 import Stripe from 'https://esm.sh/stripe@14?target=deno'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -23,7 +23,6 @@ interface RequestBody {
   client_email: string
   client_name?: string
   package_type?: string
-  setup_amount_override?: number  // in cents
   plan: string
   slug: string
   prospect_id?: string
@@ -39,7 +38,7 @@ Deno.serve(async (req: Request) => {
 
   try {
     const body: RequestBody = await req.json()
-    const { tenant_id, client_email, client_name, setup_amount_override,
+    const { tenant_id, client_email, client_name,
             plan, slug, prospect_id, onboarding_session_id, provision_data } = body
 
     if (!client_email || !slug) return json({ error: 'client_email and slug are required' }, 400)
@@ -61,10 +60,7 @@ Deno.serve(async (req: Request) => {
 
     console.log(`Customer: ${customer.id} (${client_email})`)
 
-    const setupFeeCents = setup_amount_override ?? 0
-
-    // Build subscription_data — only include initial_invoice_items when fee > 0
-    // (empty array causes Stripe validation error)
+    // subscription_data: recurring only — no setup fee bundled here
     const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {
       metadata: {
         prospect_id:           prospect_id           || '',
@@ -72,17 +68,6 @@ Deno.serve(async (req: Request) => {
         slug,
         onboarding_session_id: onboarding_session_id || '',
       },
-      ...(setupFeeCents > 0 ? {
-        invoice_settings: {
-          initial_invoice_items: [{
-            price_data: {
-              currency: 'usd' as const,
-              product_data: { name: 'One-Time Setup Fee' },
-              unit_amount: setupFeeCents,
-            },
-          }],
-        },
-      } : {}),
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -95,7 +80,6 @@ Deno.serve(async (req: Request) => {
         tenant_id:             tenant_id             || '',
         slug,
         client_email,
-        setup_fee_amount:      String(setupFeeCents),
         onboarding_session_id: onboarding_session_id || '',
       },
       success_url: 'https://pestflowpro.com/ironwood?payment=success',
@@ -114,7 +98,6 @@ Deno.serve(async (req: Request) => {
       stripe_customer_id:    customer.id,
       stripe_session_id:     session.id,
       subscription_price_id: recurringPriceId,
-      setup_amount:          setupFeeCents || null,
       status:                'pending',
       payment_type:          'setup_plus_subscription',
       provision_data:        provision_data || null,
