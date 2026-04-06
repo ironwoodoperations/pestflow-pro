@@ -5,7 +5,7 @@ export default function ScorpionControl() {
   return (
     <PestPageTemplate
       pageSlug="scorpion-control"
-      introImage="https://images.pexels.com/photos/3680934/pexels-photo-3680934.jpeg?auto=compress&w=800"
+      introImage="/images/pests/scorpion.jpg"
       videoUrl={PEST_VIDEOS.scorpion[0]?.url}
       heroTitle="Scorpion Control in East Texas"
       heroHighlight="Scorpion Control"

@@ -5,7 +5,7 @@ import { resolveTenantId } from '../../lib/tenant'
 
 interface Biz { name?: string; phone?: string }
 
-const HERO_IMAGE = 'https://images.pexels.com/photos/5025639/pexels-photo-5025639.jpeg'
+const HERO_IMAGE = '/images/pests/tech_1.jpg'
 
 const STRIPS = [
   { icon: '🏠', title: 'Residential', sub: 'Protecting your home and family', href: '/pest-control' },

@@ -5,7 +5,7 @@ export default function MosquitoControl() {
   return (
     <PestPageTemplate
       pageSlug="mosquito-control"
-      introImage="https://images.pexels.com/photos/1000067/pexels-photo-1000067.jpeg?auto=compress&w=800"
+      introImage="/images/pests/Mosquito.jpg"
       videoUrl={PEST_VIDEOS.mosquito[0]?.url}
       heroTitle="Mosquito Control in East Texas"
       heroHighlight="Mosquito Control"

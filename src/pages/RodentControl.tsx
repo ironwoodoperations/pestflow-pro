@@ -5,7 +5,7 @@ export default function RodentControl() {
   return (
     <PestPageTemplate
       pageSlug="rodent-control"
-      introImage="https://images.pexels.com/photos/4591871/pexels-photo-4591871.jpeg?auto=compress&w=800"
+      introImage="/images/pests/rodent.jpg"
       videoUrl={PEST_VIDEOS.rodent[0]?.url}
       heroTitle="Rodent Control in East Texas"
       heroHighlight="Rodent Control"

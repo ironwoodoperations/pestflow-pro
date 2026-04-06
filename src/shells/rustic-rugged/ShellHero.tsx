@@ -5,7 +5,7 @@ import { resolveTenantId } from '../../lib/tenant'
 
 interface Biz { phone?: string; founded_year?: string | number }
 
-const HERO_IMAGE = 'https://images.pexels.com/photos/4386466/pexels-photo-4386466.jpeg'
+const HERO_IMAGE = '/images/pests/tech_1.jpg'
 const BROWN = '#2c1a0e'
 const RUST  = '#b5451b'
 

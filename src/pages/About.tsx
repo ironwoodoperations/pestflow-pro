@@ -6,9 +6,9 @@ import { resolveTenantId } from '../lib/tenant'
 import StructuredData from '../components/StructuredData'
 
 const TEAM = [
-  { name: 'Ryan Carter', title: 'Owner & Founder', desc: 'Founded Ironclad in 2009. NPMA-certified with 18 years in pest management.', img: 'https://images.pexels.com/photos/1212984/pexels-photo-1212984.jpeg?w=300&h=300&fit=crop' },
-  { name: 'Michelle Tran', title: 'Lead Technician', desc: 'Certified WDI inspector and termite specialist. 10 years in the field.', img: 'https://images.pexels.com/photos/3184405/pexels-photo-3184405.jpeg?w=300&h=300&fit=crop' },
-  { name: 'Laura Medina', title: 'Office Manager', desc: 'Runs scheduling, customer service, and billing. Every call answered.', img: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?w=300&h=300&fit=crop' },
+  { name: 'Ryan Carter', title: 'Owner & Founder', desc: 'Founded Ironclad in 2009. NPMA-certified with 18 years in pest management.', img: '/images/pests/tech_1.jpg' },
+  { name: 'Michelle Tran', title: 'Lead Technician', desc: 'Certified WDI inspector and termite specialist. 10 years in the field.', img: '/images/pests/tech_1.jpg' },
+  { name: 'Laura Medina', title: 'Office Manager', desc: 'Runs scheduling, customer service, and billing. Every call answered.', img: '/images/pests/tech_1.jpg' },
 ]
 
 const VALUES = [
