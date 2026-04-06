@@ -38,6 +38,8 @@ export interface Prospect {
   plan_tier: number | null
   plan_name: string | null
   monthly_price: number | null
+  setup_invoice_url: string | null
+  setup_invoice_sent_at: string | null
   payment_link_url: string | null
   stripe_customer_id: string | null
   payment_sent_at: string | null
