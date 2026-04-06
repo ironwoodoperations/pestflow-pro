@@ -55,7 +55,8 @@ const Onboarding     = lazy(() => import('./pages/admin/Onboarding'))
 const OnboardingLive = lazy(() => import('./pages/admin/OnboardingLive'))
 
 // Ironwood Ops — lazy, platform-level
-const IronwoodOps = lazy(() => import('./pages/IronwoodOps'))
+const IronwoodOps    = lazy(() => import('./pages/IronwoodOps'))
+const IronwoodLogin  = lazy(() => import('./pages/admin/IronwoodLogin'))
 
 const LOADING = <div className="flex items-center justify-center h-screen"><div className="text-gray-400 text-sm">Loading...</div></div>
 const BLANK = <div />
@@ -113,6 +114,9 @@ export default function App() {
         } />
 
         {/* ─── Ironwood Ops — must be before /:slug ─── */}
+        <Route path="/ironwood/login" element={
+          <Suspense fallback={LOADING}><IronwoodLogin /></Suspense>
+        } />
         <Route path="/ironwood/*" element={
           <Suspense fallback={LOADING}><IronwoodOps /></Suspense>
         } />
