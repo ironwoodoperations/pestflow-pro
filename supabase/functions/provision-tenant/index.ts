@@ -74,6 +74,17 @@ Deno.serve(async (req: Request) => {
     const resolvedAdminEmail    = (wd ? (wbi.email || admin_email) : admin_email) || ''
     const resolvedAdminPassword = (wd ? (wd.admin_password || admin_password) : admin_password) || ''
 
+    // BUG C: Validate admin email has a dot after @
+    if (resolvedAdminEmail) {
+      const atIdx = resolvedAdminEmail.indexOf('@')
+      const afterAt = atIdx >= 0 ? resolvedAdminEmail.slice(atIdx + 1) : ''
+      if (atIdx < 0 || !afterAt.includes('.')) {
+        return new Response(JSON.stringify({ success: false, error: 'Admin email must be a valid address (e.g. admin@company.com)' }), {
+          status: 400, headers: { 'Content-Type': 'application/json', ...CORS },
+        })
+      }
+    }
+
     // Step 1: Resolve or create tenant row
     let tenantId = body.tenant_id?.trim() || ''
     if (!tenantId) {
@@ -113,11 +124,27 @@ Deno.serve(async (req: Request) => {
       if (authError) {
         console.error('Failed to create auth user:', authError.message)
       } else if (authData.user) {
+        const companyName = wbi.name || bi?.name || resolvedSlug
+        // tenant_users
         const { error: tuError } = await supabase
           .from('tenant_users')
           .insert({ tenant_id: tenantId, user_id: authData.user.id, role: 'admin' })
         if (tuError && tuError.code !== '23505') {
           console.error('Failed to insert tenant_users:', tuError.message)
+        }
+        // BUG A: profiles
+        const { error: profError } = await supabase
+          .from('profiles')
+          .insert({ id: authData.user.id, tenant_id: tenantId, full_name: companyName + ' Admin', role: 'admin' })
+        if (profError && profError.code !== '23505') {
+          console.error('Failed to insert profiles:', profError.message)
+        }
+        // BUG B: user_roles
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert({ user_id: authData.user.id, role: 'admin' })
+        if (roleError && roleError.code !== '23505') {
+          console.error('Failed to insert user_roles:', roleError.message)
         }
       }
     } else {
@@ -176,10 +203,10 @@ Deno.serve(async (req: Request) => {
       { tenant_id: tenantId, key: 'onboarding_complete', value: { complete: false } },
       { tenant_id: tenantId, key: 'hero_media',           value: { youtube_id: '', thumbnail_url: '' } },
       { tenant_id: tenantId, key: 'holiday_mode',         value: { enabled: false, holiday: '', message: '', auto_schedule: '' } },
-      { tenant_id: tenantId, key: 'notifications',        value: { cc_email: '', lead_email: email, monthly_report_email: email } },
+      { tenant_id: tenantId, key: 'notifications',        value: { cc_email: '', lead_email: resolvedAdminEmail || email } },
       { tenant_id: tenantId, key: 'demo_mode',            value: { active: false, seeded_at: '' } },
       { tenant_id: tenantId, key: 'subscription', value: {
-        tier:          wsub.tier          || subscription?.tier          || 1,
+        tier:          wsub.tier          ?? subscription?.tier          ?? 1,
         plan_name:     wsub.plan_name     || subscription?.plan_name     || 'Starter',
         monthly_price: wsub.monthly_price || subscription?.monthly_price || 149,
       }},
