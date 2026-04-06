@@ -1,5 +1,7 @@
 import type { Prospect } from './types'
 
+const isValidEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)
+
 const SHELLS = [
   { id: 'modern-pro',      name: 'Modern Pro' },
   { id: 'bold-local',      name: 'Bold & Local' },
@@ -47,8 +49,16 @@ export default function SiteSetupSection({ form, setField, onBlur }: Props) {
         </div>
         <div>
           <label className="text-xs text-gray-400">Admin Email</label>
-          <input type="email" className={inp} value={form.admin_email || ''}
+          <input type="email"
+            className={`${inp} ${form.admin_email && !isValidEmail(form.admin_email) ? 'border-red-500 focus:border-red-500' : ''}`}
+            value={form.admin_email || ''}
             onChange={e => setField('admin_email', e.target.value)} onBlur={onBlur} />
+          {form.admin_email && !isValidEmail(form.admin_email) && (
+            <p className="text-xs text-red-400 mt-0.5">Must be a valid email (e.g. admin@company.com)</p>
+          )}
+          {form.slug && !form.admin_email && (
+            <p className="text-xs text-gray-600 mt-0.5">Suggested: admin@{form.slug}.com</p>
+          )}
         </div>
         <div>
           <label className="text-xs text-gray-400">Admin Password</label>

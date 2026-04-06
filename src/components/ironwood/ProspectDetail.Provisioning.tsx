@@ -3,6 +3,8 @@ import { supabase } from '../../lib/supabase'
 import type { Prospect } from './types'
 import CredentialField from './CredentialField'
 
+const isValidEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)
+
 interface Props {
   form: Partial<Prospect>
   prospectId: string | null
@@ -16,7 +18,7 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
   const [fbSaved, setFbSaved]         = useState(false)
   const [gbSaved, setGbSaved]         = useState(false)
   const [skipCreds, setSkipCreds]     = useState(false)
-  const canCreate = !!form.slug && !!form.admin_email
+  const canCreate = !!form.slug && !!form.admin_email && isValidEmail(form.admin_email)
   const canReveal = skipCreds || (fbSaved && gbSaved)
 
   const handleReveal = async () => {
@@ -156,7 +158,13 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
     <div className="space-y-3">
       <h3 className="font-semibold text-gray-200 border-b border-gray-700 pb-1">Provisioning</h3>
       {error && <p className="text-red-400 text-sm bg-red-900/20 border border-red-800 rounded px-3 py-2">{error}</p>}
-      {!canCreate && <p className="text-xs text-yellow-400">Fill slug and admin email (Site Setup section) to enable.</p>}
+      {!canCreate && (
+        <p className="text-xs text-yellow-400">
+          {!form.slug ? 'Fill slug to enable. ' : ''}
+          {!form.admin_email ? 'Fill admin email to enable.' : ''}
+          {form.admin_email && !isValidEmail(form.admin_email) ? 'Admin email must be a valid address (e.g. admin@company.com)' : ''}
+        </p>
+      )}
       <button disabled={!canCreate || provisioning} onClick={() => setConfirming(true)}
         className="px-6 py-2 bg-emerald-600 text-white text-sm rounded hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed">
         {provisioning ? '⏳ Creating site…' : '🚀 Create Site'}
