@@ -4,6 +4,7 @@
 // Creates auth user, seeds tenant_users, and provisions all 11 required settings keys.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { getPageContentRows } from '../_shared/pageContentDefaults.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
@@ -232,25 +233,9 @@ Deno.serve(async (req: Request) => {
       if (error) console.error(`Failed to upsert ${row.key}:`, error.message)
     }
 
-    // Step 4: Seed page_content rows for the new tenant
+    // Step 4: Seed page_content rows for the new tenant (with real default content)
     const businessName = wbi.name || bi?.name || resolvedSlug
-    const pageContentRows = [
-      { tenant_id: tenantId, page_slug: 'home',                title: `${businessName} — Professional Pest Control`,  subtitle: 'Licensed & insured professionals. Fast, effective results.', intro: '' },
-      { tenant_id: tenantId, page_slug: 'about',               title: `About ${businessName}`, subtitle: 'Locally owned and operated.', intro: '' },
-      { tenant_id: tenantId, page_slug: 'pest-control',        title: 'Pest Control Services', subtitle: 'Comprehensive pest management solutions.', intro: '' },
-      { tenant_id: tenantId, page_slug: 'termite-control',     title: 'Termite Control', subtitle: 'Protect your home from termite damage.', intro: '' },
-      { tenant_id: tenantId, page_slug: 'termite-inspections', title: 'Termite Inspections', subtitle: 'Thorough inspections by certified professionals.', intro: '' },
-      { tenant_id: tenantId, page_slug: 'roach-control',       title: 'Roach Control', subtitle: 'Fast, effective cockroach elimination.', intro: '' },
-      { tenant_id: tenantId, page_slug: 'ant-control',         title: 'Ant Control', subtitle: 'Stop ants before they take over.', intro: '' },
-      { tenant_id: tenantId, page_slug: 'mosquito-control',    title: 'Mosquito Control', subtitle: 'Enjoy your yard again.', intro: '' },
-      { tenant_id: tenantId, page_slug: 'bed-bug-control',     title: 'Bed Bug Treatment', subtitle: 'Sleep easy again — bed bugs eliminated.', intro: '' },
-      { tenant_id: tenantId, page_slug: 'flea-tick-control',   title: 'Flea & Tick Control', subtitle: 'Protect your family and pets.', intro: '' },
-      { tenant_id: tenantId, page_slug: 'rodent-control',      title: 'Rodent Control', subtitle: 'Exclusion and elimination, done right.', intro: '' },
-      { tenant_id: tenantId, page_slug: 'scorpion-control',    title: 'Scorpion Control', subtitle: 'Safe, effective scorpion treatments.', intro: '' },
-      { tenant_id: tenantId, page_slug: 'contact',             title: 'Contact Us', subtitle: "We're here to help.", intro: '' },
-      { tenant_id: tenantId, page_slug: 'faq',                 title: 'Frequently Asked Questions', subtitle: 'Answers to common questions.', intro: '' },
-      { tenant_id: tenantId, page_slug: 'quote',               title: 'Get a Free Quote', subtitle: 'Fast response, honest pricing.', intro: '' },
-    ]
+    const pageContentRows = getPageContentRows(tenantId, businessName)
     for (const row of pageContentRows) {
       const { error: pcErr } = await supabase.from('page_content').upsert(row, { onConflict: 'tenant_id,page_slug' })
       if (pcErr) console.error(`Failed to upsert page_content ${row.page_slug}:`, pcErr.message)
