@@ -7,7 +7,7 @@ import { usePlan } from '../../hooks/usePlan'
 import {
   FileText, Search, BookOpen, Share2, Star,
   MapPin, BarChart3, Users, Settings, LogOut, ExternalLink, Eye, EyeOff,
-  TrendingUp, Lock, ClipboardList, CreditCard, CheckSquare
+  TrendingUp, Lock, ClipboardList, CreditCard
 } from 'lucide-react'
 import TierToggle from '../../components/admin/TierToggle'
 import NotificationBell from '../../components/admin/NotificationBell'
@@ -27,8 +27,6 @@ const SettingsTab   = lazy(() => import('../../components/admin/settings/Setting
 const TeamTab          = lazy(() => import('../../components/admin/team/TeamTab'))
 const ClientSetupPage  = lazy(() => import('../../components/admin/client-setup/ClientSetupPage'))
 const BillingTab       = lazy(() => import('../../components/admin/BillingTab'))
-const OnboardingTab    = lazy(() => import('../../components/admin/tabs/OnboardingTab'))
-
 const TABS = [
   { key: 'dashboard', label: 'Dashboard', icon: BarChart3 },
   { key: 'content', label: 'Content', icon: FileText },
@@ -42,7 +40,6 @@ const TABS = [
   { key: 'team', label: 'Team', icon: Users },
   { key: 'client-setup', label: 'Client Setup', icon: ClipboardList },
   { key: 'billing', label: 'Billing', icon: CreditCard },
-  { key: 'onboarding', label: 'Onboarding', icon: CheckSquare },
   { key: 'settings', label: 'Settings', icon: Settings },
 ] as const
 
@@ -61,14 +58,13 @@ const TAB_SUBTITLES: Record<string, string> = {
   team: 'Manage your team members shown on your website',
   'client-setup': 'Collect client info and generate setup files during onboarding calls',
   billing: 'Your current plan and payment history',
-  onboarding: 'Client setup checklist — track every step before go-live',
   settings: 'Configure your business settings',
 }
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<TabKey>('dashboard')
   const [businessName, setBusinessName] = useState('Your Business')
-  const [onboardingComplete, setOnboardingComplete] = useState(true)
+  const [onboardingComplete] = useState(true)
   const [previewMode, setPreviewMode] = useState(false)
   const [demoActive, setDemoActive] = useState(false)
   const { tenantId } = useTenant()
@@ -79,11 +75,9 @@ export default function Dashboard() {
     if (!tenantId) return
     Promise.all([
       supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
-      supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'onboarding_complete').maybeSingle(),
       supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'demo_mode').maybeSingle(),
-    ]).then(([bizRes, onbRes, demoRes]) => {
+    ]).then(([bizRes, demoRes]) => {
       if (bizRes.data?.value?.name) setBusinessName(bizRes.data.value.name)
-      setOnboardingComplete(onbRes.data?.value?.complete === true)
       setDemoActive(demoRes.data?.value?.active === true)
     })
   }, [tenantId])
@@ -110,7 +104,7 @@ export default function Dashboard() {
           <p className="text-gray-400 text-xs uppercase tracking-widest mt-0.5">Operations Platform</p>
         </div>
         <nav className="flex-1 py-4 px-2 space-y-0.5">
-          {TABS.filter(t => t.key !== 'onboarding' || !onboardingComplete).map(({ key, label, icon: Icon }) => {
+          {TABS.map(({ key, label, icon: Icon }) => {
             const gatedTabs: Record<string, number> = { blog: 2, seo: 2, social: 2, reports: 2 }
             const locked = gatedTabs[key] ? !canAccess(gatedTabs[key]) : false
             return (
@@ -178,7 +172,6 @@ export default function Dashboard() {
               {activeTab === 'team' && <TeamTab />}
               {activeTab === 'client-setup' && <ClientSetupPage />}
               {activeTab === 'billing' && <BillingTab />}
-              {activeTab === 'onboarding' && <OnboardingTab onComplete={() => { setOnboardingComplete(true); setActiveTab('dashboard') }} />}
               {activeTab === 'settings' && <SettingsTab />}
             </Suspense>
           </div>
