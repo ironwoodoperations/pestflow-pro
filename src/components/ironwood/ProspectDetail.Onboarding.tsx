@@ -60,8 +60,19 @@ export default function OnboardingSection({ form, setField, onBlur, prospect, on
         </div>
         <div>
           <label className="text-xs text-gray-400">Setup Fee ($)</label>
-          <input type="number" className={inp} value={form.setup_fee_amount ?? ''}
-            onChange={e => setField('setup_fee_amount', Number(e.target.value))} onBlur={onBlur} />
+          <input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            className={inp}
+            value={form.setup_fee_amount ? String(form.setup_fee_amount) : ''}
+            placeholder="e.g. 500"
+            onChange={e => {
+              const raw = e.target.value.replace(/[^0-9]/g, '')
+              setField('setup_fee_amount', raw === '' ? 0 : parseInt(raw, 10))
+            }}
+            onBlur={onBlur}
+          />
         </div>
         <div>
           <label className="text-xs text-gray-400">Plan</label>
