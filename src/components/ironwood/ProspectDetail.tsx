@@ -119,7 +119,7 @@ export default function ProspectDetail({ prospectId, salespeople, onClose }: Pro
         {/* Sections */}
         <div className="p-5 space-y-6">
           <ContactSection form={form} setField={wrappedSetField} onBlur={onBlur} salespeople={salespeople} />
-          <IntakeLinkSection prospectId={id} adminEmail={form.admin_email} companyName={form.company_name} />
+          <IntakeLinkSection prospectId={id} adminEmail={form.admin_email ?? undefined} companyName={form.company_name ?? undefined} />
           <OnboardingSection form={form} setField={wrappedSetField} onBlur={onBlur} prospect={form} onUpdate={onUpdate} />
           <SiteSetupSection form={form} setField={wrappedSetField} onBlur={onBlur} />
           <IntegrationsSection prospectId={id} form={form} />
