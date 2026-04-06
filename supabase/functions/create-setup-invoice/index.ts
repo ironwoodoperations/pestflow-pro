@@ -23,8 +23,10 @@ Deno.serve(async (req: Request) => {
     // JWT verification
     const authHeader = req.headers.get('authorization') || ''
     const token = authHeader.replace('Bearer ', '')
+    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || ''
+    const anonClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    const { data: { user }, error: userError } = await anonClient.auth.getUser(token)
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token)
     if (userError || !user || !IRONWOOD_ALLOWED.includes(user.email ?? '')) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401, headers: { 'Content-Type': 'application/json', ...CORS },

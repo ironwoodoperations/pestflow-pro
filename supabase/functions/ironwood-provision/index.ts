@@ -23,8 +23,10 @@ Deno.serve(async (req: Request) => {
     const token = (req.headers.get('Authorization') || '').replace('Bearer ', '').trim()
     if (!token) return json({ error: 'Unauthorized' }, 401)
 
+    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || ''
+    const anonClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    const { data: { user }, error: authError } = await anonClient.auth.getUser(token)
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
     if (authError || !user || user.email !== 'admin@pestflowpro.com') {
       return json({ error: 'Forbidden' }, 403)
     }
