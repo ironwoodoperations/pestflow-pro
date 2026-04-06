@@ -45,8 +45,14 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
     setProvisioning(true)
     setError(null)
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) throw new Error('Not authenticated')
+      // Get a fresh session token at click time — never use a cached token
+      const { data: { session: freshSession }, error: sessionError } = await supabase.auth.getSession()
+      if (!freshSession || sessionError) {
+        setError('Your session has expired. Please sign out and sign back in.')
+        return
+      }
+      const accessToken = freshSession.access_token
+
       const bi = (form.business_info || {}) as Record<string, any>
       const br = (form.branding || {}) as Record<string, any>
       const cu = (form.customization || {}) as Record<string, any>
@@ -55,7 +61,7 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
+          'Authorization': `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
           prospect_id:  prospectId,
