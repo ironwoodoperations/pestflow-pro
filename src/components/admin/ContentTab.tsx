@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
 import PageHelpBanner from './PageHelpBanner'
 import ContentPageForm from './ContentPageForm'
+import FaqTab from './FaqTab'
 
 const PAGE_SLUGS = [
   'home', 'about',
@@ -139,12 +140,16 @@ export default function ContentTab() {
           </div>
         </div>
         <div className="lg:col-span-3">
-          <ContentPageForm
-            selectedSlug={selectedSlug} form={form} loading={loading} saving={saving}
-            aiLoading={aiLoading} reverting={reverting} isPestPage={isPestPage}
-            apiKey={apiKey} pexelsApiKey={pexelsApiKey}
-            updateField={updateField} onSave={handleSave} onGenerateAI={generateAI} onRevert={handleRevert}
-          />
+          {selectedSlug === 'faq' ? (
+            <FaqTab />
+          ) : (
+            <ContentPageForm
+              selectedSlug={selectedSlug} form={form} loading={loading} saving={saving}
+              aiLoading={aiLoading} reverting={reverting} isPestPage={isPestPage}
+              apiKey={apiKey} pexelsApiKey={pexelsApiKey}
+              updateField={updateField} onSave={handleSave} onGenerateAI={generateAI} onRevert={handleRevert}
+            />
+          )}
         </div>
       </div>
     </div>

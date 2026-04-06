@@ -33,16 +33,23 @@ const FAQ_CATEGORIES = [
   },
 ]
 
+interface FaqItem { id: string; question: string; answer: string; sort_order: number }
+
 export default function FAQPage() {
   const [heroTitle, setHeroTitle] = useState('Frequently Asked Questions')
   const [heroSubtitle, setHeroSubtitle] = useState('Everything you need to know about our pest control services.')
+  const [faqItems, setFaqItems] = useState<FaqItem[]>([])
 
   useEffect(() => {
     resolveTenantId().then(async (tid) => {
       if (!tid) return
-      const { data } = await supabase.from('page_content').select('title, subtitle').eq('tenant_id', tid).eq('page_slug', 'faq').maybeSingle()
-      if (data?.title) setHeroTitle(data.title)
-      if (data?.subtitle) setHeroSubtitle(data.subtitle)
+      const [pageRes, itemsRes] = await Promise.all([
+        supabase.from('page_content').select('title, subtitle').eq('tenant_id', tid).eq('page_slug', 'faq').maybeSingle(),
+        supabase.from('faq_items').select('id, question, answer, sort_order').eq('tenant_id', tid).order('sort_order'),
+      ])
+      if (pageRes.data?.title) setHeroTitle(pageRes.data.title)
+      if (pageRes.data?.subtitle) setHeroSubtitle(pageRes.data.subtitle)
+      if (itemsRes.data?.length) setFaqItems(itemsRes.data)
     })
   }, [])
 
@@ -59,19 +66,30 @@ export default function FAQPage() {
 
       <section className="py-16 bg-white">
         <div className="max-w-4xl mx-auto px-4">
-          {FAQ_CATEGORIES.map((cat) => (
-            <div key={cat.title} className="mb-12">
-              <h2 className="text-2xl font-bold text-emerald-600 mb-6">{cat.title}</h2>
-              <div className="space-y-6">
-                {cat.faqs.map((faq, i) => (
-                  <div key={i}>
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">{faq.q}</h3>
-                    <p className="text-gray-600">{faq.a}</p>
-                  </div>
-                ))}
-              </div>
+          {faqItems.length > 0 ? (
+            <div className="space-y-6">
+              {faqItems.map(item => (
+                <div key={item.id}>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">{item.question}</h3>
+                  <p className="text-gray-600">{item.answer}</p>
+                </div>
+              ))}
             </div>
-          ))}
+          ) : (
+            FAQ_CATEGORIES.map((cat) => (
+              <div key={cat.title} className="mb-12">
+                <h2 className="text-2xl font-bold text-emerald-600 mb-6">{cat.title}</h2>
+                <div className="space-y-6">
+                  {cat.faqs.map((faq, i) => (
+                    <div key={i}>
+                      <h3 className="text-lg font-bold text-gray-900 mb-2">{faq.q}</h3>
+                      <p className="text-gray-600">{faq.a}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </section>
 
