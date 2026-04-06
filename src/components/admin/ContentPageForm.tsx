@@ -17,35 +17,41 @@ interface Props {
   form: ContentForm
   loading: boolean; saving: boolean; aiLoading: boolean; reverting: boolean
   isPestPage: boolean; apiKey: string
+  heroHeadline?: string
+  onHeroHeadlineChange?: (val: string) => void
   updateField: (field: keyof ContentForm, value: string) => void
   onSave: () => void
   onGenerateAI: () => void
   onRevert: () => void
 }
 
-function PageImageUpload({ slug }: { slug: string }) {
+function PageImageUpload({ slug, index }: { slug: string; index: number }) {
   const { tenantId } = useTenant()
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [currentUrl, setCurrentUrl] = useState<string | null>(null)
+  const label = `Image ${index + 2}`
 
   useEffect(() => {
     if (!tenantId) return
     supabase.from('page_content').select('image_urls').eq('tenant_id', tenantId).eq('page_slug', slug).maybeSingle()
-      .then(({ data }) => { if (data?.image_urls?.[0]) setCurrentUrl(data.image_urls[0]) })
-  }, [tenantId, slug])
+      .then(({ data }) => { if (data?.image_urls?.[index]) setCurrentUrl(data.image_urls[index]) })
+  }, [tenantId, slug, index])
 
   async function handleFile(file: File) {
     if (!tenantId || !file) return
     const ext = file.name.split('.').pop()
-    const path = `${tenantId}/pages/${slug}/image-0.${ext}`
+    const path = `${tenantId}/pages/${slug}/image-${index}.${ext}`
     setUploading(true)
     const { data, error } = await supabase.storage.from('tenant-assets').upload(path, file, { upsert: true })
     setUploading(false)
     if (error) { toast.error('Upload failed: ' + error.message); return }
     const { data: { publicUrl } } = supabase.storage.from('tenant-assets').getPublicUrl(data.path)
+    const { data: existing } = await supabase.from('page_content').select('image_urls').eq('tenant_id', tenantId).eq('page_slug', slug).maybeSingle()
+    const arr = [...(existing?.image_urls || [])]
+    arr[index] = publicUrl
     await supabase.from('page_content').upsert(
-      { tenant_id: tenantId, page_slug: slug, image_urls: [publicUrl] },
+      { tenant_id: tenantId, page_slug: slug, image_urls: arr },
       { onConflict: 'tenant_id,page_slug' }
     )
     setCurrentUrl(publicUrl)
@@ -54,8 +60,11 @@ function PageImageUpload({ slug }: { slug: string }) {
 
   async function handleRemove() {
     if (!tenantId) return
+    const { data: existing } = await supabase.from('page_content').select('image_urls').eq('tenant_id', tenantId).eq('page_slug', slug).maybeSingle()
+    const arr = [...(existing?.image_urls || [])]
+    arr[index] = null
     await supabase.from('page_content').upsert(
-      { tenant_id: tenantId, page_slug: slug, image_urls: [] },
+      { tenant_id: tenantId, page_slug: slug, image_urls: arr.filter(Boolean) },
       { onConflict: 'tenant_id,page_slug' }
     )
     setCurrentUrl(null)
@@ -64,7 +73,7 @@ function PageImageUpload({ slug }: { slug: string }) {
 
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">Page Image</label>
+      <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
       {currentUrl && (
         <div className="mb-3 relative inline-block">
           <img src={currentUrl} alt="" className="h-32 w-48 object-cover rounded-lg border border-gray-200" />
@@ -79,20 +88,27 @@ function PageImageUpload({ slug }: { slug: string }) {
         className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition disabled:opacity-50">
         {uploading ? 'Uploading...' : currentUrl ? '🔄 Replace Image' : '📷 Upload Image'}
       </button>
-      <p className="text-xs text-gray-400 mt-1">Replaces the page hero image. Recommended: 1200×600px.</p>
+      <p className="text-xs text-gray-400 mt-1">Recommended: 1200×600px.</p>
     </div>
   )
 }
 
 const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-400'
 
-export default function ContentPageForm({ selectedSlug, form, loading, saving, aiLoading, reverting, isPestPage, apiKey, updateField, onSave, onGenerateAI, onRevert }: Props) {
+export default function ContentPageForm({ selectedSlug, form, loading, saving, aiLoading, reverting, isPestPage, apiKey, heroHeadline, onHeroHeadlineChange, updateField, onSave, onGenerateAI, onRevert }: Props) {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
       <h3 className="text-base font-semibold text-gray-900 mb-1">Editing: <span className="text-emerald-600">{selectedSlug}</span></h3>
       <p className="text-gray-500 text-sm mb-6">Content changes will appear on the public page immediately after save.</p>
       {loading ? <p className="text-gray-400">Loading...</p> : (
         <div className="space-y-4">
+          {selectedSlug === 'home' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Hero Headline</label>
+              <input type="text" value={heroHeadline || ''} onChange={e => onHeroHeadlineChange?.(e.target.value)} placeholder="e.g. Professional Pest Control You Can Trust" className={inputClass} />
+              <p className="text-xs text-gray-400 mt-1">Main headline shown on the home page hero. Saved to settings.</p>
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Page Title</label>
             <input type="text" value={form.title} onChange={e => updateField('title', e.target.value)} placeholder="Page title" className={inputClass} />
@@ -113,7 +129,12 @@ export default function ContentPageForm({ selectedSlug, form, loading, saving, a
           </div>
 
           {PAGES_WITH_IMAGES.has(selectedSlug) && (
-            <PageImageUpload slug={selectedSlug} />
+            <div className="space-y-4 border-t border-gray-100 pt-4">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Page Images (image_urls)</p>
+              <PageImageUpload slug={selectedSlug} index={0} />
+              <PageImageUpload slug={selectedSlug} index={1} />
+              <PageImageUpload slug={selectedSlug} index={2} />
+            </div>
           )}
 
           <div className="flex items-center gap-3 pt-1">

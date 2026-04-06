@@ -30,9 +30,10 @@ export default function ContentTab() {
   const [businessName, setBusinessName] = useState('')
   const [businessCity, setBusinessCity] = useState('')
   const [reverting, setReverting] = useState(false)
+  const [heroHeadline, setHeroHeadline] = useState('')
   const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
 
-  // Load business info once
+  // Load business info + customization once
   useEffect(() => {
     if (!tenantId) return
     supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle()
@@ -43,6 +44,8 @@ export default function ContentTab() {
           if (match) setBusinessCity(match[1].trim())
         }
       })
+    supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'customization').maybeSingle()
+      .then(({ data }) => { if (data?.value?.hero_headline) setHeroHeadline(data.value.hero_headline) })
   }, [tenantId])
 
   // Load page content when slug changes
@@ -101,6 +104,11 @@ export default function ContentTab() {
       if (current) await supabase.from('page_snapshots').insert({ tenant_id: tenantId, page_slug: selectedSlug, snapshot_type: 'original', snapshot_data: current })
     }
     const { error } = await supabase.from('page_content').upsert({ tenant_id: tenantId, page_slug: selectedSlug, ...form }, { onConflict: 'tenant_id,page_slug' })
+    if (selectedSlug === 'home') {
+      const { data: custSnap } = await supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'customization').maybeSingle()
+      const merged = { ...(custSnap?.value || {}), hero_headline: heroHeadline }
+      await supabase.from('settings').upsert({ tenant_id: tenantId, key: 'customization', value: merged }, { onConflict: 'tenant_id,key' })
+    }
     setSaving(false)
     if (error) toast.error('Failed to save content.'); else toast.success('Content saved!')
   }
@@ -142,7 +150,7 @@ export default function ContentTab() {
             <ContentPageForm
               selectedSlug={selectedSlug} form={form} loading={loading} saving={saving}
               aiLoading={aiLoading} reverting={reverting} isPestPage={isPestPage}
-              apiKey={apiKey}
+              apiKey={apiKey} heroHeadline={heroHeadline} onHeroHeadlineChange={setHeroHeadline}
               updateField={updateField} onSave={handleSave} onGenerateAI={generateAI} onRevert={handleRevert}
             />
           )}
