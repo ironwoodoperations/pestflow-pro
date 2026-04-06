@@ -10,6 +10,7 @@ import { ShellSectionsRenderer } from '../components/PublicShell'
 interface PageContent {
   title: string
   subtitle: string
+  heroImageUrl?: string
 }
 
 const DEFAULT_CONTENT: PageContent = {
@@ -26,11 +27,15 @@ export default function Index() {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
       const [pageRes, mediaRes] = await Promise.all([
-        supabase.from('page_content').select('title, subtitle').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
+        supabase.from('page_content').select('title, subtitle, image_urls').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'hero_media').maybeSingle(),
       ])
       if (pageRes.data) {
-        setContent({ title: pageRes.data.title || DEFAULT_CONTENT.title, subtitle: pageRes.data.subtitle || DEFAULT_CONTENT.subtitle })
+        setContent({
+          title: pageRes.data.title || DEFAULT_CONTENT.title,
+          subtitle: pageRes.data.subtitle || DEFAULT_CONTENT.subtitle,
+          heroImageUrl: pageRes.data.image_urls?.[0] || undefined,
+        })
       }
       if (mediaRes.data?.value?.youtube_id) setHeroMedia(mediaRes.data.value)
     })
@@ -46,7 +51,7 @@ export default function Index() {
         style={{ minHeight: '600px', background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}
       >
         {/* Hero fallback image — shown behind gradient overlay when no video */}
-        <img src="/images/pests/hero.jpg" alt="" className="absolute inset-0 w-full h-full object-cover opacity-20" loading="eager" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+        <img src={content.heroImageUrl || '/images/pests/hero.jpg'} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20" loading="eager" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
 
         {/* Full-bleed background video — renders behind hero text, falls back to gradient */}
         <HeroVideoPlayer />

@@ -17,17 +17,19 @@ const VALUES = [
 export default function About() {
   const [heroTitle, setHeroTitle] = useState('About <span class="text-emerald-400">Ironclad Pest Solutions</span>')
   const [heroSubtitle, setHeroSubtitle] = useState('Family-owned. Science-backed. Trusted since 2009.')
+  const [aboutImage, setAboutImage] = useState<string | null>(null)
   const [team, setTeam] = useState<TeamMember[] | null>(null)
 
   useEffect(() => {
     resolveTenantId().then(async (tid) => {
       if (!tid) return
       const [pageRes, teamRes] = await Promise.all([
-        supabase.from('page_content').select('title, subtitle').eq('tenant_id', tid).eq('page_slug', 'about').maybeSingle(),
+        supabase.from('page_content').select('title, subtitle, image_urls').eq('tenant_id', tid).eq('page_slug', 'about').maybeSingle(),
         supabase.from('team_members').select('id, name, title, bio, photo_url').eq('tenant_id', tid).order('display_order'),
       ])
       if (pageRes.data?.title) setHeroTitle(pageRes.data.title)
       if (pageRes.data?.subtitle) setHeroSubtitle(pageRes.data.subtitle)
+      if (pageRes.data?.image_urls?.[0]) setAboutImage(pageRes.data.image_urls[0])
       setTeam(teamRes.data || [])
     })
   }, [])
@@ -47,7 +49,7 @@ export default function About() {
         <div className="max-w-4xl mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
             <div className="rounded-xl overflow-hidden border-2 border-emerald-500 bg-[#0a0f1e] h-72 flex items-center justify-center">
-              <img src="/images/pests/team.jpg" alt="Ironclad Pest Solutions team" loading="lazy" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+              <img src={aboutImage || '/images/pests/team.jpg'} alt="About us" loading="lazy" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
             </div>
             <div>
               <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 mb-4">Our Story</h2>
