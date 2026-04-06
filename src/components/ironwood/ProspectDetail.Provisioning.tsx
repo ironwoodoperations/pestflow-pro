@@ -34,7 +34,7 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
     setError(null)
     try {
       const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
+      if (!session) throw new Error('Not authenticated')
       const bi = form.business_info || {}
       const br = form.branding || {}
       const cu = form.customization || {}
@@ -43,7 +43,7 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${session.access_token}`,
           'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
         },
         body: JSON.stringify({

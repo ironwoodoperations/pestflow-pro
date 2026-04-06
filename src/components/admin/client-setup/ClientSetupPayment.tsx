@@ -91,11 +91,13 @@ export default function ClientSetupPayment({ form }: Props) {
       }
 
       // Step 2: Create Stripe checkout session, passing onboarding_session_id
+      const { data: { session: authSession } } = await supabase.auth.getSession()
+      if (!authSession) throw new Error('Not authenticated')
       const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`, {
         method: 'POST',
         headers: {
           'Content-Type':  'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Authorization': `Bearer ${authSession.access_token}`,
         },
         body: JSON.stringify({
           client_email:          form.email,

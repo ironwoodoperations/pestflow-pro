@@ -20,12 +20,13 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
     setLoadingInvoice(true); setError(null)
     try {
       const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('Not authenticated')
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-setup-invoice`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${session?.access_token || ''}`,
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           setupFeeAmount: prospect.setup_fee_amount,
@@ -59,11 +60,14 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
     }
     setLoadingLink(true); setError(null)
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('Not authenticated')
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           client_email:          prospect.email,
