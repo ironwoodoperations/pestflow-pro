@@ -1,7 +1,17 @@
+import { useState, useRef, useEffect } from 'react'
 import { Sparkles, RotateCcw } from 'lucide-react'
 import PestImagePicker from './PestImagePicker'
+import { supabase } from '../../lib/supabase'
+import { useTenant } from '../../hooks/useTenant'
+import { toast } from 'sonner'
 
 interface ContentForm { title: string; subtitle: string; intro: string; video_url: string; image_url: string }
+
+const PAGES_WITH_IMAGES = new Set([
+  'home','about','pest-control','termite-control','termite-inspections',
+  'roach-control','ant-control','spider-control','scorpion-control','mosquito-control',
+  'bed-bug-control','flea-tick-control','rodent-control','wasp-hornet-control',
+])
 
 interface Props {
   selectedSlug: string
@@ -12,6 +22,67 @@ interface Props {
   onSave: () => void
   onGenerateAI: () => void
   onRevert: () => void
+}
+
+function PageImageUpload({ slug }: { slug: string }) {
+  const { tenantId } = useTenant()
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+  const [currentUrl, setCurrentUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!tenantId) return
+    supabase.from('page_content').select('image_urls').eq('tenant_id', tenantId).eq('page_slug', slug).maybeSingle()
+      .then(({ data }) => { if (data?.image_urls?.[0]) setCurrentUrl(data.image_urls[0]) })
+  }, [tenantId, slug])
+
+  async function handleFile(file: File) {
+    if (!tenantId || !file) return
+    const ext = file.name.split('.').pop()
+    const path = `${tenantId}/pages/${slug}/image-0.${ext}`
+    setUploading(true)
+    const { data, error } = await supabase.storage.from('tenant-assets').upload(path, file, { upsert: true })
+    setUploading(false)
+    if (error) { toast.error('Upload failed: ' + error.message); return }
+    const { data: { publicUrl } } = supabase.storage.from('tenant-assets').getPublicUrl(data.path)
+    await supabase.from('page_content').upsert(
+      { tenant_id: tenantId, page_slug: slug, image_urls: [publicUrl] },
+      { onConflict: 'tenant_id,page_slug' }
+    )
+    setCurrentUrl(publicUrl)
+    toast.success('Image uploaded!')
+  }
+
+  async function handleRemove() {
+    if (!tenantId) return
+    await supabase.from('page_content').upsert(
+      { tenant_id: tenantId, page_slug: slug, image_urls: [] },
+      { onConflict: 'tenant_id,page_slug' }
+    )
+    setCurrentUrl(null)
+    toast.success('Image removed.')
+  }
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">Page Image</label>
+      {currentUrl && (
+        <div className="mb-3 relative inline-block">
+          <img src={currentUrl} alt="" className="h-32 w-48 object-cover rounded-lg border border-gray-200" />
+          <button onClick={handleRemove}
+            className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hover:bg-red-600"
+            title="Remove image">×</button>
+        </div>
+      )}
+      <input ref={inputRef} type="file" accept="image/*" className="hidden"
+        onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = '' }} />
+      <button onClick={() => inputRef.current?.click()} disabled={uploading}
+        className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition disabled:opacity-50">
+        {uploading ? 'Uploading...' : currentUrl ? '🔄 Replace Image' : '📷 Upload Image'}
+      </button>
+      <p className="text-xs text-gray-400 mt-1">Replaces the page hero image. Recommended: 1200×600px.</p>
+    </div>
+  )
 }
 
 const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-400'
@@ -41,6 +112,10 @@ export default function ContentPageForm({ selectedSlug, form, loading, saving, a
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Video URL</label>
             <input type="text" value={form.video_url} onChange={e => updateField('video_url', e.target.value)} placeholder="https://youtube.com/..." className={inputClass} />
           </div>
+
+          {PAGES_WITH_IMAGES.has(selectedSlug) && (
+            <PageImageUpload slug={selectedSlug} />
+          )}
 
           {isPestPage && (
             <PestImagePicker
