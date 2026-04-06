@@ -11,21 +11,30 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
   const [loadingInvoice, setLoadingInvoice] = useState(false)
   const [loadingLink, setLoadingLink]       = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [confirmWaive, setConfirmWaive]     = useState(false)
 
-  const hasSetupFee = (prospect.setup_fee_amount || 0) > 0
+  const setupFeeAmount = prospect.setup_fee_amount || 0
+  const hasSetupFee    = setupFeeAmount > 0
 
   // SECTION 1 — Setup Invoice
   async function generateInvoice() {
     if (!prospect.email || !prospect.company_name || !prospect.id) return
+
+    // $0 fee: show waive confirmation instead of calling Stripe
+    if (!hasSetupFee) {
+      setConfirmWaive(true)
+      return
+    }
+
     setLoadingInvoice(true); setError(null)
     try {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession()
       if (sessionError || !session?.access_token) {
-        console.error('No valid session', sessionError)
         setError('Authentication error — please refresh and try again.')
         setLoadingInvoice(false)
         return
       }
+      const amountCents = Math.round(setupFeeAmount * 100)
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-setup-invoice`, {
         method: 'POST',
         headers: {
@@ -33,21 +42,34 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
           'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
-          setupFeeAmount: prospect.setup_fee_amount,
-          clientEmail:    prospect.email,
-          companyName:    prospect.company_name,
-          prospectId:     prospect.id,
+          amountCents,
+          clientEmail: prospect.email,
+          companyName: prospect.company_name,
+          prospectId:  prospect.id,
         }),
       })
       const data = await res.json()
+      if (data.skipped) {
+        // Edge function handled zero case — update local state
+        onUpdate({ status: 'paid', payment_confirmed_at: new Date().toISOString() })
+        return
+      }
       if (!data.invoice_url) { setError(data.error || 'Failed to generate invoice'); return }
-      const updates: Partial<Prospect> = {
+      onUpdate({
         setup_invoice_url: data.invoice_url,
         setup_invoice_sent_at: new Date().toISOString(),
-      }
-      onUpdate(updates)
+      })
     } catch (e: any) { setError(e.message || 'Network error') }
     finally { setLoadingInvoice(false) }
+  }
+
+  async function waiveSetupFee() {
+    setConfirmWaive(false)
+    const now = new Date().toISOString()
+    if (prospect.id) {
+      await supabase.from('prospects').update({ status: 'paid', payment_confirmed_at: now }).eq('id', prospect.id)
+    }
+    onUpdate({ status: 'paid', payment_confirmed_at: now })
   }
 
   async function markSetupPaid() {
@@ -120,16 +142,33 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
     <div className="space-y-4 mt-3">
       {error && <p className="text-red-400 text-xs">{error}</p>}
 
-      {/* SECTION 1 — Setup Fee (only if setup_fee_amount > 0) */}
-      {hasSetupFee && (
-        <div className="p-3 bg-gray-800/60 border border-gray-700 rounded">
-          <p className="text-xs font-semibold text-amber-400 mb-2">Step 1 — Setup Fee (${prospect.setup_fee_amount?.toLocaleString()})</p>
-          {!prospect.setup_invoice_url ? (
-            <button onClick={generateInvoice} disabled={loadingInvoice}
-              className="px-3 py-1.5 bg-amber-700 text-white text-xs rounded hover:bg-amber-600 disabled:opacity-50">
-              {loadingInvoice ? 'Generating…' : '📄 Generate Setup Invoice'}
-            </button>
-          ) : (
+      {/* SECTION 1 — Setup Fee */}
+      <div className="p-3 bg-gray-800/60 border border-gray-700 rounded">
+        <p className="text-xs font-semibold text-amber-400 mb-2">
+          Step 1 — Setup Fee {hasSetupFee ? `($${setupFeeAmount.toLocaleString()})` : '($0 — waived)'}
+        </p>
+
+        {/* $0 waive confirmation */}
+        {confirmWaive && (
+          <div className="mb-2 p-2 bg-amber-900/40 border border-amber-700 rounded text-xs text-amber-200">
+            Setup fee is $0 — skip invoice and mark as waived?
+            <div className="flex gap-2 mt-2">
+              <button onClick={waiveSetupFee} className="px-2 py-1 bg-green-700 text-white rounded hover:bg-green-600">Yes, waive</button>
+              <button onClick={() => setConfirmWaive(false)} className="px-2 py-1 bg-gray-700 text-white rounded hover:bg-gray-600">Cancel</button>
+            </div>
+          </div>
+        )}
+
+        {prospect.payment_confirmed_at && !prospect.setup_invoice_url && (
+          <span className="text-xs text-green-400">✓ Setup fee waived {new Date(prospect.payment_confirmed_at).toLocaleDateString()}</span>
+        )}
+
+        {!prospect.setup_invoice_url && !prospect.payment_confirmed_at ? (
+          <button onClick={generateInvoice} disabled={loadingInvoice}
+            className="px-3 py-1.5 bg-amber-700 text-white text-xs rounded hover:bg-amber-600 disabled:opacity-50">
+            {loadingInvoice ? 'Generating…' : hasSetupFee ? '📄 Generate Setup Invoice' : '📄 Waive Setup Fee'}
+          </button>
+        ) : prospect.setup_invoice_url ? (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-400 truncate flex-1">{prospect.setup_invoice_url}</span>
@@ -150,9 +189,8 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
                 )}
               </div>
             </div>
-          )}
+          ) : null}
         </div>
-      )}
 
       {/* SECTION 2 — Monthly Subscription */}
       <div className="p-3 bg-gray-800/60 border border-gray-700 rounded">
