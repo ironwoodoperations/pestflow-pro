@@ -7,7 +7,6 @@ const SHELLS = [
   { id: 'bold-local',      name: 'Bold & Local' },
   { id: 'clean-friendly',  name: 'Clean & Friendly' },
   { id: 'rustic-rugged',   name: 'Rustic & Rugged' },
-  { id: 'youpest',         name: 'YouPest' },
 ]
 // name, phone, email are auto-populated from Contact section — read-only here
 const BI_FIELDS: [string, string][] = [
