@@ -5,7 +5,6 @@ import BrandingSection from './BrandingSection'
 import SocialLinksSection from './SocialLinksSection'
 import NotificationsSection from './NotificationsSection'
 import HeroMediaSection from './HeroMediaSection'
-import IntegrationsSection from './IntegrationsSection'
 import HolidayModeSection from './HolidayModeSection'
 import DomainSection from './DomainSection'
 import { useTenant } from '../../../hooks/useTenant'
@@ -13,7 +12,7 @@ import { useTenant } from '../../../hooks/useTenant'
 const IRONWOOD_TENANT_ID = '9215b06b-3eb5-49a1-a16e-7ff214bf6783'
 
 const CLIENT_TABS = ['Business Info', 'Branding', 'Social Links', 'Notifications', 'Hero Media', 'Holiday Mode'] as const
-const IRONWOOD_TABS = ['Business Info', 'Branding', 'Social Links', 'Notifications', 'Hero Media', 'Integrations', 'Holiday Mode', 'Domain'] as const
+const IRONWOOD_TABS = ['Business Info', 'Branding', 'Social Links', 'Notifications', 'Hero Media', 'Holiday Mode', 'Domain'] as const
 type SubTab = (typeof IRONWOOD_TABS)[number]
 
 export default function SettingsTab() {
@@ -45,7 +44,6 @@ export default function SettingsTab() {
       {activeSubTab === 'Social Links'   && <SocialLinksSection />}
       {activeSubTab === 'Notifications'  && <NotificationsSection />}
       {activeSubTab === 'Hero Media'     && <HeroMediaSection />}
-      {activeSubTab === 'Integrations'   && <IntegrationsSection />}
       {activeSubTab === 'Holiday Mode'   && <HolidayModeSection />}
       {activeSubTab === 'Domain'         && <DomainSection />}
     </div>
