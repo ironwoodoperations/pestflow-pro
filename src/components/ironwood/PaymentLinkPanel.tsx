@@ -70,7 +70,7 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
         onUpdate({ status: 'paid', payment_confirmed_at: new Date().toISOString() })
         return
       }
-      if (!data.invoice_url) { setError(data.error || 'Failed to generate invoice'); return }
+      if (!data.invoice_url) { setError(data.error || 'Failed to generate invoice — please try again'); return }
       onUpdate({
         setup_invoice_url: data.invoice_url,
         setup_invoice_sent_at: new Date().toISOString(),
