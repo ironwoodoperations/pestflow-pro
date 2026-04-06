@@ -9,16 +9,19 @@ interface Testimonial { id: string; author_name: string; review_text: string; ra
 export default function ShellHomeSections() {
   const [biz, setBiz] = useState<Biz>({})
   const [testimonials, setTestimonials] = useState<Testimonial[]>([])
+  const [ctaText, setCtaText] = useState('Get a Free Estimate')
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const [bizRes, testRes] = await Promise.all([
+      const [bizRes, testRes, brandRes] = await Promise.all([
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
         supabase.from('testimonials').select('id,author_name,review_text,rating').eq('tenant_id', tenantId).eq('featured', true).limit(3),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
       ])
       if (bizRes.data?.value) setBiz(bizRes.data.value)
       if (testRes.data?.length) setTestimonials(testRes.data)
+      if (brandRes.data?.value?.cta_text) setCtaText(brandRes.data.value.cta_text)
     })
   }, [])
 
@@ -122,7 +125,7 @@ export default function ShellHomeSections() {
           href="/quote"
           style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }} className="inline-block font-bold px-10 py-4 rounded-lg text-lg transition mb-4"
         >
-          Get a Free Estimate
+          {ctaText}
         </a>
         {biz.phone && <p className="text-gray-400 mt-4">{biz.phone}</p>}
       </section>

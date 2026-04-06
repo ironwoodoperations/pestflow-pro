@@ -12,19 +12,22 @@ const RUST  = '#b5451b'
 export default function ShellHero() {
   const [headline, setHeadline] = useState('Built Tough. Built Local. Built for East Texas.')
   const [biz, setBiz] = useState<Biz>({ phone: '(903) 555-0142', founded_year: 2009 })
+  const [ctaText, setCtaText] = useState('Get a Free Estimate')
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const [bizRes, custRes] = await Promise.all([
+      const [bizRes, custRes, brandRes] = await Promise.all([
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'customization').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
       ])
       if (bizRes.data?.value) {
         const v = bizRes.data.value
         setBiz({ phone: v.phone || '(903) 555-0142', founded_year: v.founded_year || 2009 })
       }
       if (custRes.data?.value?.hero_headline) setHeadline(custRes.data.value.hero_headline)
+      if (brandRes.data?.value?.cta_text) setCtaText(brandRes.data.value.cta_text)
     })
   }, [])
 
@@ -57,7 +60,7 @@ export default function ShellHero() {
           className="inline-block font-bold px-8 py-4 text-white text-lg transition w-fit hover:opacity-90"
           style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)', borderRadius: '2px' }}
         >
-          Get a Free Estimate
+          {ctaText}
         </Link>
       </div>
 

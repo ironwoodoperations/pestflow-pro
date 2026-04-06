@@ -15,19 +15,19 @@ const STRIPS = [
 
 export default function ShellHero() {
   const [biz, setBiz] = useState<Biz>({ phone: '(903) 555-0142' })
+  const [ctaText, setCtaText] = useState('Get a Free Quote')
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const res = await supabase
-        .from('settings')
-        .select('value')
-        .eq('tenant_id', tenantId)
-        .eq('key', 'business_info')
-        .maybeSingle()
-      if (res.data?.value) {
-        setBiz({ name: res.data.value.name, phone: res.data.value.phone || '(903) 555-0142' })
+      const [bizRes, brandRes] = await Promise.all([
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
+      ])
+      if (bizRes.data?.value) {
+        setBiz({ name: bizRes.data.value.name, phone: bizRes.data.value.phone || '(903) 555-0142' })
       }
+      if (brandRes.data?.value?.cta_text) setCtaText(brandRes.data.value.cta_text)
     })
   }, [])
 
@@ -61,7 +61,7 @@ export default function ShellHero() {
             to="/quote"
             style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }} className="inline-block font-bold px-8 py-4 rounded-full transition shadow-lg text-lg"
           >
-            Get a Free Quote
+            {ctaText}
           </Link>
         </div>
       </section>

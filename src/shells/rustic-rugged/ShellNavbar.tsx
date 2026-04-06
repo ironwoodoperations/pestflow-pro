@@ -34,6 +34,7 @@ const BROWN = '#3b1f0e'
 export default function ShellNavbar() {
   const [businessName, setBusinessName] = useState('Ironclad Pest Solutions')
   const [logoUrl, setLogoUrl] = useState('')
+  const [ctaText, setCtaText] = useState('Get a Free Estimate')
   const [mobileOpen, setMobileOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -49,6 +50,7 @@ export default function ShellNavbar() {
       ])
       if (bizRes.data?.value?.name) setBusinessName(bizRes.data.value.name)
       if (brandRes.data?.value?.logo_url) setLogoUrl(brandRes.data.value.logo_url)
+      if (brandRes.data?.value?.cta_text) setCtaText(brandRes.data.value.cta_text)
     })
   }, [])
 
@@ -100,7 +102,7 @@ export default function ShellNavbar() {
               <Link key={link.href} to={link.href} style={{ color: CREAM }} className="text-sm font-medium transition hover:opacity-75">{link.label}</Link>
             ))}
             <Link to="/quote" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)', borderRadius: '4px' }} className="font-medium px-5 py-2.5 transition text-sm hover:opacity-90">
-              Get a Free Estimate
+              {ctaText}
             </Link>
           </div>
 
@@ -122,7 +124,7 @@ export default function ShellNavbar() {
               <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} style={{ color: CREAM }} className="block px-2 py-2 text-base font-medium transition hover:opacity-75">{link.label}</Link>
             ))}
             <Link to="/quote" onClick={() => setMobileOpen(false)} style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)', borderRadius: '4px' }} className="block text-center font-semibold px-5 py-2.5 transition mt-3">
-              Get a Free Estimate
+              {ctaText}
             </Link>
           </div>
         </div>

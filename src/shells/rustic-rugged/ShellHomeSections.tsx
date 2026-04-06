@@ -16,16 +16,19 @@ interface Testimonial { id: string; author_name: string; review_text: string; ra
 export default function ShellHomeSections() {
   const [biz, setBiz] = useState<Biz>({})
   const [featured, setFeatured] = useState<Testimonial | null>(null)
+  const [ctaText, setCtaText] = useState('Get a Free Quote')
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const [bizRes, testRes] = await Promise.all([
+      const [bizRes, testRes, brandRes] = await Promise.all([
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
         supabase.from('testimonials').select('id,author_name,review_text,rating').eq('tenant_id', tenantId).eq('featured', true).limit(1),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
       ])
       if (bizRes.data?.value) setBiz(bizRes.data.value)
       if (testRes.data?.length) setFeatured(testRes.data[0])
+      if (brandRes.data?.value?.cta_text) setCtaText(brandRes.data.value.cta_text)
     })
   }, [])
 
@@ -101,7 +104,7 @@ export default function ShellHomeSections() {
           <span className="text-emerald-300 text-sm">or</span>
           <a href="/quote"
             className="border-2 border-white text-white font-bold px-8 py-3 rounded-lg hover:bg-white hover:text-emerald-600 transition">
-            Get a Free Quote
+            {ctaText}
           </a>
         </div>
       </section>

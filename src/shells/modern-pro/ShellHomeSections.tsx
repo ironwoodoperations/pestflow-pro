@@ -26,14 +26,16 @@ export default function ShellHomeSections() {
   const [biz, setBiz] = useState<Biz>({})
   const [testimonials, setTestimonials] = useState<Testimonial[]>([])
   const [serviceImgs, setServiceImgs] = useState<Record<string, string>>({})
+  const [ctaText, setCtaText] = useState('Get a Free Quote')
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const [bizRes, testRes, intRes] = await Promise.all([
+      const [bizRes, testRes, intRes, brandRes] = await Promise.all([
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
         supabase.from('testimonials').select('id,author_name,review_text,rating').eq('tenant_id', tenantId).eq('featured', true).limit(3),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
       ])
       if (bizRes.data?.value) setBiz(bizRes.data.value)
       if (testRes.data?.length) setTestimonials(testRes.data)
@@ -47,6 +49,7 @@ export default function ShellHomeSections() {
         results.forEach(({ name, url }) => { if (url) imgMap[name] = url })
         setServiceImgs(imgMap)
       }
+      if (brandRes.data?.value?.cta_text) setCtaText(brandRes.data.value.cta_text)
     })
   }, [])
 
@@ -128,7 +131,7 @@ export default function ShellHomeSections() {
           <h2 className="text-white font-oswald text-3xl md:text-4xl tracking-wide">Ready to protect your home?</h2>
           <div className="flex items-center gap-6 flex-wrap">
             <Link to="/quote" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }} className="font-bold px-8 py-3 rounded-lg transition">
-              Get a Free Quote
+              {ctaText}
             </Link>
             {biz.phone && (
               <a href={`tel:${biz.phone.replace(/\D/g, '')}`} className="text-gray-300 font-semibold hover:text-white transition">

@@ -17,18 +17,21 @@ export default function ShellHero() {
   const [biz, setBiz] = useState<BusinessInfo>({})
   const [custom, setCustom] = useState<Customization>({})
   const [heroMedia, setHeroMedia] = useState<HeroMedia>({})
+  const [ctaText, setCtaText] = useState('Get a Free Quote')
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const [bizRes, mediaRes, custRes] = await Promise.all([
+      const [bizRes, mediaRes, custRes, brandRes] = await Promise.all([
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'hero_media').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'customization').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
       ])
       if (bizRes.data?.value) setBiz(bizRes.data.value)
       if (mediaRes.data?.value) setHeroMedia(mediaRes.data.value)
       if (custRes.data?.value) setCustom(custRes.data.value)
+      if (brandRes.data?.value?.cta_text) setCtaText(brandRes.data.value.cta_text)
     })
   }, [])
 
@@ -86,7 +89,7 @@ export default function ShellHero() {
             style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}
             className="font-semibold px-8 py-3 rounded-lg transition"
           >
-            Get a Free Quote
+            {ctaText}
           </Link>
           {biz.phone && (
             <a

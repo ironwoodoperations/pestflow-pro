@@ -30,6 +30,7 @@ const NAV_LINKS = [
 export default function ShellNavbar() {
   const [businessName, setBusinessName] = useState('Ironclad Pest Solutions')
   const [logoUrl, setLogoUrl] = useState('')
+  const [ctaText, setCtaText] = useState('Get a Free Quote')
   const [mobileOpen, setMobileOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -45,6 +46,7 @@ export default function ShellNavbar() {
       ])
       if (bizRes.data?.value?.name) setBusinessName(bizRes.data.value.name)
       if (brandRes.data?.value?.logo_url) setLogoUrl(brandRes.data.value.logo_url)
+      if (brandRes.data?.value?.cta_text) setCtaText(brandRes.data.value.cta_text)
     })
   }, [])
 
@@ -93,7 +95,7 @@ export default function ShellNavbar() {
             {NAV_LINKS.map((link) => (
               <Link key={link.href} to={link.href} className="font-raleway text-sm font-medium text-slate-700 hover:text-sky-600 transition">{link.label}</Link>
             ))}
-            <Link to="/quote" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }} className="font-raleway font-semibold rounded-full px-5 py-2 transition text-sm">Get a Quote</Link>
+            <Link to="/quote" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }} className="font-raleway font-semibold rounded-full px-5 py-2 transition text-sm">{ctaText}</Link>
           </div>
 
           <button className="lg:hidden p-2 text-slate-700" onClick={() => setMobileOpen(!mobileOpen)} aria-label={mobileOpen ? 'Close menu' : 'Open menu'} aria-expanded={mobileOpen}>
@@ -113,7 +115,7 @@ export default function ShellNavbar() {
             {NAV_LINKS.map((link) => (
               <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} className="block px-2 py-2 font-raleway text-base font-medium text-slate-700 hover:text-sky-600 transition">{link.label}</Link>
             ))}
-            <Link to="/quote" onClick={() => setMobileOpen(false)} style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }} className="block text-center font-raleway font-semibold rounded-full px-5 py-2.5 transition mt-3">Get a Quote</Link>
+            <Link to="/quote" onClick={() => setMobileOpen(false)} style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }} className="block text-center font-raleway font-semibold rounded-full px-5 py-2.5 transition mt-3">{ctaText}</Link>
           </div>
         </div>
       )}

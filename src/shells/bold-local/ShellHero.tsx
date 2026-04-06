@@ -9,18 +9,21 @@ interface FormState { name: string; phone: string; service: string }
 export default function ShellHero() {
   const [headline, setHeadline] = useState('East Texas Pest Control That Gets Results.')
   const [biz, setBiz] = useState<Biz>({})
+  const [ctaText, setCtaText] = useState('Get a Free Estimate')
   const [form, setForm] = useState<FormState>({ name: '', phone: '', service: '' })
   const navigate = useNavigate()
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const [bizRes, custRes] = await Promise.all([
+      const [bizRes, custRes, brandRes] = await Promise.all([
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'customization').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
       ])
       if (bizRes.data?.value) setBiz({ name: bizRes.data.value.name, phone: bizRes.data.value.phone })
       if (custRes.data?.value?.hero_headline) setHeadline(custRes.data.value.hero_headline)
+      if (brandRes.data?.value?.cta_text) setCtaText(brandRes.data.value.cta_text)
     })
   }, [])
 
@@ -51,7 +54,7 @@ export default function ShellHero() {
           href="/quote"
           style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }} className="inline-block font-bold px-8 py-4 text-lg transition w-fit"
         >
-          Get a Free Estimate
+          {ctaText}
         </a>
         {biz.phone && (
           <a
@@ -108,7 +111,7 @@ export default function ShellHero() {
               type="submit"
               style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }} className="w-full font-bold py-3 rounded transition text-sm"
             >
-              Get My Free Estimate
+              {ctaText}
             </button>
           </form>
         </div>
