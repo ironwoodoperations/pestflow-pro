@@ -11,16 +11,18 @@ const RUST  = '#b5451b'
 
 export default function ShellHero() {
   const [headline, setHeadline] = useState('Built Tough. Built Local. Built for East Texas.')
+  const [heroSubtext, setHeroSubtext] = useState('')
   const [biz, setBiz] = useState<Biz>({ phone: '(903) 555-0142', founded_year: 2009 })
   const [ctaText, setCtaText] = useState('Get a Free Estimate')
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const [bizRes, custRes, brandRes] = await Promise.all([
+      const [bizRes, custRes, brandRes, contentRes] = await Promise.all([
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'customization').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
+        supabase.from('page_content').select('subtitle').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
       ])
       if (bizRes.data?.value) {
         const v = bizRes.data.value
@@ -28,6 +30,7 @@ export default function ShellHero() {
       }
       if (custRes.data?.value?.hero_headline) setHeadline(custRes.data.value.hero_headline)
       if (brandRes.data?.value?.cta_text) setCtaText(brandRes.data.value.cta_text)
+      if (contentRes.data?.subtitle) setHeroSubtext(contentRes.data.subtitle)
     })
   }, [])
 
@@ -52,7 +55,7 @@ export default function ShellHero() {
         </h1>
 
         <p className="text-gray-300 text-lg mt-2 mb-8">
-          Serving Tyler &amp; surrounding counties since {biz.founded_year || 2009}.
+          {heroSubtext || `Serving Tyler & surrounding counties since ${biz.founded_year || 2009}.`}
         </p>
 
         <Link

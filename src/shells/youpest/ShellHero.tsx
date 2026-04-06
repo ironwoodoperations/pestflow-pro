@@ -7,17 +7,20 @@ const ACCENT = '#22c55e'
 
 export default function ShellHero() {
   const [headline, setHeadline] = useState('Your Home. Protected.')
-  const [sub] = useState('Fast, effective pest control you can trust.')
+  const [sub, setSub] = useState('Fast, effective pest control you can trust.')
   const [cta, setCta] = useState('Get a Free Quote')
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
-      const [contentRes, brandingRes] = await Promise.all([
+      if (!tenantId) return
+      const [contentRes, brandingRes, pageRes] = await Promise.all([
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'customization').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
+        supabase.from('page_content').select('subtitle').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
       ])
       if (contentRes.data?.value?.hero_headline) setHeadline(contentRes.data.value.hero_headline)
       if (brandingRes.data?.value?.cta_text) setCta(brandingRes.data.value.cta_text)
+      if (pageRes.data?.subtitle) setSub(pageRes.data.subtitle)
     })
   }, [])
 

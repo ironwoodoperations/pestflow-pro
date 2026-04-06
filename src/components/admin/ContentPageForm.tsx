@@ -28,7 +28,9 @@ export default function ContentPageForm({ selectedSlug, form, loading, saving, a
             <input type="text" value={form.title} onChange={e => updateField('title', e.target.value)} placeholder="Page title" className={inputClass} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Subtitle</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              {selectedSlug === 'home' ? 'Hero Subtext (shown under main headline)' : 'Subtitle'}
+            </label>
             <input type="text" value={form.subtitle} onChange={e => updateField('subtitle', e.target.value)} placeholder="Subtitle or tagline" className={inputClass} />
           </div>
           <div>

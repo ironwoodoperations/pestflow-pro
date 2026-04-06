@@ -18,30 +18,34 @@ export default function ShellHero() {
   const [custom, setCustom] = useState<Customization>({})
   const [heroMedia, setHeroMedia] = useState<HeroMedia>({})
   const [ctaText, setCtaText] = useState('Get a Free Quote')
+  const [heroSubtext, setHeroSubtext] = useState('')
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const [bizRes, mediaRes, custRes, brandRes] = await Promise.all([
+      const [bizRes, mediaRes, custRes, brandRes, contentRes] = await Promise.all([
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'hero_media').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'customization').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
+        supabase.from('page_content').select('subtitle').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
       ])
       if (bizRes.data?.value) setBiz(bizRes.data.value)
       if (mediaRes.data?.value) setHeroMedia(mediaRes.data.value)
       if (custRes.data?.value) setCustom(custRes.data.value)
       if (brandRes.data?.value?.cta_text) setCtaText(brandRes.data.value.cta_text)
+      if (contentRes.data?.subtitle) setHeroSubtext(contentRes.data.subtitle)
     })
   }, [])
 
   const headline = custom.hero_headline || 'Professional Pest Control You Can Trust'
 
-  // Extract city from address (everything before first comma)
+  // Subtitle: use page_content.home.subtitle, fall back to city-based text
   const city = biz.address ? biz.address.split(',')[0].trim() : null
-  const subtext = city
+  const fallbackSubtext = city
     ? `Serving ${city} and surrounding areas. Licensed, insured, and ready to help.`
     : 'Licensed, insured, and ready to protect your home.'
+  const subtext = heroSubtext || fallbackSubtext
 
   // Trust line — only render fields that exist
   const trustParts: string[] = []

@@ -16,18 +16,21 @@ const STRIPS = [
 export default function ShellHero() {
   const [biz, setBiz] = useState<Biz>({ phone: '(903) 555-0142' })
   const [ctaText, setCtaText] = useState('Get a Free Quote')
+  const [heroSubtext, setHeroSubtext] = useState('Call for Same-Day Service')
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const [bizRes, brandRes] = await Promise.all([
+      const [bizRes, brandRes, contentRes] = await Promise.all([
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
+        supabase.from('page_content').select('subtitle').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
       ])
       if (bizRes.data?.value) {
         setBiz({ name: bizRes.data.value.name, phone: bizRes.data.value.phone || '(903) 555-0142' })
       }
       if (brandRes.data?.value?.cta_text) setCtaText(brandRes.data.value.cta_text)
+      if (contentRes.data?.subtitle) setHeroSubtext(contentRes.data.subtitle)
     })
   }, [])
 
@@ -56,7 +59,7 @@ export default function ShellHero() {
           >
             {biz.phone || '(903) 555-0142'}
           </a>
-          <p className="text-xl text-sky-200 mt-2 mb-6">Call for Same-Day Service</p>
+          <p className="text-xl text-sky-200 mt-2 mb-6">{heroSubtext}</p>
           <Link
             to="/quote"
             style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }} className="inline-block font-bold px-8 py-4 rounded-full transition shadow-lg text-lg"

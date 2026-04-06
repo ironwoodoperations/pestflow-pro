@@ -8,6 +8,7 @@ interface FormState { name: string; phone: string; service: string }
 
 export default function ShellHero() {
   const [headline, setHeadline] = useState('East Texas Pest Control That Gets Results.')
+  const [heroSubtext, setHeroSubtext] = useState('Fast. Reliable. Local.')
   const [biz, setBiz] = useState<Biz>({})
   const [ctaText, setCtaText] = useState('Get a Free Estimate')
   const [form, setForm] = useState<FormState>({ name: '', phone: '', service: '' })
@@ -16,14 +17,16 @@ export default function ShellHero() {
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const [bizRes, custRes, brandRes] = await Promise.all([
+      const [bizRes, custRes, brandRes, contentRes] = await Promise.all([
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'customization').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
+        supabase.from('page_content').select('subtitle').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
       ])
       if (bizRes.data?.value) setBiz({ name: bizRes.data.value.name, phone: bizRes.data.value.phone })
       if (custRes.data?.value?.hero_headline) setHeadline(custRes.data.value.hero_headline)
       if (brandRes.data?.value?.cta_text) setCtaText(brandRes.data.value.cta_text)
+      if (contentRes.data?.subtitle) setHeroSubtext(contentRes.data.subtitle)
     })
   }, [])
 
@@ -49,7 +52,7 @@ export default function ShellHero() {
         <h1 className="font-oswald text-5xl md:text-6xl font-bold uppercase leading-tight mb-6 text-white">
           {headline}
         </h1>
-        <p className="text-lg text-gray-300 mb-8">Fast. Reliable. Local.</p>
+        <p className="text-lg text-gray-300 mb-8">{heroSubtext}</p>
         <a
           href="/quote"
           style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }} className="inline-block font-bold px-8 py-4 text-lg transition w-fit"
