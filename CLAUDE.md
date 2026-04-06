@@ -18,7 +18,7 @@ Stop only when you genuinely cannot proceed without information not in this file
 
 1. Read `SKILL.md` in the project root — full architecture, schema, file paths
 2. If a file you need to edit exists, read it fully before touching it
-3. Check what was last built: look at recent git log — `git log --oneline -10`
+3. Check what was last built: `git log --oneline -10`
 
 ---
 
@@ -28,7 +28,7 @@ Stop only when you genuinely cannot proceed without information not in this file
 2. Execute tasks IN ORDER — never jump ahead
 3. Read each file before editing it
 4. After EVERY task: `git add . && git commit -m "task[N]: description" && git push`
-5. When all tasks are done, report: files changed, what the bug/fix was, build status, anything left for next session
+5. When all tasks are done, report: files changed, bug/fix summary, build status, anything left
 
 ---
 
@@ -37,7 +37,7 @@ Stop only when you genuinely cannot proceed without information not in this file
 ### Proceed without asking:
 - Task is clearly described in the session prompt
 - Minor error you can diagnose and fix yourself
-- Choosing between two reasonable implementations — pick better, note it in commit
+- Choosing between two reasonable implementations — pick better, note in commit
 - Installing packages needed for the task
 - Running build, type-check, lint, dev server commands
 
@@ -50,9 +50,9 @@ Stop only when you genuinely cannot proceed without information not in this file
 
 ### Never without asking:
 - Drop or truncate database tables
-- Change or remove existing RLS policies on tables that have live data
+- Change or remove existing RLS policies on tables with live data
 - Modify already-applied Supabase migrations
-- Delete any seeded demo data
+- Delete seeded demo data
 - Change Vercel production environment variables
 
 ---
@@ -60,7 +60,7 @@ Stop only when you genuinely cannot proceed without information not in this file
 ## NON-NEGOTIABLE RULES (violating any of these breaks the app)
 
 1. **Model string:** always `claude-sonnet-4-6` — never any other string, ever
-2. **Tenant ID:** `9215b06b-3eb5-49a1-a16e-7ff214bf6783` — hardcoded constant, never change
+2. **Demo Tenant ID:** `9215b06b-3eb5-49a1-a16e-7ff214bf6783` — hardcoded constant, never change
 3. **Anthropic browser header:** `'anthropic-dangerous-direct-browser-access': 'true'` — required on every fetch
 4. **Single useState object for forms** — never per-field state. Per-field state causes focus/re-render bugs.
 5. **Strip backticks before JSON.parse** — `text.replace(/```json|```/g, '').trim()`
@@ -69,32 +69,189 @@ Stop only when you genuinely cannot proceed without information not in this file
 8. **RLS is always the first diagnostic** when table data appears missing — run audit query before assuming frontend bug
 9. **Social features are VERTICAL-AGNOSTIC** — industry comes from `settings.business_info.industry`, never hardcoded
 10. **Demo company is IRONCLAD PEST SOLUTIONS** — never "Dang Pest Control" anywhere
+11. **Admin email must be valid format** — must contain a dot after @ before calling createUser
+12. **provision-tenant must create profiles + user_roles rows** — always, after every createUser call
+13. **Shell CSS vars applied at root** — use applyShellTheme() from src/lib/shellThemes.ts, never hardcode colors in public components
 
 ---
 
 ## CRITICAL CONSTANTS
 
 ```
-Live URL:       https://pestflow-pro.vercel.app
-GitHub:         https://github.com/ironwoodoperations/pestflow-pro
-Supabase URL:   https://biezzykcgzkrwdgqpsar.supabase.co
-Supabase ID:    biezzykcgzkrwdgqpsar
-Tenant ID:      9215b06b-3eb5-49a1-a16e-7ff214bf6783
-Admin login:    admin@pestflowpro.com / pf123demo
-Dev server:     doppler run -- npm run dev  →  localhost:8080
-                (NEVER run npm run dev directly — always use Doppler to inject env vars)
+Live URL:         https://pestflowpro.com
+Ironwood Ops:     https://pestflowpro.com/ironwood  (admin@pestflowpro.com only)
+Client Admin:     https://[slug].pestflowpro.com/admin
+GitHub:           https://github.com/ironwoodoperations/pestflow-pro
+Supabase URL:     https://biezzykcgzkrwdgqpsar.supabase.co
+Supabase ID:      biezzykcgzkrwdgqpsar
+Demo Tenant ID:   9215b06b-3eb5-49a1-a16e-7ff214bf6783
+Demo Admin:       admin@pestflowpro.com / pf123demo
+Tyler Pest ID:    1abd6f30-0bb0-4424-97aa-4e6d0a74c4cd  (test tenant — do not delete)
+Dev server:       doppler run -- npm run dev  →  localhost:8080
+                  (NEVER run npm run dev directly — always use Doppler)
 ```
+
+---
+
+## PLATFORM ARCHITECTURE
+
+PestFlow Pro is a concierge SaaS. Scott sells it 1-on-1 by phone.
+Clients never self-serve. Scott provisions all sites.
+
+**Two separate surfaces:**
+- `/ironwood` — Ironwood Ops CRM (Scott only, admin@pestflowpro.com)
+  Pipeline, Prospects, Reports, Team, Integrations
+- `/admin` — Client admin dashboard (each client's tenant, scoped by tenant_id)
+  Content, SEO, Blog, Social, Testimonials, Locations, Reports, CRM, Team,
+  Client Setup, Billing, Onboarding, Settings
+  Settings tabs: Business Info | Branding | Social Links | Notifications |
+                 Hero Media | Holiday Mode
+  NEVER show Integrations or Domain tabs to clients — those are Ironwood-only
+
+**Provisioning flow:**
+1. Scott fills Ironwood Ops prospect form on the sales call
+2. Generates Stripe setup invoice (one-time fee) → sends via mailto
+3. Generates Stripe subscription link (recurring) → sends via mailto
+4. Clicks "Create Site" → calls ironwood-provision edge function
+5. ironwood-provision calls provision-tenant with full prospect data
+6. provision-tenant creates: tenant row, auth user, profiles row, user_roles row,
+   all settings rows (8 keys — see below)
+7. Day 2 reveal call — Scott walks client through their finished site
+
+---
+
+## SETTINGS TABLE — ALL REQUIRED KEYS
+
+Every tenant must have ALL of these settings rows seeded on provisioning.
+Use: INSERT ... ON CONFLICT (tenant_id, key) DO UPDATE SET value = EXCLUDED.value
+
+| Key            | Shape |
+|----------------|-------|
+| business_info  | { name, phone, email, address, hours, tagline, industry, license, certifications, founded_year, num_technicians } |
+| branding       | { logo_url, favicon_url, primary_color, accent_color, template, cta_text } |
+| customization  | { hero_headline, show_license, show_years, show_technicians, show_certifications } |
+| social_links   | { facebook, instagram, google, youtube } |
+| subscription   | { tier: 1-4, plan_name, monthly_price } |
+| notifications  | { lead_email, cc_email } |
+| demo_mode      | { active: false } |
+| integrations   | { facebook_access_token: null, facebook_page_id: null, google_business_token: null } |
+
+Tier mapping: Starter→1, Grow→2, Pro→3, Elite→4
+
+---
+
+## SHELL SYSTEM (CSS CUSTOM PROPERTIES)
+
+Shells are applied via CSS custom properties on document.documentElement.
+File: src/lib/shellThemes.ts
+
+Four shells: 'modern-pro' | 'bold-local' | 'clean-friendly' | 'rustic-rugged'
+
+Each shell defines these CSS vars:
+  --color-primary, --color-primary-dark, --color-accent
+  --color-bg-hero, --color-bg-section, --color-bg-cta
+  --color-nav-bg, --color-nav-text
+  --color-footer-bg, --color-footer-text
+  --color-btn-bg, --color-btn-text
+  --color-heading
+  --font-heading, --font-body
+
+applyShellTheme(template, primaryOverride?, accentOverride?) sets all vars at root.
+Call on app init (before Supabase fetch) using localStorage cache to prevent flash.
+Call again after Supabase branding fetch resolves.
+Call again when user saves branding in Settings.
+
+Public components MUST use var(--color-*) — never hardcode Tailwind color classes
+on nav, hero, buttons, CTA bands, or footer.
+Admin dashboard components keep their own hardcoded colors — do not change those.
+
+Flash prevention:
+  On init: applyShellTheme(localStorage.getItem('pfp_template') || 'modern-pro')
+  After fetch: applyShellTheme(branding.template, ...) + update localStorage
+
+---
+
+## STRIPE — TWO-INVOICE FLOW
+
+Setup fee and subscription are two separate Stripe items:
+
+**Invoice 1 — Setup Fee (one-time):**
+  Edge function: create-setup-invoice
+  Uses: stripe.invoiceItems.create + stripe.invoices.create + finalizeInvoice
+  Returns: hosted_invoice_url
+  Saved to: prospects.setup_invoice_url
+
+**Invoice 2 — Subscription (recurring):**
+  Edge function: create-checkout-session
+  mode: 'subscription'
+  Single line_item: recurring price ID
+  NO setup fee in this session
+  Saved to: prospects.payment_link_url
+
+Price IDs (recurring):
+  Starter  = price_1TIZ6DCZBM0TUusSaC2UdcYG  ($149/mo)
+  Grow     = price_1TIrvGCZBM0TUusSNBntvS6l  ($249/mo)
+  Pro      = price_1TIrvcCZBM0TUusS4BJt8oQi  ($349/mo)
+  Elite    = price_1TIrw3CZBM0TUusSomA1hsT4  ($499/mo)
+
+---
+
+## KEY TABLES (Ironwood Ops specific)
+
+### prospects
+All pipeline data. Key fields:
+  status: prospect|quoted|paid|onboarding|provisioned|active|churned
+  tenant_id: UUID FK → tenants (set after provisioning)
+  onboarding_rep_id: UUID FK → salespeople
+  salesperson_id: UUID FK → salespeople
+  setup_invoice_url: TEXT (Stripe hosted invoice URL)
+  payment_link_url: TEXT (Stripe subscription checkout URL)
+  admin_email: must be valid format with TLD before provisioning
+
+### salespeople
+  commission_setup_pct: % of one-time setup fee
+  commission_recurring_pct: % of monthly recurring
+  invited_at: set when Supabase invite email is sent
+
+### ironwood_integrations
+  Platform key visibility panel. Secret keys are in Doppler env vars — not stored here.
+  Non-secret values (App IDs, etc.) stored in value column.
+
+---
+
+## EDGE FUNCTIONS
+
+| Function | Purpose | JWT |
+|----------|---------|-----|
+| provision-tenant | Creates tenant, auth user, profiles, user_roles, all settings | false |
+| ironwood-provision | JWT-verified wrapper — calls provision-tenant with service role | true |
+| create-checkout-session | Stripe subscription checkout | true |
+| create-setup-invoice | Stripe one-time setup invoice | true |
+| invite-salesperson | Supabase auth invite by email | true |
+| ironwood-stripe-report | Stripe MRR summary for Reports tab | true |
+| stripe-webhook | Handles Stripe events (renewals/cancellations) | false |
+
+---
+
+## PLATFORM KEY ARCHITECTURE
+
+Platform-wide keys live in Doppler → injected as env vars into edge functions.
+Per-client keys (Facebook token, Google Business token) stored in tenant settings.integrations.
+Clients can NOT see or change platform keys.
+Only mandatory per-client secrets: facebook_access_token, google_business_token.
+These are collected by Scott during the reveal call and saved via Ironwood Ops
+Provisioning section → Reveal Call Checklist.
 
 ---
 
 ## DESIGN NON-NEGOTIABLES
 
-- Pest service pages: **YELLOW diagonal CTA** (`#f5c518`) — NEVER on location pages
-- Location pages: **DARK NAVY CTA** — NEVER yellow
-- Footer: always has "Powered by PestFlow Pro" badge
+- Footer always has "Powered by PestFlow Pro" badge (orange link)
 - HolidayBanner renders ABOVE Navbar on all public pages
 - PageHelpBanner on EVERY admin tab
-- Fonts: Oswald (bold), Raleway (clean), Space Grotesk (modern) — Bangers is REJECTED
+- Nav logo: if branding.logo_url set → show <img>, else show business name text
+- Admin login page: show tenant business name (from get_business_name RPC), not "PestFlow Pro"
+- Amber padlocks on gated features (not gray) — signals "attainable upgrade"
 
 ---
 
@@ -106,7 +263,7 @@ Dev server:     doppler run -- npm run dev  →  localhost:8080
 
 ---
 
-## RLS AUDIT (run this before assuming data is missing)
+## RLS AUDIT (run this when table data appears missing)
 
 ```sql
 SELECT tablename, policyname, cmd, roles::text
@@ -115,53 +272,20 @@ WHERE schemaname = 'public'
   AND NOT ('anon' = ANY(roles) OR 'public' = ANY(roles))
 ORDER BY tablename;
 ```
-Any row returned = anon blocked on that table. Fix:
+Any row returned = anon blocked. Fix:
 ```sql
 CREATE POLICY "allow_read_anon" ON {table} FOR SELECT TO anon USING (true);
 ```
 
 ---
 
-## Migration Workflow (Custom Shell from Existing Site)
+## SESSION REPORT FORMAT
 
-Used for the $3,500 Custom Migration and $5,000 Premium Migration packages.
-
-**Step 1: Run the migration script**
-```
-doppler run --config prd -- npx ts-node scripts/migrate-site.ts [client-url] [slug]
-```
-Output: `scripts/output/[slug]-content.md`
-Note: Some sites block crawlers (403). Review output for quality before proceeding.
-
-**Step 2: Review the output file for accuracy**
-Check extracted: company name, phone, address, email, tagline, services, about copy, brand colors.
-Manually fill in any missing fields.
-
-**Step 3: Build shell files in src/shells/[slug]/**
-Files needed: ShellNavbar.tsx, ShellHero.tsx, ShellFooter.tsx, ShellHomeSections.tsx, ServicesData.ts
-Match structure of existing shells exactly.
-Use migration content file as the source for hardcoded copy and brand colors.
-
-**Step 4: Register the shell in the shell switcher**
-- Add `'[slug]'` to `TemplateName` union in `src/context/TemplateContext.tsx`
-- Import and wire the shell in `src/components/PublicShell.tsx` (navbar, footer, sections)
-
-**Step 5: Provision the tenant via Client Setup Wizard**
-- Create a row in the `tenants` table in Supabase (get the UUID)
-- Run the Client Setup Wizard: set slug, paste tenant UUID, set admin email + password
-- Wizard calls `provision-tenant` which creates auth user + seeds all settings
-- Set `branding.template = '[slug]'` in the client's settings row to activate the new shell
-
----
-
-## WHEN A SESSION IS DONE
-
-Report back in this format — keep it short:
+Keep it short:
 1. Files modified (list)
-2. What the actual bug/fix was (1-2 sentences)
-3. Industry/AI features — confirm they're dynamic not hardcoded
-4. Build status + bundle size
-5. Any workarounds used
-6. What's left for next session
+2. What the actual bug/fix was (1-2 sentences per task)
+3. Build status + bundle size
+4. Any workarounds used
+5. What's left for next session
 
-Do not recap every step you took. Scott just needs the outcome.
+Do not recap every step. Scott just needs the outcome.
