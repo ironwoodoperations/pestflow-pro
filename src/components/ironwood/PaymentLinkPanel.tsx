@@ -38,18 +38,22 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
 
     setLoadingInvoice(true); setError(null)
     try {
-      const { data: { session }, error: sessionError } = await supabase.auth.refreshSession()
-      if (sessionError || !session?.access_token) {
-        setError('Authentication error — please refresh and try again.')
-        setLoadingInvoice(false)
+      let { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        const { data: refreshData } = await supabase.auth.refreshSession()
+        session = refreshData.session
+      }
+      if (!session) {
+        setError('Unable to authenticate. Please sign out and sign back in.')
         return
       }
+      const accessToken = session.access_token
       const amountCents = Math.round(setupFeeAmount * 100)
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-setup-invoice`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
+          'Authorization': `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
           amountCents,
@@ -96,18 +100,21 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
     }
     setLoadingLink(true); setError(null)
     try {
-      const { data: { session }, error: sessionError } = await supabase.auth.refreshSession()
-      if (sessionError || !session?.access_token) {
-        console.error('No valid session', sessionError)
-        setError('Authentication error — please refresh and try again.')
-        setLoadingLink(false)
+      let { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        const { data: refreshData } = await supabase.auth.refreshSession()
+        session = refreshData.session
+      }
+      if (!session) {
+        setError('Unable to authenticate. Please sign out and sign back in.')
         return
       }
+      const accessToken = session.access_token
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
+          'Authorization': `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
           client_email:          resolvedEmail,
