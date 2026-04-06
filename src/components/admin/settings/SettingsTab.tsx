@@ -8,11 +8,18 @@ import HeroMediaSection from './HeroMediaSection'
 import IntegrationsSection from './IntegrationsSection'
 import HolidayModeSection from './HolidayModeSection'
 import DomainSection from './DomainSection'
+import { useTenant } from '../../../hooks/useTenant'
 
-const SUB_TABS = ['Business Info', 'Branding', 'Social Links', 'Notifications', 'Hero Media', 'Integrations', 'Holiday Mode', 'Domain'] as const
-type SubTab = (typeof SUB_TABS)[number]
+const IRONWOOD_TENANT_ID = '9215b06b-3eb5-49a1-a16e-7ff214bf6783'
+
+const CLIENT_TABS = ['Business Info', 'Branding', 'Social Links', 'Notifications', 'Hero Media', 'Holiday Mode'] as const
+const IRONWOOD_TABS = ['Business Info', 'Branding', 'Social Links', 'Notifications', 'Hero Media', 'Integrations', 'Holiday Mode', 'Domain'] as const
+type SubTab = (typeof IRONWOOD_TABS)[number]
 
 export default function SettingsTab() {
+  const { tenantId } = useTenant()
+  const isIronwood = tenantId === IRONWOOD_TENANT_ID
+  const SUB_TABS = isIronwood ? IRONWOOD_TABS : CLIENT_TABS
   const [activeSubTab, setActiveSubTab] = useState<SubTab>('Business Info')
 
   return (
