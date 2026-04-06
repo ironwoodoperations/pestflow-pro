@@ -1,10 +1,7 @@
 import { useState } from 'react'
 import { Lock } from 'lucide-react'
 import { usePlan } from '../../../hooks/usePlan'
-import type { IntegrationSettings } from './useSocialData'
-
 interface Props {
-  integrations: IntegrationSettings | null
   onClose: () => void
   onSaved: () => void
   onNavigate?: (tab: string) => void
@@ -26,7 +23,7 @@ const PLAN_INFO: Record<number, { name: string; price: number }> = {
   4: { name: 'Elite',   price: 499 },
 }
 
-export default function ConnectionsModal({ integrations, onClose, onNavigate }: Props) {
+export default function ConnectionsModal({ onClose, onNavigate }: Props) {
   const { tier } = usePlan()
   const [activeTab, setActiveTab] = useState<ProviderTab>('export')
   const activeProvider = TIER_PROVIDER[tier] || 'export'

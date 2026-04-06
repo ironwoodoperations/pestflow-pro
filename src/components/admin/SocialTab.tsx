@@ -26,7 +26,7 @@ const TABS: { id: TabId; label: string }[] = [
 type PostFlow = 'none' | 'choice' | 'single' | 'campaign'
 
 export default function SocialTab({ onNavigate }: Props) {
-  const { posts, campaigns, integrations, loading, refresh } = useSocialData()
+  const { posts, campaigns, loading, refresh } = useSocialData()
   const { canAccess } = usePlan()
   const [activeTab, setActiveTab] = useState<TabId>('queue')
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null)
@@ -161,7 +161,7 @@ export default function SocialTab({ onNavigate }: Props) {
 
       {/* Connections modal */}
       {showConnections && (
-        <ConnectionsModal integrations={integrations} onClose={() => setShowConnections(false)} onSaved={refresh} onNavigate={onNavigate} />
+        <ConnectionsModal onClose={() => setShowConnections(false)} onSaved={refresh} onNavigate={onNavigate} />
       )}
     </div>
   )
