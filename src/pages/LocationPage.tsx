@@ -23,7 +23,7 @@ const SERVICES = [
 export default function LocationPage({ slug }: { slug: string }) {
   const [location, setLocation] = useState<LocationData>({ city: '', hero_title: '', intro_video_url: '' })
   const [otherLocations, setOtherLocations] = useState<OtherLocation[]>([])
-  const [phone, setPhone] = useState('(903) 555-0100')
+  const [phone, setPhone] = useState('')
   const [bizAddress, setBizAddress] = useState('')
   const [mapsApiKey, setMapsApiKey] = useState('')
 
