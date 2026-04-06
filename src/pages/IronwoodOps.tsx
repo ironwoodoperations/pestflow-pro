@@ -29,7 +29,7 @@ export default function IronwoodOps() {
     supabase.auth.getUser().then(({ data }) => {
       const IRONWOOD_ALLOWED = ['admin@pestflowpro.com', 'murphygurl92@gmail.com']
       if (!IRONWOOD_ALLOWED.includes(data.user?.email ?? '')) {
-        navigate('/admin/login', { replace: true })
+        navigate('/ironwood/login', { replace: true })
       } else {
         setChecking(false)
       }
