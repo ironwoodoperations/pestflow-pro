@@ -34,7 +34,7 @@ const WHY = [
 
 export default function PestPageTemplate(props: PestPageProps) {
   const [content, setContent] = useState({ title: '', subtitle: '', intro: '', image_url: '', image_urls: [] as string[] })
-  const [phone, setPhone] = useState('(903) 555-0100')
+  const [phone, setPhone] = useState('')
   const [template, setTemplate] = useState('modern-pro')
 
   useEffect(() => {

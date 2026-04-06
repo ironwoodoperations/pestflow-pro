@@ -12,7 +12,7 @@ const RUST  = '#b5451b'
 export default function ShellHero() {
   const [headline, setHeadline] = useState('Built Tough. Built Local. Built for East Texas.')
   const [heroSubtext, setHeroSubtext] = useState('')
-  const [biz, setBiz] = useState<Biz>({ phone: '(903) 555-0142', founded_year: 2009 })
+  const [biz, setBiz] = useState<Biz>({})
   const [ctaText, setCtaText] = useState('Get a Free Estimate')
 
   useEffect(() => {
@@ -26,7 +26,7 @@ export default function ShellHero() {
       ])
       if (bizRes.data?.value) {
         const v = bizRes.data.value
-        setBiz({ phone: v.phone || '(903) 555-0142', founded_year: v.founded_year || 2009 })
+        setBiz({ phone: v.phone, founded_year: v.founded_year })
       }
       if (custRes.data?.value?.hero_headline) setHeadline(custRes.data.value.hero_headline)
       if (brandRes.data?.value?.cta_text) setCtaText(brandRes.data.value.cta_text)
@@ -41,12 +41,14 @@ export default function ShellHero() {
       {/* LEFT — text */}
       <div className="md:w-1/2 flex flex-col justify-center px-10 py-16 relative z-10">
         {/* Est. badge */}
-        <span
-          className="inline-block text-sm font-bold px-3 py-1 rounded-sm mb-6 w-fit"
-          style={{ border: `1px solid ${RUST}`, color: RUST }}
-        >
-          Est. {biz.founded_year || 2009}
-        </span>
+        {biz.founded_year && (
+          <span
+            className="inline-block text-sm font-bold px-3 py-1 rounded-sm mb-6 w-fit"
+            style={{ border: `1px solid ${RUST}`, color: RUST }}
+          >
+            Est. {biz.founded_year}
+          </span>
+        )}
 
         <h1
           className="font-oswald text-5xl font-bold uppercase leading-tight mb-4 text-white"
@@ -55,7 +57,7 @@ export default function ShellHero() {
         </h1>
 
         <p className="text-gray-300 text-lg mt-2 mb-8">
-          {heroSubtext || `Serving Tyler & surrounding counties since ${biz.founded_year || 2009}.`}
+          {heroSubtext || (biz.founded_year ? `Serving Tyler & surrounding counties since ${biz.founded_year}.` : 'Serving Tyler & surrounding counties.')}
         </p>
 
         <Link
@@ -78,45 +80,45 @@ export default function ShellHero() {
         <div className="absolute inset-0 bg-gradient-to-r from-[#2c1a0e]/60 to-transparent" />
 
         {/* Floating card — visible md+ */}
+        {biz.phone && (
+          <div
+            className="hidden md:block absolute top-1/2 left-0 -translate-x-1/3 -translate-y-1/2 rounded-xl p-5 shadow-2xl z-20"
+            style={{ backgroundColor: BROWN, border: `1px solid ${RUST}`, minWidth: '180px' }}
+          >
+            <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: RUST }}>
+              Free Estimate
+            </p>
+            <p className="text-white font-bold text-xl leading-tight mb-3">{biz.phone}</p>
+            <a
+              href={dialPhone}
+              className="block text-center text-white text-sm font-bold px-4 py-2 rounded transition hover:opacity-80"
+              style={{ backgroundColor: RUST }}
+            >
+              Call Now
+            </a>
+          </div>
+        )}
+      </div>
+
+      {/* Mobile floating card — below image on small screens */}
+      {biz.phone && (
         <div
-          className="hidden md:block absolute top-1/2 left-0 -translate-x-1/3 -translate-y-1/2 rounded-xl p-5 shadow-2xl z-20"
-          style={{ backgroundColor: BROWN, border: `1px solid ${RUST}`, minWidth: '180px' }}
+          className="md:hidden mx-6 -mt-6 relative z-20 rounded-xl p-5 shadow-2xl mb-8"
+          style={{ backgroundColor: BROWN, border: `1px solid ${RUST}` }}
         >
-          <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: RUST }}>
+          <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: RUST }}>
             Free Estimate
           </p>
-          <p className="text-white font-bold text-xl leading-tight mb-3">
-            {biz.phone || '(903) 555-0142'}
-          </p>
+          <p className="text-white font-bold text-xl mb-3">{biz.phone}</p>
           <a
             href={dialPhone}
-            className="block text-center text-white text-sm font-bold px-4 py-2 rounded transition hover:opacity-80"
+            className="block text-center text-white text-sm font-bold px-4 py-2 rounded transition"
             style={{ backgroundColor: RUST }}
           >
             Call Now
           </a>
         </div>
-      </div>
-
-      {/* Mobile floating card — below image on small screens */}
-      <div
-        className="md:hidden mx-6 -mt-6 relative z-20 rounded-xl p-5 shadow-2xl mb-8"
-        style={{ backgroundColor: BROWN, border: `1px solid ${RUST}` }}
-      >
-        <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: RUST }}>
-          Free Estimate
-        </p>
-        <p className="text-white font-bold text-xl mb-3">
-          {biz.phone || '(903) 555-0142'}
-        </p>
-        <a
-          href={dialPhone}
-          className="block text-center text-white text-sm font-bold px-4 py-2 rounded transition"
-          style={{ backgroundColor: RUST }}
-        >
-          Call Now
-        </a>
-      </div>
+      )}
     </section>
   )
 }

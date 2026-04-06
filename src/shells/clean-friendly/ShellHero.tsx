@@ -14,27 +14,28 @@ const STRIPS = [
 ]
 
 export default function ShellHero() {
-  const [biz, setBiz] = useState<Biz>({ phone: '(903) 555-0142' })
+  const [biz, setBiz] = useState<Biz>({})
+  const [headline, setHeadline] = useState('Professional Pest Control You Can Trust')
   const [ctaText, setCtaText] = useState('Get a Free Quote')
   const [heroSubtext, setHeroSubtext] = useState('Call for Same-Day Service')
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const [bizRes, brandRes, contentRes] = await Promise.all([
+      const [bizRes, custRes, brandRes, contentRes] = await Promise.all([
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'customization').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
         supabase.from('page_content').select('subtitle').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
       ])
-      if (bizRes.data?.value) {
-        setBiz({ name: bizRes.data.value.name, phone: bizRes.data.value.phone || '(903) 555-0142' })
-      }
+      if (bizRes.data?.value) setBiz({ name: bizRes.data.value.name, phone: bizRes.data.value.phone })
+      if (custRes.data?.value?.hero_headline) setHeadline(custRes.data.value.hero_headline)
       if (brandRes.data?.value?.cta_text) setCtaText(brandRes.data.value.cta_text)
       if (contentRes.data?.subtitle) setHeroSubtext(contentRes.data.subtitle)
     })
   }, [])
 
-  const dialPhone = `tel:${(biz.phone || '').replace(/\D/g, '')}`
+  const dialPhone = biz.phone ? `tel:${biz.phone.replace(/\D/g, '')}` : '#'
 
   return (
     <>
@@ -52,13 +53,22 @@ export default function ShellHero() {
               {biz.name}
             </p>
           )}
-          <a
-            href={dialPhone}
-            className="block text-6xl md:text-8xl font-black text-white tracking-tight leading-none mb-3 drop-shadow-lg hover:text-sky-100 transition"
-            style={{ textShadow: '0 4px 24px rgba(0,0,0,0.5)' }}
-          >
-            {biz.phone || '(903) 555-0142'}
-          </a>
+          {biz.phone ? (
+            <a
+              href={dialPhone}
+              className="block text-6xl md:text-8xl font-black text-white tracking-tight leading-none mb-3 drop-shadow-lg hover:text-sky-100 transition"
+              style={{ textShadow: '0 4px 24px rgba(0,0,0,0.5)' }}
+            >
+              {biz.phone}
+            </a>
+          ) : (
+            <h1
+              className="block text-4xl md:text-6xl font-black text-white tracking-tight leading-none mb-3 drop-shadow-lg"
+              style={{ textShadow: '0 4px 24px rgba(0,0,0,0.5)' }}
+            >
+              {headline}
+            </h1>
+          )}
           <p className="text-xl text-sky-200 mt-2 mb-6">{heroSubtext}</p>
           <Link
             to="/quote"
