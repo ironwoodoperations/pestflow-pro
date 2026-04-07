@@ -145,6 +145,7 @@ export function applyShellTheme(
   primaryOverride?: string,
   accentOverride?: string
 ) {
+  console.log('[applyShellTheme] called', { template, primaryOverride, accentOverride }, new Error().stack)
   const theme = SHELL_THEMES[template] || SHELL_THEMES['modern-pro']
   const root = document.documentElement
   Object.entries(theme).forEach(([key, value]) => {
