@@ -158,13 +158,16 @@ export function applyShellTheme(
     const paletteHero = PALETTE_HERO[primary]
     if (paletteHero) {
       root.style.setProperty('--color-bg-hero', paletteHero.hero)
+      console.log('set --color-bg-hero to:', document.documentElement.style.getPropertyValue('--color-bg-hero'))
       root.style.setProperty('--color-bg-hero-end', paletteHero.end)
       root.style.setProperty('--color-bg-cta', paletteHero.cta)
     } else if (template === 'clean-friendly') {
       root.style.setProperty('--color-bg-hero', lightenHex(primaryOverride, 0.85))
+      console.log('set --color-bg-hero to:', document.documentElement.style.getPropertyValue('--color-bg-hero'))
       root.style.setProperty('--color-bg-hero-end', lightenHex(primaryOverride, 0.93))
     } else {
       root.style.setProperty('--color-bg-hero', darkenHex(primaryOverride, 0.35))
+      console.log('set --color-bg-hero to:', document.documentElement.style.getPropertyValue('--color-bg-hero'))
       root.style.setProperty('--color-bg-hero-end', darkenHex(primaryOverride, 0.2))
     }
   } else if (primaryOverride) {
