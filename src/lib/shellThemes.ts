@@ -153,7 +153,9 @@ export function applyShellTheme(
   if (primaryOverride && /^#[0-9a-fA-F]{6}$/.test(primaryOverride)) {
     root.style.setProperty('--color-primary', primaryOverride)
     root.style.setProperty('--color-btn-bg', primaryOverride)
-    const paletteHero = PALETTE_HERO[primaryOverride.toLowerCase()]
+    const primary = primaryOverride.toLowerCase().trim()
+    console.log('palette lookup:', JSON.stringify(primary), !!PALETTE_HERO[primary])
+    const paletteHero = PALETTE_HERO[primary]
     if (paletteHero) {
       root.style.setProperty('--color-bg-hero', paletteHero.hero)
       root.style.setProperty('--color-bg-hero-end', paletteHero.end)
