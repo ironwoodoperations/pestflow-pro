@@ -64,9 +64,9 @@ export default function ShellHero() {
   return (
     <section
       className="relative text-white min-h-screen flex items-center justify-center px-4 overflow-hidden"
-      style={{ backgroundColor: 'var(--color-bg-hero)', ...sectionStyle }}
+      style={{ background: 'var(--color-bg-hero)', ...sectionStyle }}
     >
-      {bgImage && <div className="absolute inset-0" style={{ background: 'rgba(10,15,30,0.75)' }} />}
+      {bgImage && <div className="absolute inset-0" style={{ backgroundColor: 'var(--color-bg-cta)', opacity: 0.85 }} />}
 
       <div className="relative z-10 max-w-3xl mx-auto text-center">
         {/* Tagline badge */}

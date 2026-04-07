@@ -45,13 +45,14 @@ export default function PestPageTemplate(props: PestPageProps) {
 
   const heroTitle = content.title || props.heroTitle
   const pestImg = content.image_urls?.[0] || content.image_url || PEST_PAGE_IMG[props.pageSlug] || props.introImage || FALLBACK_PEST_IMG
+  const pestImg2 = content.image_urls?.[1] || pestImg
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
       <StructuredData type="WebPage" pageSlug={props.pageSlug} />
 
       {/* HERO */}
-      <section className="relative py-20 md:py-28 overflow-hidden" style={{ backgroundColor: 'var(--color-bg-hero)' }}>
+      <section className="relative py-20 md:py-28 overflow-hidden" style={{ background: 'var(--color-bg-hero)' }}>
         <div className="relative z-10 max-w-5xl mx-auto px-4 text-center">
           <h1 className="font-oswald tracking-wide text-5xl md:text-7xl mb-4" style={{ color: 'var(--color-nav-text)' }}>
             {heroTitle.split(props.heroHighlight).map((part, i, arr) => (
@@ -146,7 +147,7 @@ export default function PestPageTemplate(props: PestPageProps) {
       </section>
 
       {/* READY TO BE PEST-FREE */}
-      <section className="py-16" style={{ backgroundColor: 'var(--color-bg-hero)' }}>
+      <section className="py-16" style={{ background: 'var(--color-bg-hero)' }}>
         <div className="max-w-5xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
           <div>
             <h2 className="font-oswald tracking-wide text-4xl md:text-5xl mb-4" style={{ color: 'var(--color-nav-text)' }}>Ready to Be Pest-Free?</h2>
@@ -154,7 +155,7 @@ export default function PestPageTemplate(props: PestPageProps) {
             <Link to="/quote" className="inline-block font-bold rounded-lg px-8 py-4 text-lg transition hover:opacity-90" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}>Get a Free Quote</Link>
           </div>
           <div className="hidden md:block rounded-xl overflow-hidden shadow-md">
-            <img src={pestImg} alt={`${props.heroHighlight} pest control`} loading="lazy" className="w-full h-56 object-cover" />
+            <img src={pestImg2} alt={`${props.heroHighlight} pest control`} loading="lazy" className="w-full h-56 object-cover" />
           </div>
         </div>
       </section>

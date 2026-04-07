@@ -145,7 +145,7 @@ export default function QuotePage() {
               )}
             </div>
           </div>
-          <div className="mt-8 rounded-xl p-6" style={{ backgroundColor: 'var(--color-bg-hero)' }}>
+          <div className="mt-8 rounded-xl p-6" style={{ background: 'var(--color-bg-hero)' }}>
             <h3 className="font-oswald tracking-wide text-xl mb-3" style={{ color: 'var(--color-primary)' }}>{businessName}</h3>
             <a href={`tel:${businessPhone}`} className="text-2xl font-bold hover:underline block mb-4" style={{ color: 'var(--color-nav-text)' }}>{businessPhone}</a>
             <ul className="space-y-2 text-sm" style={{ color: 'var(--color-nav-text)', opacity: 0.75 }}>

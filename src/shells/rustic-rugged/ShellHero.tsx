@@ -35,7 +35,7 @@ export default function ShellHero() {
   const dialPhone = `tel:${(biz.phone || '').replace(/\D/g, '')}`
 
   return (
-    <section style={{ backgroundColor: 'var(--color-bg-hero)' }} className="flex flex-col md:flex-row min-h-[540px]">
+    <section style={{ background: 'var(--color-bg-hero)' }} className="flex flex-col md:flex-row min-h-[540px]">
       {/* LEFT — text */}
       <div className="md:w-1/2 flex flex-col justify-center px-10 py-16 relative z-10">
         {/* Est. badge */}
@@ -74,8 +74,8 @@ export default function ShellHero() {
           alt="Pest control technician"
           className="w-full h-full object-cover"
         />
-        {/* Dark overlay to blend with left */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent" />
+        {/* Overlay blends image panel with left — tinted to palette */}
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, color-mix(in srgb, var(--color-bg-cta) 90%, transparent), transparent)' }} />
 
         {/* Floating card — visible md+ */}
         {biz.phone && (

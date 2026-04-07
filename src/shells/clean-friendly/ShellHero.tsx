@@ -44,8 +44,8 @@ export default function ShellHero() {
         className="relative flex items-center justify-center min-h-[65vh] bg-cover bg-center"
         style={{ backgroundImage: `url(${HERO_IMAGE})` }}
       >
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/75 to-black/55" />
+        {/* Overlay — tinted with palette primary */}
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, color-mix(in srgb, var(--color-primary) 40%, #000), color-mix(in srgb, var(--color-primary) 30%, #000))' }} />
 
         <div className="relative z-10 text-center px-4 py-16">
           {biz.name && (

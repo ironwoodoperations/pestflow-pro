@@ -73,7 +73,7 @@ export default function ContactPage() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
 
-      <section className="py-16" style={{ backgroundColor: 'var(--color-bg-hero)' }}>
+      <section className="py-16" style={{ background: 'var(--color-bg-hero)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h1 className="font-oswald tracking-wide text-4xl md:text-6xl mb-4" style={{ color: 'var(--color-nav-text)' }}>{heroTitle}</h1>
           <p className="text-lg" style={{ color: 'var(--color-nav-text)', opacity: 0.75 }}>
@@ -115,7 +115,7 @@ export default function ContactPage() {
               </button>
             </form>
 
-            <div className="rounded-xl p-6" style={{ backgroundColor: 'var(--color-bg-hero)', color: 'var(--color-nav-text)' }}>
+            <div className="rounded-xl p-6" style={{ background: 'var(--color-bg-hero)', color: 'var(--color-nav-text)' }}>
               <h3 className="font-oswald tracking-wide text-xl mb-4" style={{ color: 'var(--color-primary)' }}>Get in Touch</h3>
               <ul className="space-y-4">
                 {info.phone && <li className="flex items-start gap-3"><Phone className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: 'var(--color-primary)' }} /><a href={`tel:${info.phone}`} className="hover:underline">{info.phone}</a></li>}

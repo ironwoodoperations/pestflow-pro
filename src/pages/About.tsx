@@ -39,7 +39,7 @@ export default function About() {
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
       <StructuredData type="WebPage" pageSlug="about" />
 
-      <section className="py-20 md:py-28" style={{ backgroundColor: 'var(--color-bg-hero)' }}>
+      <section className="py-20 md:py-28" style={{ background: 'var(--color-bg-hero)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h1 className="font-oswald tracking-wide text-5xl md:text-7xl mb-4" style={{ color: 'var(--color-nav-text)' }} dangerouslySetInnerHTML={{ __html: heroTitle }} />
           <p className="text-xl" style={{ color: 'var(--color-nav-text)', opacity: 0.75 }}>{heroSubtitle}</p>
@@ -49,7 +49,7 @@ export default function About() {
       <section className="py-16" style={{ backgroundColor: 'var(--color-bg-section)' }}>
         <div className="max-w-4xl mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-            <div className="rounded-xl overflow-hidden border-2 h-72 flex items-center justify-center" style={{ borderColor: 'var(--color-primary)', backgroundColor: 'var(--color-bg-hero)' }}>
+            <div className="rounded-xl overflow-hidden border-2 h-72 flex items-center justify-center" style={{ borderColor: 'var(--color-primary)', background: 'var(--color-bg-hero)' }}>
               <img src={aboutImage || '/images/pests/team.jpg'} alt="About us" loading="lazy" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
             </div>
             <div>
@@ -69,7 +69,7 @@ export default function About() {
         </div>
       </section>
 
-      <section className="py-12" style={{ backgroundColor: 'var(--color-bg-hero)' }}>
+      <section className="py-12" style={{ background: 'var(--color-bg-hero)' }}>
         <div className="max-w-6xl mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             {[
