@@ -78,7 +78,7 @@ export default function ContactPage() {
           <h1 className="font-oswald tracking-wide text-4xl md:text-6xl text-white mb-4">{heroTitle}</h1>
           <p className="text-gray-400 text-lg">
             {heroSubtitle || <>Have a question or need service? Call us at{' '}
-            <a href={`tel:${info.phone}`} className="text-emerald-400 font-bold hover:underline">{info.phone}</a></>}
+            <a href={`tel:${info.phone}`} className="font-bold hover:underline" style={{ color: 'var(--color-primary)' }}>{info.phone}</a></>}
           </p>
         </div>
       </section>
@@ -110,26 +110,26 @@ export default function ContactPage() {
                 </label>
               </div>
               <div className="mb-6"><label className="block text-sm font-medium text-gray-700 mb-1">Message</label><textarea value={form.message} onChange={(e) => updateField('message', e.target.value)} rows={5} className={`${inputClass} resize-none`} /></div>
-              <button type="submit" disabled={submitting} className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg px-6 py-4 text-lg transition disabled:opacity-50">
+              <button type="submit" disabled={submitting} className="w-full font-bold rounded-lg px-6 py-4 text-lg transition disabled:opacity-50 hover:opacity-90" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}>
                 {submitting ? 'Sending...' : 'Send Message'}
               </button>
             </form>
 
             <div className="bg-[#0a0f1e] text-white rounded-xl p-6">
-              <h3 className="font-oswald tracking-wide text-xl text-emerald-400 mb-4">Get in Touch</h3>
+              <h3 className="font-oswald tracking-wide text-xl mb-4" style={{ color: 'var(--color-primary)' }}>Get in Touch</h3>
               <ul className="space-y-4">
-                {info.phone && <li className="flex items-start gap-3"><Phone className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" /><a href={`tel:${info.phone}`} className="hover:underline">{info.phone}</a></li>}
-                {info.email && <li className="flex items-start gap-3"><Mail className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" /><a href={`mailto:${info.email}`} className="hover:underline">{info.email}</a></li>}
-                {info.address && <li className="flex items-start gap-3"><MapPin className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" /><span>{info.address}</span></li>}
-                {info.hours && <li className="flex items-start gap-3"><Clock className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" /><span>{info.hours}</span></li>}
+                {info.phone && <li className="flex items-start gap-3"><Phone className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: 'var(--color-primary)' }} /><a href={`tel:${info.phone}`} className="hover:underline">{info.phone}</a></li>}
+                {info.email && <li className="flex items-start gap-3"><Mail className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: 'var(--color-primary)' }} /><a href={`mailto:${info.email}`} className="hover:underline">{info.email}</a></li>}
+                {info.address && <li className="flex items-start gap-3"><MapPin className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: 'var(--color-primary)' }} /><span>{info.address}</span></li>}
+                {info.hours && <li className="flex items-start gap-3"><Clock className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: 'var(--color-primary)' }} /><span>{info.hours}</span></li>}
               </ul>
               {(social.facebook || social.instagram || social.google) && (
                 <div className="mt-6 pt-4 border-t border-gray-700">
                   <h4 className="text-sm font-bold text-gray-400 uppercase mb-2">Follow Us</h4>
                   <div className="flex gap-3">
-                    {social.facebook && <a href={social.facebook} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-emerald-400 transition">Facebook</a>}
-                    {social.instagram && <a href={social.instagram} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-emerald-400 transition">Instagram</a>}
-                    {social.google && <a href={social.google} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-emerald-400 transition">Google</a>}
+                    {social.facebook && <a href={social.facebook} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-[color:var(--color-primary)] transition">Facebook</a>}
+                    {social.instagram && <a href={social.instagram} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-[color:var(--color-primary)] transition">Instagram</a>}
+                    {social.google && <a href={social.google} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-[color:var(--color-primary)] transition">Google</a>}
                   </div>
                 </div>
               )}

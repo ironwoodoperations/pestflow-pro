@@ -20,11 +20,6 @@ export interface PestPageProps {
   introImage?: string; videoUrl?: string
 }
 
-const STEP_COLORS_DEFAULT = ['bg-emerald-500', 'bg-yellow-500', 'bg-teal-500', 'bg-slate-600']
-const CTA_COLORS: Record<string, string> = {
-  'modern-pro': 'bg-emerald-700', 'bold-local': 'bg-amber-600',
-  'clean-friendly': 'bg-sky-600',  'rustic-rugged': 'bg-[#8b3a1a]',
-}
 const WHY = [
   { Icon: Shield, title: 'Licensed & Certified', desc: 'Fully licensed, bonded, and insured for your protection.' },
   { Icon: Leaf,   title: 'Family & Pet Safe',    desc: 'EPA-approved treatments safe for your whole family.' },
@@ -35,26 +30,21 @@ const WHY = [
 export default function PestPageTemplate(props: PestPageProps) {
   const [content, setContent] = useState({ title: '', subtitle: '', intro: '', image_url: '', image_urls: [] as string[] })
   const [phone, setPhone] = useState('')
-  const [template, setTemplate] = useState('modern-pro')
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const [pageRes, settingsRes, brandRes] = await Promise.all([
+      const [pageRes, settingsRes] = await Promise.all([
         supabase.from('page_content').select('title, subtitle, intro, image_url, image_urls').eq('tenant_id', tenantId).eq('page_slug', props.pageSlug).maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
-        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
       ])
       if (pageRes.data) setContent({ title: pageRes.data.title || '', subtitle: pageRes.data.subtitle || '', intro: pageRes.data.intro || '', image_url: pageRes.data.image_url || '', image_urls: pageRes.data.image_urls || [] })
       if (settingsRes.data?.value?.phone) setPhone(settingsRes.data.value.phone)
-      if (brandRes.data?.value?.template) setTemplate(brandRes.data.value.template)
     })
   }, [props.pageSlug])
 
   const heroTitle = content.title || props.heroTitle
-  const stepColors = props.stepColors || STEP_COLORS_DEFAULT
   const pestImg = content.image_urls?.[0] || content.image_url || PEST_PAGE_IMG[props.pageSlug] || props.introImage || FALLBACK_PEST_IMG
-  const ctaBgClass = CTA_COLORS[template] || 'bg-yellow-500'
 
   return (
     <div className="min-h-screen bg-white">
@@ -65,13 +55,13 @@ export default function PestPageTemplate(props: PestPageProps) {
         <div className="relative z-10 max-w-5xl mx-auto px-4 text-center">
           <h1 className="font-oswald tracking-wide text-white text-5xl md:text-7xl mb-4">
             {heroTitle.split(props.heroHighlight).map((part, i, arr) => (
-              <span key={i}>{part}{i < arr.length - 1 && <span className="text-emerald-400">{props.heroHighlight}</span>}</span>
+              <span key={i}>{part}{i < arr.length - 1 && <span style={{ color: 'var(--color-primary)' }}>{props.heroHighlight}</span>}</span>
             ))}
           </h1>
           <p className="text-gray-300 text-xl mb-8">{content.subtitle || props.heroSubtitle}</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/quote" className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg px-8 py-4 text-lg transition">Get a Free Quote</Link>
-            <a href={`tel:${phone}`} className="border-2 border-emerald-500 text-emerald-400 hover:bg-emerald-500 hover:text-white font-bold rounded-lg px-8 py-4 text-lg transition">Call Us Now</a>
+            <Link to="/quote" className="font-bold rounded-lg px-8 py-4 text-lg transition hover:opacity-90" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}>Get a Free Quote</Link>
+            <a href={`tel:${phone}`} className="border-2 font-bold rounded-lg px-8 py-4 text-lg transition hover:opacity-90" style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}>Call Us Now</a>
           </div>
         </div>
       </section>
@@ -88,8 +78,8 @@ export default function PestPageTemplate(props: PestPageProps) {
             <p className="text-gray-600 mb-4">{props.introP2}</p>
             <p className="text-gray-600 mb-6">{props.introP3}</p>
             <div className="flex flex-col sm:flex-row gap-3">
-              <Link to="/quote" className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg px-6 py-3 transition text-center">Get a Free Quote</Link>
-              <a href={`tel:${phone}`} className="border-2 border-emerald-500 text-emerald-600 hover:bg-emerald-50 font-bold rounded-lg px-6 py-3 transition text-center">Call {phone}</a>
+              <Link to="/quote" className="font-bold rounded-lg px-6 py-3 transition text-center hover:opacity-90" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}>Get a Free Quote</Link>
+              <a href={`tel:${phone}`} className="border-2 font-bold rounded-lg px-6 py-3 transition text-center hover:opacity-90" style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}>Call {phone}</a>
             </div>
           </div>
         </div>
@@ -102,7 +92,7 @@ export default function PestPageTemplate(props: PestPageProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {props.steps.map((step, i) => (
               <div key={i} className="bg-white rounded-xl p-6 shadow-sm text-center">
-                <div className={`w-12 h-12 ${stepColors[i] || 'bg-emerald-500'} text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4`}>{i + 1}</div>
+                <div className="w-12 h-12 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4" style={{ backgroundColor: 'var(--color-primary)' }}>{i + 1}</div>
                 <h3 className="text-lg font-bold text-gray-900 mb-2">{step.title}</h3>
                 <p className="text-gray-600 text-sm">{step.desc}</p>
               </div>
@@ -118,7 +108,7 @@ export default function PestPageTemplate(props: PestPageProps) {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {WHY.map(({ Icon, title, desc }) => (
               <div key={title} className="bg-[#f8fafc] rounded-xl p-6 text-center">
-                <div className="flex justify-center mb-4"><Icon className="w-8 h-8 text-emerald-500" /></div>
+                <div className="flex justify-center mb-4"><Icon className="w-8 h-8" style={{ color: 'var(--color-primary)' }} /></div>
                 <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>
                 <p className="text-gray-600 text-sm">{desc}</p>
               </div>
@@ -134,9 +124,9 @@ export default function PestPageTemplate(props: PestPageProps) {
           {props.pricingCards ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {props.pricingCards.map((plan) => (
-                <div key={plan.name} className="bg-white rounded-xl p-6 shadow-sm border-t-[3px] border-emerald-500 text-center">
+                <div key={plan.name} className="bg-white rounded-xl p-6 shadow-sm border-t-[3px] text-center" style={{ borderTopColor: 'var(--color-primary)' }}>
                   <h3 className="text-xl font-bold text-gray-900 mb-2">{plan.name}</h3>
-                  <p className="text-3xl font-bold text-emerald-600 mb-2">{plan.price}</p>
+                  <p className="text-3xl font-bold mb-2" style={{ color: 'var(--color-primary)' }}>{plan.price}</p>
                   <p className="text-gray-600 text-sm">{plan.desc}</p>
                 </div>
               ))}
@@ -145,7 +135,7 @@ export default function PestPageTemplate(props: PestPageProps) {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {props.specialCards.map((card) => (
-                <div key={card.title} className="bg-white rounded-xl p-6 shadow-sm border-t-[3px] border-emerald-500">
+                <div key={card.title} className="bg-white rounded-xl p-6 shadow-sm border-t-[3px]" style={{ borderTopColor: 'var(--color-primary)' }}>
                   <h3 className="text-lg font-bold text-gray-900 mb-2">{card.title}</h3>
                   <p className="text-gray-600 text-sm">{card.desc}</p>
                 </div>
@@ -161,7 +151,7 @@ export default function PestPageTemplate(props: PestPageProps) {
           <div>
             <h2 className="font-oswald tracking-wide text-4xl md:text-5xl text-white mb-4">Ready to Be Pest-Free?</h2>
             <p className="text-gray-300 mb-6">Same-day service available. Request your free quote today.</p>
-            <Link to="/quote" className="inline-block bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg px-8 py-4 text-lg transition">Get a Free Quote</Link>
+            <Link to="/quote" className="inline-block font-bold rounded-lg px-8 py-4 text-lg transition hover:opacity-90" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}>Get a Free Quote</Link>
           </div>
           <div className="hidden md:block rounded-xl overflow-hidden shadow-md">
             <img src={pestImg} alt={`${props.heroHighlight} pest control`} loading="lazy" className="w-full h-56 object-cover" />
@@ -181,8 +171,8 @@ export default function PestPageTemplate(props: PestPageProps) {
         </div>
       </section>
 
-      {/* BOTTOM CTA — shell-coordinated color */}
-      <section className={`relative py-16 ${ctaBgClass}`} style={{ clipPath: 'polygon(0 8%, 100% 0, 100% 100%, 0 100%)' }}>
+      {/* BOTTOM CTA */}
+      <section className="relative py-16" style={{ backgroundColor: 'var(--color-bg-cta)', clipPath: 'polygon(0 8%, 100% 0, 100% 100%, 0 100%)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center pt-8">
           <h2 className="font-oswald tracking-wide text-4xl md:text-5xl text-white mb-4">{props.eastTexasCTATitle}</h2>
           <p className="text-white/70 text-lg mb-8">Serving Tyler, Longview, and all of East Texas</p>

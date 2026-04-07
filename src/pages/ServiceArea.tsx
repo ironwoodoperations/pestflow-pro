@@ -17,9 +17,10 @@ const FALLBACK_CITIES: LocationItem[] = [
 export default function ServiceArea() {
   const [locations, setLocations] = useState<LocationItem[]>(FALLBACK_CITIES)
   const [address, setAddress] = useState('')
+  const [phone, setPhone] = useState('')
   const [mapsApiKey, setMapsApiKey] = useState('')
-  const [heroTitle, setHeroTitle] = useState('Our East Texas <span class="text-emerald-400">Service Area</span>')
-  const [heroSubtitle, setHeroSubtitle] = useState('We proudly serve Tyler, TX and surrounding communities within 50 miles.')
+  const [heroTitle, setHeroTitle] = useState('Our Service Area')
+  const [heroSubtitle, setHeroSubtitle] = useState('We proudly serve your community and surrounding areas within 50 miles.')
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
@@ -32,6 +33,7 @@ export default function ServiceArea() {
       ])
       if (locRes.data && locRes.data.length > 0) setLocations(locRes.data)
       if (bizRes.data?.value?.address) setAddress(bizRes.data.value.address)
+      if (bizRes.data?.value?.phone) setPhone(bizRes.data.value.phone)
       if (intgRes.data?.value?.google_maps_api_key) setMapsApiKey(intgRes.data.value.google_maps_api_key)
       if (contentRes.data?.title) setHeroTitle(contentRes.data.title)
       if (contentRes.data?.subtitle) setHeroSubtitle(contentRes.data.subtitle)
@@ -54,9 +56,9 @@ export default function ServiceArea() {
           <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-10">Communities We Serve</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {locations.map((loc) => (
-              <Link key={loc.slug} to={`/${loc.slug}`} className="bg-white border-2 border-gray-200 hover:border-emerald-500 rounded-xl p-4 text-center transition group shadow-sm">
-                <MapPin className="w-6 h-6 text-emerald-500 mx-auto mb-2" />
-                <h3 className="text-gray-900 font-bold group-hover:text-emerald-600 transition">{loc.city}</h3>
+              <Link key={loc.slug} to={`/${loc.slug}`} className="bg-white border-2 border-gray-200 rounded-xl p-4 text-center transition group shadow-sm hover:border-[color:var(--color-primary)]">
+                <MapPin className="w-6 h-6 mx-auto mb-2" style={{ color: 'var(--color-primary)' }} />
+                <h3 className="text-gray-900 font-bold transition group-hover:text-[color:var(--color-primary)]">{loc.city}</h3>
                 <p className="text-gray-500 text-sm">Pest Control</p>
               </Link>
             ))}
@@ -74,7 +76,7 @@ export default function ServiceArea() {
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 mb-4">Don't See Your City?</h2>
           <p className="text-gray-600 mb-8">We may still serve your area. Give us a call to find out.</p>
-          <a href="tel:9035550100" className="inline-block bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg px-10 py-4 text-lg transition">Call (903) 555-0100</a>
+          {phone && <a href={`tel:${phone.replace(/\D/g, '')}`} className="inline-block font-bold rounded-lg px-10 py-4 text-lg transition hover:opacity-90" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}>Call {phone}</a>}
         </div>
       </section>
 

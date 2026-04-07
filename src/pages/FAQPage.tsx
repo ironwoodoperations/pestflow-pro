@@ -39,17 +39,20 @@ export default function FAQPage() {
   const [heroTitle, setHeroTitle] = useState('Frequently Asked Questions')
   const [heroSubtitle, setHeroSubtitle] = useState('Everything you need to know about our pest control services.')
   const [faqItems, setFaqItems] = useState<FaqItem[]>([])
+  const [phone, setPhone] = useState('')
 
   useEffect(() => {
     resolveTenantId().then(async (tid) => {
       if (!tid) return
-      const [pageRes, itemsRes] = await Promise.all([
+      const [pageRes, itemsRes, bizRes] = await Promise.all([
         supabase.from('page_content').select('title, subtitle').eq('tenant_id', tid).eq('page_slug', 'faq').maybeSingle(),
         supabase.from('faq_items').select('id, question, answer, sort_order').eq('tenant_id', tid).order('sort_order'),
+        supabase.from('settings').select('value').eq('tenant_id', tid).eq('key', 'business_info').maybeSingle(),
       ])
       if (pageRes.data?.title) setHeroTitle(pageRes.data.title)
       if (pageRes.data?.subtitle) setHeroSubtitle(pageRes.data.subtitle)
       if (itemsRes.data?.length) setFaqItems(itemsRes.data)
+      if (bizRes.data?.value?.phone) setPhone(bizRes.data.value.phone)
     })
   }, [])
 
@@ -78,7 +81,7 @@ export default function FAQPage() {
           ) : (
             FAQ_CATEGORIES.map((cat) => (
               <div key={cat.title} className="mb-12">
-                <h2 className="text-2xl font-bold text-emerald-600 mb-6">{cat.title}</h2>
+                <h2 className="text-2xl font-bold mb-6" style={{ color: 'var(--color-primary)' }}>{cat.title}</h2>
                 <div className="space-y-6">
                   {cat.faqs.map((faq, i) => (
                     <div key={i}>
@@ -98,8 +101,8 @@ export default function FAQPage() {
           <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 mb-4">Still Have Questions?</h2>
           <p className="text-gray-600 mb-8">We're here to help. Call us or request a quote online.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="tel:9035550100" className="border-2 border-emerald-500 text-emerald-600 hover:bg-emerald-50 font-bold rounded-lg px-8 py-4 text-lg transition">Call (903) 555-0100</a>
-            <Link to="/quote" className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg px-8 py-4 text-lg transition">Get a Free Quote</Link>
+            <a href={`tel:${phone}`} className="border-2 font-bold rounded-lg px-8 py-4 text-lg transition hover:opacity-90" style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}>Call Us Now</a>
+            <Link to="/quote" className="font-bold rounded-lg px-8 py-4 text-lg transition hover:opacity-90" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}>Get a Free Quote</Link>
           </div>
         </div>
       </section>

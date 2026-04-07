@@ -137,7 +137,7 @@ export default function QuotePage() {
                 <button onClick={() => { setStep(s => s - 1); setError('') }} className="border border-gray-300 text-gray-700 hover:bg-gray-50 px-6 py-2.5 rounded-lg text-sm font-medium transition">Back</button>
               ) : <div />}
               {step < 4 ? (
-                <button onClick={next} className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-8 py-2.5 rounded-lg transition">Continue</button>
+                <button onClick={next} className="font-bold px-8 py-2.5 rounded-lg transition hover:opacity-90" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}>Continue</button>
               ) : (
                 <button onClick={handleSubmit} disabled={submitting} className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-8 py-2.5 rounded-lg transition disabled:opacity-50">
                   {submitting ? 'Submitting...' : 'Submit Quote Request'}
@@ -146,7 +146,7 @@ export default function QuotePage() {
             </div>
           </div>
           <div className="mt-8 bg-[#0a0f1e] text-white rounded-xl p-6">
-            <h3 className="font-oswald tracking-wide text-xl text-emerald-400 mb-3">{businessName}</h3>
+            <h3 className="font-oswald tracking-wide text-xl mb-3" style={{ color: 'var(--color-primary)' }}>{businessName}</h3>
             <a href={`tel:${businessPhone}`} className="text-2xl font-bold text-white hover:underline block mb-4">{businessPhone}</a>
             <ul className="space-y-2 text-gray-300 text-sm">
               <li>✅ Free Estimates</li><li>✅ Same-Day Service</li><li>✅ Licensed & Insured</li><li>✅ Satisfaction Guaranteed</li>

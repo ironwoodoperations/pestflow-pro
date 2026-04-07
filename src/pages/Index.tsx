@@ -57,7 +57,7 @@ export default function Index() {
         <HeroVideoPlayer />
 
         <div className="relative z-10 text-center px-4 max-w-5xl mx-auto py-20">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-sm mb-6">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm mb-6" style={{ border: '1px solid color-mix(in srgb, var(--color-primary) 30%, transparent)', backgroundColor: 'color-mix(in srgb, var(--color-primary) 10%, transparent)', color: 'var(--color-primary)' }}>
             <Shield className="w-4 h-4" /> Licensed & Insured Professionals
           </div>
           <h1 className="font-oswald tracking-wide text-white text-5xl sm:text-6xl md:text-8xl leading-tight mb-6">
@@ -67,7 +67,7 @@ export default function Index() {
             {content.subtitle}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-            <Link to="/quote" className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg px-8 py-4 text-lg transition">
+            <Link to="/quote" className="font-bold rounded-lg px-8 py-4 text-lg transition hover:opacity-90" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}>
               Get a Free Quote
             </Link>
             <Link to="/pest-control" className="border-2 border-white/30 text-white hover:border-white font-bold rounded-lg px-8 py-4 text-lg transition">
@@ -85,7 +85,7 @@ export default function Index() {
                 <button type="button" aria-label="Play video" className="relative rounded-xl overflow-hidden cursor-pointer shadow-2xl w-full text-left" style={{ paddingBottom: '56.25%' }} onClick={() => setVideoPlaying(true)}>
                   <img src={heroMedia.thumbnail_url || `https://img.youtube.com/vi/${heroMedia.youtube_id}/maxresdefault.jpg`} alt="Video thumbnail" className="absolute inset-0 w-full h-full object-cover" />
                   <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                    <div className="w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg">
+                    <div className="w-16 h-16 rounded-full flex items-center justify-center shadow-lg" style={{ backgroundColor: 'var(--color-primary)' }}>
                       <svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
                     </div>
                   </div>

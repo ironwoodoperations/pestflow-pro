@@ -7,15 +7,16 @@ import StructuredData from '../components/StructuredData'
 
 interface TeamMember { id: string; name: string; title?: string; bio?: string; photo_url?: string }
 
+const VALUE_ICONS = [Shield, Eye, Award, Zap]
 const VALUES = [
-  { icon: <Shield className="w-7 h-7 text-emerald-500" />, title: 'Science-Backed Solutions', desc: 'Every treatment plan is based on Integrated Pest Management (IPM) principles. We target the root cause, not just the symptoms.' },
-  { icon: <Eye className="w-7 h-7 text-emerald-500" />, title: 'Transparent Pricing', desc: 'We quote before we treat. No hidden fees, no upselling, no surprise invoices. The price we quote is the price you pay.' },
-  { icon: <Award className="w-7 h-7 text-emerald-500" />, title: '30-Day Guarantee', desc: "If pests return within 30 days of treatment, we come back and retreat at no additional cost. That's our Ironclad Guarantee." },
-  { icon: <Zap className="w-7 h-7 text-emerald-500" />, title: 'Same-Day Response', desc: "Call before noon and we'll be at your property the same day. Your family's safety shouldn't wait." },
+  { title: 'Science-Backed Solutions', desc: 'Every treatment plan is based on Integrated Pest Management (IPM) principles. We target the root cause, not just the symptoms.' },
+  { title: 'Transparent Pricing', desc: 'We quote before we treat. No hidden fees, no upselling, no surprise invoices. The price we quote is the price you pay.' },
+  { title: '30-Day Guarantee', desc: "If pests return within 30 days of treatment, we come back and retreat at no additional cost. That's our Ironclad Guarantee." },
+  { title: 'Same-Day Response', desc: "Call before noon and we'll be at your property the same day. Your family's safety shouldn't wait." },
 ]
 
 export default function About() {
-  const [heroTitle, setHeroTitle] = useState('About <span class="text-emerald-400">Ironclad Pest Solutions</span>')
+  const [heroTitle, setHeroTitle] = useState('About Ironclad Pest Solutions')
   const [heroSubtitle, setHeroSubtitle] = useState('Family-owned. Science-backed. Trusted since 2009.')
   const [aboutImage, setAboutImage] = useState<string | null>(null)
   const [team, setTeam] = useState<TeamMember[] | null>(null)
@@ -48,7 +49,7 @@ export default function About() {
       <section className="py-16 bg-white">
         <div className="max-w-4xl mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-            <div className="rounded-xl overflow-hidden border-2 border-emerald-500 bg-[#0a0f1e] h-72 flex items-center justify-center">
+            <div className="rounded-xl overflow-hidden border-2 bg-[#0a0f1e] h-72 flex items-center justify-center" style={{ borderColor: 'var(--color-primary)' }}>
               <img src={aboutImage || '/images/pests/team.jpg'} alt="About us" loading="lazy" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
             </div>
             <div>
@@ -78,8 +79,8 @@ export default function About() {
               { num: 'Same-Day', label: 'Service Available', icon: <Bug className="w-6 h-6 mx-auto mb-2" /> },
             ].map((s) => (
               <div key={s.label}>
-                <div className="text-emerald-400">{s.icon}</div>
-                <div className="text-emerald-400 text-3xl font-bold">{s.num}</div>
+                <div style={{ color: 'var(--color-primary)' }}>{s.icon}</div>
+                <div className="text-3xl font-bold" style={{ color: 'var(--color-primary)' }}>{s.num}</div>
                 <div className="text-gray-400 text-sm mt-1">{s.label}</div>
               </div>
             ))}
@@ -91,15 +92,18 @@ export default function About() {
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-10">Why Ironclad?</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {VALUES.map((v) => (
-              <div key={v.title} className="bg-[#f8fafc] rounded-xl p-6 flex gap-4">
-                <div className="flex-shrink-0 mt-1">{v.icon}</div>
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-1">{v.title}</h3>
-                  <p className="text-gray-600 text-sm">{v.desc}</p>
+            {VALUES.map((v, i) => {
+              const Icon = VALUE_ICONS[i]
+              return (
+                <div key={v.title} className="bg-[#f8fafc] rounded-xl p-6 flex gap-4">
+                  <div className="flex-shrink-0 mt-1" style={{ color: 'var(--color-primary)' }}><Icon className="w-7 h-7" /></div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-1">{v.title}</h3>
+                    <p className="text-gray-600 text-sm">{v.desc}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       </section>
@@ -124,7 +128,7 @@ export default function About() {
                     )}
                   </div>
                   <h3 className="text-lg font-bold text-gray-900">{member.name}</h3>
-                  {member.title && <p className="text-emerald-600 text-sm font-medium">{member.title}</p>}
+                  {member.title && <p className="text-sm font-medium" style={{ color: 'var(--color-primary)' }}>{member.title}</p>}
                   {member.bio && <p className="text-gray-500 text-sm mt-2">{member.bio}</p>}
                 </div>
               ))}
@@ -148,7 +152,7 @@ export default function About() {
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h2 className="font-oswald tracking-wide text-4xl md:text-5xl text-white mb-4">Ready to Be Pest-Free?</h2>
           <p className="text-gray-300 text-lg mb-8">Get your free quote today — same-day service available.</p>
-          <Link to="/quote" className="inline-block bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg px-10 py-4 text-lg transition">Get a Free Quote</Link>
+          <Link to="/quote" className="inline-block font-bold rounded-lg px-10 py-4 text-lg transition hover:opacity-90" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}>Get a Free Quote</Link>
         </div>
       </section>
 
