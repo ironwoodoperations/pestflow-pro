@@ -61,7 +61,7 @@ export default function ShellHomeSections() {
             <div className="text-8xl text-slate-200 font-serif leading-none select-none mb-4">"</div>
             <p className="text-xl italic text-slate-700 max-w-2xl mx-auto mb-6">{featured.review_text}</p>
             <p className="text-slate-500 text-sm uppercase tracking-widest mb-3">{featured.author_name}</p>
-            <div className="text-emerald-500">{'★'.repeat(featured.rating)}</div>
+            <div style={{ color: 'var(--color-primary)' }}>{'★'.repeat(featured.rating)}</div>
           </div>
         </section>
       )}
@@ -74,16 +74,16 @@ export default function ShellHomeSections() {
           </h2>
           <p className="text-slate-400">Expert pest control with a satisfaction guarantee.</p>
         </div>
-        <div className="flex-1 bg-emerald-600 flex flex-col justify-center items-center px-10 py-16 gap-4">
+        <div className="flex-1 flex flex-col justify-center items-center px-10 py-16 gap-4" style={{ backgroundColor: 'var(--color-primary)' }}>
           {biz.phone && (
             <a href={`tel:${biz.phone.replace(/\D/g, '')}`}
-              className="text-white font-bold text-3xl hover:text-emerald-200 transition">
+              className="text-white font-bold text-3xl hover:opacity-80 transition">
               {biz.phone}
             </a>
           )}
-          <span className="text-emerald-300 text-sm">or</span>
+          <span className="text-white/60 text-sm">or</span>
           <a href="/quote"
-            className="border-2 border-white text-white font-bold px-8 py-3 rounded-lg hover:bg-white hover:text-emerald-600 transition">
+            className="border-2 border-white text-white font-bold px-8 py-3 rounded-lg hover:bg-white hover:text-[color:var(--color-primary)] transition">
             {ctaText}
           </a>
         </div>

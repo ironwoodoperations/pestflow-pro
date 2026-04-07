@@ -6,8 +6,6 @@ import { resolveTenantId } from '../../lib/tenant'
 interface Biz { phone?: string; founded_year?: string | number }
 
 const HERO_IMAGE = '/images/pests/tech_1.jpg'
-const BROWN = '#2c1a0e'
-const RUST  = '#b5451b'
 
 export default function ShellHero() {
   const [headline, setHeadline] = useState('Built Tough. Built Local. Built for East Texas.')
@@ -44,7 +42,7 @@ export default function ShellHero() {
         {biz.founded_year && (
           <span
             className="inline-block text-sm font-bold px-3 py-1 rounded-sm mb-6 w-fit"
-            style={{ border: `1px solid ${RUST}`, color: RUST }}
+            style={{ border: '1px solid var(--color-primary)', color: 'var(--color-primary)' }}
           >
             Est. {biz.founded_year}
           </span>
@@ -77,22 +75,22 @@ export default function ShellHero() {
           className="w-full h-full object-cover"
         />
         {/* Dark overlay to blend with left */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#2c1a0e]/60 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent" />
 
         {/* Floating card — visible md+ */}
         {biz.phone && (
           <div
             className="hidden md:block absolute top-1/2 left-0 -translate-x-1/3 -translate-y-1/2 rounded-xl p-5 shadow-2xl z-20"
-            style={{ backgroundColor: BROWN, border: `1px solid ${RUST}`, minWidth: '180px' }}
+            style={{ backgroundColor: 'var(--color-bg-hero)', border: '1px solid var(--color-primary)', minWidth: '180px' }}
           >
-            <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: RUST }}>
+            <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--color-primary)' }}>
               Free Estimate
             </p>
             <p className="text-white font-bold text-xl leading-tight mb-3">{biz.phone}</p>
             <a
               href={dialPhone}
               className="block text-center text-white text-sm font-bold px-4 py-2 rounded transition hover:opacity-80"
-              style={{ backgroundColor: RUST }}
+              style={{ backgroundColor: 'var(--color-primary)' }}
             >
               Call Now
             </a>
@@ -104,16 +102,16 @@ export default function ShellHero() {
       {biz.phone && (
         <div
           className="md:hidden mx-6 -mt-6 relative z-20 rounded-xl p-5 shadow-2xl mb-8"
-          style={{ backgroundColor: BROWN, border: `1px solid ${RUST}` }}
+          style={{ backgroundColor: 'var(--color-bg-hero)', border: '1px solid var(--color-primary)' }}
         >
-          <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: RUST }}>
+          <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: 'var(--color-primary)' }}>
             Free Estimate
           </p>
           <p className="text-white font-bold text-xl mb-3">{biz.phone}</p>
           <a
             href={dialPhone}
             className="block text-center text-white text-sm font-bold px-4 py-2 rounded transition"
-            style={{ backgroundColor: RUST }}
+            style={{ backgroundColor: 'var(--color-primary)' }}
           >
             Call Now
           </a>

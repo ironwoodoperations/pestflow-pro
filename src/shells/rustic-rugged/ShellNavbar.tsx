@@ -27,8 +27,6 @@ const NAV_LINKS = [
   { label: 'Contact', href: '/contact' },
 ]
 
-const CREAM = '#f5e6d3'
-const RUST = '#c2410c'
 
 export default function ShellNavbar() {
   const [businessName, setBusinessName] = useState('Ironclad Pest Solutions')
@@ -70,7 +68,7 @@ export default function ShellNavbar() {
   return (
     <nav style={{ backgroundColor: 'var(--color-nav-bg)' }} className="border-b border-white/10 sticky top-0 z-50">
       <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 px-4 py-2 rounded z-[60]"
-        style={{ backgroundColor: RUST, color: CREAM }}>
+        style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-nav-text)' }}>
         Skip to main content
       </a>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -85,14 +83,14 @@ export default function ShellNavbar() {
           <div className="hidden lg:flex items-center gap-5">
             <div ref={dropdownRef} className="relative" onMouseEnter={onEnter} onMouseLeave={onLeave}>
               <button aria-haspopup="true" aria-expanded={dropdownOpen}
-                style={{ color: CREAM }} className="text-sm font-medium transition flex items-center gap-1 hover:opacity-80">
+                style={{ color: 'var(--color-nav-text)' }} className="text-sm font-medium transition flex items-center gap-1 hover:opacity-80">
                 Services <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
               {dropdownOpen && (
-                <div role="menu" style={{ backgroundColor: '#4a2810' }} className="absolute top-full left-0 mt-1 w-56 shadow-xl rounded border border-white/10 py-2 z-50">
+                <div role="menu" style={{ backgroundColor: 'var(--color-nav-bg)' }} className="absolute top-full left-0 mt-1 w-56 shadow-xl rounded border border-white/10 py-2 z-50">
                   {SERVICE_LINKS.map((link) => (
                     <Link key={link.href} to={link.href} onClick={() => setDropdownOpen(false)}
-                      style={{ color: CREAM }} className="block px-4 py-2 text-sm transition hover:opacity-80 hover:bg-white/5">
+                      style={{ color: 'var(--color-nav-text)' }} className="block px-4 py-2 text-sm transition hover:opacity-80 hover:bg-white/5">
                       {link.label}
                     </Link>
                   ))}
@@ -100,14 +98,14 @@ export default function ShellNavbar() {
               )}
             </div>
             {NAV_LINKS.map((link) => (
-              <Link key={link.href} to={link.href} style={{ color: CREAM }} className="text-sm font-medium transition hover:opacity-75">{link.label}</Link>
+              <Link key={link.href} to={link.href} style={{ color: 'var(--color-nav-text)' }} className="text-sm font-medium transition hover:opacity-75">{link.label}</Link>
             ))}
             <Link to="/quote" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)', borderRadius: '4px' }} className="font-medium px-5 py-2.5 transition text-sm hover:opacity-90">
               {ctaText}
             </Link>
           </div>
 
-          <button className="lg:hidden p-2" style={{ color: CREAM }} onClick={() => setMobileOpen(!mobileOpen)} aria-label={mobileOpen ? 'Close menu' : 'Open menu'} aria-expanded={mobileOpen}>
+          <button className="lg:hidden p-2" style={{ color: 'var(--color-nav-text)' }} onClick={() => setMobileOpen(!mobileOpen)} aria-label={mobileOpen ? 'Close menu' : 'Open menu'} aria-expanded={mobileOpen}>
             {mobileOpen ? <X className="w-6 h-6" aria-hidden="true" /> : <Menu className="w-6 h-6" aria-hidden="true" />}
           </button>
         </div>
@@ -116,13 +114,13 @@ export default function ShellNavbar() {
       {mobileOpen && (
         <div ref={menuRef} style={{ backgroundColor: 'var(--color-nav-bg)' }} className="lg:hidden border-t border-white/10 max-h-[80vh] overflow-y-auto">
           <div className="px-4 py-4 space-y-1">
-            <p className="text-xs font-semibold uppercase px-2 pt-2 pb-1" style={{ color: 'rgba(245,230,211,0.5)' }}>Services</p>
+            <p className="text-xs font-semibold uppercase px-2 pt-2 pb-1" style={{ color: 'rgba(255,255,255,0.5)' }}>Services</p>
             {SERVICE_LINKS.map((link) => (
-              <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} style={{ color: CREAM }} className="block px-2 py-2 text-sm transition hover:opacity-75">{link.label}</Link>
+              <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} style={{ color: 'var(--color-nav-text)' }} className="block px-2 py-2 text-sm transition hover:opacity-75">{link.label}</Link>
             ))}
             <div className="border-t border-white/10 my-2" />
             {NAV_LINKS.map((link) => (
-              <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} style={{ color: CREAM }} className="block px-2 py-2 text-base font-medium transition hover:opacity-75">{link.label}</Link>
+              <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} style={{ color: 'var(--color-nav-text)' }} className="block px-2 py-2 text-base font-medium transition hover:opacity-75">{link.label}</Link>
             ))}
             <Link to="/quote" onClick={() => setMobileOpen(false)} style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)', borderRadius: '4px' }} className="block text-center font-semibold px-5 py-2.5 transition mt-3">
               {ctaText}
