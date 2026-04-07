@@ -16,6 +16,7 @@ const BI_FIELDS: [string, string][] = [
   ['certifications','Certifications'],['founded_year','Founded Year'],
   ['num_technicians','# Technicians'],
 ]
+// service_areas is a top-level prospect field (not nested in business_info)
 const CU_TOGGLES: [string, string][] = [
   ['show_license','Show License #'],['show_years','Show Years in Business'],
   ['show_technicians','Show # of Technicians'],['show_certifications','Show Certifications'],
@@ -103,6 +104,14 @@ export default function SiteSetupSection({ form, setField, onBlur }: Props) {
               onChange={e => setBi(k, e.target.value)} onBlur={onBlur} />
           </div>
         ))}
+      </div>
+
+      <div>
+        <label className="text-xs text-gray-400">Service Areas</label>
+        <input className={inp} value={form.service_areas || ''}
+          placeholder="e.g. Phoenix, Scottsdale, Tempe, Mesa"
+          onChange={e => setField('service_areas', e.target.value)} onBlur={onBlur} />
+        <p className="text-xs text-gray-600 mt-0.5">Comma-separated cities or counties</p>
       </div>
 
       <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wide pt-1">Branding</h4>

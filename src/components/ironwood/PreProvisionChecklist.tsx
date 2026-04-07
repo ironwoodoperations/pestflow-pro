@@ -23,7 +23,6 @@ function Check({ label, pass }: { label: string; pass: boolean }) {
 export default function PreProvisionChecklist({ prospect, onConfirm, onCancel }: Props) {
   const bi = (prospect.business_info || {}) as Record<string, any>
   const br = (prospect.branding || {}) as Record<string, any>
-  const serviceAreas = (prospect.intake_data as any)?.areas
 
   const checks = [
     { label: 'Business Name',       pass: !!prospect.company_name?.trim() },
@@ -35,7 +34,7 @@ export default function PreProvisionChecklist({ prospect, onConfirm, onCancel }:
     { label: 'Shell selected',      pass: !!br.template },
     { label: 'Palette selected',    pass: !!br.primary_color },
     { label: 'CTA Button Text',     pass: !!br.cta_text?.trim() },
-    { label: 'At least one service area', pass: Array.isArray(serviceAreas) ? serviceAreas.length > 0 : false },
+    { label: 'At least one service area', pass: !!prospect.service_areas?.trim() },
     { label: 'Admin Email',         pass: !!prospect.admin_email?.trim() && isValidEmail(prospect.admin_email.trim()) },
     { label: 'Admin Password',      pass: !!prospect.admin_password?.trim() },
     {
