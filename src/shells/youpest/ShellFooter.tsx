@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
+import { useTemplate } from '../../context/TemplateContext'
 
 const ACCENT = '#22c55e'
 
 export default function ShellFooter() {
-  const [biz, setBiz] = useState({ name: 'You Pest Control', phone: '', email: '', address: '' })
+  const { businessName: ctxBusinessName } = useTemplate()
+  const [biz, setBiz] = useState({ name: ctxBusinessName, phone: '', email: '', address: '' })
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {

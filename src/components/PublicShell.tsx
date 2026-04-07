@@ -33,7 +33,18 @@ interface Props {
 }
 
 export default function PublicShell({ children }: Props) {
-  const { template } = useTemplate()
+  const { template, loading } = useTemplate()
+
+  if (loading) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: 'var(--color-bg-hero)' }}
+      >
+        <div className="w-8 h-8 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+      </div>
+    )
+  }
 
   let NavbarComp: React.ComponentType
   let FooterComp: React.ComponentType

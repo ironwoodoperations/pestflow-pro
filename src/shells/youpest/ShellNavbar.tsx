@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
+import { useTemplate } from '../../context/TemplateContext'
 
 const NAV = [
   { label: 'Services', href: '/pest-control' },
@@ -16,7 +17,8 @@ const NAV = [
 const ACCENT = '#22c55e'
 
 export default function ShellNavbar() {
-  const [businessName, setBusinessName] = useState('You Pest Control')
+  const { businessName: ctxBusinessName } = useTemplate()
+  const [businessName, setBusinessName] = useState(ctxBusinessName)
   const [phone, setPhone] = useState('')
   const [mobileOpen, setMobileOpen] = useState(false)
 

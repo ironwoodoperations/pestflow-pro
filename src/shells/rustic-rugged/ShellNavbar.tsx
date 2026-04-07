@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Menu, X, ChevronDown } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
+import { useTemplate } from '../../context/TemplateContext'
 
 const SERVICE_LINKS = [
   { label: 'Mosquito Control', href: '/mosquito-control' },
@@ -29,7 +30,8 @@ const NAV_LINKS = [
 
 
 export default function ShellNavbar() {
-  const [businessName, setBusinessName] = useState('Ironclad Pest Solutions')
+  const { businessName: ctxBusinessName } = useTemplate()
+  const [businessName, setBusinessName] = useState(ctxBusinessName)
   const [logoUrl, setLogoUrl] = useState('')
   const [ctaText, setCtaText] = useState('Get a Free Estimate')
   const [mobileOpen, setMobileOpen] = useState(false)
