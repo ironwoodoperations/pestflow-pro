@@ -45,11 +45,11 @@ export default function ShellHero() {
         style={{ backgroundImage: `url(${HERO_IMAGE})` }}
       >
         {/* Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-sky-900/80 to-sky-900/60" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/75 to-black/55" />
 
         <div className="relative z-10 text-center px-4 py-16">
           {biz.name && (
-            <p className="text-xl font-semibold text-sky-200 tracking-widest uppercase mb-2">
+            <p className="text-xl font-semibold tracking-widest uppercase mb-2" style={{ color: 'var(--color-primary)' }}>
               {biz.name}
             </p>
           )}
@@ -89,7 +89,7 @@ export default function ShellHero() {
               className="flex flex-col items-start py-6 px-8 cursor-pointer hover:bg-gray-800 transition group"
             >
               <span className="text-3xl mb-2" aria-hidden="true">{s.icon}</span>
-              <span className="text-white font-bold text-lg group-hover:text-sky-400 transition">{s.title}</span>
+              <span className="text-white font-bold text-lg transition group-hover:text-[color:var(--color-primary)]">{s.title}</span>
               <span className="text-gray-400 text-sm mt-1">{s.sub}</span>
             </Link>
           ))}

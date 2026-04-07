@@ -47,15 +47,15 @@ export default function ShellFooter() {
           <div>
             {logoUrl && <img src={logoUrl} alt={`${info.name} logo`} className="h-10 w-auto object-contain mb-3 brightness-200" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />}
             <h3 className="font-raleway text-xl mb-3 text-white font-bold">{info.name}</h3>
-            {info.tagline && <p className="mb-2 text-sky-200 text-sm">{info.tagline}</p>}
+            {info.tagline && <p className="mb-2 text-sm text-white/70">{info.tagline}</p>}
             {info.phone && <p className="mb-1"><a href={`tel:${info.phone}`} className="hover:text-white transition">{info.phone}</a></p>}
-            {info.license && <p className="text-sm text-sky-300">License #{info.license}</p>}
+            {info.license && <p className="text-sm text-white/60">License #{info.license}</p>}
             {(social.facebook || social.instagram || social.google || social.youtube) && (
               <div className="flex gap-3 mt-3">
-                {social.facebook && <a href={social.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="text-sky-300 hover:text-white transition"><FbIcon /></a>}
-                {social.instagram && <a href={social.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="text-sky-300 hover:text-white transition"><IgIcon /></a>}
-                {social.google && <a href={social.google} target="_blank" rel="noopener noreferrer" aria-label="Google Business" className="text-sky-300 hover:text-white transition"><Globe className="w-5 h-5" /></a>}
-                {social.youtube && <a href={social.youtube} target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="text-sky-300 hover:text-white transition"><YtIcon /></a>}
+                {social.facebook && <a href={social.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="text-white/60 hover:text-white transition"><FbIcon /></a>}
+                {social.instagram && <a href={social.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="text-white/60 hover:text-white transition"><IgIcon /></a>}
+                {social.google && <a href={social.google} target="_blank" rel="noopener noreferrer" aria-label="Google Business" className="text-white/60 hover:text-white transition"><Globe className="w-5 h-5" /></a>}
+                {social.youtube && <a href={social.youtube} target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="text-white/60 hover:text-white transition"><YtIcon /></a>}
               </div>
             )}
           </div>
@@ -76,8 +76,8 @@ export default function ShellFooter() {
           </div>
         </div>
       </div>
-      <div className="border-t border-sky-800 py-4">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-2 text-sm text-sky-300">
+      <div className="border-t border-white/10 py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-2 text-sm text-white/60">
           <span className="font-raleway">&copy; {new Date().getFullYear()} {info.name}. All rights reserved.</span>
           <span className="font-raleway text-xs text-white">Powered by PestFlow Pro</span>
         </div>

@@ -66,7 +66,7 @@ export default function ShellNavbar() {
 
   return (
     <nav style={{ backgroundColor: 'var(--color-nav-bg)' }} className="shadow-sm sticky top-0 z-50">
-      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-sky-600 text-white px-4 py-2 rounded-lg z-[60]">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 text-white px-4 py-2 rounded-lg z-[60]" style={{ backgroundColor: 'var(--color-primary)' }}>
         Skip to main content
       </a>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -80,14 +80,14 @@ export default function ShellNavbar() {
 
           <div className="hidden lg:flex items-center gap-5">
             <div ref={dropdownRef} className="relative" onMouseEnter={onEnter} onMouseLeave={onLeave}>
-              <button aria-haspopup="true" aria-expanded={dropdownOpen} className="font-raleway text-sm font-medium text-slate-700 hover:text-sky-600 transition flex items-center gap-1">
+              <button aria-haspopup="true" aria-expanded={dropdownOpen} className="font-raleway text-sm font-medium text-slate-700 hover:text-[color:var(--color-primary)] transition flex items-center gap-1">
                 Services <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
               {dropdownOpen && (
                 <div role="menu" className="absolute top-full left-0 mt-2 w-56 bg-white shadow-lg rounded-xl border border-gray-100 py-2 z-50">
                   {SERVICE_LINKS.map((link) => (
                     <Link key={link.href} to={link.href} onClick={() => setDropdownOpen(false)}
-                      className="block px-4 py-2 text-sm font-raleway text-slate-700 hover:text-sky-600 hover:bg-sky-50 transition">
+                      className="block px-4 py-2 text-sm font-raleway text-slate-700 hover:text-[color:var(--color-primary)] hover:bg-gray-50 transition">
                       {link.label}
                     </Link>
                   ))}
@@ -95,7 +95,7 @@ export default function ShellNavbar() {
               )}
             </div>
             {NAV_LINKS.map((link) => (
-              <Link key={link.href} to={link.href} className="font-raleway text-sm font-medium text-slate-700 hover:text-sky-600 transition">{link.label}</Link>
+              <Link key={link.href} to={link.href} className="font-raleway text-sm font-medium text-slate-700 hover:text-[color:var(--color-primary)] transition">{link.label}</Link>
             ))}
             <Link to="/quote" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }} className="font-raleway font-semibold rounded-full px-5 py-2 transition text-sm">{ctaText}</Link>
           </div>
@@ -111,11 +111,11 @@ export default function ShellNavbar() {
           <div className="px-4 py-4 space-y-1">
             <p className="text-xs font-semibold text-gray-400 uppercase px-2 pt-2 pb-1">Services</p>
             {SERVICE_LINKS.map((link) => (
-              <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} className="block px-2 py-2 text-sm font-raleway text-slate-700 hover:text-sky-600 transition">{link.label}</Link>
+              <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} className="block px-2 py-2 text-sm font-raleway text-slate-700 hover:text-[color:var(--color-primary)] transition">{link.label}</Link>
             ))}
             <div className="border-t border-gray-100 my-2" />
             {NAV_LINKS.map((link) => (
-              <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} className="block px-2 py-2 font-raleway text-base font-medium text-slate-700 hover:text-sky-600 transition">{link.label}</Link>
+              <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} className="block px-2 py-2 font-raleway text-base font-medium text-slate-700 hover:text-[color:var(--color-primary)] transition">{link.label}</Link>
             ))}
             <Link to="/quote" onClick={() => setMobileOpen(false)} style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }} className="block text-center font-raleway font-semibold rounded-full px-5 py-2.5 transition mt-3">{ctaText}</Link>
           </div>
