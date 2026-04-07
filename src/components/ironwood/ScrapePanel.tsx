@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import ScrapeResultsTable from './ScrapeResultsTable'
+import SiteRecreationCard from './SiteRecreationCard'
+import type { SiteRecreation } from './SiteRecreationCard'
 
 export interface ScrapedData {
   business_name:       string | null
@@ -28,12 +30,13 @@ export interface ScrapedData {
 const PROTECTED_FIELDS = new Set(['salesperson', 'onboarding_rep', 'status', 'call_date'])
 
 interface ScrapeState {
-  scraping:   boolean
-  error:      string
-  result:     ScrapedData | null
-  pages:      string[]
-  pagesFound: number
-  applied:    boolean
+  scraping:       boolean
+  error:          string
+  result:         ScrapedData | null
+  pages:          string[]
+  pagesFound:     number
+  applied:        boolean
+  siteRecreation: SiteRecreation | null
 }
 
 interface Props {
@@ -41,16 +44,17 @@ interface Props {
   onSourceUrlChange:  (url: string) => void
   prospectId:         string | null
   onApplyScraped:     (data: Partial<ScrapedData>) => void
+  onApplyRecreation:  (data: SiteRecreation) => void
 }
 
-export default function ScrapePanel({ sourceUrl, onSourceUrlChange, prospectId, onApplyScraped }: Props) {
+export default function ScrapePanel({ sourceUrl, onSourceUrlChange, prospectId, onApplyScraped, onApplyRecreation }: Props) {
   const [state, setState] = useState<ScrapeState>({
-    scraping: false, error: '', result: null, pages: [], pagesFound: 0, applied: false,
+    scraping: false, error: '', result: null, pages: [], pagesFound: 0, applied: false, siteRecreation: null,
   })
 
   const handleScrape = async () => {
     if (!sourceUrl) return
-    setState(s => ({ ...s, scraping: true, error: '', result: null, pages: [], pagesFound: 0, applied: false }))
+    setState(s => ({ ...s, scraping: true, error: '', result: null, pages: [], pagesFound: 0, applied: false, siteRecreation: null }))
     try {
       const { data: { session }, error: sessionError } = await supabase.auth.refreshSession()
       if (!session || sessionError) {
@@ -80,6 +84,7 @@ export default function ScrapePanel({ sourceUrl, onSourceUrlChange, prospectId, 
         result: data.scraped,
         pages: data.pages_scraped || [],
         pagesFound: data.pagesFound ?? 0,
+        siteRecreation: data.siteRecreation ?? null,
       }))
     } catch {
       setState(s => ({ ...s, scraping: false, error: 'Network error — check your connection.' }))
@@ -100,7 +105,7 @@ export default function ScrapePanel({ sourceUrl, onSourceUrlChange, prospectId, 
   }
 
   const handleDiscard = () => {
-    setState(s => ({ ...s, result: null, pages: [], pagesFound: 0, applied: false }))
+    setState(s => ({ ...s, result: null, pages: [], pagesFound: 0, applied: false, siteRecreation: null }))
   }
 
   return (
@@ -146,6 +151,12 @@ export default function ScrapePanel({ sourceUrl, onSourceUrlChange, prospectId, 
               ? `${state.pagesFound} page${state.pagesFound === 1 ? '' : 's'} of content found and saved — will be used to seed this client's site.`
               : 'No additional page content found.'}
           </p>
+          {state.siteRecreation && (
+            <SiteRecreationCard
+              initial={state.siteRecreation}
+              onApply={onApplyRecreation}
+            />
+          )}
         </>
       )}
 
