@@ -35,7 +35,7 @@ export default function ShellHomeSections() {
   return (
     <>
       {/* Process Steps */}
-      <section className="py-16 bg-slate-50">
+      <section className="py-16" style={{ backgroundColor: 'var(--color-bg-section)' }}>
         <div className="max-w-6xl mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {STEPS.map((step, i) => (
@@ -44,7 +44,7 @@ export default function ShellHomeSections() {
                   <div className="hidden md:block absolute top-8 right-0 w-1/2 h-px bg-slate-200" />
                 )}
                 <div className="text-8xl font-bold text-slate-200 leading-none select-none">{step.num}</div>
-                <h3 className="text-slate-800 font-semibold text-lg -mt-4 mb-1">{step.title}</h3>
+                <h3 className="font-semibold text-lg -mt-4 mb-1" style={{ color: 'var(--color-heading)' }}>{step.title}</h3>
                 <p className="text-slate-500 text-sm">{step.desc}</p>
               </div>
             ))}
@@ -56,7 +56,7 @@ export default function ShellHomeSections() {
 
       {/* Featured Pull Quote */}
       {featured && (
-        <section className="py-20 bg-slate-50 overflow-hidden">
+        <section className="py-20 overflow-hidden" style={{ backgroundColor: 'var(--color-bg-section)' }}>
           <div className="max-w-3xl mx-auto px-4 text-center">
             <div className="text-8xl text-slate-200 font-serif leading-none select-none mb-4">"</div>
             <p className="text-xl italic text-slate-700 max-w-2xl mx-auto mb-6">{featured.review_text}</p>
@@ -68,8 +68,8 @@ export default function ShellHomeSections() {
 
       {/* Split Bottom CTA */}
       <section className="flex flex-col md:flex-row min-h-[200px]">
-        <div className="flex-1 bg-slate-800 flex flex-col justify-center px-10 py-16">
-          <h2 className="font-oswald text-white text-3xl md:text-4xl mb-3 tracking-wide">
+        <div className="flex-1 flex flex-col justify-center px-10 py-16" style={{ backgroundColor: 'var(--color-bg-hero)' }}>
+          <h2 className="font-oswald text-3xl md:text-4xl mb-3 tracking-wide" style={{ color: 'var(--color-nav-text)' }}>
             Ready to protect your home?
           </h2>
           <p className="text-slate-400">Expert pest control with a satisfaction guarantee.</p>
