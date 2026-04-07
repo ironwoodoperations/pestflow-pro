@@ -69,13 +69,13 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
+    <nav className="border-b border-gray-200 sticky top-0 z-50" style={{ backgroundColor: 'var(--color-nav-bg)' }}>
       <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-emerald-500 text-white px-4 py-2 rounded-lg z-[60]">
         Skip to main content
       </a>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center gap-3 text-[#0a0f1e] font-oswald text-2xl tracking-wide">
+          <Link to="/" className="flex items-center gap-3 font-oswald text-2xl tracking-wide" style={{ color: 'var(--color-nav-text)' }}>
             {logoUrl && <img src={logoUrl} alt={`${businessName} logo`} className="h-10 w-auto object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />}
             <div>
               <span className="text-emerald-500 font-bold">{businessName.split(' ')[0]}</span>{' '}

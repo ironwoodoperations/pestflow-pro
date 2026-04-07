@@ -69,7 +69,7 @@ export default function Footer() {
   }, [])
 
   return (
-    <footer className="bg-[#0a0f1e] text-gray-300">
+    <footer style={{ backgroundColor: 'var(--color-footer-bg)', color: 'var(--color-footer-text)' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
@@ -111,7 +111,7 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="bg-[#060c15] py-4">
+      <div className="py-4" style={{ backgroundColor: 'var(--color-footer-bg)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-2 text-sm text-gray-500">
           <span>&copy; {new Date().getFullYear()} {info.name}. All rights reserved.</span>
           <span className="text-xs text-gray-600">Powered by PestFlow Pro</span>
@@ -119,7 +119,7 @@ export default function Footer() {
       </div>
 
       {/* SaaS watermark */}
-      <div className="bg-[#040810] py-2.5">
+      <div className="py-2.5" style={{ backgroundColor: 'var(--color-footer-bg)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <span className="text-xs text-gray-600">
             Website by{' '}
