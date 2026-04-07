@@ -48,13 +48,10 @@ export default function ScrapePanel({ sourceUrl, onSourceUrlChange, prospectId, 
     if (!sourceUrl) return
     setState(s => ({ ...s, scraping: true, error: '', result: null, pages: [], applied: false }))
     try {
-      let { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
-        const { data: r } = await supabase.auth.refreshSession()
-        session = r.session
-      }
-      if (!session) {
-        setState(s => ({ ...s, scraping: false, error: 'Session expired — please refresh.' }))
+      // Always force a fresh token — never use a cached/potentially-expired token
+      const { data: { session }, error: sessionError } = await supabase.auth.refreshSession()
+      if (!session || sessionError) {
+        setState(s => ({ ...s, scraping: false, error: 'Session expired — please refresh the page.' }))
         return
       }
 
