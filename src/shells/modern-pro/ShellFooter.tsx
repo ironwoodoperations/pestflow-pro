@@ -52,29 +52,29 @@ export default function ShellFooter() {
             {logoUrl && <img src={logoUrl} alt={`${info.name} logo`} className="h-10 w-auto object-contain mb-3 brightness-200" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />}
             <h3 className="text-xl mb-3 text-white font-oswald tracking-wide">{info.name}</h3>
             {info.tagline && <p className="mb-2 text-gray-400">{info.tagline}</p>}
-            {info.phone && <p className="mb-1"><a href={`tel:${info.phone}`} className="hover:text-emerald-400 transition">{info.phone}</a></p>}
+            {info.phone && <p className="mb-1"><a href={`tel:${info.phone}`} className="hover:text-[color:var(--color-primary)] transition">{info.phone}</a></p>}
             {info.license && <p className="text-sm text-gray-500">License #{info.license}</p>}
             {(social.facebook || social.instagram || social.google || social.youtube) && (
               <div className="flex gap-3 mt-3">
-                {social.facebook && <a href={social.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="text-gray-400 hover:text-emerald-400 transition"><FbIcon /></a>}
-                {social.instagram && <a href={social.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="text-gray-400 hover:text-emerald-400 transition"><IgIcon /></a>}
-                {social.google && <a href={social.google} target="_blank" rel="noopener noreferrer" aria-label="Google Business" className="text-gray-400 hover:text-emerald-400 transition"><Globe className="w-5 h-5" /></a>}
-                {social.youtube && <a href={social.youtube} target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="text-gray-400 hover:text-emerald-400 transition"><YtIcon /></a>}
+                {social.facebook && <a href={social.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="text-gray-400 hover:text-[color:var(--color-primary)] transition"><FbIcon /></a>}
+                {social.instagram && <a href={social.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="text-gray-400 hover:text-[color:var(--color-primary)] transition"><IgIcon /></a>}
+                {social.google && <a href={social.google} target="_blank" rel="noopener noreferrer" aria-label="Google Business" className="text-gray-400 hover:text-[color:var(--color-primary)] transition"><Globe className="w-5 h-5" /></a>}
+                {social.youtube && <a href={social.youtube} target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="text-gray-400 hover:text-[color:var(--color-primary)] transition"><YtIcon /></a>}
               </div>
             )}
           </div>
           <div>
             <h3 className="text-lg mb-3 text-white font-semibold">Quick Links</h3>
             <ul className="space-y-2">
-              {QUICK_LINKS.map((link) => <li key={link.href + link.label}><Link to={link.href} className="hover:text-emerald-400 transition">{link.label}</Link></li>)}
+              {QUICK_LINKS.map((link) => <li key={link.href + link.label}><Link to={link.href} className="hover:text-[color:var(--color-primary)] transition">{link.label}</Link></li>)}
             </ul>
           </div>
           <div>
             <h3 className="text-lg mb-3 text-white font-semibold">Contact</h3>
             <ul className="space-y-2">
               {info.address && <li>{info.address}</li>}
-              {info.phone && <li><a href={`tel:${info.phone}`} className="hover:text-emerald-400 transition">{info.phone}</a></li>}
-              {info.email && <li><a href={`mailto:${info.email}`} className="hover:text-emerald-400 transition">{info.email}</a></li>}
+              {info.phone && <li><a href={`tel:${info.phone}`} className="hover:text-[color:var(--color-primary)] transition">{info.phone}</a></li>}
+              {info.email && <li><a href={`mailto:${info.email}`} className="hover:text-[color:var(--color-primary)] transition">{info.email}</a></li>}
               {info.hours && <li>{info.hours}</li>}
             </ul>
           </div>

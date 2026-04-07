@@ -71,7 +71,7 @@ export default function ShellHero() {
       <div className="relative z-10 max-w-3xl mx-auto text-center">
         {/* Tagline badge */}
         {biz.tagline && (
-          <span className="inline-block text-emerald-400 border border-emerald-700 text-xs font-semibold px-3 py-1 rounded-full mb-4">
+          <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full mb-4" style={{ color: 'var(--color-primary)', border: '1px solid var(--color-primary-dark)' }}>
             {biz.tagline}
           </span>
         )}

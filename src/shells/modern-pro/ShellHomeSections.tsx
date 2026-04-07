@@ -35,19 +35,19 @@ export default function ShellHomeSections() {
         <div className="max-w-4xl mx-auto px-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
             <div>
-              <div className="text-emerald-400 text-4xl font-bold">
+              <div className="text-4xl font-bold" style={{ color: 'var(--color-primary)' }}>
                 {biz.founded_year ? `Est. ${biz.founded_year}` : 'Est.'}
               </div>
               <div className="text-slate-400 text-sm mt-1">Founded</div>
             </div>
             <div>
-              <div className="text-emerald-400 text-4xl font-bold">
+              <div className="text-4xl font-bold" style={{ color: 'var(--color-primary)' }}>
                 {biz.num_technicians ? `${biz.num_technicians} Techs` : '10+ Techs'}
               </div>
               <div className="text-slate-400 text-sm mt-1">On Staff</div>
             </div>
             <div>
-              <div className="text-emerald-400 text-4xl font-bold">✓</div>
+              <div className="text-4xl font-bold" style={{ color: 'var(--color-primary)' }}>✓</div>
               <div className="text-slate-400 text-sm mt-1">Licensed &amp; Insured</div>
             </div>
           </div>
@@ -62,7 +62,7 @@ export default function ShellHomeSections() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {testimonials.map((t) => (
                 <div key={t.id} className="bg-white rounded-xl p-6 shadow border border-gray-100">
-                  <div className="text-emerald-500 mb-3">{'★'.repeat(t.rating)}</div>
+                  <div className="mb-3" style={{ color: 'var(--color-primary)' }}>{'★'.repeat(t.rating)}</div>
                   <p className="text-gray-700 italic mb-4">
                     "{t.review_text.slice(0, 80)}{t.review_text.length > 80 ? '…' : ''}"
                   </p>
