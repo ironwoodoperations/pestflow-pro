@@ -1,96 +1,70 @@
 import { useState, useEffect } from 'react'
-import { Shield, Clock, MapPin } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
-import ServicesGrid from '../../components/public/ServicesGrid'
+import CleanFriendlyTrustBar from './CleanFriendlyTrustBar'
+import CleanFriendlyServicesGrid from './CleanFriendlyServicesGrid'
+import CleanFriendlyAboutStrip from './CleanFriendlyAboutStrip'
+import CleanFriendlyWhyChooseUs from './CleanFriendlyWhyChooseUs'
+import CleanFriendlyTestimonials from './CleanFriendlyTestimonials'
+import CleanFriendlyFaqStrip from './CleanFriendlyFaqStrip'
+import CleanFriendlyCtaBanner from './CleanFriendlyCtaBanner'
 
-interface Biz { founded_year?: string | number; phone?: string; address?: string }
-interface Testimonial { id: string; author_name: string; review_text: string; rating: number }
+interface BizInfo {
+  name?: string
+  phone?: string
+  founded_year?: string | number
+  num_technicians?: number
+}
+
+interface State {
+  biz: BizInfo
+  ctaText: string
+  aboutIntro: string
+  aboutImage: string
+}
 
 export default function ShellHomeSections() {
-  const [biz, setBiz] = useState<Biz>({})
-  const [testimonials, setTestimonials] = useState<Testimonial[]>([])
+  const [state, setState] = useState<State>({
+    biz: {},
+    ctaText: 'Get a Free Quote',
+    aboutIntro: '',
+    aboutImage: '',
+  })
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const [bizRes, testRes] = await Promise.all([
+      const [bizRes, brandRes, aboutRes] = await Promise.all([
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
-        supabase.from('testimonials').select('id,author_name,review_text,rating').eq('tenant_id', tenantId).eq('featured', true).limit(3),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
+        supabase.from('page_content').select('intro,image_url').eq('tenant_id', tenantId).eq('page_slug', 'about').maybeSingle(),
       ])
-      if (bizRes.data?.value) setBiz(bizRes.data.value)
-      if (testRes.data?.length) setTestimonials(testRes.data)
+      setState({
+        biz:        bizRes.data?.value   ?? {},
+        ctaText:    brandRes.data?.value?.cta_text || 'Get a Free Quote',
+        aboutIntro: aboutRes.data?.intro     || '',
+        aboutImage: aboutRes.data?.image_url || '',
+      })
     })
   }, [])
 
-  const city = biz.address ? (biz.address.split(',')[0]?.trim() || 'East Texas') : 'East Texas'
+  const { biz, ctaText, aboutIntro, aboutImage } = state
 
   return (
     <>
-      <ServicesGrid />
-
-      {/* Google Reviews Strip */}
-      {testimonials.length > 0 && (
-        <section className="py-10" style={{ backgroundColor: 'var(--color-bg-section)' }}>
-          <div className="max-w-6xl mx-auto px-4">
-            <p className="text-gray-700 font-semibold mb-4">⭐ What Our Customers Are Saying</p>
-            <div className="flex gap-4 overflow-x-auto pb-2">
-              {testimonials.map((t) => (
-                <div key={t.id}
-                  className="flex-shrink-0 w-64 bg-white shadow border border-gray-100 rounded-xl p-4 flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 15%, white)', color: 'var(--color-primary)' }}>
-                    {t.author_name.slice(0, 2).toUpperCase()}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-bold text-gray-900 text-sm">{t.author_name}</p>
-                    <div className="text-yellow-500 text-xs mb-1">{'★'.repeat(t.rating)}</div>
-                    <p className="text-gray-600 text-xs line-clamp-2">{t.review_text}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Why Local Matters */}
-      <section className="py-16" style={{ backgroundColor: 'var(--color-bg-section)' }}>
-        <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="text-center">
-            <Shield className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--color-primary)' }} />
-            <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--color-heading)' }}>Locally Owned</h3>
-            <p className="text-gray-600 text-sm">We live and work in your community. Our reputation depends on your satisfaction.</p>
-          </div>
-          <div className="text-center">
-            <Clock className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--color-primary)' }} />
-            <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--color-heading)' }}>Fast Response</h3>
-            <p className="text-gray-600 text-sm">Same-day and next-day service available. We don't make you wait weeks.</p>
-          </div>
-          <div className="text-center">
-            <MapPin className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--color-primary)' }} />
-            <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--color-heading)' }}>Your Neighbors Trust Us</h3>
-            <p className="text-gray-600 text-sm">
-              Serving {city} families since {biz.founded_year || 'day one'}. Ask your neighbors.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Bottom CTA */}
-      <section className="py-16 text-center" style={{ backgroundColor: 'var(--color-bg-cta)' }}>
-        {biz.phone && (
-          <a href={`tel:${biz.phone.replace(/\D/g, '')}`}
-            className="block font-oswald text-5xl font-bold mb-3 hover:opacity-80 transition" style={{ color: 'var(--color-nav-text)' }}>
-            {biz.phone}
-          </a>
-        )}
-        <p className="text-lg mb-6" style={{ color: 'var(--color-nav-text)', opacity: 0.7 }}>Call today — same-day service available</p>
-        <a href="/quote"
-          className="border-2 font-bold px-8 py-3 rounded-lg transition hover:opacity-90"
-          style={{ borderColor: 'var(--color-nav-text)', color: 'var(--color-nav-text)' }}>
-          Schedule Online
-        </a>
-      </section>
+      <CleanFriendlyTrustBar />
+      <CleanFriendlyServicesGrid />
+      <CleanFriendlyAboutStrip
+        businessName={biz.name || ''}
+        intro={aboutIntro}
+        foundedYear={biz.founded_year ? String(biz.founded_year) : undefined}
+        techCount={biz.num_technicians ? String(biz.num_technicians) : undefined}
+        imageUrl={aboutImage || undefined}
+      />
+      <CleanFriendlyWhyChooseUs businessName={biz.name || ''} />
+      <CleanFriendlyTestimonials />
+      <CleanFriendlyFaqStrip />
+      <CleanFriendlyCtaBanner phone={biz.phone || ''} ctaText={ctaText} />
     </>
   )
 }
