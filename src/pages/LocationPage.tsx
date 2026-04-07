@@ -50,37 +50,37 @@ export default function LocationPage({ slug }: { slug: string }) {
   const heroTitle = location.hero_title || `${city} Pest Control`
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
       <StructuredData type="WebPage" pageSlug={slug} />
 
       {/* HERO */}
-      <section className="relative py-20 md:py-28 overflow-hidden" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>
+      <section className="relative py-20 md:py-28 overflow-hidden" style={{ background: 'var(--color-bg-hero)' }}>
         <div className="relative z-10 max-w-5xl mx-auto px-4 text-center">
-          <h1 className="font-oswald tracking-wide text-white text-5xl md:text-7xl mb-4">{heroTitle}</h1>
-          <p className="text-gray-300 text-xl mb-8">Protecting East Texas Homes & Businesses</p>
+          <h1 className="font-oswald tracking-wide text-5xl md:text-7xl mb-4" style={{ color: 'var(--color-nav-text)' }}>{heroTitle}</h1>
+          <p className="text-xl mb-8" style={{ color: 'var(--color-nav-text)', opacity: 0.75 }}>Protecting East Texas Homes & Businesses</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/quote" className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg px-8 py-4 text-lg transition">Get a Free Quote</Link>
-            <a href={`tel:${phone}`} className="border-2 border-emerald-500 text-emerald-400 hover:bg-emerald-500 hover:text-white font-bold rounded-lg px-8 py-4 text-lg transition">Call Us Now</a>
+            <Link to="/quote" className="font-bold rounded-lg px-8 py-4 text-lg transition hover:opacity-90" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}>Get a Free Quote</Link>
+            <a href={`tel:${phone}`} className="border-2 font-bold rounded-lg px-8 py-4 text-lg transition hover:opacity-80" style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}>Call Us Now</a>
           </div>
         </div>
         <img src="/banner-img.png" alt="" loading="lazy" className="absolute bottom-0 left-0 w-full opacity-20 pointer-events-none" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
       </section>
 
       {/* INTRO */}
-      <section className="py-16" style={{ backgroundImage: 'radial-gradient(circle, #ddd 1px, transparent 1px)', backgroundSize: '24px 24px' }}>
+      <section className="py-16" style={{ backgroundColor: 'var(--color-bg-section)' }}>
         <div className="max-w-6xl mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-            <div className="border-2 border-emerald-500 rounded-lg overflow-hidden bg-[#0a0f1e] h-80 flex items-center justify-center">
+            <div className="border-2 rounded-lg overflow-hidden h-80 flex items-center justify-center" style={{ borderColor: 'var(--color-primary)', backgroundColor: 'var(--color-bg-cta)' }}>
               <VideoImage src="/images/pests/tech_1.jpg" alt={`Pest control in ${city}`} videoUrl={PEST_VIDEOS.general[0]?.url} className="w-full h-full" />
             </div>
             <div>
-              <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 mb-4">Professional Pest Control in {city}</h2>
+              <h2 className="font-oswald tracking-wide text-3xl md:text-4xl mb-4" style={{ color: 'var(--color-heading)' }}>Professional Pest Control in {city}</h2>
               <p className="text-gray-600 mb-4">Professional pest control serving {city} and surrounding areas. Our certified technicians use the latest treatments to eliminate pests and keep your home protected year-round.</p>
               <p className="text-gray-600 mb-4">From mosquitoes and spiders to rodents and termites, we handle every type of pest common to East Texas. We offer same-day service and free estimates.</p>
               <p className="text-gray-600 mb-6">Don't let pests take over your property. Contact us today for a thorough inspection and customized treatment plan for your {city} home or business.</p>
               <div className="flex flex-col sm:flex-row gap-3">
-                <Link to="/quote" className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg px-6 py-3 transition text-center">Get a Free Quote</Link>
-                <a href={`tel:${phone}`} className="border-2 border-emerald-500 text-emerald-600 hover:bg-emerald-50 font-bold rounded-lg px-6 py-3 transition text-center">Call {phone}</a>
+                <Link to="/quote" className="font-bold rounded-lg px-6 py-3 transition text-center hover:opacity-90" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}>Get a Free Quote</Link>
+                <a href={`tel:${phone}`} className="border-2 font-bold rounded-lg px-6 py-3 transition text-center hover:opacity-80" style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}>Call {phone}</a>
               </div>
             </div>
           </div>
@@ -90,13 +90,13 @@ export default function LocationPage({ slug }: { slug: string }) {
       {/* SERVICES GRID */}
       <section className="py-16 bg-white">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-10">Our Pest Control Services in {city}</h2>
+          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-center mb-10" style={{ color: 'var(--color-heading)' }}>Our Pest Control Services in {city}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {SERVICES.map((svc) => (
-              <Link key={svc.name} to={svc.href} className="bg-white rounded-xl p-6 shadow-sm hover:border-emerald-500 border-2 border-gray-100 transition group">
+              <Link key={svc.name} to={svc.href} className="bg-white rounded-xl p-6 shadow-sm border-2 border-gray-100 transition group hover:opacity-90" style={{ '--hover-border': 'var(--color-primary)' } as React.CSSProperties}>
                 <span className="text-4xl block mb-3">{svc.icon}</span>
-                <h3 className="text-xl font-bold text-gray-900 group-hover:text-emerald-600 transition">{svc.name}</h3>
-                <p className="text-emerald-500 text-sm mt-1 font-medium">Learn more →</p>
+                <h3 className="text-xl font-bold mb-1" style={{ color: 'var(--color-heading)' }}>{svc.name}</h3>
+                <p className="text-sm font-medium" style={{ color: 'var(--color-primary)' }}>Learn more →</p>
               </Link>
             ))}
           </div>
@@ -104,18 +104,18 @@ export default function LocationPage({ slug }: { slug: string }) {
       </section>
 
       {/* WHY CHOOSE US */}
-      <section className="py-16 bg-[#f8fafc]">
+      <section className="py-16" style={{ backgroundColor: 'var(--color-bg-section)' }}>
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-10">Why Choose Us</h2>
+          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-center mb-10" style={{ color: 'var(--color-heading)' }}>Why Choose Us</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { icon: <Shield className="w-8 h-8 text-emerald-500" />, title: 'Licensed & Certified', desc: 'Fully licensed, bonded, and insured for your peace of mind.' },
-              { icon: <Leaf className="w-8 h-8 text-emerald-500" />, title: 'Family Safe', desc: 'Kid and pet-friendly treatments that are tough on pests.' },
-              { icon: <MapPin className="w-8 h-8 text-emerald-500" />, title: 'Local Experts', desc: `We know ${city} pests and the best way to eliminate them.` },
-              { icon: <Star className="w-8 h-8 text-emerald-500" />, title: 'Satisfaction Guaranteed', desc: "If pests come back, so do we — free of charge." },
+              { Icon: Shield, title: 'Licensed & Certified', desc: 'Fully licensed, bonded, and insured for your peace of mind.' },
+              { Icon: Leaf,   title: 'Family Safe', desc: 'Kid and pet-friendly treatments that are tough on pests.' },
+              { Icon: MapPin, title: 'Local Experts', desc: `We know ${city} pests and the best way to eliminate them.` },
+              { Icon: Star,   title: 'Satisfaction Guaranteed', desc: "If pests come back, so do we — free of charge." },
             ].map((item) => (
               <div key={item.title} className="bg-white rounded-xl p-6 text-center shadow-sm">
-                <div className="flex justify-center mb-4">{item.icon}</div>
+                <div className="flex justify-center mb-4"><item.Icon className="w-8 h-8" style={{ color: 'var(--color-primary)' }} /></div>
                 <h3 className="text-lg font-bold text-gray-900 mb-2">{item.title}</h3>
                 <p className="text-gray-600 text-sm">{item.desc}</p>
               </div>
@@ -124,24 +124,24 @@ export default function LocationPage({ slug }: { slug: string }) {
         </div>
       </section>
 
-      {/* CTA — Location pages use dark navy (not yellow diagonal) */}
-      <section className="py-16" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>
+      {/* CTA */}
+      <section className="py-16" style={{ background: 'var(--color-bg-hero)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="font-oswald tracking-wide text-4xl md:text-6xl text-white mb-4">Ready for a Pest-Free {city}?</h2>
-          <p className="text-gray-300 text-lg mb-8">Same-day service available. Call or request a quote online.</p>
-          <Link to="/quote" className="inline-block bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg px-10 py-4 text-lg transition">Get a Free Quote</Link>
+          <h2 className="font-oswald tracking-wide text-4xl md:text-6xl mb-4" style={{ color: 'var(--color-nav-text)' }}>Ready for a Pest-Free {city}?</h2>
+          <p className="text-lg mb-8" style={{ color: 'var(--color-nav-text)', opacity: 0.75 }}>Same-day service available. Call or request a quote online.</p>
+          <Link to="/quote" className="inline-block font-bold rounded-lg px-10 py-4 text-lg transition hover:opacity-90" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}>Get a Free Quote</Link>
         </div>
       </section>
 
       {/* WE ALSO SERVE */}
       {otherLocations.length >= 2 && (
-        <section className="py-12 bg-gray-50">
+        <section className="py-12" style={{ backgroundColor: 'var(--color-bg-section)' }}>
           <div className="max-w-6xl mx-auto px-4 text-center">
-            <h2 className="text-xl font-bold text-gray-900 mb-2">We Also Serve</h2>
+            <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--color-heading)' }}>We Also Serve</h2>
             <p className="text-gray-500 text-sm mb-6">Pest control services throughout East Texas</p>
             <div className="flex flex-wrap justify-center gap-3">
               {otherLocations.slice(0, 6).map((loc) => (
-                <Link key={loc.slug} to={`/${loc.slug}`} className="px-4 py-2 rounded-full border border-emerald-200 bg-white text-emerald-700 text-sm font-medium hover:bg-emerald-50 hover:border-emerald-400 transition-colors">
+                <Link key={loc.slug} to={`/${loc.slug}`} className="px-4 py-2 rounded-full border bg-white text-sm font-medium transition hover:opacity-80" style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}>
                   {loc.city} Pest Control
                 </Link>
               ))}

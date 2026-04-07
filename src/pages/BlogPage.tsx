@@ -31,22 +31,22 @@ export default function BlogPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
       <StructuredData type="WebPage" pageSlug="blog" />
 
-      <section className="py-20 md:py-28" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>
+      <section className="py-20 md:py-28" style={{ background: 'var(--color-bg-hero)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h1 className="font-oswald tracking-wide text-white text-5xl md:text-7xl mb-4">{heroTitle}</h1>
-          <p className="text-gray-300 text-xl">{heroSubtitle}</p>
+          <h1 className="font-oswald tracking-wide text-5xl md:text-7xl mb-4" style={{ color: 'var(--color-nav-text)' }}>{heroTitle}</h1>
+          <p className="text-xl" style={{ color: 'var(--color-nav-text)', opacity: 0.75 }}>{heroSubtitle}</p>
         </div>
       </section>
 
-      <section className="py-16 bg-[#f8fafc]">
+      <section className="py-16" style={{ backgroundColor: 'var(--color-bg-section)' }}>
         <div className="max-w-6xl mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {posts.map((post) => (
               <Link key={post.id} to={`/blog/${post.slug}`} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition group">
-                <div className="bg-[#0a0f1e] h-40 overflow-hidden">
+                <div className="h-40 overflow-hidden" style={{ backgroundColor: 'var(--color-bg-cta)' }}>
                   <img
                     src={post.intro_image || '/images/pests/pest_control.jpg'}
                     alt={post.title}
@@ -55,9 +55,9 @@ export default function BlogPage() {
                 </div>
                 <div className="p-5">
                   <p className="text-sm text-gray-400 mb-2">{new Date(post.published_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-emerald-600 transition">{post.title}</h3>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:opacity-70 transition" style={{ color: 'var(--color-heading)' }}>{post.title}</h3>
                   <p className="text-gray-600 text-sm mb-3">{post.excerpt?.slice(0, 120)}...</p>
-                  <span className="text-emerald-500 font-medium text-sm">Read More →</span>
+                  <span className="font-medium text-sm" style={{ color: 'var(--color-primary)' }}>Read More →</span>
                 </div>
               </Link>
             ))}
@@ -67,11 +67,11 @@ export default function BlogPage() {
 
       <section className="py-16 bg-white">
         <div className="max-w-lg mx-auto px-4 text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Stay Updated</h2>
+          <h2 className="text-2xl font-bold mb-4" style={{ color: 'var(--color-heading)' }}>Stay Updated</h2>
           <p className="text-gray-600 mb-6">Get pest control tips and seasonal alerts delivered to your inbox.</p>
           <div className="flex gap-2">
-            <input type="email" placeholder="Your email address" className="flex-1 border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none" />
-            <button className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg px-6 py-3 transition">Subscribe</button>
+            <input type="email" placeholder="Your email address" className="flex-1 border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none" style={{ outline: 'none' }} />
+            <button className="font-bold rounded-lg px-6 py-3 transition hover:opacity-90" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}>Subscribe</button>
           </div>
         </div>
       </section>
