@@ -9,6 +9,8 @@ import IntegrationsSection  from './ProspectDetail.Integrations'
 import ProvisionSection     from './ProspectDetail.Provisioning'
 import RepGuideButton       from './RepGuideButton'
 import RepGuideDrawer       from './RepGuideDrawer'
+import ScrapePanel          from './ScrapePanel'
+import type { ScrapedData } from './ScrapePanel'
 
 interface Props {
   prospectId: string | null   // null = new prospect
@@ -106,6 +108,32 @@ export default function ProspectDetail({ prospectId, salespeople, onClose }: Pro
     setTimeout(() => setSaved(false), 2000)
   }, [])
 
+  const onApplyScraped = useCallback((data: ScrapedData) => {
+    setForm(f => {
+      const bi = { ...(f.business_info || {}) } as Record<string, any>
+      if (data.address)       bi.address        = data.address
+      if (data.hours)         bi.hours          = data.hours
+      if (data.tagline)       bi.tagline        = data.tagline
+      if (data.founded_year)  bi.founded_year   = data.founded_year
+      if (data.tech_count)    bi.num_technicians = data.tech_count
+      if (data.license_number) bi.license       = data.license_number
+      const updates: Partial<Prospect> = { business_info: bi }
+      if (data.business_name)      updates.company_name    = data.business_name
+      if (data.owner_name)         updates.contact_name    = data.owner_name
+      if (data.phone)              updates.phone           = data.phone
+      if (data.email)              updates.email           = data.email
+      if (data.facebook_url)       updates.social_facebook = data.facebook_url
+      if (data.instagram_handle)   updates.social_instagram = data.instagram_handle
+      if (data.google_business_url) updates.social_google  = data.google_business_url
+      // services and service_areas have no dedicated columns — log for rep reference
+      if (data.services?.length)      console.log('[scrape] services:', data.services)
+      if (data.service_areas?.length) console.log('[scrape] service_areas:', data.service_areas)
+      return { ...f, ...updates }
+    })
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }, [])
+
   async function handleDelete() {
     if (!id) return
     setDeleting(true)
@@ -135,6 +163,14 @@ export default function ProspectDetail({ prospectId, salespeople, onClose }: Pro
         <div className="p-5 space-y-6">
           <div className="flex justify-end"><RepGuideButton section="sales-call" onOpen={setGuideSection} /></div>
           <ContactSection form={form} setField={wrappedSetField} onBlur={onBlur} salespeople={salespeople} />
+          <div className="border-t border-gray-800 pt-4">
+            <ScrapePanel
+              sourceUrl={form.website_url || ''}
+              onSourceUrlChange={v => { wrappedSetField('website_url', v); onBlur() }}
+              prospectId={id}
+              onApplyScraped={onApplyScraped}
+            />
+          </div>
           <div className="flex justify-end"><RepGuideButton section="intake" onOpen={setGuideSection} /></div>
           <IntakeLinkSection
             prospectId={id}
