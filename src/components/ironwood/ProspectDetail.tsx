@@ -108,7 +108,7 @@ export default function ProspectDetail({ prospectId, salespeople, onClose }: Pro
     setTimeout(() => setSaved(false), 2000)
   }, [])
 
-  const onApplyScraped = useCallback((data: ScrapedData) => {
+  const onApplyScraped = useCallback((data: Partial<ScrapedData>) => {
     setForm(f => {
       const bi = { ...(f.business_info || {}) } as Record<string, any>
       if (data.address)       bi.address        = data.address

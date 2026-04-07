@@ -24,31 +24,34 @@ export interface ScrapedData {
   google_business_url: string | null
 }
 
+// Fields the Apply action must never touch
+const PROTECTED_FIELDS = new Set(['salesperson', 'onboarding_rep', 'status', 'call_date'])
+
 interface ScrapeState {
-  scraping:  boolean
-  error:     string
-  result:    ScrapedData | null
-  pages:     string[]
-  applied:   boolean
+  scraping:   boolean
+  error:      string
+  result:     ScrapedData | null
+  pages:      string[]
+  pagesFound: number
+  applied:    boolean
 }
 
 interface Props {
   sourceUrl:          string
   onSourceUrlChange:  (url: string) => void
   prospectId:         string | null
-  onApplyScraped:     (data: ScrapedData) => void
+  onApplyScraped:     (data: Partial<ScrapedData>) => void
 }
 
 export default function ScrapePanel({ sourceUrl, onSourceUrlChange, prospectId, onApplyScraped }: Props) {
   const [state, setState] = useState<ScrapeState>({
-    scraping: false, error: '', result: null, pages: [], applied: false,
+    scraping: false, error: '', result: null, pages: [], pagesFound: 0, applied: false,
   })
 
   const handleScrape = async () => {
     if (!sourceUrl) return
-    setState(s => ({ ...s, scraping: true, error: '', result: null, pages: [], applied: false }))
+    setState(s => ({ ...s, scraping: true, error: '', result: null, pages: [], pagesFound: 0, applied: false }))
     try {
-      // Always force a fresh token — never use a cached/potentially-expired token
       const { data: { session }, error: sessionError } = await supabase.auth.refreshSession()
       if (!session || sessionError) {
         setState(s => ({ ...s, scraping: false, error: 'Session expired — please refresh the page.' }))
@@ -62,7 +65,7 @@ export default function ScrapePanel({ sourceUrl, onSourceUrlChange, prospectId, 
           'Authorization': `Bearer ${session.access_token}`,
           'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
         },
-        body: JSON.stringify({ prospect_id: prospectId, url: sourceUrl }),
+        body: JSON.stringify({ url: sourceUrl, prospectId }),
       })
 
       const data = await res.json()
@@ -71,20 +74,33 @@ export default function ScrapePanel({ sourceUrl, onSourceUrlChange, prospectId, 
         return
       }
 
-      setState(s => ({ ...s, scraping: false, result: data.scraped, pages: data.pages_scraped || [] }))
-    } catch (err) {
+      setState(s => ({
+        ...s,
+        scraping: false,
+        result: data.scraped,
+        pages: data.pages_scraped || [],
+        pagesFound: data.pagesFound ?? 0,
+      }))
+    } catch {
       setState(s => ({ ...s, scraping: false, error: 'Network error — check your connection.' }))
     }
   }
 
   const handleApply = () => {
     if (!state.result) return
-    onApplyScraped(state.result)
+    // Only pass fields that are non-null, non-empty, and not in the protected list
+    const safe: Partial<ScrapedData> = {}
+    for (const [k, v] of Object.entries(state.result)) {
+      if (PROTECTED_FIELDS.has(k)) continue
+      if (v === null || v === '' || (Array.isArray(v) && v.length === 0)) continue
+      ;(safe as Record<string, unknown>)[k] = v
+    }
+    onApplyScraped(safe)
     setState(s => ({ ...s, applied: true }))
   }
 
   const handleDiscard = () => {
-    setState(s => ({ ...s, result: null, pages: [], applied: false }))
+    setState(s => ({ ...s, result: null, pages: [], pagesFound: 0, applied: false }))
   }
 
   return (
@@ -118,12 +134,19 @@ export default function ScrapePanel({ sourceUrl, onSourceUrlChange, prospectId, 
       )}
 
       {state.result && !state.applied && (
-        <ScrapeResultsTable
-          result={state.result}
-          pagesScraped={state.pages}
-          onApply={handleApply}
-          onDiscard={handleDiscard}
-        />
+        <>
+          <ScrapeResultsTable
+            result={state.result}
+            pagesScraped={state.pages}
+            onApply={handleApply}
+            onDiscard={handleDiscard}
+          />
+          <p className="text-blue-400 text-xs mt-2">
+            {state.pagesFound > 0
+              ? `${state.pagesFound} page${state.pagesFound === 1 ? '' : 's'} of content found and saved — will be used to seed this client's site.`
+              : 'No additional page content found.'}
+          </p>
+        </>
       )}
 
       {state.applied && (
