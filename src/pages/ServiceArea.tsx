@@ -41,24 +41,24 @@ export default function ServiceArea() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
       <StructuredData type="WebPage" pageSlug="service-area" />
 
-      <section className="py-20 md:py-28" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>
+      <section className="py-20 md:py-28" style={{ backgroundColor: 'var(--color-bg-hero)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h1 className="font-oswald tracking-wide text-white text-5xl md:text-7xl mb-4" dangerouslySetInnerHTML={{ __html: heroTitle }} />
-          <p className="text-gray-300 text-xl">{heroSubtitle}</p>
+          <h1 className="font-oswald tracking-wide text-5xl md:text-7xl mb-4" style={{ color: 'var(--color-nav-text)' }} dangerouslySetInnerHTML={{ __html: heroTitle }} />
+          <p className="text-xl" style={{ color: 'var(--color-nav-text)', opacity: 0.75 }}>{heroSubtitle}</p>
         </div>
       </section>
 
-      <section className="py-16 bg-white">
+      <section className="py-16" style={{ backgroundColor: 'var(--color-bg-section)' }}>
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-10">Communities We Serve</h2>
+          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-center mb-10" style={{ color: 'var(--color-heading)' }}>Communities We Serve</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {locations.map((loc) => (
               <Link key={loc.slug} to={`/${loc.slug}`} className="bg-white border-2 border-gray-200 rounded-xl p-4 text-center transition group shadow-sm hover:border-[color:var(--color-primary)]">
                 <MapPin className="w-6 h-6 mx-auto mb-2" style={{ color: 'var(--color-primary)' }} />
-                <h3 className="text-gray-900 font-bold transition group-hover:text-[color:var(--color-primary)]">{loc.city}</h3>
+                <h3 className="font-bold transition group-hover:text-[color:var(--color-primary)]" style={{ color: 'var(--color-heading)' }}>{loc.city}</h3>
                 <p className="text-gray-500 text-sm">Pest Control</p>
               </Link>
             ))}
@@ -66,15 +66,15 @@ export default function ServiceArea() {
         </div>
       </section>
 
-      <section className="py-16 bg-[#f8fafc]">
+      <section className="py-16" style={{ backgroundColor: 'var(--color-bg-cta)' }}>
         <div className="max-w-4xl mx-auto px-4">
           <GoogleMapEmbed address={address || '1204 S. Main Street, Tyler, TX 75701'} apiKey={mapsApiKey || undefined} />
         </div>
       </section>
 
-      <section className="py-16 bg-white">
+      <section className="py-16" style={{ backgroundColor: 'var(--color-bg-section)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 mb-4">Don't See Your City?</h2>
+          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl mb-4" style={{ color: 'var(--color-heading)' }}>Don't See Your City?</h2>
           <p className="text-gray-600 mb-8">We may still serve your area. Give us a call to find out.</p>
           {phone && <a href={`tel:${phone.replace(/\D/g, '')}`} className="inline-block font-bold rounded-lg px-10 py-4 text-lg transition hover:opacity-90" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}>Call {phone}</a>}
         </div>

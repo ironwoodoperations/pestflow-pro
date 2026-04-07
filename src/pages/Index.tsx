@@ -42,41 +42,38 @@ export default function Index() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
       <StructuredData type="LocalBusiness" />
 
       {/* HERO */}
       <section
         className="relative flex items-center justify-center overflow-hidden"
-        style={{ minHeight: '600px', background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}
+        style={{ minHeight: '600px', backgroundColor: 'var(--color-bg-hero)' }}
       >
         {/* Hero fallback image — shown behind gradient overlay when no video */}
         <img src={content.heroImageUrl || '/images/pests/hero.jpg'} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20" loading="eager" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
 
-        {/* Full-bleed background video — renders behind hero text, falls back to gradient */}
+        {/* Full-bleed background video — renders behind hero text, falls back to bg */}
         <HeroVideoPlayer />
 
         <div className="relative z-10 text-center px-4 max-w-5xl mx-auto py-20">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm mb-6" style={{ border: '1px solid color-mix(in srgb, var(--color-primary) 30%, transparent)', backgroundColor: 'color-mix(in srgb, var(--color-primary) 10%, transparent)', color: 'var(--color-primary)' }}>
             <Shield className="w-4 h-4" /> Licensed & Insured Professionals
           </div>
-          <h1 className="font-oswald tracking-wide text-white text-5xl sm:text-6xl md:text-8xl leading-tight mb-6">
+          <h1 className="font-oswald tracking-wide text-5xl sm:text-6xl md:text-8xl leading-tight mb-6" style={{ color: 'var(--color-nav-text)' }}>
             {content.title}
           </h1>
-          <p className="text-gray-300 text-xl md:text-2xl mb-8 max-w-3xl mx-auto">
+          <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto" style={{ color: 'var(--color-nav-text)', opacity: 0.75 }}>
             {content.subtitle}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
             <Link to="/quote" className="font-bold rounded-lg px-8 py-4 text-lg transition hover:opacity-90" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}>
               Get a Free Quote
             </Link>
-            <Link to="/pest-control" className="border-2 border-white/30 text-white hover:border-white font-bold rounded-lg px-8 py-4 text-lg transition">
+            <Link to="/pest-control" className="border-2 font-bold rounded-lg px-8 py-4 text-lg transition hover:opacity-80" style={{ borderColor: 'var(--color-nav-text)', color: 'var(--color-nav-text)', opacity: 0.8 }}>
               See Our Services
             </Link>
           </div>
-          <a href="tel:9035550100" className="text-gray-300 text-xl font-semibold hover:text-white transition">
-            (903) 555-0100
-          </a>
 
           {/* Hero Video */}
           {heroMedia?.youtube_id && (

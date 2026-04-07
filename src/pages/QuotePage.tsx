@@ -100,10 +100,10 @@ export default function QuotePage() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
         <div className="max-w-2xl mx-auto px-4 py-24 text-center">
           <CheckCircle className="w-16 h-16 text-emerald-500 mx-auto mb-6" />
-          <h1 className="font-oswald tracking-wide text-4xl text-gray-900 mb-4">Quote Request Received!</h1>
+          <h1 className="font-oswald tracking-wide text-4xl mb-4" style={{ color: 'var(--color-heading)' }}>Quote Request Received!</h1>
           <p className="text-gray-600 text-lg mb-2">We'll call you within 2 hours!</p>
           <p className="text-gray-500">Need immediate help? Call <a href={`tel:${businessPhone}`} className="text-emerald-600 font-bold hover:underline">{businessPhone}</a></p>
         </div>
@@ -114,10 +114,10 @@ export default function QuotePage() {
   const inputClass = 'w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none'
 
   return (
-    <div className="min-h-screen bg-white">
-      <section className="py-12 bg-[#f8fafc]">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
+      <section className="py-12" style={{ backgroundColor: 'var(--color-bg-section)' }}>
         <div className="max-w-3xl mx-auto px-4">
-          <h1 className="font-oswald tracking-wide text-4xl md:text-5xl text-gray-900 text-center mb-2">{heroTitle}</h1>
+          <h1 className="font-oswald tracking-wide text-4xl md:text-5xl text-center mb-2" style={{ color: 'var(--color-heading)' }}>{heroTitle}</h1>
           <p className="text-gray-600 text-center mb-8">{heroSubtitle}</p>
           <div className="flex items-center justify-between mb-10 max-w-lg mx-auto">
             {STEPS.map((s, i) => (
@@ -145,10 +145,10 @@ export default function QuotePage() {
               )}
             </div>
           </div>
-          <div className="mt-8 bg-[#0a0f1e] text-white rounded-xl p-6">
+          <div className="mt-8 rounded-xl p-6" style={{ backgroundColor: 'var(--color-bg-hero)' }}>
             <h3 className="font-oswald tracking-wide text-xl mb-3" style={{ color: 'var(--color-primary)' }}>{businessName}</h3>
-            <a href={`tel:${businessPhone}`} className="text-2xl font-bold text-white hover:underline block mb-4">{businessPhone}</a>
-            <ul className="space-y-2 text-gray-300 text-sm">
+            <a href={`tel:${businessPhone}`} className="text-2xl font-bold hover:underline block mb-4" style={{ color: 'var(--color-nav-text)' }}>{businessPhone}</a>
+            <ul className="space-y-2 text-sm" style={{ color: 'var(--color-nav-text)', opacity: 0.75 }}>
               <li>✅ Free Estimates</li><li>✅ Same-Day Service</li><li>✅ Licensed & Insured</li><li>✅ Satisfaction Guaranteed</li>
             </ul>
           </div>

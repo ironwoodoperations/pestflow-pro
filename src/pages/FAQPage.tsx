@@ -57,23 +57,23 @@ export default function FAQPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
       <StructuredData type="WebPage" pageSlug="faq" />
 
-      <section className="py-20 md:py-28" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>
+      <section className="py-20 md:py-28" style={{ backgroundColor: 'var(--color-bg-hero)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h1 className="font-oswald tracking-wide text-white text-5xl md:text-7xl mb-4">{heroTitle}</h1>
-          <p className="text-gray-300 text-xl">{heroSubtitle}</p>
+          <h1 className="font-oswald tracking-wide text-5xl md:text-7xl mb-4" style={{ color: 'var(--color-nav-text)' }}>{heroTitle}</h1>
+          <p className="text-xl" style={{ color: 'var(--color-nav-text)', opacity: 0.75 }}>{heroSubtitle}</p>
         </div>
       </section>
 
-      <section className="py-16 bg-white">
+      <section className="py-16" style={{ backgroundColor: 'var(--color-bg-section)' }}>
         <div className="max-w-4xl mx-auto px-4">
           {faqItems.length > 0 ? (
             <div className="space-y-6">
               {faqItems.map(item => (
                 <div key={item.id}>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">{item.question}</h3>
+                  <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--color-heading)' }}>{item.question}</h3>
                   <p className="text-gray-600">{item.answer}</p>
                 </div>
               ))}
@@ -85,7 +85,7 @@ export default function FAQPage() {
                 <div className="space-y-6">
                   {cat.faqs.map((faq, i) => (
                     <div key={i}>
-                      <h3 className="text-lg font-bold text-gray-900 mb-2">{faq.q}</h3>
+                      <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--color-heading)' }}>{faq.q}</h3>
                       <p className="text-gray-600">{faq.a}</p>
                     </div>
                   ))}
@@ -96,10 +96,10 @@ export default function FAQPage() {
         </div>
       </section>
 
-      <section className="py-16 bg-[#f8fafc]">
+      <section className="py-16" style={{ backgroundColor: 'var(--color-bg-cta)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 mb-4">Still Have Questions?</h2>
-          <p className="text-gray-600 mb-8">We're here to help. Call us or request a quote online.</p>
+          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl mb-4" style={{ color: 'var(--color-nav-text)' }}>Still Have Questions?</h2>
+          <p className="mb-8" style={{ color: 'var(--color-nav-text)', opacity: 0.75 }}>We're here to help. Call us or request a quote online.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a href={`tel:${phone}`} className="border-2 font-bold rounded-lg px-8 py-4 text-lg transition hover:opacity-90" style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}>Call Us Now</a>
             <Link to="/quote" className="font-bold rounded-lg px-8 py-4 text-lg transition hover:opacity-90" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}>Get a Free Quote</Link>
