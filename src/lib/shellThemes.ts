@@ -145,7 +145,6 @@ export function applyShellTheme(
   primaryOverride?: string,
   accentOverride?: string
 ) {
-  console.log('[applyShellTheme] called', { template, primaryOverride, accentOverride }, new Error().stack)
   const theme = SHELL_THEMES[template] || SHELL_THEMES['modern-pro']
   const root = document.documentElement
   Object.entries(theme).forEach(([key, value]) => {
@@ -155,20 +154,16 @@ export function applyShellTheme(
     root.style.setProperty('--color-primary', primaryOverride)
     root.style.setProperty('--color-btn-bg', primaryOverride)
     const primary = primaryOverride.toLowerCase().trim()
-    console.log('palette lookup:', JSON.stringify(primary), !!PALETTE_HERO[primary])
     const paletteHero = PALETTE_HERO[primary]
     if (paletteHero) {
       root.style.setProperty('--color-bg-hero', paletteHero.hero)
-      console.log('set --color-bg-hero to:', document.documentElement.style.getPropertyValue('--color-bg-hero'))
       root.style.setProperty('--color-bg-hero-end', paletteHero.end)
       root.style.setProperty('--color-bg-cta', paletteHero.cta)
     } else if (template === 'clean-friendly') {
       root.style.setProperty('--color-bg-hero', lightenHex(primaryOverride, 0.85))
-      console.log('set --color-bg-hero to:', document.documentElement.style.getPropertyValue('--color-bg-hero'))
       root.style.setProperty('--color-bg-hero-end', lightenHex(primaryOverride, 0.93))
     } else {
       root.style.setProperty('--color-bg-hero', darkenHex(primaryOverride, 0.35))
-      console.log('set --color-bg-hero to:', document.documentElement.style.getPropertyValue('--color-bg-hero'))
       root.style.setProperty('--color-bg-hero-end', darkenHex(primaryOverride, 0.2))
     }
   } else if (primaryOverride) {
