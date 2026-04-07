@@ -25,7 +25,6 @@ export function getPalettesForShell(shell: string): ShellPalette[] {
   return PALETTES.filter(p => p.shell === shell)
 }
 
-// Derive a darker shade of a hex color (factor 0=black, 1=original)
 function darkenHex(hex: string, factor: number): string {
   const h = hex.startsWith('#') ? hex.slice(1) : hex
   const r = Math.max(0, Math.min(255, Math.round(parseInt(h.slice(0, 2), 16) * factor)))
@@ -34,13 +33,28 @@ function darkenHex(hex: string, factor: number): string {
   return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('')
 }
 
-// Blend hex toward white (white 0=original, 1=white)
 function lightenHex(hex: string, white: number): string {
   const h = hex.startsWith('#') ? hex.slice(1) : hex
   const r = Math.max(0, Math.min(255, Math.round(parseInt(h.slice(0, 2), 16) * (1 - white) + 255 * white)))
   const g = Math.max(0, Math.min(255, Math.round(parseInt(h.slice(2, 4), 16) * (1 - white) + 255 * white)))
   const b = Math.max(0, Math.min(255, Math.round(parseInt(h.slice(4, 6), 16) * (1 - white) + 255 * white)))
   return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('')
+}
+
+// Per-palette explicit hero gradient start/end and CTA background. Keyed by primary hex (lowercase).
+const PALETTE_HERO: Record<string, { hero: string; end: string; cta: string }> = {
+  '#1e3a5f': { hero: '#0d1f35', end: '#162208', cta: '#0d1f35' }, // Navy & Gold
+  '#2d6a4f': { hero: '#1a3d2a', end: '#0d2b1a', cta: '#1a3d2a' }, // Forest & Cream
+  '#334155': { hero: '#1e293b', end: '#2d1a0a', cta: '#1e293b' }, // Slate & Orange
+  '#e87800': { hero: '#2d1a00', end: '#1a0f00', cta: '#2d1a00' }, // Orange & Black
+  '#b91c1c': { hero: '#3b0a0a', end: '#1a0505', cta: '#3b0a0a' }, // Red & Dark
+  '#15803d': { hero: '#0a2d1a', end: '#071a0f', cta: '#0a2d1a' }, // Green & Black
+  '#0ea5e9': { hero: '#e0f5ff', end: '#bae8ff', cta: '#e0f2fe' }, // Sky & White
+  '#0d9488': { hero: '#e0faf7', end: '#b2f5ec', cta: '#e0faf7' }, // Teal & Light
+  '#7c3aed': { hero: '#f5f0ff', end: '#e9d5ff', cta: '#f5f3ff' }, // Purple & Soft
+  '#78350f': { hero: '#2d1305', end: '#1a0a02', cta: '#2d1305' }, // Brown & Tan
+  '#365314': { hero: '#162105', end: '#0d1503', cta: '#162105' }, // Green & Earth
+  '#9a3412': { hero: '#3b1205', end: '#1a0802', cta: '#3b1205' }, // Rust & Cream
 }
 
 export const SHELL_THEMES: Record<string, Record<string, string>> = {
@@ -50,9 +64,10 @@ export const SHELL_THEMES: Record<string, Record<string, string>> = {
     '--color-primary-light':   '#d1fae5',
     '--color-accent':          '#10b981',
     '--color-text-on-primary': '#ffffff',
-    '--color-bg-hero':         'linear-gradient(135deg, #0a0f1e 0%, #1a2744 60%, #0f3d2e 100%)',
+    '--color-bg-hero':         '#0d1f35',
+    '--color-bg-hero-end':     '#162208',
     '--color-bg-section':      '#f8fafc',
-    '--color-bg-cta':          '#0f172a',
+    '--color-bg-cta':          '#0d1f35',
     '--color-nav-bg':          '#0f172a',
     '--color-nav-text':        '#ffffff',
     '--color-footer-bg':       '#0f172a',
@@ -69,7 +84,8 @@ export const SHELL_THEMES: Record<string, Record<string, string>> = {
     '--color-primary-light':   '#fef3c7',
     '--color-accent':          '#f59e0b',
     '--color-text-on-primary': '#1c1c1e',
-    '--color-bg-hero':         'linear-gradient(135deg, #0d0d0d 0%, #1c1c1e 60%, #0d0d0d 100%)',
+    '--color-bg-hero':         '#2d1a00',
+    '--color-bg-hero-end':     '#1a0f00',
     '--color-bg-section':      '#f5f5f5',
     '--color-bg-cta':          '#1c1c1e',
     '--color-nav-bg':          '#1c1c1e',
@@ -88,7 +104,8 @@ export const SHELL_THEMES: Record<string, Record<string, string>> = {
     '--color-primary-light':   '#dbeafe',
     '--color-accent':          '#3b82f6',
     '--color-text-on-primary': '#ffffff',
-    '--color-bg-hero':         'linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 60%, #ffffff 100%)',
+    '--color-bg-hero':         '#e0f5ff',
+    '--color-bg-hero-end':     '#bae8ff',
     '--color-bg-section':      '#f0f9ff',
     '--color-bg-cta':          '#eff6ff',
     '--color-nav-bg':          '#ffffff',
@@ -107,7 +124,8 @@ export const SHELL_THEMES: Record<string, Record<string, string>> = {
     '--color-primary-light':   '#fed7aa',
     '--color-accent':          '#c2410c',
     '--color-text-on-primary': '#ffffff',
-    '--color-bg-hero':         'linear-gradient(135deg, #1c0a00 0%, #3b1a08 60%, #2a1200 100%)',
+    '--color-bg-hero':         '#2d1305',
+    '--color-bg-hero-end':     '#1a0a02',
     '--color-bg-section':      '#fdf8f3',
     '--color-bg-cta':          '#3b1a08',
     '--color-nav-bg':          '#3b1a08',
@@ -135,15 +153,17 @@ export function applyShellTheme(
   if (primaryOverride && /^#[0-9a-fA-F]{6}$/.test(primaryOverride)) {
     root.style.setProperty('--color-primary', primaryOverride)
     root.style.setProperty('--color-btn-bg', primaryOverride)
-    // Derive hero gradient from the palette's primary color
-    if (template === 'clean-friendly') {
-      root.style.setProperty('--color-bg-hero',
-        `linear-gradient(135deg, ${lightenHex(primaryOverride, 0.85)} 0%, ${lightenHex(primaryOverride, 0.93)} 60%, #ffffff 100%)`)
+    const paletteHero = PALETTE_HERO[primaryOverride.toLowerCase()]
+    if (paletteHero) {
+      root.style.setProperty('--color-bg-hero', paletteHero.hero)
+      root.style.setProperty('--color-bg-hero-end', paletteHero.end)
+      root.style.setProperty('--color-bg-cta', paletteHero.cta)
+    } else if (template === 'clean-friendly') {
+      root.style.setProperty('--color-bg-hero', lightenHex(primaryOverride, 0.85))
+      root.style.setProperty('--color-bg-hero-end', lightenHex(primaryOverride, 0.93))
     } else {
-      const darkest = darkenHex(primaryOverride, 0.22)
-      const dark = darkenHex(primaryOverride, 0.42)
-      root.style.setProperty('--color-bg-hero',
-        `linear-gradient(135deg, ${darkest} 0%, ${dark} 60%, ${darkest} 100%)`)
+      root.style.setProperty('--color-bg-hero', darkenHex(primaryOverride, 0.35))
+      root.style.setProperty('--color-bg-hero-end', darkenHex(primaryOverride, 0.2))
     }
   } else if (primaryOverride) {
     root.style.setProperty('--color-primary', primaryOverride)
