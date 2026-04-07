@@ -16,16 +16,18 @@ const TemplateContext = createContext<TemplateContextValue>({
 })
 
 export function TemplateProvider({ children }: { children: ReactNode }) {
-  const cached = (localStorage.getItem('pfp_template') || 'modern-pro') as TemplateName
-  const [template, setTemplate] = useState<TemplateName>(cached)
+  const [template, setTemplate] = useState<TemplateName>(
+    (localStorage.getItem('pfp_template') || 'modern-pro') as TemplateName
+  )
   const [loading, setLoading] = useState(true)
 
-  // Apply cached theme immediately to eliminate flash
   useEffect(() => {
-    applyShellTheme(cached)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    // Apply cached colors immediately to eliminate flash
+    const cachedTemplate = (localStorage.getItem('pfp_template') || 'modern-pro') as TemplateName
+    const cachedPrimary = localStorage.getItem('pfp_primary_color') || undefined
+    const cachedAccent = localStorage.getItem('pfp_accent_color') || undefined
+    applyShellTheme(cachedTemplate, cachedPrimary, cachedAccent)
 
-  useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) { setLoading(false); return }
       const { data } = await supabase
@@ -36,13 +38,17 @@ export function TemplateProvider({ children }: { children: ReactNode }) {
         .maybeSingle()
       if (data?.value?.template) {
         const t = data.value.template as TemplateName
+        const primary = data.value.primary_color as string | undefined
+        const accent = data.value.accent_color as string | undefined
         setTemplate(t)
-        applyShellTheme(t, data.value.primary_color, data.value.accent_color)
+        applyShellTheme(t, primary, accent)
         localStorage.setItem('pfp_template', t)
+        if (primary) localStorage.setItem('pfp_primary_color', primary)
+        if (accent) localStorage.setItem('pfp_accent_color', accent)
       }
       setLoading(false)
     })
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <TemplateContext.Provider value={{ template, loading }}>
