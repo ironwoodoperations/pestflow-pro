@@ -64,7 +64,7 @@ function PageImageUpload({ slug, index }: { slug: string; index: number }) {
     const arr = [...(existing?.image_urls || [])]
     arr[index] = null
     await supabase.from('page_content').upsert(
-      { tenant_id: tenantId, page_slug: slug, image_urls: arr.filter(Boolean) },
+      { tenant_id: tenantId, page_slug: slug, image_urls: arr },
       { onConflict: 'tenant_id,page_slug' }
     )
     setCurrentUrl(null)
