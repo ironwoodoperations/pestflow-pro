@@ -34,7 +34,7 @@ export default function BlogPage() {
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
       <StructuredData type="WebPage" pageSlug="blog" />
 
-      <section className="py-20 md:py-28" style={{ background: 'var(--color-bg-hero)' }}>
+      <section className="py-20 md:py-28" style={{ background: 'linear-gradient(135deg, var(--color-bg-hero) 0%, var(--color-bg-hero-end) 100%)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h1 className="font-oswald tracking-wide text-5xl md:text-7xl mb-4" style={{ color: 'var(--color-nav-text)' }}>{heroTitle}</h1>
           <p className="text-xl" style={{ color: 'var(--color-nav-text)', opacity: 0.75 }}>{heroSubtitle}</p>

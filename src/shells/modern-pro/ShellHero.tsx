@@ -64,7 +64,7 @@ export default function ShellHero() {
   return (
     <section
       className="relative text-white min-h-screen flex items-center justify-center px-4 overflow-hidden"
-      style={{ background: 'var(--color-bg-hero)', ...sectionStyle }}
+      style={{ background: 'linear-gradient(135deg, var(--color-bg-hero) 0%, var(--color-bg-hero-end) 100%)', ...sectionStyle }}
     >
       {bgImage && <div className="absolute inset-0" style={{ backgroundColor: 'var(--color-bg-cta)', opacity: 0.85 }} />}
 

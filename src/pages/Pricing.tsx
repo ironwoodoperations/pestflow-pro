@@ -61,7 +61,7 @@ export default function Pricing() {
       <StructuredData type="WebPage" pageSlug="pricing" />
 
       {/* Hero */}
-      <section className="py-20 md:py-28" style={{ background: 'var(--color-bg-hero)' }}>
+      <section className="py-20 md:py-28" style={{ background: 'linear-gradient(135deg, var(--color-bg-hero) 0%, var(--color-bg-hero-end) 100%)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h1 className="font-oswald tracking-wide text-5xl md:text-7xl mb-4" style={{ color: 'var(--color-nav-text)' }}>
             Simple, Transparent <span style={{ color: 'var(--color-primary)' }}>Pricing</span>
@@ -152,7 +152,7 @@ export default function Pricing() {
       </section>
 
       {/* CTA */}
-      <section className="py-16" style={{ background: 'var(--color-bg-hero)' }}>
+      <section className="py-16" style={{ background: 'linear-gradient(135deg, var(--color-bg-hero) 0%, var(--color-bg-hero-end) 100%)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h2 className="font-oswald tracking-wide text-4xl md:text-5xl mb-4" style={{ color: 'var(--color-nav-text)' }}>Ready to Get Started?</h2>
           <p className="text-lg mb-8" style={{ color: 'var(--color-nav-text)', opacity: 0.75 }}>14-day free trial. No credit card required.</p>

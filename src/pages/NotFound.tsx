@@ -8,7 +8,7 @@ export default function NotFound() {
 
       <section
         className="flex-1 flex items-center justify-center py-24 px-4"
-        style={{ background: 'var(--color-bg-hero)' }}
+        style={{ background: 'linear-gradient(135deg, var(--color-bg-hero) 0%, var(--color-bg-hero-end) 100%)' }}
       >
         <div className="text-center max-w-lg">
           <div className="text-[10rem] font-black opacity-20 select-none leading-none" style={{ color: 'var(--color-primary)' }}>

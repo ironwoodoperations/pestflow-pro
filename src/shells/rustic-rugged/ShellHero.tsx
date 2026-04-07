@@ -35,7 +35,7 @@ export default function ShellHero() {
   const dialPhone = `tel:${(biz.phone || '').replace(/\D/g, '')}`
 
   return (
-    <section style={{ background: 'var(--color-bg-hero)' }} className="flex flex-col md:flex-row min-h-[540px]">
+    <section style={{ background: 'linear-gradient(135deg, var(--color-bg-hero) 0%, var(--color-bg-hero-end) 100%)' }} className="flex flex-col md:flex-row min-h-[540px]">
       {/* LEFT — text */}
       <div className="md:w-1/2 flex flex-col justify-center px-10 py-16 relative z-10">
         {/* Est. badge */}

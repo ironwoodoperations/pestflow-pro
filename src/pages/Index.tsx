@@ -48,7 +48,7 @@ export default function Index() {
       {/* HERO */}
       <section
         className="relative flex items-center justify-center overflow-hidden"
-        style={{ minHeight: '600px', background: 'var(--color-bg-hero)' }}
+        style={{ minHeight: '600px', background: 'linear-gradient(135deg, var(--color-bg-hero) 0%, var(--color-bg-hero-end) 100%)' }}
       >
         {/* Hero fallback image — shown behind gradient overlay when no video */}
         <img src={content.heroImageUrl || '/images/pests/hero.jpg'} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20" loading="eager" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
