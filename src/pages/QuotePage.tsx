@@ -122,10 +122,10 @@ export default function QuotePage() {
           <div className="flex items-center justify-between mb-10 max-w-lg mx-auto">
             {STEPS.map((s, i) => (
               <div key={s.num} className="flex items-center">
-                <div aria-label={`Step ${s.num} of 4: ${s.label}`} className={`flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold transition ${step >= s.num ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'}`}>
+                <div aria-label={`Step ${s.num} of 4: ${s.label}`} className={`flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold transition ${step >= s.num ? 'text-white' : 'bg-gray-200 text-gray-500'}`} style={step >= s.num ? { backgroundColor: 'var(--color-primary)' } : undefined}>
                   {step > s.num ? <CheckCircle className="w-5 h-5" /> : <s.icon className="w-5 h-5" />}
                 </div>
-                {i < STEPS.length - 1 && <div className={`w-12 sm:w-20 h-0.5 mx-1 transition ${step > s.num ? 'bg-emerald-500' : 'bg-gray-200'}`} />}
+                {i < STEPS.length - 1 && <div className="w-12 sm:w-20 h-0.5 mx-1 transition" style={step > s.num ? { backgroundColor: 'var(--color-primary)' } : { backgroundColor: '#e5e7eb' }} />}
               </div>
             ))}
           </div>
@@ -139,7 +139,7 @@ export default function QuotePage() {
               {step < 4 ? (
                 <button onClick={next} className="font-bold px-8 py-2.5 rounded-lg transition hover:opacity-90" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}>Continue</button>
               ) : (
-                <button onClick={handleSubmit} disabled={submitting} className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-8 py-2.5 rounded-lg transition disabled:opacity-50">
+                <button onClick={handleSubmit} disabled={submitting} className="font-bold px-8 py-2.5 rounded-lg transition disabled:opacity-50 hover:opacity-90" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}>
                   {submitting ? 'Submitting...' : 'Submit Quote Request'}
                 </button>
               )}
