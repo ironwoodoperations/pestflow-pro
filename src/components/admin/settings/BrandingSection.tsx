@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../hooks/useTenant'
-import { applyShellTheme, getPalettesForShell } from '../../../lib/shellThemes'
+import { applyShellTheme } from '../../../lib/shellThemes'
 import BrandingLogo from './BrandingLogo'
+import PalettePicker from '../../shared/PalettePicker'
 
 interface BrandingForm {
   logo_url: string; favicon_url: string; primary_color: string; accent_color: string
@@ -117,28 +118,14 @@ export default function BrandingSection() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-3">Color Palette</label>
-          <div className="grid grid-cols-3 gap-3">
-            {getPalettesForShell(form.template).map(p => {
-              const isActive = form.primary_color === p.primary && form.accent_color === p.accent
-              return (
-                <button key={p.id} type="button"
-                  onClick={() => {
-                    setForm(prev => ({ ...prev, primary_color: p.primary, accent_color: p.accent }))
-                    applyShellTheme(form.template, p.primary, p.accent)
-                  }}
-                  className={`rounded-xl border-2 overflow-hidden transition ${isActive ? 'border-emerald-500 shadow-md' : 'border-gray-200 hover:border-gray-300'}`}>
-                  <div className="flex h-10">
-                    <div className="flex-1" style={{ background: p.primary }} />
-                    <div className="w-1/3" style={{ background: p.accent }} />
-                  </div>
-                  <div className="px-2 py-1.5 bg-white">
-                    <p className="text-xs font-medium text-gray-700 truncate">{p.name}</p>
-                    {isActive && <p className="text-xs text-emerald-600 font-semibold">Active</p>}
-                  </div>
-                </button>
-              )
-            })}
-          </div>
+          <PalettePicker
+            primary={form.primary_color}
+            accent={form.accent_color}
+            onSelect={(p, a) => {
+              setForm(prev => ({ ...prev, primary_color: p, accent_color: a }))
+              applyShellTheme(form.template, p, a)
+            }}
+          />
           <p className="text-xs text-gray-400 mt-2">Pick a preset or use the color pickers below for custom colors.</p>
         </div>
 
