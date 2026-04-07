@@ -186,14 +186,10 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
     onUpdate(updates)
   }
 
-  const setupMailBody = encodeURIComponent(
-    `Hi ${prospect.contact_name || ''},\n\nHere is your setup fee invoice:\n\n${prospect.setup_invoice_url}\n\nPlease pay within 24 hours to get started.\n\nScott`
-  )
   const subMailBody = encodeURIComponent(
     `Hi ${prospect.contact_name || ''},\n\nHere is your subscription payment link for the ${prospect.plan_name || ''} plan:\n\n${prospect.payment_link_url}\n\nLet me know if you have any questions!\n\nScott`
   )
-  const mailSubjectInvoice = encodeURIComponent('Your Setup Fee Invoice — PestFlow Pro')
-  const mailSubjectSub     = encodeURIComponent('Your Monthly Subscription Link — PestFlow Pro')
+  const mailSubjectSub = encodeURIComponent('Your Monthly Subscription Link — PestFlow Pro')
 
   return (
     <div className="space-y-4 mt-3">

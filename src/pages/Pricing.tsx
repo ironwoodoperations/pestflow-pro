@@ -75,7 +75,7 @@ export default function Pricing() {
         <div className="max-w-6xl mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {PLANS.map(plan => (
-              <div key={plan.name} className={`bg-white rounded-2xl shadow-lg border p-8 relative ${plan.popular ? 'ring-2' : 'border-gray-200'}`} style={plan.popular ? { borderColor: 'var(--color-primary)', ringColor: 'var(--color-primary)' } : undefined}>
+              <div key={plan.name} className={`bg-white rounded-2xl shadow-lg border p-8 relative ${plan.popular ? 'ring-2' : 'border-gray-200'}`} style={plan.popular ? { borderColor: 'var(--color-primary)' } : undefined}>
                 {plan.popular && (
                   <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-white text-xs font-bold px-4 py-1 rounded-full" style={{ backgroundColor: 'var(--color-primary)' }}>MOST POPULAR</span>
                 )}

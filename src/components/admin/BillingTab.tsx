@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
 import PageHelpBanner from './PageHelpBanner'
