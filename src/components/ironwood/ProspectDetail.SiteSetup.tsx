@@ -124,7 +124,7 @@ export default function SiteSetupSection({ form, setField, onBlur }: Props) {
             shell={br.template}
             primary={br.primary_color || ''}
             accent={br.accent_color || ''}
-            onSelect={(p, a) => { setBr('primary_color', p); setBr('accent_color', a); onBlur() }}
+            onSelect={(p, a) => { setField('branding', { ...br, primary_color: p, accent_color: a }); onBlur() }}
           />
         )}
         <div>
