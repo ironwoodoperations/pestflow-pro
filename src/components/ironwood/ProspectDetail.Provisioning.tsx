@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import type { Prospect } from './types'
 import CredentialField from './CredentialField'
+import PreProvisionChecklist from './PreProvisionChecklist'
 
 const isValidEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)
 
@@ -14,6 +15,7 @@ interface Props {
 
 export default function ProvisioningSection({ form, prospectId, onProvisioned }: Props) {
   const [confirming, setConfirming]       = useState(false)
+  const [showChecklist, setShowChecklist] = useState(false)
   const [provisioning, setProvisioning]   = useState(false)
   const [error, setError]                 = useState<string | null>(null)
   const [fbSaved, setFbSaved]             = useState(false)
@@ -253,10 +255,18 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
           {resolvedAdminEmail && !isValidEmail(resolvedAdminEmail) ? 'Admin email must be a valid address (e.g. admin@company.com)' : ''}
         </p>
       )}
-      <button disabled={!canCreate || provisioning} onClick={() => setConfirming(true)}
+      <button disabled={!canCreate || provisioning} onClick={() => setShowChecklist(true)}
         className="px-6 py-2 bg-emerald-600 text-white text-sm rounded hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed">
         {provisioning ? '⏳ Creating site…' : '🚀 Create Site'}
       </button>
+
+      {showChecklist && (
+        <PreProvisionChecklist
+          prospect={form}
+          onConfirm={() => { setShowChecklist(false); doProvision() }}
+          onCancel={() => setShowChecklist(false)}
+        />
+      )}
 
       {confirming && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
