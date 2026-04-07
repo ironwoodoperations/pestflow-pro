@@ -47,18 +47,18 @@ export default function PestPageTemplate(props: PestPageProps) {
   const pestImg = content.image_urls?.[0] || content.image_url || PEST_PAGE_IMG[props.pageSlug] || props.introImage || FALLBACK_PEST_IMG
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
       <StructuredData type="WebPage" pageSlug={props.pageSlug} />
 
       {/* HERO */}
-      <section className="relative py-20 md:py-28 overflow-hidden" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 60%, #0f3d2e 100%)' }}>
+      <section className="relative py-20 md:py-28 overflow-hidden" style={{ backgroundColor: 'var(--color-bg-hero)' }}>
         <div className="relative z-10 max-w-5xl mx-auto px-4 text-center">
-          <h1 className="font-oswald tracking-wide text-white text-5xl md:text-7xl mb-4">
+          <h1 className="font-oswald tracking-wide text-5xl md:text-7xl mb-4" style={{ color: 'var(--color-nav-text)' }}>
             {heroTitle.split(props.heroHighlight).map((part, i, arr) => (
               <span key={i}>{part}{i < arr.length - 1 && <span style={{ color: 'var(--color-primary)' }}>{props.heroHighlight}</span>}</span>
             ))}
           </h1>
-          <p className="text-gray-300 text-xl mb-8">{content.subtitle || props.heroSubtitle}</p>
+          <p className="text-xl mb-8" style={{ color: 'var(--color-nav-text)', opacity: 0.75 }}>{content.subtitle || props.heroSubtitle}</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/quote" className="font-bold rounded-lg px-8 py-4 text-lg transition hover:opacity-90" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}>Get a Free Quote</Link>
             <a href={`tel:${phone}`} className="border-2 font-bold rounded-lg px-8 py-4 text-lg transition hover:opacity-90" style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}>Call Us Now</a>
@@ -67,13 +67,13 @@ export default function PestPageTemplate(props: PestPageProps) {
       </section>
 
       {/* INTRO */}
-      <section className="py-16 bg-white">
+      <section className="py-16" style={{ backgroundColor: 'var(--color-bg-section)' }}>
         <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
           <div className="rounded-xl overflow-hidden shadow-lg aspect-[4/3]">
             <img src={pestImg} alt={`${props.heroHighlight} pest control`} loading="lazy" className="w-full h-full object-cover" />
           </div>
           <div>
-            <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 mb-4">{props.introHeading}</h2>
+            <h2 className="font-oswald tracking-wide text-3xl md:text-4xl mb-4" style={{ color: 'var(--color-heading)' }}>{props.introHeading}</h2>
             <p className="text-gray-600 mb-4">{content.intro || props.introP1}</p>
             <p className="text-gray-600 mb-4">{props.introP2}</p>
             <p className="text-gray-600 mb-6">{props.introP3}</p>
@@ -86,14 +86,14 @@ export default function PestPageTemplate(props: PestPageProps) {
       </section>
 
       {/* TREATMENT STEPS */}
-      <section className="py-16 bg-[#f8fafc]">
+      <section className="py-16" style={{ backgroundColor: 'var(--color-bg-cta)' }}>
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-12">Our Treatment Process</h2>
+          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-center mb-12" style={{ color: 'var(--color-nav-text)' }}>Our Treatment Process</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {props.steps.map((step, i) => (
-              <div key={i} className="bg-white rounded-xl p-6 shadow-sm text-center">
-                <div className="w-12 h-12 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4" style={{ backgroundColor: 'var(--color-primary)' }}>{i + 1}</div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">{step.title}</h3>
+              <div key={i} className="rounded-xl p-6 shadow-sm text-center" style={{ backgroundColor: 'var(--color-bg-section)' }}>
+                <div className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4" style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-btn-text)' }}>{i + 1}</div>
+                <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--color-heading)' }}>{step.title}</h3>
                 <p className="text-gray-600 text-sm">{step.desc}</p>
               </div>
             ))}
@@ -102,14 +102,14 @@ export default function PestPageTemplate(props: PestPageProps) {
       </section>
 
       {/* WHY CHOOSE US */}
-      <section className="py-16 bg-white">
+      <section className="py-16" style={{ backgroundColor: 'var(--color-bg-section)' }}>
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-10">Why Choose Us</h2>
+          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-center mb-10" style={{ color: 'var(--color-heading)' }}>Why Choose Us</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {WHY.map(({ Icon, title, desc }) => (
-              <div key={title} className="bg-[#f8fafc] rounded-xl p-6 text-center">
+              <div key={title} className="rounded-xl p-6 text-center border border-gray-100 shadow-sm" style={{ backgroundColor: 'var(--color-primary-light)' }}>
                 <div className="flex justify-center mb-4"><Icon className="w-8 h-8" style={{ color: 'var(--color-primary)' }} /></div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>
+                <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--color-heading)' }}>{title}</h3>
                 <p className="text-gray-600 text-sm">{desc}</p>
               </div>
             ))}
@@ -118,25 +118,25 @@ export default function PestPageTemplate(props: PestPageProps) {
       </section>
 
       {/* SPECIAL SECTION */}
-      <section className="py-16 bg-[#f8fafc]">
+      <section className="py-16" style={{ backgroundColor: 'var(--color-bg-cta)' }}>
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-10">{props.specialSectionTitle}</h2>
+          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-center mb-10" style={{ color: 'var(--color-nav-text)' }}>{props.specialSectionTitle}</h2>
           {props.pricingCards ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {props.pricingCards.map((plan) => (
-                <div key={plan.name} className="bg-white rounded-xl p-6 shadow-sm border-t-[3px] text-center" style={{ borderTopColor: 'var(--color-primary)' }}>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">{plan.name}</h3>
+                <div key={plan.name} className="rounded-xl p-6 shadow-sm border-t-[3px] text-center" style={{ backgroundColor: 'var(--color-bg-section)', borderTopColor: 'var(--color-primary)' }}>
+                  <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--color-heading)' }}>{plan.name}</h3>
                   <p className="text-3xl font-bold mb-2" style={{ color: 'var(--color-primary)' }}>{plan.price}</p>
                   <p className="text-gray-600 text-sm">{plan.desc}</p>
                 </div>
               ))}
-              <p className="text-center text-gray-500 text-sm col-span-full mt-2">Call for exact pricing tailored to your property.</p>
+              <p className="text-center text-sm col-span-full mt-2" style={{ color: 'var(--color-nav-text)', opacity: 0.7 }}>Call for exact pricing tailored to your property.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {props.specialCards.map((card) => (
-                <div key={card.title} className="bg-white rounded-xl p-6 shadow-sm border-t-[3px]" style={{ borderTopColor: 'var(--color-primary)' }}>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">{card.title}</h3>
+                <div key={card.title} className="rounded-xl p-6 shadow-sm border-t-[3px]" style={{ backgroundColor: 'var(--color-bg-section)', borderTopColor: 'var(--color-primary)' }}>
+                  <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--color-heading)' }}>{card.title}</h3>
                   <p className="text-gray-600 text-sm">{card.desc}</p>
                 </div>
               ))}
@@ -146,11 +146,11 @@ export default function PestPageTemplate(props: PestPageProps) {
       </section>
 
       {/* READY TO BE PEST-FREE */}
-      <section className="py-16" style={{ background: 'linear-gradient(135deg, #0a0f1e 0%, #1a2744 50%, #0f3d2e 100%)' }}>
+      <section className="py-16" style={{ backgroundColor: 'var(--color-bg-hero)' }}>
         <div className="max-w-5xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
           <div>
-            <h2 className="font-oswald tracking-wide text-4xl md:text-5xl text-white mb-4">Ready to Be Pest-Free?</h2>
-            <p className="text-gray-300 mb-6">Same-day service available. Request your free quote today.</p>
+            <h2 className="font-oswald tracking-wide text-4xl md:text-5xl mb-4" style={{ color: 'var(--color-nav-text)' }}>Ready to Be Pest-Free?</h2>
+            <p className="mb-6" style={{ color: 'var(--color-nav-text)', opacity: 0.75 }}>Same-day service available. Request your free quote today.</p>
             <Link to="/quote" className="inline-block font-bold rounded-lg px-8 py-4 text-lg transition hover:opacity-90" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}>Get a Free Quote</Link>
           </div>
           <div className="hidden md:block rounded-xl overflow-hidden shadow-md">
@@ -160,12 +160,15 @@ export default function PestPageTemplate(props: PestPageProps) {
       </section>
 
       {/* FAQ */}
-      <section className="py-16 bg-white">
+      <section className="py-16" style={{ backgroundColor: 'var(--color-bg-section)' }}>
         <div className="max-w-4xl mx-auto px-4">
-          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-gray-900 text-center mb-10">Frequently Asked Questions</h2>
+          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-center mb-10" style={{ color: 'var(--color-heading)' }}>Frequently Asked Questions</h2>
           <div className="space-y-6">
             {props.faqs.map((faq, i) => (
-              <div key={i}><h3 className="text-lg font-bold text-gray-900 mb-2">{faq.q}</h3><p className="text-gray-600">{faq.a}</p></div>
+              <div key={i}>
+                <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--color-heading)' }}>{faq.q}</h3>
+                <p className="text-gray-600">{faq.a}</p>
+              </div>
             ))}
           </div>
         </div>
@@ -174,9 +177,9 @@ export default function PestPageTemplate(props: PestPageProps) {
       {/* BOTTOM CTA */}
       <section className="relative py-16" style={{ backgroundColor: 'var(--color-bg-cta)', clipPath: 'polygon(0 8%, 100% 0, 100% 100%, 0 100%)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center pt-8">
-          <h2 className="font-oswald tracking-wide text-4xl md:text-5xl text-white mb-4">{props.eastTexasCTATitle}</h2>
-          <p className="text-white/70 text-lg mb-8">Serving Tyler, Longview, and all of East Texas</p>
-          <Link to="/quote" className="inline-block bg-white hover:bg-gray-100 text-gray-900 font-bold rounded-lg px-10 py-4 text-lg transition">Request a Free Quote</Link>
+          <h2 className="font-oswald tracking-wide text-4xl md:text-5xl mb-4" style={{ color: 'var(--color-nav-text)' }}>{props.eastTexasCTATitle}</h2>
+          <p className="text-lg mb-8" style={{ color: 'var(--color-nav-text)', opacity: 0.75 }}>Serving Tyler, Longview, and all of East Texas</p>
+          <Link to="/quote" className="inline-block font-bold rounded-lg px-10 py-4 text-lg transition hover:opacity-90" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}>Request a Free Quote</Link>
         </div>
       </section>
     </div>
