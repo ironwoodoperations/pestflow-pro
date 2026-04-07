@@ -23,7 +23,7 @@ const SERVICES = [
 export default function LocationPage({ slug }: { slug: string }) {
   const [location, setLocation] = useState<LocationData>({ city: '', hero_title: '', intro_video_url: '' })
   const [otherLocations, setOtherLocations] = useState<OtherLocation[]>([])
-  const [phone, setPhone] = useState('(903) 555-0100')
+  const [phone, setPhone] = useState('')
   const [bizAddress, setBizAddress] = useState('')
   const [mapsApiKey, setMapsApiKey] = useState('')
 
@@ -60,7 +60,7 @@ export default function LocationPage({ slug }: { slug: string }) {
           <p className="text-xl mb-8" style={{ color: 'var(--color-nav-text)', opacity: 0.75 }}>Protecting East Texas Homes & Businesses</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/quote" className="font-bold rounded-lg px-8 py-4 text-lg transition hover:opacity-90" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}>Get a Free Quote</Link>
-            <a href={`tel:${phone}`} className="border-2 font-bold rounded-lg px-8 py-4 text-lg transition hover:opacity-80" style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}>Call Us Now</a>
+            {phone && <a href={`tel:${phone}`} className="border-2 font-bold rounded-lg px-8 py-4 text-lg transition hover:opacity-80" style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}>Call Us Now</a>}
           </div>
         </div>
         <img src="/banner-img.png" alt="" loading="lazy" className="absolute bottom-0 left-0 w-full opacity-20 pointer-events-none" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
@@ -80,7 +80,7 @@ export default function LocationPage({ slug }: { slug: string }) {
               <p className="text-gray-600 mb-6">Don't let pests take over your property. Contact us today for a thorough inspection and customized treatment plan for your {city} home or business.</p>
               <div className="flex flex-col sm:flex-row gap-3">
                 <Link to="/quote" className="font-bold rounded-lg px-6 py-3 transition text-center hover:opacity-90" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}>Get a Free Quote</Link>
-                <a href={`tel:${phone}`} className="border-2 font-bold rounded-lg px-6 py-3 transition text-center hover:opacity-80" style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}>Call {phone}</a>
+                {phone && <a href={`tel:${phone}`} className="border-2 font-bold rounded-lg px-6 py-3 transition text-center hover:opacity-80" style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}>Call {phone}</a>}
               </div>
             </div>
           </div>

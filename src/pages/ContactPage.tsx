@@ -11,7 +11,7 @@ interface FormState { name: string; email: string; phone: string; message: strin
 export default function ContactPage() {
   const [tenantId, setTenantId] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [info, setInfo] = useState<BusinessInfo>({ name: 'Ironclad Pest Solutions', phone: '(903) 555-0100', email: '', address: '', hours: '' })
+  const [info, setInfo] = useState<BusinessInfo>({ name: 'Ironclad Pest Solutions', phone: '', email: '', address: '', hours: '' })
   const [social, setSocial] = useState<SocialLinks>({ facebook: '', instagram: '', google: '' })
   const [form, setForm] = useState<FormState>({ name: '', email: '', phone: '', message: '', smsConsent: false })
   const [heroTitle, setHeroTitle] = useState('Contact Us')
@@ -33,7 +33,7 @@ export default function ContactPage() {
       const { data } = settingsRes
       if (data) {
         for (const row of data) {
-          if (row.key === 'business_info' && row.value) setInfo({ name: row.value.name || 'Ironclad Pest Solutions', phone: row.value.phone || '(903) 555-0100', email: row.value.email || '', address: row.value.address || '', hours: row.value.hours || '' })
+          if (row.key === 'business_info' && row.value) setInfo({ name: row.value.name || 'Ironclad Pest Solutions', phone: row.value.phone || '', email: row.value.email || '', address: row.value.address || '', hours: row.value.hours || '' })
           if (row.key === 'social_links' && row.value) setSocial({ facebook: row.value.facebook || '', instagram: row.value.instagram || '', google: row.value.google || '' })
         }
       }

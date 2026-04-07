@@ -23,7 +23,7 @@ export default function QuotePage() {
   const [form, setForm] = useState<QuoteFormState>(INITIAL)
   const [tenantId, setTenantId] = useState('')
   const [businessName, setBusinessName] = useState('PestFlow Pro')
-  const [businessPhone, setBusinessPhone] = useState('(903) 555-0100')
+  const [businessPhone, setBusinessPhone] = useState('')
   const [ownerSmsNumber, setOwnerSmsNumber] = useState('')
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
@@ -105,7 +105,7 @@ export default function QuotePage() {
           <CheckCircle className="w-16 h-16 text-emerald-500 mx-auto mb-6" />
           <h1 className="font-oswald tracking-wide text-4xl mb-4" style={{ color: 'var(--color-heading)' }}>Quote Request Received!</h1>
           <p className="text-gray-600 text-lg mb-2">We'll call you within 2 hours!</p>
-          <p className="text-gray-500">Need immediate help? Call <a href={`tel:${businessPhone}`} className="text-emerald-600 font-bold hover:underline">{businessPhone}</a></p>
+          {businessPhone && <p className="text-gray-500">Need immediate help? Call <a href={`tel:${businessPhone}`} className="text-emerald-600 font-bold hover:underline">{businessPhone}</a></p>}
         </div>
       </div>
     )
@@ -147,7 +147,7 @@ export default function QuotePage() {
           </div>
           <div className="mt-8 rounded-xl p-6" style={{ background: 'var(--color-bg-hero)' }}>
             <h3 className="font-oswald tracking-wide text-xl mb-3" style={{ color: 'var(--color-primary)' }}>{businessName}</h3>
-            <a href={`tel:${businessPhone}`} className="text-2xl font-bold hover:underline block mb-4" style={{ color: 'var(--color-nav-text)' }}>{businessPhone}</a>
+            {businessPhone && <a href={`tel:${businessPhone}`} className="text-2xl font-bold hover:underline block mb-4" style={{ color: 'var(--color-nav-text)' }}>{businessPhone}</a>}
             <ul className="space-y-2 text-sm" style={{ color: 'var(--color-nav-text)', opacity: 0.75 }}>
               <li>✅ Free Estimates</li><li>✅ Same-Day Service</li><li>✅ Licensed & Insured</li><li>✅ Satisfaction Guaranteed</li>
             </ul>
