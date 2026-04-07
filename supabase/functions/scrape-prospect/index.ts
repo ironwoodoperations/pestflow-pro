@@ -4,6 +4,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { pathToSlug, extractPageContent, PageContent } from './mapContent.ts'
+import { analyzeSite } from './analyzeSite.ts'
 
 const SUPABASE_URL              = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
@@ -132,19 +133,23 @@ Deno.serve(async (req: Request) => {
       .join('\n\n---\n\n')
       .slice(0, 30000)
 
-    const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: EXTRACTION_PROMPT + combinedForClaude }],
+    // Run prospect extraction and site recreation analysis in parallel
+    const [anthropicRes, siteRecreation] = await Promise.all([
+      fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: EXTRACTION_PROMPT + combinedForClaude }],
+        }),
       }),
-    })
+      analyzeSite(homepage.markdown, ANTHROPIC_API_KEY),
+    ])
 
     let prospectFields: Record<string, any> = {}
     if (anthropicRes.ok) {
@@ -170,6 +175,7 @@ Deno.serve(async (req: Request) => {
       pages_scraped: successful.map(s => s.path),
       scrapedContent,
       pagesFound: Object.keys(scrapedContent).length,
+      siteRecreation,
     })
   } catch (err) {
     console.error('scrape-prospect error:', err)
