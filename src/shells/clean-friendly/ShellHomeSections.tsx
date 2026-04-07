@@ -31,7 +31,7 @@ export default function ShellHomeSections() {
 
       {/* Google Reviews Strip */}
       {testimonials.length > 0 && (
-        <section className="py-10 bg-gray-50">
+        <section className="py-10" style={{ backgroundColor: 'var(--color-bg-section)' }}>
           <div className="max-w-6xl mx-auto px-4">
             <p className="text-gray-700 font-semibold mb-4">⭐ What Our Customers Are Saying</p>
             <div className="flex gap-4 overflow-x-auto pb-2">
@@ -54,21 +54,21 @@ export default function ShellHomeSections() {
       )}
 
       {/* Why Local Matters */}
-      <section className="py-16 bg-white">
+      <section className="py-16" style={{ backgroundColor: 'var(--color-bg-section)' }}>
         <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="text-center">
             <Shield className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--color-primary)' }} />
-            <h3 className="font-bold text-gray-900 text-lg mb-2">Locally Owned</h3>
+            <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--color-heading)' }}>Locally Owned</h3>
             <p className="text-gray-600 text-sm">We live and work in your community. Our reputation depends on your satisfaction.</p>
           </div>
           <div className="text-center">
             <Clock className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--color-primary)' }} />
-            <h3 className="font-bold text-gray-900 text-lg mb-2">Fast Response</h3>
+            <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--color-heading)' }}>Fast Response</h3>
             <p className="text-gray-600 text-sm">Same-day and next-day service available. We don't make you wait weeks.</p>
           </div>
           <div className="text-center">
             <MapPin className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--color-primary)' }} />
-            <h3 className="font-bold text-gray-900 text-lg mb-2">Your Neighbors Trust Us</h3>
+            <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--color-heading)' }}>Your Neighbors Trust Us</h3>
             <p className="text-gray-600 text-sm">
               Serving {city} families since {biz.founded_year || 'day one'}. Ask your neighbors.
             </p>
@@ -80,13 +80,14 @@ export default function ShellHomeSections() {
       <section className="py-16 text-center" style={{ backgroundColor: 'var(--color-bg-cta)' }}>
         {biz.phone && (
           <a href={`tel:${biz.phone.replace(/\D/g, '')}`}
-            className="block text-white font-oswald text-5xl font-bold mb-3 hover:opacity-80 transition">
+            className="block font-oswald text-5xl font-bold mb-3 hover:opacity-80 transition" style={{ color: 'var(--color-nav-text)' }}>
             {biz.phone}
           </a>
         )}
-        <p className="text-white/70 text-lg mb-6">Call today — same-day service available</p>
+        <p className="text-lg mb-6" style={{ color: 'var(--color-nav-text)', opacity: 0.7 }}>Call today — same-day service available</p>
         <a href="/quote"
-          className="border-2 border-white text-white font-bold px-8 py-3 rounded-lg hover:bg-white hover:text-[color:var(--color-primary)] transition">
+          className="border-2 font-bold px-8 py-3 rounded-lg transition hover:opacity-90"
+          style={{ borderColor: 'var(--color-nav-text)', color: 'var(--color-nav-text)' }}>
           Schedule Online
         </a>
       </section>
