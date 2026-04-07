@@ -18,6 +18,7 @@ interface RequestBody {
   slug?: string
   admin_email?: string
   admin_password?: string
+  prospect_id?: string
   onboarding_session_id?: string
   business_info: { name: string; phone: string; email: string; address: string; tagline: string; industry: string }
   branding: { logo_url: string; primary_color: string; template: string }
@@ -39,7 +40,7 @@ Deno.serve(async (req: Request) => {
 
   try {
     const body: RequestBody = await req.json()
-    const { slug, admin_email, admin_password, onboarding_session_id,
+    const { slug, admin_email, admin_password, prospect_id, onboarding_session_id,
             business_info: bi, branding, customization: bodyCustomization,
             social_links: social, integrations, subscription } = body
 
@@ -258,7 +259,36 @@ Deno.serve(async (req: Request) => {
       if (pcErr) console.error(`Failed to upsert page_content ${row.page_slug}:`, pcErr.message)
     }
 
-    // Step 5: Mark onboarding session as consumed
+    // Step 5: Overlay page_content with real scraped data (if available on the prospect)
+    if (prospect_id) {
+      try {
+        const { data: prospect } = await supabase
+          .from('prospects')
+          .select('scraped_content')
+          .eq('id', prospect_id)
+          .maybeSingle()
+
+        const sc = prospect?.scraped_content as Record<string, { title?: string; subtitle?: string; intro?: string }> | null
+        if (sc && Object.keys(sc).length > 0) {
+          for (const [slug, pc] of Object.entries(sc)) {
+            if (!pc.title && !pc.intro) continue
+            const { error: scErr } = await supabase.from('page_content').upsert({
+              tenant_id: tenantId,
+              page_slug: slug,
+              title:    pc.title    || undefined,
+              subtitle: pc.subtitle || undefined,
+              intro:    pc.intro    || undefined,
+            }, { onConflict: 'tenant_id,page_slug' })
+            if (scErr) console.error(`scraped page_content upsert failed for ${slug}:`, scErr.message)
+          }
+          console.log(`Seeded ${Object.keys(sc).length} page_content rows from scraped_content`)
+        }
+      } catch (scrapedErr: any) {
+        console.error('scraped_content seeding failed (non-fatal):', scrapedErr?.message)
+      }
+    }
+
+    // Step 6: Mark onboarding session as consumed
     if (onboarding_session_id && wd) {
       await supabase
         .from('onboarding_sessions')

@@ -44,6 +44,7 @@ Deno.serve(async (req: Request) => {
       slug,
       admin_email,
       admin_password: admin_password || '',
+      prospect_id: prospect_id || null,
       business_info: business_info || {},
       branding: branding || {},
       customization: customization || {},
