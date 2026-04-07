@@ -7,6 +7,8 @@ import OnboardingSection    from './ProspectDetail.Onboarding'
 import SiteSetupSection     from './ProspectDetail.SiteSetup'
 import IntegrationsSection  from './ProspectDetail.Integrations'
 import ProvisionSection     from './ProspectDetail.Provisioning'
+import RepGuideButton       from './RepGuideButton'
+import RepGuideDrawer       from './RepGuideDrawer'
 
 interface Props {
   prospectId: string | null   // null = new prospect
@@ -26,6 +28,7 @@ export default function ProspectDetail({ prospectId, salespeople, onClose }: Pro
   const [slugEdited, setSlugEdited]   = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting]       = useState(false)
+  const [guideSection, setGuideSection] = useState<string | null>(null)
   const timer                         = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   useEffect(() => {
@@ -115,6 +118,7 @@ export default function ProspectDetail({ prospectId, salespeople, onClose }: Pro
 
   return (
     <div className="fixed inset-0 z-40 flex justify-end" onClick={() => onClose(true)}>
+      <RepGuideDrawer section={guideSection} onClose={() => setGuideSection(null)} />
       <div className="w-full max-w-2xl bg-gray-950 border-l border-gray-800 h-full overflow-y-auto shadow-2xl"
         onClick={e => e.stopPropagation()}>
         {/* Header */}
@@ -122,22 +126,33 @@ export default function ProspectDetail({ prospectId, salespeople, onClose }: Pro
           <h2 className="font-bold text-white truncate">{form.company_name || 'New Prospect'}</h2>
           <div className="flex items-center gap-3">
             {saved && <span className="text-xs text-emerald-400">✓ Saved</span>}
+            <RepGuideButton section="faq" label="? Client FAQ" onOpen={setGuideSection} />
             <button onClick={() => onClose(true)} className="text-gray-400 hover:text-white text-xl leading-none">×</button>
           </div>
         </div>
 
         {/* Sections */}
         <div className="p-5 space-y-6">
+          <div className="flex justify-end"><RepGuideButton section="sales-call" onOpen={setGuideSection} /></div>
           <ContactSection form={form} setField={wrappedSetField} onBlur={onBlur} salespeople={salespeople} />
+          <div className="flex justify-end"><RepGuideButton section="intake" onOpen={setGuideSection} /></div>
           <IntakeLinkSection
             prospectId={id}
             adminEmail={form.admin_email ?? undefined}
             companyName={form.company_name ?? undefined}
             onImportSuccess={(data) => setForm(data)}
           />
+          <div className="flex justify-end"><RepGuideButton section="invoice" onOpen={setGuideSection} /></div>
           <OnboardingSection form={form} setField={wrappedSetField} onBlur={onBlur} prospect={form} onUpdate={onUpdate} />
+          <div className="flex items-center justify-end gap-2">
+            <RepGuideButton section="prospect-fields" onOpen={setGuideSection} />
+            <RepGuideButton section="shell-palette" onOpen={setGuideSection} />
+          </div>
           <SiteSetupSection form={form} setField={wrappedSetField} onBlur={onBlur} />
           <IntegrationsSection prospectId={id} form={form} />
+          <div className="flex justify-end">
+            <RepGuideButton section={form.provisioned_at ? 'post-launch' : 'pre-provision'} label={form.provisioned_at ? '? Post-Launch Guide' : undefined} onOpen={setGuideSection} />
+          </div>
           <ProvisionSection form={form} prospectId={id} onProvisioned={onUpdate} />
 
           {id && (
