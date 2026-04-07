@@ -58,7 +58,7 @@ export default function ShellHomeSections() {
         <section>
           <div className="max-w-6xl mx-auto flex flex-col md:flex-row">
             <div className="bg-[#1c1c1c] md:w-1/3 p-10 flex flex-col justify-center">
-              <div className="text-amber-400 text-8xl font-serif leading-none mb-4 select-none">"</div>
+              <div className="text-8xl font-serif leading-none mb-4 select-none" style={{ color: 'var(--color-primary)' }}>"</div>
               <h3 className="font-oswald text-white text-2xl mb-3">What Our Customers Say</h3>
               <p className="text-gray-400 text-sm">Trusted by homeowners across {region}</p>
             </div>
@@ -67,7 +67,7 @@ export default function ShellHomeSections() {
                 <div key={t.id} className="p-6 shadow-sm">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="font-bold text-gray-900 text-sm">{t.author_name}</span>
-                    <span className="text-amber-400 text-sm">{'★'.repeat(t.rating)}</span>
+                    <span className="text-sm" style={{ color: 'var(--color-primary)' }}>{'★'.repeat(t.rating)}</span>
                   </div>
                   <p className="text-gray-600 text-sm">
                     "{t.review_text.slice(0, 120)}{t.review_text.length > 120 ? '…' : ''}"
@@ -82,19 +82,19 @@ export default function ShellHomeSections() {
       {/* Guarantee Section */}
       <section className="py-16 bg-white">
         <div className="max-w-5xl mx-auto px-4 flex flex-col md:flex-row gap-12 items-start">
-          <div className="md:w-1/2 border-l-4 border-amber-500 pl-6">
+          <div className="md:w-1/2 border-l-4 pl-6" style={{ borderLeftColor: 'var(--color-primary)' }}>
             <h3 className="font-oswald text-3xl text-[#1c1c1c] mb-2">
               Your Satisfaction,<br />Guaranteed
             </h3>
-            <div className="w-12 h-1 bg-amber-500 mt-3" />
+            <div className="w-12 h-1 mt-3" style={{ backgroundColor: 'var(--color-primary)' }} />
           </div>
           <ul className="md:w-1/2 space-y-4 text-gray-600">
             <li className="flex items-start gap-3">
-              <span className="text-amber-500 font-bold mt-0.5">✓</span>
+              <span className="font-bold mt-0.5" style={{ color: 'var(--color-primary)' }}>✓</span>
               We'll come back at no charge if pests return
             </li>
             <li className="flex items-start gap-3">
-              <span className="text-amber-500 font-bold mt-0.5">✓</span>
+              <span className="font-bold mt-0.5" style={{ color: 'var(--color-primary)' }}>✓</span>
               Licensed, background-checked technicians every time
             </li>
           </ul>

@@ -45,8 +45,8 @@ export default function ShellHero() {
     <section style={{ backgroundColor: 'var(--color-bg-hero)' }} className="text-white min-h-[560px] flex flex-col md:flex-row">
       {/* LEFT — headline + CTA */}
       <div className="flex-1 md:w-[60%] flex flex-col justify-center px-8 md:px-14 py-16 relative">
-        <div className="absolute top-0 left-0 w-1 h-full bg-amber-500 hidden md:block" aria-hidden="true" />
-        <span className="text-amber-400 text-sm font-bold tracking-widest uppercase mb-4 block">
+        <div className="absolute top-0 left-0 w-1 h-full hidden md:block" style={{ backgroundColor: 'var(--color-primary)' }} aria-hidden="true" />
+        <span className="text-sm font-bold tracking-widest uppercase mb-4 block" style={{ color: 'var(--color-primary)' }}>
           ★★★★★ Rated #1 in Tyler, TX
         </span>
         <h1 className="font-oswald text-5xl md:text-6xl font-bold uppercase leading-tight mb-6 text-white">
@@ -62,7 +62,8 @@ export default function ShellHero() {
         {biz.phone && (
           <a
             href={`tel:${biz.phone.replace(/\D/g, '')}`}
-            className="mt-4 text-amber-400 font-semibold hover:text-amber-300 transition text-sm inline-block"
+            className="mt-4 font-semibold transition text-sm inline-block hover:opacity-80"
+            style={{ color: 'var(--color-primary)' }}
           >
             Or call: {biz.phone}
           </a>
@@ -71,7 +72,7 @@ export default function ShellHero() {
 
       {/* RIGHT — floating estimate card */}
       <div className="md:w-[40%] flex items-center justify-center px-6 md:px-10 py-12 md:py-0">
-        <div className="w-full max-w-sm bg-[#141414] border-t-4 border-amber-500 rounded-xl shadow-2xl p-6 md:translate-y-8">
+        <div className="w-full max-w-sm bg-[#141414] border-t-4 rounded-xl shadow-2xl p-6 md:translate-y-8" style={{ borderTopColor: 'var(--color-primary)' }}>
           <h2 className="text-xl font-bold text-white mb-5">Get a Free Estimate</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

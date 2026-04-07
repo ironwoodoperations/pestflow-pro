@@ -85,14 +85,14 @@ export default function ShellNavbar() {
 
           <div className="hidden lg:flex items-center gap-5">
             <div ref={dropdownRef} className="relative" onMouseEnter={handleDropdownEnter} onMouseLeave={handleDropdownLeave}>
-              <button aria-haspopup="true" aria-expanded={dropdownOpen} className="text-sm font-medium text-gray-300 hover:text-[#d97706] transition flex items-center gap-1">
+              <button aria-haspopup="true" aria-expanded={dropdownOpen} className="text-sm font-medium text-gray-300 hover:text-[color:var(--color-primary)] transition flex items-center gap-1">
                 Services <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
               {dropdownOpen && (
                 <div role="menu" className="absolute top-full left-0 mt-1 w-56 bg-[#2a2a2a] shadow-xl rounded-lg border border-white/10 py-2 z-50">
                   {SERVICE_LINKS.map((link) => (
                     <Link key={link.href} to={link.href} onClick={() => setDropdownOpen(false)}
-                      className="block px-4 py-2 text-sm text-gray-300 hover:text-[#d97706] hover:bg-white/5 transition">
+                      className="block px-4 py-2 text-sm text-gray-300 hover:text-[color:var(--color-primary)] hover:bg-white/5 transition">
                       {link.label}
                     </Link>
                   ))}
@@ -100,7 +100,7 @@ export default function ShellNavbar() {
               )}
             </div>
             {NAV_LINKS.map((link) => (
-              <Link key={link.href} to={link.href} className="text-sm font-medium text-gray-300 hover:text-[#d97706] transition">{link.label}</Link>
+              <Link key={link.href} to={link.href} className="text-sm font-medium text-gray-300 hover:text-[color:var(--color-primary)] transition">{link.label}</Link>
             ))}
             <Link to="/quote" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }} className="font-bold rounded-lg px-5 py-2.5 transition">{ctaText}</Link>
           </div>
@@ -116,11 +116,11 @@ export default function ShellNavbar() {
           <div className="px-4 py-4 space-y-1">
             <p className="text-xs font-semibold text-gray-500 uppercase px-2 pt-2 pb-1">Services</p>
             {SERVICE_LINKS.map((link) => (
-              <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} className="block px-2 py-2 text-sm text-gray-300 hover:text-[#d97706] transition">{link.label}</Link>
+              <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} className="block px-2 py-2 text-sm text-gray-300 hover:text-[color:var(--color-primary)] transition">{link.label}</Link>
             ))}
             <div className="border-t border-white/10 my-2" />
             {NAV_LINKS.map((link) => (
-              <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} className="block px-2 py-2 text-base font-medium text-gray-300 hover:text-[#d97706] transition">{link.label}</Link>
+              <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} className="block px-2 py-2 text-base font-medium text-gray-300 hover:text-[color:var(--color-primary)] transition">{link.label}</Link>
             ))}
             <Link to="/quote" onClick={() => setMobileOpen(false)} style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }} className="block text-center font-bold rounded-lg px-5 py-2.5 transition mt-3">{ctaText}</Link>
           </div>
