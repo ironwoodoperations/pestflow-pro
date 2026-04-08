@@ -19,10 +19,10 @@ import Sitemap from './pages/Sitemap'
 import SlugRouter from './pages/SlugRouter'
 
 // Payment success — public, no shell needed
-import PaymentSuccess from './pages/PaymentSuccess'
+const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'))
 
 // Intake form — public, no shell needed
-import IntakePage from './pages/IntakePage'
+const IntakePage = lazy(() => import('./pages/IntakePage'))
 
 // Secondary marketing pages — lazy
 const About           = lazy(() => import('./pages/About'))
@@ -122,10 +122,10 @@ export default function App() {
         } />
 
         {/* ─── Post-payment landing — must be before /:slug ─── */}
-        <Route path="/payment-success" element={<PaymentSuccess />} />
+        <Route path="/payment-success" element={<Suspense fallback={LOADING}><PaymentSuccess /></Suspense>} />
 
         {/* ─── Public intake form — must be before /:slug ─── */}
-        <Route path="/intake/:token" element={<IntakePage />} />
+        <Route path="/intake/:token" element={<Suspense fallback={LOADING}><IntakePage /></Suspense>} />
 
         {/* ─── Dynamic slug — MUST BE LAST ─── */}
         <Route path="/:slug" element={<PublicShell><SlugRouter /></PublicShell>} />
