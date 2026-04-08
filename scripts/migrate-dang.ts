@@ -13,7 +13,11 @@ const pro = createClient(
 const OLD_TENANT_ID = '1282b822-825b-4713-9dc9-6d14a2094d06'
 const NEW_TENANT_ID = '1611b16f-381b-4d4f-ba3a-fbde56ad425b'
 
-async function migrate(table: string, extraStrip: string[] = []): Promise<number> {
+async function migrate(
+  table: string,
+  extraStrip: string[] = [],
+  transform?: (row: any) => any
+): Promise<number> {
   const { data, error } = await dang
     .from(table)
     .select('*')
@@ -29,10 +33,11 @@ async function migrate(table: string, extraStrip: string[] = []): Promise<number
   }
 
   const cleaned = data.map((row: any) => {
-    const r = { ...row }
+    let r = { ...row }
     delete r.id
     r.tenant_id = NEW_TENANT_ID
     extraStrip.forEach(k => delete r[k])
+    if (transform) r = transform(r)
     return r
   })
 
@@ -60,6 +65,12 @@ async function main() {
   // locations — try both table names
   const locCount = await migrate('locations')
   if (locCount === 0) await migrate('location_data')
+
+  await migrate('page_content', ['custom_content'], (row) => {
+    // Dang uses 'slug'; PestFlow Pro uses 'page_slug'
+    if (row.slug !== undefined) { row.page_slug = row.slug; delete row.slug }
+    return row
+  })
 
   console.log('Migration complete.')
 }
