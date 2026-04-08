@@ -47,8 +47,11 @@ Deno.serve(async (req) => {
     const notifyEmail: string = notifRes.data?.value?.lead_email || ''
     const ccEmail: string = notifRes.data?.value?.cc_email || ''
     const primaryColor: string = brandRes.data?.value?.primary_color || '#10b981'
+    const logoUrl: string = brandRes.data?.value?.logo_url || ''
     const businessName: string = bizRes.data?.value?.name || 'PestFlow Pro'
     const businessPhone: string = bizRes.data?.value?.phone || ''
+    const businessEmail: string = bizRes.data?.value?.email || ''
+    const businessAddress: string = bizRes.data?.value?.address || ''
     const services = Array.isArray(lead.services) ? lead.services.join(', ') : (lead.services || 'Not specified')
     const firstName = lead.name?.split(' ')[0] || lead.name || 'there'
     const timestamp = new Date(lead.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })
@@ -57,22 +60,57 @@ Deno.serve(async (req) => {
 
     // ── Email A: Customer acknowledgment ──────────────────────────────────
     if (lead.email) {
+      const logoHtml = logoUrl
+        ? `<img src="${logoUrl}" alt="${businessName}" style="max-height:60px;max-width:200px;object-fit:contain;margin-bottom:16px" />`
+        : `<h1 style="margin:0 0 16px;font-size:22px;color:${primaryColor}">${businessName}</h1>`
+
+      const autoReplyHtml = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 16px">
+<tr><td align="center">
+<table width="100%" style="max-width:600px;background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08)">
+  <tr><td style="background:${primaryColor};padding:28px 32px;text-align:center">
+    ${logoHtml}
+  </td></tr>
+  <tr><td style="padding:32px">
+    <p style="margin:0 0 16px;font-size:16px;color:#111">Hi ${firstName},</p>
+    <p style="margin:0 0 16px;font-size:16px;color:#333;line-height:1.6">
+      Thank you for reaching out to <strong>${businessName}</strong>!
+      We've received your request and will be in touch within <strong>1 business day</strong>.
+    </p>
+    <table style="width:100%;background:#f9fafb;border-radius:6px;padding:16px;margin:24px 0;border-collapse:collapse">
+      <tr><td style="padding:6px 12px;font-size:13px;color:#555;font-weight:bold;width:120px">Name</td>
+          <td style="padding:6px 12px;font-size:13px;color:#111">${lead.name}</td></tr>
+      <tr style="background:#f1f3f5"><td style="padding:6px 12px;font-size:13px;color:#555;font-weight:bold">Phone</td>
+          <td style="padding:6px 12px;font-size:13px;color:#111">${lead.phone || '—'}</td></tr>
+      ${lead.services?.length ? `<tr><td style="padding:6px 12px;font-size:13px;color:#555;font-weight:bold">Services</td>
+          <td style="padding:6px 12px;font-size:13px;color:#111">${services}</td></tr>` : ''}
+    </table>
+    ${businessPhone ? `<p style="margin:0 0 24px;text-align:center">
+      <a href="tel:${businessPhone.replace(/\D/g,'')}" style="display:inline-block;background:${primaryColor};color:#fff;font-size:16px;font-weight:bold;padding:12px 28px;border-radius:6px;text-decoration:none">
+        Call us: ${businessPhone}
+      </a>
+    </p>` : ''}
+    <p style="margin:0;font-size:15px;color:#333">We look forward to speaking with you!</p>
+  </td></tr>
+  <tr><td style="background:#f9fafb;padding:20px 32px;border-top:1px solid #e5e7eb;font-size:12px;color:#888;text-align:center">
+    ${businessAddress ? `${businessAddress}<br>` : ''}
+    Powered by <a href="https://pestflowpro.com" style="color:#888">PestFlow Pro</a>
+  </td></tr>
+</table>
+</td></tr></table>
+</body></html>`
+
+      const autoReplyText = `Hi ${firstName},\n\nThank you for contacting ${businessName}! We received your request and will be in touch within 1 business day.\n\nYour submitted information:\n- Name: ${lead.name}\n- Phone: ${lead.phone || '—'}\n${lead.services?.length ? `- Services: ${services}\n` : ''}\n${businessPhone ? `If you need immediate assistance, call us: ${businessPhone}\n\n` : ''}We look forward to speaking with you!\n\n${businessName}${businessAddress ? '\n' + businessAddress : ''}\n\n---\nPowered by PestFlow Pro — https://pestflowpro.com`
+
       try {
         await sendEmail({
           to: lead.email,
-          cc: notifyEmail || undefined,
-          subject: `Thank you for contacting ${businessName}!`,
-          html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
-  <h2 style="color:${primaryColor}">${businessName}</h2>
-  <p>Hi ${firstName},</p>
-  <p>Thank you for reaching out! We've received your inquiry and will be in
-  touch with you as soon as possible — usually within 1 business day.</p>
-  ${businessPhone ? `<p>If you need immediate assistance, please call us at <strong>${businessPhone}</strong>.</p>` : ''}
-  <p>We look forward to helping you!</p>
-  <p style="margin-top:32px;color:#888;font-size:12px">
-    Powered by <a href="https://pestflowpro.com" style="color:#888">PestFlow Pro</a>
-  </p>
-</div>`,
+          subject: `We received your request, ${firstName}! — ${businessName}`,
+          replyTo: businessEmail || notifyEmail || undefined,
+          html: autoReplyHtml,
+          text: autoReplyText,
         })
         results.emailA = 'sent'
       } catch (e) {

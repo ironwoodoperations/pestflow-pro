@@ -3,11 +3,15 @@ export async function sendEmail({
   cc,
   subject,
   html,
+  text,
+  replyTo,
 }: {
   to: string
   cc?: string
   subject: string
   html: string
+  text?: string
+  replyTo?: string
 }): Promise<void> {
   const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') || ''
   const payload: Record<string, unknown> = {
@@ -16,7 +20,9 @@ export async function sendEmail({
     subject,
     html,
   }
-  if (cc) payload.cc = cc
+  if (cc)      payload.cc       = cc
+  if (text)    payload.text     = text
+  if (replyTo) payload.reply_to = replyTo
 
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
