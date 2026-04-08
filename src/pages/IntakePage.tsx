@@ -26,7 +26,7 @@ export default function IntakePage() {
   useEffect(() => {
     if (!token) { setStatus('invalid'); return }
     supabase.from('intake_tokens')
-      .select('*, prospects(id, contact_name, company_name, phone, email, admin_email, business_info, branding, customization, social_facebook, social_instagram, social_google, social_youtube, intake_data)')
+      .select('*, prospects(id, contact_name, company_name, phone, email, admin_email, business_info, branding, customization, social_facebook, social_instagram, social_google, social_youtube, intake_data, tier)')
       .eq('token', token)
       .maybeSingle()
       .then(({ data, error }) => {
@@ -162,7 +162,7 @@ export default function IntakePage() {
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8">
           {step === 0 && <IntakeStep1Business form={form.business} setForm={b => setForm(f => ({ ...f, business: b }))} />}
-          {step === 1 && <IntakeStep2Branding form={form.branding} setForm={b => setForm(f => ({ ...f, branding: b }))} token={token!} />}
+          {step === 1 && <IntakeStep2Branding form={form.branding} setForm={b => setForm(f => ({ ...f, branding: b }))} token={token!} tier={tokenRow?.prospects?.tier ?? 'growth'} />}
           {step === 2 && <IntakeStep3Domain form={form.domain} setForm={d => setForm(f => ({ ...f, domain: d }))} />}
           {step === 3 && <IntakeStep4Social form={form.social} setForm={s => setForm(f => ({ ...f, social: s }))} />}
 
