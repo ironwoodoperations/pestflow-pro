@@ -26,6 +26,7 @@ const CRMTab        = lazy(() => import('../../components/admin/CRMTab'))
 const SettingsTab   = lazy(() => import('../../components/admin/settings/SettingsTab'))
 const TeamTab          = lazy(() => import('../../components/admin/team/TeamTab'))
 const BillingTab       = lazy(() => import('../../components/admin/BillingTab'))
+const ReviewsTab       = lazy(() => import('../../components/admin/ReviewsTab'))
 const TABS = [
   { key: 'dashboard', label: 'Dashboard', icon: BarChart3 },
   { key: 'content', label: 'Content', icon: FileText },
@@ -33,6 +34,7 @@ const TABS = [
   { key: 'blog', label: 'Blog', icon: BookOpen },
   { key: 'social', label: 'Social', icon: Share2 },
   { key: 'testimonials', label: 'Testimonials', icon: Star },
+  { key: 'reviews', label: 'Reviews', icon: Star },
   { key: 'locations', label: 'Locations', icon: MapPin },
   { key: 'reports', label: 'Reports', icon: TrendingUp },
   { key: 'crm', label: 'CRM', icon: Users },
@@ -50,6 +52,7 @@ const TAB_SUBTITLES: Record<string, string> = {
   blog: 'Create and manage blog posts',
   social: 'Schedule and manage social media',
   testimonials: 'Manage customer reviews and testimonials',
+  reviews: 'Live Google reviews from your Business Profile',
   locations: 'Manage service area locations',
   reports: 'Business analytics and reports',
   crm: 'Track leads and customer relationships',
@@ -105,7 +108,7 @@ export default function Dashboard() {
         </div>
         <nav className="flex-1 py-4 px-2 space-y-0.5">
           {TABS.map(({ key, label, icon: Icon }) => {
-            const gatedTabs: Record<string, number> = { blog: 2, seo: 2, social: 2, reports: 2 }
+            const gatedTabs: Record<string, number> = { blog: 2, seo: 2, social: 2, reports: 2, reviews: 4 }
             const locked = gatedTabs[key] ? !canAccess(gatedTabs[key]) : false
             return (
               <button key={key} onClick={() => setActiveTab(key)} aria-current={activeTab === key ? 'page' : undefined}
@@ -167,6 +170,7 @@ export default function Dashboard() {
               {activeTab === 'blog' && <BlogTab />}
               {activeTab === 'social' && <SocialTab onNavigate={(t) => setActiveTab(t as TabKey)} />}
               {activeTab === 'testimonials' && <TestimonialsTab />}
+              {activeTab === 'reviews' && <ReviewsTab />}
               {activeTab === 'locations' && <LocationsTab />}
               {activeTab === 'reports' && <ReportsTab />}
               {activeTab === 'crm' && <CRMTab />}
