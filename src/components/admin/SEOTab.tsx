@@ -40,9 +40,10 @@ export default function SEOTab() {
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
                 activeTab === tab.id
-                  ? 'border-emerald-600 text-emerald-700 bg-white'
+                  ? 'text-emerald-700 bg-white'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-              }`}>
+              }`}
+            style={activeTab === tab.id ? { borderBottomColor: 'var(--admin-accent, #10b981)', borderBottomStyle: 'solid', borderBottomWidth: '2px' } : undefined}>
               {tab.label}
               {tab.id === 'pages' && stats.issuesFound > 0 && (
                 <span className="ml-1.5 w-2 h-2 bg-red-500 rounded-full inline-block" />

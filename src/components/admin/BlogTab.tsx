@@ -63,7 +63,8 @@ export default function BlogTab() {
       <FeatureGate minTier={2}>
         <div className="flex items-center justify-between mb-6">
           <p className="text-sm text-gray-500">{posts.length} post{posts.length !== 1 ? 's' : ''}</p>
-          <button onClick={openNew} className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+          <button onClick={openNew} className="flex items-center gap-2 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:opacity-90"
+            style={{ backgroundColor: 'var(--admin-accent, #10b981)' }}>
             <Plus size={16} /> New Post
           </button>
         </div>

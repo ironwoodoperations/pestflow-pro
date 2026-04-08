@@ -91,7 +91,8 @@ export default function LocationsTab() {
 
       <div className="flex items-center justify-between mb-6">
         <p className="text-sm text-gray-500">{activeCount} active location{activeCount !== 1 ? 's' : ''} · {locations.length} total</p>
-        <button onClick={openNew} className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+        <button onClick={openNew} className="flex items-center gap-2 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:opacity-90"
+          style={{ backgroundColor: 'var(--admin-accent, #10b981)' }}>
           <Plus size={16} /> Add Location
         </button>
       </div>
@@ -184,7 +185,8 @@ export default function LocationsTab() {
             </div>
             <div className="flex justify-end gap-3 mt-6">
               <button onClick={() => setModalOpen(false)} className="border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium transition-colors">Cancel</button>
-              <button onClick={handleSave} disabled={saving} className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
+              <button onClick={handleSave} disabled={saving} className="text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 hover:opacity-90"
+                style={{ backgroundColor: 'var(--admin-accent, #10b981)' }}>
                 {saving ? 'Saving...' : 'Save'}
               </button>
             </div>

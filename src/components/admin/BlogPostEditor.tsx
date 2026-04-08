@@ -132,7 +132,8 @@ export default function BlogPostEditor({ editing, initialPost, tenantId, onSave,
             )}
           </div>
           <div className="flex gap-3 pt-2">
-            <button onClick={handleSave} disabled={saving} className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
+            <button onClick={handleSave} disabled={saving} className="text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 hover:opacity-90"
+              style={{ backgroundColor: 'var(--admin-accent, #10b981)' }}>
               {saving ? 'Saving...' : 'Save Post'}
             </button>
             <button onClick={onCancel} className="border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium transition-colors">Cancel</button>

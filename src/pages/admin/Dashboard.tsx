@@ -61,6 +61,7 @@ const TAB_SUBTITLES: Record<string, string> = {
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<TabKey>('dashboard')
   const [businessName, setBusinessName] = useState('Your Business')
+  const [accentColor, setAccentColor] = useState('#10b981')
   const [onboardingComplete] = useState(true)
   const [previewMode, setPreviewMode] = useState(false)
   const [demoActive, setDemoActive] = useState(false)
@@ -73,9 +74,11 @@ export default function Dashboard() {
     Promise.all([
       supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
       supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'demo_mode').maybeSingle(),
-    ]).then(([bizRes, demoRes]) => {
+      supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
+    ]).then(([bizRes, demoRes, brandRes]) => {
       if (bizRes.data?.value?.name) setBusinessName(bizRes.data.value.name)
       setDemoActive(demoRes.data?.value?.active === true)
+      if (brandRes.data?.value?.accent_color) setAccentColor(brandRes.data.value.accent_color)
     })
   }, [tenantId])
 
@@ -92,7 +95,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen" style={{ '--admin-accent': accentColor } as React.CSSProperties}>
       {demoActive && <DemoBanner onGoLive={handleGoLive} />}
       <div className="flex flex-1">
       <aside className="w-64 flex-shrink-0 flex flex-col" style={{ background: '#1a1f2e' }}>
@@ -107,8 +110,9 @@ export default function Dashboard() {
             return (
               <button key={key} onClick={() => setActiveTab(key)} aria-current={activeTab === key ? 'page' : undefined}
                 className={`w-full flex items-center gap-3 px-4 py-3 mx-0 rounded-lg text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
-                  activeTab === key ? 'bg-[#1a3d2b] text-white border-l-4 border-emerald-500' : 'text-gray-300 hover:bg-[#22304a] hover:text-white border-l-4 border-transparent'
-                } ${locked ? 'opacity-50' : ''}`}>
+                  activeTab === key ? 'bg-[#1a3d2b] text-white border-l-4' : 'text-gray-300 hover:bg-[#22304a] hover:text-white border-l-4 border-transparent'
+                } ${locked ? 'opacity-50' : ''}`}
+                style={activeTab === key ? { borderLeftColor: accentColor } : undefined}>
                 <Icon size={20} aria-hidden="true" />
                 <span className="flex-1 text-left">{label}</span>
                 {locked && <span title="Upgrade to Grow to unlock"><Lock className="w-3.5 h-3.5 shrink-0 text-amber-500" /></span>}
