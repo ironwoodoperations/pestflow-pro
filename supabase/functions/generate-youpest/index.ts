@@ -13,10 +13,67 @@ const CORS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const SYSTEM_PROMPT = `You analyze pest control websites and output a JSON layout config that matches
-their site structure as closely as possible. You return ONLY valid JSON — no
-preamble, no markdown fences, no explanation. Match section order, hero style,
-and nav/footer patterns from the scraped content.`
+const SYSTEM_PROMPT = `You are an expert web designer analyzing pest control websites.
+You output a JSON layout_config that recreates the structure and feel of the
+analyzed site as closely as possible. You match:
+- Section order (what appears first, second, third on their homepage)
+- Hero style (does the original have a full-width image? split layout? centered text?)
+- Nav style (is their nav transparent over the hero, or solid?)
+- Content tone (professional/corporate vs friendly/family vs bold/aggressive)
+- Trust signals they emphasize (years in business, technician count, guarantees)
+
+You return ONLY valid JSON. No preamble. No markdown. No explanation.
+The JSON must exactly match the layout_config schema provided.`
+
+const USER_PROMPT_TEMPLATE = (sourceUrl: string, businessName: string, homepageMarkdown: string) =>
+`Analyze this pest control website and return a layout_config JSON.
+
+Source URL: ${sourceUrl}
+Business Name: ${businessName}
+
+Scraped homepage content:
+${homepageMarkdown}
+
+Available section types and variants:
+- hero: full-bleed | split | centered | video-bg
+- trust-bar: (no variants — just an items array of trust badges)
+- services-grid: cards | icon-list | large-tiles
+- about-strip: left-image | right-image | centered
+- why-choose-us: icons | checklist | numbered
+- cta-banner: (no variants — headline + cta text)
+
+Nav styles: transparent-overlay | solid | minimal
+Footer styles: full | minimal | centered
+
+Rules:
+1. sections array must have 4-6 items in the order they should appear on the page
+2. Always include hero as the first section
+3. Always include cta-banner as the last section
+4. Choose variants that best match the original site's style
+5. Extract real copy from the scraped content for headlines, subheadlines, trust items,
+   why-us points — do not invent generic placeholder text
+6. Extract or infer primary and accent colors from the scraped content description
+7. hero.bg should be "primary" unless the site uses a photo hero (then use "image")
+
+Return ONLY the layout_config JSON object matching this schema:
+{
+  "nav": { "style": "transparent-overlay|solid|minimal", "links": [{"label": "...", "href": "..."}] },
+  "sections": [
+    { "id": "hero", "type": "hero", "variant": "full-bleed|split|centered|video-bg",
+      "headline": "...", "subheadline": "...", "cta": "...", "bg": "primary|accent|dark|light|image" },
+    { "id": "trust-bar", "type": "trust-bar", "items": ["...", "..."] },
+    { "id": "services", "type": "services-grid", "variant": "cards|icon-list|large-tiles", "headline": "..." },
+    { "id": "about", "type": "about-strip", "variant": "left-image|right-image|centered",
+      "headline": "...", "body": "..." },
+    { "id": "why-us", "type": "why-choose-us", "variant": "icons|checklist|numbered",
+      "headline": "...", "points": ["...", "..."] },
+    { "id": "cta-banner", "type": "cta-banner", "headline": "...", "cta": "..." }
+  ],
+  "footer": { "style": "full|minimal|centered" },
+  "colors": { "primary": "#hexcolor", "accent": "#hexcolor" }
+}
+
+Return the layout_config JSON now.`
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS })
@@ -45,10 +102,8 @@ Deno.serve(async (req: Request) => {
     }
 
     // Extract relevant fields
-    const businessName  = prospect.company_name || (prospect.business_info as any)?.name || 'Unknown'
-    const sourceUrl     = prospect.source_url || (prospect.scraped_content as any)?.source_url || ''
-    const primaryColor  = (prospect.branding as any)?.primary_color || '#E87800'
-    const accentColor   = (prospect.branding as any)?.accent_color  || '#1a1a1a'
+    const businessName = prospect.company_name || (prospect.business_info as any)?.name || 'Unknown'
+    const sourceUrl    = prospect.source_url || ''
 
     // Build homepage markdown from scraped_content
     let homepageMarkdown = ''
@@ -64,7 +119,6 @@ Deno.serve(async (req: Request) => {
         if (home.intro)    parts.push(home.intro)
         if (home.body)     parts.push(home.body)
         if (home.content)  parts.push(home.content)
-        // Include all page slugs as context
         for (const [slug, pageData] of Object.entries(sc)) {
           if (slug === 'home') continue
           const pd = pageData as any
@@ -79,17 +133,6 @@ Deno.serve(async (req: Request) => {
       homepageMarkdown = `Business: ${businessName}. No scraped content available.`
     }
 
-    const userPrompt = `Here is the scraped homepage content from ${sourceUrl}:
-
-${homepageMarkdown}
-
-Business name: ${businessName}
-Extracted primary color: ${primaryColor}
-Extracted accent color: ${accentColor}
-
-Return a layout_config JSON object matching the schema you were given.
-Preserve section order, tone, and structure from their existing site.`
-
     // Call Claude
     const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -103,7 +146,7 @@ Preserve section order, tone, and structure from their existing site.`
         model: 'claude-sonnet-4-6',
         max_tokens: 2048,
         system: SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: userPrompt }],
+        messages: [{ role: 'user', content: USER_PROMPT_TEMPLATE(sourceUrl, businessName, homepageMarkdown) }],
       }),
     })
 

@@ -6,6 +6,7 @@ import { resolveTenantId } from '../lib/tenant'
 import StructuredData from '../components/StructuredData'
 import HeroVideoPlayer from '../components/HeroVideoPlayer'
 import { ShellSectionsRenderer } from '../components/PublicShell'
+import { useTemplate } from '../context/TemplateContext'
 
 interface PageContent {
   title: string
@@ -19,6 +20,7 @@ const DEFAULT_CONTENT: PageContent = {
 }
 
 export default function Index() {
+  const { template } = useTemplate()
   const [content, setContent] = useState<PageContent>(DEFAULT_CONTENT)
   const [heroMedia, setHeroMedia] = useState<{ youtube_id?: string; thumbnail_url?: string } | null>(null)
   const [videoPlaying, setVideoPlaying] = useState(false)
@@ -40,6 +42,16 @@ export default function Index() {
       if (mediaRes.data?.value?.youtube_id) setHeroMedia(mediaRes.data.value)
     })
   }, [])
+
+  // youpest shell owns its own hero via layout_config — skip the standard hero
+  if (template === 'youpest') {
+    return (
+      <div style={{ backgroundColor: 'var(--color-bg-section)' }}>
+        <StructuredData type="LocalBusiness" />
+        <ShellSectionsRenderer />
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>

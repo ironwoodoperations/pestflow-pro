@@ -7,11 +7,15 @@ interface Props {
 }
 
 export default function GenerateProLayout({ prospectId, tier }: Props) {
-  const [loading, setLoading]           = useState(false)
-  const [error, setError]               = useState<string | null>(null)
-  const [success, setSuccess]           = useState(false)
-  const [layout, setLayout]             = useState<Record<string, any> | null>(null)
-  const [expanded, setExpanded]         = useState(false)
+  const [loading, setLoading]       = useState(false)
+  const [error, setError]           = useState<string | null>(null)
+  const [success, setSuccess]       = useState(false)
+  const [layout, setLayout]         = useState<Record<string, any> | null>(null)
+  const [expanded, setExpanded]     = useState(false)
+  const [editMode, setEditMode]     = useState(false)
+  const [editJson, setEditJson]     = useState('')
+  const [editError, setEditError]   = useState<string | null>(null)
+  const [editSaved, setEditSaved]   = useState(false)
 
   if (tier !== 'pro') return null
 
@@ -20,14 +24,11 @@ export default function GenerateProLayout({ prospectId, tier }: Props) {
     setError(null)
     setSuccess(false)
     setLayout(null)
+    setEditMode(false)
+    setEditError(null)
+    setEditSaved(false)
 
     try {
-      let { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
-        const { data: r } = await supabase.auth.refreshSession()
-        session = r.session
-      }
-
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-youpest`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -42,12 +43,38 @@ export default function GenerateProLayout({ prospectId, tier }: Props) {
       }
 
       setLayout(data.layout_config)
+      setEditJson(JSON.stringify(data.layout_config, null, 2))
       setSuccess(true)
     } catch (e: any) {
       setError(e.message || 'Network error')
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleSaveEdit = async () => {
+    setEditError(null)
+    setEditSaved(false)
+    let parsed: Record<string, any>
+    try {
+      parsed = JSON.parse(editJson.replace(/```json|```/g, '').trim())
+    } catch {
+      setEditError('Invalid JSON — check syntax')
+      return
+    }
+
+    const { error: dbErr } = await supabase
+      .from('prospects')
+      .update({ youpest_layout: parsed })
+      .eq('id', prospectId)
+
+    if (dbErr) {
+      setEditError('Save failed: ' + dbErr.message)
+      return
+    }
+
+    setLayout(parsed)
+    setEditSaved(true)
   }
 
   return (
@@ -85,16 +112,49 @@ export default function GenerateProLayout({ prospectId, tier }: Props) {
           <p className="text-emerald-400 text-xs font-medium">
             ✓ Pro layout generated — review before provisioning
           </p>
-          <button
-            onClick={() => setExpanded(e => !e)}
-            className="text-xs text-gray-400 hover:text-gray-200 underline"
-          >
-            {expanded ? 'Collapse' : 'Expand'} layout JSON
-          </button>
-          {expanded && (
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setExpanded(e => !e)}
+              className="text-xs text-gray-400 hover:text-gray-200 underline"
+            >
+              {expanded ? 'Collapse' : 'Expand'} layout JSON
+            </button>
+            <button
+              onClick={() => { setEditMode(e => !e); setEditSaved(false); setEditError(null) }}
+              className="text-xs text-violet-400 hover:text-violet-200 underline"
+            >
+              {editMode ? 'Cancel Edit' : 'Edit Layout JSON'}
+            </button>
+          </div>
+
+          {expanded && !editMode && (
             <pre className="bg-gray-950 border border-gray-700 rounded p-3 text-xs text-green-300 font-mono whitespace-pre-wrap break-all max-h-72 overflow-y-auto">
               {JSON.stringify(layout, null, 2)}
             </pre>
+          )}
+
+          {editMode && (
+            <div className="space-y-2">
+              <textarea
+                value={editJson}
+                onChange={e => { setEditJson(e.target.value); setEditSaved(false); setEditError(null) }}
+                className="w-full h-72 bg-gray-950 border border-gray-600 rounded p-3 text-xs text-green-300 font-mono resize-y focus:outline-none focus:border-violet-500"
+                spellCheck={false}
+              />
+              {editError && (
+                <p className="text-red-400 text-xs">{editError}</p>
+              )}
+              {editSaved && (
+                <p className="text-emerald-400 text-xs">✓ Saved</p>
+              )}
+              <button
+                onClick={handleSaveEdit}
+                className="px-3 py-1.5 bg-violet-700 hover:bg-violet-600 text-white text-xs font-medium rounded transition"
+              >
+                Save Edits
+              </button>
+            </div>
           )}
         </div>
       )}

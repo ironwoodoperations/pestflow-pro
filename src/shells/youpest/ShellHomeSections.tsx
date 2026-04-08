@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
+import { applyShellTheme } from '../../lib/shellThemes'
 import SectionRenderer from './SectionRenderer'
 
 interface LayoutConfig {
   sections?: { id?: string; type: string; [key: string]: any }[]
+  colors?: { primary?: string; accent?: string }
   [key: string]: any
 }
 
@@ -20,7 +22,16 @@ export default function ShellHomeSections() {
         .select('layout_config')
         .eq('tenant_id', tenantId)
         .maybeSingle()
-      if (data?.layout_config) setLayout(data.layout_config as LayoutConfig)
+      if (data?.layout_config) {
+        const lc = data.layout_config as LayoutConfig
+        setLayout(lc)
+        // If layout has extracted brand colors, apply them over the youpest shell
+        const lPrimary = lc.colors?.primary
+        const lAccent  = lc.colors?.accent
+        if (lPrimary) {
+          applyShellTheme('youpest', lPrimary, lAccent || undefined)
+        }
+      }
       setLoading(false)
     })
   }, [])
