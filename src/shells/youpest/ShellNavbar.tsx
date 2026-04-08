@@ -13,9 +13,6 @@ const NAV = [
   { label: 'Contact', href: '/contact' },
 ]
 
-// Brand: dark charcoal + bright green — from You Pest Control identity
-const ACCENT = '#22c55e'
-
 export default function ShellNavbar() {
   const { businessName: ctxBusinessName } = useTemplate()
   const [businessName, setBusinessName] = useState(ctxBusinessName)
@@ -35,7 +32,7 @@ export default function ShellNavbar() {
   return (
     <nav style={{ background: 'var(--color-nav-bg)' }} className="sticky top-0 z-50 shadow-lg">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-        <Link to="/" className="font-bold text-xl tracking-tight" style={{ color: ACCENT }}>
+        <Link to="/" className="font-bold text-xl tracking-tight" style={{ color: 'var(--color-accent)' }}>
           {businessName}
         </Link>
         <div className="hidden md:flex items-center gap-6">
@@ -45,7 +42,7 @@ export default function ShellNavbar() {
             </Link>
           ))}
           {phone && (
-            <a href={`tel:${phone}`} style={{ background: ACCENT }}
+            <a href={`tel:${phone}`} style={{ background: 'var(--color-accent)' }}
               className="px-4 py-2 rounded-lg text-white text-sm font-bold hover:opacity-90 transition">
               {phone}
             </a>
@@ -64,7 +61,7 @@ export default function ShellNavbar() {
             </Link>
           ))}
           {phone && (
-            <a href={`tel:${phone}`} style={{ background: ACCENT }}
+            <a href={`tel:${phone}`} style={{ background: 'var(--color-accent)' }}
               className="block mt-3 text-center px-4 py-2 rounded-lg text-white text-sm font-bold">
               {phone}
             </a>

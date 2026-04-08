@@ -3,8 +3,6 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
 
-const ACCENT = '#22c55e'
-
 export default function ShellHero() {
   const [headline, setHeadline] = useState('Your Home. Protected.')
   const [sub, setSub] = useState('Fast, effective pest control you can trust.')
@@ -27,7 +25,7 @@ export default function ShellHero() {
   return (
     <section style={{ background: 'var(--color-bg-hero)' }} className="py-24 px-4">
       <div className="max-w-4xl mx-auto text-center">
-        <span style={{ background: ACCENT + '22', color: ACCENT }}
+        <span style={{ background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)', color: 'var(--color-accent)' }}
           className="inline-block text-xs font-bold tracking-widest uppercase px-4 py-1.5 rounded-full mb-6">
           Licensed &amp; Insured
         </span>

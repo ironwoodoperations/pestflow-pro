@@ -4,8 +4,6 @@ import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
 import { useTemplate } from '../../context/TemplateContext'
 
-const ACCENT = '#22c55e'
-
 export default function ShellFooter() {
   const { businessName: ctxBusinessName } = useTemplate()
   const [biz, setBiz] = useState({ name: ctxBusinessName, phone: '', email: '', address: '' })
@@ -50,7 +48,7 @@ export default function ShellFooter() {
         <p>
           Powered by{' '}
           <a href="https://pestflowpro.com" target="_blank" rel="noopener noreferrer"
-            style={{ color: ACCENT }} className="font-semibold hover:underline">
+            style={{ color: 'var(--color-accent)' }} className="font-semibold hover:underline">
             PestFlow Pro
           </a>
         </p>

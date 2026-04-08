@@ -58,4 +58,6 @@ export interface Prospect {
   site_revealed_at: string | null
   salesperson_id: string | null
   onboarding_rep_id: string | null
+  tier: string | null
+  youpest_layout: Record<string, any> | null
 }

@@ -288,7 +288,34 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // Step 6: Mark onboarding session as consumed
+    // Step 6: Seed youpest_layout if this is a Pro (youpest template) tenant
+    if (prospect_id) {
+      try {
+        const { data: proProspect } = await supabase
+          .from('prospects')
+          .select('youpest_layout, source_url, branding')
+          .eq('id', prospect_id)
+          .maybeSingle()
+
+        const template = wbr.template || branding?.template || ''
+        if (template === 'youpest' && proProspect?.youpest_layout) {
+          const { error: ylErr } = await supabase
+            .from('youpest_layout')
+            .upsert({
+              tenant_id:      tenantId,
+              layout_config:  proProspect.youpest_layout,
+              status:         'applied',
+              generated_from: proProspect.source_url || (proProspect.branding as any)?.source_url || '',
+            }, { onConflict: 'tenant_id' })
+          if (ylErr) console.error('youpest_layout upsert failed:', ylErr.message)
+          else console.log('youpest_layout seeded for tenant', tenantId)
+        }
+      } catch (ylSeedErr: any) {
+        console.error('youpest_layout seeding failed (non-fatal):', ylSeedErr?.message)
+      }
+    }
+
+    // Step 7: Mark onboarding session as consumed
     if (onboarding_session_id && wd) {
       await supabase
         .from('onboarding_sessions')
