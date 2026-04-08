@@ -73,7 +73,7 @@ export default function ShellNavbar() {
 
   return (
     <nav style={{ backgroundColor: 'var(--color-nav-bg)' }} className="border-b border-white/10 sticky top-0 z-50">
-      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-[#d97706] text-white px-4 py-2 rounded-lg z-[60]">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 text-white px-4 py-2 rounded-lg z-[60]" style={{ backgroundColor: 'var(--color-primary)' }}>
         Skip to main content
       </a>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -91,7 +91,7 @@ export default function ShellNavbar() {
                 Services <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
               {dropdownOpen && (
-                <div role="menu" className="absolute top-full left-0 mt-1 w-56 bg-[#2a2a2a] shadow-xl rounded-lg border border-white/10 py-2 z-50">
+                <div role="menu" className="absolute top-full left-0 mt-1 w-56 shadow-xl rounded-lg border border-white/10 py-2 z-50" style={{ backgroundColor: 'var(--color-nav-bg)' }}>
                   {SERVICE_LINKS.map((link) => (
                     <Link key={link.href} to={link.href} onClick={() => setDropdownOpen(false)}
                       className="block px-4 py-2 text-sm text-gray-300 hover:text-[color:var(--color-primary)] hover:bg-white/5 transition">

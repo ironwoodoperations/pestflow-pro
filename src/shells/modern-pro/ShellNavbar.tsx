@@ -91,7 +91,7 @@ export default function ShellNavbar() {
                 Services <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
               {dropdownOpen && (
-                <div role="menu" className="absolute top-full left-0 mt-1 w-56 bg-[#141922] shadow-xl rounded-lg border border-white/10 py-2 z-50">
+                <div role="menu" className="absolute top-full left-0 mt-1 w-56 shadow-xl rounded-lg border border-white/10 py-2 z-50" style={{ backgroundColor: 'var(--color-nav-bg)' }}>
                   {SERVICE_LINKS.map((link) => (
                     <Link key={link.href} to={link.href} onClick={() => setDropdownOpen(false)}
                       className="block px-4 py-2 text-sm text-gray-300 hover:text-[color:var(--color-primary)] hover:bg-white/5 transition">
