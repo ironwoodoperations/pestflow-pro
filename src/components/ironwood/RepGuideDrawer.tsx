@@ -55,7 +55,7 @@ export default function RepGuideDrawer({ section, onClose }: Props) {
           <h2 className="font-bold text-gray-900 text-base">{guide.title}</h2>
           <button
             type="button"
-            onClick={onClose}
+            onClick={(e) => { e.stopPropagation(); onClose(); }}
             className="text-gray-400 hover:text-gray-700 text-xl leading-none"
           >
             ×
