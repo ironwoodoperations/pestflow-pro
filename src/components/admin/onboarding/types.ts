@@ -2,7 +2,7 @@ export interface FormData {
   businessName: string; phone: string; email: string; address: string
   hours: string; tagline: string; license: string; industry: string
   logoUrl: string; primaryColor: string; accentColor: string
-  template: 'bold' | 'clean' | 'modern' | 'rustic'
+  template: 'bold-local' | 'clean-friendly' | 'modern-pro' | 'rustic-rugged'
   facebook: string; instagram: string; google: string; youtube: string
   locations: { city: string; slug: string }[]
   acceptedTerms: boolean
@@ -13,7 +13,7 @@ export interface FormData {
 export const INITIAL_FORM: FormData = {
   businessName: '', phone: '', email: '', address: '', hours: '',
   tagline: '', license: '', industry: 'Pest Control',
-  logoUrl: '', primaryColor: '#10b981', accentColor: '#f5c518', template: 'bold',
+  logoUrl: '', primaryColor: '#10b981', accentColor: '#f5c518', template: 'bold-local',
   facebook: '', instagram: '', google: '', youtube: '',
   locations: [{ city: '', slug: '' }],
   acceptedTerms: false,

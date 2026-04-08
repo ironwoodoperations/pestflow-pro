@@ -7,7 +7,7 @@ interface LiveForm {
   businessName: string; phone: string; email: string; address: string
   cityStateZip: string; hours: string; tagline: string; license: string
   yearsInBusiness: string; logoUrl: string; primaryColor: string
-  template: 'bold' | 'clean' | 'modern' | 'rustic'
+  template: 'bold-local' | 'clean-friendly' | 'modern-pro' | 'rustic-rugged'
   facebookUrl: string; instagramUrl: string; googleUrl: string
   leadEmail: string; facebookPageId: string; facebookToken: string
   googlePlaceId: string; mapsEmbedUrl: string; youtubeId: string
@@ -17,17 +17,17 @@ const INITIAL: LiveForm = {
   businessName: '', phone: '', email: '', address: '',
   cityStateZip: '', hours: '', tagline: '', license: '',
   yearsInBusiness: '', logoUrl: '', primaryColor: '#10b981',
-  template: 'bold',
+  template: 'bold-local',
   facebookUrl: '', instagramUrl: '', googleUrl: '',
   leadEmail: '', facebookPageId: '', facebookToken: '',
   googlePlaceId: '', mapsEmbedUrl: '', youtubeId: '',
 }
 
 const TEMPLATES = [
-  { value: 'bold' as const, label: 'Bold', desc: 'Dark navy, emerald accents', gradient: 'from-emerald-600 to-gray-900', swatch: '#10b981' },
-  { value: 'clean' as const, label: 'Clean', desc: 'White, navy, professional', gradient: 'from-white to-blue-900', swatch: '#1d4ed8' },
-  { value: 'modern' as const, label: 'Modern', desc: 'Dark, teal, contemporary', gradient: 'from-gray-800 to-gray-950', swatch: '#14b8a6' },
-  { value: 'rustic' as const, label: 'Rustic', desc: 'Brown, amber, inviting', gradient: 'from-amber-600 to-amber-950', swatch: '#d97706' },
+  { value: 'bold-local' as const,     label: 'Bold',   desc: 'Dark navy, emerald accents', gradient: 'from-emerald-600 to-gray-900', swatch: '#10b981' },
+  { value: 'clean-friendly' as const, label: 'Clean',  desc: 'White, navy, professional', gradient: 'from-white to-blue-900', swatch: '#1d4ed8' },
+  { value: 'modern-pro' as const,     label: 'Modern', desc: 'Dark, teal, contemporary', gradient: 'from-gray-800 to-gray-950', swatch: '#14b8a6' },
+  { value: 'rustic-rugged' as const,  label: 'Rustic', desc: 'Brown, amber, inviting', gradient: 'from-amber-600 to-amber-950', swatch: '#d97706' },
 ]
 
 interface StepDef {
