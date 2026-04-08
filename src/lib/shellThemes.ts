@@ -41,20 +41,20 @@ function lightenHex(hex: string, white: number): string {
   return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('')
 }
 
-// Per-palette explicit hero gradient start/end and CTA background. Keyed by primary hex (lowercase).
-const PALETTE_HERO: Record<string, { hero: string; end: string; cta: string }> = {
-  '#1e3a5f': { hero: '#0d1f35', end: '#162208', cta: '#0d1f35' }, // Navy & Gold
-  '#2d6a4f': { hero: '#1a3d2a', end: '#0d2b1a', cta: '#1a3d2a' }, // Forest & Cream
-  '#334155': { hero: '#1e293b', end: '#2d1a0a', cta: '#1e293b' }, // Slate & Orange
-  '#e87800': { hero: '#2d1a00', end: '#1a0f00', cta: '#2d1a00' }, // Orange & Black
-  '#b91c1c': { hero: '#3b0a0a', end: '#1a0505', cta: '#3b0a0a' }, // Red & Dark
-  '#15803d': { hero: '#0a2d1a', end: '#071a0f', cta: '#0a2d1a' }, // Green & Black
-  '#0ea5e9': { hero: '#e0f5ff', end: '#bae8ff', cta: '#e0f2fe' }, // Sky & White
-  '#0d9488': { hero: '#e0faf7', end: '#b2f5ec', cta: '#e0faf7' }, // Teal & Light
-  '#7c3aed': { hero: '#f5f0ff', end: '#e9d5ff', cta: '#f5f3ff' }, // Purple & Soft
-  '#78350f': { hero: '#2d1305', end: '#1a0a02', cta: '#2d1305' }, // Brown & Tan
-  '#365314': { hero: '#162105', end: '#0d1503', cta: '#162105' }, // Green & Earth
-  '#9a3412': { hero: '#3b1205', end: '#1a0802', cta: '#3b1205' }, // Rust & Cream
+// Per-palette explicit hero gradient start/end, CTA background, nav, and footer. Keyed by primary hex (lowercase).
+const PALETTE_HERO: Record<string, { hero: string; end: string; cta: string; nav: string; navText: string; footer: string }> = {
+  '#1e3a5f': { hero: '#0d1f35', end: '#162208', cta: '#0d1f35', nav: '#1e3a5f',  navText: '#ffffff', footer: '#0d1f35' }, // Navy & Gold
+  '#2d6a4f': { hero: '#1a3d2a', end: '#0d2b1a', cta: '#1a3d2a', nav: '#2d6a4f',  navText: '#ffffff', footer: '#1a3d2a' }, // Forest & Cream
+  '#334155': { hero: '#1e293b', end: '#2d1a0a', cta: '#1e293b', nav: '#334155',  navText: '#ffffff', footer: '#1e293b' }, // Slate & Orange
+  '#e87800': { hero: '#2d1a00', end: '#1a0f00', cta: '#2d1a00', nav: '#1a1a1a',  navText: '#ffffff', footer: '#111111' }, // Orange & Black
+  '#b91c1c': { hero: '#3b0a0a', end: '#1a0505', cta: '#3b0a0a', nav: '#1a1a1a',  navText: '#ffffff', footer: '#111111' }, // Red & Dark
+  '#15803d': { hero: '#0a2d1a', end: '#071a0f', cta: '#0a2d1a', nav: '#1a1a1a',  navText: '#ffffff', footer: '#111111' }, // Green & Black
+  '#0ea5e9': { hero: '#e0f5ff', end: '#bae8ff', cta: '#e0f2fe', nav: '#ffffff',  navText: '#1e293b', footer: '#0c4a6e' }, // Sky & White
+  '#0d9488': { hero: '#e0faf7', end: '#b2f5ec', cta: '#e0faf7', nav: '#ffffff',  navText: '#1e293b', footer: '#134e4a' }, // Teal & Light
+  '#7c3aed': { hero: '#f5f0ff', end: '#e9d5ff', cta: '#f5f3ff', nav: '#ffffff',  navText: '#1e293b', footer: '#4c1d95' }, // Purple & Soft
+  '#78350f': { hero: '#2d1305', end: '#1a0a02', cta: '#2d1305', nav: '#78350f',  navText: '#ffffff', footer: '#3b1a05' }, // Brown & Tan
+  '#365314': { hero: '#162105', end: '#0d1503', cta: '#162105', nav: '#365314',  navText: '#ffffff', footer: '#1a2d08' }, // Green & Earth
+  '#9a3412': { hero: '#3b1205', end: '#1a0802', cta: '#3b1205', nav: '#9a3412',  navText: '#ffffff', footer: '#3b1205' }, // Rust & Cream
 }
 
 export const SHELL_THEMES: Record<string, Record<string, string>> = {
