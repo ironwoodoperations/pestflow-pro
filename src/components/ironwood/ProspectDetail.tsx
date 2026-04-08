@@ -11,6 +11,7 @@ import RepGuideButton       from './RepGuideButton'
 import RepGuideDrawer       from './RepGuideDrawer'
 import ScrapePanel          from './ScrapePanel'
 import type { ScrapedData } from './ScrapePanel'
+import type { SiteRecreation } from './SiteRecreationCard'
 
 interface Props {
   prospectId: string | null   // null = new prospect
@@ -134,6 +135,26 @@ export default function ProspectDetail({ prospectId, salespeople, onClose }: Pro
     setTimeout(() => setSaved(false), 2000)
   }, [])
 
+  const onApplyRecreation = useCallback((data: SiteRecreation) => {
+    setForm(f => ({
+      ...f,
+      branding: {
+        ...(f.branding || {}),
+        template: data.shell,
+        primary_color: data.primaryColor,
+        accent_color: data.accentColor,
+        cta_text: data.ctaText,
+      },
+      customization: {
+        ...(f.customization || {}),
+        hero_headline: data.heroHeadline,
+      },
+      hero_headline: data.heroHeadline,
+    }))
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }, [])
+
   async function handleDelete() {
     if (!id) return
     setDeleting(true)
@@ -169,6 +190,7 @@ export default function ProspectDetail({ prospectId, salespeople, onClose }: Pro
               onSourceUrlChange={v => { wrappedSetField('website_url', v); onBlur() }}
               prospectId={id}
               onApplyScraped={onApplyScraped}
+              onApplyRecreation={onApplyRecreation}
             />
           </div>
           <div className="flex justify-end"><RepGuideButton section="intake" onOpen={setGuideSection} /></div>

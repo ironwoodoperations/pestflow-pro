@@ -52,6 +52,7 @@ export interface Prospect {
   customization: Record<string, any> | null
   intake_data: Record<string, any> | null
   service_areas: string | null
+  hero_headline: string | null
   tenant_id: string | null
   provisioned_at: string | null
   site_revealed_at: string | null
