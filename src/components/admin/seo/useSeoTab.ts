@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../hooks/useTenant'
 import { useSeoAudit, getCachedAudit } from './useSeoAudit'
+import { useSeoAiGenerate } from './useSeoAiGenerate'
 import type {
   SeoTabId, SeoPageRow, SeoStats, SeoCoverage,
   IntegrationValues, EditorForm, ConnectForm,
@@ -147,11 +148,18 @@ export function useSeoTab() {
   const handleCloseEditor = () => setOpenEditorSlug(null)
   const handleRunCheckNow = () => { setActiveTab('overview'); setTimeout(() => audit.runLighthouseAudit(), 150) }
 
+  const { aiGenerating, aiGeneratedSlug, handleAiGenerate } = useSeoAiGenerate(
+    tenantId,
+    pages,
+    (form: EditorForm) => setEditorForm(form),
+  )
+
   return {
     activeTab, setActiveTab, pages, loading, integrations, stats, coverage,
     openEditorSlug, editorForm, editorSaving, connectForm, connectSaving,
+    aiGenerating, aiGeneratedSlug,
     handleOpenEditor, handleCloseEditor, handleEditorChange, handleSaveMeta,
-    handleConnectChange, handleConnectSave, handleRunCheckNow,
+    handleAiGenerate, handleConnectChange, handleConnectSave, handleRunCheckNow,
     ...audit,
     handleRefreshScore: () => { audit.clearCacheAndRefresh(); setTimeout(() => audit.runLighthouseAudit(), 50) },
   }

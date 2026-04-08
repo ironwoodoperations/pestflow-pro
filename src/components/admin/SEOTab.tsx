@@ -20,9 +20,10 @@ export default function SEOTab() {
   const {
     activeTab, setActiveTab, loading, integrations, stats, coverage,
     openEditorSlug, editorForm, editorSaving, connectForm, connectSaving,
+    aiGenerating, aiGeneratedSlug,
     lastAudit, auditLoading, auditMode, pages,
     handleOpenEditor, handleCloseEditor, handleEditorChange, handleSaveMeta,
-    handleConnectChange, handleConnectSave, handleRunCheckNow,
+    handleAiGenerate, handleConnectChange, handleConnectSave, handleRunCheckNow,
     setAuditMode, runLighthouseAudit, handleRefreshScore,
   } = useSeoTab()
 
@@ -62,8 +63,10 @@ export default function SEOTab() {
         {activeTab === 'pages' && (
           <SeoPagesTab stats={stats} pages={pages} openEditorSlug={openEditorSlug}
             editorForm={editorForm} editorSaving={editorSaving}
+            aiGenerating={aiGenerating} aiGeneratedSlug={aiGeneratedSlug}
             onOpenEditor={handleOpenEditor} onCloseEditor={handleCloseEditor}
-            onEditorChange={handleEditorChange} onSaveMeta={handleSaveMeta} />
+            onEditorChange={handleEditorChange} onSaveMeta={handleSaveMeta}
+            onAiGenerate={handleAiGenerate} />
         )}
         {activeTab === 'keywords' && (
           <FeatureGate minTier={3} featureName="AI Keyword Research">

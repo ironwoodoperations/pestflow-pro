@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import type { SeoPageRow, SeoStats, EditorForm } from './seoTypes'
 import SeoStatCards from './SeoStatCards'
+import SeoInlineEditor from './SeoInlineEditor'
 
 interface Props {
   stats: SeoStats
@@ -8,10 +9,13 @@ interface Props {
   openEditorSlug: string | null
   editorForm: EditorForm
   editorSaving: boolean
+  aiGenerating: string | null
+  aiGeneratedSlug: string | null
   onOpenEditor: (slug: string) => void
   onCloseEditor: () => void
   onEditorChange: (field: keyof EditorForm, value: string) => void
   onSaveMeta: (slug: string) => void
+  onAiGenerate: (slug: string) => void
 }
 
 const TYPE_LABELS: Record<string, { label: string; color: string }> = {
@@ -21,15 +25,10 @@ const TYPE_LABELS: Record<string, { label: string; color: string }> = {
   static:   { label: 'Static',   color: 'bg-gray-100 text-gray-600' },
 }
 
-function CharCount({ value, max }: { value: string; max: number }) {
-  const len = value.length
-  const color = len > max ? 'text-red-500' : len > max - 10 ? 'text-amber-500' : 'text-gray-400'
-  return <span className={`text-xs ${color}`}>{len}/{max}</span>
-}
-
 export default function SeoPagesTab({
   stats, pages, openEditorSlug, editorForm,
-  editorSaving, onOpenEditor, onCloseEditor, onEditorChange, onSaveMeta
+  editorSaving, aiGenerating, aiGeneratedSlug,
+  onOpenEditor, onCloseEditor, onEditorChange, onSaveMeta, onAiGenerate
 }: Props) {
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('all')
@@ -63,7 +62,6 @@ export default function SeoPagesTab({
         </div>
       )}
 
-      {/* Filters */}
       <div className="flex gap-2 flex-wrap">
         <input value={search} onChange={e => setSearch(e.target.value)}
           placeholder="Search pages…" className={`${inputCls} flex-1 min-w-40`} />
@@ -86,7 +84,6 @@ export default function SeoPagesTab({
         </select>
       </div>
 
-      {/* Table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-200">
@@ -131,10 +128,12 @@ export default function SeoPagesTab({
                 {openEditorSlug === page.slug && (
                   <tr>
                     <td colSpan={6} className="p-0">
-                      <InlineEditor
+                      <SeoInlineEditor
                         page={page} form={editorForm} saving={editorSaving}
+                        aiGenerating={aiGenerating === page.slug}
+                        aiGenerated={aiGeneratedSlug === page.slug}
                         onChange={onEditorChange} onSave={() => onSaveMeta(page.slug)}
-                        onCancel={onCloseEditor}
+                        onCancel={onCloseEditor} onAiGenerate={() => onAiGenerate(page.slug)}
                       />
                     </td>
                   </tr>
@@ -150,66 +149,6 @@ export default function SeoPagesTab({
             )}
           </tbody>
         </table>
-      </div>
-    </div>
-  )
-}
-
-function InlineEditor({ page, form, saving, onChange, onSave, onCancel }: {
-  page: SeoPageRow
-  form: EditorForm
-  saving: boolean
-  onChange: (field: keyof EditorForm, value: string) => void
-  onSave: () => void
-  onCancel: () => void
-}) {
-  const cls = 'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm'
-  return (
-    <div className="bg-blue-50 border-t border-b border-blue-200 p-5 space-y-3">
-      <p className="text-xs font-semibold text-blue-700 mb-1">Editing SEO — {page.label}</p>
-      <div>
-        <div className="flex justify-between items-center mb-1">
-          <label className="text-xs font-medium text-gray-700">Meta Title</label>
-          <CharCount value={form.meta_title} max={60} />
-        </div>
-        <input value={form.meta_title} onChange={e => onChange('meta_title', e.target.value)} className={cls} placeholder="Page title for Google (50–60 chars)" />
-      </div>
-      <div>
-        <div className="flex justify-between items-center mb-1">
-          <label className="text-xs font-medium text-gray-700">Meta Description</label>
-          <CharCount value={form.meta_description} max={160} />
-        </div>
-        <textarea value={form.meta_description} onChange={e => onChange('meta_description', e.target.value)} rows={2} className={cls} placeholder="Page description for Google (150–160 chars)" />
-      </div>
-      <div>
-        <label className="text-xs font-medium text-gray-700 block mb-1">Focus Keyword</label>
-        <input value={form.focus_keyword} onChange={e => onChange('focus_keyword', e.target.value)} className={cls} placeholder="e.g. pest control Tyler TX" />
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <div className="flex justify-between items-center mb-1">
-            <label className="text-xs font-medium text-gray-700">OG Title</label>
-            <CharCount value={form.og_title} max={60} />
-          </div>
-          <input value={form.og_title} onChange={e => onChange('og_title', e.target.value)} className={cls} placeholder="Social share title" />
-        </div>
-        <div>
-          <div className="flex justify-between items-center mb-1">
-            <label className="text-xs font-medium text-gray-700">OG Description</label>
-            <CharCount value={form.og_description} max={160} />
-          </div>
-          <input value={form.og_description} onChange={e => onChange('og_description', e.target.value)} className={cls} placeholder="Social share description" />
-        </div>
-      </div>
-      <div className="flex gap-2 pt-1">
-        <button onClick={onSave} disabled={saving}
-          className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50">
-          {saving ? 'Saving…' : 'Save Changes'}
-        </button>
-        <button onClick={onCancel}
-          className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-white">
-          Cancel
-        </button>
       </div>
     </div>
   )
