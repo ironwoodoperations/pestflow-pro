@@ -57,10 +57,22 @@ export default function IntakeStep2Branding({ form, setForm, token, tier }: Prop
       </div>
 
       {tier === 'pro' ? (
-        <div className="rounded-xl border-2 border-indigo-300 bg-indigo-50 p-5 text-center">
-          <p className="text-xs font-semibold text-indigo-400 uppercase tracking-widest mb-2">⚡ Pro Custom Build</p>
-          <p className="text-sm text-indigo-900 font-medium">Your site will be custom-built to match your existing website.</p>
-          <p className="text-sm text-indigo-700 mt-1">No shell selection needed — our team handles everything.</p>
+        <div className="rounded-xl border-l-4 border-indigo-500 bg-indigo-50 p-5 space-y-3">
+          <p className="text-xs font-semibold text-indigo-500 uppercase tracking-widest">⚡ Pro Custom Build</p>
+          <p className="text-sm text-indigo-900 font-medium leading-relaxed">
+            Your site will be built to match your existing website — your brand colors, your content, and
+            your layout structure — running on PestFlow Pro with the full admin dashboard underneath.
+          </p>
+          <div className="space-y-1.5 pt-1">
+            <p className="text-xs font-semibold text-indigo-700 uppercase tracking-wide">Here's what happens next:</p>
+            <ol className="text-sm text-indigo-800 space-y-1 list-none">
+              <li className="flex gap-2"><span className="font-bold text-indigo-500">1.</span> We scrape your existing site to capture your content and brand</li>
+              <li className="flex gap-2"><span className="font-bold text-indigo-500">2.</span> Our AI analyzes your site and generates a custom layout</li>
+              <li className="flex gap-2"><span className="font-bold text-indigo-500">3.</span> Your rep reviews and provisions your new site on a call with you</li>
+              <li className="flex gap-2"><span className="font-bold text-indigo-500">4.</span> You get a reveal call to see your site before it goes live</li>
+            </ol>
+          </div>
+          <p className="text-xs text-indigo-600 italic">No action needed on this step — your rep handles the rest.</p>
         </div>
       ) : (
         <>

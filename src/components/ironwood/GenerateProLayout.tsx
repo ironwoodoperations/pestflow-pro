@@ -1,23 +1,31 @@
 import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
+import type { Prospect } from './types'
+import ProLayoutSummary   from './ProLayoutSummary'
+import ApplyProSiteButton from './ApplyProSiteButton'
 
 interface Props {
   prospectId: string
   tier: string | null
+  form: Partial<Prospect>
 }
 
-export default function GenerateProLayout({ prospectId, tier }: Props) {
-  const [loading, setLoading]       = useState(false)
-  const [error, setError]           = useState<string | null>(null)
-  const [success, setSuccess]       = useState(false)
-  const [layout, setLayout]         = useState<Record<string, any> | null>(null)
-  const [expanded, setExpanded]     = useState(false)
-  const [editMode, setEditMode]     = useState(false)
-  const [editJson, setEditJson]     = useState('')
-  const [editError, setEditError]   = useState<string | null>(null)
-  const [editSaved, setEditSaved]   = useState(false)
+export default function GenerateProLayout({ prospectId, tier, form }: Props) {
+  const [loading, setLoading]     = useState(false)
+  const [error, setError]         = useState<string | null>(null)
+  const [success, setSuccess]     = useState(false)
+  const [layout, setLayout]       = useState<Record<string, any> | null>(null)
+  const [expanded, setExpanded]   = useState(false)
+  const [editMode, setEditMode]   = useState(false)
+  const [editJson, setEditJson]   = useState('')
+  const [editError, setEditError] = useState<string | null>(null)
+  const [editSaved, setEditSaved] = useState(false)
 
   if (tier !== 'pro') return null
+
+  // Use freshly generated layout, or fall back to persisted DB value
+  const activeLayout = layout ?? form.youpest_layout ?? null
+  const hasLayout    = !!activeLayout && Object.keys(activeLayout).length > 0
 
   const handleGenerate = async () => {
     setLoading(true)
@@ -113,6 +121,8 @@ export default function GenerateProLayout({ prospectId, tier }: Props) {
             ✓ Pro layout generated — review before provisioning
           </p>
 
+          <ProLayoutSummary layoutConfig={layout} />
+
           <div className="flex items-center gap-3">
             <button
               onClick={() => setExpanded(e => !e)}
@@ -142,12 +152,8 @@ export default function GenerateProLayout({ prospectId, tier }: Props) {
                 className="w-full h-72 bg-gray-950 border border-gray-600 rounded p-3 text-xs text-green-300 font-mono resize-y focus:outline-none focus:border-violet-500"
                 spellCheck={false}
               />
-              {editError && (
-                <p className="text-red-400 text-xs">{editError}</p>
-              )}
-              {editSaved && (
-                <p className="text-emerald-400 text-xs">✓ Saved</p>
-              )}
+              {editError && <p className="text-red-400 text-xs">{editError}</p>}
+              {editSaved && <p className="text-emerald-400 text-xs">✓ Saved</p>}
               <button
                 onClick={handleSaveEdit}
                 className="px-3 py-1.5 bg-violet-700 hover:bg-violet-600 text-white text-xs font-medium rounded transition"
@@ -157,6 +163,25 @@ export default function GenerateProLayout({ prospectId, tier }: Props) {
             </div>
           )}
         </div>
+      )}
+
+      {/* Always show Apply button when a layout exists (fresh or from DB) */}
+      {hasLayout && !form.provisioned_at && (
+        <div className="pt-2 border-t border-violet-700/30">
+          <p className="text-xs text-gray-500 mb-2">Layout ready — provision the Pro site:</p>
+          <ApplyProSiteButton
+            prospectId={prospectId}
+            form={form}
+            layout={activeLayout!}
+          />
+        </div>
+      )}
+
+      {/* Persisted layout indicator when no fresh generation */}
+      {!success && form.youpest_layout && Object.keys(form.youpest_layout).length > 0 && (
+        <p className="text-xs text-violet-400">
+          ✓ Layout saved — click Generate to regenerate or Apply to provision.
+        </p>
       )}
     </div>
   )

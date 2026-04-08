@@ -225,7 +225,7 @@ export default function ProspectDetail({ prospectId, salespeople, onClose }: Pro
             />
           </div>
           {id && (
-            <GenerateProLayout prospectId={id} tier={form.tier ?? null} />
+            <GenerateProLayout prospectId={id} tier={form.tier ?? null} form={form} />
           )}
           <div className="flex justify-end"><RepGuideButton section="intake" onOpen={setGuideSection} /></div>
           <IntakeLinkSection
