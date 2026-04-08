@@ -68,6 +68,8 @@ export default function Dashboard() {
   const [onboardingComplete] = useState(true)
   const [previewMode, setPreviewMode] = useState(false)
   const [demoActive, setDemoActive] = useState(false)
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const [primaryColor, setPrimaryColor] = useState('#16a34a')
   const { tenantId } = useTenant()
   const { canAccess } = usePlan()
   const navigate = useNavigate()
@@ -82,6 +84,8 @@ export default function Dashboard() {
       if (bizRes.data?.value?.name) setBusinessName(bizRes.data.value.name)
       setDemoActive(demoRes.data?.value?.active === true)
       if (brandRes.data?.value?.accent_color) setAccentColor(brandRes.data.value.accent_color)
+      if (brandRes.data?.value?.primary_color) setPrimaryColor(brandRes.data.value.primary_color)
+      if (brandRes.data?.value?.logo_url) setLogoUrl(brandRes.data.value.logo_url)
     })
   }, [tenantId])
 
@@ -101,10 +105,13 @@ export default function Dashboard() {
     <div className="flex flex-col min-h-screen" style={{ '--admin-accent': accentColor } as React.CSSProperties}>
       {demoActive && <DemoBanner onGoLive={handleGoLive} />}
       <div className="flex flex-1">
-      <aside className="w-64 flex-shrink-0 flex flex-col" style={{ background: '#1a1f2e' }}>
+      <aside className="w-64 flex-shrink-0 flex flex-col" style={{ background: '#1a1f2e', '--brand-primary': primaryColor, '--brand-accent': accentColor } as React.CSSProperties}>
         <div className="px-6 py-5" style={{ background: '#141922' }}>
           <h1 className="font-oswald text-xl text-white tracking-wide">PestFlow Pro</h1>
           <p className="text-gray-400 text-xs uppercase tracking-widest mt-0.5">Operations Platform</p>
+          {logoUrl && (
+            <img src={logoUrl} alt="logo" style={{ maxHeight: '40px', maxWidth: '120px', objectFit: 'contain', marginTop: '8px' }} />
+          )}
         </div>
         <nav className="flex-1 py-4 px-2 space-y-0.5">
           {TABS.map(({ key, label, icon: Icon }) => {
@@ -113,9 +120,9 @@ export default function Dashboard() {
             return (
               <button key={key} onClick={() => setActiveTab(key)} aria-current={activeTab === key ? 'page' : undefined}
                 className={`w-full flex items-center gap-3 px-4 py-3 mx-0 rounded-lg text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
-                  activeTab === key ? 'bg-[#1a3d2b] text-white border-l-4' : 'text-gray-300 hover:bg-[#22304a] hover:text-white border-l-4 border-transparent'
+                  activeTab === key ? 'text-white border-l-4' : 'text-gray-300 hover:bg-[#22304a] hover:text-white border-l-4 border-transparent'
                 } ${locked ? 'opacity-50' : ''}`}
-                style={activeTab === key ? { borderLeftColor: accentColor } : undefined}>
+                style={activeTab === key ? { borderLeftColor: primaryColor, backgroundColor: primaryColor + '26' } : undefined}>
                 <Icon size={20} aria-hidden="true" />
                 <span className="flex-1 text-left">{label}</span>
                 {locked && <span title="Upgrade to Grow to unlock"><Lock className="w-3.5 h-3.5 shrink-0 text-amber-500" /></span>}
