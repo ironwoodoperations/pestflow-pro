@@ -91,7 +91,7 @@ Deno.serve(async (req: Request) => {
     // Fetch prospect record
     const { data: prospect, error: pErr } = await supabase
       .from('prospects')
-      .select('id, company_name, source_url, scraped_content, hero_headline, business_info, branding')
+      .select('id, company_name, source_url, scraped_content, business_info, branding')
       .eq('id', prospect_id)
       .maybeSingle()
 
