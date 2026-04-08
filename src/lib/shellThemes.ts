@@ -156,9 +156,13 @@ export function applyShellTheme(
     const primary = primaryOverride.toLowerCase().trim()
     const paletteHero = PALETTE_HERO[primary]
     if (paletteHero) {
-      root.style.setProperty('--color-bg-hero', paletteHero.hero)
+      root.style.setProperty('--color-bg-hero',     paletteHero.hero)
       root.style.setProperty('--color-bg-hero-end', paletteHero.end)
-      root.style.setProperty('--color-bg-cta', paletteHero.cta)
+      root.style.setProperty('--color-bg-cta',      paletteHero.cta)
+      root.style.setProperty('--color-nav-bg',      paletteHero.nav)
+      root.style.setProperty('--color-nav-text',    paletteHero.navText)
+      root.style.setProperty('--color-footer-bg',   paletteHero.footer)
+      root.style.setProperty('--color-footer-text', '#ffffff')
     } else if (template === 'clean-friendly') {
       root.style.setProperty('--color-bg-hero', lightenHex(primaryOverride, 0.85))
       root.style.setProperty('--color-bg-hero-end', lightenHex(primaryOverride, 0.93))
