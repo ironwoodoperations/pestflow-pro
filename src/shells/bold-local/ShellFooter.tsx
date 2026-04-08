@@ -82,13 +82,13 @@ export default function ShellFooter() {
           </div>
         </div>
       </div>
-      <div className="bg-[#141414] py-4">
+      <div className="bg-black/10 py-4">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-2 text-sm text-gray-500">
           <span>&copy; {new Date().getFullYear()} {info.name}. All rights reserved.</span>
           <span className="text-xs text-gray-600">Powered by PestFlow Pro</span>
         </div>
       </div>
-      <div className="bg-[#0e0e0e] py-2.5">
+      <div className="bg-black/20 py-2.5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <span className="text-xs text-gray-600">Website by <span className="font-semibold" style={{ color: 'var(--color-primary)' }}>PestFlow Pro</span> · A product of Ironwood Operations Group</span>
         </div>
