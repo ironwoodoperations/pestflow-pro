@@ -8,10 +8,12 @@ import PageHelpBanner from './PageHelpBanner'
 interface Location {
   id: string; city: string; slug: string; hero_title: string; intro: string
   is_live: boolean; created_at: string
+  meta_title?: string; meta_description?: string; focus_keyword?: string
 }
 
 interface LocForm {
   city: string; slug: string; hero_title: string; intro: string; is_live: boolean
+  meta_title: string; meta_description: string; focus_keyword: string
 }
 
 const toSlug = (city: string) => {
@@ -26,7 +28,7 @@ export default function LocationsTab() {
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [form, setForm] = useState<LocForm>({ city: '', slug: '', hero_title: '', intro: '', is_live: false })
+  const [form, setForm] = useState<LocForm>({ city: '', slug: '', hero_title: '', intro: '', is_live: false, meta_title: '', meta_description: '', focus_keyword: '' })
   const [saving, setSaving] = useState(false)
 
   async function fetchLocations() {
@@ -43,12 +45,12 @@ export default function LocationsTab() {
   }, [tenantId])
 
   function openNew() {
-    setForm({ city: '', slug: '', hero_title: '', intro: '', is_live: false })
+    setForm({ city: '', slug: '', hero_title: '', intro: '', is_live: false, meta_title: '', meta_description: '', focus_keyword: '' })
     setEditingId(null); setModalOpen(true)
   }
 
   function openEdit(loc: Location) {
-    setForm({ city: loc.city, slug: loc.slug, hero_title: loc.hero_title || '', intro: loc.intro || '', is_live: loc.is_live })
+    setForm({ city: loc.city, slug: loc.slug, hero_title: loc.hero_title || '', intro: loc.intro || '', is_live: loc.is_live, meta_title: loc.meta_title || '', meta_description: loc.meta_description || '', focus_keyword: loc.focus_keyword || '' })
     setEditingId(loc.id); setModalOpen(true)
   }
 
@@ -57,11 +59,12 @@ export default function LocationsTab() {
     const slug = form.slug || toSlug(form.city)
     const hero_title = form.hero_title || `${form.city} Pest Control`
     setSaving(true)
+    const seoFields = { meta_title: form.meta_title || null, meta_description: form.meta_description || null, focus_keyword: form.focus_keyword || null }
     if (editingId) {
-      const { error } = await supabase.from('location_data').update({ city: form.city, slug, hero_title, intro: form.intro, is_live: form.is_live }).eq('id', editingId)
+      const { error } = await supabase.from('location_data').update({ city: form.city, slug, hero_title, intro: form.intro, is_live: form.is_live, ...seoFields }).eq('id', editingId)
       if (error) toast.error('Failed to update.'); else toast.success('Location updated!')
     } else {
-      const { error } = await supabase.from('location_data').insert({ tenant_id: tenantId, city: form.city, slug, hero_title, intro: form.intro, is_live: form.is_live })
+      const { error } = await supabase.from('location_data').insert({ tenant_id: tenantId, city: form.city, slug, hero_title, intro: form.intro, is_live: form.is_live, ...seoFields })
       if (error) toast.error('Failed to add location.'); else toast.success('Location added!')
     }
     setSaving(false); setModalOpen(false); fetchLocations()
@@ -161,6 +164,18 @@ export default function LocationsTab() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Intro Text</label>
                 <textarea value={form.intro} onChange={e => setForm(p => ({ ...p, intro: e.target.value }))} rows={4} placeholder="Brief intro shown on the location page" className={`${inputClass} resize-none`} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Meta Title</label>
+                <input value={form.meta_title} onChange={e => setForm(p => ({ ...p, meta_title: e.target.value }))} placeholder={`Pest Control in ${form.city || 'City'}, TX | Your Business`} className={inputClass} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Meta Description</label>
+                <textarea value={form.meta_description} onChange={e => setForm(p => ({ ...p, meta_description: e.target.value }))} rows={2} placeholder="150-160 char description for Google" className={`${inputClass} resize-none`} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Focus Keyword</label>
+                <input value={form.focus_keyword} onChange={e => setForm(p => ({ ...p, focus_keyword: e.target.value }))} placeholder={`pest control ${form.city ? form.city.toLowerCase() : 'city'} tx`} className={inputClass} />
               </div>
               <label className="flex items-center gap-2 text-sm text-gray-700">
                 <input type="checkbox" checked={form.is_live} onChange={e => setForm(p => ({ ...p, is_live: e.target.checked }))} className="rounded border-gray-300 text-emerald-500 focus:ring-emerald-500" />

@@ -5,10 +5,10 @@ import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
 import StructuredData from '../components/StructuredData'
 import VideoImage from '../components/VideoImage'
-import GoogleMapEmbed from '../components/common/GoogleMapEmbed'
+import LocationMap from '../components/shared/LocationMap'
 import { PEST_VIDEOS } from '../data/pestVideos'
 
-interface LocationData { city: string; hero_title: string; intro_video_url: string }
+interface LocationData { city: string; hero_title: string; intro_video_url: string; meta_title?: string; meta_description?: string; focus_keyword?: string }
 interface OtherLocation { slug: string; city: string }
 
 const SERVICES = [
@@ -25,29 +25,42 @@ export default function LocationPage({ slug }: { slug: string }) {
   const [otherLocations, setOtherLocations] = useState<OtherLocation[]>([])
   const [phone, setPhone] = useState('')
   const [bizAddress, setBizAddress] = useState('')
-  const [mapsApiKey, setMapsApiKey] = useState('')
+  const [bizName, setBizName] = useState('')
 
   function titleCase(s: string) { return s.replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()) }
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const [locRes, allLocsRes, settingsRes, intgRes] = await Promise.all([
-        supabase.from('location_data').select('city, hero_title, intro_video_url').eq('tenant_id', tenantId).eq('slug', slug).eq('is_live', true).maybeSingle(),
+      const [locRes, allLocsRes, settingsRes] = await Promise.all([
+        supabase.from('location_data').select('city, hero_title, intro_video_url, meta_title, meta_description, focus_keyword').eq('tenant_id', tenantId).eq('slug', slug).eq('is_live', true).maybeSingle(),
         supabase.from('location_data').select('slug, city').eq('tenant_id', tenantId).eq('is_live', true).neq('slug', slug),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
-        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle(),
       ])
-      if (locRes.data) setLocation({ city: locRes.data.city || titleCase(slug), hero_title: locRes.data.hero_title || '', intro_video_url: locRes.data.intro_video_url || '' })
+      if (locRes.data) setLocation(locRes.data)
       if (allLocsRes.data) setOtherLocations(allLocsRes.data)
-      if (settingsRes.data?.value?.phone) setPhone(settingsRes.data.value.phone)
-      if (settingsRes.data?.value?.address) setBizAddress(settingsRes.data.value.address)
-      if (intgRes.data?.value?.google_maps_api_key) setMapsApiKey(intgRes.data.value.google_maps_api_key)
+      const biz = settingsRes.data?.value || {}
+      if (biz.phone) setPhone(biz.phone)
+      if (biz.address) setBizAddress(biz.address)
+      if (biz.name) setBizName(biz.name)
     })
   }, [slug])
 
   const city = location.city || titleCase(slug)
   const heroTitle = location.hero_title || `${city} Pest Control`
+
+  // Apply meta tags
+  useEffect(() => {
+    const pageTitle = location.meta_title || `${city} Pest Control | ${bizName || 'Pest Control'}`
+    document.title = pageTitle
+    const setMeta = (name: string, content: string) => {
+      let el = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement | null
+      if (!el) { el = document.createElement('meta'); el.name = name; document.head.appendChild(el) }
+      el.content = content
+    }
+    if (location.meta_description) setMeta('description', location.meta_description)
+    if (location.focus_keyword) setMeta('keywords', location.focus_keyword)
+  }, [location, city, bizName])
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
@@ -154,10 +167,9 @@ export default function LocationPage({ slug }: { slug: string }) {
       <section className="py-12 bg-white">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Find Us on the Map</h2>
-          <GoogleMapEmbed address={bizAddress || '1204 S. Main Street, Tyler, TX 75701'} apiKey={mapsApiKey || undefined} />
+          <LocationMap address={bizAddress} city={city} businessName={bizName} />
         </div>
       </section>
-
     </div>
   )
 }
