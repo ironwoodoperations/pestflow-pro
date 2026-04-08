@@ -156,6 +156,14 @@ export default function ProspectDetail({ prospectId, salespeople, onClose }: Pro
     setTimeout(() => setSaved(false), 2000)
   }, [])
 
+  async function saveTier(val: string) {
+    if (!id) return
+    await supabase.from('prospects').update({ tier: val }).eq('id', id)
+    setField('tier', val)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }
+
   async function handleDelete() {
     if (!id) return
     setDeleting(true)
@@ -172,13 +180,35 @@ export default function ProspectDetail({ prospectId, salespeople, onClose }: Pro
       <div className="w-full max-w-2xl bg-gray-950 border-l border-gray-800 h-full overflow-y-auto shadow-2xl"
         onClick={e => e.stopPropagation()}>
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-3 bg-gray-950 border-b border-gray-800">
-          <h2 className="font-bold text-white truncate">{form.company_name || 'New Prospect'}</h2>
-          <div className="flex items-center gap-3">
-            {saved && <span className="text-xs text-emerald-400">✓ Saved</span>}
-            <RepGuideButton section="faq" label="? Client FAQ" onOpen={setGuideSection} />
-            <button onClick={() => onClose(true)} className="text-gray-400 hover:text-white text-xl leading-none">×</button>
+        <div className="sticky top-0 z-10 px-5 py-3 bg-gray-950 border-b border-gray-800">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 min-w-0">
+              <h2 className="font-bold text-white truncate">{form.company_name || 'New Prospect'}</h2>
+              {form.tier === 'pro' && <span className="flex-shrink-0 px-2 py-0.5 text-xs font-semibold rounded-full bg-indigo-900/60 text-indigo-300 border border-indigo-700">Pro</span>}
+              {form.tier === 'growth' && <span className="flex-shrink-0 px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-900/60 text-blue-300 border border-blue-700">Growth</span>}
+              {(!form.tier || form.tier === 'starter') && <span className="flex-shrink-0 px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-800 text-gray-400 border border-gray-600">Starter</span>}
+            </div>
+            <div className="flex items-center gap-3">
+              {saved && <span className="text-xs text-emerald-400">✓ Saved</span>}
+              <RepGuideButton section="faq" label="? Client FAQ" onOpen={setGuideSection} />
+              <button onClick={() => onClose(true)} className="text-gray-400 hover:text-white text-xl leading-none">×</button>
+            </div>
           </div>
+          {id && (
+            <div className="flex items-center gap-1 mt-2">
+              <span className="text-xs text-gray-500 mr-1">Tier:</span>
+              {(['starter', 'growth', 'pro'] as const).map(t => (
+                <button key={t} onClick={() => saveTier(t)}
+                  className={`px-3 py-0.5 text-xs rounded-full border transition capitalize ${
+                    (form.tier ?? 'starter') === t
+                      ? t === 'pro' ? 'bg-indigo-700 border-indigo-500 text-white'
+                        : t === 'growth' ? 'bg-blue-700 border-blue-500 text-white'
+                        : 'bg-gray-600 border-gray-400 text-white'
+                      : 'bg-transparent border-gray-700 text-gray-400 hover:border-gray-500'
+                  }`}>{t}</button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Sections */}
