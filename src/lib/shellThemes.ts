@@ -150,11 +150,11 @@ export function applyShellTheme(
   Object.entries(theme).forEach(([key, value]) => {
     root.style.setProperty(key, value)
   })
+  let paletteHero: (typeof PALETTE_HERO)[string] | undefined
   if (primaryOverride && /^#[0-9a-fA-F]{6}$/.test(primaryOverride)) {
     root.style.setProperty('--color-primary', primaryOverride)
-    root.style.setProperty('--color-btn-bg', primaryOverride)
     const primary = primaryOverride.toLowerCase().trim()
-    const paletteHero = PALETTE_HERO[primary]
+    paletteHero = PALETTE_HERO[primary]
     if (paletteHero) {
       root.style.setProperty('--color-bg-hero',     paletteHero.hero)
       root.style.setProperty('--color-bg-hero-end', paletteHero.end)
@@ -172,9 +172,12 @@ export function applyShellTheme(
     }
   } else if (primaryOverride) {
     root.style.setProperty('--color-primary', primaryOverride)
-    root.style.setProperty('--color-btn-bg', primaryOverride)
   }
   if (accentOverride) {
     root.style.setProperty('--color-accent', accentOverride)
+  }
+  if (primaryOverride) {
+    root.style.setProperty('--color-btn-bg', accentOverride ?? primaryOverride)
+    root.style.setProperty('--color-btn-text', paletteHero?.navText === '#ffffff' ? '#1c1c1e' : '#ffffff')
   }
 }
