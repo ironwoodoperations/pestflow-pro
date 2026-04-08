@@ -1,3 +1,5 @@
+import { formatPhone } from '../../lib/formatPhone'
+
 interface Props {
   phone: string
   ctaText: string
@@ -24,7 +26,7 @@ export default function ModernProCtaBanner({ phone, ctaText }: Props) {
                 border: '2px solid rgba(255,255,255,0.5)',
               }}
             >
-              {phone}
+              {formatPhone(phone)}
             </a>
           )}
           <a

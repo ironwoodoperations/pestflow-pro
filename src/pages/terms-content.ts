@@ -14,7 +14,7 @@ export const planTable = [
   { plan: "Starter", fee: "$149 / mo", features: "Website, CRM, basic SEO, locations (up to 3), team" },
   { plan: "Grow",    fee: "$249 / mo", features: "All Starter + full SEO suite, blog, social scheduling" },
   { plan: "Pro",     fee: "$349 / mo", features: "All Grow + AI tools, advanced reports, campaigns" },
-  { plan: "Elite",   fee: "$499 / mo", features: "All Pro + social analytics, Ayrshare, live reviews" },
+  { plan: "Elite",   fee: "$499 / mo", features: "All Pro + social analytics, Buffer, live reviews" },
 ];
 
 export const termsSections: Section[] = [
@@ -83,7 +83,7 @@ export const termsSections: Section[] = [
   },
   {
     heading: "11. THIRD-PARTY SERVICES",
-    body: "The Platform integrates with third-party services including but not limited to: Supabase (database), Vercel (hosting), Resend (email), Textbelt/Twilio (SMS), Facebook Graph API, Ayrshare, and Google APIs. Your use of these integrations is also subject to those providers' terms of service. Provider is not responsible for third-party service outages or policy changes.",
+    body: "The Platform integrates with third-party services including but not limited to: Supabase (database), Vercel (hosting), Resend (email), Textbelt/Twilio (SMS), Facebook Graph API, Buffer, and Google APIs. Your use of these integrations is also subject to those providers' terms of service. Provider is not responsible for third-party service outages or policy changes.",
   },
   {
     heading: "12. SERVICE AVAILABILITY",

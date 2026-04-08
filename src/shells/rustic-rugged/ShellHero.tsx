@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
+import { formatPhone } from '../../lib/formatPhone'
 
 interface Biz { phone?: string; founded_year?: string | number }
 
@@ -86,7 +87,7 @@ export default function ShellHero() {
             <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--color-primary)' }}>
               Free Estimate
             </p>
-            <p className="text-white font-bold text-xl leading-tight mb-3">{biz.phone}</p>
+            <p className="text-white font-bold text-xl leading-tight mb-3">{formatPhone(biz.phone!)}</p>
             <a
               href={dialPhone}
               className="block text-center text-white text-sm font-bold px-4 py-2 rounded transition hover:opacity-80"
@@ -107,7 +108,7 @@ export default function ShellHero() {
           <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: 'var(--color-primary)' }}>
             Free Estimate
           </p>
-          <p className="text-white font-bold text-xl mb-3">{biz.phone}</p>
+          <p className="text-white font-bold text-xl mb-3">{formatPhone(biz.phone!)}</p>
           <a
             href={dialPhone}
             className="block text-center text-white text-sm font-bold px-4 py-2 rounded transition"

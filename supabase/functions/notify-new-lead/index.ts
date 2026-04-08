@@ -8,6 +8,13 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { sendEmail } from '../_shared/sendEmail.ts'
 
+function formatPhone(raw: string): string {
+  const digits = raw.replace(/\D/g, '')
+  if (digits.length === 10) return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`
+  if (digits.length === 11 && digits[0] === '1') return `(${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`
+  return raw
+}
+
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 
@@ -89,7 +96,7 @@ Deno.serve(async (req) => {
     </table>
     ${businessPhone ? `<p style="margin:0 0 24px;text-align:center">
       <a href="tel:${businessPhone.replace(/\D/g,'')}" style="display:inline-block;background:${primaryColor};color:#fff;font-size:16px;font-weight:bold;padding:12px 28px;border-radius:6px;text-decoration:none">
-        Call us: ${businessPhone}
+        Call us: ${formatPhone(businessPhone)}
       </a>
     </p>` : ''}
     <p style="margin:0;font-size:15px;color:#333">We look forward to speaking with you!</p>

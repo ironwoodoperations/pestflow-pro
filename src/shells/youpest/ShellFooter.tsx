@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
 import { useTemplate } from '../../context/TemplateContext'
+import { formatPhone } from '../../lib/formatPhone'
 
 const QUICK_LINKS = [
   ['Pest Control', '/pest-control'], ['Termite Control', '/termite-control'],
@@ -58,7 +59,7 @@ export default function ShellFooter() {
         className="py-12 px-4 text-center text-sm">
         <p className="font-bold text-base mb-2" style={{ color: 'var(--color-footer-text)' }}>{biz.name}</p>
         {biz.address && <p className="opacity-70 mb-1">{biz.address}</p>}
-        {biz.phone && <p className="mb-1"><a href={`tel:${biz.phone}`} className="hover:opacity-80">{biz.phone}</a></p>}
+        {biz.phone && <p className="mb-1"><a href={`tel:${biz.phone}`} className="hover:opacity-80">{formatPhone(biz.phone)}</a></p>}
         {biz.email && <p className="mb-4"><a href={`mailto:${biz.email}`} className="hover:opacity-80">{biz.email}</a></p>}
         <p className="opacity-60">© {year} {biz.name} · Powered by {powered}</p>
       </footer>

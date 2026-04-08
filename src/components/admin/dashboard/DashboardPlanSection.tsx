@@ -44,7 +44,7 @@ const PLAN_DETAILS: Record<number, { subtitle: string; features: string[] }> = {
     features: [
       'Everything in Pro',
       'Social analytics (all platforms)',
-      'Ayrshare multi-platform posting',
+      'Buffer multi-platform posting',
       'LeadFusion live Google reviews',
       'White-glove onboarding support',
     ],

@@ -66,7 +66,7 @@ export const privacySections: Section[] = [
       "• Textbelt / Twilio: SMS delivery",
       "• Anthropic: AI content generation (captions, keyword research) — prompts may include business info but not personal customer data",
       "• Facebook / Meta: Social post publishing when you connect your Facebook Page",
-      "• Ayrshare: Multi-platform social publishing (Elite tier only) when you provide an API key",
+      "• Buffer: Multi-platform social publishing when you connect your Buffer account",
       "• Google APIs: Analytics, Maps, Search Console when you configure these integrations",
       "All third-party providers are contractually required to protect your data and use it only to provide their services.",
     ],

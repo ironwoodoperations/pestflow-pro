@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
+import { formatPhone } from '../../lib/formatPhone'
 
 interface Biz { name?: string; phone?: string }
 interface FormState { name: string; phone: string; service: string }
@@ -65,7 +66,7 @@ export default function ShellHero() {
             className="mt-4 font-semibold transition text-sm inline-block hover:opacity-80"
             style={{ color: 'var(--color-primary)' }}
           >
-            Or call: {biz.phone}
+            Or call: {formatPhone(biz.phone)}
           </a>
         )}
       </div>

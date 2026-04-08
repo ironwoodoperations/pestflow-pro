@@ -1,3 +1,5 @@
+import { formatPhone } from '../../lib/formatPhone'
+
 interface Props {
   phone: string
   ctaText: string
@@ -14,7 +16,7 @@ export default function CleanFriendlyCtaBanner({ phone, ctaText }: Props) {
         {phone && (
           <p className="text-lg mb-6"
              style={{ color: 'var(--color-text-on-primary)', opacity: 0.9 }}>
-            Call us: {phone}
+            Call us: {formatPhone(phone)}
           </p>
         )}
         <div className="flex flex-wrap gap-4 justify-center">
@@ -27,7 +29,7 @@ export default function CleanFriendlyCtaBanner({ phone, ctaText }: Props) {
                 color: 'var(--color-text-on-primary)',
               }}
             >
-              {phone}
+              {formatPhone(phone)}
             </a>
           )}
           <a

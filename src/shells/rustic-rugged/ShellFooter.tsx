@@ -4,6 +4,7 @@ import { Globe } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
 import { useTemplate } from '../../context/TemplateContext'
+import { formatPhone } from '../../lib/formatPhone'
 
 const FbIcon = () => <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
 const IgIcon = () => <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor"/></svg>
@@ -51,7 +52,7 @@ export default function ShellFooter() {
             {logoUrl && <img src={logoUrl} alt={`${info.name} logo`} className="h-10 w-auto object-contain mb-3 brightness-200" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />}
             <h3 className="font-oswald text-xl mb-3 font-bold" style={{ color: 'var(--color-footer-text)' }}>{info.name}</h3>
             {info.tagline && <p className="mb-2 text-sm" style={{ color: 'rgba(255,255,255,0.75)' }}>{info.tagline}</p>}
-            {info.phone && <p className="mb-1"><a href={`tel:${info.phone}`} style={{ color: 'var(--color-footer-text)' }} className="transition hover:opacity-75">{info.phone}</a></p>}
+            {info.phone && <p className="mb-1"><a href={`tel:${info.phone}`} style={{ color: 'var(--color-footer-text)' }} className="transition hover:opacity-75">{formatPhone(info.phone)}</a></p>}
             {info.license && <p className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>License #{info.license}</p>}
             {(social.facebook || social.instagram || social.google || social.youtube) && (
               <div className="flex gap-3 mt-3">
@@ -76,7 +77,7 @@ export default function ShellFooter() {
             <h3 className="font-oswald text-lg mb-3 font-bold" style={{ color: 'var(--color-footer-text)' }}>Contact</h3>
             <ul className="space-y-2" style={{ color: 'var(--color-footer-text)' }}>
               {info.address && <li>{info.address}</li>}
-              {info.phone && <li><a href={`tel:${info.phone}`} style={{ color: 'var(--color-footer-text)' }} className="transition hover:opacity-75">{info.phone}</a></li>}
+              {info.phone && <li><a href={`tel:${info.phone}`} style={{ color: 'var(--color-footer-text)' }} className="transition hover:opacity-75">{formatPhone(info.phone)}</a></li>}
               {info.email && <li><a href={`mailto:${info.email}`} style={{ color: 'var(--color-footer-text)' }} className="transition hover:opacity-75">{info.email}</a></li>}
               {info.hours && <li>{info.hours}</li>}
             </ul>

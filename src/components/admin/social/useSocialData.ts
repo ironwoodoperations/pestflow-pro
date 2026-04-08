@@ -38,8 +38,9 @@ export interface IntegrationSettings {
   facebook_page_id?: string
   active_social_provider?: 'export' | 'diy' | 'buffer' | 'ayrshare'
   buffer_access_token?: string
-  ayrshare_api_key?: string
-  ayrshare_profile_key?: string
+  buffer_profile_ids?: string[]
+  // ayrshare_api_key?: string   // reserved for future Ayrshare support
+  // ayrshare_profile_key?: string
   pexels_api_key?: string
 }
 

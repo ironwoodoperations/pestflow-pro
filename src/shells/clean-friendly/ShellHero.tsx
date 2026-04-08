@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
+import { formatPhone } from '../../lib/formatPhone'
 
 interface Biz { name?: string; phone?: string }
 
@@ -59,7 +60,7 @@ export default function ShellHero() {
               className="block text-6xl md:text-8xl font-black text-white tracking-tight leading-none mb-3 drop-shadow-lg hover:text-sky-100 transition"
               style={{ textShadow: '0 4px 24px rgba(0,0,0,0.5)' }}
             >
-              {biz.phone}
+              {formatPhone(biz.phone)}
             </a>
           ) : (
             <h1

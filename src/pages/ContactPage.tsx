@@ -3,6 +3,7 @@ import { Phone, Mail, MapPin, Clock } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
+import { formatPhone } from '../lib/formatPhone'
 
 interface BusinessInfo { name: string; phone: string; email: string; address: string; hours: string }
 interface SocialLinks { facebook: string; instagram: string; google: string }
@@ -78,7 +79,7 @@ export default function ContactPage() {
           <h1 className="font-oswald tracking-wide text-4xl md:text-6xl mb-4" style={{ color: 'var(--color-nav-text)' }}>{heroTitle}</h1>
           <p className="text-lg" style={{ color: 'var(--color-nav-text)', opacity: 0.75 }}>
             {heroSubtitle || <>Have a question or need service? Call us at{' '}
-            <a href={`tel:${info.phone}`} className="font-bold hover:underline" style={{ color: 'var(--color-primary)' }}>{info.phone}</a></>}
+            <a href={`tel:${info.phone}`} className="font-bold hover:underline" style={{ color: 'var(--color-primary)' }}>{formatPhone(info.phone)}</a></>}
           </p>
         </div>
       </section>
@@ -118,7 +119,7 @@ export default function ContactPage() {
             <div className="rounded-xl p-6" style={{ background: 'var(--color-bg-hero)', color: 'var(--color-nav-text)' }}>
               <h3 className="font-oswald tracking-wide text-xl mb-4" style={{ color: 'var(--color-primary)' }}>Get in Touch</h3>
               <ul className="space-y-4">
-                {info.phone && <li className="flex items-start gap-3"><Phone className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: 'var(--color-primary)' }} /><a href={`tel:${info.phone}`} className="hover:underline">{info.phone}</a></li>}
+                {info.phone && <li className="flex items-start gap-3"><Phone className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: 'var(--color-primary)' }} /><a href={`tel:${info.phone}`} className="hover:underline">{formatPhone(info.phone)}</a></li>}
                 {info.email && <li className="flex items-start gap-3"><Mail className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: 'var(--color-primary)' }} /><a href={`mailto:${info.email}`} className="hover:underline">{info.email}</a></li>}
                 {info.address && <li className="flex items-start gap-3"><MapPin className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: 'var(--color-primary)' }} /><span>{info.address}</span></li>}
                 {info.hours && <li className="flex items-start gap-3"><Clock className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: 'var(--color-primary)' }} /><span>{info.hours}</span></li>}

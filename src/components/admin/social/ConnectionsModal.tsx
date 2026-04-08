@@ -1,6 +1,10 @@
 import { useState } from 'react'
 import { Lock } from 'lucide-react'
 import { usePlan } from '../../../hooks/usePlan'
+import { supabase } from '../../../lib/supabase'
+
+const TENANT_ID = import.meta.env.VITE_TENANT_ID
+
 interface Props {
   onClose: () => void
   onSaved: () => void
@@ -23,10 +27,22 @@ const PLAN_INFO: Record<number, { name: string; price: number }> = {
   4: { name: 'Elite',   price: 499 },
 }
 
-export default function ConnectionsModal({ onClose, onNavigate }: Props) {
+export default function ConnectionsModal({ onClose, onSaved, onNavigate }: Props) {
   const { tier } = usePlan()
   const [activeTab, setActiveTab] = useState<ProviderTab>('export')
+  const [bufferToken, setBufferToken] = useState('')
+  const [saving, setSaving] = useState(false)
   const activeProvider = TIER_PROVIDER[tier] || 'export'
+
+  async function saveBufferToken() {
+    if (!bufferToken.trim()) return
+    setSaving(true)
+    const { data: existing } = await supabase.from('settings').select('value').eq('tenant_id', TENANT_ID).eq('key', 'integrations').maybeSingle()
+    const current = existing?.value || {}
+    await supabase.from('settings').upsert({ tenant_id: TENANT_ID, key: 'integrations', value: { ...current, buffer_access_token: bufferToken.trim() } }, { onConflict: 'tenant_id,key' })
+    setSaving(false)
+    onSaved()
+  }
 
   function ActiveBadge() {
     return <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">✓ Your Active Mode</span>
@@ -102,9 +118,33 @@ export default function ConnectionsModal({ onClose, onNavigate }: Props) {
 
           {activeTab === 'buffer' && (
             <div className="space-y-3">
-              <h4 className="font-semibold text-gray-800">Semi-Automated Posting</h4>
-              <p className="text-xs text-gray-500">We set this up for you. Your approved posts will be automatically scheduled and sent to your connected Facebook page on a consistent posting schedule — no extra accounts or tools required on your end.</p>
-              {tier < 3 ? <LockedBadge tabTier={3} /> : activeProvider === 'buffer' && <ActiveBadge />}
+              <h4 className="font-semibold text-gray-800">Semi-Automated Posting via Buffer</h4>
+              <p className="text-xs text-gray-500">Paste your Buffer access token below to enable semi-automated posting. Approved posts will be sent to your connected Buffer channels on a consistent schedule.</p>
+              {tier < 3 ? <LockedBadge tabTier={3} /> : (
+                <>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Buffer Access Token</label>
+                    <input
+                      type="password"
+                      value={bufferToken}
+                      onChange={e => setBufferToken(e.target.value)}
+                      placeholder="Paste your Buffer access token"
+                      className="w-full text-xs border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">
+                      Get your token at <a href="https://buffer.com/developers" target="_blank" rel="noopener noreferrer" className="underline text-emerald-600">buffer.com/developers</a>
+                    </p>
+                  </div>
+                  <button
+                    onClick={saveBufferToken}
+                    disabled={saving || !bufferToken.trim()}
+                    className="text-xs px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 disabled:opacity-50"
+                  >
+                    {saving ? 'Saving…' : 'Save Token'}
+                  </button>
+                  {activeProvider === 'buffer' && <ActiveBadge />}
+                </>
+              )}
             </div>
           )}
 

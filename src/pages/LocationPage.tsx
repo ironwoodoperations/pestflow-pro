@@ -6,6 +6,7 @@ import { resolveTenantId } from '../lib/tenant'
 import StructuredData from '../components/StructuredData'
 import VideoImage from '../components/VideoImage'
 import LocationMap from '../components/shared/LocationMap'
+import { formatPhone } from '../lib/formatPhone'
 import { PEST_VIDEOS } from '../data/pestVideos'
 
 interface LocationData { city: string; hero_title: string; intro_video_url: string; meta_title?: string; meta_description?: string; focus_keyword?: string }
@@ -93,7 +94,7 @@ export default function LocationPage({ slug }: { slug: string }) {
               <p className="text-gray-600 mb-6">Don't let pests take over your property. Contact us today for a thorough inspection and customized treatment plan for your {city} home or business.</p>
               <div className="flex flex-col sm:flex-row gap-3">
                 <Link to="/quote" className="font-bold rounded-lg px-6 py-3 transition text-center hover:opacity-90" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}>Get a Free Quote</Link>
-                {phone && <a href={`tel:${phone}`} className="border-2 font-bold rounded-lg px-6 py-3 transition text-center hover:opacity-80" style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}>Call {phone}</a>}
+                {phone && <a href={`tel:${phone}`} className="border-2 font-bold rounded-lg px-6 py-3 transition text-center hover:opacity-80" style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}>Call {formatPhone(phone)}</a>}
               </div>
             </div>
           </div>

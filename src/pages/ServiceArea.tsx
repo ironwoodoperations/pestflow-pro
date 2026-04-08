@@ -4,6 +4,7 @@ import { MapPin } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
 import StructuredData from '../components/StructuredData'
+import { formatPhone } from '../lib/formatPhone'
 import GoogleMapEmbed from '../components/common/GoogleMapEmbed'
 
 interface LocationItem { slug: string; city: string }
@@ -76,7 +77,7 @@ export default function ServiceArea() {
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h2 className="font-oswald tracking-wide text-3xl md:text-4xl mb-4" style={{ color: 'var(--color-heading)' }}>Don't See Your City?</h2>
           <p className="text-gray-600 mb-8">We may still serve your area. Give us a call to find out.</p>
-          {phone && <a href={`tel:${phone.replace(/\D/g, '')}`} className="inline-block font-bold rounded-lg px-10 py-4 text-lg transition hover:opacity-90" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}>Call {phone}</a>}
+          {phone && <a href={`tel:${phone.replace(/\D/g, '')}`} className="inline-block font-bold rounded-lg px-10 py-4 text-lg transition hover:opacity-90" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}>Call {formatPhone(phone)}</a>}
         </div>
       </section>
 

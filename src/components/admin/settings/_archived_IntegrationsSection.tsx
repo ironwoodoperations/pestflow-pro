@@ -21,13 +21,13 @@ export default function IntegrationsSection() {
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
   const [showToken, setShowToken] = useState(false)
-  const [form, setForm] = useState({ google_place_id: '', facebook_page_id: '', facebook_access_token: '', google_maps_embed_url: '', pexels_api_key: '', google_analytics_id: '', google_api_key: '', google_search_console_url: '', textbelt_api_key: '', owner_sms_number: '', ayrshare_api_key: '' })
+  const [form, setForm] = useState({ google_place_id: '', facebook_page_id: '', facebook_access_token: '', google_maps_embed_url: '', pexels_api_key: '', google_analytics_id: '', google_api_key: '', google_search_console_url: '', textbelt_api_key: '', owner_sms_number: '', buffer_access_token: '' })
 
   useEffect(() => {
     if (!tenantId) return
     supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle()
       .then(({ data }) => {
-        if (data?.value) setForm(prev => ({ ...prev, google_place_id: data.value.google_place_id || '', facebook_page_id: data.value.facebook_page_id || '', facebook_access_token: data.value.facebook_access_token || '', google_maps_embed_url: data.value.google_maps_embed_url || '', pexels_api_key: data.value.pexels_api_key || '', google_analytics_id: data.value.google_analytics_id || '', google_api_key: data.value.google_api_key || '', google_search_console_url: data.value.google_search_console_url || '', textbelt_api_key: data.value.textbelt_api_key || '', owner_sms_number: data.value.owner_sms_number || '', ayrshare_api_key: data.value.ayrshare_api_key || '' }))
+        if (data?.value) setForm(prev => ({ ...prev, google_place_id: data.value.google_place_id || '', facebook_page_id: data.value.facebook_page_id || '', facebook_access_token: data.value.facebook_access_token || '', google_maps_embed_url: data.value.google_maps_embed_url || '', pexels_api_key: data.value.pexels_api_key || '', google_analytics_id: data.value.google_analytics_id || '', google_api_key: data.value.google_api_key || '', google_search_console_url: data.value.google_search_console_url || '', textbelt_api_key: data.value.textbelt_api_key || '', owner_sms_number: data.value.owner_sms_number || '', buffer_access_token: data.value.buffer_access_token || '' }))
         setLoading(false)
       })
   }, [tenantId])
@@ -136,11 +136,11 @@ export default function IntegrationsSection() {
             <input value={form.pexels_api_key} onChange={e => setForm(p => ({ ...p, pexels_api_key: e.target.value }))} placeholder="Get free key at pexels.com/api" className={inputClass} />
             <HelpDrop text="Free stock photo search. Get your key at pexels.com/api" />
           </div>
-          {canAccess(4) && (
+          {canAccess(3) && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Ayrshare API Key</label>
-              <input type="password" value={form.ayrshare_api_key} onChange={e => setForm(p => ({ ...p, ayrshare_api_key: e.target.value }))} placeholder="••••••••" className={inputClass} />
-              <p className="text-xs text-gray-400 mt-1">Connect Ayrshare to post to all platforms at once (Elite plan)</p>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Buffer Access Token</label>
+              <input type="password" value={form.buffer_access_token} onChange={e => setForm(p => ({ ...p, buffer_access_token: e.target.value }))} placeholder="••••••••" className={inputClass} />
+              <p className="text-xs text-gray-400 mt-1">Connect Buffer to enable semi-automated posting. Get your token at <a href="https://buffer.com/developers" target="_blank" rel="noopener noreferrer" className="underline">buffer.com/developers</a></p>
             </div>
           )}
           <div>

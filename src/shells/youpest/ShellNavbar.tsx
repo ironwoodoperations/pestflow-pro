@@ -4,6 +4,7 @@ import { Menu, X } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
 import { useTemplate } from '../../context/TemplateContext'
+import { formatPhone } from '../../lib/formatPhone'
 
 const DEFAULT_LINKS = [
   { label: 'Services', href: '/pest-control' },
@@ -77,7 +78,7 @@ export default function ShellNavbar() {
             <a href={`tel:${phone}`}
               style={{ background: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}
               className="px-4 py-2 rounded-lg text-sm font-bold hover:opacity-90 transition-opacity">
-              {phone}
+              {formatPhone(phone)}
             </a>
           )}
         </div>
@@ -111,7 +112,7 @@ export default function ShellNavbar() {
             <a href={`tel:${phone}`}
               style={{ background: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}
               className="block mt-3 text-center px-4 py-2.5 rounded-lg text-sm font-bold">
-              {phone}
+              {formatPhone(phone)}
             </a>
           )}
         </div>
