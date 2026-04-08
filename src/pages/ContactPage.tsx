@@ -62,7 +62,7 @@ export default function ContactPage() {
       fetch(fnUrl, { method: 'POST', headers, body: JSON.stringify({ tenant_id: tenantId, to: form.phone, message: `Hi ${form.name}, thanks for contacting ${info.name}! We received your message and will be in touch shortly.`, type: 'customer' }) }).catch(() => {})
     }
     if (ownerSmsNumber) {
-      fetch(fnUrl, { method: 'POST', headers, body: JSON.stringify({ tenant_id: tenantId, to: ownerSmsNumber, message: `📬 New contact from ${form.name} — ${form.phone} — "${form.message?.slice(0, 80)}". Check CRM: https://dangpestcontrol.com/admin`, type: 'owner' }) }).catch(() => {})
+      fetch(fnUrl, { method: 'POST', headers, body: JSON.stringify({ tenant_id: tenantId, to: ownerSmsNumber, message: `📬 New contact from ${form.name} — ${form.phone} — "${form.message?.slice(0, 80)}". Check your PestFlow Pro admin panel for details.`, type: 'owner' }) }).catch(() => {})
     }
 
     toast.success("Message sent! We'll get back to you soon.")

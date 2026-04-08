@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { formatPhone } from '../lib/formatPhone'
 import { CheckCircle, Bug, Home, User, ClipboardCheck } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
@@ -92,7 +93,7 @@ export default function QuotePage() {
       fetch(fnUrl, { method: 'POST', headers, body: JSON.stringify({ tenant_id: tenantId, to: form.phone, message: `Hi ${form.name}, thanks for reaching out to ${businessName}! We received your quote request and will be in touch shortly.`, type: 'customer' }) }).catch(() => {})
     }
     if (ownerSmsNumber) {
-      fetch(fnUrl, { method: 'POST', headers, body: JSON.stringify({ tenant_id: tenantId, to: ownerSmsNumber, message: `📋 New quote from ${form.name} — ${form.phone} — Service: ${form.pests.join(', ')}. Check CRM: https://dangpestcontrol.com/admin`, type: 'owner' }) }).catch(() => {})
+      fetch(fnUrl, { method: 'POST', headers, body: JSON.stringify({ tenant_id: tenantId, to: ownerSmsNumber, message: `📋 New quote from ${form.name} — ${form.phone} — Service: ${form.pests.join(', ')}. Check your PestFlow Pro admin panel for details.`, type: 'owner' }) }).catch(() => {})
     }
 
     setSubmitted(true)
@@ -147,7 +148,7 @@ export default function QuotePage() {
           </div>
           <div className="mt-8 rounded-xl p-6" style={{ background: 'var(--color-bg-hero)' }}>
             <h3 className="font-oswald tracking-wide text-xl mb-3" style={{ color: 'var(--color-primary)' }}>{businessName}</h3>
-            {businessPhone && <a href={`tel:${businessPhone}`} className="text-2xl font-bold hover:underline block mb-4" style={{ color: 'var(--color-nav-text)' }}>{businessPhone}</a>}
+            {businessPhone && <a href={`tel:${businessPhone.replace(/\D/g, '')}`} className="text-2xl font-bold hover:underline block mb-4" style={{ color: 'var(--color-nav-text)' }}>{formatPhone(businessPhone)}</a>}
             <ul className="space-y-2 text-sm" style={{ color: 'var(--color-nav-text)', opacity: 0.75 }}>
               <li>✅ Free Estimates</li><li>✅ Same-Day Service</li><li>✅ Licensed & Insured</li><li>✅ Satisfaction Guaranteed</li>
             </ul>
