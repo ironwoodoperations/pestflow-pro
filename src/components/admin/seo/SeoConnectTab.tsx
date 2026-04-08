@@ -1,4 +1,5 @@
 import type { ConnectForm, IntegrationValues } from './seoTypes'
+import { SearchConsoleMockPreview, GA4MockPreview, PageSpeedMockPreview } from './SeoConnectPreviews'
 
 interface Props {
   integrations: IntegrationValues
@@ -85,7 +86,8 @@ export default function SeoConnectTab({
           status={google_search_console_url ? 'connected' : 'not-connected'}
           actionLabel={google_search_console_url ? 'Open Search Console' : undefined}
           actionUrl="https://search.google.com/search-console">
-          <FieldRow value={connectForm.google_search_console_url} placeholder="https://dangpestcontrol.com"
+          {!google_search_console_url && <SearchConsoleMockPreview />}
+          <FieldRow value={connectForm.google_search_console_url} placeholder="https://yoursite.com"
             helper="Go to search.google.com/search-console → Add Property"
             saving={connectSaving === 'google_search_console_url'}
             onChange={v => onChange('google_search_console_url', v)}
@@ -97,6 +99,7 @@ export default function SeoConnectTab({
           status={google_analytics_id ? 'connected' : 'not-connected'}
           actionLabel={google_analytics_id ? 'Open GA4' : undefined}
           actionUrl="https://analytics.google.com">
+          {!google_analytics_id && <GA4MockPreview />}
           <FieldRow value={connectForm.google_analytics_id} placeholder="G-XXXXXXXXXX"
             helper="GA4 Admin → Data Streams → your stream → Measurement ID"
             saving={connectSaving === 'google_analytics_id'}
@@ -107,6 +110,7 @@ export default function SeoConnectTab({
         <DataSourceCard icon="⚡" title="Google PageSpeed Insights"
           description="Performance scores, Core Web Vitals, Lighthouse audit, accessibility and SEO scores. Powers the Overview tab."
           status="active" statusLabel="Active — No Setup Required">
+          <PageSpeedMockPreview />
           <button onClick={onRunCheckNow}
             className="text-xs px-3 py-1.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium flex items-center gap-1">
             🔄 Run Check Now
