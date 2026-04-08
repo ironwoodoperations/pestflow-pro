@@ -54,9 +54,9 @@ function FBPreview({ post }: { post: SocialPost }) {
   return (
     <div>
       <div className="flex items-center gap-3 px-4 py-3">
-        <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-400 text-sm">IC</div>
+        <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-400 text-sm font-bold">YB</div>
         <div>
-          <p className="text-sm font-semibold text-gray-900">PestFlow Pro</p>
+          <p className="text-sm font-semibold text-gray-900">Your Business</p>
           <p className="text-xs text-gray-400">Just now · 🌐</p>
         </div>
       </div>
@@ -79,8 +79,8 @@ function IGPreview({ post }: { post: SocialPost }) {
   return (
     <div>
       <div className="flex items-center gap-3 px-4 py-2.5 border-b border-gray-100">
-        <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white text-xs font-bold">IC</div>
-        <span className="text-xs font-semibold text-gray-900">ironclad_pest</span>
+        <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white text-xs font-bold">YB</div>
+        <span className="text-xs font-semibold text-gray-900">your_business</span>
         <span className="ml-auto text-gray-400">···</span>
       </div>
       <div className="aspect-square bg-gray-100 flex items-center justify-center overflow-hidden">
@@ -98,7 +98,7 @@ function IGPreview({ post }: { post: SocialPost }) {
         </div>
         <p className="text-xs text-gray-400 mb-1">Be the first to like this</p>
         <p className="text-xs text-gray-800">
-          <span className="font-semibold">ironclad_pest</span>{' '}
+          <span className="font-semibold">your_business</span>{' '}
           {post.caption.length > 100 ? post.caption.slice(0, 100) + '…' : post.caption}
         </p>
       </div>
