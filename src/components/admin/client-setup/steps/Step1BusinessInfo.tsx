@@ -32,7 +32,7 @@ export default function Step1BusinessInfo({ form, setForm }: Props) {
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Company Name *</label>
-          <input value={form.biz_name} onChange={handleBizName} required className={INPUT} placeholder="Ironclad Pest Solutions" />
+          <input value={form.biz_name} onChange={handleBizName} required className={INPUT} placeholder="Acme Pest Solutions" />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Site Slug *</label>

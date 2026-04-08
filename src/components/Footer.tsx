@@ -39,7 +39,7 @@ const QUICK_LINKS = [
 
 export default function Footer() {
   const [info, setInfo] = useState<BusinessInfo>({
-    name: 'Ironclad Pest Solutions', phone: '', email: '', address: '', hours: '', tagline: '', license: '',
+    name: '', phone: '', email: '', address: '', hours: '', tagline: '', license: '',
   })
   const [logoUrl, setLogoUrl] = useState('')
   const [social, setSocial] = useState<SocialLinks>({})

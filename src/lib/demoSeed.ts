@@ -107,7 +107,7 @@ export async function seedDemoData(tenantId: string, supabase: SupabaseClient): 
       },
       {
         tenant_id: tenantId,
-        caption: '[Demo] Happy customers are the foundation of our business. Thank you for trusting Ironclad Pest Solutions with your home! ⭐⭐⭐⭐⭐ #Testimonial',
+        caption: '[Demo] Happy customers are the foundation of our business. Thank you for trusting us with your home! ⭐⭐⭐⭐⭐ #Testimonial',
         status: 'draft',
         platform: 'facebook',
       },
@@ -118,7 +118,7 @@ export async function seedDemoData(tenantId: string, supabase: SupabaseClient): 
         tenant_id: tenantId,
         author_name: 'Demo: Kevin Barnett',
         rating: 5,
-        review_text: 'Ironclad took care of a serious roach problem we had been battling for months. Professional, thorough, and completely effective. Could not be happier.',
+        review_text: 'They took care of a serious roach problem we had been battling for months. Professional, thorough, and completely effective. Could not be happier.',
         approved: true,
       },
       {

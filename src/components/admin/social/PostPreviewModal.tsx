@@ -56,7 +56,7 @@ function FBPreview({ post }: { post: SocialPost }) {
       <div className="flex items-center gap-3 px-4 py-3">
         <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-400 text-sm">IC</div>
         <div>
-          <p className="text-sm font-semibold text-gray-900">Ironclad Pest Solutions</p>
+          <p className="text-sm font-semibold text-gray-900">PestFlow Pro</p>
           <p className="text-xs text-gray-400">Just now · 🌐</p>
         </div>
       </div>

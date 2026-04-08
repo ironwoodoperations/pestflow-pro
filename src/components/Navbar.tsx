@@ -28,7 +28,7 @@ const NAV_LINKS = [
 ]
 
 export default function Navbar() {
-  const [businessName, setBusinessName] = useState('Ironclad Pest Solutions')
+  const [businessName, setBusinessName] = useState('')
   const [logoUrl, setLogoUrl] = useState('')
   const [mobileOpen, setMobileOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)

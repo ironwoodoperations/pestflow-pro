@@ -11,12 +11,12 @@ const VALUE_ICONS = [Shield, Eye, Award, Zap]
 const VALUES = [
   { title: 'Science-Backed Solutions', desc: 'Every treatment plan is based on Integrated Pest Management (IPM) principles. We target the root cause, not just the symptoms.' },
   { title: 'Transparent Pricing', desc: 'We quote before we treat. No hidden fees, no upselling, no surprise invoices. The price we quote is the price you pay.' },
-  { title: '30-Day Guarantee', desc: "If pests return within 30 days of treatment, we come back and retreat at no additional cost. That's our Ironclad Guarantee." },
+  { title: '30-Day Guarantee', desc: "If pests return within 30 days of treatment, we come back and retreat at no additional cost. That's our guarantee." },
   { title: 'Same-Day Response', desc: "Call before noon and we'll be at your property the same day. Your family's safety shouldn't wait." },
 ]
 
 export default function About() {
-  const [heroTitle, setHeroTitle] = useState('About Ironclad Pest Solutions')
+  const [heroTitle, setHeroTitle] = useState('About Us')
   const [heroSubtitle, setHeroSubtitle] = useState('Family-owned. Science-backed. Trusted since 2009.')
   const [aboutImage, setAboutImage] = useState<string | null>(null)
   const [team, setTeam] = useState<TeamMember[] | null>(null)
@@ -54,8 +54,8 @@ export default function About() {
             </div>
             <div>
               <h2 className="font-oswald tracking-wide text-3xl md:text-4xl mb-4" style={{ color: 'var(--color-heading)' }}>Our Story</h2>
-              <p className="text-gray-600 mb-4">Ironclad Pest Solutions was founded in 2009 by Ryan Carter in Tyler, Texas. After a decade working for national chains, Ryan saw an opportunity to do things differently — with better products, honest pricing, and genuine commitment to every customer.</p>
-              <p className="text-gray-600 mb-4">What started as a one-truck operation has grown into one of East Texas's most trusted pest control companies. Today, Ironclad employs 12 licensed technicians and serves Tyler, Longview, Jacksonville, and surrounding communities.</p>
+              <p className="text-gray-600 mb-4">Our company was founded by a local professional who saw an opportunity to do things differently — with better products, honest pricing, and genuine commitment to every customer.</p>
+              <p className="text-gray-600 mb-4">What started as a small operation has grown into one of the area's most trusted pest control companies, employing licensed technicians who serve homes and businesses across the region.</p>
               <p className="text-gray-600">We are fully licensed, bonded, and insured. Every technician is EPA-certified and trained in the latest integrated pest management techniques. We are proud members of the NPMA and TPCA.</p>
             </div>
           </div>
@@ -90,7 +90,7 @@ export default function About() {
 
       <section className="py-16" style={{ backgroundColor: 'var(--color-bg-section)' }}>
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-center mb-10" style={{ color: 'var(--color-heading)' }}>Why Ironclad?</h2>
+          <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-center mb-10" style={{ color: 'var(--color-heading)' }}>Why Choose Us?</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {VALUES.map((v, i) => {
               const Icon = VALUE_ICONS[i]
