@@ -34,6 +34,15 @@ async function main() {
   if (roleError) throw roleError
   console.log('User role inserted')
 
+  // 4. Insert tenant_users row (required for login gate in Login.tsx)
+  const { error: tuError } = await supabase.from('tenant_users').insert({
+    tenant_id: DANG_TENANT_ID,
+    user_id: userId,
+    role: 'admin',
+  })
+  if (tuError) throw tuError
+  console.log('Tenant user inserted')
+
   console.log('Dang admin user provisioned successfully')
   console.log('User ID:', userId)
   console.log('Tenant ID:', DANG_TENANT_ID)
