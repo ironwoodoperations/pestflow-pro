@@ -1,124 +1,63 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { usePageContent } from '../../hooks/usePageContent'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
 import { formatPhone } from '../../lib/formatPhone'
 
-interface Biz { name?: string; phone?: string }
-interface FormState { name: string; phone: string; service: string }
+const FALLBACK_PHOTO = 'https://images.pexels.com/photos/3807517/pexels-photo-3807517.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750'
+
+interface BizState { name?: string; phone?: string; tagline?: string }
+interface HeroMedia { thumbnail_url?: string; youtube_id?: string }
 
 export default function ShellHero() {
-  const [headline, setHeadline] = useState('East Texas Pest Control That Gets Results.')
-  const [heroSubtext, setHeroSubtext] = useState('Fast. Reliable. Local.')
-  const [biz, setBiz] = useState<Biz>({})
-  const [ctaText, setCtaText] = useState('Get a Free Estimate')
-  const [form, setForm] = useState<FormState>({ name: '', phone: '', service: '' })
-  const navigate = useNavigate()
+  const { content } = usePageContent('home')
+  const [biz, setBiz] = useState<BizState>({})
+  const [heroMedia, setHeroMedia] = useState<HeroMedia>({})
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const [bizRes, custRes, brandRes, contentRes] = await Promise.all([
+      const [bizRes, mediaRes] = await Promise.all([
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
-        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'customization').maybeSingle(),
-        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
-        supabase.from('page_content').select('subtitle').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'hero_media').maybeSingle(),
       ])
-      if (bizRes.data?.value) setBiz({ name: bizRes.data.value.name, phone: bizRes.data.value.phone })
-      if (custRes.data?.value?.hero_headline) setHeadline(custRes.data.value.hero_headline)
-      if (brandRes.data?.value?.cta_text) setCtaText(brandRes.data.value.cta_text)
-      if (contentRes.data?.subtitle) setHeroSubtext(contentRes.data.subtitle)
+      if (bizRes.data?.value) setBiz(bizRes.data.value)
+      if (mediaRes.data?.value) setHeroMedia(mediaRes.data.value)
     })
   }, [])
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    navigate('/quote')
-  }
+  const bgPhoto = heroMedia.thumbnail_url
+    || (heroMedia.youtube_id ? `https://img.youtube.com/vi/${heroMedia.youtube_id}/maxresdefault.jpg` : null)
+    || FALLBACK_PHOTO
 
-  function setField(key: keyof FormState, val: string) {
-    setForm(prev => ({ ...prev, [key]: val }))
-  }
-
-  const inputCls = 'w-full rounded px-3 py-2 text-sm bg-white text-black border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-400'
+  const title = content?.title || biz.name || 'Expert Pest Control You Can Count On'
+  const subtitle = content?.subtitle || biz.tagline || 'Professional and personalized service for your home and business'
 
   return (
-    <section style={{ background: 'linear-gradient(135deg, var(--color-bg-hero) 0%, var(--color-bg-hero-end) 100%)' }} className="text-white min-h-[560px] flex flex-col md:flex-row">
-      {/* LEFT — headline + CTA */}
-      <div className="flex-1 md:w-[60%] flex flex-col justify-center px-8 md:px-14 py-16 relative">
-        <div className="absolute top-0 left-0 w-1 h-full hidden md:block" style={{ backgroundColor: 'var(--color-primary)' }} aria-hidden="true" />
-        <span className="text-sm font-bold tracking-widest uppercase mb-4 block" style={{ color: 'var(--color-primary)' }}>
-          ★★★★★ Rated #1 in Tyler, TX
-        </span>
-        <h1 className="font-oswald text-5xl md:text-6xl font-bold uppercase leading-tight mb-6 text-white">
-          {headline}
-        </h1>
-        <p className="text-lg text-gray-300 mb-8">{heroSubtext}</p>
-        <a
-          href="/quote"
-          style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }} className="inline-block font-bold px-8 py-4 text-lg transition w-fit"
-        >
-          {ctaText}
-        </a>
-        {biz.phone && (
-          <a
-            href={`tel:${biz.phone.replace(/\D/g, '')}`}
-            className="mt-4 font-semibold transition text-sm inline-block hover:opacity-80"
-            style={{ color: 'var(--color-primary)' }}
-          >
-            Or call: {formatPhone(biz.phone)}
-          </a>
-        )}
-      </div>
-
-      {/* RIGHT — floating estimate card */}
-      <div className="md:w-[40%] flex items-center justify-center px-6 md:px-10 py-12 md:py-0">
-        <div className="w-full max-w-sm bg-[#141414] border-t-4 rounded-xl shadow-2xl p-6 md:translate-y-8" style={{ borderTopColor: 'var(--color-primary)' }}>
-          <h2 className="text-xl font-bold text-white mb-5">Get a Free Estimate</h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs text-gray-400 mb-1 font-semibold uppercase tracking-wide">Your Name</label>
-              <input
-                type="text"
-                value={form.name}
-                onChange={e => setField('name', e.target.value)}
-                placeholder="Your Name"
-                className={inputCls}
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-400 mb-1 font-semibold uppercase tracking-wide">Phone</label>
-              <input
-                type="tel"
-                value={form.phone}
-                onChange={e => setField('phone', e.target.value)}
-                placeholder="(XXX) XXX-XXXX"
-                className={inputCls}
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-400 mb-1 font-semibold uppercase tracking-wide">Service Needed</label>
-              <select
-                value={form.service}
-                onChange={e => setField('service', e.target.value)}
-                className={inputCls}
-              >
-                <option value="">Select a Service</option>
-                <option>Residential Pest Control</option>
-                <option>Commercial Pest Control</option>
-                <option>Termite Treatment</option>
-                <option>Mosquito Control</option>
-                <option>Rodent Control</option>
-                <option>Other</option>
-              </select>
-            </div>
-            <button
-              type="submit"
-              style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }} className="w-full font-bold py-3 rounded transition text-sm"
-            >
-              {ctaText}
-            </button>
-          </form>
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      <img src={bgPhoto} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover" />
+      <div className="absolute inset-0" style={{ backgroundColor: 'rgba(0,0,0,0.55)' }} />
+      <div className="relative z-10 flex items-center justify-center px-4 w-full py-16">
+        <div className="text-center w-full" style={{ background: 'rgba(0,0,0,0.72)', borderRadius: '16px', padding: '48px 40px', maxWidth: '640px' }}>
+          <h1 className="font-bold text-white" style={{ fontSize: 'clamp(28px,5vw,48px)', lineHeight: 1.2, marginBottom: '16px' }}>
+            {title}
+          </h1>
+          <p style={{ color: 'white', opacity: 0.9, marginBottom: '32px', fontSize: '18px', lineHeight: 1.6 }}>
+            {subtitle}
+          </p>
+          <div className="flex flex-wrap gap-3 justify-center">
+            <a href="/quote" className="font-bold rounded-full px-8 py-3 transition hover:opacity-90"
+              style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-text-on-primary)' }}>
+              Get a Quote
+            </a>
+            {biz.phone && (
+              <a href={`tel:${biz.phone.replace(/\D/g, '')}`}
+                className="font-semibold rounded-full px-8 py-3 transition hover:bg-white hover:opacity-90"
+                style={{ border: '2px solid white', color: 'white' }}>
+                Call {formatPhone(biz.phone)}
+              </a>
+            )}
+          </div>
         </div>
       </div>
     </section>
