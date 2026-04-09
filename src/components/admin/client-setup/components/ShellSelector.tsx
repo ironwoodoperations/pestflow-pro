@@ -1,6 +1,7 @@
 interface ShellSelectorProps {
   value: string
   onChange: (shell: string) => void
+  tier?: number  // 1=Starter 2=Grow 3=Pro 4=Elite — youpest only shown for 3+
 }
 
 const SHELLS = [
@@ -28,14 +29,21 @@ const SHELLS = [
     desc: 'Warm and established. Perfect for trusted local brands.',
     swatches: ['#b5451b', '#166534', '#b45309'],
   },
+  {
+    key: 'youpest',
+    name: 'YouPest AI Quick Build',
+    desc: 'AI-generated layout from scraped site. Same-day launch.',
+    swatches: ['#6366f1', '#818cf8', '#312e81'],
+    proOnly: true,
+  },
 ]
 
-export default function ShellSelector({ value, onChange }: ShellSelectorProps) {
+export default function ShellSelector({ value, onChange, tier = 1 }: ShellSelectorProps) {
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-2">Site Template</label>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {SHELLS.map(s => {
+        {SHELLS.filter(s => !s.proOnly || tier >= 3).map(s => {
           const selected = value === s.key
           return (
             <button
@@ -44,9 +52,12 @@ export default function ShellSelector({ value, onChange }: ShellSelectorProps) {
               onClick={() => onChange(s.key)}
               className={`text-left rounded-xl border-2 p-4 transition ${selected ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 hover:border-gray-300 bg-white'}`}
             >
-              <p className={`text-sm font-bold mb-1 ${selected ? 'text-emerald-700' : 'text-gray-900'}`}>
-                {s.name}
-              </p>
+              <div className="flex items-center gap-2 mb-1">
+                <p className={`text-sm font-bold ${selected ? 'text-emerald-700' : 'text-gray-900'}`}>
+                  {s.name}
+                </p>
+                {s.proOnly && <span className="text-xs font-semibold text-indigo-700 bg-indigo-100 px-1.5 py-0.5 rounded-full">Pro</span>}
+              </div>
               <p className="text-xs text-gray-400 leading-snug mb-2">{s.desc}</p>
               <div className="flex gap-1.5">
                 {s.swatches.map(color => (
