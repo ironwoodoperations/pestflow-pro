@@ -1,9 +1,11 @@
 import Navbar from '../ShellNavbar';
 import Footer from '../ShellFooter';
+import { usePageContent } from '../../../hooks/usePageContent';
 
 // ─── COMPONENT ───────────────────────────────────────────────────────────────
 
 const About = () => {
+  const { content } = usePageContent('about');
   return (
     <div style={{ fontFamily: "'Open Sans', sans-serif", color: 'hsl(20, 40%, 12%)', overflowX: 'hidden' }}>
       <Navbar />
@@ -42,7 +44,7 @@ const About = () => {
             margin: 0,
             lineHeight: 1,
           }}>
-            ABOUT US
+            {content?.title ?? 'About Us'}
           </h1>
         </div>
 
@@ -90,7 +92,7 @@ const About = () => {
               marginBottom: '6px',
               marginTop: 0,
             }}>
-              ABOUT US
+              {content?.subtitle ?? 'About Us'}
             </p>
             <h2 style={{
               fontSize: 'clamp(26px, 2.8vw, 38px)',
@@ -98,12 +100,10 @@ const About = () => {
               marginBottom: '18px',
               marginTop: 0,
             }}>
-              Family-Owned, Community-Driven
+              {content?.title ?? 'Family-Owned, Community-Driven'}
             </h2>
             <p style={{ fontSize: '16px', lineHeight: 1.75, marginBottom: '16px', color: '#444', marginTop: 0 }}>
-              We have been in the home services industry for over 15 years and love that our contribution to you is to bring peace and security to a place where you should feel the safest. At{' '}
-              <a href="/" style={{ color: '#000', textDecoration: 'underline' }}>Dang Pest Control</a>,
-              we are a hands-on, personable, relationship-based, and family-owned company. We live, work, worship, and play in the Tyler community.
+              {content?.intro ?? 'We have been in the home services industry for over 15 years and love that our contribution to you is to bring peace and security to a place where you should feel the safest. At Dang Pest Control, we are a hands-on, personable, relationship-based, and family-owned company. We live, work, worship, and play in the Tyler community.'}
             </p>
             <p style={{ fontSize: '16px', lineHeight: 1.75, marginBottom: '28px', color: '#444', marginTop: 0 }}>
               Our{' '}

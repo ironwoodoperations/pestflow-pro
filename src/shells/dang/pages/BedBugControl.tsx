@@ -51,14 +51,9 @@ const BedBugControl = () => {
             <VideoImage src="https://www.dangpestcontrol.com/wp-content/uploads/2025/05/bed-bug-1.jpg" alt="Bed Bug Pest Control Service in Tyler TX" className="" videoUrl={content?.video_url ?? null} videoType={(content?.video_type as string) ?? null} />
           </div>
           <div>
-            <p style={{ fontFamily: '"Bangers", cursive', color: 'hsl(28, 100%, 50%)', fontSize: '18px', letterSpacing: '0.12em', fontStyle: 'italic', marginBottom: '6px', marginTop: 0 }}>BED BUGS</p>
-            <h2 style={{ fontSize: 'clamp(26px, 2.8vw, 38px)', fontWeight: '800', marginBottom: '18px', marginTop: 0 }}>Bed Bug Control Services</h2>
-            <p style={{ fontSize: '16px', lineHeight: 1.75, marginBottom: '28px', color: '#444', marginTop: 0 }}>
-              When it comes to bed bug infestations, you need a reliable partner to restore your peace of mind—and your home. At{' '}
-              <a href="/" style={{ color: '#000', textDecoration: 'underline' }}>Dang Pest Control</a>, we specialize in effective, professional bed bug control services that eliminate bed bugs at every stage of their life cycle. Our expert technicians are ready to help you reclaim your home or property with advanced, eco-friendly treatments that deliver long-term results. We serve Tyler, TX, and the surrounding areas. Call us today at{' '}
-              <a href="tel:(903) 871-0550" style={{ color: '#000', fontWeight: '700' }}>(903) 871-0550</a>{' '}and{' '}
-              <a href="/quote" style={{ color: '#000', textDecoration: 'underline' }}>get your quote</a>.
-            </p>
+            <p style={{ fontFamily: '"Bangers", cursive', color: 'hsl(28, 100%, 50%)', fontSize: '18px', letterSpacing: '0.12em', fontStyle: 'italic', marginBottom: '6px', marginTop: 0 }}>{content?.subtitle ?? 'BED BUGS'}</p>
+            <h2 style={{ fontSize: 'clamp(26px, 2.8vw, 38px)', fontWeight: '800', marginBottom: '18px', marginTop: 0 }}>{content?.title ?? 'Bed Bug Control Services'}</h2>
+            <p style={{ fontSize: '16px', lineHeight: 1.75, marginBottom: '28px', color: '#444', marginTop: 0 }}>{content?.intro ?? 'When it comes to bed bug infestations, you need a reliable partner to restore your peace of mind—and your home. At{\' \'} Dang Pest Control, we specialize in effective, professional bed bug control services that eliminate bed bugs at every stage of their life cycle. Our expert technicians are ready to help you reclaim your home or property with advanced, eco-friendly treatments that deliver long-term results. We serve Tyler, TX, and the surrounding areas. Call us today at{\' \'} (903) 871-0550{\' \'}and{\' \'} get your quote.'}</p>
             <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
               <a href="tel:(903) 871-0550" style={{ padding: '13px 28px', border: '2px solid hsl(20, 40%, 12%)', borderRadius: '50px', fontWeight: '700', color: 'hsl(20, 40%, 12%)', textDecoration: 'none', fontSize: '15px', whiteSpace: 'nowrap' }}>(903) 871-0550</a>
               <a href="/quote" style={{ padding: '13px 28px', background: 'hsl(28, 100%, 50%)', borderRadius: '50px', fontWeight: '700', color: '#fff', textDecoration: 'none', fontSize: '15px', whiteSpace: 'nowrap' }}>Get Your Quote</a>

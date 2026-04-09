@@ -51,11 +51,9 @@ const TermiteControl = () => {
             <VideoImage src="https://www.dangpestcontrol.com/wp-content/uploads/2025/05/Interior-Bathroom-scaled-e1747162320401.jpg" alt="Termite Control Treatment Specialists in Tyler TX" className="" videoUrl={content?.video_url ?? null} videoType={(content?.video_type as string) ?? null} />
           </div>
           <div>
-            <p style={{ fontFamily: '"Bangers", cursive', color: 'hsl(28, 100%, 50%)', fontSize: '18px', letterSpacing: '0.12em', fontStyle: 'italic', marginBottom: '6px', marginTop: 0 }}>TERMITE CONTROL</p>
-            <h2 style={{ fontSize: 'clamp(26px, 2.8vw, 38px)', fontWeight: '800', marginBottom: '18px', marginTop: 0 }}>Termite Control Services</h2>
-            <p style={{ fontSize: '16px', lineHeight: 1.75, marginBottom: '16px', color: '#444', marginTop: 0 }}>
-              Termites are silent destroyers, capable of causing costly damage to your home or property before you notice a single sign of their presence. At <a href="/" style={{ color: '#000', textDecoration: 'underline' }}>Dang Pest Control</a>, we specialize in eliminating and preventing termite infestations to protect your home and give you peace of mind. Serving Tyler, TX, and the surrounding areas, give us a call at <a href="tel:(903) 871-0550" style={{ color: '#000', fontWeight: '700' }}>(903) 871-0550</a> today and <a href="/quote" style={{ color: '#000', textDecoration: 'underline' }}>get your quote</a>.
-            </p>
+            <p style={{ fontFamily: '"Bangers", cursive', color: 'hsl(28, 100%, 50%)', fontSize: '18px', letterSpacing: '0.12em', fontStyle: 'italic', marginBottom: '6px', marginTop: 0 }}>{content?.subtitle ?? 'TERMITE CONTROL'}</p>
+            <h2 style={{ fontSize: 'clamp(26px, 2.8vw, 38px)', fontWeight: '800', marginBottom: '18px', marginTop: 0 }}>{content?.title ?? 'Termite Control Services'}</h2>
+            <p style={{ fontSize: '16px', lineHeight: 1.75, marginBottom: '16px', color: '#444', marginTop: 0 }}>{content?.intro ?? 'Termites are silent destroyers, capable of causing costly damage to your home or property before you notice a single sign of their presence. At Dang Pest Control, we specialize in eliminating and preventing termite infestations to protect your home and give you peace of mind. Serving Tyler, TX, and the surrounding areas, give us a call at (903) 871-0550 today and get your quote.'}</p>
             <p style={{ fontSize: '16px', lineHeight: 1.75, marginBottom: '28px', color: '#444', marginTop: 0 }}>
               Not yet sure if termites are present at your property? We can perform a <a href="/termite-inspections" style={{ color: '#000', textDecoration: 'underline' }}>thorough termite inspection</a> conducted by our highly trained technicians. We identify the species of termites—whether it's subterranean or drywood—and their colonies, so we can tailor the most effective treatment options for your situation.
             </p>
