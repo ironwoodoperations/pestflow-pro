@@ -1,9 +1,13 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { Facebook, Instagram, Linkedin, X } from 'lucide-react'
 import dangLogo from './assets/dang-logo.png'
 
 const ORANGE = 'hsl(28, 100%, 50%)'
+
+const FbIcon = () => <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+const IgIcon = () => <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor"/></svg>
+const LiIcon = () => <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+const XIcon = () => <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
 
 const ShellFooter = () => (
   <footer className="bg-white py-12">
@@ -48,15 +52,15 @@ const ShellFooter = () => (
       </div>
       <div className="flex justify-center gap-4 mt-10">
         {[
-          { href: 'https://www.facebook.com/DangPestControl', Icon: Facebook, label: 'Facebook' },
-          { href: 'https://instagram.com/dangpestcontrol', Icon: Instagram, label: 'Instagram' },
-          { href: 'https://www.linkedin.com/company/dangpestcontrol/', Icon: Linkedin, label: 'LinkedIn' },
-          { href: 'https://x.com/dangpestcontrol', Icon: X, label: 'X (Twitter)' },
+          { href: 'https://www.facebook.com/DangPestControl', Icon: FbIcon, label: 'Facebook' },
+          { href: 'https://instagram.com/dangpestcontrol', Icon: IgIcon, label: 'Instagram' },
+          { href: 'https://www.linkedin.com/company/dangpestcontrol/', Icon: LiIcon, label: 'LinkedIn' },
+          { href: 'https://x.com/dangpestcontrol', Icon: XIcon, label: 'X (Twitter)' },
         ].map(({ href, Icon, label }) => (
           <a key={href} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
             className="w-14 h-14 rounded-full flex items-center justify-center text-white transition-all hover:brightness-110"
             style={{ backgroundColor: ORANGE }}>
-            <Icon className="w-6 h-6" />
+            <Icon />
           </a>
         ))}
       </div>
