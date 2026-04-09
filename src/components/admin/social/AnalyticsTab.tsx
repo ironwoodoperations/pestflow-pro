@@ -59,7 +59,7 @@ export default function AnalyticsTab({ posts, integrations, onOpenConnections }:
           <div className="text-center py-6">
             <p className="text-4xl mb-2">📊</p>
             <p className="text-sm text-gray-500 mb-1">Connect a social account to unlock engagement analytics</p>
-            <p className="text-xs text-gray-400 mb-3">Real-time likes, comments, reach, and click data will appear here once you connect via DIY or Buffer.</p>
+            <p className="text-xs text-gray-400 mb-3">Real-time likes, comments, reach, and click data will appear here once you connect via DIY or bundle.social.</p>
             <button onClick={onOpenConnections}
               className="text-xs px-3 py-1.5 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700">
               Open Connections

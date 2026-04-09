@@ -11,15 +11,15 @@ interface Props {
   onNavigate?: (tab: string) => void
 }
 
-type ProviderTab = 'export' | 'diy' | 'buffer' | 'ayrshare'
+type ProviderTab = 'export' | 'diy' | 'bundle' | 'ayrshare'
 const TABS: { id: ProviderTab; label: string; tier: number }[] = [
   { id: 'export',   label: 'Hands On',       tier: 1 },
   { id: 'diy',      label: 'DIY',            tier: 2 },
-  { id: 'buffer',   label: 'Semi-Auto',      tier: 3 },
+  { id: 'bundle',   label: 'Semi-Auto',      tier: 3 },
   { id: 'ayrshare', label: 'Full Autopilot', tier: 4 },
 ]
 
-const TIER_PROVIDER: Record<number, ProviderTab> = { 1: 'export', 2: 'diy', 3: 'buffer', 4: 'ayrshare' }
+const TIER_PROVIDER: Record<number, ProviderTab> = { 1: 'export', 2: 'diy', 3: 'bundle', 4: 'ayrshare' }
 const PLAN_INFO: Record<number, { name: string; price: number }> = {
   1: { name: 'Starter', price: 149 },
   2: { name: 'Grow',    price: 249 },
@@ -30,19 +30,8 @@ const PLAN_INFO: Record<number, { name: string; price: number }> = {
 export default function ConnectionsModal({ onClose, onSaved, onNavigate }: Props) {
   const { tier } = usePlan()
   const [activeTab, setActiveTab] = useState<ProviderTab>('export')
-  const [bufferToken, setBufferToken] = useState('')
   const [saving, setSaving] = useState(false)
   const activeProvider = TIER_PROVIDER[tier] || 'export'
-
-  async function saveBufferToken() {
-    if (!bufferToken.trim()) return
-    setSaving(true)
-    const { data: existing } = await supabase.from('settings').select('value').eq('tenant_id', TENANT_ID).eq('key', 'integrations').maybeSingle()
-    const current = existing?.value || {}
-    await supabase.from('settings').upsert({ tenant_id: TENANT_ID, key: 'integrations', value: { ...current, buffer_access_token: bufferToken.trim() } }, { onConflict: 'tenant_id,key' })
-    setSaving(false)
-    onSaved()
-  }
 
   function ActiveBadge() {
     return <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">✓ Your Active Mode</span>
@@ -116,33 +105,26 @@ export default function ConnectionsModal({ onClose, onSaved, onNavigate }: Props
             </div>
           )}
 
-          {activeTab === 'buffer' && (
+          {activeTab === 'bundle' && (
             <div className="space-y-3">
-              <h4 className="font-semibold text-gray-800">Semi-Automated Posting via Buffer</h4>
-              <p className="text-xs text-gray-500">Paste your Buffer access token below to enable semi-automated posting. Approved posts will be sent to your connected Buffer channels on a consistent schedule.</p>
+              <h4 className="font-semibold text-gray-800">Semi-Automated Posting via bundle.social</h4>
+              <p className="text-xs text-gray-500">Approved posts in your Content Queue are automatically sent to your social accounts via bundle.social. No token required — posting is managed by PestFlow Pro on your behalf.</p>
               {tier < 3 ? <LockedBadge tabTier={3} /> : (
                 <>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Buffer Access Token</label>
-                    <input
-                      type="password"
-                      value={bufferToken}
-                      onChange={e => setBufferToken(e.target.value)}
-                      placeholder="Paste your Buffer access token"
-                      className="w-full text-xs border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    />
-                    <p className="text-xs text-gray-400 mt-1">
-                      Get your token at <a href="https://buffer.com/developers" target="_blank" rel="noopener noreferrer" className="underline text-emerald-600">buffer.com/developers</a>
-                    </p>
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-xs text-emerald-700 space-y-1">
+                    <p className="font-semibold">How Semi-Auto works:</p>
+                    <ol className="list-decimal list-inside space-y-1 text-emerald-600">
+                      <li>Write or generate posts in the Content Queue</li>
+                      <li>Approve the post — it enters the publishing queue</li>
+                      <li>bundle.social delivers it to your connected accounts</li>
+                      <li>Track results in the Analytics tab</li>
+                    </ol>
                   </div>
-                  <button
-                    onClick={saveBufferToken}
-                    disabled={saving || !bufferToken.trim()}
-                    className="text-xs px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 disabled:opacity-50"
-                  >
-                    {saving ? 'Saving…' : 'Save Token'}
-                  </button>
-                  {activeProvider === 'buffer' && <ActiveBadge />}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700">
+                    Powered by <strong>bundle.social</strong> — managed by your PestFlow Pro account manager.
+                    Contact Scott to connect your Facebook or Instagram account.
+                  </div>
+                  {activeProvider === 'bundle' && <ActiveBadge />}
                 </>
               )}
             </div>
@@ -163,7 +145,7 @@ export default function ConnectionsModal({ onClose, onSaved, onNavigate }: Props
         </div>
 
         <div className="px-5 py-3 border-t bg-gray-50 text-xs text-gray-500">
-          Active mode: <span className="font-medium text-gray-700">{TABS.find(t => t.id === activeProvider)?.label}</span>
+          Active mode: <span className="font-medium text-gray-700">{TABS.find(t => t.id === activeProvider || (t.id === 'bundle' && activeProvider === 'buffer'))?.label ?? 'Hands On'}</span>
           <span className="ml-2 text-gray-400">(set by {PLAN_INFO[tier]?.name} plan)</span>
         </div>
       </div>

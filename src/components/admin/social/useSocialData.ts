@@ -36,9 +36,7 @@ export interface Campaign {
 export interface IntegrationSettings {
   facebook_access_token?: string
   facebook_page_id?: string
-  active_social_provider?: 'export' | 'diy' | 'buffer' | 'ayrshare'
-  buffer_access_token?: string
-  buffer_profile_ids?: string[]
+  active_social_provider?: 'export' | 'diy' | 'buffer' | 'bundle' | 'ayrshare'
   // ayrshare_api_key?: string   // reserved for future Ayrshare support
   // ayrshare_profile_key?: string
   pexels_api_key?: string
