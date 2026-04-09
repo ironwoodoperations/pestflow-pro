@@ -3,6 +3,9 @@ import { supabase } from '../../lib/supabase'
 import ScrapeResultsTable from './ScrapeResultsTable'
 import SiteRecreationCard from './SiteRecreationCard'
 import type { SiteRecreation } from './SiteRecreationCard'
+import GenerateProLayout from './GenerateProLayout'
+import ExportForBolt from './ExportForBolt'
+import type { Prospect } from './types'
 
 export interface ScrapedData {
   business_name:       string | null
@@ -45,9 +48,12 @@ interface Props {
   prospectId:         string | null
   onApplyScraped:     (data: Partial<ScrapedData>) => void
   onApplyRecreation:  (data: SiteRecreation) => void
+  tier?:              string | null
+  form?:              Partial<Prospect>
 }
 
-export default function ScrapePanel({ sourceUrl, onSourceUrlChange, prospectId, onApplyScraped, onApplyRecreation }: Props) {
+export default function ScrapePanel({ sourceUrl, onSourceUrlChange, prospectId, onApplyScraped, onApplyRecreation, tier, form }: Props) {
+  const isProElite = tier === 'pro' || tier === 'elite'
   const [state, setState] = useState<ScrapeState>({
     scraping: false, error: '', result: null, pages: [], pagesFound: 0, applied: false, siteRecreation: null,
   })
@@ -164,6 +170,24 @@ export default function ScrapePanel({ sourceUrl, onSourceUrlChange, prospectId, 
         <p className="text-emerald-400 text-xs mt-3 font-medium">
           ✓ Data applied — review each field and save when ready.
         </p>
+      )}
+
+      {isProElite && prospectId && (
+        <div className="mt-5 border-t border-gray-700 pt-4">
+          <p className="text-xs font-semibold text-indigo-300 uppercase tracking-wide mb-3">Pro Build Options</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs font-medium text-gray-400 mb-1">⚡ AI Quick Build</p>
+              <p className="text-xs text-gray-600 mb-2">Same-day launch via YouPest shell</p>
+              <GenerateProLayout prospectId={prospectId} tier={tier ?? null} form={form ?? {}} />
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-400 mb-1">📦 Custom Bolt Build</p>
+              <p className="text-xs text-gray-600 mb-2">90% site match — export context for Bolt</p>
+              <ExportForBolt prospectId={prospectId} companyName={form?.company_name ?? ''} />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

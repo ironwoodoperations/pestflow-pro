@@ -12,7 +12,6 @@ import RepGuideDrawer       from './RepGuideDrawer'
 import ScrapePanel          from './ScrapePanel'
 import type { ScrapedData } from './ScrapePanel'
 import type { SiteRecreation } from './SiteRecreationCard'
-import GenerateProLayout    from './GenerateProLayout'
 
 interface Props {
   prospectId: string | null   // null = new prospect
@@ -222,11 +221,10 @@ export default function ProspectDetail({ prospectId, salespeople, onClose }: Pro
               prospectId={id}
               onApplyScraped={onApplyScraped}
               onApplyRecreation={onApplyRecreation}
+              tier={form.tier ?? null}
+              form={form}
             />
           </div>
-          {id && (
-            <GenerateProLayout prospectId={id} tier={form.tier ?? null} form={form} />
-          )}
           <div className="flex justify-end"><RepGuideButton section="intake" onOpen={setGuideSection} /></div>
           <IntakeLinkSection
             prospectId={id}
