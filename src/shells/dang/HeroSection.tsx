@@ -25,9 +25,11 @@ interface Props {
   dynamicVideoType?: string
   videoStart?: string
   videoEnd?: string
+  heroTitle?: string
+  heroIntro?: string
 }
 
-export default function HeroSection({ dynamicVideoUrl, dynamicVideoType, videoStart, videoEnd }: Props) {
+export default function HeroSection({ dynamicVideoUrl, dynamicVideoType, videoStart, videoEnd, heroTitle, heroIntro }: Props) {
   const [isPlaying, setIsPlaying] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
 
@@ -63,10 +65,10 @@ export default function HeroSection({ dynamicVideoUrl, dynamicVideoType, videoSt
         <div className="grid grid-cols-1 sm:grid-cols-[42fr_58fr] items-center gap-8 sm:gap-10">
           <div>
             <h1 className="dang-text-comic italic uppercase" style={{ color: 'hsl(45,95%,60%)', fontSize: 'clamp(38px,5vw,60px)', fontWeight: 800, lineHeight: 1.0, marginBottom: '24px' }}>
-              Super Powered<br />Pest Control
+              {heroTitle ?? 'Super Powered\u00A0Pest Control'}
             </h1>
             <p style={{ fontSize: '18px', lineHeight: 1.75, marginBottom: '32px', color: 'white', maxWidth: '480px' }}>
-              We are a hands-on, personable, relationship-based company. We live, work, worship, and play in the Tyler community. Our innovative pest control practices make us stand out amongst our competitors. Our goal is to be an active part in making our community and the lives of our clients better.
+              {heroIntro ?? 'We are a hands-on, personable, relationship-based company. We live, work, worship, and play in the Tyler community. Our innovative pest control practices make us stand out amongst our competitors. Our goal is to be an active part in making our community and the lives of our clients better.'}
             </p>
             <Link to="/quote" className="font-bold transition-all duration-200 inline-flex items-center"
               style={{ backgroundColor: 'white', color: 'hsl(28,100%,50%)', border: '2px solid white', borderRadius: '146px', padding: '10px 28px', fontSize: '15px' }}

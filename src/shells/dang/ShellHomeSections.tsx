@@ -7,11 +7,17 @@ import MidPageVideo from './MidPageVideo'
 import PestExterminationSection from './PestExterminationSection'
 import TestimonialsSection from './TestimonialsSection'
 import CTASection from './CTASection'
+import { usePageContent } from '../../hooks/usePageContent'
 
 export default function ShellHomeSections() {
+  const { content } = usePageContent('home')
+
   return (
     <>
-      <HeroSection />
+      <HeroSection
+        heroTitle={content?.title ?? undefined}
+        heroIntro={content?.intro ?? undefined}
+      />
       <FeatureStrip />
       <ExpertSection />
       <ServicesSection />
