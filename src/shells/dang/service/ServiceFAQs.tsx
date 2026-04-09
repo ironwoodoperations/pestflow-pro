@@ -1,4 +1,4 @@
-import { FAQ } from "../data/servicesData";
+import type { FAQ } from "../data/servicesData";
 import {
   Accordion,
   AccordionContent,

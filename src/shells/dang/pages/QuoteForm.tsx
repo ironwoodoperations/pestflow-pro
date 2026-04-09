@@ -1,5 +1,5 @@
 import { Send } from "lucide-react";
-import { UseFormRegister, FieldErrors } from "react-hook-form";
+import type { UseFormRegister, FieldErrors } from "react-hook-form";
 
 export type QuoteFormData = {
   firstName: string;

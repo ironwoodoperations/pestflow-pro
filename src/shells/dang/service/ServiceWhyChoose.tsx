@@ -1,4 +1,4 @@
-import { WhyChooseItem } from "../data/servicesData";
+import type { WhyChooseItem } from "../data/servicesData";
 import { Link } from "react-router-dom";
 
 interface ServiceWhyChooseProps {

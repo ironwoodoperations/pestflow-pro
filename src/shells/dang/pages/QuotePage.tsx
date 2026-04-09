@@ -6,9 +6,10 @@ import Navbar from "../ShellNavbar";
 import Footer from "../ShellFooter";
 import SEO from "../SEO";
 import { useSiteConfig } from "../hooks/useSiteConfig";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { supabase } from "../../../lib/supabase";
-import QuoteForm, { QuoteFormData } from "./QuoteForm";
+import QuoteForm from "./QuoteForm";
+import type { QuoteFormData } from "./QuoteForm";
 
 const quoteSchema = z.object({
   firstName: z.string().trim().min(1, "First name is required").max(50),
@@ -25,7 +26,6 @@ const quoteSchema = z.object({
 });
 
 const QuotePage = () => {
-  const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
   const [smsTransactional, setSmsTransactional] = useState(false);
   const [smsMarketing, setSmsMarketing] = useState(false);
@@ -63,17 +63,10 @@ const QuotePage = () => {
         }).catch(() => {});
       }
 
-      toast({
-        title: "Quote Request Sent!",
-        description: "We'll get back to you as soon as possible.",
-      });
+      toast.success("Quote Request Sent!", { description: "We'll get back to you as soon as possible." });
       reset();
     } catch (err) {
-      toast({
-        title: "Error",
-        description: "Something went wrong. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
     }

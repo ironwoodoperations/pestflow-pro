@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ProcessStep } from "../data/servicesData";
+import type { ProcessStep } from "../data/servicesData";
 
 interface ServiceProcessProps {
   title: string;

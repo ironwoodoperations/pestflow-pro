@@ -1,23 +1,12 @@
-import { useState, useEffect } from 'react';
 import Navbar from '../ShellNavbar';
 import Footer from '../ShellFooter';
 import SEO from '../SEO';
-import { supabase } from '../../../lib/supabase';
 import { VideoImage } from '../VideoImage';
 import { whyCards, termiteSigns } from './data/TermiteInspectionsData';
+import { usePageContent } from '../../../hooks/usePageContent';
 
 const TermiteInspections = () => {
-  const [pageVideo, setPageVideo] = useState<{ video_url: string | null; video_type: string | null } | null>(null);
-
-  useEffect(() => {
-    supabase
-      .from('page_content')
-      .select('video_url, video_type')
-      .eq('tenant_id', '1282b822-825b-4713-9dc9-6d14a2094d06')
-      .eq('slug', 'termite-inspections')
-      .maybeSingle()
-      .then(({ data }) => { if (data) setPageVideo(data); });
-  }, []);
+  const { content } = usePageContent('termite-inspections');
 
   return (
     <div style={{ fontFamily: "'Open Sans', sans-serif", color: 'hsl(20, 40%, 12%)', overflowX: 'hidden' }}>
@@ -39,7 +28,7 @@ const TermiteInspections = () => {
       <section style={{ position: 'relative', background: `url(/dang/moblie_banner.webp) center/cover no-repeat, hsl(28, 100%, 50%)`, paddingTop: '80px', paddingBottom: '200px', minHeight: '420px', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle, rgba(0,0,0,0.18) 1.5px, transparent 1.5px)', backgroundSize: '18px 18px', pointerEvents: 'none' }} />
         <div style={{ textAlign: 'center', position: 'relative', zIndex: 2, padding: '0 20px 30px' }}>
-          <h1 style={{ fontFamily: '"Bangers", cursive', fontSize: 'clamp(56px, 9vw, 100px)', color: 'hsl(45, 95%, 60%)', fontStyle: 'italic', letterSpacing: '0.05em', WebkitTextStroke: '3px #000000', textShadow: '3px 3px 0 #000000', margin: 0, lineHeight: 1 }}>TERMITE INSPECTIONS</h1>
+          <h1 style={{ fontFamily: '"Bangers", cursive', fontSize: 'clamp(56px, 9vw, 100px)', color: 'hsl(45, 95%, 60%)', fontStyle: 'italic', letterSpacing: '0.05em', WebkitTextStroke: '3px #000000', textShadow: '3px 3px 0 #000000', margin: 0, lineHeight: 1 }}>{content?.title ?? 'TERMITE INSPECTIONS'}</h1>
         </div>
         <div style={{ position: 'absolute', bottom: -1, left: 0, right: 0, lineHeight: 0, zIndex: 1 }}>
           <img fetchPriority="high" width={1200} height={50} src="/dang/banner-img.png" alt="" style={{ width: '100%', display: 'block' }} />
@@ -49,7 +38,7 @@ const TermiteInspections = () => {
       <section className="px-4 md:px-10" style={{ paddingTop: '80px', paddingBottom: '60px', maxWidth: '1200px', margin: '0 auto', background: '#ffffff', backgroundImage: 'radial-gradient(circle, #d0d0d0 1px, transparent 1px)', backgroundSize: '24px 24px' }}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-center">
           <div style={{ border: '4px solid rgb(255, 213, 39)', borderRadius: '6px', overflow: 'hidden', boxShadow: '8px 8px 0 rgba(0,0,0,0.1)' }}>
-            <VideoImage src="https://www.dangpestcontrol.com/wp-content/uploads/2025/05/subterranean-termite-inspections.jpg" alt="Subterranean Termite Inspections in Tyler TX" className="" videoUrl={pageVideo?.video_url} videoType={pageVideo?.video_type} />
+            <VideoImage src="https://www.dangpestcontrol.com/wp-content/uploads/2025/05/subterranean-termite-inspections.jpg" alt="Subterranean Termite Inspections in Tyler TX" className="" videoUrl={content?.video_url ?? null} videoType={(content?.video_type as string) ?? null} />
           </div>
           <div>
             <p style={{ fontFamily: '"Bangers", cursive', color: 'hsl(28, 100%, 50%)', fontSize: '18px', letterSpacing: '0.12em', fontStyle: 'italic', marginBottom: '6px', marginTop: 0 }}>TERMITE INSPECTIONS</p>
