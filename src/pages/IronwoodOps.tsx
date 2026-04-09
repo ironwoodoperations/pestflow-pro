@@ -68,7 +68,7 @@ export default function IronwoodOps() {
             </button>
           ))}
         </nav>
-        <div className="p-2 border-t border-gray-800">
+        <div className="p-2 border-t border-gray-800 space-y-0.5">
           <a
             href="/sales-deck.html"
             target="_blank"
@@ -76,6 +76,22 @@ export default function IronwoodOps() {
             className="w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2 text-gray-400 hover:bg-gray-800 hover:text-white"
           >
             <span>🎯</span>Sales Deck
+          </a>
+          <a
+            href="https://outlook.office.com/book/PestFlowProOnboarding@ironwoodoperationsgroup.com/?ismsaljsauthenabled"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2 text-gray-400 hover:bg-gray-800 hover:text-white"
+          >
+            <span>📅</span>Book Onboarding Call
+          </a>
+          <a
+            href="https://teams.microsoft.com/l/meeting/new"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2 text-gray-400 hover:bg-gray-800 hover:text-white"
+          >
+            <span>🎥</span>Start Teams Call
           </a>
         </div>
         <div className="px-4 py-3 border-t border-gray-800">
