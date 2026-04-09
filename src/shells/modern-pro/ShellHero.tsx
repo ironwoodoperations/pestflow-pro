@@ -12,13 +12,14 @@ interface BusinessInfo {
 }
 interface Customization { hero_headline?: string }
 interface HeroMedia { youtube_id?: string; thumbnail_url?: string }
+interface HomeContent { title?: string; subtitle?: string; intro?: string }
 
 export default function ShellHero() {
   const [biz, setBiz] = useState<BusinessInfo>({})
   const [custom, setCustom] = useState<Customization>({})
   const [heroMedia, setHeroMedia] = useState<HeroMedia>({})
   const [ctaText, setCtaText] = useState('Get a Free Quote')
-  const [heroSubtext, setHeroSubtext] = useState('')
+  const [homeContent, setHomeContent] = useState<HomeContent>({})
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
@@ -28,24 +29,24 @@ export default function ShellHero() {
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'hero_media').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'customization').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
-        supabase.from('page_content').select('subtitle').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
+        supabase.from('page_content').select('title,subtitle,intro').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
       ])
       if (bizRes.data?.value) setBiz(bizRes.data.value)
       if (mediaRes.data?.value) setHeroMedia(mediaRes.data.value)
       if (custRes.data?.value) setCustom(custRes.data.value)
       if (brandRes.data?.value?.cta_text) setCtaText(brandRes.data.value.cta_text)
-      if (contentRes.data?.subtitle) setHeroSubtext(contentRes.data.subtitle)
+      if (contentRes.data) setHomeContent(contentRes.data)
     })
   }, [])
 
-  const headline = custom.hero_headline || 'Professional Pest Control You Can Trust'
+  const headline = custom.hero_headline || homeContent.title || 'Professional Pest Control You Can Trust'
 
-  // Subtitle: use page_content.home.subtitle, fall back to city-based text
+  // Subtext: use page_content intro, then subtitle, then city-based fallback
   const city = biz.address ? biz.address.split(',')[0].trim() : null
   const fallbackSubtext = city
     ? `Serving ${city} and surrounding areas. Licensed, insured, and ready to help.`
     : 'Licensed, insured, and ready to protect your home.'
-  const subtext = heroSubtext || fallbackSubtext
+  const subtext = homeContent.intro || homeContent.subtitle || fallbackSubtext
 
   // Trust line — only render fields that exist
   const trustParts: string[] = []

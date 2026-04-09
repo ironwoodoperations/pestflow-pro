@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>PestFlow Pro – Demo Sales Page</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #020617;
+      --bg-soft: #0f172a;
+      --surface: #0b1220;
+      --surface-soft: #111827;
+      --border-subtle: rgba(148, 163, 184, 0.35);
+      --text: #e5e7eb;
+      --text-soft: #9ca3af;
+      --text-muted: #6b7280;
+      --accent: #22c55e;
+      --accent-soft: rgba(34, 197, 94, 0.08);
+      --accent-warm: #fbbf24;
+      --accent-warm-soft: rgba(251, 191, 36, 0.08);
+      --accent-blue: #60a5fa;
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-pill: 999px;
+      --shadow-soft: 0 18px 40px rgba(15, 23, 42, 0.7);
+      --shadow-chip: 0 10px 25px rgba(15, 23, 42, 0.6);
+      --font-display: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      --font-body: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0;
+      background: radial-gradient(circle at top, #0b1120, #020617 55%);
+      color: var(--text);
+      font-family: var(--font-body);
+      -webkit-font-smoothing: antialiased;
+    }
+    body { min-height: 100vh; }
+    a { color: inherit; text-decoration: none; }
+    .page { max-width: 1120px; margin: 0 auto; padding: 32px 20px 64px; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 40px; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-mark { width: 32px; height: 32px; border-radius: 10px; background: conic-gradient(from 220deg, #22c55e, #60a5fa, #fbbf24, #22c55e); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 18px rgba(34, 197, 94, 0.7); font-size: 16px; font-weight: 800; }
+    .brand-text { display: flex; flex-direction: column; gap: 2px; }
+    .brand-title { font-weight: 700; letter-spacing: 0.04em; font-size: 14px; text-transform: uppercase; color: #e5e7eb; }
+    .brand-sub { font-size: 12px; color: var(--text-soft); }
+    .nav-ctas { display: flex; align-items: center; gap: 12px; }
+    .btn { border: none; cursor: pointer; font-size: 14px; font-weight: 500; padding: 10px 18px; border-radius: var(--radius-pill); display: inline-flex; align-items: center; gap: 8px; transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease; white-space: nowrap; }
+    .btn-primary { background: linear-gradient(135deg, #22c55e, #4ade80); color: #022c22; box-shadow: var(--shadow-chip); }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 14px 30px rgba(34, 197, 94, 0.5); }
+    .btn-ghost { background: rgba(15, 23, 42, 0.8); color: var(--text-soft); border: 1px solid rgba(148, 163, 184, 0.4); }
+    .btn-ghost:hover { background: rgba(15, 23, 42, 1); color: var(--text); }
+    .hero { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.1fr); gap: 32px; align-items: center; margin-bottom: 56px; }
+    .eyebrow { font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-blue); margin-bottom: 8px; }
+    .hero-title { font-family: var(--font-display); font-size: clamp(30px, 4vw, 40px); line-height: 1.1; margin-bottom: 16px; }
+    .hero-title span.highlight { background-image: linear-gradient(120deg, #22c55e, #60a5fa, #fbbf24); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .hero-body { color: var(--text-soft); font-size: 15px; line-height: 1.6; margin-bottom: 20px; }
+    .hero-meta { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: 12px; color: var(--text-muted); margin-top: 12px; }
+    .hero-meta span.chip { padding: 4px 10px; border-radius: var(--radius-pill); border: 1px solid rgba(148, 163, 184, 0.5); background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.8)); display: inline-flex; align-items: center; gap: 6px; }
+    .hero-panel { background: radial-gradient(circle at top left, rgba(96, 165, 250, 0.25), rgba(15, 23, 42, 0.96)); border-radius: 26px; border: 1px solid rgba(148, 163, 184, 0.4); box-shadow: var(--shadow-soft); padding: 18px 18px 16px; position: relative; overflow: hidden; }
+    .hero-panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .hero-tabs { display: flex; gap: 6px; font-size: 12px; }
+    .hero-tab { padding: 4px 9px; border-radius: 999px; background: rgba(15, 23, 42, 0.8); color: var(--text-muted); }
+    .hero-tab.active { background: var(--accent-soft); color: #bbf7d0; }
+    .hero-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; font-size: 12px; }
+    .kpi-card { background: rgba(15, 23, 42, 0.96); border-radius: 12px; padding: 9px 10px; border: 1px solid rgba(148, 163, 184, 0.45); }
+    .kpi-label { color: var(--text-muted); font-size: 11px; margin-bottom: 4px; }
+    .kpi-value { font-size: 16px; font-weight: 600; display: flex; align-items: baseline; gap: 6px; }
+    .kpi-chip { font-size: 10px; padding: 2px 6px; border-radius: 999px; background: rgba(22, 163, 74, 0.15); color: #bbf7d0; }
+    .hero-grid { display: grid; grid-template-columns: 1.2fr 1.1fr; gap: 12px; align-items: stretch; }
+    .hero-mini { background: rgba(15, 23, 42, 0.96); border-radius: 14px; border: 1px solid rgba(148, 163, 184, 0.45); padding: 10px 11px; font-size: 11px; color: var(--text-soft); }
+    .hero-mini h4 { margin: 0 0 6px; font-size: 12px; }
+    section { margin-bottom: 56px; }
+    .section-label { font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
+    .section-heading { font-size: 22px; font-weight: 600; margin-bottom: 10px; }
+    .section-intro { font-size: 14px; color: var(--text-soft); max-width: 640px; line-height: 1.6; margin-bottom: 20px; }
+    .pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .pill { padding: 4px 10px; border-radius: 999px; font-size: 12px; border: 1px solid rgba(148, 163, 184, 0.4); color: var(--text-muted); }
+    .three-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+    .card { background: linear-gradient(145deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.93)); border-radius: var(--radius-lg); border: 1px solid var(--border-subtle); padding: 16px 16px 18px; box-shadow: 0 14px 30px rgba(15, 23, 42, 0.8); }
+    .card-header-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .card-title { font-size: 14px; font-weight: 600; }
+    .card-tag { font-size: 11px; padding: 3px 8px; border-radius: 999px; background: rgba(148, 163, 184, 0.12); color: var(--text-muted); }
+    .card-body { font-size: 13px; color: var(--text-soft); line-height: 1.6; }
+    .card-small { font-size: 12px; color: var(--text-muted); margin-top: 8px; }
+    .two-cols { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.1fr); gap: 24px; align-items: flex-start; }
+    .list { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+    .list li { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; color: var(--text-soft); }
+    .list li span.bullet { margin-top: 3px; font-size: 14px; }
+    .note { font-size: 12px; color: var(--text-muted); margin-top: 12px; }
+    .pricing-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+    .plan { border-radius: 18px; padding: 16px 16px 18px; background: radial-gradient(circle at top left, rgba(55, 65, 81, 0.32), rgba(15, 23, 42, 0.97)); border: 1px solid rgba(148, 163, 184, 0.55); display: flex; flex-direction: column; gap: 8px; }
+    .plan.current { border-color: var(--accent); box-shadow: 0 18px 42px rgba(34, 197, 94, 0.55); }
+    .plan-name { font-size: 13px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-muted); }
+    .plan-price { font-size: 18px; font-weight: 600; }
+    .plan-desc { font-size: 12px; color: var(--text-soft); }
+    .plan-list { list-style: none; padding: 0; margin: 4px 0 0; display: grid; gap: 4px; font-size: 12px; color: var(--text-soft); }
+    .plan-list li { display: flex; gap: 6px; align-items: flex-start; }
+    .plan-list li span.icon { color: var(--accent); margin-top: 1px; }
+    .plan-cta { margin-top: auto; padding-top: 8px; }
+    .plan-cta button { width: 100%; justify-content: center; font-size: 12px; padding: 7px 10px; }
+    .closing { border-radius: 24px; padding: 20px 18px 18px; background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(37, 99, 235, 0.14)); border: 1px solid rgba(148, 163, 184, 0.7); box-shadow: var(--shadow-soft); }
+    .closing h3 { margin: 0 0 8px; font-size: 18px; }
+    .closing p { margin: 0 0 14px; font-size: 13px; color: var(--text-soft); max-width: 580px; }
+    .closing-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+    .closing-qs { font-size: 13px; color: var(--text-muted); max-width: 480px; }
+    footer { margin-top: 32px; font-size: 11px; color: var(--text-muted); text-align: center; }
+    @media (max-width: 880px) {
+      header { flex-direction: column; align-items: flex-start; }
+      .nav-ctas { align-self: stretch; }
+      .hero { grid-template-columns: minmax(0, 1fr); }
+      .hero-panel { order: -1; }
+      .three-cols { grid-template-columns: minmax(0, 1fr); }
+      .two-cols { grid-template-columns: minmax(0, 1fr); }
+      .pricing-grid { grid-template-columns: minmax(0, 1fr); }
+      .page { padding-inline: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="brand">
+        <div class="brand-mark">P</div>
+        <div class="brand-text">
+          <div class="brand-title">PestFlow Pro</div>
+          <div class="brand-sub">Operations platform for pest companies</div>
+        </div>
+      </div>
+      <div class="nav-ctas">
+        <button class="btn btn-ghost" onclick="document.getElementById('plans').scrollIntoView({behavior:'smooth'})">View plans</button>
+        <button class="btn btn-primary" onclick="document.getElementById('rollout').scrollIntoView({behavior:'smooth'})">Map out my rollout →</button>
+      </div>
+    </header>
+
+    <section class="hero">
+      <div>
+        <div class="eyebrow">Live demo talk track</div>
+        <h1 class="hero-title">Turn your pest website, content, and social into a <span class="highlight">repeatable growth machine</span>.</h1>
+        <p class="hero-body">PestFlow Pro puts your website, SEO blog, social campaigns, and lead notifications in one place—so the next person who Googles "pest control near me" actually finds you, calls you, and hears back quickly.</p>
+        <div>
+          <button class="btn btn-primary" style="margin-right:8px" onclick="document.getElementById('story').scrollIntoView({behavior:'smooth'})">Start demo storyline</button>
+          <button class="btn btn-ghost" onclick="document.getElementById('marketing').scrollIntoView({behavior:'smooth'})">Show me the marketing engine</button>
+        </div>
+        <div class="hero-meta">
+          <span class="chip">Built for local pest operators</span>
+          <span>Use this page as your Zoom "script" — just scroll and talk.</span>
+        </div>
+      </div>
+      <aside class="hero-panel" aria-label="Outcome snapshot">
+        <div class="hero-panel-header">
+          <div style="font-size:12px;color:var(--text-soft);font-weight:500;">Month at a glance</div>
+          <div class="hero-tabs">
+            <div class="hero-tab active">Overview</div>
+            <div class="hero-tab">Website</div>
+            <div class="hero-tab">Social</div>
+          </div>
+        </div>
+        <div class="hero-kpis">
+          <div class="kpi-card"><div class="kpi-label">Website leads</div><div class="kpi-value">37<span class="kpi-chip">↑ 42%</span></div></div>
+          <div class="kpi-card"><div class="kpi-label">Blog posts live</div><div class="kpi-value">4<span class="kpi-chip" style="background:rgba(96,165,250,0.15);color:#bfdbfe;">SEO</span></div></div>
+          <div class="kpi-card"><div class="kpi-label">Social posts this month</div><div class="kpi-value">18<span class="kpi-chip" style="background:rgba(251,191,36,0.12);color:#fef3c7;">On schedule</span></div></div>
+        </div>
+        <div class="hero-grid">
+          <div class="hero-mini"><h4>Content queue</h4><p style="margin:0 0 4px;">Mosquito season BBQ, Spring termite season, Monthly maintenance push…</p><p style="margin:0;font-size:11px;color:var(--text-muted);">Posts are written, queued, and waiting on your approval—not your memory.</p></div>
+          <div class="hero-mini"><h4>SEO blog</h4><p style="margin:0 0 4px;">"5 Signs You Have a Termite Problem", "Why East Texas Has the Worst Mosquito Season…"</p><p style="margin:0;font-size:11px;color:var(--text-muted);">Each post targets a real search phrase your customers actually type.</p></div>
+        </div>
+        <p style="margin:10px 0 0;font-size:11px;color:var(--text-muted);">On your call, start here. Then tell them: "Now I'll walk you backward through how PestFlow keeps this full every month."</p>
+      </aside>
+    </section>
+
+    <section id="story">
+      <div class="section-label">The silent leak</div>
+      <h2 class="section-heading">Disconnected marketing is costing pest companies more than missed calls.</h2>
+      <p class="section-intro">Most owners aren't losing business because they're bad at pest control. They're losing it because their website, social, and follow-up live in different places—and nobody has time to keep all of it moving.</p>
+      <div class="three-cols">
+        <div class="card"><div class="card-header-row"><div class="card-title">Random website + no updates</div><span class="card-tag">"We'll fix it later"</span></div><div class="card-body">A brochure site from 2016 that never changes and doesn't match your current offers tells Google and customers you might not be the best choice today.</div><div class="card-small">Zoom prompt: "When is the last time someone updated your website on purpose?"</div></div>
+        <div class="card"><div class="card-header-row"><div class="card-title">Social only when someone remembers</div><span class="card-tag">Manual hustle</span></div><div class="card-body">One week you post three times, then nothing for a month. There's no queue, no campaigns, and no way to see which posts actually turned into calls.</div><div class="card-small">Zoom prompt: "Who is in charge of your Facebook page right now?"</div></div>
+        <div class="card"><div class="card-header-row"><div class="card-title">Leads in inboxes, not in a system</div><span class="card-tag">Slow responses</span></div><div class="card-body">Quote forms hit someone's email, and if that person is in the truck or on vacation, that customer just keeps scrolling and calls the next company.</div><div class="card-small">Zoom prompt: "How confident are you that every form fill gets a same‑day response?"</div></div>
+      </div>
+    </section>
+
+    <section id="website">
+      <div class="section-label">Your online front door</div>
+      <h2 class="section-heading">A pest‑specific website you can actually control.</h2>
+      <p class="section-intro">PestFlow Pro gives you a modern, fast pest control site that you don't have to babysit. You fill out your Business Info and Branding once—logo, colors, tagline, hours—and every page stays consistent.</p>
+      <div class="two-cols">
+        <div>
+          <ul class="list">
+            <li><span class="bullet">✓</span><div><strong>Business Info that powers your site.</strong><br />Name, phones, hours, license number, service area, and tagline flow across your homepage, footer, and contact pages automatically.</div></li>
+            <li><span class="bullet">✓</span><div><strong>Branding without hiring a designer.</strong><br />Pick a template like "Modern Pro", choose your primary color, accent color, and a palette such as Forest &amp; Cream or Slate &amp; Orange.</div></li>
+            <li><span class="bullet">✓</span><div><strong>Hero media you can swap yourself.</strong><br />Upload a 1920×1080 hero image or video to keep your site in season—no developer ticket required.</div></li>
+            <li><span class="bullet">✓</span><div><strong>Holiday Mode in one click.</strong><br />Turn on a Memorial Day or July 4th banner with a custom message that shows on every public page, then turn it off when the holiday passes.</div></li>
+            <li><span class="bullet">✓</span><div><strong>Custom domain included.</strong><br />Connect <em>acmepestcontrol.com</em> so all this lives on your own URL, not a shared subdomain.</div></li>
+          </ul>
+          <p class="note">On your demo: scroll through Business Info → Branding → Hero Media → Holiday Mode → Domain and narrate: "This is how we keep your site on-brand and seasonal without you ever editing code."</p>
+        </div>
+        <div class="card" style="min-height:220px;"><div class="card-header-row"><div class="card-title">Screenshot placeholder</div><span class="card-tag">Business Info & Branding</span></div><div class="card-body">Drop a combined screenshot here showing:<ul style="margin:6px 0 0 16px;padding:0;font-size:12px;"><li>Business Info (name, phones, tagline, hours)</li><li>Branding (Modern Pro template, primary &amp; accent colors)</li><li>Holiday Mode / Domain tab</li></ul><p style="margin-top:8px;font-size:12px;color:var(--text-muted);">Use this visual as your "website control center" moment.</p></div></div>
+      </div>
+    </section>
+
+    <section id="marketing">
+      <div class="section-label">Always‑on marketing</div>
+      <h2 class="section-heading">Your blog and social media, handled inside PestFlow.</h2>
+      <p class="section-intro">Instead of bouncing between a website admin, a Facebook tab, and a blank Google Doc, PestFlow gives you one place to create campaigns, approve AI‑assisted posts, and see what's going out next.</p>
+      <div class="three-cols">
+        <div class="card"><div class="card-header-row"><div class="card-title">SEO blog engine</div><span class="card-tag">Blog</span></div><div class="card-body">Draft posts like:<ul style="margin:6px 0 0 16px;padding:0;font-size:12px;"><li>"5 Signs You Have a Termite Problem"</li><li>"Why East Texas Has the Worst Mosquito Season in the State"</li><li>"DIY vs Professional Pest Control"</li></ul>You publish with one click when you're ready. Each post is written to match what customers actually search in your area.</div><div class="card-small">Demo line: "Instead of staring at a blinking cursor, you pick from topics like these and we help you fill them in."</div></div>
+        <div class="card"><div class="card-header-row"><div class="card-title">Campaigns & AI posts</div><span class="card-tag">Social</span></div><div class="card-body">Start from "What would you like to create?" → Single Post or Campaign. For campaigns, you name it ("Spring Termite Season"), choose tone, duration, and platforms, and PestFlow generates a series of posts for you.<p style="margin-top:6px;font-size:12px;color:var(--text-muted);">For one‑off posts, type a prompt ("mosquito season tips") and click <em>Generate 3 Captions</em> to get options you can tweak.</p></div><div class="card-small">Demo line: "Tell me one campaign you'd love to run this month, and let's set it up together on the call."</div></div>
+        <div class="card"><div class="card-header-row"><div class="card-title">Queue, approvals & analytics</div><span class="card-tag">Control</span></div><div class="card-body">See all posts waiting for review in your content queue, approve or edit in one place, and track what's been published. Social Analytics shows which campaigns performed best and how many posts went out this month.</div><div class="card-small">Demo line: "This replaces the text thread where someone says 'Did we ever post that?'"</div></div>
+      </div>
+      <div class="pill-row">
+        <span class="pill">Use screenshots: Social → Campaigns</span>
+        <span class="pill">Use screenshots: Social → Content Queue</span>
+        <span class="pill">Use screenshots: Social → New AI Campaign &amp; New Post</span>
+      </div>
+    </section>
+
+    <section id="analytics">
+      <div class="section-label">Know what's working</div>
+      <h2 class="section-heading">Google and performance data, wired into your PestFlow site.</h2>
+      <p class="section-intro">You shouldn't need five logins and a data analyst to know if your marketing is working. PestFlow connects directly to the tools that matter so you can see how people find you and how fast your site is.</p>
+      <div class="two-cols">
+        <div>
+          <ul class="list">
+            <li><span class="bullet">✓</span><div><strong>Google Search Console.</strong><br />See impressions, clicks, and search terms tied directly to your domain.</div></li>
+            <li><span class="bullet">✓</span><div><strong>Google Analytics 4.</strong><br />Track sessions, engagement, and where your visitors come from.</div></li>
+            <li><span class="bullet">✓</span><div><strong>PageSpeed Insights &amp; Vercel Analytics.</strong><br />Performance scores, Core Web Vitals, and real‑user behavior baked into your hosting.</div></li>
+            <li><span class="bullet">✓</span><div><strong>Ahrefs &amp; Bing Webmaster.</strong><br />Optional connections for deeper SEO and backlink analysis when you're ready.</div></li>
+          </ul>
+          <p class="note">Demo line: "Right now, who on your team actually logs into GA4 or GSC? With this, you don't have to—everything is summarized right here."</p>
+        </div>
+        <div class="card"><div class="card-header-row"><div class="card-title">Screenshot placeholder</div><span class="card-tag">Connect Data Sources</span></div><div class="card-body">Drop in the screen that shows:<ul style="margin:6px 0 0 16px;padding:0;font-size:12px;"><li>Google Search Console connected</li><li>GA4 sample preview</li><li>PageSpeed Insights sample scores</li><li>Vercel Analytics active</li></ul></div></div>
+      </div>
+    </section>
+
+    <section id="leads">
+      <div class="section-label">Never miss a lead</div>
+      <h2 class="section-heading">Smart notifications so website leads don't vanish in someone's inbox.</h2>
+      <p class="section-intro">When a new lead hits your PestFlow website, you decide exactly who hears about it. No more "We never saw that form"—just fast responses and clear responsibility.</p>
+      <div class="two-cols">
+        <div class="card"><div class="card-header-row"><div class="card-title">Lead notification routing</div><span class="card-tag">Settings → Notifications</span></div><div class="card-body">Configure:<ul style="margin:6px 0 0 16px;padding:0;font-size:12px;"><li>Main sales email for new leads</li><li>CC email for support or office staff</li><li>Monthly report email for the owner</li><li>Optional weekly SEO digest</li></ul>Every form fill kicks out notifications to the right people automatically.</div><div class="card-small">Zoom prompt: "Who should be copied on every new lead so nothing gets missed?"</div></div>
+        <div>
+          <ul class="list">
+            <li><span class="bullet">→</span><div><strong>Today:</strong> form hits one inbox, maybe gets forwarded, and there's no record of who replied or when.</div></li>
+            <li><span class="bullet">→</span><div><strong>With PestFlow:</strong> the website, notifications, and analytics are all tied together. As soon as a form hits, your team has it and can respond.</div></li>
+          </ul>
+          <p class="note">Optional next step: connect these notifications to Google Calendar or iCal in the future so new leads can be dropped onto your schedule automatically.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="plans">
+      <div class="section-label">Plans</div>
+      <h2 class="section-heading">Pick the level of "done‑for‑you" that matches your goals.</h2>
+      <p class="section-intro">Whether you just need a professional pest website or want an all‑in‑one growth system with content, social, and strategy, PestFlow Pro has a tier that fits.</p>
+      <div class="pricing-grid">
+        <div class="plan"><div class="plan-name">Starter</div><div class="plan-price">$149<span style="font-size:12px;font-weight:400;">/mo</span></div><div class="plan-desc">Launch a pro pest website with hosting and essentials.</div><ul class="plan-list"><li><span class="icon">✓</span><span>Website + hosting</span></li><li><span class="icon">✓</span><span>Lead capture form</span></li><li><span class="icon">✓</span><span>Content editor &amp; SEO tools</span></li><li><span class="icon">✓</span><span>Blog basics</span></li></ul><div class="plan-cta"><button class="btn btn-ghost">Good for just getting online</button></div></div>
+        <div class="plan"><div class="plan-name">Grow</div><div class="plan-price">$249<span style="font-size:12px;font-weight:400;">/mo</span></div><div class="plan-desc">Layer in social media posts and reviews to grow locally.</div><ul class="plan-list"><li><span class="icon">✓</span><span>Everything in Starter</span></li><li><span class="icon">✓</span><span>Social media posts &amp; campaigns</span></li><li><span class="icon">✓</span><span>Review requests</span></li><li><span class="icon">✓</span><span>CRM tools &amp; priority support</span></li></ul><div class="plan-cta"><button class="btn btn-ghost">Most popular for growing teams</button></div></div>
+        <div class="plan"><div class="plan-name">Pro</div><div class="plan-price">$349<span style="font-size:12px;font-weight:400;">/mo</span></div><div class="plan-desc">Add advanced messaging and analytics as you scale.</div><ul class="plan-list"><li><span class="icon">✓</span><span>Everything in Grow</span></li><li><span class="icon">✓</span><span>SMS notifications</span></li><li><span class="icon">✓</span><span>Advanced analytics</span></li><li><span class="icon">✓</span><span>Google Business sync &amp; team accounts</span></li></ul><div class="plan-cta"><button class="btn btn-ghost">For owners serious about scale</button></div></div>
+        <div class="plan current"><div class="plan-name">Elite</div><div class="plan-price">$499<span style="font-size:12px;font-weight:400;">/mo</span></div><div class="plan-desc">Treat PestFlow like your marketing &amp; operations partner.</div><ul class="plan-list"><li><span class="icon">✓</span><span>Everything in Pro</span></li><li><span class="icon">✓</span><span>White‑glove onboarding</span></li><li><span class="icon">✓</span><span>Custom integrations</span></li><li><span class="icon">✓</span><span>Dedicated support line &amp; monthly strategy call</span></li></ul><div class="plan-cta"><button class="btn btn-primary">Use this as your "flagship" offer</button></div></div>
+      </div>
+    </section>
+
+    <section id="rollout">
+      <div class="closing">
+        <h3>Rollout in 3 weeks, not 3 months.</h3>
+        <p>On your call, position PestFlow as a fast rollout, not a multi‑month project. Walk them through exactly what happens if they say "yes" this week, and then ask a single clear question.</p>
+        <div class="closing-row">
+          <div class="closing-qs">
+            <strong>Suggested rollout script:</strong><br /><br />
+            <ol style="margin:0 0 10px 18px;padding:0;font-size:13px;">
+              <li><strong>Week 1:</strong> Clone or rebuild your current site inside PestFlow, wire up lead forms and notifications.</li>
+              <li><strong>Week 2:</strong> Set up blog topics, first SEO posts, and at least one social campaign.</li>
+              <li><strong>Week 3:</strong> Connect Google data sources, review analytics, and adjust messaging.</li>
+            </ol>
+            Then ask:<br />
+            <em>"If we could have this live for your company in the next 30 days, what would have to be true for you to feel comfortable starting that rollout?"</em>
+          </div>
+          <div>
+            <button class="btn btn-primary" onclick="alert('Use this button to start your scheduling flow.')">Schedule my rollout call →</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer>Use this page as your live demo guide. Scroll, ask questions, and jump into the actual PestFlow Pro app whenever they want to see something working in real time.</footer>
+  </div>
+</body>
+</html>

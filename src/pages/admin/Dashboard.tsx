@@ -67,6 +67,7 @@ export default function Dashboard() {
   const [demoActive, setDemoActive] = useState(false)
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [primaryColor, setPrimaryColor] = useState('#16a34a')
+  const [template, setTemplate] = useState('')
   const { tenantId } = useTenant()
   const { canAccess } = usePlan()
   const navigate = useNavigate()
@@ -83,6 +84,7 @@ export default function Dashboard() {
       if (brandRes.data?.value?.accent_color) setAccentColor(brandRes.data.value.accent_color)
       if (brandRes.data?.value?.primary_color) setPrimaryColor(brandRes.data.value.primary_color)
       if (brandRes.data?.value?.logo_url) setLogoUrl(brandRes.data.value.logo_url)
+      if (brandRes.data?.value?.template) setTemplate(brandRes.data.value.template)
     })
   }, [tenantId])
 
@@ -102,8 +104,8 @@ export default function Dashboard() {
     <div className="flex flex-col min-h-screen" style={{ '--admin-accent': accentColor } as React.CSSProperties}>
       {demoActive && <DemoBanner onGoLive={handleGoLive} />}
       <div className="flex flex-1">
-      <aside className="w-64 flex-shrink-0 flex flex-col" style={{ background: '#1a1f2e', '--brand-primary': primaryColor, '--brand-accent': accentColor } as React.CSSProperties}>
-        <div className="px-6 py-5" style={{ background: '#141922' }}>
+      <aside className="w-64 flex-shrink-0 flex flex-col" style={{ background: template === 'dang' ? '#1c1208' : '#1a1f2e', '--brand-primary': primaryColor, '--brand-accent': accentColor } as React.CSSProperties}>
+        <div className="px-6 py-5" style={{ background: template === 'dang' ? '#120d05' : '#141922' }}>
           <h1 className="font-oswald text-xl text-white tracking-wide">PestFlow Pro</h1>
           <p className="text-gray-400 text-xs uppercase tracking-widest mt-0.5">Operations Platform</p>
           {logoUrl && (
