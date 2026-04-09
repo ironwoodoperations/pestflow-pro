@@ -213,7 +213,25 @@ export default function ProspectDetail({ prospectId, salespeople, onClose }: Pro
 
         {/* Sections */}
         <div className="p-5 space-y-6">
-          <div className="flex justify-end"><RepGuideButton section="sales-call" onOpen={setGuideSection} /></div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <a
+              href="https://outlook.office.com/book/PestFlowProOnboarding@ironwoodoperationsgroup.com/?ismsaljsauthenabled"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-lg transition"
+            >
+              📅 Book Call
+            </a>
+            <a
+              href="https://teams.microsoft.com/l/meeting/new"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-lg transition"
+            >
+              🎥 Teams Call
+            </a>
+            <div className="ml-auto"><RepGuideButton section="sales-call" onOpen={setGuideSection} /></div>
+          </div>
           <ContactSection form={form} setField={wrappedSetField} onBlur={onBlur} salespeople={salespeople} />
           <div className="border-t border-gray-800 pt-4">
             <ScrapePanel
