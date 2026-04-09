@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
 import { applyShellTheme } from '../lib/shellThemes'
 
-export type TemplateName = 'modern-pro' | 'bold-local' | 'clean-friendly' | 'rustic-rugged' | 'youpest'
+export type TemplateName = 'modern-pro' | 'bold-local' | 'clean-friendly' | 'rustic-rugged' | 'youpest' | 'dang'
 
 interface TemplateContextValue {
   template: TemplateName

@@ -43,8 +43,8 @@ export default function Index() {
     })
   }, [])
 
-  // youpest shell owns its own hero via layout_config — skip the standard hero
-  if (template === 'youpest') {
+  // youpest and dang shells own their own hero — skip the standard hero
+  if (template === 'youpest' || template === 'dang') {
     return (
       <div style={{ backgroundColor: 'var(--color-bg-section)' }}>
         <StructuredData type="LocalBusiness" />

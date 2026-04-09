@@ -11,11 +11,14 @@ import RusticRuggedNavbar from '../shells/rustic-rugged/ShellNavbar'
 import RusticRuggedFooter from '../shells/rustic-rugged/ShellFooter'
 import YouPestNavbar from '../shells/youpest/ShellNavbar'
 import YouPestFooter from '../shells/youpest/ShellFooter'
+import DangNavbar from '../shells/dang/ShellNavbar'
+import DangFooter from '../shells/dang/ShellFooter'
 import ModernProSections from '../shells/modern-pro/ShellHomeSections'
 import BoldLocalSections from '../shells/bold-local/ShellHomeSections'
 import CleanFriendlySections from '../shells/clean-friendly/ShellHomeSections'
 import RusticRuggedSections from '../shells/rustic-rugged/ShellHomeSections'
 import YouPestSections from '../shells/youpest/ShellHomeSections'
+import DangSections from '../shells/dang/ShellHomeSections'
 
 export function ShellSectionsRenderer() {
   const { template } = useTemplate()
@@ -24,6 +27,7 @@ export function ShellSectionsRenderer() {
     case 'clean-friendly': return <CleanFriendlySections />
     case 'rustic-rugged': return <RusticRuggedSections />
     case 'youpest': return <YouPestSections />
+    case 'dang': return <DangSections />
     default: return <ModernProSections />
   }
 }
@@ -69,6 +73,10 @@ export default function PublicShell({ children }: Props) {
     case 'youpest':
       NavbarComp = YouPestNavbar
       FooterComp = YouPestFooter
+      break
+    case 'dang':
+      NavbarComp = DangNavbar
+      FooterComp = DangFooter
       break
     default:
       NavbarComp = ModernProNavbar

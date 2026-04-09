@@ -138,6 +138,27 @@ export const SHELL_THEMES: Record<string, Record<string, string>> = {
     '--font-heading':          'Oswald, sans-serif',
     '--font-body':             'Inter, sans-serif',
   },
+  // Dang shell — custom comic-book brand for Dang Pest Control (Tyler, TX)
+  'dang': {
+    '--color-primary':         '#F97316',
+    '--color-primary-dark':    '#ea6c00',
+    '--color-primary-light':   '#fed7aa',
+    '--color-accent':          '#06B6D4',
+    '--color-text-on-primary': '#ffffff',
+    '--color-bg-hero':         '#F97316',
+    '--color-bg-hero-end':     '#ea6c00',
+    '--color-bg-section':      '#ffffff',
+    '--color-bg-cta':          '#F97316',
+    '--color-nav-bg':          '#F97316',
+    '--color-nav-text':        '#ffffff',
+    '--color-footer-bg':       '#ffffff',
+    '--color-footer-text':     '#000000',
+    '--color-btn-bg':          '#F97316',
+    '--color-btn-text':        '#ffffff',
+    '--color-heading':         'hsl(20,40%,12%)',
+    '--font-heading':          "'Bangers', cursive",
+    '--font-body':             "'Open Sans', sans-serif",
+  },
 }
 
 export function applyShellTheme(

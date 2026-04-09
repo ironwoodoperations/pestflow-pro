@@ -42,3 +42,58 @@
   white-space: nowrap;
   border-width: 0;
 }
+
+/* === Dang Shell Components === */
+/* Bangers comic-book font utility */
+.dang-text-comic {
+  font-family: 'Bangers', cursive;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Dang yellow pill navbar */
+.navbar-pill {
+  background: hsl(45, 100%, 51%);
+  border-radius: 9999px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
+}
+
+.navbar-link {
+  padding: 8px 16px;
+  border-radius: 9999px;
+  color: hsl(20, 40%, 12%);
+  font-weight: 700;
+  font-size: 0.95rem;
+  transition: background-color 0.15s;
+}
+
+.navbar-link:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.navbar-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 8px;
+  width: 224px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  border: 1px solid hsl(30, 20%, 88%);
+  padding: 8px 0;
+  z-index: 50;
+  background: #ffffff;
+}
+
+.navbar-dropdown-item {
+  display: block;
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  color: hsl(20, 40%, 12%);
+  transition: background-color 0.15s;
+}
+
+.navbar-dropdown-item:hover {
+  background: hsl(48, 100%, 94%);
+  color: hsl(28, 100%, 50%);
+}
