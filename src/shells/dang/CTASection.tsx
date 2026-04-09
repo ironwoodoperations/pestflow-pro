@@ -14,7 +14,7 @@ const CTASection = () => {
     <section className="relative text-white text-center">
       <div className="relative">
         <img
-          src="/cta-bg.png"
+          src="/dang/cta-bg.png"
           alt=""
           width="1200"
           height="600"

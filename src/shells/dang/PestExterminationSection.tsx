@@ -32,7 +32,7 @@ const PestExterminationSection = () => {
         </div>
         <div>
           <img
-            src="/exterior-treatment.jpg"
+            src="/dang/exterior-treatment.jpg"
             alt="Pest Control Technician Applying Exterior Treatment"
             width="644"
             height="419"

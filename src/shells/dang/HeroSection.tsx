@@ -126,7 +126,7 @@ const HeroSection = ({ dynamicVideoUrl, dynamicVideoType, videoStart, videoEnd }
                   onClick={handlePlay}
                 >
                   <img
-                    src="https://www.dangpestcontrol.com/wp-content/uploads/2025/06/dang-pest-homepage-img-1.webp"
+                    src="https://www.dangpestcontrol.com/wp-content/uploads/2025/06/dang/dang-pest-homepage-img-1.webp"
                     alt="Meet Kirk"
                     fetchPriority="high"
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
@@ -162,7 +162,7 @@ const HeroSection = ({ dynamicVideoUrl, dynamicVideoType, videoStart, videoEnd }
                       controls
                       autoPlay
                       playsInline
-                      poster="https://www.dangpestcontrol.com/wp-content/uploads/2025/06/dang-pest-homepage-img-1.webp"
+                      poster="https://www.dangpestcontrol.com/wp-content/uploads/2025/06/dang/dang-pest-homepage-img-1.webp"
                     >
                       <source src={videoSrc} type="video/mp4" />
                     </video>

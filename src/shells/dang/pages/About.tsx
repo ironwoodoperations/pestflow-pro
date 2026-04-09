@@ -15,7 +15,7 @@ const About = () => {
       <section
         style={{
           position: 'relative',
-          background: `url(/moblie_banner.webp) center/cover no-repeat, hsl(28, 100%, 50%)`,
+          background: `url(/dang/moblie_banner.webp) center/cover no-repeat, hsl(28, 100%, 50%)`,
           paddingTop: '80px',
           paddingBottom: '200px',
           minHeight: '420px',
@@ -47,7 +47,7 @@ const About = () => {
         </div>
 
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, lineHeight: 0, zIndex: 1 }}>
-          <img fetchPriority="high" width={1200} height={50} src="/banner-img.png" alt="" style={{ width: '100%', display: 'block' }} />
+          <img fetchPriority="high" width={1200} height={50} src="/dang/banner-img.png" alt="" style={{ width: '100%', display: 'block' }} />
         </div>
       </section>
 
@@ -170,7 +170,7 @@ const About = () => {
           </div>
         </div>
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, lineHeight: 0, zIndex: 1 }}>
-          <img loading="lazy" width={1200} height={50} src="/banner-img.png" alt="" style={{ width: '100%', display: 'block' }} />
+          <img loading="lazy" width={1200} height={50} src="/dang/banner-img.png" alt="" style={{ width: '100%', display: 'block' }} />
         </div>
       </section>
 
