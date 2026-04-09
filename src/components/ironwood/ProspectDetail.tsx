@@ -12,6 +12,7 @@ import RepGuideDrawer       from './RepGuideDrawer'
 import ScrapePanel          from './ScrapePanel'
 import type { ScrapedData } from './ScrapePanel'
 import type { SiteRecreation } from './SiteRecreationCard'
+import BoltBuildGuide       from './BoltBuildGuide'
 
 interface Props {
   prospectId: string | null   // null = new prospect
@@ -239,6 +240,9 @@ export default function ProspectDetail({ prospectId, salespeople, onClose }: Pro
             <RepGuideButton section="shell-palette" onOpen={setGuideSection} />
           </div>
           <SiteSetupSection form={form} setField={wrappedSetField} onBlur={onBlur} />
+          {(form.tier === 'pro' || form.tier === 'elite') && (
+            <BoltBuildGuide slug={form.slug ?? undefined} />
+          )}
           <IntegrationsSection prospectId={id} form={form} />
           <div className="flex justify-end">
             <RepGuideButton section={form.provisioned_at ? 'post-launch' : 'pre-provision'} label={form.provisioned_at ? '? Post-Launch Guide' : undefined} onOpen={setGuideSection} />
