@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { ChevronDown, Phone } from 'lucide-react'
-import { pestLinks, termiteLinks, aboutLinks } from './DangNavData'
+import { pestLinks, aboutLinks } from './DangNavData'
 
 interface Props {
   openDropdown: string | null
