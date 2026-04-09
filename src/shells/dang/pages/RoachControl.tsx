@@ -125,13 +125,13 @@ const RoachControl = () => {
           <div>
             <h2 style={{ fontWeight: '800', fontSize: 'clamp(26px, 3vw, 38px)', marginBottom: '20px', marginTop: 0 }}>Get Started With Your Quote</h2>
             <p style={{ fontSize: '15px', lineHeight: 1.8, marginBottom: '28px', color: '#444', marginTop: 0 }}>
-              Dang Pest Control offers solutions designed to protect your home or property from cockroach infestations effectively. Located in Tyler, TX, we proudly serve the surrounding areas including{' '}
-              <a href="/longview-tx" style={{ color: '#000', textDecoration: 'underline' }}>Longview</a>,{' '}
-              <a href="/jacksonville-tx" style={{ color: '#000', textDecoration: 'underline' }}>Jacksonville</a>,{' '}
-              <a href="/lindale-tx" style={{ color: '#000', textDecoration: 'underline' }}>Lindale</a>,{' '}
-              <a href="/bullard-tx" style={{ color: '#000', textDecoration: 'underline' }}>Bullard</a>, and{' '}
-              <a href="/whitehouse-tx" style={{ color: '#000', textDecoration: 'underline' }}>Whitehouse</a>. Don't wait – restore comfort and enjoyment to your property today. Call us today at{' '}
-              <a href="tel:(903) 871-0550" style={{ color: '#000', fontWeight: '700' }}>(903) 871-0550</a> and{' '}
+              Dang Pest Control offers solutions designed to protect your home or property from cockroach infestations effectively. Located in Tyler, TX, we proudly serve the surrounding areas including 
+              <a href="/longview-tx" style={{ color: '#000', textDecoration: 'underline' }}>Longview</a>, 
+              <a href="/jacksonville-tx" style={{ color: '#000', textDecoration: 'underline' }}>Jacksonville</a>, 
+              <a href="/lindale-tx" style={{ color: '#000', textDecoration: 'underline' }}>Lindale</a>, 
+              <a href="/bullard-tx" style={{ color: '#000', textDecoration: 'underline' }}>Bullard</a>, and 
+              <a href="/whitehouse-tx" style={{ color: '#000', textDecoration: 'underline' }}>Whitehouse</a>. Don't wait – restore comfort and enjoyment to your property today. Call us today at 
+              <a href="tel:(903) 871-0550" style={{ color: '#000', fontWeight: '700' }}>(903) 871-0550</a> and 
               <a href="/quote" style={{ color: '#000', textDecoration: 'underline' }}>get your quote</a>.
             </p>
             <a href="/quote" style={{ display: 'inline-block', padding: '14px 40px', background: 'hsl(28, 100%, 50%)', borderRadius: '50px', fontWeight: '700', color: '#fff', textDecoration: 'none', fontSize: '16px' }}>Get Your Quote</a>

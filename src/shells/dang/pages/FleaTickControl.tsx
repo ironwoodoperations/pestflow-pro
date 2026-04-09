@@ -108,16 +108,16 @@ const FleaTickControl = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-center">
           <div>
             <h2 style={{ fontWeight: '800', fontSize: 'clamp(26px, 3vw, 38px)', marginBottom: '20px', marginTop: 0 }}>Don't Wait—Get Protected Today</h2>
-            <p style={{ fontSize: '15px', lineHeight: 1.8, marginBottom: '16px', color: '#444', marginTop: 0 }}>It's time to protect your family, pets, and property with professional,{' '}
+            <p style={{ fontSize: '15px', lineHeight: 1.8, marginBottom: '16px', color: '#444', marginTop: 0 }}>It's time to protect your family, pets, and property with professional, 
               <a href="/pest-control" style={{ color: '#000', textDecoration: 'underline' }}>dependable pest control services</a>. Fleas and ticks don't just go away on their own. Take action now to protect your home and loved ones.</p>
             <p style={{ fontSize: '15px', lineHeight: 1.8, marginBottom: '28px', color: '#444', marginTop: 0 }}>
-              Located in Tyler, TX, we proudly serve the surrounding areas, including{' '}
-              <a href="/longview-tx" style={{ color: '#000', textDecoration: 'underline' }}>Longview</a>,{' '}
-              <a href="/jacksonville-tx" style={{ color: '#000', textDecoration: 'underline' }}>Jacksonville</a>,{' '}
-              <a href="/lindale-tx" style={{ color: '#000', textDecoration: 'underline' }}>Lindale</a>,{' '}
-              <a href="/bullard-tx" style={{ color: '#000', textDecoration: 'underline' }}>Bullard</a>,{' '}
-              <a href="/whitehouse-tx" style={{ color: '#000', textDecoration: 'underline' }}>Whitehouse</a>, and more. Call us today at{' '}
-              <a href="tel:(903) 871-0550" style={{ color: '#000', fontWeight: '700' }}>(903) 871-0550</a>{' '}and{' '}
+              Located in Tyler, TX, we proudly serve the surrounding areas, including 
+              <a href="/longview-tx" style={{ color: '#000', textDecoration: 'underline' }}>Longview</a>, 
+              <a href="/jacksonville-tx" style={{ color: '#000', textDecoration: 'underline' }}>Jacksonville</a>, 
+              <a href="/lindale-tx" style={{ color: '#000', textDecoration: 'underline' }}>Lindale</a>, 
+              <a href="/bullard-tx" style={{ color: '#000', textDecoration: 'underline' }}>Bullard</a>, 
+              <a href="/whitehouse-tx" style={{ color: '#000', textDecoration: 'underline' }}>Whitehouse</a>, and more. Call us today at 
+              <a href="tel:(903) 871-0550" style={{ color: '#000', fontWeight: '700' }}>(903) 871-0550</a> and 
               <a href="/quote" style={{ color: '#000', textDecoration: 'underline' }}>get your quote</a>.
             </p>
             <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
@@ -140,10 +140,10 @@ const FleaTickControl = () => {
         <div style={{ position: 'relative', zIndex: 10, textAlign: 'center', maxWidth: '900px', margin: '0 auto' }}>
           <h2 style={{ fontFamily: '"Bangers", cursive', fontSize: 'clamp(36px, 5vw, 60px)', fontStyle: 'italic', color: 'hsl(45, 95%, 60%)', letterSpacing: '0.04em', marginBottom: '20px', marginTop: 0, lineHeight: 1.1, WebkitTextStroke: '3px #000000', textShadow: '3px 3px 0 #000000' }}>FLEA & TICK-FREE LIVING STARTS HERE</h2>
           <p style={{ fontSize: '16px', lineHeight: 1.8, color: 'rgba(0,0,0,0.72)', marginBottom: '28px', marginTop: 0 }}>
-            Reclaim your home or property with Dang Pest Control's expert flea and tick pest control services. Whether you're dealing with a minor issue or a full infestation, our proven methods ensure effective and lasting results. Located in Tyler, TX, we proudly serve homeowners throughout nearby areas, including <a href="/longview-tx" style={{ color: '#000' }}>Longview</a>,{' '}
-            <a href="/jacksonville-tx" style={{ color: '#000' }}>Jacksonville</a>,{' '}<a href="/lindale-tx" style={{ color: '#000' }}>Lindale</a>,{' '}
-            <a href="/bullard-tx" style={{ color: '#000' }}>Bullard</a>,{' '}<a href="/whitehouse-tx" style={{ color: '#000' }}>Whitehouse</a>, and more. Call us today at{' '}
-            <a href="tel:(903) 871-0550" style={{ color: '#000', fontWeight: '700' }}>(903) 871-0550</a> and{' '}
+            Reclaim your home or property with Dang Pest Control's expert flea and tick pest control services. Whether you're dealing with a minor issue or a full infestation, our proven methods ensure effective and lasting results. Located in Tyler, TX, we proudly serve homeowners throughout nearby areas, including <a href="/longview-tx" style={{ color: '#000' }}>Longview</a>, 
+            <a href="/jacksonville-tx" style={{ color: '#000' }}>Jacksonville</a>, <a href="/lindale-tx" style={{ color: '#000' }}>Lindale</a>, 
+            <a href="/bullard-tx" style={{ color: '#000' }}>Bullard</a>, <a href="/whitehouse-tx" style={{ color: '#000' }}>Whitehouse</a>, and more. Call us today at 
+            <a href="tel:(903) 871-0550" style={{ color: '#000', fontWeight: '700' }}>(903) 871-0550</a> and 
             <a href="/quote" style={{ color: '#000' }}>get your quote</a>.
           </p>
           <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center' }}>

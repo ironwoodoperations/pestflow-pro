@@ -107,13 +107,13 @@ const ScorpionControl = () => {
           <div>
             <h2 style={{ fontWeight: '800', fontSize: 'clamp(26px, 3vw, 38px)', marginBottom: '20px', marginTop: 0 }}>Don't Wait—Protect Your Home Today!</h2>
             <p style={{ fontSize: '15px', lineHeight: 1.8, marginBottom: '28px', color: '#444', marginTop: 0 }}>
-              Located in Tyler, TX, Dang Pest Control serves clients across{' '}
-              <a href="/longview-tx" style={{ color: '#000', textDecoration: 'underline' }}>Longview</a>,{' '}
-              <a href="/jacksonville-tx" style={{ color: '#000', textDecoration: 'underline' }}>Jacksonville</a>,{' '}
-              <a href="/lindale-tx" style={{ color: '#000', textDecoration: 'underline' }}>Lindale</a>,{' '}
-              <a href="/bullard-tx" style={{ color: '#000', textDecoration: 'underline' }}>Bullard</a>,{' '}
-              <a href="/whitehouse-tx" style={{ color: '#000', textDecoration: 'underline' }}>Whitehouse</a>, and neighboring areas. From identifying scorpions to eliminating and preventing infestations, we deliver results you can trust. Call us today at{' '}
-              <a href="tel:(903) 871-0550" style={{ color: '#000', fontWeight: '700' }}>(903) 871-0550</a>{' '}and <a href="/quote" style={{ color: '#000', textDecoration: 'underline' }}>get your quote</a>.
+              Located in Tyler, TX, Dang Pest Control serves clients across 
+              <a href="/longview-tx" style={{ color: '#000', textDecoration: 'underline' }}>Longview</a>, 
+              <a href="/jacksonville-tx" style={{ color: '#000', textDecoration: 'underline' }}>Jacksonville</a>, 
+              <a href="/lindale-tx" style={{ color: '#000', textDecoration: 'underline' }}>Lindale</a>, 
+              <a href="/bullard-tx" style={{ color: '#000', textDecoration: 'underline' }}>Bullard</a>, 
+              <a href="/whitehouse-tx" style={{ color: '#000', textDecoration: 'underline' }}>Whitehouse</a>, and neighboring areas. From identifying scorpions to eliminating and preventing infestations, we deliver results you can trust. Call us today at 
+              <a href="tel:(903) 871-0550" style={{ color: '#000', fontWeight: '700' }}>(903) 871-0550</a> and <a href="/quote" style={{ color: '#000', textDecoration: 'underline' }}>get your quote</a>.
             </p>
             <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
               <a href="tel:(903) 871-0550" style={{ padding: '13px 28px', border: '2px solid hsl(20, 40%, 12%)', borderRadius: '50px', fontWeight: '700', color: 'hsl(20, 40%, 12%)', textDecoration: 'none', fontSize: '15px', whiteSpace: 'nowrap' }}>(903) 871-0550</a>

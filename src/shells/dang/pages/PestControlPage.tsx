@@ -110,16 +110,16 @@ const PestControlPage = () => {
             <h2 style={{ fontWeight: '800', fontSize: 'clamp(26px, 3vw, 38px)', marginBottom: '20px', marginTop: 0 }}>Additional Services</h2>
             <p style={{ fontSize: '15px', lineHeight: 1.8, marginBottom: '16px', color: '#444', marginTop: 0 }}>While our general pest control treatments cover the most common pests in East Texas, we also provide specialized services, including:</p>
             <p style={{ fontSize: '15px', lineHeight: 2, color: '#444', marginTop: 0, marginBottom: '28px' }}>
-              <a href="/ant-control" style={{ color: '#000', textDecoration: 'underline' }}>Ant Control</a> &nbsp;·&nbsp;{' '}
-              <a href="/spider-control" style={{ color: '#000', textDecoration: 'underline' }}>Spider Control</a> &nbsp;·&nbsp;{' '}
-              <a href="/wasp-hornet-control" style={{ color: '#000', textDecoration: 'underline' }}>Wasp & Hornet Control</a> &nbsp;·&nbsp;{' '}
-              <a href="/scorpion-control" style={{ color: '#000', textDecoration: 'underline' }}>Scorpion Control</a> &nbsp;·&nbsp;{' '}
-              <a href="/rodent-control" style={{ color: '#000', textDecoration: 'underline' }}>Rodent Control</a> &nbsp;·&nbsp;{' '}
-              <a href="/mosquito-control" style={{ color: '#000', textDecoration: 'underline' }}>Mosquito Control</a> &nbsp;·&nbsp;{' '}
-              <a href="/flea-tick-control" style={{ color: '#000', textDecoration: 'underline' }}>Flea & Tick Control</a> &nbsp;·&nbsp;{' '}
-              <a href="/roach-control" style={{ color: '#000', textDecoration: 'underline' }}>Roach Control</a> &nbsp;·&nbsp;{' '}
-              <a href="/bed-bug-control" style={{ color: '#000', textDecoration: 'underline' }}>Bed Bug Control</a> &nbsp;·&nbsp;{' '}
-              <a href="/termite-control" style={{ color: '#000', textDecoration: 'underline' }}>Termite Control</a> &nbsp;·&nbsp;{' '}
+              <a href="/ant-control" style={{ color: '#000', textDecoration: 'underline' }}>Ant Control</a> &nbsp;·&nbsp; 
+              <a href="/spider-control" style={{ color: '#000', textDecoration: 'underline' }}>Spider Control</a> &nbsp;·&nbsp; 
+              <a href="/wasp-hornet-control" style={{ color: '#000', textDecoration: 'underline' }}>Wasp & Hornet Control</a> &nbsp;·&nbsp; 
+              <a href="/scorpion-control" style={{ color: '#000', textDecoration: 'underline' }}>Scorpion Control</a> &nbsp;·&nbsp; 
+              <a href="/rodent-control" style={{ color: '#000', textDecoration: 'underline' }}>Rodent Control</a> &nbsp;·&nbsp; 
+              <a href="/mosquito-control" style={{ color: '#000', textDecoration: 'underline' }}>Mosquito Control</a> &nbsp;·&nbsp; 
+              <a href="/flea-tick-control" style={{ color: '#000', textDecoration: 'underline' }}>Flea & Tick Control</a> &nbsp;·&nbsp; 
+              <a href="/roach-control" style={{ color: '#000', textDecoration: 'underline' }}>Roach Control</a> &nbsp;·&nbsp; 
+              <a href="/bed-bug-control" style={{ color: '#000', textDecoration: 'underline' }}>Bed Bug Control</a> &nbsp;·&nbsp; 
+              <a href="/termite-control" style={{ color: '#000', textDecoration: 'underline' }}>Termite Control</a> &nbsp;·&nbsp; 
               <a href="/termite-inspections" style={{ color: '#000', textDecoration: 'underline' }}>Termite Inspections</a>
             </p>
             <a href="/quote" style={{ display: 'inline-block', padding: '14px 40px', background: 'hsl(28, 100%, 50%)', borderRadius: '50px', fontWeight: '700', color: '#fff', textDecoration: 'none', fontSize: '16px' }}>Get Your Quote</a>
@@ -139,13 +139,13 @@ const PestControlPage = () => {
         <div style={{ position: 'relative', zIndex: 10, textAlign: 'center', maxWidth: '900px', margin: '0 auto' }}>
           <h2 style={{ fontFamily: '"Bangers", cursive', fontSize: 'clamp(36px, 5vw, 60px)', fontStyle: 'italic', color: 'hsl(45, 95%, 60%)', letterSpacing: '0.04em', marginBottom: '20px', marginTop: 0, lineHeight: 1.1, WebkitTextStroke: '3px #000000', textShadow: '3px 3px 0 #000000' }}>PROTECT YOUR PROPERTY TODAY</h2>
           <p style={{ fontSize: '16px', lineHeight: 1.8, color: 'rgba(0,0,0,0.72)', marginBottom: '28px', marginTop: 0 }}>
-            Don't wait for pests to invade your home—act now. With Dang Pest Control, you'll enjoy expert service, tailored solutions, and peace of mind knowing your property is in good hands. Located in Tyler, TX, we proudly serve surrounding communities including{' '}
-            <a href="/longview-tx" style={{ color: '#000' }}>Longview</a>,{' '}
-            <a href="/jacksonville-tx" style={{ color: '#000' }}>Jacksonville</a>,{' '}
-            <a href="/lindale-tx" style={{ color: '#000' }}>Lindale</a>,{' '}
-            <a href="/bullard-tx" style={{ color: '#000' }}>Bullard</a>, and{' '}
-            <a href="/whitehouse-tx" style={{ color: '#000' }}>Whitehouse</a>. Call us today at{' '}
-            <a href="tel:(903) 871-0550" style={{ color: '#000', fontWeight: '700' }}>(903) 871-0550</a>{' '}and <a href="/quote" style={{ color: '#000' }}>get your quote</a>.
+            Don't wait for pests to invade your home—act now. With Dang Pest Control, you'll enjoy expert service, tailored solutions, and peace of mind knowing your property is in good hands. Located in Tyler, TX, we proudly serve surrounding communities including 
+            <a href="/longview-tx" style={{ color: '#000' }}>Longview</a>, 
+            <a href="/jacksonville-tx" style={{ color: '#000' }}>Jacksonville</a>, 
+            <a href="/lindale-tx" style={{ color: '#000' }}>Lindale</a>, 
+            <a href="/bullard-tx" style={{ color: '#000' }}>Bullard</a>, and 
+            <a href="/whitehouse-tx" style={{ color: '#000' }}>Whitehouse</a>. Call us today at 
+            <a href="tel:(903) 871-0550" style={{ color: '#000', fontWeight: '700' }}>(903) 871-0550</a> and <a href="/quote" style={{ color: '#000' }}>get your quote</a>.
           </p>
           <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center' }}>
             <a href="tel:(903) 871-0550" className="pest-cta-phone" style={{ padding: '13px 28px', borderRadius: '50px', fontWeight: '700', textDecoration: 'none', fontSize: '15px', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>(903) 871-0550</a>

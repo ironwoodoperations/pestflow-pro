@@ -114,13 +114,13 @@ const TermiteInspections = () => {
           <div>
             <h2 style={{ fontWeight: '800', fontSize: 'clamp(26px, 3vw, 38px)', marginBottom: '20px', marginTop: 0 }}>Call Us Today &amp; Protect What Matters</h2>
             <p style={{ fontSize: '15px', lineHeight: 1.8, marginBottom: '28px', color: '#444', marginTop: 0 }}>
-              Don't wait until termites cause irreparable damage to your home or property. Whether you're buying, selling, or ensuring your home is termite-free long-term, our expertise makes all the difference. Located in Tyler, TX, we proudly serve customers in{' '}
-              <a href="/longview-tx" style={{ color: '#000', textDecoration: 'underline' }}>Longview</a>,{' '}
-              <a href="/jacksonville-tx" style={{ color: '#000', textDecoration: 'underline' }}>Jacksonville</a>,{' '}
-              <a href="/lindale-tx" style={{ color: '#000', textDecoration: 'underline' }}>Lindale</a>,{' '}
-              <a href="/bullard-tx" style={{ color: '#000', textDecoration: 'underline' }}>Bullard</a>,{' '}
-              <a href="/whitehouse-tx" style={{ color: '#000', textDecoration: 'underline' }}>Whitehouse</a>, and beyond. Take the first step in protecting your home and loved ones today. Call us today at{' '}
-              <a href="tel:(903) 871-0550" style={{ color: '#000', fontWeight: '700' }}>(903) 871-0550</a>{' '}and{' '}
+              Don't wait until termites cause irreparable damage to your home or property. Whether you're buying, selling, or ensuring your home is termite-free long-term, our expertise makes all the difference. Located in Tyler, TX, we proudly serve customers in 
+              <a href="/longview-tx" style={{ color: '#000', textDecoration: 'underline' }}>Longview</a>, 
+              <a href="/jacksonville-tx" style={{ color: '#000', textDecoration: 'underline' }}>Jacksonville</a>, 
+              <a href="/lindale-tx" style={{ color: '#000', textDecoration: 'underline' }}>Lindale</a>, 
+              <a href="/bullard-tx" style={{ color: '#000', textDecoration: 'underline' }}>Bullard</a>, 
+              <a href="/whitehouse-tx" style={{ color: '#000', textDecoration: 'underline' }}>Whitehouse</a>, and beyond. Take the first step in protecting your home and loved ones today. Call us today at 
+              <a href="tel:(903) 871-0550" style={{ color: '#000', fontWeight: '700' }}>(903) 871-0550</a> and 
               <a href="/quote" style={{ color: '#000', textDecoration: 'underline' }}>get your quote</a>.
             </p>
             <a href="/quote" style={{ display: 'inline-block', padding: '14px 40px', background: 'hsl(28, 100%, 50%)', borderRadius: '50px', fontWeight: '700', color: '#fff', textDecoration: 'none', fontSize: '16px' }}>Get Your Quote</a>
