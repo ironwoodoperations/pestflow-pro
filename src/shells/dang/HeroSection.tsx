@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Play } from "lucide-react";
 import HolidayVideoWrapper from "./HolidayVideoWrapper";
+import { usePageContent } from "../../hooks/usePageContent";
 
 const DEFAULT_VIDEO = "https://www.dangpestcontrol.com/wp-content/uploads/2025/04/dang-pest-homepage.mp4";
 
@@ -25,9 +26,12 @@ const extractYouTubeId = (url: string): string | null => {
   return null;
 };
 
+const DEFAULT_THUMBNAIL = "https://www.dangpestcontrol.com/wp-content/uploads/2025/06/dang/dang-pest-homepage-img-1.webp";
+
 const HeroSection = ({ dynamicVideoUrl, dynamicVideoType, videoStart, videoEnd }: HeroSectionProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const { content } = usePageContent('home');
 
   const videoSrc = dynamicVideoUrl || DEFAULT_VIDEO;
   const isYouTube = dynamicVideoType === "youtube" || extractYouTubeId(videoSrc) !== null;
@@ -68,7 +72,7 @@ const HeroSection = ({ dynamicVideoUrl, dynamicVideoType, videoStart, videoEnd }
                 marginBottom: '24px',
               }}
             >
-              Super Powered<br />Pest Control
+              {content?.title ?? 'Super Powered Pest Control'}
             </h1>
             <p
               className="font-body"
@@ -80,7 +84,7 @@ const HeroSection = ({ dynamicVideoUrl, dynamicVideoType, videoStart, videoEnd }
                 maxWidth: '480px',
               }}
             >
-              We are a hands-on, personable, relationship-based company. We live, work, worship, and play in the Tyler community. Our innovative pest control practices make us stand out amongst our competitors. Our goal is to be an active part in making our community and the lives of our clients better. We stand by our work and guarantee satisfaction.
+              {content?.intro ?? 'We are a hands-on, personable, relationship-based company. We live, work, worship, and play in the Tyler community. Our innovative pest control practices make us stand out amongst our competitors. Our goal is to be an active part in making our community and the lives of our clients better. We stand by our work and guarantee satisfaction.'}
             </p>
             <Link
               to="/quote"
@@ -126,7 +130,7 @@ const HeroSection = ({ dynamicVideoUrl, dynamicVideoType, videoStart, videoEnd }
                   onClick={handlePlay}
                 >
                   <img
-                    src="https://www.dangpestcontrol.com/wp-content/uploads/2025/06/dang/dang-pest-homepage-img-1.webp"
+                    src={(content?.image_url || DEFAULT_THUMBNAIL)}
                     alt="Meet Kirk"
                     fetchPriority="high"
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
@@ -162,7 +166,7 @@ const HeroSection = ({ dynamicVideoUrl, dynamicVideoType, videoStart, videoEnd }
                       controls
                       autoPlay
                       playsInline
-                      poster="https://www.dangpestcontrol.com/wp-content/uploads/2025/06/dang/dang-pest-homepage-img-1.webp"
+                      poster={(content?.image_url || DEFAULT_THUMBNAIL)}
                     >
                       <source src={videoSrc} type="video/mp4" />
                     </video>
