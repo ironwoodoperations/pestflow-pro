@@ -10,6 +10,8 @@ export interface PageContent {
   body: string | null
   meta_title: string | null
   meta_description: string | null
+  video_url: string | null
+  image_url: string | null
   image_urls: string[] | null
   [key: string]: unknown
 }
