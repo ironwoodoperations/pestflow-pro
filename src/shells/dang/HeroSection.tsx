@@ -26,7 +26,7 @@ const extractYouTubeId = (url: string): string | null => {
   return null;
 };
 
-const DEFAULT_THUMBNAIL = "https://www.dangpestcontrol.com/wp-content/uploads/2025/06/dang/dang-pest-homepage-img-1.webp";
+const DEFAULT_THUMBNAIL = "/dang/dang-pest-homepage-img-1.webp";
 
 const HeroSection = ({ dynamicVideoUrl, dynamicVideoType, videoStart, videoEnd }: HeroSectionProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
