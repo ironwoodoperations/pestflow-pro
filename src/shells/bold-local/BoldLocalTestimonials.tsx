@@ -1,6 +1,6 @@
 const PLACEHOLDERS = [
   { author: 'Sarah M.', text: 'Absolutely amazing service! They were on time, professional, and our mosquito problem is completely gone. Highly recommend to anyone in the area.' },
-  { author: 'James R.', text: 'Called them for a roach problem that had gotten out of hand. They came out the next day and explained everything clearly. Haven't seen a single roach since.' },
+  { author: 'James R.', text: "Called them for a roach problem that had gotten out of hand. They came out the next day and explained everything clearly. Haven't seen a single roach since." },
   { author: 'Linda K.', text: 'Very professional and knowledgeable. They answered all my questions and gave me a customized plan. The technician was friendly and thorough. 5 stars!' },
 ]
 

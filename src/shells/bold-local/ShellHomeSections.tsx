@@ -42,10 +42,10 @@ export default function ShellHomeSections() {
   return (
     <>
       <BoldLocalTrustBar certifications={biz.certifications} tagline={biz.tagline} />
-      <BoldLocalWhyUs businessName={name} intro={content?.intro} />
+      <BoldLocalWhyUs businessName={name} intro={content?.intro ?? undefined} />
       <BoldLocalServicesGrid />
       <BoldLocalHowItWorks />
-      <BoldLocalAboutStrip businessName={name} intro={content?.intro} photoUrl={photoUrl} />
+      <BoldLocalAboutStrip businessName={name} intro={content?.intro ?? undefined} photoUrl={photoUrl} />
       <BoldLocalTrustCards foundedYear={biz.founded_year} tagline={biz.tagline} certifications={biz.certifications} />
       <BoldLocalTestimonials testimonials={testimonials} />
       <BoldLocalCtaBanner phone={biz.phone} />
