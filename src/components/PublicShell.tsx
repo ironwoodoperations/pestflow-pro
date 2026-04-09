@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { lazy, Suspense } from 'react'
 import { useTemplate } from '../context/TemplateContext'
 import HolidayBanner from './HolidayBanner'
 import ModernProNavbar from '../shells/modern-pro/ShellNavbar'
@@ -11,14 +12,16 @@ import RusticRuggedNavbar from '../shells/rustic-rugged/ShellNavbar'
 import RusticRuggedFooter from '../shells/rustic-rugged/ShellFooter'
 import YouPestNavbar from '../shells/youpest/ShellNavbar'
 import YouPestFooter from '../shells/youpest/ShellFooter'
-import DangNavbar from '../shells/dang/ShellNavbar'
-import DangFooter from '../shells/dang/ShellFooter'
 import ModernProSections from '../shells/modern-pro/ShellHomeSections'
 import BoldLocalSections from '../shells/bold-local/ShellHomeSections'
 import CleanFriendlySections from '../shells/clean-friendly/ShellHomeSections'
 import RusticRuggedSections from '../shells/rustic-rugged/ShellHomeSections'
 import YouPestSections from '../shells/youpest/ShellHomeSections'
-import DangSections from '../shells/dang/ShellHomeSections'
+
+// Dang shell — lazy to reduce main bundle
+const DangNavbar  = lazy(() => import('../shells/dang/ShellNavbar'))
+const DangFooter  = lazy(() => import('../shells/dang/ShellFooter'))
+const DangSections = lazy(() => import('../shells/dang/ShellHomeSections'))
 
 export function ShellSectionsRenderer() {
   const { template } = useTemplate()
@@ -27,7 +30,7 @@ export function ShellSectionsRenderer() {
     case 'clean-friendly': return <CleanFriendlySections />
     case 'rustic-rugged': return <RusticRuggedSections />
     case 'youpest': return <YouPestSections />
-    case 'dang': return <DangSections />
+    case 'dang': return <Suspense fallback={null}><DangSections /></Suspense>
     default: return <ModernProSections />
   }
 }
@@ -86,9 +89,9 @@ export default function PublicShell({ children }: Props) {
   return (
     <>
       <HolidayBanner />
-      <NavbarComp />
+      <Suspense fallback={null}><NavbarComp /></Suspense>
       <main id="main-content">{children}</main>
-      <FooterComp />
+      <Suspense fallback={null}><FooterComp /></Suspense>
     </>
   )
 }
