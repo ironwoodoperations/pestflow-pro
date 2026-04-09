@@ -1,5 +1,8 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Suspense, lazy } from 'react'
+
+// Marketing landing — lazy (keeps bundle under 450 kB)
+const MarketingLanding = lazy(() => import('./pages/MarketingLanding'))
 import DangPageRouter from './shells/dang/DangPageRouter'
 import { Toaster } from 'sonner'
 import { ErrorBoundary } from './components/ErrorBoundary'
@@ -61,6 +64,20 @@ const IronwoodLogin  = lazy(() => import('./pages/admin/IronwoodLogin'))
 
 const LOADING = <div className="flex items-center justify-center h-screen"><div className="text-gray-400 text-sm">Loading...</div></div>
 const BLANK = <div />
+const DARK_BLANK = <div style={{ background: '#0a0f1e', minHeight: '100vh' }} />
+
+function RootRoute() {
+  const h = window.location.hostname
+  const isRoot = h === 'pestflowpro.com' || h === 'www.pestflowpro.com'
+  if (isRoot) {
+    return (
+      <Suspense fallback={DARK_BLANK}>
+        <MarketingLanding />
+      </Suspense>
+    )
+  }
+  return <PublicShell><Index /></PublicShell>
+}
 
 export default function App() {
   useGoogleAnalytics()
@@ -73,8 +90,8 @@ export default function App() {
       <Toaster richColors position="top-right" />
       <ErrorBoundary>
       <Routes>
-        {/* ─── Public marketing pages ─── */}
-        <Route path="/" element={<PublicShell><Index /></PublicShell>} />
+        {/* ─── Root: MarketingLanding on pestflowpro.com, pest shell on subdomains ─── */}
+        <Route path="/" element={<RootRoute />} />
         <Route path="/contact" element={<DangPageRouter slug="contact" fallback={<PublicShell><ContactPage /></PublicShell>} />} />
         <Route path="/quote" element={<DangPageRouter slug="quote" fallback={<PublicShell><QuotePage /></PublicShell>} />} />
         <Route path="/about" element={<Suspense fallback={BLANK}><DangPageRouter slug="about" fallback={<PublicShell><About /></PublicShell>} /></Suspense>} />
