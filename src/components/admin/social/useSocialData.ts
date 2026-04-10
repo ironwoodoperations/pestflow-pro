@@ -52,7 +52,7 @@ export function useSocialData() {
     setError(null)
     try {
       const [postsRes, campaignsRes, intRes] = await Promise.all([
-        supabase.from('social_posts').select('*').eq('tenant_id', TENANT_ID).order('created_at', { ascending: false }),
+        supabase.from('social_posts').select('*').eq('tenant_id', TENANT_ID).is('archived_at', null).order('created_at', { ascending: false }),
         supabase.from('social_campaigns').select('*').eq('tenant_id', TENANT_ID).order('created_at', { ascending: false }),
         supabase.from('settings').select('value').eq('tenant_id', TENANT_ID).eq('key', 'integrations').maybeSingle(),
       ])

@@ -5,6 +5,9 @@ import type { SocialPost, Campaign } from './useSocialData'
 import PostCard from './PostCard'
 import PostPreviewModal from './PostPreviewModal'
 import EditPostModal from './EditPostModal'
+import UndoToast from '../../shared/UndoToast'
+import ConfirmDeleteModal from '../../shared/ConfirmDeleteModal'
+import { archiveRecord, restoreRecord, hardDeleteRecord } from '../../../lib/archiveUtils'
 
 const TENANT_ID = import.meta.env.VITE_TENANT_ID
 
@@ -24,6 +27,10 @@ export default function ContentQueueTab({ posts, campaigns, selectedCampaignId, 
     editPost: null as SocialPost | null,
     bulkApproving: false,
   })
+  const [archivedOpen, setArchivedOpen] = useState(false)
+  const [archivedPosts, setArchivedPosts] = useState<SocialPost[]>([])
+  const [undoTarget, setUndoTarget] = useState<{ id: string; caption: string } | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<SocialPost | null>(null)
 
   useEffect(() => {
     if (selectedCampaignId) {
@@ -59,10 +66,35 @@ export default function ContentQueueTab({ posts, campaigns, selectedCampaignId, 
     onRefresh()
   }
 
-  async function handleDelete(postId: string) {
-    await supabase.from('social_posts').delete().eq('id', postId).eq('tenant_id', TENANT_ID)
-    toast.success('Post deleted.')
+  async function handleArchive(postId: string) {
+    const post = posts.find(p => p.id === postId)
+    await archiveRecord('social_posts', postId, supabase)
     onRefresh()
+    if (post) setUndoTarget({ id: postId, caption: post.caption?.slice(0, 40) || 'Post' })
+  }
+
+  const loadArchivedPosts = async () => {
+    const { data } = await supabase
+      .from('social_posts')
+      .select('*')
+      .eq('tenant_id', TENANT_ID)
+      .not('archived_at', 'is', null)
+      .order('archived_at', { ascending: false })
+    setArchivedPosts((data as SocialPost[]) || [])
+  }
+
+  async function handleRestoreArchived(postId: string) {
+    await restoreRecord('social_posts', postId, supabase)
+    loadArchivedPosts()
+    onRefresh()
+    toast.success('Post restored.')
+  }
+
+  async function handleDeletePermanently() {
+    if (!deleteTarget) return
+    await hardDeleteRecord('social_posts', deleteTarget.id, supabase)
+    setDeleteTarget(null)
+    loadArchivedPosts()
   }
 
   async function handleEditSave(postId: string, updates: { caption: string; scheduled_for: string | null; status: string }) {
@@ -167,13 +199,62 @@ export default function ContentQueueTab({ posts, campaigns, selectedCampaignId, 
             <PostCard key={post.id} post={post} campaigns={campaigns}
               onPreview={p => setState(s => ({ ...s, previewPost: p }))}
               onEdit={p => setState(s => ({ ...s, editPost: p }))}
-              onApprove={handleApprove} onDelete={handleDelete} />
+              onApprove={handleApprove} onDelete={handleArchive} />
           ))}
         </div>
       )}
 
+      {/* Archived Posts section */}
+      <div className="border border-gray-200 rounded-xl overflow-hidden">
+        <button
+          onClick={() => { setArchivedOpen(o => { if (!o) loadArchivedPosts(); return !o }) }}
+          className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 text-left transition"
+        >
+          <span className="text-sm font-medium text-gray-500">Archived Posts</span>
+          <span className="text-gray-400 text-xs">{archivedOpen ? '▲' : '▼'}</span>
+        </button>
+        {archivedOpen && (
+          <div className="p-4">
+            {archivedPosts.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-4">No archived posts.</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {archivedPosts.map(post => (
+                  <div key={post.id} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden opacity-75">
+                    <div className="px-4 py-3">
+                      <p className="text-sm text-gray-600 line-clamp-2">{post.caption}</p>
+                      <p className="text-xs text-gray-400 mt-1">{new Date(post.created_at).toLocaleDateString()}</p>
+                    </div>
+                    <div className="flex items-center gap-2 px-4 py-2 border-t border-gray-100">
+                      <button onClick={() => handleRestoreArchived(post.id)} className="text-xs text-emerald-600 hover:text-emerald-700 font-medium">Restore</button>
+                      <button onClick={() => setDeleteTarget(post)} className="text-xs text-red-500 hover:text-red-600 font-medium ml-auto">Delete Permanently</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       <PostPreviewModal post={state.previewPost} onClose={() => setState(p => ({ ...p, previewPost: null }))} />
       <EditPostModal post={state.editPost} onClose={() => setState(p => ({ ...p, editPost: null }))} onSave={handleEditSave} />
+
+      {undoTarget && (
+        <UndoToast
+          table="social_posts"
+          id={undoTarget.id}
+          label={`"${undoTarget.caption}…" archived.`}
+          onDismiss={() => { setUndoTarget(null); onRefresh() }}
+        />
+      )}
+
+      <ConfirmDeleteModal
+        isOpen={!!deleteTarget}
+        itemName={deleteTarget?.caption?.slice(0, 40) || 'this post'}
+        onConfirm={handleDeletePermanently}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   )
 }
