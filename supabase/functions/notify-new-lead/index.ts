@@ -42,7 +42,11 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'No lead data' }), { status: 400 })
     }
 
+    console.log('[notify-new-lead] started, tenant:', lead.tenant_id, 'lead_id:', lead.id)
+    console.log('[notify-new-lead] supabase_url set:', !!SUPABASE_URL, 'service_key set:', !!SUPABASE_SERVICE_ROLE_KEY)
+
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    console.log('[notify-new-lead] supabase client initialized:', !!supabase)
 
     const [notifRes, brandRes, bizRes, intRes] = await Promise.all([
       supabase.from('settings').select('value').eq('tenant_id', lead.tenant_id).eq('key', 'notifications').maybeSingle(),
@@ -63,10 +67,18 @@ Deno.serve(async (req) => {
     const firstName = lead.name?.split(' ')[0] || lead.name || 'there'
     const timestamp = new Date(lead.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })
 
+    // Use tenant's own Textbelt key if set; fall back to platform key from secrets
+    const textbeltKey = intRes.data?.value?.textbelt_api_key?.trim() ||
+                        Deno.env.get('TEXTBELT_API_KEY') || ''
+    const ownerSms: string = intRes.data?.value?.owner_sms_number || ''
+
+    console.log('[notify-new-lead] settings loaded — lead_email:', notifyEmail || '(none)', 'sms_number:', ownerSms || '(none)', 'textbelt_key_len:', textbeltKey.length)
+
     const results: Record<string, unknown> = {}
 
     // ── Email A: Customer acknowledgment ──────────────────────────────────
     if (lead.email) {
+      console.log('[notify-new-lead] sending Email A to visitor:', lead.email)
       const logoHtml = logoUrl
         ? `<img src="${logoUrl}" alt="${businessName}" style="max-height:60px;max-width:200px;object-fit:contain;margin-bottom:16px" />`
         : `<h1 style="margin:0 0 16px;font-size:22px;color:${primaryColor}">${businessName}</h1>`
@@ -120,16 +132,19 @@ Deno.serve(async (req) => {
           text: autoReplyText,
         })
         results.emailA = 'sent'
+        console.log('[notify-new-lead] Email A sent OK')
       } catch (e) {
         console.error('[notify-new-lead] Email A failed:', String(e))
         results.emailA = 'failed'
       }
     } else {
       results.emailA = 'skipped: no visitor email'
+      console.log('[notify-new-lead] Email A skipped — no visitor email')
     }
 
     // ── Email B: Owner notification ───────────────────────────────────────
     if (notifyEmail) {
+      console.log('[notify-new-lead] sending Email B (owner notification) to:', notifyEmail)
       try {
         await sendEmail({
           to: notifyEmail,
@@ -160,33 +175,45 @@ Deno.serve(async (req) => {
 </div>`,
         })
         results.emailB = 'sent'
+        console.log('[notify-new-lead] Email B sent OK')
       } catch (e) {
         console.error('[notify-new-lead] Email B failed:', String(e))
         results.emailB = 'failed'
       }
     } else {
       results.emailB = 'skipped: no lead_email configured'
+      console.log('[notify-new-lead] Email B skipped — no lead_email in notifications settings')
     }
 
     // ── SMS (owner) ───────────────────────────────────────────────────────
-    const ownerSms = intRes.data?.value?.owner_sms_number
-    // Use tenant's own Textbelt key if set; fall back to platform key from secrets
-    const textbeltKey = intRes.data?.value?.textbelt_api_key?.trim() ||
-                        Deno.env.get('TEXTBELT_API_KEY') || ''
     if (ownerSms) {
       const smsMsg = `New lead from ${lead.name} — ${services}. Phone: ${lead.phone}.`
+      console.log('[notify-new-lead] calling send-sms, to:', ownerSms, 'key_len:', textbeltKey.length)
       try {
-        await fetch(`${SUPABASE_URL}/functions/v1/send-sms`, {
+        const smsRes = await fetch(`${SUPABASE_URL}/functions/v1/send-sms`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ to: ownerSms, message: smsMsg, type: 'lead-notification', key: textbeltKey }),
         })
-        results.sms = 'sent'
-      } catch { results.sms = 'failed' }
+        console.log('[notify-new-lead] send-sms response status:', smsRes.status)
+        results.sms = smsRes.ok ? 'sent' : `failed:${smsRes.status}`
+      } catch (e) {
+        console.error('[notify-new-lead] send-sms call failed:', String(e))
+        results.sms = 'failed'
+      }
+    } else {
+      results.sms = 'skipped: no owner_sms_number'
+      console.log('[notify-new-lead] SMS skipped — no owner_sms_number in integrations')
     }
 
+    console.log('[notify-new-lead] completed successfully, results:', JSON.stringify(results))
     return new Response(JSON.stringify({ success: true, ...results }), { status: 200 })
   } catch (err) {
-    return new Response(JSON.stringify({ error: String(err) }), { status: 500 })
+    console.error('[notify-new-lead] FATAL ERROR:', err instanceof Error ? err.message : String(err))
+    console.error('[notify-new-lead] stack:', err instanceof Error ? err.stack : '(no stack)')
+    return new Response(JSON.stringify({ error: String(err) }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    })
   }
 })
