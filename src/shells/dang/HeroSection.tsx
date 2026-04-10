@@ -70,6 +70,7 @@ const HeroSection = ({ dynamicVideoUrl, dynamicVideoType, videoStart, videoEnd }
                 fontWeight: '800',
                 lineHeight: '1.0',
                 marginBottom: '24px',
+                WebkitTextStroke: '2px black',
               }}
             >
               {content?.title ?? 'Super Powered Pest Control'}
