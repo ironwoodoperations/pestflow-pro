@@ -7,6 +7,7 @@ import PageHelpBanner from './PageHelpBanner'
 import TestimonialCard from './TestimonialCard'
 import type { Testimonial } from './TestimonialCard'
 import TestimonialModal from './TestimonialModal'
+import ConfirmDeleteModal from '../shared/ConfirmDeleteModal'
 
 interface FormState {
   author_name: string; author_email: string; review_text: string
@@ -26,6 +27,7 @@ export default function TestimonialsTab() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [importing, setImporting] = useState(false)
   const [sentIds, setSentIds] = useState<Set<string>>(new Set())
+  const [deleteTarget, setDeleteTarget] = useState<Testimonial | null>(null)
 
   async function fetchReviews() {
     if (!tenantId) return
@@ -61,10 +63,12 @@ export default function TestimonialsTab() {
     setSaving(false); setModalOpen(false); fetchReviews()
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm('Delete this review? This cannot be undone.')) return
-    await supabase.from('testimonials').delete().eq('id', id)
-    toast.success('Review deleted.'); fetchReviews()
+  async function handleDelete() {
+    if (!deleteTarget) return
+    await supabase.from('testimonials').delete().eq('id', deleteTarget.id)
+    toast.success('Review deleted.')
+    setDeleteTarget(null)
+    fetchReviews()
   }
 
   async function toggleFeatured(r: Testimonial) {
@@ -150,7 +154,7 @@ export default function TestimonialsTab() {
             <TestimonialCard
               key={r.id} testimonial={r} expanded={expanded.has(r.id)} sent={sentIds.has(r.id)}
               onToggleExpand={() => toggleExpand(r.id)} onEdit={() => openEdit(r)}
-              onDelete={() => handleDelete(r.id)} onToggleFeatured={() => toggleFeatured(r)}
+              onDelete={() => setDeleteTarget(r)} onToggleFeatured={() => toggleFeatured(r)}
               onRequestReview={() => requestReview(r)}
             />
           ))}
@@ -158,6 +162,12 @@ export default function TestimonialsTab() {
       )}
 
       {modalOpen && <TestimonialModal form={form} setForm={setForm} editingId={editingId} saving={saving} onSave={handleSave} onClose={() => setModalOpen(false)} />}
+      <ConfirmDeleteModal
+        isOpen={!!deleteTarget}
+        itemName={deleteTarget?.author_name || 'this review'}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   )
 }

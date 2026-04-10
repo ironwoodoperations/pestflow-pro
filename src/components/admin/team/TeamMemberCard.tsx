@@ -14,14 +14,12 @@ export interface TeamMember {
 interface Props {
   member: TeamMember
   onEdit: (member: TeamMember) => void
-  onDelete: (id: string) => void
+  onDelete: (member: TeamMember) => void
 }
 
 export default function TeamMemberCard({ member, onEdit, onDelete }: Props) {
   const handleDelete = () => {
-    if (window.confirm(`Delete ${member.name}? This cannot be undone.`)) {
-      onDelete(member.id)
-    }
+    onDelete(member)
   }
 
   return (

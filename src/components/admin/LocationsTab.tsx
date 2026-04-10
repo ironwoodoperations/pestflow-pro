@@ -4,6 +4,7 @@ import { Plus, X, Trash2, ExternalLink } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
 import PageHelpBanner from './PageHelpBanner'
+import ConfirmDeleteModal from '../shared/ConfirmDeleteModal'
 
 interface Location {
   id: string; city: string; slug: string; hero_title: string; intro: string
@@ -30,6 +31,7 @@ export default function LocationsTab() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<LocForm>({ city: '', slug: '', hero_title: '', intro: '', is_live: false, meta_title: '', meta_description: '', focus_keyword: '' })
   const [saving, setSaving] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<Location | null>(null)
 
   async function fetchLocations() {
     if (!tenantId) return
@@ -70,10 +72,12 @@ export default function LocationsTab() {
     setSaving(false); setModalOpen(false); fetchLocations()
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm('Delete this location? This cannot be undone.')) return
-    await supabase.from('location_data').delete().eq('id', id)
-    toast.success('Location deleted.'); fetchLocations()
+  async function handleDelete() {
+    if (!deleteTarget) return
+    await supabase.from('location_data').delete().eq('id', deleteTarget.id)
+    toast.success('Location deleted.')
+    setDeleteTarget(null)
+    fetchLocations()
   }
 
   async function toggleLive(loc: Location) {
@@ -129,7 +133,7 @@ export default function LocationsTab() {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <button onClick={() => openEdit(loc)} className="text-emerald-600 hover:text-emerald-700 text-sm font-medium">Edit</button>
-                      <button onClick={() => handleDelete(loc.id)} className="text-red-500 hover:text-red-600"><Trash2 size={14} /></button>
+                      <button onClick={() => setDeleteTarget(loc)} className="text-red-500 hover:text-red-600"><Trash2 size={14} /></button>
                     </div>
                   </td>
                 </tr>
@@ -193,6 +197,13 @@ export default function LocationsTab() {
           </div>
         </div>
       )}
+
+      <ConfirmDeleteModal
+        isOpen={!!deleteTarget}
+        itemName={deleteTarget?.city || 'this location'}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   )
 }

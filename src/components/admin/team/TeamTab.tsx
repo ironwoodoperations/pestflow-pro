@@ -5,6 +5,7 @@ import { useTenant } from '../../../hooks/useTenant'
 import PageHelpBanner from '../PageHelpBanner'
 import TeamMemberCard, { type TeamMember } from './TeamMemberCard'
 import TeamMemberModal from './TeamMemberModal'
+import ConfirmDeleteModal from '../../shared/ConfirmDeleteModal'
 
 function SkeletonCard() {
   return (
@@ -25,6 +26,7 @@ export default function TeamTab() {
   const [loading, setLoading] = useState(true)
   const [editTarget, setEditTarget] = useState<TeamMember | null>(null)
   const [showModal, setShowModal] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<TeamMember | null>(null)
 
   const fetchMembers = async () => {
     if (!tenantId) return
@@ -53,9 +55,11 @@ export default function TeamTab() {
     setShowModal(true)
   }
 
-  const handleDelete = async (id: string) => {
-    await supabase.from('team_members').delete().eq('id', id)
-    setMembers(prev => prev.filter(m => m.id !== id))
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    await supabase.from('team_members').delete().eq('id', deleteTarget.id)
+    setMembers(prev => prev.filter(m => m.id !== deleteTarget.id))
+    setDeleteTarget(null)
   }
 
   const handleSaved = () => { fetchMembers() }
@@ -98,7 +102,7 @@ export default function TeamTab() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {members.map(m => (
-            <TeamMemberCard key={m.id} member={m} onEdit={handleEdit} onDelete={handleDelete} />
+            <TeamMemberCard key={m.id} member={m} onEdit={handleEdit} onDelete={m => setDeleteTarget(m)} />
           ))}
         </div>
       )}
@@ -111,6 +115,13 @@ export default function TeamTab() {
           onSaved={handleSaved}
         />
       )}
+
+      <ConfirmDeleteModal
+        isOpen={!!deleteTarget}
+        itemName={deleteTarget?.name || 'this team member'}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   )
 }
