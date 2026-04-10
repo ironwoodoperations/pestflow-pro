@@ -74,6 +74,7 @@ serve(async (req) => {
 
   const tier: number = subRes.data?.value?.tier ?? 1
   const bundleAccountId: string | null = intgRes.data?.value?.bundle_social_account_id ?? null
+  const bundleTeamId: string | null = intgRes.data?.value?.bundle_social_team_id ?? null
 
   // Tier 1 (Starter): no scheduling allowed
   if (tier === 1) {
@@ -110,29 +111,72 @@ serve(async (req) => {
     }
   }
 
-  // Call bundle.social API
-  const bundleBody: Record<string, unknown> = {
-    content,
-    platforms,
-    accountId: bundleAccountId,
+  // bundle.social team ID (workspace ID) — stored in settings.integrations.bundle_social_team_id
+  if (!bundleTeamId) {
+    return new Response(
+      JSON.stringify({ error: 'bundle.social team ID not configured. Contact your account manager.' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
   }
-  if (scheduledFor) bundleBody.scheduledDate = scheduledFor
+  const teamId = bundleTeamId
+
+  // Map frontend platform names to bundle.social uppercase keys
+  const platformMap: Record<string, string> = {
+    facebook: 'FACEBOOK',
+    instagram: 'INSTAGRAM',
+    twitter: 'TWITTER',
+    linkedin: 'LINKEDIN',
+    tiktok: 'TIKTOK',
+    youtube: 'YOUTUBE',
+    pinterest: 'PINTEREST',
+    reddit: 'REDDIT',
+  }
+  const socialAccountTypes = platforms
+    .map((p) => platformMap[p.toLowerCase()] ?? p.toUpperCase())
+
+  // Build platform-specific data object
+  const postData: Record<string, unknown> = {}
+  for (const platform of socialAccountTypes) {
+    if (platform === 'FACEBOOK' || platform === 'INSTAGRAM') {
+      postData[platform] = { type: 'POST', text: content }
+    } else {
+      postData[platform] = { text: content }
+    }
+  }
+
+  // postDate: use scheduledFor if provided, otherwise now (immediate post)
+  const postDate = scheduledFor ?? new Date().toISOString()
+
+  // title: truncate content for bundle.social title field
+  const title = content.length > 80 ? content.slice(0, 77) + '...' : content
+
+  const bundleBody: Record<string, unknown> = {
+    teamId,
+    title,
+    postDate,
+    status: 'SCHEDULED',
+    socialAccountTypes,
+    data: postData,
+  }
+
+  console.log('[post-to-social] bundle.social request body:', JSON.stringify(bundleBody))
 
   try {
-    const res = await fetch('https://api.bundle.social/v1/posts', {
+    const res = await fetch('https://api.bundle.social/api/v1/post', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${bundleApiKey}`,
+        'x-api-key': bundleApiKey,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(bundleBody),
     })
 
-    const data = await res.json()
+    const resData = await res.json()
+    console.log('[post-to-social] bundle.social response:', JSON.stringify(resData))
 
     if (!res.ok) {
-      const errMsg = data?.message || data?.error || `bundle.social error: ${res.status}`
-      console.error('[post-to-social] bundle.social API error:', JSON.stringify(data))
+      const errMsg = resData?.message || resData?.error || `bundle.social error: ${res.status}`
+      console.error('[post-to-social] bundle.social API error:', JSON.stringify(resData))
 
       // Update existing post row to failed if postId provided
       if (postId) {
@@ -156,7 +200,7 @@ serve(async (req) => {
         status: newStatus,
         scheduled_for: scheduledFor || null,
         published_at: scheduledFor ? null : new Date().toISOString(),
-        fb_post_id: data?.id || 'bundle-social',
+        fb_post_id: resData?.id || 'bundle-social',
         error_msg: null,
       }).eq('id', postId)
     } else {
@@ -167,12 +211,12 @@ serve(async (req) => {
         status: newStatus,
         scheduled_for: scheduledFor || null,
         published_at: scheduledFor ? null : new Date().toISOString(),
-        fb_post_id: data?.id || 'bundle-social',
+        fb_post_id: resData?.id || 'bundle-social',
       })
     }
 
     return new Response(
-      JSON.stringify({ success: true, postId: data?.id }),
+      JSON.stringify({ success: true, postId: resData?.id }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (err) {
