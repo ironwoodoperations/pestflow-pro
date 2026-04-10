@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FileText, LayoutGrid } from 'lucide-react'
+import { FileText, LayoutGrid, Lock } from 'lucide-react'
 import { usePlan } from '../../hooks/usePlan'
 import { FeatureGate } from '../common/FeatureGate'
 import PageHelpBanner from './PageHelpBanner'
@@ -27,42 +27,43 @@ type PostFlow = 'none' | 'choice' | 'single' | 'campaign'
 
 export default function SocialTab({ onNavigate }: Props) {
   const { posts, campaigns, loading, refresh } = useSocialData()
-  const { canAccess } = usePlan()
+  const { canAccess, tier } = usePlan()
   const [activeTab, setActiveTab] = useState<TabId>('queue')
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null)
   const [showConnections, setShowConnections] = useState(false)
   const [postFlow, setPostFlow] = useState<PostFlow>('none')
 
   const failedCount = posts.filter(p => p.status === 'failed').length
+  const isStarter = tier === 1
 
   if (loading) return <div className="p-8 text-center text-gray-400">Loading social data…</div>
-
-  // Tier 1 (Starter): entire Social tab is locked
-  if (!canAccess(2)) {
-    return (
-      <div>
-        <PageHelpBanner tab="social" title="📱 Social Media"
-          body="Plan campaigns, queue posts for approval, and track your social media performance — all in one place." />
-        <SocialUpgradeNudge planName="Grow" price="$249" onNavigate={onNavigate} />
-      </div>
-    )
-  }
 
   return (
     <div>
       <PageHelpBanner tab="social" title="📱 Social Media"
         body="Plan campaigns, queue posts for approval, and track your social media performance — all in one place." />
 
+      {/* Starter notice banner */}
+      {isStarter && (
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 flex items-start gap-3">
+          <Lock className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-amber-800">Starter plan — Hands On mode</p>
+            <p className="text-xs text-amber-700 mt-0.5">Write posts manually and copy/paste to your social accounts. Upgrade to Grow for AI captions and social scheduling (2 posts/day via bundle.social).</p>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-semibold text-gray-900">Social Media</h2>
         <div className="flex gap-2">
-          {/* + New Post: available to all tiers (Hands On) */}
+          {/* + New Post: available to all tiers (Hands On copy/paste for Starter) */}
           <button onClick={() => setPostFlow('choice')}
             className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700">
             + New Post
           </button>
-          {/* Connections: DIY — Grow and above (tier 2+) */}
+          {/* Connections: Grow and above (tier 2+) */}
           <FeatureGate minTier={2} featureName="Social Connections">
             <button onClick={() => setShowConnections(true)}
               className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
@@ -87,7 +88,6 @@ export default function SocialTab({ onNavigate }: Props) {
 
       {/* Tab content */}
       {activeTab === 'campaigns' && (
-        /* Semi-Auto — Pro and above (tier 3+) */
         canAccess(3) ? (
           <CampaignsTab campaigns={campaigns} posts={posts}
             selectedCampaignId={selectedCampaignId}
@@ -98,14 +98,13 @@ export default function SocialTab({ onNavigate }: Props) {
         )
       )}
 
-      {/* Content Queue — no gate, all tiers */}
+      {/* Content Queue — visible to all tiers */}
       {activeTab === 'queue' && (
         <ContentQueueTab posts={posts} campaigns={campaigns}
           selectedCampaignId={selectedCampaignId} onRefresh={refresh} />
       )}
 
       {activeTab === 'analytics' && (
-        /* Full Autopilot — Elite only (tier 4) */
         canAccess(4) ? (
           <SocialAnalyticsTab />
         ) : (
@@ -124,8 +123,14 @@ export default function SocialTab({ onNavigate }: Props) {
                 className="border-2 border-gray-200 rounded-xl p-5 text-left hover:border-emerald-500 hover:bg-emerald-50 transition group">
                 <FileText className="w-8 h-8 text-gray-400 group-hover:text-emerald-500 mb-3 transition" />
                 <p className="font-semibold text-gray-900 text-sm">Single Post</p>
-                <p className="text-xs text-gray-500 mt-1">Create and schedule one post for a specific date.</p>
-                <span className="mt-3 inline-block text-xs font-medium text-emerald-600">Create Single Post →</span>
+                <p className="text-xs text-gray-500 mt-1">
+                  {isStarter
+                    ? 'Write a post and copy/paste to your social accounts.'
+                    : 'Create and schedule one post for a specific date.'}
+                </p>
+                <span className="mt-3 inline-block text-xs font-medium text-emerald-600">
+                  {isStarter ? 'Write Post →' : 'Create Single Post →'}
+                </span>
               </button>
               {canAccess(3) && (
                 <button onClick={() => setPostFlow('campaign')}

@@ -11,15 +11,15 @@ interface Props {
   onNavigate?: (tab: string) => void
 }
 
-type ProviderTab = 'export' | 'diy' | 'bundle' | 'ayrshare'
+type ProviderTab = 'export' | 'diy' | 'bundle' | 'full_auto'
 const TABS: { id: ProviderTab; label: string; tier: number }[] = [
-  { id: 'export',   label: 'Hands On',       tier: 1 },
-  { id: 'diy',      label: 'DIY',            tier: 2 },
-  { id: 'bundle',   label: 'Semi-Auto',      tier: 3 },
-  { id: 'ayrshare', label: 'Full Autopilot', tier: 4 },
+  { id: 'export',    label: 'Hands On',      tier: 1 },
+  { id: 'diy',       label: 'DIY',           tier: 2 },
+  { id: 'bundle',    label: 'Semi-Auto',     tier: 3 },
+  { id: 'full_auto', label: 'Full Autopilot', tier: 4 },
 ]
 
-const TIER_PROVIDER: Record<number, ProviderTab> = { 1: 'export', 2: 'diy', 3: 'bundle', 4: 'ayrshare' }
+const TIER_PROVIDER: Record<number, ProviderTab> = { 1: 'export', 2: 'diy', 3: 'bundle', 4: 'full_auto' }
 const PLAN_INFO: Record<number, { name: string; price: number }> = {
   1: { name: 'Starter', price: 149 },
   2: { name: 'Grow',    price: 249 },
@@ -107,7 +107,7 @@ export default function ConnectionsModal({ onClose, onSaved, onNavigate }: Props
 
           {activeTab === 'bundle' && (
             <div className="space-y-3">
-              <h4 className="font-semibold text-gray-800">Semi-Automated Posting via bundle.social</h4>
+              <h4 className="font-semibold text-gray-800">Multi-platform scheduling via bundle.social</h4>
               <p className="text-xs text-gray-500">Approved posts in your Content Queue are automatically sent to your social accounts via bundle.social. No token required — posting is managed by PestFlow Pro on your behalf.</p>
               {tier < 3 ? <LockedBadge tabTier={3} /> : (
                 <>
@@ -130,22 +130,22 @@ export default function ConnectionsModal({ onClose, onSaved, onNavigate }: Props
             </div>
           )}
 
-          {activeTab === 'ayrshare' && (
+          {activeTab === 'full_auto' && (
             <div className="space-y-3">
-              <h4 className="font-semibold text-gray-800">Full Autopilot</h4>
+              <h4 className="font-semibold text-gray-800">Full multi-platform posting via bundle.social</h4>
               <p className="text-xs text-gray-500">Sit back and let us handle everything. We connect your accounts and manage your posting schedule across Facebook, Instagram, and more. Your posts go out consistently — without you lifting a finger. Included with your Elite plan.</p>
               <ul className="text-xs text-gray-600 space-y-1">
                 {['Facebook', 'Instagram', 'Google Business Posts', 'Consistent weekly posting schedule', 'AI-generated captions tailored to your business'].map(item => (
                   <li key={item} className="flex items-center gap-2"><span className="text-emerald-500 font-bold">✓</span>{item}</li>
                 ))}
               </ul>
-              {tier < 4 ? <LockedBadge tabTier={4} /> : activeProvider === 'ayrshare' && <ActiveBadge />}
+              {tier < 4 ? <LockedBadge tabTier={4} /> : activeProvider === 'full_auto' && <ActiveBadge />}
             </div>
           )}
         </div>
 
         <div className="px-5 py-3 border-t bg-gray-50 text-xs text-gray-500">
-          Active mode: <span className="font-medium text-gray-700">{TABS.find(t => t.id === activeProvider || (t.id === 'bundle' && activeProvider === 'buffer'))?.label ?? 'Hands On'}</span>
+          Active mode: <span className="font-medium text-gray-700">{TABS.find(t => t.id === activeProvider || (t.id === 'bundle' && activeProvider === 'bundle'))?.label ?? 'Hands On'}</span>
           <span className="ml-2 text-gray-400">(set by {PLAN_INFO[tier]?.name} plan)</span>
         </div>
       </div>

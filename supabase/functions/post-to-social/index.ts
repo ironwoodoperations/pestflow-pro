@@ -65,6 +65,45 @@ serve(async (req) => {
     })
   }
 
+  const supabase = createClient(supabaseUrl, serviceRoleKey)
+
+  // Read tenant subscription tier
+  const { data: subData } = await supabase
+    .from('settings')
+    .select('value')
+    .eq('tenant_id', tenantId)
+    .eq('key', 'subscription')
+    .maybeSingle()
+
+  const tier: number = subData?.value?.tier ?? 1
+
+  // Tier 1 (Starter): no scheduling allowed
+  if (tier === 1) {
+    return new Response(
+      JSON.stringify({ error: 'Scheduling not available on Starter plan. Upgrade to Grow to enable social scheduling.' }),
+      { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+  // Tier 2 (Grow): hard cap of 2 posts/day
+  if (tier === 2) {
+    const today = new Date().toISOString().split('T')[0]
+    const { count } = await supabase
+      .from('social_posts')
+      .select('id', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId)
+      .gte('scheduled_for', `${today}T00:00:00`)
+      .lte('scheduled_for', `${today}T23:59:59`)
+      .in('status', ['scheduled', 'posted'])
+
+    if ((count ?? 0) >= 2) {
+      return new Response(
+        JSON.stringify({ error: "You've reached today's 2-post scheduling limit. Upgrade to Pro for unlimited scheduling." }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+  }
+
   // Call bundle.social API
   const bundleBody: Record<string, unknown> = { content, platforms }
   if (scheduledFor) bundleBody.scheduledDate = scheduledFor
@@ -89,7 +128,6 @@ serve(async (req) => {
     }
 
     // Log successful post in social_posts table
-    const supabase = createClient(supabaseUrl, serviceRoleKey)
     const platform = platforms.length > 1 ? 'both' : (platforms[0] as 'facebook' | 'instagram' | 'both')
 
     await supabase.from('social_posts').insert({
