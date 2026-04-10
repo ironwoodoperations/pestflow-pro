@@ -4,34 +4,34 @@ import { useTemplate } from '../context/TemplateContext'
 import HolidayBanner from './HolidayBanner'
 import ModernProNavbar from '../shells/modern-pro/ShellNavbar'
 import ModernProFooter from '../shells/modern-pro/ShellFooter'
-import BoldLocalNavbar from '../shells/bold-local/ShellNavbar'
-import BoldLocalFooter from '../shells/bold-local/ShellFooter'
-import CleanFriendlyNavbar from '../shells/clean-friendly/ShellNavbar'
-import CleanFriendlyFooter from '../shells/clean-friendly/ShellFooter'
-import RusticRuggedNavbar from '../shells/rustic-rugged/ShellNavbar'
-import RusticRuggedFooter from '../shells/rustic-rugged/ShellFooter'
-import YouPestNavbar from '../shells/youpest/ShellNavbar'
-import YouPestFooter from '../shells/youpest/ShellFooter'
 import ModernProSections from '../shells/modern-pro/ShellHomeSections'
-import BoldLocalSections from '../shells/bold-local/ShellHomeSections'
-import CleanFriendlySections from '../shells/clean-friendly/ShellHomeSections'
-import RusticRuggedSections from '../shells/rustic-rugged/ShellHomeSections'
-import YouPestSections from '../shells/youpest/ShellHomeSections'
 
-// Dang shell — lazy to reduce main bundle
-const DangNavbar  = lazy(() => import('../shells/dang/ShellNavbar'))
-const DangFooter  = lazy(() => import('../shells/dang/ShellFooter'))
-const DangSections = lazy(() => import('../shells/dang/ShellHomeSections'))
+// Non-default shells — lazy to reduce main bundle
+const BoldLocalNavbar      = lazy(() => import('../shells/bold-local/ShellNavbar'))
+const BoldLocalFooter      = lazy(() => import('../shells/bold-local/ShellFooter'))
+const BoldLocalSections    = lazy(() => import('../shells/bold-local/ShellHomeSections'))
+const CleanFriendlyNavbar  = lazy(() => import('../shells/clean-friendly/ShellNavbar'))
+const CleanFriendlyFooter  = lazy(() => import('../shells/clean-friendly/ShellFooter'))
+const CleanFriendlySections = lazy(() => import('../shells/clean-friendly/ShellHomeSections'))
+const RusticRuggedNavbar   = lazy(() => import('../shells/rustic-rugged/ShellNavbar'))
+const RusticRuggedFooter   = lazy(() => import('../shells/rustic-rugged/ShellFooter'))
+const RusticRuggedSections = lazy(() => import('../shells/rustic-rugged/ShellHomeSections'))
+const YouPestNavbar        = lazy(() => import('../shells/youpest/ShellNavbar'))
+const YouPestFooter        = lazy(() => import('../shells/youpest/ShellFooter'))
+const YouPestSections      = lazy(() => import('../shells/youpest/ShellHomeSections'))
+const DangNavbar           = lazy(() => import('../shells/dang/ShellNavbar'))
+const DangFooter           = lazy(() => import('../shells/dang/ShellFooter'))
+const DangSections         = lazy(() => import('../shells/dang/ShellHomeSections'))
 
 export function ShellSectionsRenderer() {
   const { template } = useTemplate()
   switch (template) {
-    case 'bold-local': return <BoldLocalSections />
-    case 'clean-friendly': return <CleanFriendlySections />
-    case 'rustic-rugged': return <RusticRuggedSections />
-    case 'youpest': return <YouPestSections />
-    case 'dang': return <Suspense fallback={null}><DangSections /></Suspense>
-    default: return <ModernProSections />
+    case 'bold-local':    return <Suspense fallback={null}><BoldLocalSections /></Suspense>
+    case 'clean-friendly': return <Suspense fallback={null}><CleanFriendlySections /></Suspense>
+    case 'rustic-rugged': return <Suspense fallback={null}><RusticRuggedSections /></Suspense>
+    case 'youpest':       return <Suspense fallback={null}><YouPestSections /></Suspense>
+    case 'dang':          return <Suspense fallback={null}><DangSections /></Suspense>
+    default:              return <ModernProSections />
   }
 }
 
@@ -39,8 +39,32 @@ interface Props {
   children: ReactNode
 }
 
+function ShellNav() {
+  const { template } = useTemplate()
+  switch (template) {
+    case 'bold-local':    return <Suspense fallback={null}><BoldLocalNavbar /></Suspense>
+    case 'clean-friendly': return <Suspense fallback={null}><CleanFriendlyNavbar /></Suspense>
+    case 'rustic-rugged': return <Suspense fallback={null}><RusticRuggedNavbar /></Suspense>
+    case 'youpest':       return <Suspense fallback={null}><YouPestNavbar /></Suspense>
+    case 'dang':          return <Suspense fallback={null}><DangNavbar /></Suspense>
+    default:              return <ModernProNavbar />
+  }
+}
+
+function ShellFooterComp() {
+  const { template } = useTemplate()
+  switch (template) {
+    case 'bold-local':    return <Suspense fallback={null}><BoldLocalFooter /></Suspense>
+    case 'clean-friendly': return <Suspense fallback={null}><CleanFriendlyFooter /></Suspense>
+    case 'rustic-rugged': return <Suspense fallback={null}><RusticRuggedFooter /></Suspense>
+    case 'youpest':       return <Suspense fallback={null}><YouPestFooter /></Suspense>
+    case 'dang':          return <Suspense fallback={null}><DangFooter /></Suspense>
+    default:              return <ModernProFooter />
+  }
+}
+
 export default function PublicShell({ children }: Props) {
-  const { template, loading } = useTemplate()
+  const { loading } = useTemplate()
 
   if (loading) {
     return (
@@ -53,45 +77,12 @@ export default function PublicShell({ children }: Props) {
     )
   }
 
-  let NavbarComp: React.ComponentType
-  let FooterComp: React.ComponentType
-
-  switch (template) {
-    case 'modern-pro':
-      NavbarComp = ModernProNavbar
-      FooterComp = ModernProFooter
-      break
-    case 'bold-local':
-      NavbarComp = BoldLocalNavbar
-      FooterComp = BoldLocalFooter
-      break
-    case 'clean-friendly':
-      NavbarComp = CleanFriendlyNavbar
-      FooterComp = CleanFriendlyFooter
-      break
-    case 'rustic-rugged':
-      NavbarComp = RusticRuggedNavbar
-      FooterComp = RusticRuggedFooter
-      break
-    case 'youpest':
-      NavbarComp = YouPestNavbar
-      FooterComp = YouPestFooter
-      break
-    case 'dang':
-      NavbarComp = DangNavbar
-      FooterComp = DangFooter
-      break
-    default:
-      NavbarComp = ModernProNavbar
-      FooterComp = ModernProFooter
-  }
-
   return (
     <>
       <HolidayBanner />
-      <Suspense fallback={null}><NavbarComp /></Suspense>
+      <ShellNav />
       <main id="main-content">{children}</main>
-      <Suspense fallback={null}><FooterComp /></Suspense>
+      <ShellFooterComp />
     </>
   )
 }

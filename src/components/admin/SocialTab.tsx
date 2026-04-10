@@ -166,7 +166,7 @@ export default function SocialTab({ onNavigate }: Props) {
 
       {/* Connections modal */}
       {showConnections && (
-        <ConnectionsModal onClose={() => setShowConnections(false)} onSaved={refresh} onNavigate={onNavigate} />
+        <ConnectionsModal onClose={() => setShowConnections(false)} onNavigate={onNavigate} />
       )}
     </div>
   )
