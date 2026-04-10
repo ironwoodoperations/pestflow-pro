@@ -9,13 +9,13 @@ export default function NotificationsSection() {
   const { tenantId } = useTenant()
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [form, setForm] = useState({ lead_email: '', cc_email: '', monthly_report_email: '', notify_new_lead: true, weekly_seo_digest: false })
+  const [form, setForm] = useState({ lead_email: '', cc_email: '', owner_sms_number: '', monthly_report_email: '', notify_new_lead: true, weekly_seo_digest: false })
 
   useEffect(() => {
     if (!tenantId) return
     supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'notifications').maybeSingle()
       .then(({ data }) => {
-        if (data?.value) setForm(prev => ({ ...prev, lead_email: data.value.lead_email || '', cc_email: data.value.cc_email || '', monthly_report_email: data.value.monthly_report_email || '', notify_new_lead: data.value.notify_new_lead !== false, weekly_seo_digest: data.value.weekly_seo_digest === true }))
+        if (data?.value) setForm(prev => ({ ...prev, lead_email: data.value.lead_email || '', cc_email: data.value.cc_email || '', owner_sms_number: data.value.owner_sms_number || '', monthly_report_email: data.value.monthly_report_email || '', notify_new_lead: data.value.notify_new_lead !== false, weekly_seo_digest: data.value.weekly_seo_digest === true }))
         setLoading(false)
       })
   }, [tenantId])
@@ -39,6 +39,7 @@ export default function NotificationsSection() {
           <ul className="list-none space-y-1">
             <li><strong>LEAD EMAIL</strong> — Where new quote requests get emailed. Use the inbox you check most.</li>
             <li><strong>CC EMAIL</strong> — Optional second email to copy (like an office manager)</li>
+            <li><strong>SMS LEAD NOTIFICATIONS</strong> — Your mobile number to get a text the instant a new lead comes in</li>
             <li><strong>MONTHLY REPORT EMAIL</strong> — Where your monthly summary report gets sent</li>
           </ul>
           <p className="text-blue-700 italic">💡 Set your lead email to a phone-connected inbox so you get a notification the moment a lead comes in.</p>
@@ -54,6 +55,11 @@ export default function NotificationsSection() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">CC Email (optional)</label>
             <input type="email" value={form.cc_email} onChange={e => setForm(prev => ({ ...prev, cc_email: e.target.value }))} placeholder="manager@yourbusiness.com" className={inputClass} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">SMS Lead Notifications</label>
+            <input type="tel" value={form.owner_sms_number} onChange={e => setForm(prev => ({ ...prev, owner_sms_number: e.target.value }))} placeholder="9035551234" className={inputClass} />
+            <p className="text-xs text-gray-500 mt-1">Enter your mobile number to receive a text for every new lead.</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Monthly Report Email (optional)</label>
