@@ -168,15 +168,18 @@ Deno.serve(async (req) => {
       results.emailB = 'skipped: no lead_email configured'
     }
 
-    // ── SMS (owner) — keep existing behavior ─────────────────────────────
+    // ── SMS (owner) ───────────────────────────────────────────────────────
     const ownerSms = intRes.data?.value?.owner_sms_number
+    // Use tenant's own Textbelt key if set; fall back to platform key from secrets
+    const textbeltKey = intRes.data?.value?.textbelt_api_key?.trim() ||
+                        Deno.env.get('TEXTBELT_API_KEY') || ''
     if (ownerSms) {
       const smsMsg = `New lead from ${lead.name} — ${services}. Phone: ${lead.phone}.`
       try {
         await fetch(`${SUPABASE_URL}/functions/v1/send-sms`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ to: ownerSms, message: smsMsg, type: 'lead-notification' }),
+          body: JSON.stringify({ to: ownerSms, message: smsMsg, type: 'lead-notification', key: textbeltKey }),
         })
         results.sms = 'sent'
       } catch { results.sms = 'failed' }

@@ -19,7 +19,11 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const TEXTBELT_API_KEY = Deno.env.get('TEXTBELT_API_KEY')
+    const { to, message, type, key: callerKey } = await req.json() as { tenant_id: string; to: string; message: string; type: string; key?: string }
+
+    // Prefer key passed by caller (resolved with tenant + env fallback upstream),
+    // then fall back to env secret directly.
+    const TEXTBELT_API_KEY = callerKey?.trim() || Deno.env.get('TEXTBELT_API_KEY')
     if (!TEXTBELT_API_KEY) {
       console.error('[send-sms] TEXTBELT_API_KEY secret is not set — SMS will not send.')
       return new Response(
@@ -27,8 +31,6 @@ Deno.serve(async (req) => {
         { status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
       )
     }
-
-    const { to, message, type } = await req.json() as { tenant_id: string; to: string; message: string; type: string }
     console.log(`[send-sms] Sending ${type || 'sms'} to ${to?.slice(0, 6)}…`)
 
     const textbeltRes = await fetch('https://textbelt.com/text', {
