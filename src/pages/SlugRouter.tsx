@@ -9,6 +9,14 @@ const MarketingLanding = lazy(() => import('./MarketingLanding'))
 
 const DARK_FALLBACK = <div style={{ background: '#0a0f1e', minHeight: '100vh' }} />
 
+// Static hostname → tenant slug map for clients with custom domains.
+// When Kirk's dangpestcontrol.com points to Vercel, this resolves it to the 'dang' tenant.
+// Add new custom domains here as clients get them.
+const CUSTOM_DOMAIN_MAP: Record<string, string> = {
+  'dangpestcontrol.com': 'dang',
+  'www.dangpestcontrol.com': 'dang',
+}
+
 function checkRootDomain(): boolean {
   const h = window.location.hostname
   return (h === 'pestflowpro.com' || h === 'www.pestflowpro.com') &&
@@ -20,9 +28,21 @@ export default function SlugRouter() {
   const [type, setType] = useState<'location' | 'not-found' | 'loading'>(() => slug ? 'loading' : 'not-found')
   const rootDomain = checkRootDomain()
 
+  const hostname = window.location.hostname
+  const customSlug = CUSTOM_DOMAIN_MAP[hostname] ?? null
+
   useEffect(() => {
     if (rootDomain || !slug) return
-    resolveTenantId().then(async (tenantId) => {
+
+    // If on a custom domain, resolve tenant by slug directly to avoid
+    // the DB custom_domain lookup failing if the column isn't set yet.
+    const tenantIdPromise = customSlug
+      ? supabase.from('tenants').select('id').eq('slug', customSlug).maybeSingle()
+          .then(r => r.data?.id ?? '')
+      : resolveTenantId()
+
+    tenantIdPromise.then(async (tenantId) => {
+      if (!tenantId) { setType('not-found'); return }
       const { data } = await supabase
         .from('location_data')
         .select('id')
@@ -32,7 +52,7 @@ export default function SlugRouter() {
         .maybeSingle()
       setType(data ? 'location' : 'not-found')
     })
-  }, [slug, rootDomain])
+  }, [slug, rootDomain, customSlug])
 
   // Root domain with unknown slug → show MarketingLanding
   if (rootDomain) {
