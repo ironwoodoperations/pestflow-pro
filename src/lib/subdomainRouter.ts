@@ -37,13 +37,18 @@ export async function resolveTenantId(): Promise<string> {
     } catch { /* fall through */ }
   }
 
-  // 2. Custom domain lookup (e.g. admin.dangpestcontrol.com)
+  // 2. Custom domain lookup via tenant_domains table (verified only)
   const isPestflowDomain = hostname === 'pestflowpro.com' || hostname.endsWith('.pestflowpro.com')
   const isLocalhost = hostname === 'localhost' || hostname.endsWith('.localhost') || hostname.endsWith('.vercel.app')
   if (!isPestflowDomain && !isLocalhost) {
     try {
-      const { data } = await supabase.from('tenants').select('id').eq('custom_domain', hostname).maybeSingle()
-      if (data?.id) return data.id
+      const { data } = await supabase
+        .from('tenant_domains')
+        .select('tenant_id')
+        .eq('custom_domain', hostname)
+        .eq('verified', true)
+        .maybeSingle()
+      if (data?.tenant_id) return data.tenant_id
     } catch { /* fall through */ }
   }
 

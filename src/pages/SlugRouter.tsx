@@ -9,18 +9,19 @@ const MarketingLanding = lazy(() => import('./MarketingLanding'))
 
 const DARK_FALLBACK = <div style={{ background: '#0a0f1e', minHeight: '100vh' }} />
 
-// Static hostname → tenant slug map for clients with custom domains.
-// When Kirk's dangpestcontrol.com points to Vercel, this resolves it to the 'dang' tenant.
-// Add new custom domains here as clients get them.
-const CUSTOM_DOMAIN_MAP: Record<string, string> = {
-  'dangpestcontrol.com': 'dang',
-  'www.dangpestcontrol.com': 'dang',
-}
-
 function checkRootDomain(): boolean {
   const h = window.location.hostname
   return (h === 'pestflowpro.com' || h === 'www.pestflowpro.com') &&
     !window.location.pathname.startsWith('/ironwood')
+}
+
+function isPlatformDomain(hostname: string): boolean {
+  return hostname === 'pestflowpro.com'
+    || hostname === 'www.pestflowpro.com'
+    || hostname.endsWith('.pestflowpro.com')
+    || hostname === 'localhost'
+    || hostname.endsWith('.localhost')
+    || hostname.endsWith('.vercel.app')
 }
 
 export default function SlugRouter() {
@@ -29,17 +30,27 @@ export default function SlugRouter() {
   const rootDomain = checkRootDomain()
 
   const hostname = window.location.hostname
-  const customSlug = CUSTOM_DOMAIN_MAP[hostname] ?? null
+  const onCustomDomain = !isPlatformDomain(hostname)
 
   useEffect(() => {
     if (rootDomain || !slug) return
 
-    // If on a custom domain, resolve tenant by slug directly to avoid
-    // the DB custom_domain lookup failing if the column isn't set yet.
-    const tenantIdPromise = customSlug
-      ? supabase.from('tenants').select('id').eq('slug', customSlug).maybeSingle()
-          .then(r => r.data?.id ?? '')
-      : resolveTenantId()
+    let tenantIdPromise: Promise<string>
+
+    if (onCustomDomain) {
+      // Look up tenant via tenant_domains table (verified domains only)
+      tenantIdPromise = Promise.resolve(
+        supabase
+          .from('tenant_domains')
+          .select('tenant_id')
+          .eq('custom_domain', hostname)
+          .eq('verified', true)
+          .maybeSingle()
+          .then(r => r.data?.tenant_id ?? '')
+      )
+    } else {
+      tenantIdPromise = resolveTenantId()
+    }
 
     tenantIdPromise.then(async (tenantId) => {
       if (!tenantId) { setType('not-found'); return }
@@ -52,7 +63,7 @@ export default function SlugRouter() {
         .maybeSingle()
       setType(data ? 'location' : 'not-found')
     })
-  }, [slug, rootDomain, customSlug])
+  }, [slug, rootDomain, onCustomDomain, hostname])
 
   // Root domain with unknown slug → show MarketingLanding
   if (rootDomain) {
