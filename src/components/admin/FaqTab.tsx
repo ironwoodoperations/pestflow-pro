@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
 import PageHelpBanner from './PageHelpBanner'
+import ConfirmDeleteModal from '../shared/ConfirmDeleteModal'
 
 interface FaqItem {
   id: string
@@ -23,6 +24,7 @@ export default function FaqTab() {
   const [editId, setEditId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<FaqItem | null>(null)
 
   useEffect(() => {
     if (!tenantId) return
@@ -60,11 +62,12 @@ export default function FaqTab() {
     toast.success('FAQ item updated!')
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm('Delete this FAQ item?')) return
-    const { error } = await supabase.from('faq_items').delete().eq('id', id)
+  async function handleDelete() {
+    if (!deleteTarget) return
+    const { error } = await supabase.from('faq_items').delete().eq('id', deleteTarget.id)
     if (error) { toast.error('Failed to delete.'); return }
-    setItems(prev => prev.filter(i => i.id !== id))
+    setItems(prev => prev.filter(i => i.id !== deleteTarget.id))
+    setDeleteTarget(null)
     toast.success('FAQ item deleted.')
   }
 
@@ -177,7 +180,7 @@ export default function FaqTab() {
                       onClick={() => { setEditId(item.id); setEditForm({ question: item.question, answer: item.answer }) }}
                       className="text-xs text-blue-600 hover:underline"
                     >Edit</button>
-                    <button onClick={() => handleDelete(item.id)} className="text-xs text-red-500 hover:underline">Delete</button>
+                    <button onClick={() => setDeleteTarget(item)} className="text-xs text-red-500 hover:underline">Delete</button>
                   </div>
                 </div>
               )}
@@ -185,6 +188,12 @@ export default function FaqTab() {
           ))}
         </div>
       </div>
+      <ConfirmDeleteModal
+        isOpen={!!deleteTarget}
+        itemName={deleteTarget?.question?.slice(0, 50) || 'this FAQ item'}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   )
 }
