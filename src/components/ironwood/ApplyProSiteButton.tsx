@@ -23,6 +23,20 @@ export default function ApplyProSiteButton({ prospectId, form, layout }: Props) 
       const { data: { session }, error: sessErr } = await supabase.auth.refreshSession()
       if (!session || sessErr) { setError('Session expired — refresh and try again'); return }
 
+      // SAFEGUARD: Check if slug already exists before submitting — never overwrite a live tenant
+      if (form.slug) {
+        const { data: existingTenant } = await supabase
+          .from('tenants')
+          .select('id')
+          .eq('slug', form.slug)
+          .maybeSingle()
+        if (existingTenant) {
+          setError(`Slug "${form.slug}" is already in use. Try "${form.slug}2" instead.`)
+          setApplying(false)
+          return
+        }
+      }
+
       const bi = (form.business_info || {}) as Record<string, any>
       const br = (form.branding    || {}) as Record<string, any>
       const cu = (form.customization || {}) as Record<string, any>

@@ -91,7 +91,7 @@ Deno.serve(async (req: Request) => {
     // Fetch prospect record
     const { data: prospect, error: pErr } = await supabase
       .from('prospects')
-      .select('id, company_name, source_url, scraped_content, business_info, branding')
+      .select('id, company_name, source_url, scraped_content, business_info, branding, slug')
       .eq('id', prospect_id)
       .maybeSingle()
 
@@ -99,6 +99,24 @@ Deno.serve(async (req: Request) => {
       return new Response(JSON.stringify({ error: 'Prospect not found' }), {
         status: 404, headers: { 'Content-Type': 'application/json', ...CORS },
       })
+    }
+
+    // SAFEGUARD: If this prospect has a slug set, check it doesn't already exist as a live tenant
+    const prospectSlug = (prospect as any).slug || ''
+    if (prospectSlug) {
+      const { data: existingTenant } = await supabase
+        .from('tenants')
+        .select('id')
+        .eq('slug', prospectSlug)
+        .maybeSingle()
+      if (existingTenant) {
+        console.warn(`[generate-youpest] BLOCKED — slug "${prospectSlug}" already exists as tenant ${existingTenant.id}`)
+        return new Response(JSON.stringify({
+          error: 'Tenant slug already exists',
+          existingSlug: prospectSlug,
+          suggestion: prospectSlug + '2',
+        }), { status: 409, headers: { 'Content-Type': 'application/json', ...CORS } })
+      }
     }
 
     // Extract relevant fields

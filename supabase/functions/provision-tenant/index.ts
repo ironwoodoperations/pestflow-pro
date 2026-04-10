@@ -96,13 +96,19 @@ Deno.serve(async (req: Request) => {
     // Step 1: Resolve or create tenant row
     let tenantId = body.tenant_id?.trim() || ''
     if (!tenantId) {
+      // SAFEGUARD: Refuse to provision if slug already exists — never overwrite an existing tenant
       const { data: existing } = await supabase
         .from('tenants')
         .select('id')
         .eq('slug', resolvedSlug)
         .maybeSingle()
       if (existing) {
-        tenantId = existing.id
+        console.warn(`[provision-tenant] BLOCKED — slug "${resolvedSlug}" already exists (tenant ${existing.id})`)
+        return new Response(JSON.stringify({
+          error: 'Tenant slug already exists',
+          existingSlug: resolvedSlug,
+          suggestion: resolvedSlug + '2',
+        }), { status: 409, headers: { 'Content-Type': 'application/json', ...CORS } })
       } else {
         const name = wbi.name || bi.name || resolvedSlug
         const { data: newTenant, error: tenantError } = await supabase

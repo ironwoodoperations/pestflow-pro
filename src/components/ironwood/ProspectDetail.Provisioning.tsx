@@ -84,6 +84,19 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
     setProvisioning(true)
     setError(null)
     try {
+      // SAFEGUARD: Check if slug already exists before submitting — never overwrite a live tenant
+      if (form.slug) {
+        const { data: existingTenant } = await supabase
+          .from('tenants')
+          .select('id')
+          .eq('slug', form.slug)
+          .maybeSingle()
+        if (existingTenant) {
+          setError(`Slug "${form.slug}" is already in use. Try "${form.slug}2" instead.`)
+          setProvisioning(false)
+          return
+        }
+      }
       // Get a fresh session token at click time — never use a cached token
       const { data: { session: freshSession }, error: sessionError } = await supabase.auth.refreshSession()
       if (!freshSession || sessionError) {
