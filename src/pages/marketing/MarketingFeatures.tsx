@@ -1,4 +1,4 @@
-const C = { navy: '#0d1526', text: '#f1f5f9', muted: '#94a3b8', green: '#22c55e', amber: '#fbbf24' }
+const C = { navy: '#0d1526', text: '#f1f5f9', muted: '#cbd5e8', green: '#22c55e', amber: '#fbbf24' }
 
 const PROBLEMS = [
   { emoji: '🕸️', title: 'A 2016 Website', body: 'Slow, outdated, invisible on Google. Losing leads to competitors who look more professional.' },
@@ -44,7 +44,7 @@ export default function MarketingFeatures() {
             {/* Sidebar */}
             <div style={{ width: 160, background: 'rgba(0,0,0,0.2)', padding: '16px 0', borderRight: '1px solid rgba(255,255,255,0.05)', flexShrink: 0 }}>
               {['Dashboard','Content','Blog','Social','Reports','Settings'].map((item, i) => (
-                <div key={item} style={{ padding: '8px 16px', fontSize: 12, color: i === 0 ? C.green : C.muted, fontFamily: "'DM Sans', sans-serif", borderLeft: i === 0 ? `2px solid ${C.green}` : '2px solid transparent' }}>{item}</div>
+                <div key={item} style={{ padding: '8px 16px', fontSize: 12, color: i === 0 ? C.green : C.muted, fontFamily: "'Plus Jakarta Sans', sans-serif", borderLeft: i === 0 ? `2px solid ${C.green}` : '2px solid transparent' }}>{item}</div>
               ))}
             </div>
             {/* Main */}
@@ -56,9 +56,9 @@ export default function MarketingFeatures() {
                   { label: 'Social Posts', val: '18', badge: '✓', color: C.amber },
                 ].map(k => (
                   <div key={k.label} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '12px 14px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                    <div style={{ fontSize: 10, color: C.muted, marginBottom: 4, fontFamily: "'DM Sans', sans-serif" }}>{k.label}</div>
+                    <div style={{ fontSize: 10, color: C.muted, marginBottom: 4, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{k.label}</div>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                      <span style={{ fontSize: 22, fontWeight: 700, color: C.text, fontFamily: "'Syne', sans-serif" }}>{k.val}</span>
+                      <span style={{ fontSize: 22, fontWeight: 700, color: C.text, fontFamily: "'Bricolage Grotesque', sans-serif" }}>{k.val}</span>
                       <span style={{ fontSize: 10, color: k.color, fontWeight: 600 }}>{k.badge}</span>
                     </div>
                   </div>
@@ -66,10 +66,10 @@ export default function MarketingFeatures() {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: 12, border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <div style={{ fontSize: 10, color: C.muted, marginBottom: 8, fontFamily: "'DM Sans', sans-serif" }}>Top Search Terms</div>
+                  <div style={{ fontSize: 10, color: C.muted, marginBottom: 8, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Top Search Terms</div>
                   {['pest control near me','bed bug removal','ant exterminator'].map((t, i) => (
                     <div key={t} style={{ marginBottom: 6 }}>
-                      <div style={{ fontSize: 10, color: C.text, fontFamily: "'DM Sans', sans-serif", marginBottom: 3 }}>{t}</div>
+                      <div style={{ fontSize: 10, color: C.text, fontFamily: "'Plus Jakarta Sans', sans-serif", marginBottom: 3 }}>{t}</div>
                       <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2 }}>
                         <div style={{ height: '100%', width: `${[72,55,38][i]}%`, background: C.green, borderRadius: 2 }} />
                       </div>
@@ -77,9 +77,9 @@ export default function MarketingFeatures() {
                   ))}
                 </div>
                 <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: 12, border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <div style={{ fontSize: 10, color: C.muted, marginBottom: 8, fontFamily: "'DM Sans', sans-serif" }}>Content Queue</div>
+                  <div style={{ fontSize: 10, color: C.muted, marginBottom: 8, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Content Queue</div>
                   {['Spring ant season post','Termite inspection tips','Summer mosquito guide'].map((t, i) => (
-                    <div key={t} style={{ padding: '5px 0', borderBottom: i < 2 ? '1px solid rgba(255,255,255,0.05)' : undefined, fontSize: 10, color: C.text, fontFamily: "'DM Sans', sans-serif", display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div key={t} style={{ padding: '5px 0', borderBottom: i < 2 ? '1px solid rgba(255,255,255,0.05)' : undefined, fontSize: 10, color: C.text, fontFamily: "'Plus Jakarta Sans', sans-serif", display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span style={{ color: C.green }}>●</span>{t}
                     </div>
                   ))}
@@ -93,7 +93,7 @@ export default function MarketingFeatures() {
       {/* Problems */}
       <section style={{ background: '#111827', padding: '80px 24px' }}>
         <div style={{ maxWidth: 1060, margin: '0 auto' }}>
-          <h2 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 'clamp(26px,4vw,40px)', color: C.text, textAlign: 'center', margin: '0 0 48px', lineHeight: 1.2 }}>
+          <h2 style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontWeight: 800, fontSize: 'clamp(26px,4vw,40px)', letterSpacing: '-0.02em', color: C.text, textAlign: 'center', margin: '0 0 48px', lineHeight: 1.2 }}>
             Most pest companies are losing leads before they ever answer the phone.
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48 }}>
@@ -101,17 +101,17 @@ export default function MarketingFeatures() {
               {PROBLEMS.map(p => (
                 <div key={p.title} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '20px 22px' }}>
                   <p style={{ margin: '0 0 6px', fontSize: 20 }}>{p.emoji}</p>
-                  <p style={{ margin: '0 0 6px', fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15, color: C.text }}>{p.title}</p>
-                  <p style={{ margin: 0, fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: C.muted, lineHeight: 1.6 }}>{p.body}</p>
+                  <p style={{ margin: '0 0 6px', fontFamily: "'Bricolage Grotesque', sans-serif", fontWeight: 700, fontSize: 15, color: C.text }}>{p.title}</p>
+                  <p style={{ margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 13, color: C.muted, lineHeight: 1.6 }}>{p.body}</p>
                 </div>
               ))}
             </div>
             <div>
-              <p style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 17, color: C.text, margin: '0 0 20px' }}>PestFlow Pro fixes all of it:</p>
+              <p style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontWeight: 700, fontSize: 17, color: C.text, margin: '0 0 20px' }}>PestFlow Pro fixes all of it:</p>
               {SOLUTIONS.map(s => (
                 <div key={s} style={{ display: 'flex', gap: 12, marginBottom: 14, alignItems: 'flex-start' }}>
                   <span style={{ color: C.green, fontWeight: 700, fontSize: 16, flexShrink: 0 }}>✓</span>
-                  <p style={{ margin: 0, fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: C.text, lineHeight: 1.5 }}>{s}</p>
+                  <p style={{ margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 14, color: C.text, lineHeight: 1.5 }}>{s}</p>
                 </div>
               ))}
             </div>
@@ -122,15 +122,15 @@ export default function MarketingFeatures() {
       {/* Features grid */}
       <section style={{ background: '#0a0f1e', padding: '80px 24px' }}>
         <div style={{ maxWidth: 1060, margin: '0 auto' }}>
-          <h2 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 'clamp(24px,3.5vw,36px)', color: C.text, textAlign: 'center', margin: '0 0 48px' }}>
+          <h2 style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontWeight: 800, fontSize: 'clamp(24px,3.5vw,36px)', letterSpacing: '-0.02em', color: C.text, textAlign: 'center', margin: '0 0 48px' }}>
             Everything you need. Nothing you don't.
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
             {FEATURES.map(f => (
               <div key={f.title} style={{ background: C.navy, border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14, padding: '24px 22px' }}>
                 <p style={{ margin: '0 0 10px', fontSize: 26 }}>{f.icon}</p>
-                <p style={{ margin: '0 0 8px', fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15, color: C.text }}>{f.title}</p>
-                <p style={{ margin: 0, fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: C.muted, lineHeight: 1.6 }}>{f.body}</p>
+                <p style={{ margin: '0 0 8px', fontFamily: "'Bricolage Grotesque', sans-serif", fontWeight: 700, fontSize: 15, color: C.text }}>{f.title}</p>
+                <p style={{ margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 13, color: C.muted, lineHeight: 1.6 }}>{f.body}</p>
               </div>
             ))}
           </div>

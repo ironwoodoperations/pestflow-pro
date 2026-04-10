@@ -5,7 +5,7 @@ const C = {
   navy: '#0a0f1e',
   green: '#22c55e',
   text: '#f1f5f9',
-  muted: '#94a3b8',
+  muted: '#cbd5e8',
 }
 
 export default function MarketingNav() {
@@ -30,7 +30,7 @@ export default function MarketingNav() {
           fontWeight: 800, fontSize: 14, color: '#0a0f1e',
         }}>P</div>
         <span style={{
-          fontFamily: "'Syne', sans-serif", fontWeight: 700,
+          fontFamily: "'Bricolage Grotesque', sans-serif", fontWeight: 700,
           fontSize: 17, color: C.text, letterSpacing: '-0.3px',
         }}>PestFlow Pro</span>
       </div>
@@ -41,7 +41,7 @@ export default function MarketingNav() {
           padding: '7px 16px',
           border: '1px solid rgba(255,255,255,0.2)',
           borderRadius: 8, color: C.text,
-          fontSize: 13, fontFamily: "'DM Sans', sans-serif",
+          fontSize: 13, fontFamily: "'Plus Jakarta Sans', sans-serif",
           textDecoration: 'none', fontWeight: 500,
           transition: 'border-color 0.2s',
         }}
@@ -53,7 +53,7 @@ export default function MarketingNav() {
           padding: '7px 16px',
           background: C.green, borderRadius: 8,
           color: '#0a0f1e', fontSize: 13,
-          fontFamily: "'DM Sans', sans-serif",
+          fontFamily: "'Plus Jakarta Sans', sans-serif",
           textDecoration: 'none', fontWeight: 600,
         }}>
           Try the Admin →

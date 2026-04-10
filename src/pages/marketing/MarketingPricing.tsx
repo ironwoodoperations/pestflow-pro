@@ -1,4 +1,4 @@
-const C = { navy: '#0d1526', text: '#f1f5f9', muted: '#94a3b8', green: '#22c55e', amber: '#fbbf24' }
+const C = { navy: '#0d1526', text: '#f1f5f9', muted: '#cbd5e8', green: '#22c55e', amber: '#fbbf24' }
 
 const PLANS = [
   {
@@ -24,12 +24,12 @@ export default function MarketingPricing() {
     <section style={{ background: '#111827', padding: '80px 24px' }}>
       <div style={{ maxWidth: 1060, margin: '0 auto' }}>
         <h2 style={{
-          fontFamily: "'Syne', sans-serif", fontWeight: 800,
-          fontSize: 'clamp(24px,3.5vw,36px)', color: C.text,
+          fontFamily: "'Bricolage Grotesque', sans-serif", fontWeight: 800,
+          fontSize: 'clamp(24px,3.5vw,36px)', letterSpacing: '-0.02em', color: C.text,
           textAlign: 'center', margin: '0 0 12px',
         }}>Simple, Transparent Pricing</h2>
         <p style={{
-          fontFamily: "'DM Sans', sans-serif", fontSize: 15,
+          fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 15,
           color: C.muted, textAlign: 'center', margin: '0 0 48px',
         }}>No setup fees hidden in fine print. Scott walks you through everything on a live call.</p>
 
@@ -46,23 +46,23 @@ export default function MarketingPricing() {
                 <div style={{
                   position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)',
                   background: C.green, color: '#0a0f1e',
-                  fontSize: 11, fontWeight: 700, fontFamily: "'DM Sans', sans-serif",
+                  fontSize: 11, fontWeight: 700, fontFamily: "'Plus Jakarta Sans', sans-serif",
                   padding: '3px 12px', borderRadius: 20,
                   whiteSpace: 'nowrap',
                 }}>Most Popular</div>
               )}
 
-              <p style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15, color: C.text, margin: '0 0 8px' }}>{plan.name}</p>
+              <p style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontWeight: 700, fontSize: 15, color: C.text, margin: '0 0 8px' }}>{plan.name}</p>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 20 }}>
-                <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 32, color: plan.featured ? C.green : C.text }}>${plan.price}</span>
-                <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: C.muted }}>/mo</span>
+                <span style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontWeight: 800, fontSize: 32, letterSpacing: '-0.02em', color: plan.featured ? C.green : C.text }}>${plan.price}</span>
+                <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 13, color: C.muted }}>/mo</span>
               </div>
 
               <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 18 }}>
                 {plan.features.map(f => (
                   <div key={f} style={{ display: 'flex', gap: 9, marginBottom: 11, alignItems: 'flex-start' }}>
                     <span style={{ color: C.green, fontWeight: 700, fontSize: 13, flexShrink: 0, marginTop: 1 }}>✓</span>
-                    <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12.5, color: C.muted, lineHeight: 1.4 }}>{f}</span>
+                    <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 12.5, color: C.muted, lineHeight: 1.4 }}>{f}</span>
                   </div>
                 ))}
               </div>
@@ -71,7 +71,7 @@ export default function MarketingPricing() {
         </div>
 
         <p style={{
-          fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: C.muted,
+          fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 13, color: C.muted,
           textAlign: 'center', marginTop: 32,
         }}>All plans include a personalized onboarding call. No contracts — cancel anytime.</p>
       </div>
