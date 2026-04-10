@@ -13,6 +13,8 @@ import ScrapePanel          from './ScrapePanel'
 import type { ScrapedData } from './ScrapePanel'
 import type { SiteRecreation } from './SiteRecreationCard'
 import BoltBuildGuide       from './BoltBuildGuide'
+import CustomDomainSetup    from './CustomDomainSetup'
+import BundleSocialSetup    from './BundleSocialSetup'
 
 interface Props {
   prospectId: string | null   // null = new prospect
@@ -266,6 +268,13 @@ export default function ProspectDetail({ prospectId, salespeople, onClose }: Pro
             <RepGuideButton section={form.provisioned_at ? 'post-launch' : 'pre-provision'} label={form.provisioned_at ? '? Post-Launch Guide' : undefined} onOpen={setGuideSection} />
           </div>
           <ProvisionSection form={form} prospectId={id} onProvisioned={onUpdate} />
+
+          {form.tenant_id && form.slug && (
+            <div className="space-y-3">
+              <CustomDomainSetup tenantId={form.tenant_id} slug={form.slug} />
+              <BundleSocialSetup tenantId={form.tenant_id} />
+            </div>
+          )}
 
           {id && (
             <div className="pt-2 border-t border-gray-800">
