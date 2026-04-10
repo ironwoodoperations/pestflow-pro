@@ -7,9 +7,10 @@ interface Props {
   id: string
   label: string          // e.g. "Lead archived"
   onDismiss: () => void  // called after auto-dismiss or after undo
+  onUndo?: () => Promise<void>  // optional override for undo action
 }
 
-export default function UndoToast({ table, id, label, onDismiss }: Props) {
+export default function UndoToast({ table, id, label, onDismiss, onUndo }: Props) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -19,7 +20,11 @@ export default function UndoToast({ table, id, label, onDismiss }: Props) {
 
   const handleUndo = async () => {
     if (timerRef.current) clearTimeout(timerRef.current)
-    await restoreRecord(table, id, supabase)
+    if (onUndo) {
+      await onUndo()
+    } else {
+      await restoreRecord(table, id, supabase)
+    }
     onDismiss()
   }
 

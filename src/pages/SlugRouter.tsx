@@ -2,6 +2,7 @@ import { useParams } from 'react-router-dom'
 import { Suspense, lazy, useEffect, useState } from 'react'
 import LocationPage from './LocationPage'
 import NotFound from './NotFound'
+import SuspendedSite from '../components/SuspendedSite'
 import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
 
@@ -26,7 +27,7 @@ function isPlatformDomain(hostname: string): boolean {
 
 export default function SlugRouter() {
   const { slug } = useParams<{ slug: string }>()
-  const [type, setType] = useState<'location' | 'not-found' | 'loading'>(() => slug ? 'loading' : 'not-found')
+  const [type, setType] = useState<'location' | 'not-found' | 'loading' | 'suspended'>(() => slug ? 'loading' : 'not-found')
   const rootDomain = checkRootDomain()
 
   const hostname = window.location.hostname
@@ -54,6 +55,15 @@ export default function SlugRouter() {
 
     tenantIdPromise.then(async (tenantId) => {
       if (!tenantId) { setType('not-found'); return }
+
+      // Check if tenant is archived (suspended)
+      const { data: tenant } = await supabase
+        .from('tenants')
+        .select('archived_at')
+        .eq('id', tenantId)
+        .maybeSingle()
+      if (tenant?.archived_at) { setType('suspended'); return }
+
       const { data } = await supabase
         .from('location_data')
         .select('id')
@@ -94,6 +104,7 @@ export default function SlugRouter() {
     </div>
   )
 
+  if (type === 'suspended') return <SuspendedSite />
   if (type === 'location') return <LocationPage slug={slug!} />
   return <NotFound />
 }

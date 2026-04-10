@@ -29,7 +29,7 @@ export default function ProspectList() {
   const [archiveTab, setArchiveTab]     = useState<ArchiveTab>('active')
   const [deleteTarget, setDeleteTarget] = useState<Prospect | null>(null)
   const [deleting, setDeleting]         = useState(false)
-  const [undoTarget, setUndoTarget]     = useState<{ id: string; name: string } | null>(null)
+  const [undoTarget, setUndoTarget]     = useState<{ id: string; name: string; tenantId?: string } | null>(null)
 
   const load = useCallback(async (tab: ArchiveTab = 'active') => {
     const query = supabase.from('prospects').select('*').order('created_at', { ascending: false })
@@ -77,6 +77,10 @@ export default function ProspectList() {
 
   const handleRestore = async (p: Prospect) => {
     await restoreRecord('prospects', p.id, supabase)
+    // Also restore the live tenant site if provisioned
+    if (p.tenant_id) {
+      await restoreRecord('tenants', p.tenant_id, supabase)
+    }
     load(archiveTab)
   }
 
@@ -205,7 +209,7 @@ export default function ProspectList() {
           prospectId={selectedId ?? null}
           salespeople={salespeople}
           onClose={(refreshed) => { setSelectedId(undefined); if (refreshed) load(archiveTab) }}
-          onArchived={(id, name) => { setUndoTarget({ id, name }); load(archiveTab) }}
+          onArchived={(id, name, tenantId) => { setUndoTarget({ id, name, tenantId }); load(archiveTab) }}
         />
       )}
 
@@ -214,6 +218,10 @@ export default function ProspectList() {
           table="prospects"
           id={undoTarget.id}
           label={`${undoTarget.name} archived.`}
+          onUndo={async () => {
+            await restoreRecord('prospects', undoTarget.id, supabase)
+            if (undoTarget.tenantId) await restoreRecord('tenants', undoTarget.tenantId, supabase)
+          }}
           onDismiss={() => { setUndoTarget(null); load(archiveTab) }}
         />
       )}

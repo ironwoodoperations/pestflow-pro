@@ -21,7 +21,7 @@ interface Props {
   prospectId: string | null   // null = new prospect
   salespeople: Salesperson[]
   onClose: (refreshed?: boolean) => void
-  onArchived?: (id: string, name: string) => void
+  onArchived?: (id: string, name: string, tenantId?: string) => void
 }
 
 function slugify(name: string) {
@@ -169,7 +169,11 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
   async function handleArchive() {
     if (!id) return
     await archiveRecord('prospects', id, supabase)
-    onArchived?.(id, form.company_name || 'Prospect')
+    // Also suspend the live tenant site if provisioned
+    if (form.tenant_id) {
+      await archiveRecord('tenants', form.tenant_id, supabase)
+    }
+    onArchived?.(id, form.company_name || 'Prospect', form.tenant_id ?? undefined)
     onClose(true)
   }
 
