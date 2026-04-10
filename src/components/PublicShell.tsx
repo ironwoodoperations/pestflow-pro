@@ -1,6 +1,9 @@
 import type { ReactNode } from 'react'
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useTemplate } from '../context/TemplateContext'
+import { supabase } from '../lib/supabase'
+import { resolveTenantId } from '../lib/tenant'
 import HolidayBanner from './HolidayBanner'
 import ModernProNavbar from '../shells/modern-pro/ShellNavbar'
 import ModernProFooter from '../shells/modern-pro/ShellFooter'
@@ -22,6 +25,76 @@ const YouPestSections      = lazy(() => import('../shells/youpest/ShellHomeSecti
 const DangNavbar           = lazy(() => import('../shells/dang/ShellNavbar'))
 const DangFooter           = lazy(() => import('../shells/dang/ShellFooter'))
 const DangSections         = lazy(() => import('../shells/dang/ShellHomeSections'))
+
+// Injects canonical <link> tag and redirects subdomain → custom domain when verified.
+function CanonicalManager() {
+  const location = useLocation()
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function run() {
+      const hostname = window.location.hostname
+      const isLocal = hostname === 'localhost'
+        || hostname.endsWith('.localhost')
+        || hostname.endsWith('.vercel.app')
+
+      // Extract subdomain slug (e.g. "dang" from dang.pestflowpro.com)
+      let subdomainSlug: string | null = null
+      if (hostname.endsWith('.pestflowpro.com')) {
+        const parts = hostname.split('.')
+        if (parts.length === 3) subdomainSlug = parts[0]
+      }
+
+      const tenantId = await resolveTenantId()
+      if (cancelled || !tenantId) return
+
+      // Query verified custom domain for this tenant
+      let customDomain: string | null = null
+      try {
+        const { data } = await supabase
+          .from('tenant_domains')
+          .select('custom_domain')
+          .eq('tenant_id', tenantId)
+          .eq('verified', true)
+          .maybeSingle()
+        customDomain = data?.custom_domain ?? null
+      } catch { /* non-fatal */ }
+
+      if (cancelled) return
+
+      const path = location.pathname + location.search
+
+      // Determine canonical URL
+      let canonicalUrl: string | null = null
+      if (customDomain) {
+        canonicalUrl = `https://${customDomain}${path}`
+      } else if (subdomainSlug) {
+        canonicalUrl = `https://${subdomainSlug}.pestflowpro.com${path}`
+      }
+
+      if (canonicalUrl) {
+        let link = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
+        if (!link) {
+          link = document.createElement('link')
+          link.rel = 'canonical'
+          document.head.appendChild(link)
+        }
+        link.href = canonicalUrl
+      }
+
+      // Redirect: subdomain → verified custom domain (skip on local/dev)
+      if (customDomain && subdomainSlug && !isLocal) {
+        window.location.replace(`https://${customDomain}${path}`)
+      }
+    }
+
+    run()
+    return () => { cancelled = true }
+  }, [location.pathname, location.search]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  return null
+}
 
 export function ShellSectionsRenderer() {
   const { template } = useTemplate()
@@ -79,6 +152,7 @@ export default function PublicShell({ children }: Props) {
 
   return (
     <>
+      <CanonicalManager />
       <HolidayBanner />
       <ShellNav />
       <main id="main-content">{children}</main>
