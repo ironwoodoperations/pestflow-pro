@@ -58,6 +58,12 @@ export default function PostCard({ post, onPreview, onEdit, onApprove, onDelete,
           </span>
         )}
 
+        {post.status === 'failed' && post.error_msg && (
+          <p className="mt-2 text-xs text-red-600 bg-red-50 rounded px-2 py-1 leading-snug" title={post.error_msg}>
+            {post.error_msg.length > 120 ? post.error_msg.slice(0, 120) + '…' : post.error_msg}
+          </p>
+        )}
+
         <p className="text-xs text-gray-400 mt-2">{fmtDate(dateStr)}</p>
       </div>
 

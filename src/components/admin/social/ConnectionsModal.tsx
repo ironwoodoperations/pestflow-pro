@@ -1,6 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Lock } from 'lucide-react'
 import { usePlan } from '../../../hooks/usePlan'
+import { supabase } from '../../../lib/supabase'
+import { useTenant } from '../../../hooks/useTenant'
+import { toast } from 'sonner'
 
 interface Props {
   onClose: () => void
@@ -25,8 +28,37 @@ const PLAN_INFO: Record<number, { name: string; price: number }> = {
 
 export default function ConnectionsModal({ onClose, onNavigate }: Props) {
   const { tier } = usePlan()
+  const { tenantId } = useTenant()
   const [activeTab, setActiveTab] = useState<ProviderTab>('export')
+  const [accountId, setAccountId] = useState('')
+  const [saving, setSaving] = useState(false)
   const activeProvider = TIER_PROVIDER[tier] || 'export'
+
+  // Load existing accountId from settings.integrations
+  useEffect(() => {
+    if (!tenantId) return
+    supabase.from('settings').select('value')
+      .eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle()
+      .then(({ data }) => {
+        if (data?.value?.bundle_social_account_id) {
+          setAccountId(data.value.bundle_social_account_id)
+        }
+      })
+  }, [tenantId])
+
+  async function saveAccountId() {
+    if (!tenantId) return
+    setSaving(true)
+    const { data: existing } = await supabase.from('settings').select('value')
+      .eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle()
+    const current = existing?.value || {}
+    const { error } = await supabase.from('settings')
+      .upsert({ tenant_id: tenantId, key: 'integrations', value: { ...current, bundle_social_account_id: accountId.trim() } },
+        { onConflict: 'tenant_id,key' })
+    setSaving(false)
+    if (error) { toast.error('Failed to save account ID.') }
+    else { toast.success('Bundle.social account ID saved!') }
+  }
 
   function ActiveBadge() {
     return <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">✓ Your Active Mode</span>
@@ -115,9 +147,20 @@ export default function ConnectionsModal({ onClose, onNavigate }: Props) {
                       <li>Track results in the Analytics tab</li>
                     </ol>
                   </div>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700">
-                    Powered by <strong>bundle.social</strong> — managed by your PestFlow Pro account manager.
-                    Contact Scott to connect your Facebook or Instagram account.
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-medium text-gray-700">Bundle.social Account ID</label>
+                    <input
+                      type="text"
+                      value={accountId}
+                      onChange={e => setAccountId(e.target.value)}
+                      placeholder="Enter your bundle.social account ID"
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                    />
+                    <button onClick={saveAccountId} disabled={saving || !accountId.trim()}
+                      className="text-xs px-3 py-1.5 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 disabled:opacity-50">
+                      {saving ? 'Saving…' : 'Save Account ID'}
+                    </button>
+                    <p className="text-xs text-gray-400">Provided by your PestFlow Pro account manager during setup.</p>
                   </div>
                   {activeProvider === 'bundle' && <ActiveBadge />}
                 </>
@@ -134,6 +177,23 @@ export default function ConnectionsModal({ onClose, onNavigate }: Props) {
                   <li key={item} className="flex items-center gap-2"><span className="text-emerald-500 font-bold">✓</span>{item}</li>
                 ))}
               </ul>
+              {tier >= 4 && (
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-medium text-gray-700">Bundle.social Account ID</label>
+                  <input
+                    type="text"
+                    value={accountId}
+                    onChange={e => setAccountId(e.target.value)}
+                    placeholder="Enter your bundle.social account ID"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                  />
+                  <button onClick={saveAccountId} disabled={saving || !accountId.trim()}
+                    className="text-xs px-3 py-1.5 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 disabled:opacity-50">
+                    {saving ? 'Saving…' : 'Save Account ID'}
+                  </button>
+                  <p className="text-xs text-gray-400">Provided by your PestFlow Pro account manager during setup.</p>
+                </div>
+              )}
               {tier < 4 ? <LockedBadge tabTier={4} /> : activeProvider === 'full_auto' && <ActiveBadge />}
             </div>
           )}

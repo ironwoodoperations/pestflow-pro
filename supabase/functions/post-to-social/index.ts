@@ -3,8 +3,6 @@
 // JWT: true (requires auth token)
 // DEPLOY:
 //   supabase functions deploy post-to-social --project-ref biezzykcgzkrwdgqpsar
-//
-// TODO: per-tenant profileKey when upgrading to paid plan (currently single API key for all tenants)
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -19,6 +17,7 @@ interface PostBody {
   platforms: string[]
   scheduledFor?: string
   tenantId: string
+  postId?: string  // existing social_posts row to update (created by frontend)
 }
 
 serve(async (req) => {
@@ -41,7 +40,7 @@ serve(async (req) => {
 
   if (!bundleApiKey) {
     return new Response(
-      JSON.stringify({ error: 'Social posting not configured — BUNDLE_SOCIAL_API missing' }),
+      JSON.stringify({ error: 'Social posting not configured — BUNDLE_SOCIAL_API missing. Contact your account manager.' }),
       { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
@@ -56,7 +55,7 @@ serve(async (req) => {
     })
   }
 
-  const { content, platforms, scheduledFor, tenantId } = body
+  const { content, platforms, scheduledFor, tenantId, postId } = body
 
   if (!content || !platforms?.length || !tenantId) {
     return new Response(JSON.stringify({ error: 'content, platforms, and tenantId are required' }), {
@@ -67,21 +66,28 @@ serve(async (req) => {
 
   const supabase = createClient(supabaseUrl, serviceRoleKey)
 
-  // Read tenant subscription tier
-  const { data: subData } = await supabase
-    .from('settings')
-    .select('value')
-    .eq('tenant_id', tenantId)
-    .eq('key', 'subscription')
-    .maybeSingle()
+  // Read tenant settings (subscription + integrations) in parallel
+  const [subRes, intgRes] = await Promise.all([
+    supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'subscription').maybeSingle(),
+    supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle(),
+  ])
 
-  const tier: number = subData?.value?.tier ?? 1
+  const tier: number = subRes.data?.value?.tier ?? 1
+  const bundleAccountId: string | null = intgRes.data?.value?.bundle_social_account_id ?? null
 
   // Tier 1 (Starter): no scheduling allowed
   if (tier === 1) {
     return new Response(
       JSON.stringify({ error: 'Scheduling not available on Starter plan. Upgrade to Grow to enable social scheduling.' }),
       { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+  // bundle.social accountId required for posting
+  if (!bundleAccountId) {
+    return new Response(
+      JSON.stringify({ error: 'bundle.social account ID not configured. Add it in Social → Connections.' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 
@@ -94,7 +100,7 @@ serve(async (req) => {
       .eq('tenant_id', tenantId)
       .gte('scheduled_for', `${today}T00:00:00`)
       .lte('scheduled_for', `${today}T23:59:59`)
-      .in('status', ['scheduled', 'posted'])
+      .in('status', ['scheduled', 'published'])
 
     if ((count ?? 0) >= 2) {
       return new Response(
@@ -105,7 +111,11 @@ serve(async (req) => {
   }
 
   // Call bundle.social API
-  const bundleBody: Record<string, unknown> = { content, platforms }
+  const bundleBody: Record<string, unknown> = {
+    content,
+    platforms,
+    accountId: bundleAccountId,
+  }
   if (scheduledFor) bundleBody.scheduledDate = scheduledFor
 
   try {
@@ -121,24 +131,45 @@ serve(async (req) => {
     const data = await res.json()
 
     if (!res.ok) {
+      const errMsg = data?.message || data?.error || `bundle.social error: ${res.status}`
+      console.error('[post-to-social] bundle.social API error:', JSON.stringify(data))
+
+      // Update existing post row to failed if postId provided
+      if (postId) {
+        await supabase.from('social_posts')
+          .update({ status: 'failed', error_msg: errMsg })
+          .eq('id', postId)
+      }
+
       return new Response(
-        JSON.stringify({ error: data?.message || `bundle.social error: ${res.status}` }),
+        JSON.stringify({ error: errMsg }),
         { status: res.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Log successful post in social_posts table
+    // Success — update existing post row if provided, otherwise insert
     const platform = platforms.length > 1 ? 'both' : (platforms[0] as 'facebook' | 'instagram' | 'both')
+    const newStatus = scheduledFor ? 'scheduled' : 'published'
 
-    await supabase.from('social_posts').insert({
-      tenant_id: tenantId,
-      platform,
-      caption: content,
-      status: scheduledFor ? 'scheduled' : 'published',
-      scheduled_for: scheduledFor || null,
-      published_at: scheduledFor ? null : new Date().toISOString(),
-      fb_post_id: data?.id || 'bundle-social',
-    })
+    if (postId) {
+      await supabase.from('social_posts').update({
+        status: newStatus,
+        scheduled_for: scheduledFor || null,
+        published_at: scheduledFor ? null : new Date().toISOString(),
+        fb_post_id: data?.id || 'bundle-social',
+        error_msg: null,
+      }).eq('id', postId)
+    } else {
+      await supabase.from('social_posts').insert({
+        tenant_id: tenantId,
+        platform,
+        caption: content,
+        status: newStatus,
+        scheduled_for: scheduledFor || null,
+        published_at: scheduledFor ? null : new Date().toISOString(),
+        fb_post_id: data?.id || 'bundle-social',
+      })
+    }
 
     return new Response(
       JSON.stringify({ success: true, postId: data?.id }),
@@ -146,6 +177,14 @@ serve(async (req) => {
     )
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Network error'
+    console.error('[post-to-social] unexpected error:', msg)
+
+    if (postId) {
+      await supabase.from('social_posts')
+        .update({ status: 'failed', error_msg: msg })
+        .eq('id', postId)
+    }
+
     return new Response(
       JSON.stringify({ error: msg }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
