@@ -12,15 +12,19 @@ interface Props {
   notesOpenId: string | null
   notesDraft: Record<string, string>
   notesSaved: Record<string, boolean>
+  showArchived?: boolean
   onUpdateStatus: (id: string, status: string) => void
   onToggleNotes: (lead: Lead) => void
   onNotesDraftChange: (id: string, val: string) => void
   onNotesSave: (id: string) => void
   onPageChange: (fn: (p: number) => number) => void
   onView: (lead: Lead) => void
+  onArchive?: (lead: Lead) => void
+  onRestore?: (lead: Lead) => void
+  onDeletePermanently?: (lead: Lead) => void
 }
 
-export default function LeadTable({ loading, paginated, filtered, page, totalPages, notesOpenId, notesDraft, notesSaved, onUpdateStatus, onToggleNotes, onNotesDraftChange, onNotesSave, onPageChange, onView }: Props) {
+export default function LeadTable({ loading, paginated, filtered, page, totalPages, notesOpenId, notesDraft, notesSaved, showArchived, onUpdateStatus, onToggleNotes, onNotesDraftChange, onNotesSave, onPageChange, onView, onArchive, onRestore, onDeletePermanently }: Props) {
   if (loading) {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 space-y-3">
@@ -72,10 +76,18 @@ export default function LeadTable({ loading, paginated, filtered, page, totalPag
                 </td>
                 <td className="px-4 py-3 text-xs text-gray-400">{new Date(l.created_at).toLocaleDateString()}</td>
                 <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => onToggleNotes(l)} className="text-xs text-gray-400 hover:text-gray-600 font-medium transition-colors" title="Add/view notes">📝</button>
-                    <button onClick={() => onView(l)} className="text-emerald-600 hover:text-emerald-700 text-sm font-medium">View</button>
-                  </div>
+                  {showArchived ? (
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => onRestore?.(l)} className="text-xs text-emerald-600 hover:text-emerald-700 font-medium">Restore</button>
+                      <button onClick={() => onDeletePermanently?.(l)} className="text-xs text-red-500 hover:text-red-600 font-medium">Delete</button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => onToggleNotes(l)} className="text-xs text-gray-400 hover:text-gray-600 font-medium transition-colors" title="Add/view notes">📝</button>
+                      <button onClick={() => onView(l)} className="text-emerald-600 hover:text-emerald-700 text-sm font-medium">View</button>
+                      <button onClick={() => onArchive?.(l)} className="text-xs text-yellow-600 hover:text-yellow-700 font-medium" title="Archive lead">Archive</button>
+                    </div>
+                  )}
                 </td>
               </tr>
               {notesOpenId === l.id && (

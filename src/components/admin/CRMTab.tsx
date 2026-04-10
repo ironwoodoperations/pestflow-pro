@@ -8,6 +8,9 @@ import LeadTable from './crm/LeadTable'
 import LeadDetailModal from './crm/LeadDetailModal'
 import type { Lead } from './crm/types'
 import { STATUSES, PER_PAGE } from './crm/types'
+import UndoToast from '../shared/UndoToast'
+import ConfirmDeleteModal from '../shared/ConfirmDeleteModal'
+import { archiveRecord, restoreRecord, hardDeleteRecord } from '../../lib/archiveUtils'
 
 export default function CRMTab() {
   const { tenantId } = useTenant()
@@ -22,12 +25,21 @@ export default function CRMTab() {
   const [notesOpenId, setNotesOpenId] = useState<string | null>(null)
   const [notesDraft, setNotesDraft] = useState<Record<string, string>>({})
   const [notesSaved, setNotesSaved] = useState<Record<string, boolean>>({})
+  const [showArchived, setShowArchived] = useState(false)
+  const [undoTarget, setUndoTarget] = useState<{ id: string; name: string } | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Lead | null>(null)
+
+  const loadLeads = (archived = false) => {
+    if (!tenantId) return
+    const query = supabase.from('leads').select('*').eq('tenant_id', tenantId).order('created_at', { ascending: false })
+    const finalQuery = archived ? query.not('archived_at', 'is', null) : query.is('archived_at', null)
+    finalQuery.then(({ data }) => { setLeads(data || []); setLoading(false) })
+  }
 
   useEffect(() => {
     if (!tenantId) return
-    supabase.from('leads').select('*').eq('tenant_id', tenantId).order('created_at', { ascending: false })
-      .then(({ data }) => { setLeads(data || []); setLoading(false) })
-  }, [tenantId])
+    loadLeads(showArchived)
+  }, [tenantId, showArchived]) // eslint-disable-line
 
   async function updateStatus(id: string, status: string) {
     await supabase.from('leads').update({ status }).eq('id', id)
@@ -45,6 +57,24 @@ export default function CRMTab() {
         else if (data.skipped && data.reason === 'no_place_id') toast('Lead marked won. Add a Google Place ID in Settings to enable review request emails.', { icon: 'ℹ️' })
       } catch (err) { console.error('Review request failed:', err) }
     }
+  }
+
+  async function handleArchive(lead: Lead) {
+    await archiveRecord('leads', lead.id, supabase)
+    setLeads(prev => prev.filter(l => l.id !== lead.id))
+    setUndoTarget({ id: lead.id, name: lead.name || 'Lead' })
+  }
+
+  async function handleRestore(lead: Lead) {
+    await restoreRecord('leads', lead.id, supabase)
+    loadLeads(showArchived)
+  }
+
+  async function handleDeletePermanently() {
+    if (!deleteTarget) return
+    await hardDeleteRecord('leads', deleteTarget.id, supabase)
+    setDeleteTarget(null)
+    loadLeads(showArchived)
   }
 
   async function handleNotesSave(leadId: string) {
@@ -112,29 +142,63 @@ export default function CRMTab() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6 flex flex-wrap gap-3 items-center">
-        <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPage(0) }} className={`${ic} bg-white`}>
-          <option value="all">All Statuses</option>
-          {STATUSES.map(s => <option key={s} value={s} className="capitalize">{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
-        </select>
+        {!showArchived && (
+          <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPage(0) }} className={`${ic} bg-white`}>
+            <option value="all">All Statuses</option>
+            {STATUSES.map(s => <option key={s} value={s} className="capitalize">{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+          </select>
+        )}
         <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(0) }} className={ic} />
         <span className="text-gray-400 text-sm">to</span>
         <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(0) }} className={ic} />
         <input type="text" value={search} onChange={e => { setSearch(e.target.value); setPage(0) }} placeholder="Search name, email, phone..." className={`${ic} flex-1 min-w-[200px]`} />
-        <button onClick={exportCSV} className="flex items-center gap-2 border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium transition-colors ml-auto">
-          <Download size={16} /> Export CSV
+        <button
+          onClick={() => { setShowArchived(a => !a); setPage(0) }}
+          className={`px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${showArchived ? 'bg-gray-100 border-gray-400 text-gray-700' : 'border-gray-300 text-gray-500 hover:bg-gray-50'}`}
+        >
+          {showArchived ? '← Active Leads' : 'Show Archived'}
         </button>
+        {!showArchived && (
+          <button onClick={exportCSV} className="flex items-center gap-2 border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium transition-colors ml-auto">
+            <Download size={16} /> Export CSV
+          </button>
+        )}
       </div>
+
+      {showArchived && (
+        <div className="mb-4 px-4 py-2 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-700">
+          Showing archived leads. These are hidden from the active CRM view.
+        </div>
+      )}
 
       <LeadTable
         loading={loading} paginated={paginated} filtered={filtered}
         page={page} totalPages={totalPages}
         notesOpenId={notesOpenId} notesDraft={notesDraft} notesSaved={notesSaved}
+        showArchived={showArchived}
         onUpdateStatus={updateStatus} onToggleNotes={toggleNotes}
         onNotesDraftChange={(id, val) => setNotesDraft(prev => ({ ...prev, [id]: val }))}
         onNotesSave={handleNotesSave} onPageChange={setPage} onView={setDetail}
+        onArchive={handleArchive} onRestore={handleRestore} onDeletePermanently={setDeleteTarget}
       />
 
       {detail && <LeadDetailModal lead={detail} onClose={() => setDetail(null)} onStatusChange={(id, status) => { updateStatus(id, status); setDetail({ ...detail, status }) }} />}
+
+      {undoTarget && (
+        <UndoToast
+          table="leads"
+          id={undoTarget.id}
+          label={`${undoTarget.name} archived.`}
+          onDismiss={() => { setUndoTarget(null); loadLeads(showArchived) }}
+        />
+      )}
+
+      <ConfirmDeleteModal
+        isOpen={!!deleteTarget}
+        itemName={deleteTarget?.name || 'this lead'}
+        onConfirm={handleDeletePermanently}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   )
 }
