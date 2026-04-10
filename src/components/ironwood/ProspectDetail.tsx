@@ -15,25 +15,25 @@ import type { SiteRecreation } from './SiteRecreationCard'
 import BoltBuildGuide       from './BoltBuildGuide'
 import CustomDomainSetup    from './CustomDomainSetup'
 import BundleSocialSetup    from './BundleSocialSetup'
+import { archiveRecord }    from '../../lib/archiveUtils'
 
 interface Props {
   prospectId: string | null   // null = new prospect
   salespeople: Salesperson[]
   onClose: (refreshed?: boolean) => void
+  onArchived?: (id: string, name: string) => void
 }
 
 function slugify(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30)
 }
 
-export default function ProspectDetail({ prospectId, salespeople, onClose }: Props) {
+export default function ProspectDetail({ prospectId, salespeople, onClose, onArchived }: Props) {
   const [form, setForm]               = useState<Partial<Prospect>>({ status: 'prospect', business_info: {}, branding: {}, customization: {} })
   const [saved, setSaved]             = useState(false)
   const [loading, setLoading]         = useState(!!prospectId)
   const [id, setId]                   = useState<string | null>(prospectId)
   const [slugEdited, setSlugEdited]   = useState(false)
-  const [confirmDelete, setConfirmDelete] = useState(false)
-  const [deleting, setDeleting]       = useState(false)
   const [guideSection, setGuideSection] = useState<string | null>(null)
   const timer                         = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
@@ -166,11 +166,10 @@ export default function ProspectDetail({ prospectId, salespeople, onClose }: Pro
     setTimeout(() => setSaved(false), 2000)
   }
 
-  async function handleDelete() {
+  async function handleArchive() {
     if (!id) return
-    setDeleting(true)
-    await supabase.from('prospects').delete().eq('id', id)
-    // intake_tokens cascade-deletes via FK ON DELETE CASCADE
+    await archiveRecord('prospects', id, supabase)
+    onArchived?.(id, form.company_name || 'Prospect')
     onClose(true)
   }
 
@@ -278,31 +277,10 @@ export default function ProspectDetail({ prospectId, salespeople, onClose }: Pro
 
           {id && (
             <div className="pt-2 border-t border-gray-800">
-              {!confirmDelete ? (
-                <button onClick={() => setConfirmDelete(true)}
-                  className="text-xs text-red-500 hover:text-red-400 transition">
-                  Delete this prospect
-                </button>
-              ) : (
-                <div className="bg-gray-900 rounded-lg p-4 space-y-3">
-                  {form.tenant_id && (
-                    <p className="text-xs text-amber-400">This prospect has an active site. Deleting the prospect record will not affect the live site.</p>
-                  )}
-                  <p className="text-sm text-gray-300">
-                    Delete <span className="font-medium text-white">{form.company_name || 'this prospect'}</span>? This cannot be undone.
-                  </p>
-                  <div className="flex gap-2">
-                    <button onClick={handleDelete} disabled={deleting}
-                      className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-lg transition disabled:opacity-50">
-                      {deleting ? 'Deleting…' : 'Delete'}
-                    </button>
-                    <button onClick={() => setConfirmDelete(false)}
-                      className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-lg transition">
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              )}
+              <button onClick={handleArchive}
+                className="text-xs text-yellow-500 hover:text-yellow-400 transition">
+                Archive Client
+              </button>
             </div>
           )}
         </div>

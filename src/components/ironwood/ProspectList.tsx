@@ -2,9 +2,13 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { Prospect, ProspectStatus, Salesperson } from './types'
 import ProspectDetail from './ProspectDetail'
+import ConfirmDeleteModal from '../shared/ConfirmDeleteModal'
+import UndoToast from '../shared/UndoToast'
+import { hardDeleteRecord, restoreRecord } from '../../lib/archiveUtils'
 
 const ALL = 'all'
 type SortKey = 'company_name' | 'status' | 'plan_name' | 'setup_fee_amount' | 'monthly_price' | 'call_date'
+type ArchiveTab = 'active' | 'archived'
 
 const STATUS_BADGE: Record<ProspectStatus, string> = {
   prospect: 'bg-gray-700 text-gray-300', quoted: 'bg-blue-800 text-blue-200',
@@ -14,25 +18,34 @@ const STATUS_BADGE: Record<ProspectStatus, string> = {
 }
 
 export default function ProspectList() {
-  const [prospects, setProspects]     = useState<Prospect[]>([])
-  const [salespeople, setSalespeople] = useState<Salesperson[]>([])
-  const [search, setSearch]           = useState('')
+  const [prospects, setProspects]       = useState<Prospect[]>([])
+  const [salespeople, setSalespeople]   = useState<Salesperson[]>([])
+  const [search, setSearch]             = useState('')
   const [filterStatus, setFilterStatus] = useState<string>(ALL)
-  const [filterRep, setFilterRep]     = useState<string>(ALL)
-  const [sortKey, setSortKey]         = useState<SortKey>('call_date')
-  const [sortAsc, setSortAsc]         = useState(false)
-  const [selectedId, setSelectedId]   = useState<string | null | undefined>(undefined)
+  const [filterRep, setFilterRep]       = useState<string>(ALL)
+  const [sortKey, setSortKey]           = useState<SortKey>('call_date')
+  const [sortAsc, setSortAsc]           = useState(false)
+  const [selectedId, setSelectedId]     = useState<string | null | undefined>(undefined)
+  const [archiveTab, setArchiveTab]     = useState<ArchiveTab>('active')
+  const [deleteTarget, setDeleteTarget] = useState<Prospect | null>(null)
+  const [deleting, setDeleting]         = useState(false)
+  const [undoTarget, setUndoTarget]     = useState<{ id: string; name: string } | null>(null)
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (tab: ArchiveTab = 'active') => {
+    const query = supabase.from('prospects').select('*').order('created_at', { ascending: false })
+    const finalQuery = tab === 'active'
+      ? query.is('archived_at', null)
+      : query.not('archived_at', 'is', null)
+
     const [{ data: p }, { data: s }] = await Promise.all([
-      supabase.from('prospects').select('*').order('created_at', { ascending: false }),
+      finalQuery,
       supabase.from('salespeople').select('*'),
     ])
     if (p) setProspects(p)
     if (s) setSalespeople(s)
   }, [])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => { load(archiveTab) }, [load, archiveTab])
 
   const spMap = Object.fromEntries(salespeople.map(s => [s.id, s]))
 
@@ -62,16 +75,49 @@ export default function ProspectList() {
     </th>
   )
 
+  const handleRestore = async (p: Prospect) => {
+    await restoreRecord('prospects', p.id, supabase)
+    load(archiveTab)
+  }
+
+  const handleDeletePermanently = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    await hardDeleteRecord('prospects', deleteTarget.id, supabase)
+    setDeleteTarget(null)
+    setDeleting(false)
+    load(archiveTab)
+  }
+
   const isOpen = selectedId !== undefined
 
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-white">Prospects</h2>
-        <button onClick={() => setSelectedId(null)}
-          className="px-4 py-2 bg-emerald-600 text-white text-sm rounded hover:bg-emerald-500">
-          + New Prospect
-        </button>
+        <div className="flex items-center gap-4">
+          <h2 className="text-xl font-bold text-white">Prospects</h2>
+          {/* Archive tabs */}
+          <div className="flex rounded-lg overflow-hidden border border-gray-700 text-xs">
+            <button
+              onClick={() => setArchiveTab('active')}
+              className={`px-3 py-1.5 transition ${archiveTab === 'active' ? 'bg-gray-700 text-white' : 'bg-transparent text-gray-400 hover:bg-gray-800'}`}
+            >
+              Active
+            </button>
+            <button
+              onClick={() => setArchiveTab('archived')}
+              className={`px-3 py-1.5 transition ${archiveTab === 'archived' ? 'bg-gray-700 text-white' : 'bg-transparent text-gray-400 hover:bg-gray-800'}`}
+            >
+              Archived
+            </button>
+          </div>
+        </div>
+        {archiveTab === 'active' && (
+          <button onClick={() => setSelectedId(null)}
+            className="px-4 py-2 bg-emerald-600 text-white text-sm rounded hover:bg-emerald-500">
+            + New Prospect
+          </button>
+        )}
       </div>
 
       {/* Filters */}
@@ -92,6 +138,12 @@ export default function ProspectList() {
           {salespeople.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>
       </div>
+
+      {archiveTab === 'archived' && (
+        <div className="mb-3 px-3 py-2 bg-yellow-900/20 border border-yellow-800/50 rounded text-xs text-yellow-400">
+          Archived prospects are hidden from the pipeline. Restore to make them active again.
+        </div>
+      )}
 
       {/* Table */}
       <div className="overflow-x-auto">
@@ -120,17 +172,28 @@ export default function ProspectList() {
                 <td className="py-2 text-gray-300">{p.setup_fee_amount != null ? `$${p.setup_fee_amount}` : '—'}</td>
                 <td className="py-2 text-gray-300">{p.monthly_price ? `$${p.monthly_price}/mo` : '—'}</td>
                 <td className="py-2 text-gray-400">{p.call_date || '—'}</td>
-                <td className="py-2 flex gap-2">
-                  <button onClick={() => setSelectedId(p.id)} className="text-xs text-emerald-400 hover:underline">Open</button>
-                  {p.provisioned_at && p.slug && (
-                    <button onClick={() => navigator.clipboard.writeText(`https://${p.slug}.pestflowpro.com`)}
-                      className="text-xs text-gray-400 hover:underline">Copy URL</button>
+                <td className="py-2">
+                  {archiveTab === 'active' ? (
+                    <div className="flex gap-2">
+                      <button onClick={() => setSelectedId(p.id)} className="text-xs text-emerald-400 hover:underline">Open</button>
+                      {p.provisioned_at && p.slug && (
+                        <button onClick={() => navigator.clipboard.writeText(`https://${p.slug}.pestflowpro.com`)}
+                          className="text-xs text-gray-400 hover:underline">Copy URL</button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <button onClick={() => handleRestore(p)} className="text-xs text-emerald-400 hover:underline">Restore</button>
+                      <button onClick={() => setDeleteTarget(p)} className="text-xs text-red-400 hover:underline">Delete Permanently</button>
+                    </div>
                   )}
                 </td>
               </tr>
             ))}
             {filtered.length === 0 && (
-              <tr><td colSpan={8} className="py-8 text-center text-gray-600">No prospects match the current filters.</td></tr>
+              <tr><td colSpan={8} className="py-8 text-center text-gray-600">
+                {archiveTab === 'archived' ? 'No archived prospects.' : 'No prospects match the current filters.'}
+              </td></tr>
             )}
           </tbody>
         </table>
@@ -141,8 +204,30 @@ export default function ProspectList() {
         <ProspectDetail
           prospectId={selectedId ?? null}
           salespeople={salespeople}
-          onClose={(refreshed) => { setSelectedId(undefined); if (refreshed) load() }}
+          onClose={(refreshed) => { setSelectedId(undefined); if (refreshed) load(archiveTab) }}
+          onArchived={(id, name) => { setUndoTarget({ id, name }); load(archiveTab) }}
         />
+      )}
+
+      {undoTarget && (
+        <UndoToast
+          table="prospects"
+          id={undoTarget.id}
+          label={`${undoTarget.name} archived.`}
+          onDismiss={() => { setUndoTarget(null); load(archiveTab) }}
+        />
+      )}
+
+      <ConfirmDeleteModal
+        isOpen={!!deleteTarget}
+        itemName={deleteTarget?.company_name || 'this prospect'}
+        onConfirm={handleDeletePermanently}
+        onCancel={() => setDeleteTarget(null)}
+      />
+      {deleting && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+          <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+        </div>
       )}
     </div>
   )
