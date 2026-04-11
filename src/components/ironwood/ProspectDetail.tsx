@@ -22,6 +22,8 @@ import BuildPathSelector      from './BuildPathSelector'
 import BuildStatusWidget      from './BuildStatusWidget'
 import QAGate                 from './QAGate'
 import SEOHealthPanel         from './SEOHealthPanel'
+import RedirectMapPanel       from './RedirectMapPanel'
+import type { RedirectRow }   from './RedirectMapTable'
 import ActivityLog            from './ActivityLog'
 import ClaudeContextDownload  from './ClaudeContextDownload'
 import FullCustomBuildGuide   from './FullCustomBuildGuide'
@@ -259,6 +261,19 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
             </div>
           )}
 
+          {/* 5c. Redirect Map — Pro/Elite with firecrawl_migration or full_custom builds */}
+          {id && (form.tier === 'pro' || form.tier === 'elite') &&
+           (form.build_path === 'firecrawl_migration' || form.build_path === 'full_custom') && (
+            <RedirectMapPanel
+              prospectId={id}
+              tenantId={form.tenant_id ?? null}
+              redirectMap={form.redirect_map ?? []}
+              redirectMapComplete={!!form.redirect_map_complete}
+              sourceUrl={form.source_url ?? null}
+              onUpdated={(patch) => setForm(f => ({ ...f, ...patch }))}
+            />
+          )}
+
           {/* 6a. SEO Health Panel — all tiers, provisioned tenants */}
           {id && (
             <SEOHealthPanel
@@ -273,6 +288,9 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
               pipelineStage={form.pipeline_stage ?? 'lead_closed'}
               companyName={form.company_name ?? ''}
               tenantId={form.tenant_id ?? null}
+              tier={form.tier ?? null}
+              buildPath={form.build_path ?? null}
+              redirectMapComplete={!!form.redirect_map_complete}
               onRevealReady={passedAt => {
                 setQaPassedAt(passedAt)
                 setForm(f => ({ ...f, pipeline_stage: 'reveal_ready' }))
