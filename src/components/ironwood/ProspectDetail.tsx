@@ -7,6 +7,7 @@ import OnboardingSection    from './ProspectDetail.Onboarding'
 import SiteSetupSection     from './ProspectDetail.SiteSetup'
 import IntegrationsSection  from './ProspectDetail.Integrations'
 import ProvisionSection     from './ProspectDetail.Provisioning'
+import OnboardingTimeline   from './ProspectDetail.Timeline'
 import RepGuideButton       from './RepGuideButton'
 import RepGuideDrawer       from './RepGuideDrawer'
 import ScrapePanel          from './ScrapePanel'
@@ -256,6 +257,7 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
             companyName={form.company_name ?? undefined}
             onImportSuccess={(data) => setForm(data)}
           />
+          {id && <OnboardingTimeline prospect={form} />}
           <div className="flex justify-end"><RepGuideButton section="invoice" onOpen={setGuideSection} /></div>
           <OnboardingSection form={form} setField={wrappedSetField} onBlur={onBlur} prospect={form} onUpdate={onUpdate} />
           <div className="flex items-center justify-end gap-2">
