@@ -18,6 +18,7 @@ import CustomDomainSetup    from './CustomDomainSetup'
 import BundleSocialSetup    from './BundleSocialSetup'
 import { archiveRecord }    from '../../lib/archiveUtils'
 import PipelineStage       from './PipelineStage'
+import BuildPathSelector   from './BuildPathSelector'
 
 interface Props {
   prospectId: string | null   // null = new prospect
@@ -227,6 +228,18 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
               onChanged={stage => setForm(f => ({ ...f, pipeline_stage: stage }))}
             />
           )}
+          {id && (
+            <BuildPathSelector
+              prospectId={id}
+              buildPath={form.build_path ?? null}
+              customScopeNotes={form.custom_scope_notes ?? null}
+              onChanged={(path, notes) => setForm(f => ({
+                ...f,
+                build_path: path,
+                ...(notes !== undefined ? { custom_scope_notes: notes } : {}),
+              }))}
+            />
+          )}
           <div className="flex items-center gap-2 flex-wrap">
             <a
               href="https://outlook.office.com/book/PestFlowProOnboarding@ironwoodoperationsgroup.com/?ismsaljsauthenabled"
@@ -247,17 +260,19 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
             <div className="ml-auto"><RepGuideButton section="sales-call" onOpen={setGuideSection} /></div>
           </div>
           <ContactSection form={form} setField={wrappedSetField} onBlur={onBlur} salespeople={salespeople} />
-          <div className="border-t border-gray-800 pt-4">
-            <ScrapePanel
-              sourceUrl={form.website_url || ''}
-              onSourceUrlChange={v => { wrappedSetField('website_url', v); onBlur() }}
-              prospectId={id}
-              onApplyScraped={onApplyScraped}
-              onApplyRecreation={onApplyRecreation}
-              tier={form.tier ?? null}
-              form={form}
-            />
-          </div>
+          {(!form.build_path || form.build_path !== 'template_launch') && (
+            <div className="border-t border-gray-800 pt-4">
+              <ScrapePanel
+                sourceUrl={form.website_url || ''}
+                onSourceUrlChange={v => { wrappedSetField('website_url', v); onBlur() }}
+                prospectId={id}
+                onApplyScraped={onApplyScraped}
+                onApplyRecreation={onApplyRecreation}
+                tier={form.tier ?? null}
+                form={form}
+              />
+            </div>
+          )}
           <div className="flex justify-end"><RepGuideButton section="intake" onOpen={setGuideSection} /></div>
           <IntakeLinkSection
             prospectId={id}
@@ -272,7 +287,9 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
             <RepGuideButton section="prospect-fields" onOpen={setGuideSection} />
             <RepGuideButton section="shell-palette" onOpen={setGuideSection} />
           </div>
-          <SiteSetupSection form={form} setField={wrappedSetField} onBlur={onBlur} />
+          {(!form.build_path || form.build_path !== 'firecrawl_migration') && (
+            <SiteSetupSection form={form} setField={wrappedSetField} onBlur={onBlur} />
+          )}
           {(form.tier === 'pro' || form.tier === 'elite') && (
             <BoltBuildGuide slug={form.slug ?? undefined} />
           )}
