@@ -10,6 +10,7 @@ import {
   TrendingUp, Lock, CreditCard, LifeBuoy
 } from 'lucide-react'
 import TierToggle from '../../components/admin/TierToggle'
+import { AdminTabErrorBoundary } from '../../components/admin/AdminTabErrorBoundary'
 import NotificationBell from '../../components/admin/NotificationBell'
 import DashboardHome from '../../components/admin/dashboard/DashboardHome'
 import DemoBanner from '../../components/admin/DemoBanner'
@@ -185,21 +186,95 @@ export default function Dashboard() {
 
         <PreviewModeContext.Provider value={previewMode}>
           <div className={`p-8 ${previewMode ? 'pointer-events-none select-none opacity-90' : ''}`} style={previewMode ? { pointerEvents: 'none' } : undefined}>
-            <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-gray-400 text-sm">Loading...</div></div>}>
-              {activeTab === 'dashboard' && <DashboardHome onboardingComplete={onboardingComplete} demoActive={demoActive} onDemoSeeded={() => setDemoActive(true)} onNavigate={(tab) => setActiveTab(tab as TabKey)} />}
-              {activeTab === 'content' && <ContentTab />}
-              {activeTab === 'seo' && <SEOTab />}
-              {activeTab === 'blog' && <BlogTab />}
-              {activeTab === 'social' && <SocialTab onNavigate={(t) => setActiveTab(t as TabKey)} />}
-              {activeTab === 'testimonials' && <TestimonialsTab />}
-              {activeTab === 'locations' && <LocationsTab />}
-              {activeTab === 'reports' && <ReportsTab />}
-              {activeTab === 'crm' && <CRMTab />}
-              {activeTab === 'team' && <TeamTab />}
-              {activeTab === 'billing' && <BillingTab />}
-              {activeTab === 'support' && <SupportTab />}
-              {activeTab === 'settings' && <SettingsTab />}
-            </Suspense>
+            {activeTab === 'dashboard' && (
+              <AdminTabErrorBoundary tabName="Dashboard">
+                <DashboardHome onboardingComplete={onboardingComplete} demoActive={demoActive} onDemoSeeded={() => setDemoActive(true)} onNavigate={(tab) => setActiveTab(tab as TabKey)} />
+              </AdminTabErrorBoundary>
+            )}
+            {activeTab === 'content' && (
+              <AdminTabErrorBoundary tabName="Content">
+                <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-gray-400 text-sm">Loading...</div></div>}>
+                  <ContentTab />
+                </Suspense>
+              </AdminTabErrorBoundary>
+            )}
+            {activeTab === 'seo' && (
+              <AdminTabErrorBoundary tabName="SEO">
+                <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-gray-400 text-sm">Loading...</div></div>}>
+                  <SEOTab />
+                </Suspense>
+              </AdminTabErrorBoundary>
+            )}
+            {activeTab === 'blog' && (
+              <AdminTabErrorBoundary tabName="Blog">
+                <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-gray-400 text-sm">Loading...</div></div>}>
+                  <BlogTab />
+                </Suspense>
+              </AdminTabErrorBoundary>
+            )}
+            {activeTab === 'social' && (
+              <AdminTabErrorBoundary tabName="Social">
+                <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-gray-400 text-sm">Loading...</div></div>}>
+                  <SocialTab onNavigate={(t) => setActiveTab(t as TabKey)} />
+                </Suspense>
+              </AdminTabErrorBoundary>
+            )}
+            {activeTab === 'testimonials' && (
+              <AdminTabErrorBoundary tabName="Testimonials">
+                <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-gray-400 text-sm">Loading...</div></div>}>
+                  <TestimonialsTab />
+                </Suspense>
+              </AdminTabErrorBoundary>
+            )}
+            {activeTab === 'locations' && (
+              <AdminTabErrorBoundary tabName="Locations">
+                <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-gray-400 text-sm">Loading...</div></div>}>
+                  <LocationsTab />
+                </Suspense>
+              </AdminTabErrorBoundary>
+            )}
+            {activeTab === 'reports' && (
+              <AdminTabErrorBoundary tabName="Reports">
+                <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-gray-400 text-sm">Loading...</div></div>}>
+                  <ReportsTab />
+                </Suspense>
+              </AdminTabErrorBoundary>
+            )}
+            {activeTab === 'crm' && (
+              <AdminTabErrorBoundary tabName="CRM">
+                <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-gray-400 text-sm">Loading...</div></div>}>
+                  <CRMTab />
+                </Suspense>
+              </AdminTabErrorBoundary>
+            )}
+            {activeTab === 'team' && (
+              <AdminTabErrorBoundary tabName="Team">
+                <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-gray-400 text-sm">Loading...</div></div>}>
+                  <TeamTab />
+                </Suspense>
+              </AdminTabErrorBoundary>
+            )}
+            {activeTab === 'billing' && (
+              <AdminTabErrorBoundary tabName="Billing">
+                <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-gray-400 text-sm">Loading...</div></div>}>
+                  <BillingTab />
+                </Suspense>
+              </AdminTabErrorBoundary>
+            )}
+            {activeTab === 'support' && (
+              <AdminTabErrorBoundary tabName="Support">
+                <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-gray-400 text-sm">Loading...</div></div>}>
+                  <SupportTab />
+                </Suspense>
+              </AdminTabErrorBoundary>
+            )}
+            {activeTab === 'settings' && (
+              <AdminTabErrorBoundary tabName="Settings">
+                <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-gray-400 text-sm">Loading...</div></div>}>
+                  <SettingsTab />
+                </Suspense>
+              </AdminTabErrorBoundary>
+            )}
           </div>
         </PreviewModeContext.Provider>
       </main>

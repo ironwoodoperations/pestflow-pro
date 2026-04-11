@@ -8,7 +8,7 @@ import PalettePicker from '../../shared/PalettePicker'
 
 interface BrandingForm {
   logo_url: string; favicon_url: string; primary_color: string; accent_color: string
-  template: 'modern-pro' | 'bold-local' | 'clean-friendly' | 'rustic-rugged' | 'youpest'
+  template: 'modern-pro' | 'bold-local' | 'clean-friendly' | 'rustic-rugged' | 'youpest' | 'dang' | (string & {})
   cta_text: string
 }
 
@@ -37,7 +37,18 @@ export default function BrandingSection() {
       supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
       supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'subscription').maybeSingle(),
     ]).then(([brandingRes, subRes]) => {
-      if (brandingRes.data?.value) setForm(prev => ({ ...prev, ...brandingRes.data!.value }))
+      if (brandingRes.data?.value) {
+        const v = brandingRes.data.value as Partial<BrandingForm>
+        setForm(prev => ({
+          ...prev,
+          logo_url:      v.logo_url      ?? prev.logo_url,
+          favicon_url:   v.favicon_url   ?? prev.favicon_url,
+          primary_color: v.primary_color ?? prev.primary_color,
+          accent_color:  v.accent_color  ?? prev.accent_color,
+          template:      v.template      ?? prev.template,
+          cta_text:      v.cta_text      ?? prev.cta_text,
+        }))
+      }
       if (subRes.data?.value?.tier) setTierNum(Number(subRes.data!.value.tier) || 1)
       setLoading(false)
     })
@@ -86,17 +97,17 @@ export default function BrandingSection() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Primary Color</label>
             <div className="flex gap-2">
-              <input type="color" value={form.primary_color} onChange={e => setForm(prev => ({ ...prev, primary_color: e.target.value }))}
+              <input type="color" value={/^#[0-9a-fA-F]{6}$/.test(form.primary_color) ? form.primary_color : '#10b981'} onChange={e => setForm(prev => ({ ...prev, primary_color: e.target.value }))}
                 className="h-10 w-14 rounded border border-gray-300 cursor-pointer" />
-              <input type="text" value={form.primary_color} onChange={e => setForm(prev => ({ ...prev, primary_color: e.target.value }))} className={`flex-1 ${inputClass}`} />
+              <input type="text" value={form.primary_color || ''} onChange={e => setForm(prev => ({ ...prev, primary_color: e.target.value }))} className={`flex-1 ${inputClass}`} />
             </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Accent Color</label>
             <div className="flex gap-2">
-              <input type="color" value={form.accent_color} onChange={e => setForm(prev => ({ ...prev, accent_color: e.target.value }))}
+              <input type="color" value={/^#[0-9a-fA-F]{6}$/.test(form.accent_color) ? form.accent_color : '#f5c518'} onChange={e => setForm(prev => ({ ...prev, accent_color: e.target.value }))}
                 className="h-10 w-14 rounded border border-gray-300 cursor-pointer" />
-              <input type="text" value={form.accent_color} onChange={e => setForm(prev => ({ ...prev, accent_color: e.target.value }))} className={`flex-1 ${inputClass}`} />
+              <input type="text" value={form.accent_color || ''} onChange={e => setForm(prev => ({ ...prev, accent_color: e.target.value }))} className={`flex-1 ${inputClass}`} />
             </div>
           </div>
         </div>
