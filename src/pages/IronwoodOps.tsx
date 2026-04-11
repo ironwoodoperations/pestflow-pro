@@ -7,8 +7,9 @@ const PipelineBoard   = lazy(() => import('../components/ironwood/PipelineBoard'
 const ReportsTab      = lazy(() => import('../components/ironwood/ReportsTab'))
 const ProspectList    = lazy(() => import('../components/ironwood/ProspectList'))
 const IntegrationsTab = lazy(() => import('../components/ironwood/IntegrationsTab'))
+const SupportPanel    = lazy(() => import('../components/ironwood/SupportPanel'))
 
-type Tab = 'pipeline' | 'prospects' | 'reports' | 'integrations' | 'team'
+type Tab = 'pipeline' | 'prospects' | 'reports' | 'integrations' | 'team' | 'support'
 
 const NAV: { id: Tab; label: string; icon: string }[] = [
   { id: 'pipeline',     label: 'Pipeline',     icon: '📋' },
@@ -16,6 +17,7 @@ const NAV: { id: Tab; label: string; icon: string }[] = [
   { id: 'reports',      label: 'Reports',      icon: '📊' },
   { id: 'integrations', label: 'Integrations', icon: '🔑' },
   { id: 'team',         label: 'Team',         icon: '👥' },
+  { id: 'support',      label: 'Support',      icon: '🎟️' },
 ]
 
 const SPIN = <div className="p-8 text-gray-500 text-sm">Loading...</div>
@@ -107,6 +109,7 @@ export default function IronwoodOps() {
           {tab === 'reports'      && <ReportsTab />}
           {tab === 'integrations' && <IntegrationsTab />}
           {tab === 'team'         && <TeamTab />}
+          {tab === 'support'      && <SupportPanel />}
         </Suspense>
       </main>
     </div>

@@ -7,7 +7,7 @@ import { usePlan } from '../../hooks/usePlan'
 import {
   FileText, Search, BookOpen, Share2, Star,
   MapPin, BarChart3, Users, Settings, LogOut, ExternalLink, Eye, EyeOff,
-  TrendingUp, Lock, CreditCard
+  TrendingUp, Lock, CreditCard, LifeBuoy
 } from 'lucide-react'
 import TierToggle from '../../components/admin/TierToggle'
 import NotificationBell from '../../components/admin/NotificationBell'
@@ -26,6 +26,7 @@ const CRMTab        = lazy(() => import('../../components/admin/CRMTab'))
 const SettingsTab   = lazy(() => import('../../components/admin/settings/SettingsTab'))
 const TeamTab          = lazy(() => import('../../components/admin/team/TeamTab'))
 const BillingTab       = lazy(() => import('../../components/admin/BillingTab'))
+const SupportTab       = lazy(() => import('../../components/admin/SupportTab'))
 const TABS = [
   { key: 'dashboard', label: 'Dashboard', icon: BarChart3 },
   { key: 'content', label: 'Content', icon: FileText },
@@ -38,6 +39,7 @@ const TABS = [
   { key: 'crm', label: 'CRM', icon: Users },
   { key: 'team', label: 'Team', icon: Users },
   { key: 'billing', label: 'Billing', icon: CreditCard },
+  { key: 'support', label: 'Support', icon: LifeBuoy },
   { key: 'settings', label: 'Settings', icon: Settings },
 ] as const
 
@@ -55,6 +57,7 @@ const TAB_SUBTITLES: Record<string, string> = {
   crm: 'Track leads and customer relationships',
   team: 'Manage your team members shown on your website',
   billing: 'Your current plan and payment history',
+  support: 'Submit support requests to the PestFlow Pro team',
   settings: 'Configure your business settings',
 }
 
@@ -194,6 +197,7 @@ export default function Dashboard() {
               {activeTab === 'crm' && <CRMTab />}
               {activeTab === 'team' && <TeamTab />}
               {activeTab === 'billing' && <BillingTab />}
+              {activeTab === 'support' && <SupportTab />}
               {activeTab === 'settings' && <SettingsTab />}
             </Suspense>
           </div>
