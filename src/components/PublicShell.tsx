@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react'
-import { lazy, Suspense, useEffect } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useTemplate } from '../context/TemplateContext'
 import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
 import HolidayBanner from './HolidayBanner'
+import SEOHead, { type BusinessInfo, type SeoSettings, type SchemaConfig, type SocialLinks, type PageType } from './seo/SEOHead'
 import ModernProNavbar from '../shells/modern-pro/ShellNavbar'
 import ModernProFooter from '../shells/modern-pro/ShellFooter'
 import ModernProSections from '../shells/modern-pro/ShellHomeSections'
@@ -25,6 +26,97 @@ const YouPestSections      = lazy(() => import('../shells/youpest/ShellHomeSecti
 const DangNavbar           = lazy(() => import('../shells/dang/ShellNavbar'))
 const DangFooter           = lazy(() => import('../shells/dang/ShellFooter'))
 const DangSections         = lazy(() => import('../shells/dang/ShellHomeSections'))
+
+// Maps route pathnames to SEO page type + title
+function resolvePageMeta(pathname: string): { pageType: PageType; title: string } {
+  if (pathname === '/') return { pageType: 'home', title: 'Home' }
+  if (pathname === '/about') return { pageType: 'about', title: 'About Us' }
+  if (pathname === '/faq') return { pageType: 'faq', title: 'FAQ' }
+  if (pathname === '/contact') return { pageType: 'contact', title: 'Contact Us' }
+  if (pathname === '/quote') return { pageType: 'contact', title: 'Get a Free Quote' }
+  if (pathname.startsWith('/blog/')) return { pageType: 'blog', title: 'Blog' }
+  if (pathname === '/blog') return { pageType: 'blog', title: 'Blog' }
+  if (pathname.includes('pest-control')) return { pageType: 'service', title: 'Pest Control' }
+  if (pathname.includes('termite')) return { pageType: 'service', title: 'Termite Control' }
+  if (pathname.includes('mosquito')) return { pageType: 'service', title: 'Mosquito Control' }
+  if (pathname.includes('rodent')) return { pageType: 'service', title: 'Rodent Control' }
+  if (pathname.includes('ant-control')) return { pageType: 'service', title: 'Ant Control' }
+  if (pathname.includes('spider')) return { pageType: 'service', title: 'Spider Control' }
+  if (pathname.includes('roach')) return { pageType: 'service', title: 'Roach Control' }
+  if (pathname.includes('bed-bug')) return { pageType: 'service', title: 'Bed Bug Control' }
+  if (pathname.includes('flea') || pathname.includes('tick')) return { pageType: 'service', title: 'Flea & Tick Control' }
+  if (pathname.includes('wasp') || pathname.includes('hornet')) return { pageType: 'service', title: 'Wasp & Hornet Control' }
+  if (pathname.includes('scorpion')) return { pageType: 'service', title: 'Scorpion Control' }
+  return { pageType: 'custom', title: 'Pest Control Services' }
+}
+
+const EMPTY_SEO: SeoSettings = { meta_description: '', service_areas: [], certifications: [], founded_year: '', owner_name: '' }
+const EMPTY_SCHEMA: SchemaConfig = { aggregate_rating: { value: 5.0, count: 47 }, service_radius_miles: 30 }
+const EMPTY_SOCIAL: SocialLinks = {}
+const EMPTY_BIZ: BusinessInfo = { name: '', phone: '', email: '', address: '' }
+
+function SEOManager() {
+  const location = useLocation()
+  const { businessName } = useTemplate()
+  const [bizInfo, setBizInfo] = useState<BusinessInfo>(EMPTY_BIZ)
+  const [seoSettings, setSeoSettings] = useState<SeoSettings>(EMPTY_SEO)
+  const [schemaConfig, setSchemaConfig] = useState<SchemaConfig>(EMPTY_SCHEMA)
+  const [socialLinks, setSocialLinks] = useState<SocialLinks>(EMPTY_SOCIAL)
+  const [tenantSlug, setTenantSlug] = useState('')
+  const [tagline, setTagline] = useState('')
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    resolveTenantId().then(async (tenantId) => {
+      if (!tenantId) return
+      const [bizRes, seoRes, schemaRes, socialRes, brandRes] = await Promise.all([
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'seo').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'schema_config').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'social_links').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
+      ])
+      if (bizRes.data?.value) setBizInfo(bizRes.data.value as BusinessInfo)
+      if (seoRes.data?.value) setSeoSettings(seoRes.data.value as SeoSettings)
+      if (schemaRes.data?.value) setSchemaConfig(schemaRes.data.value as SchemaConfig)
+      if (socialRes.data?.value) setSocialLinks(socialRes.data.value as SocialLinks)
+      if (brandRes.data?.value?.tagline) setTagline(brandRes.data.value.tagline)
+      // Derive slug from hostname or localStorage
+      const hostname = window.location.hostname
+      if (hostname.endsWith('.pestflowpro.com')) {
+        setTenantSlug(hostname.split('.')[0])
+      } else {
+        const { data: tenant } = await supabase.from('tenants').select('slug').eq('id', tenantId).maybeSingle()
+        if (tenant?.slug) setTenantSlug(tenant.slug)
+      }
+      setLoaded(true)
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!loaded || !bizInfo.name) return null
+
+  const { pageType, title } = resolvePageMeta(location.pathname)
+  const origin = window.location.origin
+  const canonicalUrl = `${origin}${location.pathname}`
+
+  return (
+    <SEOHead
+      title={title}
+      canonicalUrl={canonicalUrl}
+      pageType={pageType}
+      breadcrumbs={[
+        { name: bizInfo.name || businessName, url: '/' },
+        ...(location.pathname !== '/' ? [{ name: title, url: location.pathname }] : []),
+      ]}
+      businessInfo={bizInfo}
+      seoSettings={seoSettings}
+      schemaConfig={schemaConfig}
+      socialLinks={socialLinks}
+      tenantSlug={tenantSlug}
+      tagline={tagline}
+    />
+  )
+}
 
 // Injects canonical <link> tag and redirects subdomain → custom domain when verified.
 function CanonicalManager() {
@@ -152,6 +244,7 @@ export default function PublicShell({ children }: Props) {
 
   return (
     <>
+      <SEOManager />
       <CanonicalManager />
       <HolidayBanner />
       <ShellNav />
