@@ -17,8 +17,9 @@ Stop only when you genuinely cannot proceed without information not in this file
 ## BEFORE YOU WRITE A SINGLE LINE OF CODE
 
 1. Read `SKILL.md` in the project root — full architecture, schema, file paths
-2. If a file you need to edit exists, read it fully before touching it
-3. Check what was last built: `git log --oneline -10`
+2. Read `PROJECT_MANIFEST.md` — current phase, open items, decisions log (replaces all prior session context .md files)
+3. If a file you need to edit exists, read it fully before touching it
+4. Check what was last built: `git log --oneline -10`
 
 ---
 
