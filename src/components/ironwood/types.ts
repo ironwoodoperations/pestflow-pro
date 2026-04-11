@@ -51,6 +51,7 @@ export interface Prospect {
   branding: Record<string, any> | null
   customization: Record<string, any> | null
   intake_data: Record<string, any> | null
+  intake_submitted_at: string | null
   service_areas: string | null
   hero_headline: string | null
   tenant_id: string | null
