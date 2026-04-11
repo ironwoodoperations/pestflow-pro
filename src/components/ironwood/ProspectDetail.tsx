@@ -19,6 +19,7 @@ import BundleSocialSetup    from './BundleSocialSetup'
 import { archiveRecord }    from '../../lib/archiveUtils'
 import PipelineStage       from './PipelineStage'
 import BuildPathSelector   from './BuildPathSelector'
+import BuildStatusWidget   from './BuildStatusWidget'
 
 interface Props {
   prospectId: string | null   // null = new prospect
@@ -238,6 +239,13 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
                 build_path: path,
                 ...(notes !== undefined ? { custom_scope_notes: notes } : {}),
               }))}
+            />
+          )}
+          {id && (
+            <BuildStatusWidget
+              prospectId={id}
+              buildPath={form.build_path ?? null}
+              pipelineStage={form.pipeline_stage ?? 'lead_closed'}
             />
           )}
           <div className="flex items-center gap-2 flex-wrap">
