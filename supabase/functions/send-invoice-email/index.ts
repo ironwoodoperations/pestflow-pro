@@ -36,6 +36,7 @@ Deno.serve(async (req) => {
 
     await sendEmail({
       to: prospectEmail,
+      replyTo: 'pfsales@pestflowpro.com',
       subject: `Your PestFlow Pro setup invoice — ${biz}`,
       html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
   <h2 style="color:#16a34a">Your Website Setup Invoice</h2>

@@ -36,6 +36,7 @@ Deno.serve(async (req) => {
 
     await sendEmail({
       to: adminEmail,
+      replyTo: 'onboarding@pestflowpro.com',
       subject: `Your ${biz} website is live!`,
       html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
   <h2 style="color:#16a34a">🎉 Your Website is Live!</h2>

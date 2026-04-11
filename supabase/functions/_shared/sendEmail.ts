@@ -15,7 +15,7 @@ export async function sendEmail({
 }): Promise<void> {
   const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') || ''
   const payload: Record<string, unknown> = {
-    from: 'PestFlow Pro <onboarding@pestflow.ai>',
+    from: 'PestFlow Pro <noreply@pestflow.ai>',
     to,
     subject,
     html,

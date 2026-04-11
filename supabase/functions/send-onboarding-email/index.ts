@@ -25,7 +25,8 @@ serve(async (req) => {
       // Mode 1: Client welcome email — no credentials, team delivers them separately
       const { to, company_name, live_url } = body
       emailPayload = {
-        from: 'PestFlow Pro <onboarding@pestflow.ai>',
+        from: 'PestFlow Pro <noreply@pestflow.ai>',
+        reply_to: 'onboarding@pestflowpro.com',
         to: [to],
         subject: `Welcome to PestFlow Pro \u2014 ${company_name}`,
         html: `
@@ -44,7 +45,7 @@ serve(async (req) => {
               ${live_url ? `<div style="margin-bottom:28px"><a href="${live_url}" style="display:inline-block;background:#10b981;color:#fff;font-weight:600;font-size:14px;padding:12px 20px;border-radius:8px;text-decoration:none">Explore PestFlow Pro</a></div>` : ''}
               <hr style="border:none;border-top:1px solid #e5e7eb;margin:28px 0" />
               <p style="color:#9ca3af;font-size:12px;margin:0">
-                Questions? Reply to this email or contact us at support@pestflowpro.com.<br />
+                Questions? Reply to this email or contact us at onboarding@pestflowpro.com.<br />
                 Powered by PestFlow Pro &#x2014; built for home service businesses.
               </p>
             </div>
@@ -55,7 +56,8 @@ serve(async (req) => {
       // Mode 2: Scott's setup notification (existing behavior)
       const { business_name, contact_name, plan, markdown_content } = body
       emailPayload = {
-        from: 'PestFlow Pro <onboarding@pestflow.ai>',
+        from: 'PestFlow Pro <noreply@pestflow.ai>',
+        reply_to: 'onboarding@pestflowpro.com',
         to: ['scott@ironwoodoperationsgroup.com'],
         subject: `New Client Setup \u2014 ${business_name} (${plan})`,
         html: `

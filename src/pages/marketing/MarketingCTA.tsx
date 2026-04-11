@@ -52,6 +52,13 @@ export default function MarketingCTA() {
               color: '#93c5fd', fontSize: 15, fontWeight: 500,
               fontFamily: "'Plus Jakarta Sans', sans-serif", textDecoration: 'none',
             }}>Open Admin Dashboard →</a>
+
+            <a href="mailto:hello@pestflowpro.com" style={{
+              padding: '14px 26px', borderRadius: 10,
+              border: '1px solid rgba(255,255,255,0.1)',
+              color: C.muted, fontSize: 15, fontWeight: 500,
+              fontFamily: "'Plus Jakarta Sans', sans-serif", textDecoration: 'none',
+            }}>Contact Us</a>
           </div>
         </div>
       </section>
