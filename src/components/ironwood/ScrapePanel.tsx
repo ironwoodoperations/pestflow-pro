@@ -4,7 +4,6 @@ import ScrapeResultsTable from './ScrapeResultsTable'
 import SiteRecreationCard from './SiteRecreationCard'
 import type { SiteRecreation } from './SiteRecreationCard'
 import GenerateProLayout from './GenerateProLayout'
-import ExportForBolt from './ExportForBolt'
 import type { Prospect } from './types'
 
 export interface ScrapedData {
@@ -182,9 +181,8 @@ export default function ScrapePanel({ sourceUrl, onSourceUrlChange, prospectId, 
               <GenerateProLayout prospectId={prospectId} tier={tier ?? null} form={form ?? {}} />
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-400 mb-1">📦 Custom Bolt Build</p>
-              <p className="text-xs text-gray-600 mb-2">90% site match — export context for Bolt</p>
-              <ExportForBolt prospectId={prospectId} companyName={form?.company_name ?? ''} />
+              <p className="text-xs font-medium text-gray-400 mb-1">🛠 Full Custom Build</p>
+              <p className="text-xs text-gray-600">Custom shell built from your existing site — set Build Path to Full Custom, then download the Claude Code prompt below in Build Files.</p>
             </div>
           </div>
         </div>
