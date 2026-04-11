@@ -1,3 +1,6 @@
+// sendEmail — shared Resend helper for all PestFlow Pro edge functions
+// From: "PestFlow Pro <noreply@pestflow.ai>" (always)
+// replyTo varies per template
 export async function sendEmail({
   to,
   cc,
