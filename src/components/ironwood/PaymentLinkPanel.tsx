@@ -10,11 +10,12 @@ interface Props {
 }
 
 export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
-  const [loadingInvoice, setLoadingInvoice] = useState(false)
-  const [loadingLink, setLoadingLink]       = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [confirmWaive, setConfirmWaive]     = useState(false)
-  const [sendingInvoice, setSendingInvoice] = useState(false)
+  const [loadingInvoice, setLoadingInvoice]   = useState(false)
+  const [loadingLink, setLoadingLink]         = useState(false)
+  const [error, setError]                     = useState<string | null>(null)
+  const [confirmWaive, setConfirmWaive]       = useState(false)
+  const [sendingInvoice, setSendingInvoice]   = useState(false)
+  const [markingSent, setMarkingSent]         = useState(false)
 
   const setupFeeAmount = prospect.setup_fee_amount || 0
   const hasSetupFee    = setupFeeAmount > 0
@@ -95,6 +96,16 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
     const updates: Partial<Prospect> = { payment_confirmed_at: now, status: 'paid' }
     if (prospect.id) await supabase.from('prospects').update(updates).eq('id', prospect.id)
     onUpdate(updates)
+  }
+
+  async function markInvoiceSent() {
+    if (!prospect.id) return
+    setMarkingSent(true)
+    const now = new Date().toISOString()
+    await supabase.from('prospects').update({ setup_invoice_sent_at: now }).eq('id', prospect.id)
+    onUpdate({ setup_invoice_sent_at: now })
+    toast.success('Invoice marked as sent')
+    setMarkingSent(false)
   }
 
   async function sendInvoiceEmail() {
@@ -217,10 +228,22 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
         )}
 
         {!prospect.setup_invoice_url && !prospect.payment_confirmed_at ? (
-          <button onClick={generateInvoice} disabled={loadingInvoice}
-            className="px-3 py-1.5 bg-amber-700 text-white text-xs rounded hover:bg-amber-600 disabled:opacity-50">
-            {loadingInvoice ? 'Generating…' : hasSetupFee ? '📄 Generate Setup Invoice' : '📄 Waive Setup Fee'}
-          </button>
+          <div className="flex flex-wrap gap-2 items-center">
+            <button onClick={generateInvoice} disabled={loadingInvoice}
+              className="px-3 py-1.5 bg-amber-700 text-white text-xs rounded hover:bg-amber-600 disabled:opacity-50">
+              {loadingInvoice ? 'Generating…' : hasSetupFee ? '📄 Generate Setup Invoice' : '📄 Waive Setup Fee'}
+            </button>
+            {!prospect.setup_invoice_sent_at ? (
+              <button onClick={markInvoiceSent} disabled={markingSent}
+                className="px-3 py-1.5 bg-gray-700 text-white text-xs rounded hover:bg-gray-600 disabled:opacity-50">
+                {markingSent ? 'Saving…' : '✓ Mark Invoice Sent'}
+              </button>
+            ) : (
+              <span className="text-xs text-emerald-400">
+                ✓ Invoice sent {new Date(prospect.setup_invoice_sent_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </span>
+            )}
+          </div>
         ) : prospect.setup_invoice_url ? (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
