@@ -21,6 +21,7 @@ import PipelineStage          from './PipelineStage'
 import BuildPathSelector      from './BuildPathSelector'
 import BuildStatusWidget      from './BuildStatusWidget'
 import QAGate                 from './QAGate'
+import SEOHealthPanel         from './SEOHealthPanel'
 import ActivityLog            from './ActivityLog'
 import ClaudeContextDownload  from './ClaudeContextDownload'
 import FullCustomBuildGuide   from './FullCustomBuildGuide'
@@ -256,6 +257,14 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
               />
               <FullCustomBuildGuide slug={form.slug ?? null} />
             </div>
+          )}
+
+          {/* 6a. SEO Health Panel — all tiers, provisioned tenants */}
+          {id && (
+            <SEOHealthPanel
+              tenantId={form.tenant_id ?? null}
+              prospectId={id}
+            />
           )}
 
           {/* 6. QA Gate (it_in_progress / reveal_ready only) */}
