@@ -1,6 +1,7 @@
 import { useParams } from 'react-router-dom'
 import { Suspense, lazy, useEffect, useState } from 'react'
 import LocationPage from './LocationPage'
+import CustomPage from './CustomPage'
 import NotFound from './NotFound'
 import SuspendedSite from '../components/SuspendedSite'
 import { supabase } from '../lib/supabase'
@@ -27,7 +28,7 @@ function isPlatformDomain(hostname: string): boolean {
 
 export default function SlugRouter() {
   const { slug } = useParams<{ slug: string }>()
-  const [type, setType] = useState<'location' | 'not-found' | 'loading' | 'suspended'>(() => slug ? 'loading' : 'not-found')
+  const [type, setType] = useState<'location' | 'custom-page' | 'not-found' | 'loading' | 'suspended'>(() => slug ? 'loading' : 'not-found')
   const rootDomain = checkRootDomain()
 
   const hostname = window.location.hostname
@@ -64,14 +65,23 @@ export default function SlugRouter() {
         .maybeSingle()
       if (tenant?.archived_at) { setType('suspended'); return }
 
-      const { data } = await supabase
+      const { data: locData } = await supabase
         .from('location_data')
         .select('id')
         .eq('tenant_id', tenantId)
         .eq('slug', slug)
         .eq('is_live', true)
         .maybeSingle()
-      setType(data ? 'location' : 'not-found')
+      if (locData) { setType('location'); return }
+
+      // Check for custom page in page_content
+      const { data: pageData } = await supabase
+        .from('page_content')
+        .select('page_slug')
+        .eq('tenant_id', tenantId)
+        .eq('page_slug', slug)
+        .maybeSingle()
+      setType(pageData ? 'custom-page' : 'not-found')
     })
   }, [slug, rootDomain, onCustomDomain, hostname])
 
@@ -106,5 +116,6 @@ export default function SlugRouter() {
 
   if (type === 'suspended') return <SuspendedSite />
   if (type === 'location') return <LocationPage slug={slug!} />
+  if (type === 'custom-page') return <CustomPage slug={slug!} />
   return <NotFound />
 }
