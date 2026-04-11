@@ -26,6 +26,8 @@ import RedirectMapPanel       from './RedirectMapPanel'
 import ActivityLog            from './ActivityLog'
 import ClaudeContextDownload  from './ClaudeContextDownload'
 import FullCustomBuildGuide   from './FullCustomBuildGuide'
+import ProspectFormGuide, { InlineGuide } from './ProspectFormGuide'
+import type { GuideSection } from './ProspectFormGuide'
 
 interface Props {
   prospectId: string | null
@@ -45,6 +47,7 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
   const [id, setId]                   = useState<string | null>(prospectId)
   const [slugEdited, setSlugEdited]   = useState(false)
   const [guideSection, setGuideSection] = useState<string | null>(null)
+  const [activeSection, setActiveSection] = useState<GuideSection>(null)
   const [qaPassedAt, setQaPassedAt]   = useState<string | null>(null)
   const timer                         = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
@@ -162,11 +165,12 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
   return (
     <div className="fixed inset-0 z-40 flex justify-end" onClick={() => onClose(true)}>
       <RepGuideDrawer section={guideSection} onClose={() => setGuideSection(null)} />
-      <div className="w-full max-w-2xl bg-gray-950 border-l border-gray-800 h-full overflow-y-auto shadow-2xl"
-        onClick={e => e.stopPropagation()}>
-
+      <div
+        className="w-full max-w-4xl bg-gray-950 border-l border-gray-800 h-full flex flex-col shadow-2xl"
+        onClick={e => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="sticky top-0 z-10 px-5 py-3 bg-gray-950 border-b border-gray-800">
+        <div className="shrink-0 z-10 px-5 py-3 bg-gray-950 border-b border-gray-800">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 min-w-0">
               <h2 className="font-bold text-white truncate">{form.company_name || 'New Prospect'}</h2>
@@ -197,170 +201,197 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
           )}
         </div>
 
-        {/* Sections — ordered per spec */}
-        <div className="p-5 space-y-6">
+        {/* Body — two columns on desktop */}
+        <div className="flex flex-1 overflow-hidden">
 
-          {/* 1. Pipeline Stage */}
-          {id && (
-            <PipelineStage
-              prospectId={id}
-              stage={form.pipeline_stage ?? 'lead_closed'}
-              qaPassedAt={qaPassedAt}
-              companyName={form.company_name ?? undefined}
-              buildPath={form.build_path ?? null}
-              onChanged={stage => setForm(f => ({ ...f, pipeline_stage: stage }))}
-            />
-          )}
+          {/* Left column: form fields */}
+          <div className="flex-[3] overflow-y-auto p-5 space-y-6">
 
-          {/* 2. Build Path */}
-          {id && (
-            <BuildPathSelector
-              prospectId={id}
-              buildPath={form.build_path ?? null}
-              customScopeNotes={form.custom_scope_notes ?? null}
-              onChanged={(path, notes) => setForm(f => ({
-                ...f, build_path: path,
-                ...(notes !== undefined ? { custom_scope_notes: notes } : {}),
-              }))}
-            />
-          )}
-
-          {/* 3. Intake Link */}
-          <div className="flex justify-end"><RepGuideButton section="intake" onOpen={setGuideSection} /></div>
-          <IntakeLinkSection
-            prospectId={id}
-            adminEmail={form.admin_email ?? undefined}
-            companyName={form.company_name ?? undefined}
-            onImportSuccess={(data) => setForm(data)}
-          />
-
-          {/* 4. Payment / Invoice */}
-          <div className="flex justify-end"><RepGuideButton section="invoice" onOpen={setGuideSection} /></div>
-          <OnboardingSection form={form} setField={wrappedSetField} onBlur={onBlur} prospect={form} onUpdate={onUpdate} />
-
-          {/* 5. Build Status */}
-          {id && (
-            <BuildStatusWidget
-              prospectId={id}
-              buildPath={form.build_path ?? null}
-              pipelineStage={form.pipeline_stage ?? 'lead_closed'}
-            />
-          )}
-
-          {/* 5b. Claude Context Download + Build Guide — full_custom builds only */}
-          {id && form.build_path === 'full_custom' && (
-            <div className="space-y-3">
-              <h3 className="font-semibold text-gray-200 border-b border-gray-700 pb-1">Build Files</h3>
-              <ClaudeContextDownload
+            {/* Pipeline Stage */}
+            {id && (
+              <PipelineStage
                 prospectId={id}
-                slug={form.slug ?? null}
-                websiteUrl={form.website_url ?? null}
+                stage={form.pipeline_stage ?? 'lead_closed'}
+                qaPassedAt={qaPassedAt}
+                companyName={form.company_name ?? undefined}
+                buildPath={form.build_path ?? null}
+                onChanged={stage => setForm(f => ({ ...f, pipeline_stage: stage }))}
               />
-              <FullCustomBuildGuide slug={form.slug ?? null} />
+            )}
+
+            {/* 1. Business Info */}
+            <div onFocus={() => setActiveSection('business_info')}>
+              <InlineGuide section="business_info" activeSection={activeSection} />
+              <div className="flex items-center gap-2 flex-wrap mb-3">
+                <a href="https://outlook.office.com/book/PestFlowProOnboarding@ironwoodoperationsgroup.com/?ismsaljsauthenabled"
+                  target="_blank" rel="noopener noreferrer"
+                  className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-lg transition">
+                  📅 Book Call
+                </a>
+                <a href="https://teams.microsoft.com/l/meeting/new"
+                  target="_blank" rel="noopener noreferrer"
+                  className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-lg transition">
+                  🎥 Teams Call
+                </a>
+                <div className="ml-auto"><RepGuideButton section="sales-call" onOpen={setGuideSection} /></div>
+              </div>
+              <ContactSection form={form} setField={wrappedSetField} onBlur={onBlur} salespeople={salespeople} />
             </div>
-          )}
 
-          {/* 5c. Redirect Map — Pro/Elite with firecrawl_migration or full_custom builds */}
-          {id && (form.tier === 'pro' || form.tier === 'elite') &&
-           (form.build_path === 'firecrawl_migration' || form.build_path === 'full_custom') && (
-            <RedirectMapPanel
-              prospectId={id}
-              tenantId={form.tenant_id ?? null}
-              redirectMap={form.redirect_map ?? []}
-              redirectMapComplete={!!form.redirect_map_complete}
-              sourceUrl={form.source_url ?? null}
-              onUpdated={(patch) => setForm(f => ({ ...f, ...patch }))}
-            />
-          )}
+            {/* 2. Build Path */}
+            {id && (
+              <div onFocus={() => setActiveSection('build_path')}>
+                <InlineGuide section="build_path" activeSection={activeSection} />
+                <BuildPathSelector
+                  prospectId={id}
+                  buildPath={form.build_path ?? null}
+                  customScopeNotes={form.custom_scope_notes ?? null}
+                  onChanged={(path, notes) => setForm(f => ({
+                    ...f, build_path: path,
+                    ...(notes !== undefined ? { custom_scope_notes: notes } : {}),
+                  }))}
+                />
+              </div>
+            )}
 
-          {/* 6a. SEO Health Panel — all tiers, provisioned tenants */}
-          {id && (
-            <SEOHealthPanel
-              tenantId={form.tenant_id ?? null}
-            />
-          )}
-
-          {/* 6. QA Gate (it_in_progress / reveal_ready only) */}
-          {id && (
-            <QAGate
-              prospectId={id}
-              pipelineStage={form.pipeline_stage ?? 'lead_closed'}
-              companyName={form.company_name ?? ''}
-              tenantId={form.tenant_id ?? null}
-              tier={form.tier ?? null}
-              buildPath={form.build_path ?? null}
-              redirectMapComplete={!!form.redirect_map_complete}
-              onRevealReady={passedAt => {
-                setQaPassedAt(passedAt)
-                setForm(f => ({ ...f, pipeline_stage: 'reveal_ready' }))
-              }}
-            />
-          )}
-
-          {/* 7. Onboarding Timeline */}
-          {id && <OnboardingTimeline prospect={form} />}
-
-          {/* --- Contact / Data Entry sections --- */}
-          <div className="border-t border-gray-800 pt-4 space-y-6">
-            <div className="flex items-center gap-2 flex-wrap">
-              <a href="https://outlook.office.com/book/PestFlowProOnboarding@ironwoodoperationsgroup.com/?ismsaljsauthenabled"
-                target="_blank" rel="noopener noreferrer"
-                className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-lg transition">
-                📅 Book Call
-              </a>
-              <a href="https://teams.microsoft.com/l/meeting/new"
-                target="_blank" rel="noopener noreferrer"
-                className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-lg transition">
-                🎥 Teams Call
-              </a>
-              <div className="ml-auto"><RepGuideButton section="sales-call" onOpen={setGuideSection} /></div>
-            </div>
-            <ContactSection form={form} setField={wrappedSetField} onBlur={onBlur} salespeople={salespeople} />
-            {(!form.build_path || form.build_path !== 'template_launch') && (
-              <ScrapePanel
-                sourceUrl={form.website_url || ''}
-                onSourceUrlChange={v => { wrappedSetField('website_url', v); onBlur() }}
-                prospectId={id}
-                onApplyScraped={onApplyScraped}
-                onApplyRecreation={onApplyRecreation}
-                tier={form.tier ?? null}
+            {/* 3 & 4. Package & Payment + Social Media */}
+            <div>
+              <div className="flex justify-end mb-1">
+                <RepGuideButton section="invoice" onOpen={setGuideSection} />
+              </div>
+              <OnboardingSection
                 form={form}
+                setField={wrappedSetField}
+                onBlur={onBlur}
+                prospect={form}
+                onUpdate={onUpdate}
+                onFocusSection={s => setActiveSection(s)}
+              />
+            </div>
+
+            {/* Build Status */}
+            {id && (
+              <BuildStatusWidget
+                prospectId={id}
+                buildPath={form.build_path ?? null}
+                pipelineStage={form.pipeline_stage ?? 'lead_closed'}
               />
             )}
-            <div className="flex items-center justify-end gap-2">
-              <RepGuideButton section="prospect-fields" onOpen={setGuideSection} />
-              <RepGuideButton section="shell-palette" onOpen={setGuideSection} />
-            </div>
-            {(!form.build_path || form.build_path !== 'firecrawl_migration') && (
-              <SiteSetupSection form={form} setField={wrappedSetField} onBlur={onBlur} />
-            )}
-            {(form.tier === 'pro' || form.tier === 'elite') && (
-              <BoltBuildGuide slug={form.slug ?? undefined} />
-            )}
-            <IntegrationsSection prospectId={id} form={form} />
-            <div className="flex justify-end">
-              <RepGuideButton section={form.provisioned_at ? 'post-launch' : 'pre-provision'} label={form.provisioned_at ? '? Post-Launch Guide' : undefined} onOpen={setGuideSection} />
-            </div>
-            <ProvisionSection form={form} prospectId={id} onProvisioned={onUpdate} />
-            {form.tenant_id && form.slug && (
+
+            {/* Claude Context Download + Build Guide — full_custom builds only */}
+            {id && form.build_path === 'full_custom' && (
               <div className="space-y-3">
-                <CustomDomainSetup tenantId={form.tenant_id} slug={form.slug} />
-                <BundleSocialSetup tenantId={form.tenant_id} />
+                <h3 className="font-semibold text-gray-200 border-b border-gray-700 pb-1">Build Files</h3>
+                <ClaudeContextDownload
+                  prospectId={id}
+                  slug={form.slug ?? null}
+                  websiteUrl={form.website_url ?? null}
+                />
+                <FullCustomBuildGuide slug={form.slug ?? null} />
+              </div>
+            )}
+
+            {/* Redirect Map — Pro/Elite with firecrawl_migration or full_custom builds */}
+            {id && (form.tier === 'pro' || form.tier === 'elite') &&
+             (form.build_path === 'firecrawl_migration' || form.build_path === 'full_custom') && (
+              <RedirectMapPanel
+                prospectId={id}
+                tenantId={form.tenant_id ?? null}
+                redirectMap={form.redirect_map ?? []}
+                redirectMapComplete={!!form.redirect_map_complete}
+                sourceUrl={form.source_url ?? null}
+                onUpdated={(patch) => setForm(f => ({ ...f, ...patch }))}
+              />
+            )}
+
+            {/* SEO Health Panel */}
+            {id && (
+              <SEOHealthPanel tenantId={form.tenant_id ?? null} />
+            )}
+
+            {/* QA Gate */}
+            {id && (
+              <QAGate
+                prospectId={id}
+                pipelineStage={form.pipeline_stage ?? 'lead_closed'}
+                companyName={form.company_name ?? ''}
+                tenantId={form.tenant_id ?? null}
+                tier={form.tier ?? null}
+                buildPath={form.build_path ?? null}
+                redirectMapComplete={!!form.redirect_map_complete}
+                onRevealReady={passedAt => {
+                  setQaPassedAt(passedAt)
+                  setForm(f => ({ ...f, pipeline_stage: 'reveal_ready' }))
+                }}
+              />
+            )}
+
+            {/* Onboarding Timeline */}
+            {id && <OnboardingTimeline prospect={form} />}
+
+            {/* 5. Remaining — Intake, Scrape, Site Setup, Provision */}
+            <div className="border-t border-gray-800 pt-4 space-y-6">
+              <div className="flex justify-end">
+                <RepGuideButton section="intake" onOpen={setGuideSection} />
+              </div>
+              <IntakeLinkSection
+                prospectId={id}
+                adminEmail={form.admin_email ?? undefined}
+                companyName={form.company_name ?? undefined}
+                onImportSuccess={(data) => setForm(data)}
+              />
+              {(!form.build_path || form.build_path !== 'template_launch') && (
+                <ScrapePanel
+                  sourceUrl={form.website_url || ''}
+                  onSourceUrlChange={v => { wrappedSetField('website_url', v); onBlur() }}
+                  prospectId={id}
+                  onApplyScraped={onApplyScraped}
+                  onApplyRecreation={onApplyRecreation}
+                  tier={form.tier ?? null}
+                  form={form}
+                />
+              )}
+              <div className="flex items-center justify-end gap-2">
+                <RepGuideButton section="prospect-fields" onOpen={setGuideSection} />
+                <RepGuideButton section="shell-palette" onOpen={setGuideSection} />
+              </div>
+              {(!form.build_path || form.build_path !== 'firecrawl_migration') && (
+                <SiteSetupSection form={form} setField={wrappedSetField} onBlur={onBlur} />
+              )}
+              {(form.tier === 'pro' || form.tier === 'elite') && (
+                <BoltBuildGuide slug={form.slug ?? undefined} />
+              )}
+              <IntegrationsSection prospectId={id} form={form} />
+              <div className="flex justify-end">
+                <RepGuideButton section={form.provisioned_at ? 'post-launch' : 'pre-provision'} label={form.provisioned_at ? '? Post-Launch Guide' : undefined} onOpen={setGuideSection} />
+              </div>
+              <ProvisionSection form={form} prospectId={id} onProvisioned={onUpdate} />
+              {form.tenant_id && form.slug && (
+                <div className="space-y-3">
+                  <CustomDomainSetup tenantId={form.tenant_id} slug={form.slug} />
+                  <BundleSocialSetup tenantId={form.tenant_id} />
+                </div>
+              )}
+            </div>
+
+            {/* Activity Log */}
+            {id && <ActivityLog prospectId={id} />}
+
+            {id && (
+              <div className="pt-2 border-t border-gray-800">
+                <button onClick={handleArchive}
+                  className="text-xs text-yellow-500 hover:text-yellow-400 transition">
+                  Archive Client
+                </button>
               </div>
             )}
           </div>
 
-          {/* 8. Activity Log */}
-          {id && <ActivityLog prospectId={id} />}
+          {/* Right column: contextual guide (desktop only) */}
+          <div className="hidden md:flex flex-[2] overflow-y-auto border-l border-gray-800 bg-gray-900/30">
+            <ProspectFormGuide activeSection={activeSection} />
+          </div>
 
-          {id && (
-            <div className="pt-2 border-t border-gray-800">
-              <button onClick={handleArchive}
-                className="text-xs text-yellow-500 hover:text-yellow-400 transition">
-                Archive Client
-              </button>
-            </div>
-          )}
         </div>
       </div>
     </div>

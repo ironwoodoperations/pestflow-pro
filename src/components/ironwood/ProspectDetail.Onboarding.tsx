@@ -26,9 +26,10 @@ interface Props {
   onBlur: () => void
   prospect: Partial<Prospect>
   onUpdate: (updates: Partial<Prospect>) => void
+  onFocusSection?: (section: 'payment' | 'social') => void
 }
 
-export default function OnboardingSection({ form, setField, onBlur, prospect, onUpdate }: Props) {
+export default function OnboardingSection({ form, setField, onBlur, prospect, onUpdate, onFocusSection }: Props) {
   const handlePackage = (id: string) => {
     const pkg = PACKAGES.find(p => p.id === id)
     setField('package_id', id)
@@ -50,7 +51,7 @@ export default function OnboardingSection({ form, setField, onBlur, prospect, on
     <div className="space-y-4">
       {/* Section 2 — Package & Payment */}
       <h3 className="font-semibold text-gray-200 border-b border-gray-700 pb-1">Package & Payment</h3>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-3" onFocus={() => onFocusSection?.('payment')}>
         <div>
           <label className="text-xs text-gray-400">Package</label>
           <select className={inp} value={form.package_id || ''} onChange={e => handlePackage(e.target.value)}>
@@ -86,6 +87,7 @@ export default function OnboardingSection({ form, setField, onBlur, prospect, on
       <PaymentLinkPanel prospect={prospect as Prospect} onUpdate={onUpdate} />
 
       {/* Section 3 — Social Media */}
+      <div onFocus={() => onFocusSection?.('social')}>
       <h3 className="font-semibold text-gray-200 border-b border-gray-700 pb-1 pt-2">Social Media</h3>
       <label className="flex items-center gap-2 text-sm text-gray-300">
         <input type="checkbox" checked={form.has_existing_social || false}
@@ -102,6 +104,7 @@ export default function OnboardingSection({ form, setField, onBlur, prospect, on
         ))}
       </div>
       <p className="text-xs text-gray-500 italic">Confirm and seed these before the reveal call.</p>
+      </div>
     </div>
   )
 }
