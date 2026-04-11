@@ -4,88 +4,93 @@ import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
 import PageHelpBanner from './PageHelpBanner'
 import ConfirmDeleteModal from '../shared/ConfirmDeleteModal'
+import FaqItemForm, { EMPTY_FAQ_FORM, FAQ_CATEGORIES, type FaqFormData } from './FaqItemForm'
 
 interface FaqItem {
   id: string
   tenant_id: string
   question: string
   answer: string
+  category: string
   sort_order: number
 }
-
-const EMPTY_FORM = { question: '', answer: '' }
 
 export default function FaqTab() {
   const { tenantId } = useTenant()
   const [items, setItems] = useState<FaqItem[]>([])
   const [loading, setLoading] = useState(true)
   const [adding, setAdding] = useState(false)
-  const [form, setForm] = useState(EMPTY_FORM)
   const [editId, setEditId] = useState<string | null>(null)
-  const [editForm, setEditForm] = useState(EMPTY_FORM)
+  const [editForm, setEditForm] = useState<FaqFormData>(EMPTY_FAQ_FORM)
   const [saving, setSaving] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<FaqItem | null>(null)
 
   useEffect(() => {
     if (!tenantId) return
     setLoading(true)
-    supabase.from('faq_items').select('*').eq('tenant_id', tenantId).order('sort_order').then(({ data }) => {
-      setItems(data || [])
-      setLoading(false)
-    })
+    supabase.from('faqs').select('*').eq('tenant_id', tenantId)
+      .order('category').order('sort_order')
+      .then(({ data }) => { setItems(data || []); setLoading(false) })
   }, [tenantId])
 
-  async function handleAdd() {
+  async function handleAdd(form: FaqFormData) {
     if (!form.question.trim() || !form.answer.trim()) { toast.error('Question and answer are required.'); return }
     if (!tenantId) return
     setSaving(true)
-    const next_order = items.length > 0 ? Math.max(...items.map(i => i.sort_order)) + 1 : 0
-    const { data, error } = await supabase.from('faq_items').insert({
-      tenant_id: tenantId, question: form.question.trim(), answer: form.answer.trim(), sort_order: next_order,
+    const { data, error } = await supabase.from('faqs').insert({
+      tenant_id: tenantId,
+      question: form.question.trim(),
+      answer: form.answer.trim(),
+      category: form.category,
+      sort_order: Number(form.sort_order) || 0,
     }).select('*').single()
     setSaving(false)
     if (error) { toast.error('Failed to save.'); return }
-    setItems(prev => [...prev, data])
-    setForm(EMPTY_FORM)
+    setItems(prev => [...prev, data].sort((a, b) => a.category.localeCompare(b.category) || a.sort_order - b.sort_order))
     setAdding(false)
     toast.success('FAQ item added!')
   }
 
-  async function handleSaveEdit(id: string) {
-    if (!editForm.question.trim() || !editForm.answer.trim()) { toast.error('Question and answer are required.'); return }
+  async function handleSaveEdit(id: string, form: FaqFormData) {
+    if (!form.question.trim() || !form.answer.trim()) { toast.error('Question and answer are required.'); return }
     setSaving(true)
-    const { error } = await supabase.from('faq_items').update({ question: editForm.question.trim(), answer: editForm.answer.trim() }).eq('id', id)
+    const { error } = await supabase.from('faqs').update({
+      question: form.question.trim(), answer: form.answer.trim(),
+      category: form.category, sort_order: Number(form.sort_order) || 0,
+    }).eq('id', id)
     setSaving(false)
     if (error) { toast.error('Failed to save.'); return }
-    setItems(prev => prev.map(i => i.id === id ? { ...i, question: editForm.question.trim(), answer: editForm.answer.trim() } : i))
+    setItems(prev => prev.map(i => i.id === id
+      ? { ...i, question: form.question.trim(), answer: form.answer.trim(), category: form.category, sort_order: Number(form.sort_order) || 0 }
+      : i).sort((a, b) => a.category.localeCompare(b.category) || a.sort_order - b.sort_order))
     setEditId(null)
     toast.success('FAQ item updated!')
   }
 
   async function handleDelete() {
     if (!deleteTarget) return
-    const { error } = await supabase.from('faq_items').delete().eq('id', deleteTarget.id)
+    const { error } = await supabase.from('faqs').delete().eq('id', deleteTarget.id)
     if (error) { toast.error('Failed to delete.'); return }
     setItems(prev => prev.filter(i => i.id !== deleteTarget.id))
     setDeleteTarget(null)
     toast.success('FAQ item deleted.')
   }
 
-  async function handleMove(index: number, dir: -1 | 1) {
-    const newItems = [...items]
-    const swap = index + dir
-    if (swap < 0 || swap >= newItems.length) return
-    ;[newItems[index], newItems[swap]] = [newItems[swap], newItems[index]]
-    const updated = newItems.map((item, i) => ({ ...item, sort_order: i }))
-    setItems(updated)
-    await Promise.all(updated.map(item => supabase.from('faq_items').update({ sort_order: item.sort_order }).eq('id', item.id)))
-  }
+  const grouped = FAQ_CATEGORIES.reduce((acc, cat) => {
+    const catItems = items.filter(i => i.category === cat)
+    if (catItems.length > 0) acc[cat] = catItems
+    return acc
+  }, {} as Record<string, FaqItem[]>)
+
+  // Also catch any items with categories not in the preset list
+  const otherCats = [...new Set(items.map(i => i.category))].filter(c => !FAQ_CATEGORIES.includes(c))
+  otherCats.forEach(cat => { grouped[cat] = items.filter(i => i.category === cat) })
 
   if (loading) return <div className="p-6 text-gray-400">Loading...</div>
 
   return (
     <div className="space-y-4">
-      <PageHelpBanner tab="content" title="❓ FAQ Manager" body="Add, edit, or delete FAQ questions. Use the ↑↓ arrows to reorder them. Changes appear on your public FAQ page immediately." />
+      <PageHelpBanner tab="content" title="❓ FAQ Manager" body="Add, edit, or delete FAQ questions by category. Changes appear on your public FAQ page immediately." />
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
         <div className="flex items-center justify-between">
@@ -97,97 +102,62 @@ export default function FaqTab() {
           )}
         </div>
 
-        {/* Add form */}
         {adding && (
-          <div className="border border-emerald-200 rounded-lg p-4 bg-emerald-50 space-y-3">
-            <h4 className="font-medium text-gray-800 text-sm">New FAQ Item</h4>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Question</label>
-              <input
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                value={form.question}
-                onChange={e => setForm(prev => ({ ...prev, question: e.target.value }))}
-                placeholder="e.g. Are your treatments safe for pets?"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Answer</label>
-              <textarea
-                rows={3}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
-                value={form.answer}
-                onChange={e => setForm(prev => ({ ...prev, answer: e.target.value }))}
-                placeholder="Write the answer here..."
-              />
-            </div>
-            <div className="flex gap-2">
-              <button onClick={handleAdd} disabled={saving} className="px-3 py-1.5 bg-emerald-500 text-white text-sm rounded-lg hover:bg-emerald-600 disabled:opacity-50">
-                {saving ? 'Saving...' : 'Save'}
-              </button>
-              <button onClick={() => { setAdding(false); setForm(EMPTY_FORM) }} className="px-3 py-1.5 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200">
-                Cancel
-              </button>
-            </div>
+          <div className="border border-emerald-200 rounded-lg p-4 bg-emerald-50">
+            <h4 className="font-medium text-gray-800 text-sm mb-3">New FAQ Item</h4>
+            <FaqItemForm
+              onSave={handleAdd}
+              onCancel={() => setAdding(false)}
+              saving={saving}
+              label="Save"
+            />
           </div>
         )}
 
-        {/* List */}
         {items.length === 0 && !adding && (
           <p className="text-sm text-gray-400 text-center py-8">No FAQ items yet. Click "Add Question" to start.</p>
         )}
 
-        <div className="space-y-3">
-          {items.map((item, idx) => (
-            <div key={item.id} className="border border-gray-200 rounded-lg p-4">
-              {editId === item.id ? (
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Question</label>
-                    <input
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      value={editForm.question}
-                      onChange={e => setEditForm(prev => ({ ...prev, question: e.target.value }))}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Answer</label>
-                    <textarea
-                      rows={3}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
-                      value={editForm.answer}
-                      onChange={e => setEditForm(prev => ({ ...prev, answer: e.target.value }))}
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => handleSaveEdit(item.id)} disabled={saving} className="px-3 py-1.5 bg-emerald-500 text-white text-sm rounded-lg hover:bg-emerald-600 disabled:opacity-50">
-                      {saving ? 'Saving...' : 'Save'}
-                    </button>
-                    <button onClick={() => setEditId(null)} className="px-3 py-1.5 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200">Cancel</button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex gap-3">
-                  <div className="flex flex-col gap-1">
-                    <button onClick={() => handleMove(idx, -1)} disabled={idx === 0} className="text-gray-400 hover:text-gray-700 disabled:opacity-25 text-xs leading-none">▲</button>
-                    <button onClick={() => handleMove(idx, 1)} disabled={idx === items.length - 1} className="text-gray-400 hover:text-gray-700 disabled:opacity-25 text-xs leading-none">▼</button>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 text-sm">{item.question}</p>
-                    <p className="text-gray-500 text-sm mt-1 line-clamp-2">{item.answer}</p>
-                  </div>
-                  <div className="flex gap-2 shrink-0">
-                    <button
-                      onClick={() => { setEditId(item.id); setEditForm({ question: item.question, answer: item.answer }) }}
-                      className="text-xs text-blue-600 hover:underline"
-                    >Edit</button>
-                    <button onClick={() => setDeleteTarget(item)} className="text-xs text-red-500 hover:underline">Delete</button>
-                  </div>
-                </div>
-              )}
+        {Object.entries(grouped).map(([cat, catItems]) => (
+          <div key={cat}>
+            <div className="flex items-center gap-2 py-1 border-b border-gray-100 mb-2">
+              <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wide">{cat}</span>
+              <span className="text-xs text-gray-400">({catItems.length})</span>
             </div>
-          ))}
-        </div>
+            <div className="space-y-2">
+              {catItems.map(item => (
+                <div key={item.id} className="border border-gray-200 rounded-lg p-3">
+                  {editId === item.id ? (
+                    <FaqItemForm
+                      initial={{ question: item.question, answer: item.answer, category: item.category, sort_order: String(item.sort_order) }}
+                      onSave={form => handleSaveEdit(item.id, form)}
+                      onCancel={() => setEditId(null)}
+                      saving={saving}
+                      label="Save"
+                    />
+                  ) : (
+                    <div className="flex gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 text-sm">{item.question}</p>
+                        <p className="text-gray-500 text-sm mt-0.5 line-clamp-2">{item.answer}</p>
+                        <p className="text-xs text-gray-300 mt-1">order: {item.sort_order}</p>
+                      </div>
+                      <div className="flex gap-2 shrink-0 items-start">
+                        <button
+                          onClick={() => { setEditId(item.id); setEditForm({ question: item.question, answer: item.answer, category: item.category, sort_order: String(item.sort_order) }) }}
+                          className="text-xs text-blue-600 hover:underline"
+                        >Edit</button>
+                        <button onClick={() => setDeleteTarget(item)} className="text-xs text-red-500 hover:underline">Delete</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
+
       <ConfirmDeleteModal
         isOpen={!!deleteTarget}
         itemName={deleteTarget?.question?.slice(0, 50) || 'this FAQ item'}
