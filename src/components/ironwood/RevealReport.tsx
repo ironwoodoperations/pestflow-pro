@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { useRevealReportData } from '../../hooks/useRevealReportData'
 import ReportCover       from './report/ReportCover'
 import ReportPerformance from './report/ReportPerformance'
@@ -7,24 +7,6 @@ import ReportAISearch    from './report/ReportAISearch'
 import ReportLocal       from './report/ReportLocal'
 import ReportTechnical   from './report/ReportTechnical'
 import ReportNextSteps   from './report/ReportNextSteps'
-
-const PRINT_STYLES = `
-@media print {
-  body > *:not(#reveal-report-root) { display: none !important; }
-  #reveal-report-root { position: static !important; overflow: visible !important; }
-  #reveal-report-toolbar { display: none !important; }
-  .reveal-report-paper {
-    box-shadow: none !important;
-    border-radius: 0 !important;
-    margin: 0 !important;
-    max-width: none !important;
-  }
-  @page { margin: 0; size: letter; }
-  section { page-break-inside: avoid; }
-  -webkit-print-color-adjust: exact;
-  print-color-adjust: exact;
-}
-`
 
 interface Props {
   prospectId: string
@@ -37,16 +19,6 @@ interface Props {
 
 export default function RevealReport({ prospectId, tenantId, siteUrl, oldSiteDesktop, oldSiteMobile, onClose }: Props) {
   const { loading, error, data } = useRevealReportData({ prospectId, tenantId, siteUrl, oldSiteDesktop, oldSiteMobile })
-  const styleRef = useRef<HTMLStyleElement | null>(null)
-
-  // Inject print styles on mount, clean up on unmount
-  useEffect(() => {
-    const el = document.createElement('style')
-    el.textContent = PRINT_STYLES
-    document.head.appendChild(el)
-    styleRef.current = el
-    return () => { el.remove() }
-  }, [])
 
   // Close on Escape
   useEffect(() => {
@@ -55,21 +27,50 @@ export default function RevealReport({ prospectId, tenantId, siteUrl, oldSiteDes
     return () => window.removeEventListener('keydown', handler)
   }, [onClose])
 
+  const handlePrint = () => {
+    const reportEl = document.getElementById('reveal-report-content')
+    if (!reportEl) return
+
+    const printWindow = window.open('', '_blank', 'width=900,height=700')
+    if (!printWindow) return
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Client Reveal Report</title>
+          <style>
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            body { font-family: Georgia, serif; background: white; }
+            @media print {
+              body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            }
+          </style>
+        </head>
+        <body>
+          ${reportEl.innerHTML}
+        </body>
+      </html>
+    `)
+    printWindow.document.close()
+    printWindow.focus()
+    setTimeout(() => {
+      printWindow.print()
+    }, 500)
+  }
+
   return (
     <div
-      id="reveal-report-root"
       style={{
         position: 'fixed', inset: 0, zIndex: 9999,
-        background: 'rgba(0,0,0,0.6)',
-        overflowY: 'auto',
-        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        display: 'flex', flexDirection: 'column',
+        overflow: 'hidden',
       }}
     >
-      {/* Toolbar */}
+      {/* Toolbar — fixed at top */}
       <div
-        id="reveal-report-toolbar"
         style={{
-          position: 'sticky', top: 0, zIndex: 1,
+          flexShrink: 0,
           width: '100%', background: '#111',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '12px 24px', gap: '16px',
@@ -81,7 +82,7 @@ export default function RevealReport({ prospectId, tenantId, siteUrl, oldSiteDes
         </span>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
           <button
-            onClick={() => window.print()}
+            onClick={handlePrint}
             style={{
               padding: '8px 18px', background: '#10b981', color: '#fff',
               border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 600,
@@ -103,44 +104,54 @@ export default function RevealReport({ prospectId, tenantId, siteUrl, oldSiteDes
         </div>
       </div>
 
-      {/* Paper */}
+      {/* Scrollable body */}
       <div
-        className="reveal-report-paper"
         style={{
-          width: '100%', maxWidth: '860px',
-          background: '#fff',
-          margin: '24px auto 48px',
-          borderRadius: '8px',
-          boxShadow: '0 4px 40px rgba(0,0,0,0.3)',
-          fontFamily: 'Georgia, "Times New Roman", serif',
-          overflow: 'hidden',
+          flex: 1,
+          overflowY: 'auto',
+          background: 'rgba(0,0,0,0.6)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
         }}
       >
-        {loading && (
-          <div style={{ padding: '80px', textAlign: 'center' }}>
-            <p style={{ fontSize: '16px', color: '#6b7280' }}>Loading report data…</p>
-            <p style={{ fontSize: '13px', color: '#9ca3af', marginTop: '8px' }}>Fetching PageSpeed scores from Google. This may take 15–30 seconds.</p>
-          </div>
-        )}
+        {/* Paper */}
+        <div
+          id="reveal-report-content"
+          style={{
+            width: '100%', maxWidth: '860px',
+            background: '#fff',
+            margin: '24px auto 48px',
+            borderRadius: '8px',
+            boxShadow: '0 4px 40px rgba(0,0,0,0.3)',
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            overflow: 'hidden',
+          }}
+        >
+          {loading && (
+            <div style={{ padding: '80px', textAlign: 'center' }}>
+              <p style={{ fontSize: '16px', color: '#6b7280' }}>Loading report data…</p>
+              <p style={{ fontSize: '13px', color: '#9ca3af', marginTop: '8px' }}>Fetching PageSpeed scores from Google. This may take 15–30 seconds.</p>
+            </div>
+          )}
 
-        {error && (
-          <div style={{ padding: '80px', textAlign: 'center' }}>
-            <p style={{ fontSize: '16px', color: '#ef4444', marginBottom: '8px' }}>Failed to load report</p>
-            <p style={{ fontSize: '13px', color: '#6b7280' }}>{error}</p>
-          </div>
-        )}
+          {error && (
+            <div style={{ padding: '80px', textAlign: 'center' }}>
+              <p style={{ fontSize: '16px', color: '#ef4444', marginBottom: '8px' }}>Failed to load report</p>
+              <p style={{ fontSize: '13px', color: '#6b7280' }}>{error}</p>
+            </div>
+          )}
 
-        {data && (
-          <>
-            <ReportCover       data={data} />
-            <ReportPerformance data={data} />
-            <ReportSEO         data={data} />
-            <ReportAISearch    data={data} />
-            <ReportLocal       data={data} />
-            <ReportTechnical   data={data} />
-            <ReportNextSteps   data={data} />
-          </>
-        )}
+          {data && (
+            <>
+              <ReportCover       data={data} />
+              <ReportPerformance data={data} />
+              <ReportSEO         data={data} />
+              <ReportAISearch    data={data} />
+              <ReportLocal       data={data} />
+              <ReportTechnical   data={data} />
+              <ReportNextSteps   data={data} />
+            </>
+          )}
+        </div>
       </div>
     </div>
   )
