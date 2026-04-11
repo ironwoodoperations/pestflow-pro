@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
-import RedirectMapTable, { type RedirectRow, type MatchType } from './RedirectMapTable'
+import RedirectMapTable, { type RedirectRow, type MatchType, STANDARD_ROUTES } from './RedirectMapTable'
 
 interface Props {
   prospectId: string
@@ -78,6 +78,7 @@ export default function RedirectMapPanel({ prospectId, tenantId, redirectMap, re
   const [customRoutes, setCustomRoutes] = useState<string[]>([])
   const [copied, setCopied]       = useState(false)
   const [srcUrl, setSrcUrl]       = useState(sourceUrl || '')
+  const [autoMapping, setAutoMapping] = useState(false)
   const saveTimer                 = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   // Load custom pages for this tenant
@@ -147,6 +148,77 @@ export default function RedirectMapPanel({ prospectId, tenantId, redirectMap, re
     onUpdated({ source_url: val })
   }
 
+  async function autoMap() {
+    setAutoMapping(true)
+    try {
+      const oldUrls = rows.map(r => r.old_url)
+      const availableRoutes = [...STANDARD_ROUTES, ...customRoutes.filter(r => !STANDARD_ROUTES.includes(r))]
+
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 2048,
+          messages: [{
+            role: 'user',
+            content: `You are mapping old pest control website URLs to new URLs for a site migration.
+
+Old URLs from existing site:
+${oldUrls.join('\n')}
+
+Available new site routes:
+${availableRoutes.join('\n')}
+
+Mapping rules (apply in order):
+1. If old slug exactly matches a new route → use that route, type "exact"
+2. Service pages (ant, termite, mosquito, rodent, spider, bed-bug, flea, wasp, roach, scorpion) → map to closest matching service route, type "slug_change"
+3. Location/city pages (city names, -tx suffix, service-area) → /locations, type "slug_change"
+4. Blog posts (/blog/anything) → /blog, type "slug_change"
+5. Quote/estimate pages → /get-quote, type "slug_change"
+6. Reviews/testimonials → /about, type "slug_change"
+7. Accessibility/legal/privacy → /, type "no_match"
+8. Anything else with no clear match → /, type "no_match"
+
+Return ONLY a valid JSON array, no markdown, no explanation:
+[
+  {"old_url": "/ant-control/", "new_url": "/ant-control", "match_type": "exact"},
+  {"old_url": "/lindale-tx/", "new_url": "/locations", "match_type": "slug_change"}
+]`,
+          }],
+        }),
+      })
+
+      const data = await response.json()
+      const text = data.content[0].text.trim()
+      const clean = text.replace(/```json|```/g, '').trim()
+      const mappings: Array<{ old_url: string; new_url: string; match_type: string }> = JSON.parse(clean)
+
+      const byOldUrl = new Map(mappings.map(m => [m.old_url, m]))
+      const updated = rows.map(r => {
+        const m = byOldUrl.get(r.old_url)
+        if (!m) return r
+        return {
+          ...r,
+          new_url: m.new_url,
+          match_type: (m.match_type as MatchType) || r.match_type,
+        }
+      })
+
+      handleRowsChange(updated)
+      toast.success(`✨ AI mapped ${mappings.length} URLs — review and adjust as needed`)
+    } catch {
+      toast.error('Auto-map failed — map manually')
+    } finally {
+      setAutoMapping(false)
+    }
+  }
+
   const vercelJson = buildVercelJson(rows)
   const counts = {
     exact:  rows.filter(r => r.match_type === 'exact').length,
@@ -202,6 +274,24 @@ export default function RedirectMapPanel({ prospectId, tenantId, redirectMap, re
           className="text-xs text-gray-400 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-700 file:text-gray-200 hover:file:bg-gray-600 file:cursor-pointer"
         />
       </div>
+
+      {/* Auto-Map button — shown when rows exist but mostly unmapped */}
+      {rows.length > 0 && rows.filter(r => r.new_url === '/').length > 3 && (
+        <div className="flex justify-end">
+          <button
+            onClick={autoMap}
+            disabled={autoMapping}
+            className="flex items-center gap-2 px-3 py-1.5 bg-indigo-700 hover:bg-indigo-600 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs rounded-lg transition"
+          >
+            {autoMapping ? (
+              <>
+                <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ✨ Mapping…
+              </>
+            ) : '✨ Auto-Map with AI'}
+          </button>
+        </div>
+      )}
 
       {/* Redirect map table */}
       {rows.length > 0 && (

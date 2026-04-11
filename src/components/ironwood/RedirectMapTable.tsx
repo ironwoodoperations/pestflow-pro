@@ -19,7 +19,7 @@ const MATCH_BADGE: Record<MatchType, { label: string; cls: string }> = {
   backlink:    { label: 'backlink!',  cls: 'bg-red-900/50 text-red-400 border-red-700' },
 }
 
-const STANDARD_ROUTES = [
+export const STANDARD_ROUTES = [
   '/', '/about', '/pest-control', '/termite-control', '/termite-inspections',
   '/mosquito-control', '/rodent-control', '/ant-control', '/spider-control',
   '/roach-control', '/bed-bug-control', '/flea-tick-control', '/wasp-hornet-control',
