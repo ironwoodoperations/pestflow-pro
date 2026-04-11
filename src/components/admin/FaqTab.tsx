@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
 import PageHelpBanner from './PageHelpBanner'
 import ConfirmDeleteModal from '../shared/ConfirmDeleteModal'
-import FaqItemForm, { EMPTY_FAQ_FORM, FAQ_CATEGORIES, type FaqFormData } from './FaqItemForm'
+import FaqItemForm, { FAQ_CATEGORIES, type FaqFormData } from './FaqItemForm'
 
 interface FaqItem {
   id: string
@@ -21,7 +21,6 @@ export default function FaqTab() {
   const [loading, setLoading] = useState(true)
   const [adding, setAdding] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
-  const [editForm, setEditForm] = useState<FaqFormData>(EMPTY_FAQ_FORM)
   const [saving, setSaving] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<FaqItem | null>(null)
 
@@ -144,7 +143,7 @@ export default function FaqTab() {
                       </div>
                       <div className="flex gap-2 shrink-0 items-start">
                         <button
-                          onClick={() => { setEditId(item.id); setEditForm({ question: item.question, answer: item.answer, category: item.category, sort_order: String(item.sort_order) }) }}
+                          onClick={() => setEditId(item.id)}
                           className="text-xs text-blue-600 hover:underline"
                         >Edit</button>
                         <button onClick={() => setDeleteTarget(item)} className="text-xs text-red-500 hover:underline">Delete</button>
