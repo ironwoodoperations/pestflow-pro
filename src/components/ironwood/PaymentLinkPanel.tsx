@@ -105,6 +105,16 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
     await supabase.from('prospects').update({ setup_invoice_sent_at: now }).eq('id', prospect.id)
     onUpdate({ setup_invoice_sent_at: now })
     toast.success('Invoice marked as sent')
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      const actor = user?.email || 'ironwood'
+      await supabase.from('prospect_activity').insert({
+        prospect_id: prospect.id,
+        actor,
+        action: 'invoice_sent',
+        detail: 'Setup invoice marked as sent',
+      })
+    } catch (e) { console.error('[activity log]', e) }
     setMarkingSent(false)
   }
 
