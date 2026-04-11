@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
 import { notifyTeamsFromClient } from '../../lib/teamsNotify'
 
-const QA_ITEMS: { field: string; label: string }[] = [
+const QA_ITEMS: { field: string; label: string; autoCheck?: boolean }[] = [
   { field: 'site_reachable',            label: 'Site is reachable on live or preview URL' },
   { field: 'admin_login_works',         label: 'Admin login tested and working' },
   { field: 'lead_form_submits',         label: 'Lead form submits successfully' },
@@ -13,16 +13,19 @@ const QA_ITEMS: { field: string; label: string }[] = [
   { field: 'mobile_check_passed',       label: 'Mobile layout checked' },
   { field: 'content_proofed',           label: 'Content proofed (no placeholders, no "TEST TEST")' },
   { field: 'credentials_package_ready', label: 'Customer credentials package ready' },
+  { field: 'seo_score_ok',              label: 'SEO health score ≥ 7/12 (check SEO Health panel)', autoCheck: true },
+  { field: 'sitemap_accessible',        label: 'sitemap.xml accessible — confirm in browser at /sitemap.xml' },
 ]
 
 interface Props {
   prospectId: string
   pipelineStage: string
   companyName: string
+  tenantId?: string | null
   onRevealReady: (passedAt: string) => void
 }
 
-export default function QAGate({ prospectId, pipelineStage, companyName, onRevealReady }: Props) {
+export default function QAGate({ prospectId, pipelineStage, companyName, tenantId, onRevealReady }: Props) {
   const [qa, setQa]       = useState<Record<string, any> | null>(null)
   const [saving, setSaving] = useState(false)
   const [moving, setMoving] = useState(false)
@@ -30,11 +33,51 @@ export default function QAGate({ prospectId, pipelineStage, companyName, onRevea
 
   const visible = ['it_in_progress', 'reveal_ready'].includes(pipelineStage)
 
+  // Calculate SEO score from tenant settings and auto-check seo_score_ok
+  const autoCheckSeoScore = useCallback(async (checklistId: string) => {
+    if (!tenantId) return
+    const [bizRes, seoRes, intRes, faqRes, testRes] = await Promise.all([
+      supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
+      supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'seo').maybeSingle(),
+      supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle(),
+      supabase.from('faqs').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId),
+      supabase.from('testimonials').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId),
+    ])
+    const biz = bizRes.data?.value || {}
+    const seo = seoRes.data?.value || {}
+    const int_ = intRes.data?.value || {}
+    let score = 0
+    if (biz.name) score++
+    if (biz.phone) score++
+    if (biz.address) score++
+    if (Array.isArray(seo.service_areas) && seo.service_areas.length > 0) score++
+    if (seo.meta_description) score++
+    if (int_.google_place_id) score++
+    if (int_.google_analytics_id || int_.ga4_id) score++
+    if (biz.license) score++
+    if (seo.owner_name) score++
+    if (seo.founded_year) score++
+    if ((faqRes.count || 0) > 0) score++
+    if ((testRes.count || 0) > 0) score++
+    const ok = score >= 7
+    await supabase.from('qa_checklists')
+      .update({ seo_score_ok: ok, updated_at: new Date().toISOString() })
+      .eq('id', checklistId)
+  }, [tenantId])
+
   const load = useCallback(async () => {
     const { data } = await supabase.from('qa_checklists')
       .select('*').eq('prospect_id', prospectId).maybeSingle()
-    setQa(data)
-  }, [prospectId])
+    if (data) {
+      // Auto-compute seo_score_ok on each load if tenant is provisioned
+      if (tenantId) await autoCheckSeoScore(data.id)
+      const { data: refreshed } = await supabase.from('qa_checklists')
+        .select('*').eq('prospect_id', prospectId).maybeSingle()
+      setQa(refreshed)
+    } else {
+      setQa(data)
+    }
+  }, [prospectId, tenantId, autoCheckSeoScore])
 
   useEffect(() => { if (visible) load() }, [visible, load])
 

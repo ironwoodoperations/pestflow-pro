@@ -273,6 +273,7 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
               prospectId={id}
               pipelineStage={form.pipeline_stage ?? 'lead_closed'}
               companyName={form.company_name ?? ''}
+              tenantId={form.tenant_id ?? null}
               onRevealReady={passedAt => {
                 setQaPassedAt(passedAt)
                 setForm(f => ({ ...f, pipeline_stage: 'reveal_ready' }))
