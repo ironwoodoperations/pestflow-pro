@@ -14,14 +14,15 @@ interface Props {
 }
 
 export default function ProvisioningSection({ form, prospectId, onProvisioned }: Props) {
-  const [confirming, setConfirming]       = useState(false)
-  const [showChecklist, setShowChecklist] = useState(false)
-  const [provisioning, setProvisioning]   = useState(false)
-  const [error, setError]                 = useState<string | null>(null)
-  const [fbSaved, setFbSaved]             = useState(false)
-  const [gbSaved, setGbSaved]             = useState(false)
-  const [skipCreds, setSkipCreds]         = useState(false)
-  const [sendingCreds, setSendingCreds]   = useState(false)
+  const [confirming, setConfirming]         = useState(false)
+  const [showChecklist, setShowChecklist]   = useState(false)
+  const [provisioning, setProvisioning]     = useState(false)
+  const [error, setError]                   = useState<string | null>(null)
+  const [fbSaved, setFbSaved]               = useState(false)
+  const [gbSaved, setGbSaved]               = useState(false)
+  const [skipCreds, setSkipCreds]           = useState(false)
+  const [sendingCreds, setSendingCreds]     = useState(false)
+  const [sendingReveal, setSendingReveal]   = useState(false)
 
   const resolvedAdminEmail =
     form.admin_email?.trim() ||
@@ -38,24 +39,20 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
     if (!adminEmail || !form.slug) { toast.error('Admin email and slug are required.'); return }
     setSendingCreds(true)
     try {
-      let { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
-        const { data: r } = await supabase.auth.refreshSession()
-        session = r.session
-      }
-      if (!session) { toast.error('Session expired — please refresh.'); return }
+      const firstName   = (form.contact_name || form.company_name || '').split(' ')[0] || 'there'
+      const siteUrl     = `https://${form.slug}.pestflowpro.com`
+      const adminUrl    = `https://${form.slug}.pestflowpro.com/admin`
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-credentials-email`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-        },
+        headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
         body: JSON.stringify({
+          to:            adminEmail,
+          firstName,
+          businessName:  form.company_name || '',
+          siteUrl,
+          adminUrl,
           adminEmail,
           adminPassword: form.admin_password || '',
-          slug:          form.slug,
-          businessName:  form.company_name || '',
         }),
       })
       const data = await res.json()
@@ -65,6 +62,29 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
       toast.error(e.message || 'Network error')
     } finally {
       setSendingCreds(false)
+    }
+  }
+
+  const sendRevealReadyEmail = async () => {
+    const to = form.admin_email?.trim() || form.email?.trim() || ''
+    if (!to || !form.slug) { toast.error('Admin email and slug are required.'); return }
+    setSendingReveal(true)
+    try {
+      const firstName  = (form.contact_name || form.company_name || '').split(' ')[0] || 'there'
+      const siteUrl    = `https://${form.slug}.pestflowpro.com`
+      const adminUrl   = `https://${form.slug}.pestflowpro.com/admin`
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-reveal-ready`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
+        body: JSON.stringify({ to, firstName, businessName: form.company_name || '', siteUrl, adminUrl }),
+      })
+      const data = await res.json()
+      if (data.success) toast.success(`Reveal ready email sent to ${to}`)
+      else toast.error(data.error || 'Failed to send reveal ready email')
+    } catch (e: any) {
+      toast.error(e.message || 'Network error')
+    } finally {
+      setSendingReveal(false)
     }
   }
 
@@ -240,13 +260,22 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
               Skip credentials for now (override)
             </label>
 
-            <button
-              onClick={handleReveal}
-              disabled={!canReveal}
-              className="px-4 py-2 bg-amber-600 text-white text-sm rounded hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              Mark as Revealed →
-            </button>
+            <div className="flex flex-wrap gap-2 pt-1">
+              <button
+                onClick={sendRevealReadyEmail}
+                disabled={sendingReveal}
+                className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-medium rounded-lg transition disabled:opacity-50"
+              >
+                {sendingReveal ? 'Sending…' : '📧 Send Reveal Ready Email'}
+              </button>
+              <button
+                onClick={handleReveal}
+                disabled={!canReveal}
+                className="px-4 py-2 bg-amber-600 text-white text-sm rounded hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Mark as Revealed →
+              </button>
+            </div>
           </div>
         )}
 
