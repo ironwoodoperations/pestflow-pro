@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase'
 
 interface Props {
   tenantId: string | null
+  onScoreChange?: (score: number) => void
 }
 
 interface SignalResult {
@@ -45,14 +46,13 @@ function ProgressBar({ score, total }: { score: number; total: number }) {
   )
 }
 
-export default function SEOHealthPanel({ tenantId }: Props) {
+export default function SEOHealthPanel({ tenantId, onScoreChange }: Props) {
   const [signals, setSignals] = useState<SignalResult[]>([])
   const [score, setScore] = useState(0)
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState<SeoForm>(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
   const [saved, setSavedFlag] = useState(false)
-  const [expanded, setExpanded] = useState(false)
 
   const load = useCallback(async () => {
     if (!tenantId) return
@@ -138,6 +138,7 @@ export default function SEOHealthPanel({ tenantId }: Props) {
     const total = checks.filter(c => c.ok).length
     setSignals(checks)
     setScore(total)
+    onScoreChange?.(total)
 
     // Pre-fill the quick-edit form
     setForm({
@@ -152,8 +153,8 @@ export default function SEOHealthPanel({ tenantId }: Props) {
   }, [tenantId])
 
   useEffect(() => {
-    if (tenantId && expanded) load()
-  }, [tenantId, expanded, load])
+    if (tenantId) load()
+  }, [tenantId, load])
 
   async function saveSeoSettings() {
     if (!tenantId) return
@@ -185,35 +186,22 @@ export default function SEOHealthPanel({ tenantId }: Props) {
   const { label: ratingLabel, color: ratingColor } = scoreLabel(score, TOTAL)
 
   return (
-    <div className="border border-gray-700 rounded-lg overflow-hidden">
-      {/* Header — always visible */}
-      <button
-        onClick={() => setExpanded(e => !e)}
-        className="w-full flex items-center justify-between px-4 py-3 bg-gray-800/80 hover:bg-gray-800 transition"
-      >
-        <span className="font-semibold text-gray-200 text-sm">SEO Health Check</span>
-        <div className="flex items-center gap-3">
-          {!loading && signals.length > 0 && (
-            <span className={`text-xs font-medium ${ratingColor}`}>
-              {score}/{TOTAL} — {ratingLabel}
-            </span>
-          )}
-          <span className="text-gray-500 text-xs">{expanded ? '▲' : '▼'}</span>
+    <div className="space-y-4">
+      {/* Score summary */}
+      {!loading && signals.length > 0 && (
+        <div className="flex items-center justify-between text-xs text-gray-400">
+          <span>SEO Score: {score}/{TOTAL}</span>
+          <span className={ratingColor}>{ratingLabel}</span>
         </div>
-      </button>
+      )}
 
-      {expanded && (
-        <div className="p-4 space-y-4 bg-gray-900/50">
+      <div>
           {loading ? (
             <p className="text-xs text-gray-500">Loading...</p>
           ) : (
             <>
               {/* Score bar */}
-              <div className="space-y-1">
-                <div className="flex items-center justify-between text-xs text-gray-400">
-                  <span>SEO Score: {score}/{TOTAL}</span>
-                  <span className={ratingColor}>{ratingLabel}</span>
-                </div>
+              <div className="space-y-1 mb-3">
                 <ProgressBar score={score} total={TOTAL} />
               </div>
 
@@ -302,8 +290,7 @@ export default function SEOHealthPanel({ tenantId }: Props) {
               </div>
             </>
           )}
-        </div>
-      )}
+      </div>
     </div>
   )
 }

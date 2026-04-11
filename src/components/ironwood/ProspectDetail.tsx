@@ -28,6 +28,7 @@ import ClaudeContextDownload  from './ClaudeContextDownload'
 import FullCustomBuildGuide   from './FullCustomBuildGuide'
 import ProspectFormGuide, { InlineGuide } from './ProspectFormGuide'
 import type { GuideSection } from './ProspectFormGuide'
+import CollapsibleSection from './CollapsibleSection'
 
 interface Props {
   prospectId: string | null
@@ -40,6 +41,12 @@ function slugify(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30)
 }
 
+function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return ''
+  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+
 export default function ProspectDetail({ prospectId, salespeople, onClose, onArchived }: Props) {
   const [form, setForm]               = useState<Partial<Prospect>>({ status: 'prospect', business_info: {}, branding: {}, customization: {} })
   const [saved, setSaved]             = useState(false)
@@ -49,6 +56,7 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
   const [guideSection, setGuideSection] = useState<string | null>(null)
   const [activeSection, setActiveSection] = useState<GuideSection>(null)
   const [qaPassedAt, setQaPassedAt]   = useState<string | null>(null)
+  const [seoScore, setSeoScore]       = useState(0)
   const timer                         = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   useEffect(() => {
@@ -255,8 +263,12 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
             )}
 
             {/* 3 & 4. Package & Payment + Social Media */}
-            <div>
-              <div className="flex justify-end mb-1">
+            <CollapsibleSection
+              title="Package & Payment"
+              isComplete={!!form.setup_invoice_sent_at}
+              completedLabel={form.setup_invoice_sent_at ? `Invoice sent ${formatDate(form.setup_invoice_sent_at)}` : undefined}
+            >
+              <div className="flex justify-end mb-2">
                 <RepGuideButton section="invoice" onOpen={setGuideSection} />
               </div>
               <OnboardingSection
@@ -267,15 +279,17 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
                 onUpdate={onUpdate}
                 onFocusSection={s => setActiveSection(s)}
               />
-            </div>
+            </CollapsibleSection>
 
             {/* Build Status */}
             {id && (
-              <BuildStatusWidget
-                prospectId={id}
-                buildPath={form.build_path ?? null}
-                pipelineStage={form.pipeline_stage ?? 'lead_closed'}
-              />
+              <CollapsibleSection title="Build Status" defaultOpen={true}>
+                <BuildStatusWidget
+                  prospectId={id}
+                  buildPath={form.build_path ?? null}
+                  pipelineStage={form.pipeline_stage ?? 'lead_closed'}
+                />
+              </CollapsibleSection>
             )}
 
             {/* Claude Context Download + Build Guide — full_custom builds only */}
@@ -294,52 +308,88 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
             {/* Redirect Map — Pro/Elite with firecrawl_migration or full_custom builds */}
             {id && (form.tier === 'pro' || form.tier === 'elite') &&
              (form.build_path === 'firecrawl_migration' || form.build_path === 'full_custom') && (
-              <RedirectMapPanel
-                prospectId={id}
-                tenantId={form.tenant_id ?? null}
-                redirectMap={form.redirect_map ?? []}
-                redirectMapComplete={!!form.redirect_map_complete}
-                sourceUrl={form.source_url ?? null}
-                onUpdated={(patch) => setForm(f => ({ ...f, ...patch }))}
-              />
+              <CollapsibleSection
+                title="301 Redirect Map"
+                isComplete={!!form.redirect_map_complete}
+                completedLabel="Redirect map complete"
+                defaultOpen={!form.redirect_map_complete}
+              >
+                <RedirectMapPanel
+                  prospectId={id}
+                  tenantId={form.tenant_id ?? null}
+                  redirectMap={form.redirect_map ?? []}
+                  redirectMapComplete={!!form.redirect_map_complete}
+                  sourceUrl={form.source_url ?? null}
+                  onUpdated={(patch) => setForm(f => ({ ...f, ...patch }))}
+                />
+              </CollapsibleSection>
             )}
 
             {/* SEO Health Panel */}
             {id && (
-              <SEOHealthPanel tenantId={form.tenant_id ?? null} />
+              <CollapsibleSection
+                title="SEO Health"
+                isComplete={seoScore >= 7}
+                completedLabel={seoScore > 0 ? `Score ${seoScore}/12` : undefined}
+                defaultOpen={seoScore < 7}
+              >
+                <SEOHealthPanel
+                  tenantId={form.tenant_id ?? null}
+                  onScoreChange={setSeoScore}
+                />
+              </CollapsibleSection>
             )}
 
             {/* QA Gate */}
             {id && (
-              <QAGate
-                prospectId={id}
-                pipelineStage={form.pipeline_stage ?? 'lead_closed'}
-                companyName={form.company_name ?? ''}
-                tenantId={form.tenant_id ?? null}
-                tier={form.tier ?? null}
-                buildPath={form.build_path ?? null}
-                redirectMapComplete={!!form.redirect_map_complete}
-                onRevealReady={passedAt => {
-                  setQaPassedAt(passedAt)
-                  setForm(f => ({ ...f, pipeline_stage: 'reveal_ready' }))
-                }}
-              />
+              <CollapsibleSection
+                title="QA Checklist"
+                isComplete={!!qaPassedAt}
+                completedLabel={qaPassedAt ? `QA passed ${formatDate(qaPassedAt)}` : undefined}
+                defaultOpen={!qaPassedAt}
+              >
+                <QAGate
+                  prospectId={id}
+                  pipelineStage={form.pipeline_stage ?? 'lead_closed'}
+                  companyName={form.company_name ?? ''}
+                  tenantId={form.tenant_id ?? null}
+                  tier={form.tier ?? null}
+                  buildPath={form.build_path ?? null}
+                  redirectMapComplete={!!form.redirect_map_complete}
+                  onRevealReady={passedAt => {
+                    setQaPassedAt(passedAt)
+                    setForm(f => ({ ...f, pipeline_stage: 'reveal_ready' }))
+                  }}
+                />
+              </CollapsibleSection>
             )}
 
             {/* Onboarding Timeline */}
-            {id && <OnboardingTimeline prospect={form} />}
+            {id && (
+              <CollapsibleSection title="Onboarding Progress" isComplete={true} defaultOpen={false}>
+                <OnboardingTimeline prospect={form} />
+              </CollapsibleSection>
+            )}
 
             {/* 5. Remaining — Intake, Scrape, Site Setup, Provision */}
             <div className="border-t border-gray-800 pt-4 space-y-6">
-              <div className="flex justify-end">
-                <RepGuideButton section="intake" onOpen={setGuideSection} />
-              </div>
-              <IntakeLinkSection
-                prospectId={id}
-                adminEmail={form.admin_email ?? undefined}
-                companyName={form.company_name ?? undefined}
-                onImportSuccess={(data) => setForm(data)}
-              />
+              <CollapsibleSection
+                title="Intake Link"
+                isComplete={!!form.intake_submitted_at}
+                isLocked={!!form.intake_submitted_at}
+                completedLabel={form.intake_submitted_at ? `Submitted ${formatDate(form.intake_submitted_at)}` : undefined}
+                defaultOpen={!form.intake_submitted_at}
+              >
+                <div className="flex justify-end mb-2">
+                  <RepGuideButton section="intake" onOpen={setGuideSection} />
+                </div>
+                <IntakeLinkSection
+                  prospectId={id}
+                  adminEmail={form.admin_email ?? undefined}
+                  companyName={form.company_name ?? undefined}
+                  onImportSuccess={(data) => setForm(data)}
+                />
+              </CollapsibleSection>
               {(!form.build_path || form.build_path !== 'template_launch') && (
                 <ScrapePanel
                   sourceUrl={form.website_url || ''}
