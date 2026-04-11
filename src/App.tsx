@@ -145,6 +145,15 @@ export default function App() {
         {/* ─── Public intake form — must be before /:slug ─── */}
         <Route path="/intake/:token" element={<Suspense fallback={LOADING}><IntakePage /></Suspense>} />
 
+        {/* ─── Dang city SEO pages — before /:slug ─── */}
+        <Route path="/lindale-tx"     element={<DangPageRouter slug="lindale-tx"     fallback={<PublicShell><SlugRouter /></PublicShell>} />} />
+        <Route path="/bullard-tx"     element={<DangPageRouter slug="bullard-tx"     fallback={<PublicShell><SlugRouter /></PublicShell>} />} />
+        <Route path="/whitehouse-tx"  element={<DangPageRouter slug="whitehouse-tx"  fallback={<PublicShell><SlugRouter /></PublicShell>} />} />
+        <Route path="/jacksonville-tx" element={<DangPageRouter slug="jacksonville-tx" fallback={<PublicShell><SlugRouter /></PublicShell>} />} />
+        <Route path="/longview-tx"    element={<DangPageRouter slug="longview-tx"    fallback={<PublicShell><SlugRouter /></PublicShell>} />} />
+        <Route path="/kilgore-tx"     element={<DangPageRouter slug="kilgore-tx"     fallback={<PublicShell><SlugRouter /></PublicShell>} />} />
+        <Route path="/henderson-tx"   element={<DangPageRouter slug="henderson-tx"   fallback={<PublicShell><SlugRouter /></PublicShell>} />} />
+
         {/* ─── Dynamic slug — MUST BE LAST ─── */}
         <Route path="/:slug" element={<PublicShell><SlugRouter /></PublicShell>} />
         <Route path="*" element={<PublicShell><NotFound /></PublicShell>} />

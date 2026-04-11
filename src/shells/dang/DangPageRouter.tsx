@@ -18,6 +18,7 @@ const DangPestControl      = React.lazy(() => import('./pages/PestControlPage'))
 const DangTermiteControl   = React.lazy(() => import('./pages/TermiteControl'))
 const DangTermiteInspect   = React.lazy(() => import('./pages/TermiteInspections'))
 const DangReviews          = React.lazy(() => import('./pages/DangReviews'))
+const DangCity             = React.lazy(() => import('./pages/DangCityPage'))
 
 const DANG_PAGES: Record<string, React.LazyExoticComponent<React.ComponentType>> = {
   'about':               DangAbout,
@@ -37,6 +38,13 @@ const DANG_PAGES: Record<string, React.LazyExoticComponent<React.ComponentType>>
   'termite-control':     DangTermiteControl,
   'termite-inspections': DangTermiteInspect,
   'reviews':             DangReviews,
+  'lindale-tx':          DangCity,
+  'bullard-tx':          DangCity,
+  'whitehouse-tx':       DangCity,
+  'jacksonville-tx':     DangCity,
+  'longview-tx':         DangCity,
+  'kilgore-tx':          DangCity,
+  'henderson-tx':        DangCity,
 }
 
 interface Props {
