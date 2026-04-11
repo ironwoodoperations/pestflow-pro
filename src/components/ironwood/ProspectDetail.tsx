@@ -17,6 +17,7 @@ import BoltBuildGuide       from './BoltBuildGuide'
 import CustomDomainSetup    from './CustomDomainSetup'
 import BundleSocialSetup    from './BundleSocialSetup'
 import { archiveRecord }    from '../../lib/archiveUtils'
+import PipelineStage       from './PipelineStage'
 
 interface Props {
   prospectId: string | null   // null = new prospect
@@ -219,6 +220,13 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
 
         {/* Sections */}
         <div className="p-5 space-y-6">
+          {id && (
+            <PipelineStage
+              prospectId={id}
+              stage={form.pipeline_stage ?? 'lead_closed'}
+              onChanged={stage => setForm(f => ({ ...f, pipeline_stage: stage }))}
+            />
+          )}
           <div className="flex items-center gap-2 flex-wrap">
             <a
               href="https://outlook.office.com/book/PestFlowProOnboarding@ironwoodoperationsgroup.com/?ismsaljsauthenabled"
