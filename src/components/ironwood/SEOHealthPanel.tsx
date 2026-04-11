@@ -3,7 +3,6 @@ import { supabase } from '../../lib/supabase'
 
 interface Props {
   tenantId: string | null
-  prospectId: string | null
 }
 
 interface SignalResult {
@@ -46,7 +45,7 @@ function ProgressBar({ score, total }: { score: number; total: number }) {
   )
 }
 
-export default function SEOHealthPanel({ tenantId, prospectId }: Props) {
+export default function SEOHealthPanel({ tenantId }: Props) {
   const [signals, setSignals] = useState<SignalResult[]>([])
   const [score, setScore] = useState(0)
   const [loading, setLoading] = useState(false)

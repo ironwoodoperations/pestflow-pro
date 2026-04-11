@@ -263,7 +263,6 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
           {id && (
             <SEOHealthPanel
               tenantId={form.tenant_id ?? null}
-              prospectId={id}
             />
           )}
 

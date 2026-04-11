@@ -76,12 +76,16 @@ export default function IntakePage() {
     const b = form.business
     const br = form.branding
     const existingBr = tokenRow.prospects?.branding || {}
-    const activityInsert = supabase.from('prospect_activity').insert({
-      prospect_id: tokenRow.prospect_id,
-      actor: 'system',
-      action: 'intake_submitted',
-      detail: 'Client submitted intake form',
-    }).then(() => {}).catch(e => console.error('[activity log]', e))
+    const activityInsert = (async () => {
+      try {
+        await supabase.from('prospect_activity').insert({
+          prospect_id: tokenRow.prospect_id,
+          actor: 'system',
+          action: 'intake_submitted',
+          detail: 'Client submitted intake form',
+        })
+      } catch (e) { console.error('[activity log]', e) }
+    })()
 
     await Promise.all([
       activityInsert,

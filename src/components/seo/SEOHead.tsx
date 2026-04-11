@@ -35,7 +35,7 @@ interface SEOHeadProps {
 }
 
 function injectScript(id: string, content: object) {
-  let el = document.getElementById(id)
+  let el = document.getElementById(id) as HTMLScriptElement | null
   if (!el) {
     el = document.createElement('script')
     el.type = 'application/ld+json'
@@ -76,7 +76,6 @@ export default function SEOHead({
   tenantSlug,
   tagline,
 }: SEOHeadProps) {
-  const siteUrl = canonicalUrl.replace(/\/[^/]*$/, '') || canonicalUrl
   const baseUrl = `https://${tenantSlug}.pestflowpro.com`
   const resolvedUrl = canonicalUrl || baseUrl
 
