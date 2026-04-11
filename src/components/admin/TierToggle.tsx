@@ -11,6 +11,7 @@ export default function TierToggle() {
   const { tier, setTier, loading } = usePlan()
 
   if (loading) return null
+  if (tier >= 4) return null  // Elite — no tier switching
 
   return (
     <div className="px-3 pb-4">

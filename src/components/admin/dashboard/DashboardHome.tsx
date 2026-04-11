@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../hooks/useTenant'
+import { usePlan } from '../../../hooks/usePlan'
 import DashboardStats from './DashboardStats'
 import DashboardSeoWidget from './DashboardSeoWidget'
 import DashboardSocialWidget from './DashboardSocialWidget'
@@ -31,6 +32,7 @@ const statusBadge = (status: string) => {
 
 export default function DashboardHome({ onboardingComplete, demoActive, onDemoSeeded, onNavigate }: Props) {
   const { tenantId } = useTenant()
+  const { tier } = usePlan()
   const [leads, setLeads] = useState<Lead[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -95,7 +97,7 @@ export default function DashboardHome({ onboardingComplete, demoActive, onDemoSe
         <DashboardSocialWidget onNavigate={onNavigate} />
       </div>
 
-      {!demoActive && tenantId && (
+      {!demoActive && tenantId && tier < 4 && (
         <DemoControls tenantId={tenantId} onSeeded={onDemoSeeded} />
       )}
 
