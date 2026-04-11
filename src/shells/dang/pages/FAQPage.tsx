@@ -9,8 +9,8 @@ import DangFaqAccordion, { type FaqEntry } from './DangFaqAccordion'
 const DangFaqAiChat = lazy(() => import('./DangFaqAiChat'))
 
 const CATEGORY_ORDER = [
-  'General', 'Ants', 'Spiders', 'Wasps & Yellow Jackets',
-  'Scorpions', 'Rodents', 'Mosquitoes', 'Fleas & Ticks', 'Roaches', 'Bed Bugs',
+  'General', 'Ants', 'Bed Bugs', 'Fleas & Ticks',
+  'Mosquitoes', 'Roaches', 'Rodents', 'Scorpions', 'Spiders', 'Wasps & Yellow Jackets',
 ]
 
 const SLUG_MAP: Record<string, string> = {
@@ -153,8 +153,8 @@ export default function FAQPage() {
           {/* Category pills */}
           {!search && (
             <div style={{
-              overflowX: 'auto', display: 'flex', gap: '8px',
-              padding: '0 20px 12px', scrollbarWidth: 'none',
+              display: 'flex', flexWrap: 'wrap', gap: '8px',
+              padding: '0 20px 12px',
               maxWidth: '1000px', margin: '0 auto',
             }}>
               {availableCategories.map(cat => {
@@ -164,8 +164,7 @@ export default function FAQPage() {
                     key={cat}
                     onClick={() => scrollToCategory(cat)}
                     style={{
-                      flexShrink: 0,
-                      padding: '5px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: 600,
+                      padding: '4px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: 600,
                       cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap',
                       background: active ? '#F97316' : '#fff',
                       color: active ? '#fff' : '#F97316',
