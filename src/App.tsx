@@ -96,7 +96,7 @@ export default function App() {
         <Route path="/quote" element={<DangPageRouter slug="quote" fallback={<PublicShell><QuotePage /></PublicShell>} />} />
         <Route path="/about" element={<Suspense fallback={BLANK}><DangPageRouter slug="about" fallback={<PublicShell><About /></PublicShell>} /></Suspense>} />
         <Route path="/faq" element={<Suspense fallback={BLANK}><DangPageRouter slug="faq" fallback={<PublicShell><FAQPage /></PublicShell>} /></Suspense>} />
-        <Route path="/reviews" element={<Suspense fallback={BLANK}><PublicShell><ReviewsPage /></PublicShell></Suspense>} />
+        <Route path="/reviews" element={<Suspense fallback={BLANK}><DangPageRouter slug="reviews" fallback={<PublicShell><ReviewsPage /></PublicShell>} /></Suspense>} />
         <Route path="/service-area" element={<Suspense fallback={BLANK}><PublicShell><ServiceArea /></PublicShell></Suspense>} />
         <Route path="/blog" element={<Suspense fallback={BLANK}><PublicShell><BlogPage /></PublicShell></Suspense>} />
         <Route path="/blog/:slug" element={<Suspense fallback={BLANK}><PublicShell><BlogPostPage /></PublicShell></Suspense>} />
