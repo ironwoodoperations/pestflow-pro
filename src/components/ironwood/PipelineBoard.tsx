@@ -11,7 +11,6 @@ export const PIPELINE_STAGES = [
   { id: 'build_ready',     label: 'Build Ready' },
   { id: 'it_in_progress',  label: 'IT In Progress' },
   { id: 'reveal_ready',    label: 'Reveal Ready' },
-  { id: 'live',            label: 'Live ✓' },
 ]
 const GATED = 'reveal_ready'
 
@@ -31,7 +30,7 @@ export default function PipelineBoard() {
 
   const load = useCallback(async () => {
     const [{ data: p }, { data: s }] = await Promise.all([
-      supabase.from('prospects').select('*').is('archived_at', null).order('updated_at', { ascending: false }),
+      supabase.from('prospects').select('*').is('archived_at', null).neq('pipeline_stage', 'live').order('updated_at', { ascending: false }),
       supabase.from('salespeople').select('*').eq('active', true),
     ])
     if (p) setProspects(p)
@@ -95,7 +94,7 @@ export default function PipelineBoard() {
       {/* Pipeline view */}
       {viewMode === 'pipeline' && (
         <div className="flex-1 overflow-x-auto" onDragEnd={() => { setDragging(null); setDragOver(null) }}>
-          <div className="flex gap-3 p-4 h-full" style={{ minWidth: `${PIPELINE_STAGES.length * 210}px` }}>
+          <div className="flex gap-3 p-4 h-full" style={{ minWidth: `${PIPELINE_STAGES.length * 220}px` }}>
             {PIPELINE_STAGES.map(stage => (
               <PipelineColumn
                 key={stage.id}

@@ -34,7 +34,7 @@ export default function ProspectList() {
   const load = useCallback(async (tab: ArchiveTab = 'active') => {
     const query = supabase.from('prospects').select('*').order('created_at', { ascending: false })
     const finalQuery = tab === 'active'
-      ? query.is('archived_at', null)
+      ? query.is('archived_at', null).neq('pipeline_stage', 'live')
       : query.not('archived_at', 'is', null)
 
     const [{ data: p }, { data: s }] = await Promise.all([
