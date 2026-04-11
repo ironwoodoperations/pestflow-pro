@@ -13,10 +13,30 @@ const corsHeaders = {
 async function notifyTeams(message: string): Promise<void> {
   const webhookUrl = Deno.env.get('TEAMS_WEBHOOK_URL')
   if (!webhookUrl || webhookUrl === 'PLACEHOLDER') return
+  const payload = {
+    type: "message",
+    attachments: [
+      {
+        contentType: "application/vnd.microsoft.card.adaptive",
+        content: {
+          type: "AdaptiveCard",
+          version: "1.4",
+          body: [
+            {
+              type: "TextBlock",
+              text: message,
+              wrap: true,
+              size: "Medium"
+            }
+          ]
+        }
+      }
+    ]
+  }
   await fetch(webhookUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text: message }),
+    body: JSON.stringify(payload),
   })
 }
 
