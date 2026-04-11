@@ -20,10 +20,11 @@ import { archiveRecord }    from '../../lib/archiveUtils'
 import PipelineStage       from './PipelineStage'
 import BuildPathSelector   from './BuildPathSelector'
 import BuildStatusWidget   from './BuildStatusWidget'
+import QAGate              from './QAGate'
 import ActivityLog         from './ActivityLog'
 
 interface Props {
-  prospectId: string | null   // null = new prospect
+  prospectId: string | null
   salespeople: Salesperson[]
   onClose: (refreshed?: boolean) => void
   onArchived?: (id: string, name: string, tenantId?: string) => void
@@ -40,28 +41,24 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
   const [id, setId]                   = useState<string | null>(prospectId)
   const [slugEdited, setSlugEdited]   = useState(false)
   const [guideSection, setGuideSection] = useState<string | null>(null)
+  const [qaPassedAt, setQaPassedAt]   = useState<string | null>(null)
   const timer                         = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   useEffect(() => {
     if (!prospectId) return
     supabase.from('prospects').select('*').eq('id', prospectId).maybeSingle().then(({ data }) => {
-      if (data) {
-        setForm(data)
-        // Existing prospects with a slug should never have it overwritten by auto-gen
-        if (data.slug) setSlugEdited(true)
-      }
+      if (data) { setForm(data); if (data.slug) setSlugEdited(true) }
       setLoading(false)
     })
+    supabase.from('qa_checklists').select('qa_passed_at').eq('prospect_id', prospectId).maybeSingle()
+      .then(({ data }) => { if (data?.qa_passed_at) setQaPassedAt(data.qa_passed_at) })
   }, [prospectId])
 
-  const setField = useCallback((k: string, v: any) => {
-    setForm(f => ({ ...f, [k]: v }))
-  }, [])
+  const setField = useCallback((k: string, v: any) => setForm(f => ({ ...f, [k]: v })), [])
 
   const save = useCallback(async (latest?: Partial<Prospect>) => {
     const data = latest ?? form
     if (!data.company_name?.trim()) return
-    // Sync contact fields into business_info so provisioning uses the right values
     const syncedBi = {
       ...(data.business_info || {}),
       name:  data.company_name || (data.business_info as any)?.name || '',
@@ -72,8 +69,7 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
     let saved_id = id
     if (!saved_id) {
       const { data: row, error } = await supabase.from('prospects').insert({
-        ...dataToSave,
-        status: dataToSave.status || 'prospect',
+        ...dataToSave, status: dataToSave.status || 'prospect',
       }).select('id').single()
       if (!error && row) { saved_id = row.id; setId(row.id) }
     } else {
@@ -88,13 +84,9 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
     timer.current = setTimeout(() => save(), 800)
   }, [save])
 
-  // Auto-generate slug when company name changes (stops once user manually edits slug)
   const handleCompanyName = (v: string) => {
     setField('company_name', v)
-    if (!slugEdited) {
-      setField('slug', slugify(v))
-    }
-    // suggest admin password on new prospects
+    if (!slugEdited) setField('slug', slugify(v))
     if (!form.admin_password && v) {
       const word = v.replace(/[^A-Za-z]/g, '').slice(0, 10)
       setField('admin_password', `${word}2026!`)
@@ -103,12 +95,8 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
 
   const wrappedSetField = useCallback((k: string, v: any) => {
     if (k === 'company_name') handleCompanyName(v)
-    else if (k === 'slug') {
-      setSlugEdited(true)
-      setField('slug', v)
-    } else {
-      setField(k, v)
-    }
+    else if (k === 'slug') { setSlugEdited(true); setField('slug', v) }
+    else setField(k, v)
   }, [form, setField, slugEdited]) // eslint-disable-line
 
   const onUpdate = useCallback((updates: Partial<Prospect>) => {
@@ -120,64 +108,47 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
   const onApplyScraped = useCallback((data: Partial<ScrapedData>) => {
     setForm(f => {
       const bi = { ...(f.business_info || {}) } as Record<string, any>
-      if (data.address)       bi.address        = data.address
-      if (data.hours)         bi.hours          = data.hours
-      if (data.tagline)       bi.tagline        = data.tagline
-      if (data.founded_year)  bi.founded_year   = data.founded_year
-      if (data.tech_count)    bi.num_technicians = data.tech_count
-      if (data.license_number) bi.license       = data.license_number
+      if (data.address)        bi.address         = data.address
+      if (data.hours)          bi.hours           = data.hours
+      if (data.tagline)        bi.tagline         = data.tagline
+      if (data.founded_year)   bi.founded_year    = data.founded_year
+      if (data.tech_count)     bi.num_technicians = data.tech_count
+      if (data.license_number) bi.license         = data.license_number
       const updates: Partial<Prospect> = { business_info: bi }
-      if (data.business_name)      updates.company_name    = data.business_name
-      if (data.owner_name)         updates.contact_name    = data.owner_name
-      if (data.phone)              updates.phone           = data.phone
-      if (data.email)              updates.email           = data.email
-      if (data.facebook_url)       updates.social_facebook = data.facebook_url
-      if (data.instagram_handle)   updates.social_instagram = data.instagram_handle
-      if (data.google_business_url) updates.social_google  = data.google_business_url
-      // services and service_areas have no dedicated columns — log for rep reference
+      if (data.business_name)       updates.company_name    = data.business_name
+      if (data.owner_name)          updates.contact_name    = data.owner_name
+      if (data.phone)               updates.phone           = data.phone
+      if (data.email)               updates.email           = data.email
+      if (data.facebook_url)        updates.social_facebook = data.facebook_url
+      if (data.instagram_handle)    updates.social_instagram = data.instagram_handle
+      if (data.google_business_url) updates.social_google   = data.google_business_url
       if (data.services?.length)      console.log('[scrape] services:', data.services)
       if (data.service_areas?.length) console.log('[scrape] service_areas:', data.service_areas)
       return { ...f, ...updates }
     })
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    setSaved(true); setTimeout(() => setSaved(false), 2000)
   }, [])
 
   const onApplyRecreation = useCallback((data: SiteRecreation) => {
     setForm(f => ({
       ...f,
-      branding: {
-        ...(f.branding || {}),
-        template: data.shell,
-        primary_color: data.primaryColor,
-        accent_color: data.accentColor,
-        cta_text: data.ctaText,
-      },
-      customization: {
-        ...(f.customization || {}),
-        hero_headline: data.heroHeadline,
-      },
+      branding: { ...(f.branding || {}), template: data.shell, primary_color: data.primaryColor, accent_color: data.accentColor, cta_text: data.ctaText },
+      customization: { ...(f.customization || {}), hero_headline: data.heroHeadline },
       hero_headline: data.heroHeadline,
     }))
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    setSaved(true); setTimeout(() => setSaved(false), 2000)
   }, [])
 
   async function saveTier(val: string) {
     if (!id) return
     await supabase.from('prospects').update({ tier: val }).eq('id', id)
-    setField('tier', val)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    setField('tier', val); setSaved(true); setTimeout(() => setSaved(false), 2000)
   }
 
   async function handleArchive() {
     if (!id) return
     await archiveRecord('prospects', id, supabase)
-    // Also suspend the live tenant site if provisioned
-    if (form.tenant_id) {
-      await archiveRecord('tenants', form.tenant_id, supabase)
-    }
+    if (form.tenant_id) await archiveRecord('tenants', form.tenant_id, supabase)
     onArchived?.(id, form.company_name || 'Prospect', form.tenant_id ?? undefined)
     onClose(true)
   }
@@ -189,12 +160,13 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
       <RepGuideDrawer section={guideSection} onClose={() => setGuideSection(null)} />
       <div className="w-full max-w-2xl bg-gray-950 border-l border-gray-800 h-full overflow-y-auto shadow-2xl"
         onClick={e => e.stopPropagation()}>
+
         {/* Header */}
         <div className="sticky top-0 z-10 px-5 py-3 bg-gray-950 border-b border-gray-800">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 min-w-0">
               <h2 className="font-bold text-white truncate">{form.company_name || 'New Prospect'}</h2>
-              {form.tier === 'pro' && <span className="flex-shrink-0 px-2 py-0.5 text-xs font-semibold rounded-full bg-indigo-900/60 text-indigo-300 border border-indigo-700">Pro</span>}
+              {form.tier === 'pro'    && <span className="flex-shrink-0 px-2 py-0.5 text-xs font-semibold rounded-full bg-indigo-900/60 text-indigo-300 border border-indigo-700">Pro</span>}
               {form.tier === 'growth' && <span className="flex-shrink-0 px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-900/60 text-blue-300 border border-blue-700">Growth</span>}
               {(!form.tier || form.tier === 'starter') && <span className="flex-shrink-0 px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-800 text-gray-400 border border-gray-600">Starter</span>}
             </div>
@@ -221,27 +193,48 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
           )}
         </div>
 
-        {/* Sections */}
+        {/* Sections — ordered per spec */}
         <div className="p-5 space-y-6">
+
+          {/* 1. Pipeline Stage */}
           {id && (
             <PipelineStage
               prospectId={id}
               stage={form.pipeline_stage ?? 'lead_closed'}
+              qaPassedAt={qaPassedAt}
+              companyName={form.company_name ?? undefined}
+              buildPath={form.build_path ?? null}
               onChanged={stage => setForm(f => ({ ...f, pipeline_stage: stage }))}
             />
           )}
+
+          {/* 2. Build Path */}
           {id && (
             <BuildPathSelector
               prospectId={id}
               buildPath={form.build_path ?? null}
               customScopeNotes={form.custom_scope_notes ?? null}
               onChanged={(path, notes) => setForm(f => ({
-                ...f,
-                build_path: path,
+                ...f, build_path: path,
                 ...(notes !== undefined ? { custom_scope_notes: notes } : {}),
               }))}
             />
           )}
+
+          {/* 3. Intake Link */}
+          <div className="flex justify-end"><RepGuideButton section="intake" onOpen={setGuideSection} /></div>
+          <IntakeLinkSection
+            prospectId={id}
+            adminEmail={form.admin_email ?? undefined}
+            companyName={form.company_name ?? undefined}
+            onImportSuccess={(data) => setForm(data)}
+          />
+
+          {/* 4. Payment / Invoice */}
+          <div className="flex justify-end"><RepGuideButton section="invoice" onOpen={setGuideSection} /></div>
+          <OnboardingSection form={form} setField={wrappedSetField} onBlur={onBlur} prospect={form} onUpdate={onUpdate} />
+
+          {/* 5. Build Status */}
           {id && (
             <BuildStatusWidget
               prospectId={id}
@@ -249,28 +242,40 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
               pipelineStage={form.pipeline_stage ?? 'lead_closed'}
             />
           )}
-          <div className="flex items-center gap-2 flex-wrap">
-            <a
-              href="https://outlook.office.com/book/PestFlowProOnboarding@ironwoodoperationsgroup.com/?ismsaljsauthenabled"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-lg transition"
-            >
-              📅 Book Call
-            </a>
-            <a
-              href="https://teams.microsoft.com/l/meeting/new"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-lg transition"
-            >
-              🎥 Teams Call
-            </a>
-            <div className="ml-auto"><RepGuideButton section="sales-call" onOpen={setGuideSection} /></div>
-          </div>
-          <ContactSection form={form} setField={wrappedSetField} onBlur={onBlur} salespeople={salespeople} />
-          {(!form.build_path || form.build_path !== 'template_launch') && (
-            <div className="border-t border-gray-800 pt-4">
+
+          {/* 6. QA Gate (it_in_progress / reveal_ready only) */}
+          {id && (
+            <QAGate
+              prospectId={id}
+              pipelineStage={form.pipeline_stage ?? 'lead_closed'}
+              companyName={form.company_name ?? ''}
+              onRevealReady={passedAt => {
+                setQaPassedAt(passedAt)
+                setForm(f => ({ ...f, pipeline_stage: 'reveal_ready' }))
+              }}
+            />
+          )}
+
+          {/* 7. Onboarding Timeline */}
+          {id && <OnboardingTimeline prospect={form} />}
+
+          {/* --- Contact / Data Entry sections --- */}
+          <div className="border-t border-gray-800 pt-4 space-y-6">
+            <div className="flex items-center gap-2 flex-wrap">
+              <a href="https://outlook.office.com/book/PestFlowProOnboarding@ironwoodoperationsgroup.com/?ismsaljsauthenabled"
+                target="_blank" rel="noopener noreferrer"
+                className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-lg transition">
+                📅 Book Call
+              </a>
+              <a href="https://teams.microsoft.com/l/meeting/new"
+                target="_blank" rel="noopener noreferrer"
+                className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-lg transition">
+                🎥 Teams Call
+              </a>
+              <div className="ml-auto"><RepGuideButton section="sales-call" onOpen={setGuideSection} /></div>
+            </div>
+            <ContactSection form={form} setField={wrappedSetField} onBlur={onBlur} salespeople={salespeople} />
+            {(!form.build_path || form.build_path !== 'template_launch') && (
               <ScrapePanel
                 sourceUrl={form.website_url || ''}
                 onSourceUrlChange={v => { wrappedSetField('website_url', v); onBlur() }}
@@ -280,41 +285,31 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
                 tier={form.tier ?? null}
                 form={form}
               />
+            )}
+            <div className="flex items-center justify-end gap-2">
+              <RepGuideButton section="prospect-fields" onOpen={setGuideSection} />
+              <RepGuideButton section="shell-palette" onOpen={setGuideSection} />
             </div>
-          )}
-          <div className="flex justify-end"><RepGuideButton section="intake" onOpen={setGuideSection} /></div>
-          <IntakeLinkSection
-            prospectId={id}
-            adminEmail={form.admin_email ?? undefined}
-            companyName={form.company_name ?? undefined}
-            onImportSuccess={(data) => setForm(data)}
-          />
-          {id && <OnboardingTimeline prospect={form} />}
-          <div className="flex justify-end"><RepGuideButton section="invoice" onOpen={setGuideSection} /></div>
-          <OnboardingSection form={form} setField={wrappedSetField} onBlur={onBlur} prospect={form} onUpdate={onUpdate} />
-          <div className="flex items-center justify-end gap-2">
-            <RepGuideButton section="prospect-fields" onOpen={setGuideSection} />
-            <RepGuideButton section="shell-palette" onOpen={setGuideSection} />
-          </div>
-          {(!form.build_path || form.build_path !== 'firecrawl_migration') && (
-            <SiteSetupSection form={form} setField={wrappedSetField} onBlur={onBlur} />
-          )}
-          {(form.tier === 'pro' || form.tier === 'elite') && (
-            <BoltBuildGuide slug={form.slug ?? undefined} />
-          )}
-          <IntegrationsSection prospectId={id} form={form} />
-          <div className="flex justify-end">
-            <RepGuideButton section={form.provisioned_at ? 'post-launch' : 'pre-provision'} label={form.provisioned_at ? '? Post-Launch Guide' : undefined} onOpen={setGuideSection} />
-          </div>
-          <ProvisionSection form={form} prospectId={id} onProvisioned={onUpdate} />
-
-          {form.tenant_id && form.slug && (
-            <div className="space-y-3">
-              <CustomDomainSetup tenantId={form.tenant_id} slug={form.slug} />
-              <BundleSocialSetup tenantId={form.tenant_id} />
+            {(!form.build_path || form.build_path !== 'firecrawl_migration') && (
+              <SiteSetupSection form={form} setField={wrappedSetField} onBlur={onBlur} />
+            )}
+            {(form.tier === 'pro' || form.tier === 'elite') && (
+              <BoltBuildGuide slug={form.slug ?? undefined} />
+            )}
+            <IntegrationsSection prospectId={id} form={form} />
+            <div className="flex justify-end">
+              <RepGuideButton section={form.provisioned_at ? 'post-launch' : 'pre-provision'} label={form.provisioned_at ? '? Post-Launch Guide' : undefined} onOpen={setGuideSection} />
             </div>
-          )}
+            <ProvisionSection form={form} prospectId={id} onProvisioned={onUpdate} />
+            {form.tenant_id && form.slug && (
+              <div className="space-y-3">
+                <CustomDomainSetup tenantId={form.tenant_id} slug={form.slug} />
+                <BundleSocialSetup tenantId={form.tenant_id} />
+              </div>
+            )}
+          </div>
 
+          {/* 8. Activity Log */}
           {id && <ActivityLog prospectId={id} />}
 
           {id && (
