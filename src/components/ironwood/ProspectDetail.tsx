@@ -37,6 +37,13 @@ interface Props {
   onArchived?: (id: string, name: string, tenantId?: string) => void
 }
 
+const TIER_META = {
+  starter: { label: 'Starter', price: '$149/mo', badgeCls: 'bg-gray-800 text-gray-400 border-gray-600',     activeCls: 'bg-gray-600 border-gray-400 text-white' },
+  growth:  { label: 'Growth',  price: '$249/mo', badgeCls: 'bg-blue-900/60 text-blue-300 border-blue-700',  activeCls: 'bg-blue-700 border-blue-500 text-white' },
+  pro:     { label: 'Pro',     price: '$349/mo', badgeCls: 'bg-indigo-900/60 text-indigo-300 border-indigo-700', activeCls: 'bg-indigo-700 border-indigo-500 text-white' },
+  elite:   { label: 'Elite',   price: '$499/mo', badgeCls: 'bg-amber-900/60 text-amber-300 border-amber-700',   activeCls: 'bg-amber-700 border-amber-500 text-white' },
+} as const
+
 function slugify(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30)
 }
@@ -48,7 +55,7 @@ function formatDate(dateStr: string | null | undefined): string {
 
 
 export default function ProspectDetail({ prospectId, salespeople, onClose, onArchived }: Props) {
-  const [form, setForm]               = useState<Partial<Prospect>>({ status: 'prospect', business_info: {}, branding: {}, customization: {} })
+  const [form, setForm]               = useState<Partial<Prospect>>({ status: 'prospect', tier: 'growth', business_info: {}, branding: {}, customization: {} })
   const [saved, setSaved]             = useState(false)
   const [loading, setLoading]         = useState(!!prospectId)
   const [id, setId]                   = useState<string | null>(prospectId)
@@ -155,9 +162,10 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
   }, [])
 
   async function saveTier(val: string) {
+    setField('tier', val)
     if (!id) return
     await supabase.from('prospects').update({ tier: val }).eq('id', id)
-    setField('tier', val); setSaved(true); setTimeout(() => setSaved(false), 2000)
+    setSaved(true); setTimeout(() => setSaved(false), 2000)
   }
 
   async function handleArchive() {
@@ -182,9 +190,10 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 min-w-0">
               <h2 className="font-bold text-white truncate">{form.company_name || 'New Prospect'}</h2>
-              {form.tier === 'pro'    && <span className="flex-shrink-0 px-2 py-0.5 text-xs font-semibold rounded-full bg-indigo-900/60 text-indigo-300 border border-indigo-700">Pro</span>}
-              {form.tier === 'growth' && <span className="flex-shrink-0 px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-900/60 text-blue-300 border border-blue-700">Growth</span>}
-              {(!form.tier || form.tier === 'starter') && <span className="flex-shrink-0 px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-800 text-gray-400 border border-gray-600">Starter</span>}
+              {TIER_META[((form.tier || 'growth') as keyof typeof TIER_META)] && (() => {
+                const t = TIER_META[(form.tier || 'growth') as keyof typeof TIER_META]
+                return <span className={`flex-shrink-0 px-2 py-0.5 text-xs font-semibold rounded-full border ${t.badgeCls}`}>{t.label} · {t.price}</span>
+              })()}
             </div>
             <div className="flex items-center gap-3">
               {saved && <span className="text-xs text-emerald-400">✓ Saved</span>}
@@ -192,21 +201,20 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
               <button onClick={() => onClose(true)} className="text-gray-400 hover:text-white text-xl leading-none">×</button>
             </div>
           </div>
-          {id && (
-            <div className="flex items-center gap-1 mt-2">
-              <span className="text-xs text-gray-500 mr-1">Tier:</span>
-              {(['starter', 'growth', 'pro'] as const).map(t => (
-                <button key={t} onClick={() => saveTier(t)}
-                  className={`px-3 py-0.5 text-xs rounded-full border transition capitalize ${
-                    (form.tier ?? 'starter') === t
-                      ? t === 'pro' ? 'bg-indigo-700 border-indigo-500 text-white'
-                        : t === 'growth' ? 'bg-blue-700 border-blue-500 text-white'
-                        : 'bg-gray-600 border-gray-400 text-white'
-                      : 'bg-transparent border-gray-700 text-gray-400 hover:border-gray-500'
-                  }`}>{t}</button>
-              ))}
-            </div>
-          )}
+          <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+            {(Object.entries(TIER_META) as [string, typeof TIER_META[keyof typeof TIER_META]][]).map(([key, meta]) => {
+              const active = (form.tier || 'growth') === key
+              return (
+                <button key={key} onClick={() => saveTier(key)}
+                  className={`flex flex-col items-center px-3 py-1 text-xs rounded-lg border transition leading-tight ${
+                    active ? meta.activeCls : 'bg-transparent border-gray-700 text-gray-400 hover:border-gray-500'
+                  }`}>
+                  <span className="font-semibold">{meta.label}</span>
+                  <span className="opacity-70">{meta.price}</span>
+                </button>
+              )
+            })}
+          </div>
         </div>
 
         {/* Body — two columns on desktop */}

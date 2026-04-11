@@ -12,6 +12,12 @@ const TIER_BADGE: Record<string, string> = {
   pro:     'bg-indigo-800 text-indigo-200',
   elite:   'bg-amber-700 text-amber-200',
 }
+const TIER_PRICE: Record<string, string> = {
+  starter: '$149/mo',
+  growth:  '$249/mo',
+  pro:     '$349/mo',
+  elite:   '$499/mo',
+}
 
 function daysSince(iso: string | null | undefined): number {
   if (!iso) return 0
@@ -50,7 +56,7 @@ export default function ProspectCard({ prospect: p, onClick, onDragStart }: Prop
           </span>
         )}
         <span className={`text-xs px-1.5 py-0.5 rounded font-medium capitalize ${TIER_BADGE[tier] ?? TIER_BADGE.starter}`}>
-          {tier}
+          {tier} · {TIER_PRICE[tier] ?? '$149/mo'}
         </span>
       </div>
       <div className="flex items-center justify-between text-xs">
