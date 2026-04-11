@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
 import { notifyTeamsFromClient } from '../../lib/teamsNotify'
+import RevealReport from './RevealReport'
 
 interface RevealProspect {
   id: string
@@ -12,7 +13,19 @@ interface RevealProspect {
   build_path: string | null
   qa_passed_at: string | null
   pipeline_stage: string
+  slug: string | null
+  tenant_id: string | null
 }
+
+interface ReportTarget {
+  prospectId:    string
+  tenantId:      string
+  siteUrl:       string
+  oldSiteDesktop?: number
+  oldSiteMobile?:  number
+}
+
+interface OldScores { desktop: string; mobile: string }
 
 interface RevisionModal {
   prospectId: string
@@ -25,11 +38,13 @@ export default function RevealQueue() {
   const [revModal, setRevModal]   = useState<RevisionModal | null>(null)
   const [revNotes, setRevNotes]   = useState('')
   const [saving, setSaving]       = useState<string | null>(null)
+  const [reportTarget, setReportTarget] = useState<ReportTarget | null>(null)
+  const [oldScores, setOldScores]       = useState<Record<string, OldScores>>({})
 
   const load = useCallback(async () => {
     const { data } = await supabase
       .from('prospects')
-      .select('id, company_name, contact_name, phone, tier, build_path, pipeline_stage')
+      .select('id, company_name, contact_name, phone, tier, build_path, pipeline_stage, slug, tenant_id')
       .eq('pipeline_stage', 'reveal_ready')
       .order('updated_at', { ascending: true })
     if (!data) { setLoading(false); return }
@@ -108,6 +123,23 @@ export default function RevealQueue() {
     return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
   }
 
+  function openReport(p: RevealProspect) {
+    if (!p.tenant_id || !p.slug) { toast.error('Missing tenant or slug — cannot generate report'); return }
+    const scores = oldScores[p.id] || { desktop: '', mobile: '' }
+    setReportTarget({
+      prospectId:    p.id,
+      tenantId:      p.tenant_id,
+      siteUrl:       `https://${p.slug}.pestflowpro.com`,
+      oldSiteDesktop: scores.desktop ? parseInt(scores.desktop) : undefined,
+      oldSiteMobile:  scores.mobile  ? parseInt(scores.mobile)  : undefined,
+    })
+  }
+
+  function setScore(prospectId: string, field: 'desktop' | 'mobile', val: string) {
+    const num = val.replace(/\D/g, '').slice(0, 3)
+    setOldScores(prev => ({ ...prev, [prospectId]: { ...(prev[prospectId] || { desktop: '', mobile: '' }), [field]: num } }))
+  }
+
   if (loading) return <div className="p-8 text-gray-500 text-sm">Loading reveal queue…</div>
 
   return (
@@ -143,34 +175,80 @@ export default function RevealQueue() {
                   <div className="text-xs text-emerald-500 mt-1">
                     ✓ QA passed {fmtDate(p.qa_passed_at)}
                   </div>
+                  {/* Old site score inputs */}
+                  <div className="flex items-center gap-3 mt-2">
+                    <span className="text-xs text-gray-500">Old site scores (optional):</span>
+                    <label className="flex items-center gap-1 text-xs text-gray-400">
+                      Desktop
+                      <input
+                        type="text" inputMode="numeric" maxLength={3}
+                        value={oldScores[p.id]?.desktop || ''}
+                        onChange={e => setScore(p.id, 'desktop', e.target.value)}
+                        placeholder="—"
+                        className="w-10 bg-gray-800 border border-gray-700 rounded px-1.5 py-0.5 text-center text-white text-xs focus:outline-none focus:border-gray-500"
+                      />
+                    </label>
+                    <label className="flex items-center gap-1 text-xs text-gray-400">
+                      Mobile
+                      <input
+                        type="text" inputMode="numeric" maxLength={3}
+                        value={oldScores[p.id]?.mobile || ''}
+                        onChange={e => setScore(p.id, 'mobile', e.target.value)}
+                        placeholder="—"
+                        className="w-10 bg-gray-800 border border-gray-700 rounded px-1.5 py-0.5 text-center text-white text-xs focus:outline-none focus:border-gray-500"
+                      />
+                    </label>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <a
-                    href="https://outlook.office.com/book/PestFlowProOnboarding@ironwoodoperationsgroup.com/?ismsaljsauthenabled"
-                    target="_blank" rel="noopener noreferrer"
-                    className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-lg transition"
-                  >
-                    📅 Book Reveal Call
-                  </a>
-                  <button
-                    onClick={() => handleLaunch(p)}
-                    disabled={saving === p.id}
-                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded-lg transition disabled:opacity-50"
-                  >
-                    {saving === p.id ? '…' : '🚀 Launch Approved'}
-                  </button>
-                  <button
-                    onClick={() => { setRevModal({ prospectId: p.id, companyName: p.company_name }); setRevNotes('') }}
-                    disabled={saving === p.id}
-                    className="px-3 py-1.5 bg-amber-700 hover:bg-amber-600 text-white text-xs rounded-lg transition disabled:opacity-50"
-                  >
-                    🔁 Revisions
-                  </button>
+                <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => openReport(p)}
+                      className="px-3 py-1.5 bg-violet-700 hover:bg-violet-600 text-white text-xs font-medium rounded-lg transition"
+                    >
+                      📄 Reveal Report
+                    </button>
+                    <a
+                      href="https://outlook.office.com/book/PestFlowProOnboarding@ironwoodoperationsgroup.com/?ismsaljsauthenabled"
+                      target="_blank" rel="noopener noreferrer"
+                      className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-lg transition"
+                    >
+                      📅 Book Reveal Call
+                    </a>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleLaunch(p)}
+                      disabled={saving === p.id}
+                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded-lg transition disabled:opacity-50"
+                    >
+                      {saving === p.id ? '…' : '🚀 Launch Approved'}
+                    </button>
+                    <button
+                      onClick={() => { setRevModal({ prospectId: p.id, companyName: p.company_name }); setRevNotes('') }}
+                      disabled={saving === p.id}
+                      className="px-3 py-1.5 bg-amber-700 hover:bg-amber-600 text-white text-xs rounded-lg transition disabled:opacity-50"
+                    >
+                      🔁 Revisions
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           ))}
         </div>
+      )}
+
+      {/* Reveal Report overlay */}
+      {reportTarget && (
+        <RevealReport
+          prospectId={reportTarget.prospectId}
+          tenantId={reportTarget.tenantId}
+          siteUrl={reportTarget.siteUrl}
+          oldSiteDesktop={reportTarget.oldSiteDesktop}
+          oldSiteMobile={reportTarget.oldSiteMobile}
+          onClose={() => setReportTarget(null)}
+        />
       )}
 
       {/* Revision modal */}
