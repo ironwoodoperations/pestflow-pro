@@ -2,22 +2,31 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import type { RevealReportData, PageSpeedScores } from '../types/revealReport'
 
-async function fetchPageSpeed(url: string, strategy: 'desktop' | 'mobile'): Promise<PageSpeedScores | null> {
+const SUPABASE_URL      = import.meta.env.VITE_SUPABASE_URL as string
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string
+
+interface ProxyResult {
+  desktop: PageSpeedScores | null
+  mobile:  PageSpeedScores | null
+}
+
+async function fetchPageSpeedViaProxy(siteUrl: string): Promise<ProxyResult> {
   try {
-    const res = await fetch(
-      `https://www.googleapis.com/pagespeedonline/v5/runPagespeed` +
-      `?url=${encodeURIComponent(url)}&strategy=${strategy}`
-    )
-    const json = await res.json()
-    const cats = json.lighthouseResult?.categories
-    if (!cats) return null
-    return {
-      performance:  Math.round((cats.performance?.score   ?? 0) * 100),
-      seo:          Math.round((cats.seo?.score           ?? 0) * 100),
-      accessibility:Math.round((cats.accessibility?.score ?? 0) * 100),
-      bestPractices:Math.round((cats['best-practices']?.score ?? 0) * 100),
-    }
-  } catch { return null }
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/pagespeed-proxy`, {
+      method: 'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'apikey':        SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({ url: siteUrl }),
+    })
+    const data = await res.json()
+    if (data.error) return { desktop: null, mobile: null }
+    return { desktop: data.desktop ?? null, mobile: data.mobile ?? null }
+  } catch {
+    return { desktop: null, mobile: null }
+  }
 }
 
 interface Params {
@@ -39,9 +48,8 @@ export function useRevealReportData({ prospectId, tenantId, siteUrl, oldSiteDesk
 
     async function load() {
       try {
-        const [desktopRes, mobileRes, settingsRes, locRes, prospectRes, faqRes, testRes] = await Promise.all([
-          fetchPageSpeed(siteUrl, 'desktop'),
-          fetchPageSpeed(siteUrl, 'mobile'),
+        const [psResult, settingsRes, locRes, prospectRes, faqRes, testRes] = await Promise.all([
+          fetchPageSpeedViaProxy(siteUrl),
           supabase.from('settings')
             .select('key, value')
             .eq('tenant_id', tenantId!)
@@ -105,8 +113,8 @@ export function useRevealReportData({ prospectId, tenantId, siteUrl, oldSiteDesk
           tier:          prospect?.tier || 'starter',
           generatedAt:   new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
 
-          desktop: desktopRes,
-          mobile:  mobileRes,
+          desktop: psResult.desktop,
+          mobile:  psResult.mobile,
           oldSiteDesktop,
           oldSiteMobile,
 
