@@ -17,11 +17,12 @@ import BoltBuildGuide       from './BoltBuildGuide'
 import CustomDomainSetup    from './CustomDomainSetup'
 import BundleSocialSetup    from './BundleSocialSetup'
 import { archiveRecord }    from '../../lib/archiveUtils'
-import PipelineStage       from './PipelineStage'
-import BuildPathSelector   from './BuildPathSelector'
-import BuildStatusWidget   from './BuildStatusWidget'
-import QAGate              from './QAGate'
-import ActivityLog         from './ActivityLog'
+import PipelineStage          from './PipelineStage'
+import BuildPathSelector      from './BuildPathSelector'
+import BuildStatusWidget      from './BuildStatusWidget'
+import QAGate                 from './QAGate'
+import ActivityLog            from './ActivityLog'
+import ClaudeContextDownload  from './ClaudeContextDownload'
 
 interface Props {
   prospectId: string | null
@@ -241,6 +242,18 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
               buildPath={form.build_path ?? null}
               pipelineStage={form.pipeline_stage ?? 'lead_closed'}
             />
+          )}
+
+          {/* 5b. Claude Context Download — full_custom builds only */}
+          {id && form.build_path === 'full_custom' && (
+            <div>
+              <h3 className="font-semibold text-gray-200 border-b border-gray-700 pb-1 mb-3">Build Files</h3>
+              <ClaudeContextDownload
+                prospectId={id}
+                slug={form.slug ?? null}
+                websiteUrl={form.website_url ?? null}
+              />
+            </div>
           )}
 
           {/* 6. QA Gate (it_in_progress / reveal_ready only) */}
