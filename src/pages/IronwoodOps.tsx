@@ -9,13 +9,15 @@ const ProspectList    = lazy(() => import('../components/ironwood/ProspectList')
 const IntegrationsTab = lazy(() => import('../components/ironwood/IntegrationsTab'))
 const SupportPanel    = lazy(() => import('../components/ironwood/SupportPanel'))
 const RevealQueue     = lazy(() => import('../components/ironwood/RevealQueue'))
+const AllClients      = lazy(() => import('../components/ironwood/AllClients'))
 
-type Tab = 'pipeline' | 'prospects' | 'reveal_queue' | 'reports' | 'integrations' | 'team' | 'support'
+type Tab = 'pipeline' | 'prospects' | 'reveal_queue' | 'all_clients' | 'reports' | 'integrations' | 'team' | 'support'
 
 const NAV: { id: Tab; label: string; icon: string }[] = [
   { id: 'pipeline',     label: 'Pipeline',      icon: '📋' },
   { id: 'prospects',    label: 'Prospects',     icon: '👤' },
   { id: 'reveal_queue', label: 'Reveal Queue',  icon: '✅' },
+  { id: 'all_clients',  label: 'All Clients',   icon: '🌐' },
   { id: 'reports',      label: 'Reports',       icon: '📊' },
   { id: 'integrations', label: 'Integrations',  icon: '🔑' },
   { id: 'team',         label: 'Team',          icon: '👥' },
@@ -109,6 +111,7 @@ export default function IronwoodOps() {
           {tab === 'pipeline'     && <PipelineBoard />}
           {tab === 'prospects'    && <ProspectList />}
           {tab === 'reveal_queue' && <RevealQueue />}
+          {tab === 'all_clients'  && <AllClients />}
           {tab === 'reports'      && <ReportsTab />}
           {tab === 'integrations' && <IntegrationsTab />}
           {tab === 'team'         && <TeamTab />}
