@@ -73,6 +73,11 @@ function buildBrief(extracted: any, prospect: any): string {
   return lines.join('\n')
 }
 
+// BUILD_PROMPT template — generates a complete, runnable Claude Code session prompt.
+// IT downloads this file and pipes it directly into the claude CLI:
+//   claude --dangerously-skip-permissions < BUILD_PROMPT.txt
+// The prompt instructs Claude Code to: create the shell directory, populate real content,
+// register the shell in shellThemes.ts + SlugRouter.tsx, seed page_content, and commit.
 function buildPrompt(extracted: any, prospect: any, clientSlug: string): string {
   const name = extracted.business_name || prospect.company_name || 'Company'
   const safeName = name.replace(/[^A-Za-z0-9]/g, '')
