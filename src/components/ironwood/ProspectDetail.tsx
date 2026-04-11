@@ -23,6 +23,7 @@ import BuildStatusWidget      from './BuildStatusWidget'
 import QAGate                 from './QAGate'
 import ActivityLog            from './ActivityLog'
 import ClaudeContextDownload  from './ClaudeContextDownload'
+import FullCustomBuildGuide   from './FullCustomBuildGuide'
 
 interface Props {
   prospectId: string | null
@@ -244,15 +245,16 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
             />
           )}
 
-          {/* 5b. Claude Context Download — full_custom builds only */}
+          {/* 5b. Claude Context Download + Build Guide — full_custom builds only */}
           {id && form.build_path === 'full_custom' && (
-            <div>
-              <h3 className="font-semibold text-gray-200 border-b border-gray-700 pb-1 mb-3">Build Files</h3>
+            <div className="space-y-3">
+              <h3 className="font-semibold text-gray-200 border-b border-gray-700 pb-1">Build Files</h3>
               <ClaudeContextDownload
                 prospectId={id}
                 slug={form.slug ?? null}
                 websiteUrl={form.website_url ?? null}
               />
+              <FullCustomBuildGuide slug={form.slug ?? null} />
             </div>
           )}
 
