@@ -20,6 +20,7 @@ import { archiveRecord }    from '../../lib/archiveUtils'
 import PipelineStage       from './PipelineStage'
 import BuildPathSelector   from './BuildPathSelector'
 import BuildStatusWidget   from './BuildStatusWidget'
+import ActivityLog         from './ActivityLog'
 
 interface Props {
   prospectId: string | null   // null = new prospect
@@ -313,6 +314,8 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
               <BundleSocialSetup tenantId={form.tenant_id} />
             </div>
           )}
+
+          {id && <ActivityLog prospectId={id} />}
 
           {id && (
             <div className="pt-2 border-t border-gray-800">
