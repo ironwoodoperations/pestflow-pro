@@ -22,14 +22,21 @@ interface Props {
   pipelineStage: string
   companyName: string
   tenantId?: string | null
+  tier?: string | null
+  buildPath?: string | null
+  redirectMapComplete?: boolean
   onRevealReady: (passedAt: string) => void
 }
 
-export default function QAGate({ prospectId, pipelineStage, companyName, tenantId, onRevealReady }: Props) {
+export default function QAGate({ prospectId, pipelineStage, companyName, tenantId, tier, buildPath, redirectMapComplete, onRevealReady }: Props) {
   const [qa, setQa]       = useState<Record<string, any> | null>(null)
   const [saving, setSaving] = useState(false)
   const [moving, setMoving] = useState(false)
   const notesTimer          = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+
+  const isProOrElite = tier === 'pro' || tier === 'elite'
+  const redirectRequired = isProOrElite && buildPath !== 'template_launch'
+  const redirectOk = !redirectRequired || !!redirectMapComplete
 
   const visible = ['it_in_progress', 'reveal_ready'].includes(pipelineStage)
 
@@ -145,7 +152,7 @@ export default function QAGate({ prospectId, pipelineStage, companyName, tenantI
 
   const passed = QA_ITEMS.filter(i => qa[i.field]).length
   const total  = QA_ITEMS.length
-  const allDone = passed === total
+  const allDone = passed === total && redirectOk
 
   return (
     <div>
@@ -179,6 +186,29 @@ export default function QAGate({ prospectId, pipelineStage, companyName, tenantI
             </span>
           </label>
         ))}
+
+        {/* Redirect map — conditional item */}
+        {redirectRequired ? (
+          <label className="flex items-start gap-2.5">
+            <input
+              type="checkbox"
+              checked={!!redirectMapComplete}
+              disabled
+              className="mt-0.5 flex-shrink-0 accent-emerald-500"
+            />
+            <span className={`text-xs ${redirectMapComplete ? 'text-gray-300' : 'text-gray-400'}`}>
+              301 redirect map complete
+              {!redirectMapComplete && <span className="text-amber-500 ml-1">(mark complete in Redirect Map panel above)</span>}
+            </span>
+          </label>
+        ) : (
+          <div className="flex items-start gap-2.5">
+            <input type="checkbox" checked disabled className="mt-0.5 flex-shrink-0 accent-gray-600" />
+            <span className="text-xs text-gray-600">
+              301 redirect map — N/A for this build tier/path
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Reveal notes */}
