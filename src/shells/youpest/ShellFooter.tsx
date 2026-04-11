@@ -94,10 +94,17 @@ export default function ShellFooter() {
           </ul>
         </div>
       </div>
-      <div className="border-t pt-6 flex flex-col md:flex-row justify-between gap-2 opacity-60"
+      <div className="border-t pt-4 flex flex-col md:flex-row justify-between items-center gap-3"
         style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
-        <p>© {year} {biz.name}. All rights reserved.</p>
-        <p>Powered by {powered}</p>
+        <p className="opacity-60">© {year} {biz.name}. All rights reserved.</p>
+        <div className="flex items-center gap-3 text-xs opacity-50">
+          <Link to="/privacy" className="hover:opacity-100 transition">Privacy Policy</Link>
+          <span>·</span>
+          <Link to="/terms" className="hover:opacity-100 transition">Terms of Service</Link>
+          <span>·</span>
+          <Link to="/sms-terms" className="hover:opacity-100 transition">SMS Terms</Link>
+        </div>
+        <p className="opacity-60">Powered by {powered}</p>
       </div>
     </footer>
   )

@@ -48,7 +48,7 @@ export function VideoImage({ src, alt, className = '', videoUrl, videoType }: Vi
     <div ref={containerRef} className="relative" style={{ display: 'inline-block', width: '100%' }}>
       {/* Image — always rendered, hidden when playing */}
       <div style={{ display: playing ? 'none' : 'block' }}>
-        <img src={src} alt={alt} className={className} />
+        <img src={src} alt={alt} loading="lazy" className={className} />
       </div>
 
       {/* Video player — shown when playing */}

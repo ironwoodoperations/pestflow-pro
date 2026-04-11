@@ -82,6 +82,13 @@ export default function ShellFooter() {
       <div className="border-t border-white/10 py-4">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-2 text-sm text-white/60">
           <span className="font-raleway">&copy; {new Date().getFullYear()} {info.name}. All rights reserved.</span>
+          <div className="flex items-center gap-3 font-raleway text-xs text-white/50">
+            <Link to="/privacy" className="hover:text-white/80 transition">Privacy Policy</Link>
+            <span>·</span>
+            <Link to="/terms" className="hover:text-white/80 transition">Terms of Service</Link>
+            <span>·</span>
+            <Link to="/sms-terms" className="hover:text-white/80 transition">SMS Terms</Link>
+          </div>
           <a href="https://pestflowpro.com" target="_blank" rel="noopener noreferrer" className="font-raleway text-xs text-orange-400 hover:text-orange-300 transition">Powered by PestFlow Pro</a>
         </div>
       </div>

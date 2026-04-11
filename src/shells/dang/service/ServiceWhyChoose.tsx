@@ -15,7 +15,7 @@ const ServiceWhyChoose = ({ items, intro }: ServiceWhyChooseProps) => (
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-10">
         {items.map((item, i) => (
           <div key={i} className="flex gap-4">
-            <img src={item.icon} alt={item.title} className="w-10 h-10 flex-shrink-0" />
+            <img src={item.icon} alt={item.title} loading="lazy" className="w-10 h-10 flex-shrink-0" />
             <div>
               <h3 className="text-comic text-lg mb-2">{item.title}</h3>
               <p className="text-sm opacity-90">{item.description}</p>

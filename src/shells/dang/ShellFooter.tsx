@@ -78,7 +78,11 @@ const Footer = () => {
         <div className="mt-8 pt-6 text-center text-xs border-t border-gray-100" style={{ color: 'hsl(20, 10%, 55%)' }}>
           © {new Date().getFullYear()} Dang Pest Control. All rights reserved.
           <span className="mx-2">·</span>
-          <Link to="/accessibility" className="hover:text-primary transition-colors" style={{ color: 'hsl(20, 10%, 55%)' }}>Accessibility</Link>
+          <Link to="/privacy" className="hover:text-primary transition-colors" style={{ color: 'hsl(20, 10%, 55%)' }}>Privacy Policy</Link>
+          <span className="mx-2">·</span>
+          <Link to="/terms" className="hover:text-primary transition-colors" style={{ color: 'hsl(20, 10%, 55%)' }}>Terms of Service</Link>
+          <span className="mx-2">·</span>
+          <Link to="/sms-terms" className="hover:text-primary transition-colors" style={{ color: 'hsl(20, 10%, 55%)' }}>SMS Terms</Link>
           <a href="https://dang.pestflowpro.com/admin/login" style={{color: 'inherit', opacity: 0.5, fontSize: '11px', marginLeft: '8px'}}>©</a>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
 import { useTemplate } from '../../context/TemplateContext'
@@ -89,8 +90,15 @@ export default function ShellFooter() {
         </div>
       </div>
       <div style={{ borderTop: '1px solid #333' }} className="py-3">
-        <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-gray-600">
+        <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-gray-600">
           <span>&copy; {year} {biz.name}. All rights reserved.</span>
+          <div className="flex items-center gap-3">
+            <Link to="/privacy" className="hover:text-gray-400 transition">Privacy Policy</Link>
+            <span>·</span>
+            <Link to="/terms" className="hover:text-gray-400 transition">Terms of Service</Link>
+            <span>·</span>
+            <Link to="/sms-terms" className="hover:text-gray-400 transition">SMS Terms</Link>
+          </div>
           <a href="https://pestflowpro.com" target="_blank" rel="noopener noreferrer" className="transition hover:opacity-80" style={{ color: 'var(--color-primary)' }}>Powered by PestFlow Pro</a>
         </div>
       </div>

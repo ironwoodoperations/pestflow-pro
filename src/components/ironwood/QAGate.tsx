@@ -15,6 +15,7 @@ const QA_ITEMS: { field: string; label: string; autoCheck?: boolean }[] = [
   { field: 'credentials_package_ready', label: 'Customer credentials package ready' },
   { field: 'seo_score_ok',              label: 'SEO health score ≥ 7/12 (check SEO Health panel)', autoCheck: true },
   { field: 'sitemap_accessible',        label: 'sitemap.xml accessible — confirm in browser at /sitemap.xml' },
+  { field: 'legal_pages',               label: 'Legal pages present (/privacy, /terms, /sms-terms) and footer links working' },
 ]
 
 interface Props {

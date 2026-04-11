@@ -69,7 +69,7 @@ const WhyChooseUs = () => {
               background: 'hsl(30, 20%, 93%)',
             }}
           >
-            <img src={reasons[0].icon} alt={reasons[0].title} className="w-20 h-20 object-contain mb-4" />
+            <img src={reasons[0].icon} alt={reasons[0].title} loading="lazy" className="w-20 h-20 object-contain mb-4" />
             <h3 className="text-comic text-base mb-3 uppercase" style={{ color: 'hsl(20, 40%, 12%)' }}>{reasons[0].title}</h3>
             <p className="text-sm leading-relaxed" style={{ color: 'hsl(20, 20%, 40%)' }}>{reasons[0].description}</p>
           </div>
@@ -81,7 +81,7 @@ const WhyChooseUs = () => {
               background: 'hsl(30, 20%, 93%)',
             }}
           >
-            <img src={reasons[1].icon} alt={reasons[1].title} className="w-20 h-20 object-contain mb-4" />
+            <img src={reasons[1].icon} alt={reasons[1].title} loading="lazy" className="w-20 h-20 object-contain mb-4" />
             <h3 className="text-comic text-base mb-3 uppercase" style={{ color: 'hsl(20, 40%, 12%)' }}>{reasons[1].title}</h3>
             <p className="text-sm leading-relaxed" style={{ color: 'hsl(20, 20%, 40%)' }}>{reasons[1].description}</p>
           </div>
@@ -93,7 +93,7 @@ const WhyChooseUs = () => {
               background: 'hsl(30, 20%, 93%)',
             }}
           >
-            <img src={reasons[4].icon} alt={reasons[4].title} className="w-20 h-20 object-contain mb-4" />
+            <img src={reasons[4].icon} alt={reasons[4].title} loading="lazy" className="w-20 h-20 object-contain mb-4" />
             <h3 className="text-comic text-base mb-3 uppercase" style={{ color: 'hsl(20, 40%, 12%)' }}>{reasons[4].title}</h3>
             <p className="text-sm leading-relaxed" style={{ color: 'hsl(20, 20%, 40%)' }}>{reasons[4].description}</p>
           </div>
@@ -105,7 +105,7 @@ const WhyChooseUs = () => {
               background: 'hsl(30, 20%, 93%)',
             }}
           >
-            <img src={reasons[2].icon} alt={reasons[2].title} className="w-20 h-20 object-contain mb-4" />
+            <img src={reasons[2].icon} alt={reasons[2].title} loading="lazy" className="w-20 h-20 object-contain mb-4" />
             <h3 className="text-comic text-base mb-3 uppercase" style={{ color: 'hsl(20, 40%, 12%)' }}>{reasons[2].title}</h3>
             <p className="text-sm leading-relaxed" style={{ color: 'hsl(20, 20%, 40%)' }}>{reasons[2].description}</p>
           </div>
@@ -117,7 +117,7 @@ const WhyChooseUs = () => {
               background: 'hsl(30, 20%, 93%)',
             }}
           >
-            <img src={reasons[3].icon} alt={reasons[3].title} className="w-20 h-20 object-contain mb-4" />
+            <img src={reasons[3].icon} alt={reasons[3].title} loading="lazy" className="w-20 h-20 object-contain mb-4" />
             <h3 className="text-comic text-base mb-3 uppercase" style={{ color: 'hsl(20, 40%, 12%)' }}>{reasons[3].title}</h3>
             <p className="text-sm leading-relaxed" style={{ color: 'hsl(20, 20%, 40%)' }}>{reasons[3].description}</p>
           </div>

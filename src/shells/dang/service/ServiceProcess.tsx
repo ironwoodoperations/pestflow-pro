@@ -19,7 +19,7 @@ const ServiceProcess = ({ title, intro, steps }: ServiceProcessProps) => {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-10">
           {steps.map((step, i) => (
             <div key={i} className="bg-card rounded-2xl p-6 shadow-md">
-              <img src={step.icon} alt={step.subtitle || step.title} className="w-10 h-10 mb-4" />
+              <img src={step.icon} alt={step.subtitle || step.title} loading="lazy" className="w-10 h-10 mb-4" />
               {step.title && <span className="text-comic text-primary text-sm">{step.title}</span>}
               {step.subtitle && <h3 className="text-comic text-lg mb-2">{step.subtitle}</h3>}
               <p className="text-sm text-muted-foreground">{step.description}</p>

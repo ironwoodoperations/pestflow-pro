@@ -36,8 +36,9 @@ const ServiceArea     = lazy(() => import('./pages/ServiceArea'))
 const BlogPage        = lazy(() => import('./pages/BlogPage'))
 const BlogPostPage    = lazy(() => import('./pages/BlogPostPage'))
 const Pricing         = lazy(() => import('./pages/Pricing'))
-const TermsPage       = lazy(() => import('./pages/TermsPage'))
-const PrivacyPage     = lazy(() => import('./pages/PrivacyPage'))
+const ClientTermsPage    = lazy(() => import('./components/shared/ClientTermsPage'))
+const ClientPrivacyPage  = lazy(() => import('./components/shared/ClientPrivacyPage'))
+const ClientSmsTermsPage = lazy(() => import('./components/shared/ClientSmsTermsPage'))
 
 // Pest service pages — lazy (share PestPageTemplate chunk)
 const SpiderControl       = lazy(() => import('./pages/SpiderControl'))
@@ -101,8 +102,9 @@ export default function App() {
         <Route path="/blog" element={<Suspense fallback={BLANK}><PublicShell><BlogPage /></PublicShell></Suspense>} />
         <Route path="/blog/:slug" element={<Suspense fallback={BLANK}><PublicShell><BlogPostPage /></PublicShell></Suspense>} />
         <Route path="/pricing" element={<Suspense fallback={BLANK}><PublicShell><Pricing /></PublicShell></Suspense>} />
-        <Route path="/terms" element={<Suspense fallback={BLANK}><PublicShell><TermsPage /></PublicShell></Suspense>} />
-        <Route path="/privacy" element={<Suspense fallback={BLANK}><PublicShell><PrivacyPage /></PublicShell></Suspense>} />
+        <Route path="/terms" element={<Suspense fallback={BLANK}><DangPageRouter slug="terms" fallback={<PublicShell><ClientTermsPage /></PublicShell>} /></Suspense>} />
+        <Route path="/privacy" element={<Suspense fallback={BLANK}><DangPageRouter slug="privacy" fallback={<PublicShell><ClientPrivacyPage /></PublicShell>} /></Suspense>} />
+        <Route path="/sms-terms" element={<Suspense fallback={BLANK}><DangPageRouter slug="sms-terms" fallback={<PublicShell><ClientSmsTermsPage /></PublicShell>} /></Suspense>} />
         <Route path="/sitemap.xml" element={<Sitemap />} />
 
         {/* ─── Pest service pages ─── */}
