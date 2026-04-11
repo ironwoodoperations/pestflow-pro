@@ -155,8 +155,8 @@ export default function BillingTab() {
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{upgradeError}</div>
       )}
 
-      {/* Tier upgrade cards */}
-      {subscription && (
+      {/* Tier upgrade cards — hidden for Elite (no upgrades available) */}
+      {subscription && subscription.tier < 4 && (
         <div className="mb-6">
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Plans</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
