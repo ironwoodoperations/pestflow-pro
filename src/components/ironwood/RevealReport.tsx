@@ -21,7 +21,7 @@ interface Props {
 
 export default function RevealReport({ prospectId, tenantId, siteUrl, oldSiteDesktop, oldSiteMobile, onClose }: Props) {
   const { loading, pagespeedLoading, error, data } = useRevealReportData({ prospectId, tenantId, siteUrl, oldSiteDesktop, oldSiteMobile })
-  const [secondsLeft, setSecondsLeft] = useState(COUNTDOWN_START)
+  const [countdown, setCountdown] = useState(COUNTDOWN_START)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Countdown while PageSpeed is loading
@@ -30,9 +30,9 @@ export default function RevealReport({ prospectId, tenantId, siteUrl, oldSiteDes
       if (intervalRef.current) clearInterval(intervalRef.current)
       return
     }
-    setSecondsLeft(COUNTDOWN_START)
+    setCountdown(COUNTDOWN_START)
     intervalRef.current = setInterval(() => {
-      setSecondsLeft(prev => {
+      setCountdown(prev => {
         if (prev <= 1) {
           if (intervalRef.current) clearInterval(intervalRef.current)
           return 0
@@ -80,27 +80,23 @@ export default function RevealReport({ prospectId, tenantId, siteUrl, oldSiteDes
     setTimeout(() => { printWindow.print() }, 500)
   }
 
-  const printBtn = pagespeedLoading ? (
+  const printBtn = (
     <button
-      disabled
+      onClick={pagespeedLoading ? undefined : handlePrint}
+      disabled={pagespeedLoading}
       style={{
-        padding: '8px 18px', background: '#374151', color: '#9ca3af',
-        border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 600,
-        cursor: 'not-allowed', opacity: 0.7,
+        backgroundColor: pagespeedLoading ? '#6b7280' : '#22c55e',
+        color: 'white',
+        padding: '8px 16px',
+        borderRadius: '6px',
+        border: 'none',
+        cursor: pagespeedLoading ? 'not-allowed' : 'pointer',
+        opacity: pagespeedLoading ? 0.7 : 1,
+        fontSize: '14px',
+        fontWeight: 600,
       }}
     >
-      ⏳ Loading Scores… ({secondsLeft}s)
-    </button>
-  ) : (
-    <button
-      onClick={handlePrint}
-      style={{
-        padding: '8px 18px', background: '#22c55e', color: '#fff',
-        border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 600,
-        cursor: 'pointer',
-      }}
-    >
-      🖨️ Print / Save PDF
+      {pagespeedLoading ? `⏳ Loading Scores... (${countdown}s)` : '🖨️ Print / Save PDF'}
     </button>
   )
 
