@@ -32,6 +32,7 @@ interface SEOHeadProps {
   socialLinks: SocialLinks
   tenantSlug: string
   tagline?: string
+  googleSearchConsoleVerification?: string
 }
 
 function injectScript(id: string, content: object) {
@@ -75,6 +76,7 @@ export default function SEOHead({
   socialLinks,
   tenantSlug,
   tagline,
+  googleSearchConsoleVerification,
 }: SEOHeadProps) {
   const baseUrl = `https://${tenantSlug}.pestflowpro.com`
   const resolvedUrl = canonicalUrl || baseUrl
@@ -105,6 +107,11 @@ export default function SEOHead({
     setMeta('twitter:title', fullTitle)
     setMeta('twitter:description', resolvedDescription)
 
+    // Google Search Console verification
+    if (googleSearchConsoleVerification) {
+      setMeta('google-site-verification', googleSearchConsoleVerification)
+    }
+
     // Canonical
     let canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
     if (!canonical) {
@@ -113,7 +120,7 @@ export default function SEOHead({
       document.head.appendChild(canonical)
     }
     canonical.href = resolvedUrl
-  }, [fullTitle, resolvedDescription, resolvedUrl, pageType, businessInfo.name])
+  }, [fullTitle, resolvedDescription, resolvedUrl, pageType, businessInfo.name, googleSearchConsoleVerification])
 
   // JSON-LD schemas
   useEffect(() => {

@@ -67,7 +67,7 @@ export function useRevealReportData({ prospectId, tenantId, siteUrl, oldSiteDesk
         // --- Phase 1: fetch DB data (fast, ~1s) ---
         const [settingsRes, locRes, prospectRes, faqRes, testRes] = await Promise.all([
           supabase.from('settings')
-            .select('key, value')
+            .select('key, value, google_search_console_verification')
             .eq('tenant_id', tenantId!)
             .in('key', ['business_info', 'branding', 'seo', 'schema_config', 'integrations']),
           supabase.from('location_data')
@@ -88,7 +88,13 @@ export function useRevealReportData({ prospectId, tenantId, siteUrl, oldSiteDesk
 
         // Build settings map
         const s: Record<string, Record<string, unknown>> = {}
-        for (const row of settingsRes.data || []) s[row.key] = row.value || {}
+        let gscVerificationValue = ''
+        for (const row of settingsRes.data || []) {
+          s[row.key] = row.value || {}
+          if (row.key === 'integrations' && (row as Record<string, unknown>).google_search_console_verification) {
+            gscVerificationValue = String((row as Record<string, unknown>).google_search_console_verification)
+          }
+        }
 
         const biz    = s.business_info  || {}
         const brand  = s.branding       || {}
@@ -105,7 +111,7 @@ export function useRevealReportData({ prospectId, tenantId, siteUrl, oldSiteDesk
         const hasAggRating     = !!(schema.aggregate_rating as { value?: number })?.value
         const aggRating        = schema.aggregate_rating as { value: number; count: number } | undefined
 
-        // 12-point SEO score
+        // 13-point SEO score
         let seoScore = 0
         if (biz.name)                                                                seoScore++
         if (biz.phone)                                                               seoScore++
@@ -120,6 +126,7 @@ export function useRevealReportData({ prospectId, tenantId, siteUrl, oldSiteDesk
         if (seo.founded_year)                                                        seoScore++
         if (hasFaqSchema)                                                            seoScore++
         if ((testRes.count ?? 0) > 0)                                                seoScore++
+        if (gscVerificationValue)                                                    seoScore++
 
         // Populate report with null PageSpeed scores — report renders immediately
         const reportData: RevealReportData = {
@@ -151,10 +158,11 @@ export function useRevealReportData({ prospectId, tenantId, siteUrl, oldSiteDesk
           aggregateRating:    hasAggRating ? { score: aggRating!.value, count: aggRating!.count } : undefined,
 
           redirectCount,
-          hasCanonical:        true,
-          hasOpenGraph:        true,
-          hasSsl:              siteUrl.startsWith('https://'),
-          legalPagesInstalled: true,
+          hasCanonical:                true,
+          hasOpenGraph:                true,
+          hasSsl:                      siteUrl.startsWith('https://'),
+          legalPagesInstalled:         true,
+          googleSearchConsoleVerified: !!gscVerificationValue,
 
           ownerName:   seo.owner_name   ? String(seo.owner_name)   : undefined,
           foundedYear: seo.founded_year ? parseInt(String(seo.founded_year)) : undefined,

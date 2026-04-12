@@ -19,21 +19,27 @@ const FIELDS: { key: string; label: string; placeholder: string; secret?: boolea
   { key: 'owner_sms_number',         label: 'Owner SMS Number',         placeholder: '+15551234567' },
 ]
 
+const GSC_KEY = 'google_search_console_verification'
+
 const inp = 'w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-emerald-500'
 
 export default function IntegrationsSection({ prospectId, form }: Props) {
-  const [values, setValues]     = useState<Record<string, string>>({})
-  const [show, setShow]         = useState<Record<string, boolean>>({})
-  const [saving, setSaving]     = useState(false)
-  const [open, setOpen]         = useState(false)
+  const [values, setValues]         = useState<Record<string, string>>({})
+  const [gscValue, setGscValue]     = useState('')
+  const [show, setShow]             = useState<Record<string, boolean>>({})
+  const [saving, setSaving]         = useState(false)
+  const [open, setOpen]             = useState(false)
   const tenantId = form.tenant_id
 
   useEffect(() => {
     if (!open) return
     // Load from tenant settings if provisioned, otherwise from intake_data
     if (tenantId) {
-      supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle()
-        .then(({ data }) => { if (data?.value) setValues(data.value) })
+      supabase.from('settings').select('value, google_search_console_verification').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle()
+        .then(({ data }) => {
+          if (data?.value) setValues(data.value)
+          if (data?.google_search_console_verification) setGscValue(data.google_search_console_verification)
+        })
     } else if (prospectId) {
       supabase.from('prospects').select('intake_data').eq('id', prospectId).maybeSingle()
         .then(({ data }) => {
@@ -49,6 +55,11 @@ export default function IntegrationsSection({ prospectId, form }: Props) {
       const { error } = await supabase.from('settings')
         .upsert({ tenant_id: tenantId, key: 'integrations', value: values }, { onConflict: 'tenant_id,key' })
       if (error) { toast.error('Save failed: ' + error.message); setSaving(false); return }
+      // Save GSC verification as a direct column on the integrations row
+      await supabase.from('settings')
+        .update({ [GSC_KEY]: gscValue || null })
+        .eq('tenant_id', tenantId)
+        .eq('key', 'integrations')
     } else if (prospectId) {
       // No tenant yet — store in prospect intake_data.integrations as holding field
       const { data: row } = await supabase.from('prospects').select('intake_data').eq('id', prospectId).maybeSingle()
@@ -93,6 +104,19 @@ export default function IntegrationsSection({ prospectId, form }: Props) {
               </div>
             ))}
           </div>
+          {/* Google Search Console Verification — separate column, not part of integrations JSONB */}
+          <div className="border-t border-gray-700 pt-3">
+            <label className="block text-xs text-gray-400 mb-0.5">Google Search Console Verification</label>
+            <input
+              type="text"
+              className={inp}
+              value={gscValue}
+              placeholder="Paste verification code from Google Search Console"
+              onChange={e => setGscValue(e.target.value)}
+            />
+            <p className="text-xs text-gray-600 mt-1">From Search Console → Add Property → HTML tag method → copy only the content value</p>
+          </div>
+
           <button onClick={save} disabled={saving}
             className="mt-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition disabled:opacity-50">
             {saving ? 'Saving…' : 'Save Integrations'}

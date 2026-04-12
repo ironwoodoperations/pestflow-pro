@@ -31,6 +31,7 @@ export default function ReportTechnical({ data }: { data: RevealReportData }) {
     { label: 'Robots.txt',                      value: 'Configured',          done: true },
     { label: 'Mobile Responsive',               value: 'Yes',                 done: true },
     { label: 'Core Web Vitals Optimized',       value: data.mobile?.performance && data.mobile.performance >= 70 ? 'Pass' : 'Check scores', done: !!(data.mobile?.performance && data.mobile.performance >= 70) },
+    { label: 'Google Search Console Verified',  value: data.googleSearchConsoleVerified ? 'Active' : 'Not yet configured', done: data.googleSearchConsoleVerified },
   ]
 
   const passCount = items.filter(i => i.done).length

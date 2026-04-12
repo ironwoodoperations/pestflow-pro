@@ -64,23 +64,26 @@ function SEOManager() {
   const [socialLinks, setSocialLinks] = useState<SocialLinks>(EMPTY_SOCIAL)
   const [tenantSlug, setTenantSlug] = useState('')
   const [tagline, setTagline] = useState('')
+  const [googleSearchConsoleVerification, setGoogleSearchConsoleVerification] = useState('')
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const [bizRes, seoRes, schemaRes, socialRes, brandRes] = await Promise.all([
+      const [bizRes, seoRes, schemaRes, socialRes, brandRes, gscRes] = await Promise.all([
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'seo').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'schema_config').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'social_links').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
+        supabase.from('settings').select('google_search_console_verification').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle(),
       ])
       if (bizRes.data?.value) setBizInfo(bizRes.data.value as BusinessInfo)
       if (seoRes.data?.value) setSeoSettings(seoRes.data.value as SeoSettings)
       if (schemaRes.data?.value) setSchemaConfig(schemaRes.data.value as SchemaConfig)
       if (socialRes.data?.value) setSocialLinks(socialRes.data.value as SocialLinks)
       if (brandRes.data?.value?.tagline) setTagline(brandRes.data.value.tagline)
+      if (gscRes.data?.google_search_console_verification) setGoogleSearchConsoleVerification(gscRes.data.google_search_console_verification)
       // Derive slug from hostname or localStorage
       const hostname = window.location.hostname
       if (hostname.endsWith('.pestflowpro.com')) {
@@ -114,6 +117,7 @@ function SEOManager() {
       socialLinks={socialLinks}
       tenantSlug={tenantSlug}
       tagline={tagline}
+      googleSearchConsoleVerification={googleSearchConsoleVerification || undefined}
     />
   )
 }

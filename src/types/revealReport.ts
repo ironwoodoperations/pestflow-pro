@@ -36,6 +36,7 @@ export interface RevealReportData {
   hasOpenGraph: boolean
   hasSsl: boolean
   legalPagesInstalled: boolean
+  googleSearchConsoleVerified: boolean
 
   // Owner
   ownerName?: string

@@ -30,9 +30,9 @@ const EMPTY_FORM: SeoForm = {
 
 function scoreLabel(score: number, total: number): { label: string; color: string } {
   const pct = score / total
-  if (pct >= 10 / 12) return { label: 'Excellent', color: 'text-emerald-400' }
-  if (pct >= 7 / 12)  return { label: 'Good', color: 'text-blue-400' }
-  if (pct >= 4 / 12)  return { label: 'Needs Work', color: 'text-amber-400' }
+  if (pct >= 10 / 13) return { label: 'Excellent', color: 'text-emerald-400' }
+  if (pct >= 7 / 13)  return { label: 'Good', color: 'text-blue-400' }
+  if (pct >= 4 / 13)  return { label: 'Needs Work', color: 'text-amber-400' }
   return { label: 'Critical Issues', color: 'text-red-400' }
 }
 
@@ -61,7 +61,7 @@ export default function SEOHealthPanel({ tenantId, onScoreChange }: Props) {
     const [bizRes, seoRes, intRes, faqRes, testRes] = await Promise.all([
       supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
       supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'seo').maybeSingle(),
-      supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle(),
+      supabase.from('settings').select('value, google_search_console_verification').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle(),
       supabase.from('faqs').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId),
       supabase.from('testimonials').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId),
     ])
@@ -69,6 +69,7 @@ export default function SEOHealthPanel({ tenantId, onScoreChange }: Props) {
     const biz = bizRes.data?.value || {}
     const seo = seoRes.data?.value || {}
     const int_ = intRes.data?.value || {}
+    const gscVerified = !!intRes.data?.google_search_console_verification
     const faqCount = faqRes.count || 0
     const testCount = testRes.count || 0
 
@@ -133,6 +134,11 @@ export default function SEOHealthPanel({ tenantId, onScoreChange }: Props) {
         ok: testCount > 0,
         hint: 'Add testimonials in client admin → Testimonials',
       },
+      {
+        label: 'Search Console verified',
+        ok: gscVerified,
+        hint: 'Add in Integrations section → Google Search Console Verification',
+      },
     ]
 
     const total = checks.filter(c => c.ok).length
@@ -182,7 +188,7 @@ export default function SEOHealthPanel({ tenantId, onScoreChange }: Props) {
     )
   }
 
-  const TOTAL = 12
+  const TOTAL = 13
   const { label: ratingLabel, color: ratingColor } = scoreLabel(score, TOTAL)
 
   return (
