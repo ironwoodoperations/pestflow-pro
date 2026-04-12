@@ -10,18 +10,20 @@ const IntegrationsTab = lazy(() => import('../components/ironwood/IntegrationsTa
 const SupportPanel    = lazy(() => import('../components/ironwood/SupportPanel'))
 const RevealQueue     = lazy(() => import('../components/ironwood/RevealQueue'))
 const AllClients      = lazy(() => import('../components/ironwood/AllClients'))
+const TrainingManual  = lazy(() => import('../components/ironwood/TrainingManual'))
 
-type Tab = 'pipeline' | 'prospects' | 'reveal_queue' | 'all_clients' | 'reports' | 'integrations' | 'team' | 'support'
+type Tab = 'pipeline' | 'prospects' | 'reveal_queue' | 'all_clients' | 'reports' | 'integrations' | 'team' | 'support' | 'training'
 
 const NAV: { id: Tab; label: string; icon: string }[] = [
-  { id: 'pipeline',     label: 'Pipeline',      icon: '📋' },
-  { id: 'prospects',    label: 'Prospects',     icon: '👤' },
-  { id: 'reveal_queue', label: 'Reveal Queue',  icon: '✅' },
-  { id: 'all_clients',  label: 'All Clients',   icon: '🌐' },
-  { id: 'reports',      label: 'Reports',       icon: '📊' },
-  { id: 'integrations', label: 'Integrations',  icon: '🔑' },
-  { id: 'team',         label: 'Team',          icon: '👥' },
-  { id: 'support',      label: 'Support',       icon: '🎟️' },
+  { id: 'pipeline',     label: 'Pipeline',         icon: '📋' },
+  { id: 'prospects',    label: 'Prospects',        icon: '👤' },
+  { id: 'reveal_queue', label: 'Reveal Queue',     icon: '✅' },
+  { id: 'all_clients',  label: 'All Clients',      icon: '🌐' },
+  { id: 'reports',      label: 'Reports',          icon: '📊' },
+  { id: 'integrations', label: 'Integrations',     icon: '🔑' },
+  { id: 'team',         label: 'Team',             icon: '👥' },
+  { id: 'support',      label: 'Support',          icon: '🎟️' },
+  { id: 'training',     label: 'Training Manual',  icon: '📖' },
 ]
 
 const SPIN = <div className="p-8 text-gray-500 text-sm">Loading...</div>
@@ -116,6 +118,7 @@ export default function IronwoodOps() {
           {tab === 'integrations' && <IntegrationsTab />}
           {tab === 'team'         && <TeamTab />}
           {tab === 'support'      && <SupportPanel />}
+          {tab === 'training'     && <TrainingManual />}
         </Suspense>
       </main>
     </div>
