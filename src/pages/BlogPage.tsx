@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
 import StructuredData from '../components/StructuredData'
+import { useTemplate } from '../context/TemplateContext'
 
 interface BlogPost { id: string; title: string; slug: string; excerpt: string; published_at: string; intro_image?: string }
 
@@ -13,6 +14,7 @@ const PLACEHOLDER_POSTS: BlogPost[] = [
 ]
 
 export default function BlogPage() {
+  const { template } = useTemplate()
   const [posts, setPosts] = useState<BlogPost[]>(PLACEHOLDER_POSTS)
   const [heroTitle, setHeroTitle] = useState('Pest Control Blog')
   const [heroSubtitle, setHeroSubtitle] = useState('Tips, guides, and news from our East Texas pest control experts.')
@@ -30,16 +32,46 @@ export default function BlogPage() {
     })
   }, [])
 
+  const isDang = template === 'dang'
+
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
+    <div className="min-h-screen" style={{ backgroundColor: isDang ? '#faf7f4' : 'var(--color-bg-section)' }}>
       <StructuredData type="WebPage" pageSlug="blog" />
 
-      <section className="py-20 md:py-28" style={{ background: 'linear-gradient(135deg, var(--color-bg-hero) 0%, var(--color-bg-hero-end) 100%)' }}>
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <h1 className="font-oswald tracking-wide text-5xl md:text-7xl mb-4" style={{ color: 'var(--color-nav-text)' }}>{heroTitle}</h1>
-          <p className="text-xl" style={{ color: 'var(--color-nav-text)', opacity: 0.75 }}>{heroSubtitle}</p>
-        </div>
-      </section>
+      {isDang ? (
+        <section style={{
+          position: 'relative',
+          background: `url(/dang/moblie_banner.webp) center/cover no-repeat, hsl(28, 100%, 50%)`,
+          paddingTop: '80px', paddingBottom: '200px', minHeight: '420px', overflow: 'hidden',
+        }}>
+          <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle, rgba(0,0,0,0.18) 1.5px, transparent 1.5px)', backgroundSize: '18px 18px', pointerEvents: 'none' }} />
+          <div style={{ textAlign: 'center', position: 'relative', zIndex: 2, padding: '0 20px 30px' }}>
+            <h1 style={{
+              fontFamily: '"Bangers", cursive',
+              fontSize: 'clamp(42px, 7vw, 88px)',
+              color: 'hsl(45, 95%, 60%)',
+              fontStyle: 'italic', letterSpacing: '0.05em',
+              WebkitTextStroke: '3px #000000', textShadow: '3px 3px 0 #000000',
+              margin: 0, lineHeight: 1.05,
+            }}>
+              {heroTitle.toUpperCase()}
+            </h1>
+            <p style={{ color: '#fff', fontSize: '1.1rem', marginTop: '12px', textShadow: '1px 1px 2px rgba(0,0,0,0.6)' }}>
+              {heroSubtitle}
+            </p>
+          </div>
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, lineHeight: 0, zIndex: 1 }}>
+            <img fetchPriority="high" width={1200} height={50} src="/dang/banner-img.png" alt="" style={{ width: '100%', display: 'block' }} />
+          </div>
+        </section>
+      ) : (
+        <section className="py-20 md:py-28" style={{ background: 'linear-gradient(135deg, var(--color-bg-hero) 0%, var(--color-bg-hero-end) 100%)' }}>
+          <div className="max-w-4xl mx-auto px-4 text-center">
+            <h1 className="font-oswald tracking-wide text-5xl md:text-7xl mb-4" style={{ color: 'var(--color-nav-text)' }}>{heroTitle}</h1>
+            <p className="text-xl" style={{ color: 'var(--color-nav-text)', opacity: 0.75 }}>{heroSubtitle}</p>
+          </div>
+        </section>
+      )}
 
       <section className="py-16" style={{ backgroundColor: 'var(--color-bg-section)' }}>
         <div className="max-w-6xl mx-auto px-4">
