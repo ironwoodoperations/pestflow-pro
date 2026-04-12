@@ -13,7 +13,7 @@ import RepGuideDrawer       from './RepGuideDrawer'
 import ScrapePanel          from './ScrapePanel'
 import type { ScrapedData } from './ScrapePanel'
 import type { SiteRecreation } from './SiteRecreationCard'
-import BoltBuildGuide       from './BoltBuildGuide'
+
 import CustomDomainSetup    from './CustomDomainSetup'
 import BundleSocialSetup    from './BundleSocialSetup'
 import { archiveRecord }    from '../../lib/archiveUtils'
@@ -416,9 +416,7 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
               {(!form.build_path || form.build_path !== 'firecrawl_migration') && (
                 <SiteSetupSection form={form} setField={wrappedSetField} onBlur={onBlur} />
               )}
-              {(form.tier === 'pro' || form.tier === 'elite') && (
-                <BoltBuildGuide slug={form.slug ?? undefined} />
-              )}
+
               <IntegrationsSection prospectId={id} form={form} />
               <div className="flex justify-end">
                 <RepGuideButton section={form.provisioned_at ? 'post-launch' : 'pre-provision'} label={form.provisioned_at ? '? Post-Launch Guide' : undefined} onOpen={setGuideSection} />
