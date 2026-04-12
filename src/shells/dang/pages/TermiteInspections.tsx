@@ -1,5 +1,3 @@
-import Navbar from '../ShellNavbar';
-import Footer from '../ShellFooter';
 import SEO from '../SEO';
 import { VideoImage } from '../VideoImage';
 import { whyCards, termiteSigns } from './data/TermiteInspectionsData';
@@ -23,8 +21,8 @@ const TermiteInspections = () => {
           description: "Professional termite inspection services for residential and commercial properties.",
         }}
       />
-      <Navbar />
-      <main>
+
+      <div>
       <section style={{ position: 'relative', background: `url(/dang/moblie_banner.webp) center/cover no-repeat, hsl(28, 100%, 50%)`, paddingTop: '80px', paddingBottom: '200px', minHeight: '420px', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle, rgba(0,0,0,0.18) 1.5px, transparent 1.5px)', backgroundSize: '18px 18px', pointerEvents: 'none' }} />
         <div style={{ textAlign: 'center', position: 'relative', zIndex: 2, padding: '0 20px 30px' }}>
@@ -133,8 +131,8 @@ const TermiteInspections = () => {
           </div>
         </div>
       </section>
-      </main>
-      <Footer />
+      </div>
+
     </div>
   );
 };

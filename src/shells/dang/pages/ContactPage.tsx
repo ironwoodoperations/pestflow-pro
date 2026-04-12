@@ -1,6 +1,4 @@
 import { useState } from 'react';
-import Navbar from '../ShellNavbar';
-import Footer from '../ShellFooter';
 import { supabase } from '../../../lib/supabase';
 
 const ContactPage = () => {
@@ -45,8 +43,8 @@ const ContactPage = () => {
 
   return (
     <div style={{ fontFamily: "'Open Sans', sans-serif", color: 'hsl(20, 40%, 12%)', overflowX: 'hidden' }}>
-      <Navbar />
-      <main>
+
+      <div>
 
       {/* HERO */}
       <section style={{
@@ -167,8 +165,8 @@ const ContactPage = () => {
         )}
       </section>
 
-      </main>
-      <Footer />
+      </div>
+
     </div>
   );
 };

@@ -1,5 +1,6 @@
 import React from 'react'
 import { useTemplate } from '../../context/TemplateContext'
+import PublicShell from '../../components/PublicShell'
 
 const DangAbout            = React.lazy(() => import('./pages/About'))
 const DangFAQ              = React.lazy(() => import('./pages/FAQPage'))
@@ -58,8 +59,10 @@ export default function DangPageRouter({ slug, fallback }: Props) {
   const DangPage = DANG_PAGES[slug]
   if (!DangPage) return fallback
   return (
-    <React.Suspense fallback={<div />}>
-      <DangPage />
-    </React.Suspense>
+    <PublicShell>
+      <React.Suspense fallback={<div />}>
+        <DangPage />
+      </React.Suspense>
+    </PublicShell>
   )
 }

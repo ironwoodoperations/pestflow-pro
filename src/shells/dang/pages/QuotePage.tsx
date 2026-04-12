@@ -2,8 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import Navbar from "../ShellNavbar";
-import Footer from "../ShellFooter";
+
 import SEO from "../SEO";
 import { useSiteConfig } from "../hooks/useSiteConfig";
 import { toast } from "sonner";
@@ -81,8 +80,8 @@ const QuotePage = () => {
         description={seoDescription || "Request a free pest control quote from Dang Pest Control in Tyler, TX. Fast response, family & pet safe treatments, Super Powered Guarantee."}
         canonical="/quote"
       />
-      <Navbar />
-      <main>
+
+      <div>
 
       {/* Header */}
       <section style={{
@@ -129,8 +128,8 @@ const QuotePage = () => {
         </div>
       </section>
 
-      </main>
-      <Footer />
+      </div>
+
     </div>
   );
 };

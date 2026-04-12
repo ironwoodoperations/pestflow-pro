@@ -1,5 +1,3 @@
-import Navbar from '../ShellNavbar';
-import Footer from '../ShellFooter';
 import { usePageContent } from '../../../hooks/usePageContent';
 
 // ─── COMPONENT ───────────────────────────────────────────────────────────────
@@ -8,8 +6,8 @@ const About = () => {
   const { content } = usePageContent('about');
   return (
     <div style={{ fontFamily: "'Open Sans', sans-serif", color: 'hsl(20, 40%, 12%)', overflowX: 'hidden' }}>
-      <Navbar />
-      <main>
+
+      <div>
 
       {/* ══════════════════════════════════════════════════════
           HERO BANNER
@@ -174,8 +172,8 @@ const About = () => {
         </div>
       </section>
 
-      </main>
-      <Footer />
+      </div>
+
     </div>
   );
 };

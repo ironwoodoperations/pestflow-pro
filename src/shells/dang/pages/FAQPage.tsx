@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { lazy, Suspense } from 'react'
-import Navbar from '../ShellNavbar'
-import Footer from '../ShellFooter'
+
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../hooks/useTenant'
 import DangFaqAccordion, { type FaqEntry } from './DangFaqAccordion'
@@ -85,8 +84,8 @@ export default function FAQPage() {
 
   return (
     <div style={{ fontFamily: "'Open Sans', sans-serif", color: 'hsl(20, 40%, 12%)', overflowX: 'hidden' }}>
-      <Navbar />
-      <main>
+
+      <div>
 
         {/* HERO */}
         <section style={{
@@ -219,8 +218,8 @@ export default function FAQPage() {
           )}
         </section>
 
-      </main>
-      <Footer />
+      </div>
+
 
       {/* AI Chat button */}
       {!chatOpen && (

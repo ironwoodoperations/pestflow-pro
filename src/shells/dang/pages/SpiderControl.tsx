@@ -1,5 +1,3 @@
-import Navbar from '../ShellNavbar';
-import Footer from '../ShellFooter';
 import SEO from '../SEO';
 import { StructuredData } from '../StructuredData';
 import { VideoImage } from '../VideoImage';
@@ -36,8 +34,8 @@ const SpiderControl = () => {
           acceptedAnswer: { "@type": "Answer", text: f.a },
         })),
       }} />
-      <Navbar />
-      <main>
+
+      <div>
 
       {/* HERO BANNER */}
       <section style={{ position: 'relative', background: `url(/dang/moblie_banner.webp) center/cover no-repeat, hsl(28, 100%, 50%)`, paddingTop: '80px', paddingBottom: '200px', minHeight: '420px', overflow: 'hidden' }}>
@@ -152,8 +150,8 @@ const SpiderControl = () => {
       <ServiceFaqSection faqs={faqs} />
       <EastTexasCtaSection />
 
-      </main>
-      <Footer />
+      </div>
+
     </div>
   );
 };
