@@ -20,7 +20,7 @@ interface Props {
 }
 
 export default function RevealReport({ prospectId, tenantId, siteUrl, oldSiteDesktop, oldSiteMobile, onClose }: Props) {
-  const { loading, pagespeedLoading, error, data } = useRevealReportData({ prospectId, tenantId, siteUrl, oldSiteDesktop, oldSiteMobile })
+  const { loading, pagespeedLoading, pagespeedError, error, data } = useRevealReportData({ prospectId, tenantId, siteUrl, oldSiteDesktop, oldSiteMobile })
   const [countdown, setCountdown] = useState(COUNTDOWN_START)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -80,7 +80,25 @@ export default function RevealReport({ prospectId, tenantId, siteUrl, oldSiteDes
     setTimeout(() => { printWindow.print() }, 500)
   }
 
-  const printBtn = (
+  const printBtn = pagespeedError ? (
+    // Scores failed (quota/rate limit) — still allow printing without scores
+    <button
+      onClick={handlePrint}
+      title={pagespeedError}
+      style={{
+        backgroundColor: '#d97706',
+        color: 'white',
+        padding: '8px 16px',
+        borderRadius: '6px',
+        border: 'none',
+        cursor: 'pointer',
+        fontSize: '14px',
+        fontWeight: 600,
+      }}
+    >
+      ⚠️ Scores Unavailable — Print Anyway
+    </button>
+  ) : (
     <button
       onClick={pagespeedLoading ? undefined : handlePrint}
       disabled={pagespeedLoading}

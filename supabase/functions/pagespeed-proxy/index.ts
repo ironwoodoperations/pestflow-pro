@@ -27,6 +27,21 @@ serve(async (req) => {
       mobileRes.json(),
     ])
 
+    // Surface Google API errors so the client can distinguish quota/rate issues from real null scores
+    const googleError =
+      (desktop as Record<string, unknown>).error
+      ?? (mobile as Record<string, unknown>).error
+      ?? null
+
+    if (googleError) {
+      const errMsg = ((googleError as Record<string, unknown>).message as string) ?? 'Google PageSpeed API error'
+      console.error('Google PageSpeed API error:', errMsg)
+      return new Response(
+        JSON.stringify({ desktop: null, mobile: null, apiError: errMsg }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const extract = (data: Record<string, unknown>) => {
       const cats = (data.lighthouseResult as Record<string, unknown>)?.categories as Record<string, { score: number }> | undefined
       if (!cats) return null
@@ -39,7 +54,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ desktop: extract(desktop), mobile: extract(mobile) }),
+      JSON.stringify({ desktop: extract(desktop), mobile: extract(mobile), apiError: null }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (err) {

@@ -6,13 +6,17 @@ const SUPABASE_URL      = import.meta.env.VITE_SUPABASE_URL as string
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string
 
 interface ProxyResult {
-  desktop: PageSpeedScores | null
-  mobile:  PageSpeedScores | null
+  desktop:  PageSpeedScores | null
+  mobile:   PageSpeedScores | null
+  apiError: string | null
 }
 
 async function fetchPageSpeedViaProxy(siteUrl: string): Promise<ProxyResult> {
+  const proxyUrl = `${SUPABASE_URL}/functions/v1/pagespeed-proxy`
+  console.log('[PageSpeed] Fetching for:', siteUrl)
+  console.log('[PageSpeed] Proxy URL:', proxyUrl)
   try {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/pagespeed-proxy`, {
+    const res = await fetch(proxyUrl, {
       method: 'POST',
       headers: {
         'Content-Type':  'application/json',
@@ -21,11 +25,17 @@ async function fetchPageSpeedViaProxy(siteUrl: string): Promise<ProxyResult> {
       },
       body: JSON.stringify({ url: siteUrl }),
     })
+    console.log('[PageSpeed] Response status:', res.status)
     const data = await res.json()
-    if (data.error) return { desktop: null, mobile: null }
-    return { desktop: data.desktop ?? null, mobile: data.mobile ?? null }
-  } catch {
-    return { desktop: null, mobile: null }
+    console.log('[PageSpeed] Response data:', data)
+    // Top-level error = edge function itself failed
+    if (data.error) return { desktop: null, mobile: null, apiError: data.error }
+    // apiError = Google returned an error (quota, rate limit, etc.)
+    if (data.apiError) return { desktop: null, mobile: null, apiError: data.apiError }
+    return { desktop: data.desktop ?? null, mobile: data.mobile ?? null, apiError: null }
+  } catch (err) {
+    console.error('[PageSpeed] Fetch error:', err)
+    return { desktop: null, mobile: null, apiError: err instanceof Error ? err.message : 'Network error' }
   }
 }
 
@@ -40,6 +50,7 @@ interface Params {
 export function useRevealReportData({ prospectId, tenantId, siteUrl, oldSiteDesktop, oldSiteMobile }: Params) {
   const [loading,           setLoading]           = useState(true)
   const [pagespeedLoading,  setPagespeedLoading]  = useState(true)
+  const [pagespeedError,    setPagespeedError]    = useState<string | null>(null)
   const [error,             setError]             = useState<string | null>(null)
   const [data,              setData]              = useState<RevealReportData | null>(null)
 
@@ -47,6 +58,7 @@ export function useRevealReportData({ prospectId, tenantId, siteUrl, oldSiteDesk
     if (!tenantId || !prospectId || !siteUrl) return
     setLoading(true)
     setPagespeedLoading(true)
+    setPagespeedError(null)
     setError(null)
     setData(null)
 
@@ -154,11 +166,17 @@ export function useRevealReportData({ prospectId, tenantId, siteUrl, oldSiteDesk
 
         // --- Phase 2: fetch PageSpeed (slow, ~45s) ---
         const psResult = await fetchPageSpeedViaProxy(siteUrl)
-        setData(prev => prev ? { ...prev, desktop: psResult.desktop, mobile: psResult.mobile } : prev)
+        if (psResult.apiError) {
+          console.warn('[PageSpeed] API error:', psResult.apiError)
+          setPagespeedError(psResult.apiError)
+        } else {
+          setData(prev => prev ? { ...prev, desktop: psResult.desktop, mobile: psResult.mobile } : prev)
+        }
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : 'Failed to load report data'
         setError(msg)
         setLoading(false)
+        setPagespeedError(msg)
       } finally {
         setPagespeedLoading(false)
       }
@@ -167,5 +185,5 @@ export function useRevealReportData({ prospectId, tenantId, siteUrl, oldSiteDesk
     load()
   }, [prospectId, tenantId, siteUrl, oldSiteDesktop, oldSiteMobile])
 
-  return { loading, pagespeedLoading, error, data }
+  return { loading, pagespeedLoading, pagespeedError, error, data }
 }
