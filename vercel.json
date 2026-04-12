@@ -3,7 +3,6 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "redirects": [
-    { "source": "/", "destination": "/", "permanent": true },
     { "source": "/about/", "destination": "/about", "permanent": true },
     { "source": "/accessibility/", "destination": "/", "permanent": true },
     { "source": "/ant-control/", "destination": "/ant-control", "permanent": true },
