@@ -38,18 +38,22 @@ interface Params {
 }
 
 export function useRevealReportData({ prospectId, tenantId, siteUrl, oldSiteDesktop, oldSiteMobile }: Params) {
-  const [loading, setLoading] = useState(true)
-  const [error,   setError]   = useState<string | null>(null)
-  const [data,    setData]    = useState<RevealReportData | null>(null)
+  const [loading,           setLoading]           = useState(true)
+  const [pagespeedLoading,  setPagespeedLoading]  = useState(true)
+  const [error,             setError]             = useState<string | null>(null)
+  const [data,              setData]              = useState<RevealReportData | null>(null)
 
   useEffect(() => {
     if (!tenantId || !prospectId || !siteUrl) return
-    setLoading(true); setError(null); setData(null)
+    setLoading(true)
+    setPagespeedLoading(true)
+    setError(null)
+    setData(null)
 
     async function load() {
       try {
-        const [psResult, settingsRes, locRes, prospectRes, faqRes, testRes] = await Promise.all([
-          fetchPageSpeedViaProxy(siteUrl),
+        // --- Phase 1: fetch DB data (fast, ~1s) ---
+        const [settingsRes, locRes, prospectRes, faqRes, testRes] = await Promise.all([
           supabase.from('settings')
             .select('key, value')
             .eq('tenant_id', tenantId!)
@@ -80,31 +84,32 @@ export function useRevealReportData({ prospectId, tenantId, siteUrl, oldSiteDesk
         const schema = s.schema_config  || {}
         const integ  = s.integrations   || {}
 
-        const prospect     = prospectRes.data
-        const redirectMap  = prospect?.redirect_map
+        const prospect      = prospectRes.data
+        const redirectMap   = prospect?.redirect_map
         const redirectCount = Array.isArray(redirectMap) ? redirectMap.length : 0
 
-        const cityPages   = (locRes.data || []).map(l => l.slug || l.city || '').filter(Boolean)
-        const hasFaqSchema       = (faqRes.count ?? 0) > 0
-        const hasAggRating       = !!(schema.aggregate_rating as {value?: number})?.value
-        const aggRating          = schema.aggregate_rating as { value: number; count: number } | undefined
+        const cityPages        = (locRes.data || []).map(l => l.slug || l.city || '').filter(Boolean)
+        const hasFaqSchema     = (faqRes.count ?? 0) > 0
+        const hasAggRating     = !!(schema.aggregate_rating as { value?: number })?.value
+        const aggRating        = schema.aggregate_rating as { value: number; count: number } | undefined
 
         // 12-point SEO score
         let seoScore = 0
-        if (biz.name)                                              seoScore++
-        if (biz.phone)                                             seoScore++
-        if (biz.address)                                           seoScore++
+        if (biz.name)                                                                seoScore++
+        if (biz.phone)                                                               seoScore++
+        if (biz.address)                                                             seoScore++
         if (Array.isArray(seo.service_areas) && (seo.service_areas as string[]).length > 0) seoScore++
-        if (seo.meta_description)                                  seoScore++
-        if ((integ as Record<string,unknown>).google_place_id)     seoScore++
-        if ((integ as Record<string,unknown>).google_analytics_id ||
-            (integ as Record<string,unknown>).ga4_id)              seoScore++
-        if (biz.license)                                           seoScore++
-        if (seo.owner_name)                                        seoScore++
-        if (seo.founded_year)                                      seoScore++
-        if (hasFaqSchema)                                          seoScore++
-        if ((testRes.count ?? 0) > 0)                              seoScore++
+        if (seo.meta_description)                                                    seoScore++
+        if ((integ as Record<string, unknown>).google_place_id)                      seoScore++
+        if ((integ as Record<string, unknown>).google_analytics_id ||
+            (integ as Record<string, unknown>).ga4_id)                               seoScore++
+        if (biz.license)                                                             seoScore++
+        if (seo.owner_name)                                                          seoScore++
+        if (seo.founded_year)                                                        seoScore++
+        if (hasFaqSchema)                                                            seoScore++
+        if ((testRes.count ?? 0) > 0)                                                seoScore++
 
+        // Populate report with null PageSpeed scores — report renders immediately
         const reportData: RevealReportData = {
           businessName:  String(biz.name || prospect?.company_name || 'Your Business'),
           slug:          prospect?.slug || '',
@@ -113,8 +118,8 @@ export function useRevealReportData({ prospectId, tenantId, siteUrl, oldSiteDesk
           tier:          prospect?.tier || 'starter',
           generatedAt:   new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
 
-          desktop: psResult.desktop,
-          mobile:  psResult.mobile,
+          desktop: null,
+          mobile:  null,
           oldSiteDesktop,
           oldSiteMobile,
 
@@ -122,8 +127,8 @@ export function useRevealReportData({ prospectId, tenantId, siteUrl, oldSiteDesk
           schemaTypes: [
             'LocalBusiness',
             'PestControlService',
-            hasFaqSchema   ? 'FAQPage'          : null,
-            hasAggRating   ? 'AggregateRating'  : null,
+            hasFaqSchema ? 'FAQPage'         : null,
+            hasAggRating ? 'AggregateRating' : null,
             'BreadcrumbList',
           ].filter(Boolean) as string[],
           cityPages,
@@ -145,16 +150,22 @@ export function useRevealReportData({ prospectId, tenantId, siteUrl, oldSiteDesk
         }
 
         setData(reportData)
+        setLoading(false)
+
+        // --- Phase 2: fetch PageSpeed (slow, ~45s) ---
+        const psResult = await fetchPageSpeedViaProxy(siteUrl)
+        setData(prev => prev ? { ...prev, desktop: psResult.desktop, mobile: psResult.mobile } : prev)
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : 'Failed to load report data'
         setError(msg)
-      } finally {
         setLoading(false)
+      } finally {
+        setPagespeedLoading(false)
       }
     }
 
     load()
   }, [prospectId, tenantId, siteUrl, oldSiteDesktop, oldSiteMobile])
 
-  return { loading, error, data }
+  return { loading, pagespeedLoading, error, data }
 }

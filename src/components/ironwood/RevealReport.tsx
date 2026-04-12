@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRevealReportData } from '../../hooks/useRevealReportData'
 import ReportCover       from './report/ReportCover'
 import ReportPerformance from './report/ReportPerformance'
@@ -7,6 +7,8 @@ import ReportAISearch    from './report/ReportAISearch'
 import ReportLocal       from './report/ReportLocal'
 import ReportTechnical   from './report/ReportTechnical'
 import ReportNextSteps   from './report/ReportNextSteps'
+
+const COUNTDOWN_START = 60
 
 interface Props {
   prospectId: string
@@ -18,7 +20,28 @@ interface Props {
 }
 
 export default function RevealReport({ prospectId, tenantId, siteUrl, oldSiteDesktop, oldSiteMobile, onClose }: Props) {
-  const { loading, error, data } = useRevealReportData({ prospectId, tenantId, siteUrl, oldSiteDesktop, oldSiteMobile })
+  const { loading, pagespeedLoading, error, data } = useRevealReportData({ prospectId, tenantId, siteUrl, oldSiteDesktop, oldSiteMobile })
+  const [secondsLeft, setSecondsLeft] = useState(COUNTDOWN_START)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Countdown while PageSpeed is loading
+  useEffect(() => {
+    if (!pagespeedLoading) {
+      if (intervalRef.current) clearInterval(intervalRef.current)
+      return
+    }
+    setSecondsLeft(COUNTDOWN_START)
+    intervalRef.current = setInterval(() => {
+      setSecondsLeft(prev => {
+        if (prev <= 1) {
+          if (intervalRef.current) clearInterval(intervalRef.current)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
+  }, [pagespeedLoading])
 
   // Close on Escape
   useEffect(() => {
@@ -54,10 +77,32 @@ export default function RevealReport({ prospectId, tenantId, siteUrl, oldSiteDes
     `)
     printWindow.document.close()
     printWindow.focus()
-    setTimeout(() => {
-      printWindow.print()
-    }, 500)
+    setTimeout(() => { printWindow.print() }, 500)
   }
+
+  const printBtn = pagespeedLoading ? (
+    <button
+      disabled
+      style={{
+        padding: '8px 18px', background: '#374151', color: '#9ca3af',
+        border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 600,
+        cursor: 'not-allowed', opacity: 0.7,
+      }}
+    >
+      ⏳ Loading Scores… ({secondsLeft}s)
+    </button>
+  ) : (
+    <button
+      onClick={handlePrint}
+      style={{
+        padding: '8px 18px', background: '#22c55e', color: '#fff',
+        border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 600,
+        cursor: 'pointer',
+      }}
+    >
+      🖨️ Print / Save PDF
+    </button>
+  )
 
   return (
     <div
@@ -81,16 +126,7 @@ export default function RevealReport({ prospectId, tenantId, siteUrl, oldSiteDes
           {data && <span style={{ color: '#9ca3af', fontWeight: 400 }}> · {data.businessName}</span>}
         </span>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <button
-            onClick={handlePrint}
-            style={{
-              padding: '8px 18px', background: '#10b981', color: '#fff',
-              border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            🖨️ Print / Save PDF
-          </button>
+          {printBtn}
           <button
             onClick={onClose}
             style={{
@@ -113,7 +149,6 @@ export default function RevealReport({ prospectId, tenantId, siteUrl, oldSiteDes
           display: 'flex', flexDirection: 'column', alignItems: 'center',
         }}
       >
-        {/* Paper */}
         <div
           id="reveal-report-content"
           style={{
@@ -129,7 +164,6 @@ export default function RevealReport({ prospectId, tenantId, siteUrl, oldSiteDes
           {loading && (
             <div style={{ padding: '80px', textAlign: 'center' }}>
               <p style={{ fontSize: '16px', color: '#6b7280' }}>Loading report data…</p>
-              <p style={{ fontSize: '13px', color: '#9ca3af', marginTop: '8px' }}>Fetching PageSpeed scores from Google. This may take 15–30 seconds.</p>
             </div>
           )}
 
@@ -143,7 +177,7 @@ export default function RevealReport({ prospectId, tenantId, siteUrl, oldSiteDes
           {data && (
             <>
               <ReportCover       data={data} />
-              <ReportPerformance data={data} />
+              <ReportPerformance data={data} pagespeedLoading={pagespeedLoading} />
               <ReportSEO         data={data} />
               <ReportAISearch    data={data} />
               <ReportLocal       data={data} />
