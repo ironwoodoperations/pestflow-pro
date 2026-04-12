@@ -14,8 +14,9 @@ serve(async (req) => {
     const { url } = await req.json()
     if (!url) throw new Error('url is required')
 
+    const apiKey = Deno.env.get('PAGESPEED_API_KEY') ?? ''
     const encode = (u: string, strategy: string) =>
-      `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(u)}&strategy=${strategy}`
+      `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(u)}&strategy=${strategy}${apiKey ? `&key=${apiKey}` : ''}`
 
     const [desktopRes, mobileRes] = await Promise.all([
       fetch(encode(url, 'desktop')),
