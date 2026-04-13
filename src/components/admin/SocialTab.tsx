@@ -13,7 +13,6 @@ import LegacyComposer from './social/LegacyComposer'
 import NewCampaignModal from './social/NewCampaignModal'
 import SocialUpgradeNudge from './social/SocialUpgradeNudge'
 import ZernioOnboardingBanner from './social/ZernioOnboardingBanner'
-import { FeatureGate } from '../common/FeatureGate'
 
 const TENANT_ID = import.meta.env.VITE_TENANT_ID
 
