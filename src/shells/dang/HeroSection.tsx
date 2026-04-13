@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Play } from "lucide-react";
 import HolidayVideoWrapper from "./HolidayVideoWrapper";
 import { usePageContent } from "../../hooks/usePageContent";
+import YouTubeFacade from "./components/YouTubeFacade";
 
 const DEFAULT_VIDEO = "https://www.dangpestcontrol.com/wp-content/uploads/2025/04/dang-pest-homepage.mp4";
 
@@ -28,7 +29,7 @@ const extractYouTubeId = (url: string): string | null => {
 
 const DEFAULT_THUMBNAIL = "/dang/dang-pest-homepage-img-1.webp";
 
-const HeroSection = ({ dynamicVideoUrl, dynamicVideoType, videoStart, videoEnd }: HeroSectionProps) => {
+const HeroSection = ({ dynamicVideoUrl, dynamicVideoType }: HeroSectionProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { content } = usePageContent('home');
@@ -36,13 +37,6 @@ const HeroSection = ({ dynamicVideoUrl, dynamicVideoType, videoStart, videoEnd }
   const videoSrc = dynamicVideoUrl || DEFAULT_VIDEO;
   const isYouTube = dynamicVideoType === "youtube" || extractYouTubeId(videoSrc) !== null;
   const youtubeId = isYouTube ? extractYouTubeId(videoSrc) : null;
-
-  const buildYouTubeParams = () => {
-    const params = new URLSearchParams({ autoplay: "1", rel: "0" });
-    if (videoStart) params.set("start", videoStart);
-    if (videoEnd) params.set("end", videoEnd);
-    return params.toString();
-  };
 
   const handlePlay = () => {
     setIsPlaying(true);
@@ -124,7 +118,10 @@ const HeroSection = ({ dynamicVideoUrl, dynamicVideoType, videoStart, videoEnd }
                 boxShadow: '0 0 30px hsla(185, 100%, 45%, 0.5)',
               }}
             >
-              {!isPlaying ? (
+              {isYouTube && youtubeId ? (
+                // YouTube path: facade defers iframe until user clicks — no eager script load
+                <YouTubeFacade videoId={youtubeId} />
+              ) : !isPlaying ? (
                 <div
                   style={{ position: 'relative', width: '100%', height: '100%', cursor: 'pointer' }}
                   onClick={handlePlay}
@@ -150,28 +147,16 @@ const HeroSection = ({ dynamicVideoUrl, dynamicVideoType, videoStart, videoEnd }
                   </div>
                 </div>
               ) : (
-                <>
-                  {isYouTube && youtubeId ? (
-                    <iframe
-                      src={`https://www.youtube.com/embed/${youtubeId}?${buildYouTubeParams()}`}
-                      title="Meet Kirk - Dang Pest Control"
-                      style={{ width: '100%', height: '100%' }}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                  ) : (
-                    <video
-                      ref={videoRef}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      controls
-                      autoPlay
-                      playsInline
-                      poster={(content?.image_url || DEFAULT_THUMBNAIL)}
-                    >
-                      <source src={videoSrc} type="video/mp4" />
-                    </video>
-                  )}
-                </>
+                <video
+                  ref={videoRef}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  controls
+                  autoPlay
+                  playsInline
+                  poster={(content?.image_url || DEFAULT_THUMBNAIL)}
+                >
+                  <source src={videoSrc} type="video/mp4" />
+                </video>
               )}
             </div>
           </HolidayVideoWrapper>
