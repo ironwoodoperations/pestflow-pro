@@ -78,6 +78,14 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
         setup_invoice_url: data.invoice_url,
         setup_invoice_sent_at: new Date().toISOString(),
       })
+      // Notify Teams — fire and forget
+      const biz2 = prospect.company_name || ''
+      const amt2 = setupFeeAmount ? `$${setupFeeAmount.toLocaleString()}` : '$0'
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-teams`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
+        body: JSON.stringify({ message: `📄 Setup invoice generated: **${biz2}** — ${amt2}\nhttps://pestflowpro.com/ironwood` }),
+      }).catch(() => {})
     } catch (e: any) { setError(e.message || 'Network error') }
     finally { setLoadingInvoice(false) }
   }
@@ -115,6 +123,14 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
         detail: 'Setup invoice marked as sent',
       })
     } catch (e) { console.error('[activity log]', e) }
+    // Notify Teams — fire and forget
+    const biz = prospect.company_name || ''
+    const amt = setupFeeAmount ? `$${setupFeeAmount.toLocaleString()}` : '$0'
+    fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-teams`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
+      body: JSON.stringify({ message: `📄 Setup invoice sent: **${biz}** — ${amt}\nhttps://pestflowpro.com/ironwood` }),
+    }).catch(() => {})
     setMarkingSent(false)
   }
 

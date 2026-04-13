@@ -90,10 +90,18 @@ Deno.serve(async (req: Request) => {
     }
     const zernioPlatform = TO_ZERNIO[platform] ?? platform
 
-    const res = await fetch('https://zernio.com/api/v1/connect/url', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${ZERNIO_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ platform: zernioPlatform, profileId }),
+    // Fetch tenant slug for redirect URL
+    const { data: tenantRow } = await supabase.from('tenants').select('slug').eq('id', tenantId).maybeSingle()
+    const tenantSlug = tenantRow?.slug || tenantId
+    const redirectUrl = `https://${tenantSlug}.pestflowpro.com/admin?tab=social&connected=true`
+
+    const connectUrl = new URL(`https://zernio.com/api/v1/connect/${zernioPlatform}`)
+    connectUrl.searchParams.set('profileId', profileId)
+    connectUrl.searchParams.set('redirectUrl', redirectUrl)
+
+    const res = await fetch(connectUrl.toString(), {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${ZERNIO_API_KEY}` },
     })
     const data = await res.json()
     console.log('[zernio-connect] get_connect_url response:', JSON.stringify(data))
@@ -103,7 +111,7 @@ Deno.serve(async (req: Request) => {
         status: res.status, headers: { ...CORS, 'Content-Type': 'application/json' },
       })
     }
-    return new Response(JSON.stringify({ authUrl: data.authUrl }), {
+    return new Response(JSON.stringify({ authUrl: data.authUrl || data.url }), {
       status: 200, headers: { ...CORS, 'Content-Type': 'application/json' },
     })
   }

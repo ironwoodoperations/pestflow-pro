@@ -383,6 +383,127 @@ Deno.serve(async (req: Request) => {
       console.error('Zernio profile creation failed (non-fatal):', zernioErr?.message)
     }
 
+    // Step 9: Seed from intake_data (non-fatal)
+    if (prospect_id) {
+      try {
+        const { data: prosp } = await supabase
+          .from('prospects')
+          .select('intake_data, company_name')
+          .eq('id', prospect_id)
+          .maybeSingle()
+
+        const intake = prosp?.intake_data as Record<string, any> | null
+        const ib = intake?.business || {}
+        const city  = (ib.city  || '').trim()
+        const state = (ib.state || '').trim()
+        const bizForSeo = ib.business_name || businessName
+
+        // 9a: Overlay business_info with intake data
+        if (city || state || ib.zip || ib.address) {
+          const { data: existingBiRow } = await supabase.from('settings').select('value')
+            .eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle()
+          const currentBi = existingBiRow?.value ?? {}
+          const fullAddress = [ib.address, city, state, ib.zip].filter(Boolean).join(', ')
+          await supabase.from('settings').update({
+            value: {
+              ...currentBi,
+              ...(ib.business_name ? { name: ib.business_name } : {}),
+              ...(ib.phone    ? { phone: ib.phone }       : {}),
+              ...(ib.email    ? { email: ib.email }       : {}),
+              ...(fullAddress ? { address: fullAddress }  : {}),
+              ...(ib.hours    ? { hours: ib.hours }       : {}),
+              ...(ib.tagline  ? { tagline: ib.tagline }   : {}),
+            }
+          }).eq('tenant_id', tenantId).eq('key', 'business_info')
+          console.log('[provision-tenant] business_info overlaid from intake_data')
+        }
+
+        // 9b: Seed SEO settings key
+        const serviceArea = [city, state].filter(Boolean).join(', ')
+        const metaDesc = ib.tagline
+          ? `${bizForSeo} — ${ib.tagline}. Serving ${serviceArea || 'your area'}.`
+          : `Professional pest control services by ${bizForSeo}. Serving ${serviceArea || 'your area'} and surrounding areas.`
+        await supabase.from('settings').upsert(
+          { tenant_id: tenantId, key: 'seo', value: {
+            meta_description: metaDesc,
+            service_areas: serviceArea ? [serviceArea] : [],
+            focus_keyword: city ? `pest control ${city.toLowerCase()}` : 'pest control',
+          }},
+          { onConflict: 'tenant_id,key' }
+        )
+
+        // 9c: Seed location_data row for primary city
+        if (city) {
+          const citySlug = city.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+          await supabase.from('location_data').upsert({
+            tenant_id:        tenantId,
+            city,
+            slug:             citySlug,
+            hero_title:       `Pest Control in ${city}${state ? ', ' + state : ''}`,
+            intro:            `${bizForSeo} provides professional pest control in ${city}${state ? ', ' + state : ''}. Call today for a free estimate.`,
+            is_live:          false,
+            meta_title:       `Pest Control ${city}${state ? ', ' + state : ''} | ${bizForSeo}`,
+            meta_description: metaDesc,
+            focus_keyword:    `pest control ${city.toLowerCase()}`,
+          }, { onConflict: 'tenant_id,city' })
+          console.log(`[provision-tenant] location_data seeded for ${city}`)
+        }
+
+        // 9d: Seed 3 starter blog posts
+        const postNow = new Date().toISOString()
+        const day7ago = new Date(Date.now() - 7  * 86400000).toISOString()
+        const day14ago= new Date(Date.now() - 14 * 86400000).toISOString()
+        const starterPosts = [
+          { tenant_id: tenantId, title: 'Top 5 Signs You Have a Pest Problem', slug: 'top-5-signs-pest-problem',
+            excerpt: 'Early detection is the key to stopping a pest problem before it becomes a full infestation.',
+            content: '<p>Early detection is the key to stopping a pest problem before it becomes a full infestation. Here are the top signs to watch for in your home...</p>',
+            published_at: postNow },
+          { tenant_id: tenantId, title: 'How to Prevent Pests This Season', slug: 'seasonal-pest-prevention-tips',
+            excerpt: 'Seasonal changes bring new pest activity. These simple steps can keep your home protected year-round.',
+            content: '<p>Every season brings different pest pressures. Here\'s how to stay ahead of them with simple preventive measures around your home...</p>',
+            published_at: day7ago },
+          { tenant_id: tenantId, title: 'Why Professional Pest Control Beats DIY', slug: 'professional-vs-diy-pest-control',
+            excerpt: 'DIY products can reduce pest activity temporarily — but rarely eliminate the root cause.',
+            content: '<p>Store-bought sprays and traps can temporarily reduce pest activity, but they rarely eliminate the root cause. Professional pest control delivers better, longer-lasting results...</p>',
+            published_at: day14ago },
+        ]
+        for (const post of starterPosts) {
+          const { error: blogErr } = await supabase.from('blog_posts').upsert(post, { onConflict: 'tenant_id,slug' })
+          if (blogErr) console.error(`[provision-tenant] blog_posts upsert failed (${post.slug}):`, blogErr.message)
+        }
+        console.log('[provision-tenant] 3 starter blog posts seeded')
+
+        // 9e: Advance prospect stage to it_in_progress
+        await supabase.from('prospects').update({ pipeline_stage: 'it_in_progress' }).eq('id', prospect_id)
+        console.log('[provision-tenant] prospect stage → it_in_progress')
+
+      } catch (intakeErr: any) {
+        console.error('[provision-tenant] intake seeding failed (non-fatal):', intakeErr?.message)
+      }
+    }
+
+    // Teams notification (non-fatal)
+    try {
+      const TEAMS_WEBHOOK_URL = Deno.env.get('TEAMS_WEBHOOK_URL')
+      if (TEAMS_WEBHOOK_URL && TEAMS_WEBHOOK_URL !== 'PLACEHOLDER') {
+        await fetch(TEAMS_WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'message',
+            attachments: [{
+              contentType: 'application/vnd.microsoft.card.adaptive',
+              content: {
+                type: 'AdaptiveCard', version: '1.4',
+                body: [{ type: 'TextBlock', wrap: true, size: 'Medium',
+                  text: `🎉 Site provisioned: **${businessName}** — https://${resolvedSlug}.pestflowpro.com` }],
+              },
+            }],
+          }),
+        })
+      }
+    } catch { /* non-fatal */ }
+
     const liveUrl = `https://${resolvedSlug}.pestflowpro.com`
     return new Response(JSON.stringify({ success: true, tenant_id: tenantId, slug: resolvedSlug, url: liveUrl }), {
       headers: { 'Content-Type': 'application/json', ...CORS },

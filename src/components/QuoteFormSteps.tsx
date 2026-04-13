@@ -21,7 +21,7 @@ const PEST_OPTIONS = [
 ]
 const PROPERTY_TYPES = ['Single Family Home', 'Apartment/Condo', 'Townhouse', 'Commercial', 'Rental Property', 'Other']
 const URGENCY = ['Routine / Not Urgent', 'Within a Week', 'Within 48 Hours', 'Same Day Emergency']
-const REFERRAL_OPTIONS = ['Google', 'Facebook', 'Referral', 'Yard Sign', 'Nextdoor', 'Other']
+const REFERRAL_OPTIONS = ['Google', 'Referral', 'Yard Sign', 'Nextdoor', 'Other']
 
 interface Props {
   step: number

@@ -133,12 +133,7 @@ export default function ProspectSections({ id, form, openSection, setOpenSection
         <SocialSection form={form} setField={wrappedSetField} onBlur={onBlur} />
       </Acc>
 
-      {/* 7. Integrations */}
-      <Acc id="integrations" title="Integrations" {...acc}>
-        <IntegrationsSection prospectId={id} form={form} />
-      </Acc>
-
-      {/* 8. Site Setup & Provision */}
+      {/* 7. Site Setup & Provision */}
       <Acc id="site_provision" title="Site Setup & Provision" isComplete={!!form.provisioned_at} completedLabel={form.provisioned_at ? `Provisioned ${fmt(form.provisioned_at)}` : undefined} {...acc}>
         <div className="flex justify-end mb-2">
           <RepGuideButton section={form.provisioned_at ? 'post-launch' : 'pre-provision'} label={form.provisioned_at ? '? Post-Launch Guide' : undefined} onOpen={setGuideSection} />
@@ -153,6 +148,11 @@ export default function ProspectSections({ id, form, openSection, setOpenSection
             <BundleSocialSetup tenantId={form.tenant_id} />
           </div>
         )}
+      </Acc>
+
+      {/* 8. Integrations */}
+      <Acc id="integrations" title="Integrations" {...acc}>
+        <IntegrationsSection prospectId={id} form={form} />
       </Acc>
 
       {/* 9. QA Checklist */}

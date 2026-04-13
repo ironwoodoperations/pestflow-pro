@@ -102,6 +102,20 @@ export default function IntakePage() {
     ])
     setSubmitting(false)
     setStatus('done')
+
+    // Notify client via email (non-blocking, non-fatal)
+    try {
+      const confirmEmail = form.business.email || tokenRow.prospects?.email || ''
+      const confirmName  = (tokenRow.prospects?.contact_name || '').split(' ')[0] || tokenRow.prospects?.contact_name || ''
+      const confirmBiz   = form.business.business_name || tokenRow.prospects?.company_name || ''
+      if (confirmEmail) {
+        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-intake-confirmation`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
+          body: JSON.stringify({ to: confirmEmail, firstName: confirmName, businessName: confirmBiz }),
+        }).catch(() => {})
+      }
+    } catch { /* non-fatal */ }
   }
 
   const canAdvance = (): boolean => {
