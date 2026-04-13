@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, lazy, Suspense } from 'react'
 import { Link } from 'react-router-dom'
 import { MapPin } from 'lucide-react'
 import { supabase } from '../lib/supabase'
@@ -7,6 +7,8 @@ import StructuredData from '../components/StructuredData'
 import { formatPhone } from '../lib/formatPhone'
 import GoogleMapEmbed from '../components/common/GoogleMapEmbed'
 import { useTemplate } from '../context/TemplateContext'
+
+const DangServiceAreaMap = lazy(() => import('../shells/dang/components/DangServiceAreaMap'))
 
 interface LocationItem { slug: string; city: string }
 
@@ -99,9 +101,15 @@ export default function ServiceArea() {
         </div>
       </section>
 
-      <section className="py-16" style={{ backgroundColor: 'var(--color-bg-cta)' }}>
+      <section className="py-16" style={{ backgroundColor: isDang ? '#fff' : 'var(--color-bg-cta)' }}>
         <div className="max-w-4xl mx-auto px-4">
-          <GoogleMapEmbed address={address || '1204 S. Main Street, Tyler, TX 75701'} apiKey={mapsApiKey || undefined} />
+          {isDang ? (
+            <Suspense fallback={<div style={{ height: '400px', background: '#f5f0ea', borderRadius: '0.75rem' }} />}>
+              <DangServiceAreaMap />
+            </Suspense>
+          ) : (
+            <GoogleMapEmbed address={address || '1204 S. Main Street, Tyler, TX 75701'} apiKey={mapsApiKey || undefined} />
+          )}
         </div>
       </section>
 
