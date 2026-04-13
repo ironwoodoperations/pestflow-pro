@@ -1,38 +1,82 @@
+import { useState, useEffect } from 'react'
+import { supabase } from '../../lib/supabase'
 import type { Prospect } from './types'
 
-const SOCIALS: [keyof Prospect, string][] = [
-  ['social_facebook','Facebook'],
-  ['social_instagram','Instagram'],
-  ['social_google','Google Business'],
-  ['social_youtube','YouTube'],
-  ['social_tiktok','TikTok'],
-]
-const inp = 'w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-emerald-500'
+const PLATFORM_LABELS: Record<string, string> = {
+  facebook:       'Facebook',
+  instagram:      'Instagram',
+  youtube:        'YouTube',
+  googlebusiness: 'Google Business',
+  linkedin:       'LinkedIn',
+  tiktok:         'TikTok',
+}
 
 interface Props {
   form: Partial<Prospect>
+  // setField / onBlur retained in signature for compatibility — no longer used
   setField: (k: string, v: any) => void
   onBlur: () => void
 }
 
-export default function SocialSection({ form, setField, onBlur }: Props) {
+export default function SocialSection({ form }: Props) {
+  const [accounts, setAccounts] = useState<Record<string, string> | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  const tenantId = form.tenant_id
+
+  useEffect(() => {
+    if (!tenantId) { setAccounts(null); return }
+    setLoading(true)
+    supabase.from('settings').select('value')
+      .eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle()
+      .then(({ data }) => {
+        setAccounts(data?.value?.zernio_accounts ?? {})
+        setLoading(false)
+      })
+  }, [tenantId])
+
+  if (!tenantId) {
+    return (
+      <p className="text-xs text-gray-500 italic">
+        Provision this tenant first to see their social connection status.
+      </p>
+    )
+  }
+
+  if (loading) {
+    return <p className="text-xs text-gray-400">Loading…</p>
+  }
+
+  const connectedPlatforms = Object.entries(accounts ?? {}).filter(([, id]) => !!id)
+
+  if (connectedPlatforms.length === 0) {
+    return (
+      <div className="space-y-2">
+        <p className="text-xs text-gray-400">
+          Client has not connected social accounts yet. They can connect from their admin dashboard → Social → Connections.
+        </p>
+        <p className="text-xs text-gray-500 italic">
+          Connection status updates automatically once they authorize a platform.
+        </p>
+      </div>
+    )
+  }
+
   return (
-    <div className="space-y-3">
-      <label className="flex items-center gap-2 text-sm text-gray-300">
-        <input type="checkbox" checked={form.has_existing_social || false}
-          onChange={e => { setField('has_existing_social', e.target.checked); onBlur() }} />
-        Has existing social profiles
-      </label>
-      <div className="grid grid-cols-2 gap-3">
-        {SOCIALS.map(([key, label]) => (
-          <div key={String(key)}>
-            <label className="text-xs text-gray-400">{label}</label>
-            <input className={inp} value={(form as any)[key] || ''}
-              onChange={e => setField(String(key), e.target.value)} onBlur={onBlur} />
-          </div>
+    <div className="space-y-2">
+      <p className="text-xs font-medium text-gray-400 mb-1">Connected via Zernio OAuth</p>
+      <div className="flex flex-wrap gap-2">
+        {connectedPlatforms.map(([platform]) => (
+          <span key={platform}
+            className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-900/30 border border-emerald-700 rounded-full text-xs text-emerald-300 font-medium">
+            <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full" />
+            {PLATFORM_LABELS[platform] ?? platform}
+          </span>
         ))}
       </div>
-      <p className="text-xs text-gray-500 italic">Confirm and seed these before the reveal call.</p>
+      <p className="text-xs text-gray-500 mt-1 italic">
+        Client connected these accounts from their admin dashboard.
+      </p>
     </div>
   )
 }
