@@ -8,11 +8,13 @@ import PestExterminationSection from './PestExterminationSection'
 import TestimonialsSection from './TestimonialsSection'
 import CTASection from './CTASection'
 import { useSiteConfig } from './hooks/useSiteConfig'
+import DangFaqSchema from './components/DangFaqSchema'
 
 export default function ShellHomeSections() {
   const { heroVideoUrl, heroVideoType, heroVideoStart, heroVideoEnd } = useSiteConfig()
   return (
     <>
+      <DangFaqSchema />
       <HeroSection dynamicVideoUrl={heroVideoUrl} dynamicVideoType={heroVideoType} videoStart={heroVideoStart} videoEnd={heroVideoEnd} />
       <FeatureStrip />
       <ExpertSection />
