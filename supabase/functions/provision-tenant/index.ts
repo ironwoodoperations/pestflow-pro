@@ -418,6 +418,24 @@ Deno.serve(async (req: Request) => {
           console.log('[provision-tenant] business_info overlaid from intake_data')
         }
 
+        // 9a-br: Overlay branding with intake_data.branding (logo, colors, template)
+        const ib_br = (intake?.branding || {}) as Record<string, any>
+        if (ib_br.logo_url || ib_br.primary_color || ib_br.accent_color || ib_br.template) {
+          const { data: existingBrRow } = await supabase.from('settings').select('value')
+            .eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle()
+          const currentBr = existingBrRow?.value ?? {}
+          await supabase.from('settings').update({
+            value: {
+              ...currentBr,
+              ...(ib_br.logo_url      ? { logo_url:      ib_br.logo_url }      : {}),
+              ...(ib_br.primary_color ? { primary_color: ib_br.primary_color } : {}),
+              ...(ib_br.accent_color  ? { accent_color:  ib_br.accent_color }  : {}),
+              ...(ib_br.template      ? { template:      ib_br.template }      : {}),
+            }
+          }).eq('tenant_id', tenantId).eq('key', 'branding')
+          console.log('[provision-tenant] branding overlaid from intake_data')
+        }
+
         // 9b: Seed SEO settings key
         const serviceArea = [city, state].filter(Boolean).join(', ')
         const metaDesc = ib.tagline
@@ -431,6 +449,25 @@ Deno.serve(async (req: Request) => {
           }},
           { onConflict: 'tenant_id,key' }
         )
+
+        // 9b-seo: Per-page SEO meta on page_content rows
+        if (city) {
+          const phone9 = ib.phone || ''
+          const pageSeoMap: Record<string, { meta_title: string; meta_description: string }> = {
+            'home':           { meta_title: `${bizForSeo} | Pest Control in ${city}${state ? ', ' + state : ''}`, meta_description: `${bizForSeo} offers professional pest control in ${city}. Licensed technicians, fast response, guaranteed results. Call for a free quote.` },
+            'about':          { meta_title: `About ${bizForSeo} | Local Pest Control`,               meta_description: `Learn about ${bizForSeo}, your local pest control experts in ${city}${state ? ', ' + state : ''}. Family-owned, fully licensed and insured.` },
+            'pest-control':   { meta_title: `Pest Control Services | ${bizForSeo}`,                  meta_description: `Comprehensive pest control services in ${city}. Ants, roaches, spiders, and more. Fast, effective, guaranteed.` },
+            'termite-control':{ meta_title: `Termite Control & Treatment | ${bizForSeo}`,            meta_description: `Professional termite control in ${city}. Protect your home from costly termite damage. Free inspections available.` },
+            'rodent-control': { meta_title: `Rodent Control | ${bizForSeo}`,                        meta_description: `Get rid of mice and rats in ${city}. Humane and effective rodent removal by ${bizForSeo}.` },
+            'mosquito-control':{ meta_title: `Mosquito Treatment | ${bizForSeo}`,                   meta_description: `Mosquito control services in ${city}. Enjoy your yard again. Call ${bizForSeo} for a free quote.` },
+            'contact':        { meta_title: `Contact ${bizForSeo} | ${city} Pest Control`,          meta_description: `Contact ${bizForSeo} for pest control in ${city}${state ? ', ' + state : ''}. ${phone9 ? 'Call ' + phone9 + ' or r' : 'R'}equest a free quote online.` },
+          }
+          for (const [pageSlug, seo] of Object.entries(pageSeoMap)) {
+            await supabase.from('page_content').update({ meta_title: seo.meta_title, meta_description: seo.meta_description })
+              .eq('tenant_id', tenantId).eq('page_slug', pageSlug)
+          }
+          console.log('[provision-tenant] per-page SEO meta seeded')
+        }
 
         // 9c: Seed location_data row for primary city
         if (city) {
