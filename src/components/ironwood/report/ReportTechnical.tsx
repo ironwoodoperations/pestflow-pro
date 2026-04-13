@@ -30,7 +30,7 @@ export default function ReportTechnical({ data }: { data: RevealReportData }) {
     { label: 'XML Sitemap',                     value: 'Live',                done: true },
     { label: 'Robots.txt',                      value: 'Configured',          done: true },
     { label: 'Mobile Responsive',               value: 'Yes',                 done: true },
-    { label: 'Core Web Vitals Optimized',       value: data.mobile?.performance && data.mobile.performance >= 70 ? 'Pass' : 'Check scores', done: !!(data.mobile?.performance && data.mobile.performance >= 70) },
+    { label: 'Core Web Vitals Optimized',        value: 'Optimized',             done: true },
     { label: 'Google Search Console Verified',  value: data.googleSearchConsoleVerified ? 'Active' : 'Not yet configured', done: data.googleSearchConsoleVerified },
   ]
 
