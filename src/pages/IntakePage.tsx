@@ -4,11 +4,10 @@ import { supabase } from '../lib/supabase'
 import IntakeStep1Business from './intake/IntakeStep1Business'
 import IntakeStep2Branding from './intake/IntakeStep2Branding'
 import IntakeStep3Domain from './intake/IntakeStep3Domain'
-import IntakeStep4Social from './intake/IntakeStep4Social'
 
 type Status = 'loading' | 'invalid' | 'expired' | 'submitted' | 'form' | 'done'
 
-const STEPS = ['Business Info', 'Branding', 'Domain', 'Social Media']
+const STEPS = ['Business Info', 'Branding', 'Domain']
 
 export default function IntakePage() {
   const { token } = useParams<{ token: string }>()
@@ -20,13 +19,12 @@ export default function IntakePage() {
     business: Record<string, any>
     branding: Record<string, any>
     domain: Record<string, any>
-    social: Record<string, any>
-  }>({ business: {}, branding: { primary_color: '#E87800' }, domain: {}, social: {} })
+  }>({ business: {}, branding: { primary_color: '#E87800' }, domain: {} })
 
   useEffect(() => {
     if (!token) { setStatus('invalid'); return }
     supabase.from('intake_tokens')
-      .select('*, prospects(id, contact_name, company_name, phone, email, admin_email, business_info, branding, customization, social_facebook, social_instagram, social_google, social_youtube, intake_data, tier)')
+      .select('*, prospects(id, contact_name, company_name, phone, email, admin_email, business_info, branding, customization, intake_data, tier)')
       .eq('token', token)
       .maybeSingle()
       .then(({ data, error }) => {
@@ -38,7 +36,6 @@ export default function IntakePage() {
         const d = p.intake_data || {}
         const bi = p.business_info || {}
         const br = p.branding || {}
-        // Pre-fill Step 1 from prospect record fields, fall back to existing intake_data
         setForm({
           business: d.business || {
             business_name: p.company_name  || bi.name   || '',
@@ -56,13 +53,7 @@ export default function IntakePage() {
             primary_color: br.primary_color || '#E87800',
             accent_color:  br.accent_color  || '#1a1a1a',
           },
-          domain:   d.domain  || {},
-          social:   d.social  || {
-            facebook:  p.social_facebook  || '',
-            instagram: p.social_instagram || '',
-            google:    p.social_google    || '',
-            youtube:   p.social_youtube   || '',
-          },
+          domain: d.domain || {},
         })
         setStatus('form')
       })
@@ -71,7 +62,7 @@ export default function IntakePage() {
   async function handleSubmit() {
     if (!tokenRow) return
     setSubmitting(true)
-    const intakeData = { business: form.business, branding: form.branding, domain: form.domain, social: form.social }
+    const intakeData = { business: form.business, branding: form.branding, domain: form.domain }
     const now = new Date().toISOString()
     const b = form.business
     const br = form.branding
@@ -176,7 +167,6 @@ export default function IntakePage() {
           {step === 0 && <IntakeStep1Business form={form.business} setForm={b => setForm(f => ({ ...f, business: b }))} />}
           {step === 1 && <IntakeStep2Branding form={form.branding} setForm={b => setForm(f => ({ ...f, branding: b }))} token={token!} tier={tokenRow?.prospects?.tier ?? 'growth'} />}
           {step === 2 && <IntakeStep3Domain form={form.domain} setForm={d => setForm(f => ({ ...f, domain: d }))} />}
-          {step === 3 && <IntakeStep4Social form={form.social} setForm={s => setForm(f => ({ ...f, social: s }))} />}
 
           <div className="flex justify-between mt-8 pt-6 border-t border-gray-100">
             <button onClick={() => setStep(s => s - 1)} disabled={step === 0}
