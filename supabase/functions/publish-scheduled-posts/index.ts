@@ -4,8 +4,8 @@
 // If post_id is passed in the request body, only that specific post is processed
 // (used by the "Publish Now" button in the admin social tab).
 //
-// Posting provider: Late (getlate.dev)
-//   Per-platform accountIds stored in settings.integrations.late_accounts
+// Posting provider: Zernio (zernio.com)
+//   zernio_accounts stored in settings.integrations as { [zernio_platform_key]: account_id }
 //   Fallback: Facebook Graph API (facebook_access_token + facebook_page_id)
 //
 // DEPLOY:
@@ -23,9 +23,6 @@
 //     );
 //     $$
 //   );
-//
-// Verify:
-//   SELECT jobname, schedule, active FROM cron.job WHERE jobname = 'publish-scheduled-posts';
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -46,21 +43,20 @@ interface SocialPost {
 }
 
 interface IntegrationSettings {
-  late_accounts?: Record<string, string>  // { facebook: 'acc_xxx', instagram: 'acc_yyy', ... }
-  bundle_social_team_id?: string          // kept for backwards compatibility
+  zernio_accounts?: Record<string, string>   // { [zernio_platform_key]: account_id }
   facebook_access_token?: string
   facebook_page_id?: string
   ayrshare_api_key?: string
 }
 
-// Map frontend platform names to Late API platform keys
-const LATE_PLATFORM_MAP: Record<string, string> = {
-  facebook: 'facebook',
-  instagram: 'instagram',
-  youtube: 'youtube',
-  linkedin: 'linkedin',
-  google: 'google_business',
-  tiktok: 'tiktok',
+// Frontend platform key → Zernio platform string
+const TO_ZERNIO: Record<string, string> = {
+  facebook:        'facebook',
+  instagram:       'instagram',
+  youtube:         'youtube',
+  linkedin:        'linkedin',
+  tiktok:          'tiktok',
+  google_business: 'googlebusiness',
 }
 
 function toPlatformArray(platform: string): string[] {
@@ -72,10 +68,10 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+  const supabaseUrl    = Deno.env.get('SUPABASE_URL') ?? ''
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-  const lateApiKey = Deno.env.get('LATE_API_KEY') ?? ''
-  const supabase = createClient(supabaseUrl, serviceRoleKey)
+  const zernioApiKey   = Deno.env.get('ZERNIO_API_KEY') ?? ''
+  const supabase       = createClient(supabaseUrl, serviceRoleKey)
 
   let specificPostId: string | null = null
   try {
@@ -113,7 +109,6 @@ serve(async (req) => {
   let failed = 0
 
   for (const post of (posts ?? []) as SocialPost[]) {
-    // Load integrations settings for this tenant
     const { data: settingsData } = await supabase
       .from('settings')
       .select('value')
@@ -122,63 +117,67 @@ serve(async (req) => {
       .maybeSingle()
 
     const intg = (settingsData?.value ?? {}) as IntegrationSettings
-    const lateAccounts = intg.late_accounts ?? {}
+    const zernioAccounts = intg.zernio_accounts ?? {}
 
-    // ── 1. Late (getlate.dev) — primary provider ────────────────────────────
-    if (lateApiKey && Object.keys(lateAccounts).length > 0) {
-      const platforms = toPlatformArray(post.platform)
-      let anyOk = false
-      const errors: string[] = []
+    // ── 1. Zernio (primary) ─────────────────────────────────────────────────
+    if (zernioApiKey && Object.keys(zernioAccounts).length > 0) {
+      const frontendPlatforms = toPlatformArray(post.platform)
+      const zernioPlatforms: { platform: string; accountId: string }[] = []
 
-      for (const platform of platforms) {
-        const accountId = lateAccounts[platform]
-        if (!accountId) {
-          errors.push(`No Late account connected for ${platform}`)
-          continue
-        }
-
-        const lateBody: Record<string, unknown> = {
-          accountId,
-          platforms: [LATE_PLATFORM_MAP[platform] ?? platform],
-          content: post.caption,
-        }
-        if (post.image_url) lateBody.mediaUrls = [post.image_url]
-
-        console.log(`[publish-scheduled-posts] Late API post ${post.id} / ${platform}:`, JSON.stringify(lateBody))
-
-        try {
-          const res = await fetch('https://api.getlate.dev/v1/posts', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${lateApiKey}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify(lateBody),
-          })
-          const data = await res.json()
-          console.log(`[publish-scheduled-posts] Late API response ${post.id} / ${platform}:`, JSON.stringify(data))
-
-          if (!res.ok) {
-            errors.push(`${platform}: ${data?.error || data?.message || `HTTP ${res.status}`}`)
-          } else {
-            anyOk = true
-          }
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : 'Network error'
-          console.error(`[publish-scheduled-posts] Late API error ${post.id} / ${platform}:`, msg)
-          errors.push(`${platform}: ${msg}`)
-        }
+      for (const fp of frontendPlatforms) {
+        const zKey    = TO_ZERNIO[fp] ?? fp
+        const accId   = zernioAccounts[zKey]
+        if (accId) zernioPlatforms.push({ platform: zKey, accountId: accId })
       }
 
-      if (anyOk) {
-        await supabase.from('social_posts').update({
-          status: 'published',
-          published_at: new Date().toISOString(),
-          fb_post_id: 'late-social',
-          error_msg: errors.length > 0 ? errors.join('; ') : null,
-        }).eq('id', post.id)
-        published++
-      } else {
-        const errMsg = errors.join('; ') || 'Late API: no accounts configured'
+      if (zernioPlatforms.length === 0) {
         await supabase.from('social_posts')
-          .update({ status: 'failed', error_msg: errMsg })
+          .update({ status: 'failed', error_msg: 'No connected Zernio accounts for this platform' })
+          .eq('id', post.id)
+        failed++
+        continue
+      }
+
+      const zernioBody: Record<string, unknown> = {
+        content: post.caption,
+        platforms: zernioPlatforms,
+        publishNow: true,
+      }
+      if (post.image_url) zernioBody.mediaItems = [{ type: 'image', url: post.image_url }]
+
+      console.log(`[publish-scheduled-posts] Zernio post ${post.id}:`, JSON.stringify(zernioBody))
+
+      try {
+        const res = await fetch('https://zernio.com/api/v1/posts', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${zernioApiKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(zernioBody),
+        })
+        const data = await res.json()
+        console.log(`[publish-scheduled-posts] Zernio response ${post.id}:`, JSON.stringify(data))
+
+        if (!res.ok) {
+          const errMsg = data?.error || data?.message || `Zernio HTTP ${res.status}`
+          await supabase.from('social_posts')
+            .update({ status: 'failed', error_msg: errMsg })
+            .eq('id', post.id)
+          failed++
+        } else {
+          const zernioPostId = data?.post?._id ?? 'zernio-social'
+          await supabase.from('social_posts').update({
+            status: 'published',
+            published_at: new Date().toISOString(),
+            fb_post_id: zernioPostId,
+            zernio_post_id: zernioPostId,
+            error_msg: null,
+          }).eq('id', post.id)
+          published++
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Network error'
+        console.error(`[publish-scheduled-posts] Zernio error ${post.id}:`, msg)
+        await supabase.from('social_posts')
+          .update({ status: 'failed', error_msg: msg })
           .eq('id', post.id)
         failed++
       }
@@ -219,7 +218,6 @@ serve(async (req) => {
 
     // ── 3. Facebook Graph API (last resort) ─────────────────────────────────
     if (post.platform === 'instagram' || !intg.facebook_access_token || !intg.facebook_page_id) {
-      // Instagram-only or no credentials: mark published with note
       await supabase.from('social_posts').update({
         status: 'published',
         published_at: new Date().toISOString(),
@@ -233,14 +231,14 @@ serve(async (req) => {
       const endpoint = post.image_url
         ? `https://graph.facebook.com/v19.0/${intg.facebook_page_id}/photos`
         : `https://graph.facebook.com/v19.0/${intg.facebook_page_id}/feed`
-      const body: Record<string, string> = post.image_url
+      const fbBody: Record<string, string> = post.image_url
         ? { url: post.image_url, caption: post.caption, access_token: intg.facebook_access_token }
         : { message: post.caption, access_token: intg.facebook_access_token }
 
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify(fbBody),
       })
       const data = await res.json()
 
