@@ -5,10 +5,15 @@ const MidPageVideo = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  const VIDEO_URL = "https://www.dangpestcontrol.com/wp-content/uploads/2025/04/dang-pest-referral-video.mp4";
+
   const handlePlay = () => {
     setIsPlaying(true);
     setTimeout(() => {
-      videoRef.current?.play();
+      if (videoRef.current) {
+        videoRef.current.src = VIDEO_URL;
+        videoRef.current.play();
+      }
     }, 100);
   };
 
@@ -51,12 +56,8 @@ const MidPageVideo = () => {
               controls
               playsInline
               autoPlay
-            >
-              <source
-                src="https://www.dangpestcontrol.com/wp-content/uploads/2025/04/dang-pest-referral-video.mp4"
-                type="video/mp4"
-              />
-            </video>
+              preload="none"
+            />
           )}
         </div>
       </div>

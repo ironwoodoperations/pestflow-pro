@@ -1,6 +1,24 @@
 // ─── MOSQUITO CONTROL — extracted section sub-components ─────────────────────
+import { useState, useRef } from 'react'
+import { Play } from 'lucide-react'
+
+const IN2CARE_VIDEO_URL = "https://www.dangpestcontrol.com/wp-content/uploads/2025/05/In2Care_V1_Dang-Pest-Control-WEBSITE.mp4"
+const IN2CARE_POSTER = "https://www.dangpestcontrol.com/wp-content/uploads/2025/06/Picture1-e1749056859859.png"
 
 export function MosquitoIn2CareSection() {
+  const [isPlaying, setIsPlaying] = useState(false)
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  const handlePlay = () => {
+    setIsPlaying(true)
+    setTimeout(() => {
+      if (videoRef.current) {
+        videoRef.current.src = IN2CARE_VIDEO_URL
+        videoRef.current.play()
+      }
+    }, 100)
+  }
+
   return (
     <section className="px-4 md:px-10" style={{ paddingTop: '70px', paddingBottom: '0', maxWidth: '1200px', margin: '0 auto' }}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-center" style={{ marginBottom: '60px' }}>
@@ -27,14 +45,40 @@ export function MosquitoIn2CareSection() {
           borderRadius: '6px',
           overflow: 'hidden',
           boxShadow: '0 4px 24px rgba(0, 180, 200, 0.25)',
+          position: 'relative',
         }}>
-          <video
-            src="https://www.dangpestcontrol.com/wp-content/uploads/2025/05/In2Care_V1_Dang-Pest-Control-WEBSITE.mp4"
-            poster="https://www.dangpestcontrol.com/wp-content/uploads/2025/06/Picture1-e1749056859859.png"
-            controls
-            preload="metadata"
-            style={{ width: '100%', display: 'block' }}
-          />
+          {!isPlaying ? (
+            <div style={{ position: 'relative', cursor: 'pointer' }} onClick={handlePlay}>
+              <img
+                src={IN2CARE_POSTER}
+                alt="In2Care mosquito treatment video"
+                style={{ width: '100%', display: 'block' }}
+              />
+              <div style={{
+                position: 'absolute', inset: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                backgroundColor: 'rgba(0,0,0,0.1)',
+              }}>
+                <div style={{
+                  width: '64px', height: '64px', borderRadius: '50%',
+                  backgroundColor: 'rgba(255,255,255,0.85)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Play style={{ width: '28px', height: '28px', color: '#333', marginLeft: '4px' }} />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <video
+              ref={videoRef}
+              controls
+              autoPlay
+              playsInline
+              preload="none"
+              poster={IN2CARE_POSTER}
+              style={{ width: '100%', display: 'block' }}
+            />
+          )}
         </div>
       </div>
 

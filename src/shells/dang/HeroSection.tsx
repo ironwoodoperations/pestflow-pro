@@ -41,7 +41,12 @@ const HeroSection = ({ dynamicVideoUrl, dynamicVideoType }: HeroSectionProps) =>
   const handlePlay = () => {
     setIsPlaying(true);
     if (!isYouTube) {
-      setTimeout(() => { videoRef.current?.play(); }, 100);
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.src = videoSrc;
+          videoRef.current.play();
+        }
+      }, 100);
     }
   };
 
@@ -153,10 +158,9 @@ const HeroSection = ({ dynamicVideoUrl, dynamicVideoType }: HeroSectionProps) =>
                   controls
                   autoPlay
                   playsInline
+                  preload="none"
                   poster={(content?.image_url || DEFAULT_THUMBNAIL)}
-                >
-                  <source src={videoSrc} type="video/mp4" />
-                </video>
+                />
               )}
             </div>
           </HolidayVideoWrapper>
