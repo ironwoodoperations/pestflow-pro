@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
 
 interface BusinessInfo {
+  name?: string
   tagline?: string
   phone?: string
   address?: string
@@ -39,7 +40,8 @@ export default function ShellHero() {
     })
   }, [])
 
-  const headline = custom.hero_headline || homeContent.title || 'Professional Pest Control You Can Trust'
+  const headline = custom.hero_headline?.trim()
+    || (biz.name ? `${biz.name} — Professional Pest Control` : 'Professional Pest Control You Can Trust')
 
   // Subtext: use page_content intro, then subtitle, then city-based fallback
   const city = biz.address ? biz.address.split(',')[0].trim() : null

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { usePageContent } from '../../hooks/usePageContent'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
 import { formatPhone } from '../../lib/formatPhone'
@@ -10,19 +9,24 @@ interface BizState { name?: string; phone?: string; tagline?: string }
 interface HeroMedia { thumbnail_url?: string; youtube_id?: string }
 
 export default function ShellHero() {
-  const { content } = usePageContent('home')
   const [biz, setBiz] = useState<BizState>({})
   const [heroMedia, setHeroMedia] = useState<HeroMedia>({})
+  const [heroHeadline, setHeroHeadline] = useState('')
+  const [subtext, setSubtext] = useState('')
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const [bizRes, mediaRes] = await Promise.all([
+      const [bizRes, mediaRes, custRes, contentRes] = await Promise.all([
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'hero_media').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'customization').maybeSingle(),
+        supabase.from('page_content').select('subtitle').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
       ])
       if (bizRes.data?.value) setBiz(bizRes.data.value)
       if (mediaRes.data?.value) setHeroMedia(mediaRes.data.value)
+      if (custRes.data?.value?.hero_headline) setHeroHeadline(custRes.data.value.hero_headline)
+      if (contentRes.data?.subtitle) setSubtext(contentRes.data.subtitle)
     })
   }, [])
 
@@ -30,8 +34,8 @@ export default function ShellHero() {
     || (heroMedia.youtube_id ? `https://img.youtube.com/vi/${heroMedia.youtube_id}/maxresdefault.jpg` : null)
     || FALLBACK_PHOTO
 
-  const title = content?.title || biz.name || 'Expert Pest Control You Can Count On'
-  const subtitle = content?.subtitle || biz.tagline || 'Professional and personalized service for your home and business'
+  const headline = heroHeadline?.trim() || (biz.name ? `${biz.name} — Expert Pest Control` : 'Expert Pest Control You Can Count On')
+  const subtitle = subtext || biz.tagline || 'Professional and personalized service for your home and business'
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -40,7 +44,7 @@ export default function ShellHero() {
       <div className="relative z-10 flex items-center justify-center px-4 w-full py-16">
         <div className="text-center w-full" style={{ background: 'rgba(0,0,0,0.72)', borderRadius: '16px', padding: '48px 40px', maxWidth: '640px' }}>
           <h1 className="font-bold text-white" style={{ fontSize: 'clamp(28px,5vw,48px)', lineHeight: 1.2, marginBottom: '16px' }}>
-            {title}
+            {headline}
           </h1>
           <p style={{ color: 'white', opacity: 0.9, marginBottom: '32px', fontSize: '18px', lineHeight: 1.6 }}>
             {subtitle}

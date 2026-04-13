@@ -106,12 +106,13 @@ export default function ContentPageForm({ selectedSlug, form, loading, saving, a
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Hero Headline</label>
               <input type="text" value={heroHeadline || ''} onChange={e => onHeroHeadlineChange?.(e.target.value)} placeholder="e.g. Professional Pest Control You Can Trust" className={inputClass} />
-              <p className="text-xs text-gray-400 mt-1">Main headline shown on the home page hero. Saved to settings.</p>
+              <p className="text-xs text-gray-400 mt-1">This is the large text shown in the hero section of your homepage.</p>
             </div>
           )}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Page Title</label>
             <input type="text" value={form.title} onChange={e => updateField('title', e.target.value)} placeholder="Page title" className={inputClass} />
+            <p className="text-xs text-gray-400 mt-1">Used for browser tab and SEO only — not shown on the page.</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
