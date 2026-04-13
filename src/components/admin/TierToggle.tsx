@@ -7,11 +7,19 @@ const TIERS = [
   { value: 4, label: 'E', name: 'Elite' },
 ]
 
+// Detect demo tenant by hostname slug
+function useIsDemoTenant() {
+  const parts = window.location.hostname.split('.')
+  const slug = parts.length >= 3 && window.location.hostname.endsWith('.pestflowpro.com') ? parts[0] : ''
+  return slug === 'pestflow-pro' || slug === ''  // also show on localhost/dev
+}
+
 export default function TierToggle() {
   const { tier, setTier, loading } = usePlan()
+  const isDemo = useIsDemoTenant()
 
   if (loading) return null
-  if (tier >= 4) return null  // Elite — no tier switching
+  if (!isDemo) return null  // hide on real client sites
 
   return (
     <div className="px-3 pb-4">

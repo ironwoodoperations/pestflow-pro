@@ -69,6 +69,7 @@ export default function BillingTab() {
   const [upgrading, setUpgrading] = useState<number | null>(null)
   const [clientEmail, setClientEmail] = useState('')
   const [upgradeError, setUpgradeError] = useState<string | null>(null)
+  const [isDemoTenant, setIsDemoTenant] = useState(false)
 
   // Slug from hostname: cypress-creek-pest-control.pestflowpro.com → "cypress-creek-pest-control"
   const clientSlug = (() => {
@@ -88,7 +89,8 @@ export default function BillingTab() {
       supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'subscription').maybeSingle(),
       supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'notifications').maybeSingle(),
       supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
-    ]).then(([paymentsRes, subRes, notifRes, bizRes]) => {
+      supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'demo_mode').maybeSingle(),
+    ]).then(([paymentsRes, subRes, notifRes, bizRes, demoRes]) => {
       setPayments(paymentsRes.data || [])
       if (subRes.data?.value) setSubscription(subRes.data.value as SubscriptionSettings)
       const email =
@@ -96,9 +98,11 @@ export default function BillingTab() {
         bizRes.data?.value?.email ||
         ''
       setClientEmail(email)
+      const demoActive = demoRes.data?.value?.active === true || clientSlug === 'pestflow-pro'
+      setIsDemoTenant(demoActive)
       setLoading(false)
     })
-  }, [tenantId])
+  }, [tenantId, clientSlug])
 
   async function handleUpgrade(tier: typeof TIERS[number]) {
     if (!tenantId) return
@@ -155,8 +159,8 @@ export default function BillingTab() {
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{upgradeError}</div>
       )}
 
-      {/* Tier upgrade cards — hidden for Elite (no upgrades available) */}
-      {subscription && subscription.tier < 4 && (
+      {/* Tier upgrade cards — only shown on demo tenant */}
+      {isDemoTenant && subscription && subscription.tier < 4 && (
         <div className="mb-6">
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Plans</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
