@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { FileText, LayoutGrid, Lock } from 'lucide-react'
 import { usePlan } from '../../hooks/usePlan'
 import { FeatureGate } from '../common/FeatureGate'
+import { supabase } from '../../lib/supabase'
 import PageHelpBanner from './PageHelpBanner'
 import { useSocialData } from './social/useSocialData'
 import CampaignsTab from './social/CampaignsTab'
@@ -11,6 +12,9 @@ import ConnectionsModal from './social/ConnectionsModal'
 import LegacyComposer from './social/LegacyComposer'
 import NewCampaignModal from './social/NewCampaignModal'
 import SocialUpgradeNudge from './social/SocialUpgradeNudge'
+import ZernioOnboardingBanner from './social/ZernioOnboardingBanner'
+
+const TENANT_ID = import.meta.env.VITE_TENANT_ID
 
 interface Props {
   onNavigate?: (tab: string) => void
@@ -32,9 +36,33 @@ export default function SocialTab({ onNavigate }: Props) {
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null)
   const [showConnections, setShowConnections] = useState(false)
   const [postFlow, setPostFlow] = useState<PostFlow>('none')
+  const [hasConnectedAccounts, setHasConnectedAccounts] = useState<boolean | null>(null)
 
   const failedCount = posts.filter(p => p.status === 'failed').length
   const isStarter = tier === 1
+
+  // Check if client has connected any Zernio social accounts
+  useEffect(() => {
+    if (!TENANT_ID || tier < 2) return
+    supabase.from('settings').select('value')
+      .eq('tenant_id', TENANT_ID).eq('key', 'integrations').maybeSingle()
+      .then(({ data }) => {
+        const accounts = data?.value?.zernio_accounts ?? {}
+        setHasConnectedAccounts(Object.keys(accounts).length > 0)
+      })
+  }, [tier])
+
+  // Re-check when ConnectionsModal closes (client may have just connected)
+  function handleConnectionsClose() {
+    setShowConnections(false)
+    if (!TENANT_ID || tier < 2) return
+    supabase.from('settings').select('value')
+      .eq('tenant_id', TENANT_ID).eq('key', 'integrations').maybeSingle()
+      .then(({ data }) => {
+        const accounts = data?.value?.zernio_accounts ?? {}
+        setHasConnectedAccounts(Object.keys(accounts).length > 0)
+      })
+  }
 
   if (loading) return <div className="p-8 text-center text-gray-400">Loading social data…</div>
 
@@ -49,21 +77,29 @@ export default function SocialTab({ onNavigate }: Props) {
           <Lock className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
           <div>
             <p className="text-sm font-semibold text-amber-800">Starter plan — Hands On mode</p>
-            <p className="text-xs text-amber-700 mt-0.5">Write posts manually and copy/paste to your social accounts. Upgrade to Grow for AI captions and social scheduling (2 posts/day via connected social accounts).</p>
+            <p className="text-xs text-amber-700 mt-0.5">
+              Social media scheduling is available on the Growth plan.
+              {onNavigate
+                ? <button onClick={() => onNavigate('billing')} className="underline ml-1">Upgrade to connect your accounts.</button>
+                : ' Upgrade to connect your accounts.'}
+            </p>
           </div>
         </div>
+      )}
+
+      {/* Zernio onboarding banner — Growth+ with no accounts connected yet */}
+      {!isStarter && hasConnectedAccounts === false && (
+        <ZernioOnboardingBanner onOpenConnections={() => setShowConnections(true)} />
       )}
 
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-semibold text-gray-900">Social Media</h2>
         <div className="flex gap-2">
-          {/* + New Post: available to all tiers (Hands On copy/paste for Starter) */}
           <button onClick={() => setPostFlow('choice')}
             className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700">
             + New Post
           </button>
-          {/* Connections: Grow and above (tier 2+) */}
           <FeatureGate minTier={2} featureName="Social Connections">
             <button onClick={() => setShowConnections(true)}
               className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
@@ -73,7 +109,7 @@ export default function SocialTab({ onNavigate }: Props) {
         </div>
       </div>
 
-      {/* Tab bar — labels always visible */}
+      {/* Tab bar */}
       <div className="flex border-b border-gray-200 mb-6">
         {TABS.map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
@@ -86,7 +122,6 @@ export default function SocialTab({ onNavigate }: Props) {
         ))}
       </div>
 
-      {/* Tab content */}
       {activeTab === 'campaigns' && (
         canAccess(3) ? (
           <CampaignsTab campaigns={campaigns} posts={posts}
@@ -98,7 +133,6 @@ export default function SocialTab({ onNavigate }: Props) {
         )
       )}
 
-      {/* Content Queue — visible to all tiers */}
       {activeTab === 'queue' && (
         <ContentQueueTab posts={posts} campaigns={campaigns}
           selectedCampaignId={selectedCampaignId} onRefresh={refresh} />
@@ -112,7 +146,6 @@ export default function SocialTab({ onNavigate }: Props) {
         )
       )}
 
-      {/* Choice modal */}
       {postFlow === 'choice' && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setPostFlow('none')}>
           <div className="max-w-md w-full bg-white rounded-xl shadow-xl p-6" onClick={e => e.stopPropagation()}>
@@ -150,7 +183,6 @@ export default function SocialTab({ onNavigate }: Props) {
         </div>
       )}
 
-      {/* Single post composer */}
       {postFlow === 'single' && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto" onClick={() => setPostFlow('none')}>
           <div className="max-w-4xl w-full bg-white rounded-xl shadow-xl p-6 my-8 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
@@ -159,14 +191,12 @@ export default function SocialTab({ onNavigate }: Props) {
         </div>
       )}
 
-      {/* Campaign creation */}
       {postFlow === 'campaign' && (
         <NewCampaignModal onClose={() => setPostFlow('none')} onCreated={() => { refresh(); setPostFlow('none'); setActiveTab('campaigns') }} />
       )}
 
-      {/* Connections modal */}
       {showConnections && (
-        <ConnectionsModal onClose={() => setShowConnections(false)} onNavigate={onNavigate} />
+        <ConnectionsModal onClose={handleConnectionsClose} onNavigate={onNavigate} />
       )}
     </div>
   )
