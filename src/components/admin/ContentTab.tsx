@@ -149,8 +149,11 @@ export default function ContentTab() {
       const { data: current } = await supabase.from('page_content').select('title, subtitle, intro, video_url, image_url').eq('tenant_id', tenantId).eq('page_slug', selectedSlug).maybeSingle()
       if (current) await supabase.from('page_snapshots').insert({ tenant_id: tenantId, page_slug: selectedSlug, snapshot_type: 'original', snapshot_data: current })
     }
-    const { error } = await supabase.from('page_content').upsert({ tenant_id: tenantId, page_slug: selectedSlug, ...form }, { onConflict: 'tenant_id,page_slug' })
+    const pageRow: Record<string, unknown> = { tenant_id: tenantId, page_slug: selectedSlug, ...form }
+    if (selectedSlug === 'home') pageRow.hero_headline = heroHeadline
+    const { error } = await supabase.from('page_content').upsert(pageRow, { onConflict: 'tenant_id,page_slug' })
     if (selectedSlug === 'home') {
+      // Also keep customization in sync for backwards compat with existing tenants
       const { data: custSnap } = await supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'customization').maybeSingle()
       const merged = { ...(custSnap?.value || {}), hero_headline: heroHeadline }
       await supabase.from('settings').upsert({ tenant_id: tenantId, key: 'customization', value: merged }, { onConflict: 'tenant_id,key' })

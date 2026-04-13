@@ -13,7 +13,7 @@ interface BusinessInfo {
 }
 interface Customization { hero_headline?: string }
 interface HeroMedia { youtube_id?: string; thumbnail_url?: string }
-interface HomeContent { title?: string; subtitle?: string; intro?: string }
+interface HomeContent { hero_headline?: string; title?: string; subtitle?: string; intro?: string }
 
 export default function ShellHero() {
   const [biz, setBiz] = useState<BusinessInfo>({})
@@ -30,7 +30,7 @@ export default function ShellHero() {
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'hero_media').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'customization').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
-        supabase.from('page_content').select('title,subtitle,intro').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
+        supabase.from('page_content').select('hero_headline,title,subtitle,intro').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
       ])
       if (bizRes.data?.value) setBiz(bizRes.data.value)
       if (mediaRes.data?.value) setHeroMedia(mediaRes.data.value)
@@ -40,7 +40,8 @@ export default function ShellHero() {
     })
   }, [])
 
-  const headline = custom.hero_headline?.trim()
+  const headline = homeContent.hero_headline?.trim()
+    || custom.hero_headline?.trim()
     || (biz.name ? `${biz.name} — Professional Pest Control` : 'Professional Pest Control You Can Trust')
 
   // Subtext: use page_content intro, then subtitle, then city-based fallback

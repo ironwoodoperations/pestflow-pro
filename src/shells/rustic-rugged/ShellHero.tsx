@@ -11,6 +11,7 @@ const PHOTOS = [
 
 interface Biz { name?: string; phone?: string; tagline?: string; address?: string }
 interface HeroMedia { thumbnail_url?: string }
+interface HomeContent { hero_headline?: string; subtitle?: string }
 
 const DOT_BG: React.CSSProperties = {
   backgroundImage: 'radial-gradient(circle, #d0d0d0 1px, transparent 1px)',
@@ -27,8 +28,8 @@ const Circle = ({ src, alt, style }: { src: string; alt: string; style: React.CS
 export default function ShellHero() {
   const [biz, setBiz] = useState<Biz>({})
   const [heroMedia, setHeroMedia] = useState<HeroMedia>({})
-  const [heroHeadline, setHeroHeadline] = useState('')
-  const [subtext, setSubtext] = useState('')
+  const [homeContent, setHomeContent] = useState<HomeContent>({})
+  const [customHeadline, setCustomHeadline] = useState('')
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
@@ -37,12 +38,12 @@ export default function ShellHero() {
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'hero_media').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'customization').maybeSingle(),
-        supabase.from('page_content').select('subtitle').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
+        supabase.from('page_content').select('hero_headline,subtitle').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
       ])
       if (bizRes.data?.value) setBiz(bizRes.data.value)
       if (mediaRes.data?.value) setHeroMedia(mediaRes.data.value)
-      if (custRes.data?.value?.hero_headline) setHeroHeadline(custRes.data.value.hero_headline)
-      if (contentRes.data?.subtitle) setSubtext(contentRes.data.subtitle)
+      if (custRes.data?.value?.hero_headline) setCustomHeadline(custRes.data.value.hero_headline)
+      if (contentRes.data) setHomeContent(contentRes.data as HomeContent)
     })
   }, [])
 
@@ -55,10 +56,10 @@ export default function ShellHero() {
       {/* Left — text on textured bg */}
       <div className="md:w-[60%] flex flex-col justify-center px-8 md:px-14 py-16" style={DOT_BG}>
         <h1 className="font-bold leading-tight mb-2" style={{ fontSize: 'clamp(32px,4.5vw,52px)', color: '#1a1a1a' }}>
-          {heroHeadline?.trim() || (biz.name ? `${biz.name} — Expert Pest Control` : 'Expert Pest Control')}
+          {homeContent.hero_headline?.trim() || customHeadline?.trim() || (biz.name ? `${biz.name} — Expert Pest Control` : 'Expert Pest Control')}
         </h1>
         <p className="font-bold italic mb-4" style={{ fontSize: 'clamp(28px,3.5vw,44px)', color: 'var(--color-primary)', lineHeight: 1.1 }}>
-          {subtext || biz.tagline || 'Pest Control'}
+          {homeContent.subtitle || biz.tagline || 'Pest Control'}
         </p>
         {city && (
           <p className="text-gray-500 mb-2 text-sm">Serving {city} and the Surrounding Area</p>

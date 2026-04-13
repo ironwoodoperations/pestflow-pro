@@ -5,6 +5,7 @@ import { resolveTenantId } from '../../lib/tenant'
 import { formatPhone } from '../../lib/formatPhone'
 
 interface Biz { name?: string; phone?: string }
+interface HomeContent { hero_headline?: string; subtitle?: string }
 
 const HERO_IMAGE = '/images/pests/tech_1.jpg'
 
@@ -16,7 +17,8 @@ const STRIPS = [
 
 export default function ShellHero() {
   const [biz, setBiz] = useState<Biz>({})
-  const [headline, setHeadline] = useState('Professional Pest Control You Can Trust')
+  const [homeContent, setHomeContent] = useState<HomeContent>({})
+  const [customHeadline, setCustomHeadline] = useState('')
   const [ctaText, setCtaText] = useState('Get a Free Quote')
   const [heroSubtext, setHeroSubtext] = useState('Call for Same-Day Service')
 
@@ -27,14 +29,19 @@ export default function ShellHero() {
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'customization').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
-        supabase.from('page_content').select('subtitle').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
+        supabase.from('page_content').select('hero_headline,subtitle').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
       ])
       if (bizRes.data?.value) setBiz({ name: bizRes.data.value.name, phone: bizRes.data.value.phone })
-      if (custRes.data?.value?.hero_headline) setHeadline(custRes.data.value.hero_headline)
+      if (custRes.data?.value?.hero_headline) setCustomHeadline(custRes.data.value.hero_headline)
       if (brandRes.data?.value?.cta_text) setCtaText(brandRes.data.value.cta_text)
+      if (contentRes.data) setHomeContent(contentRes.data as HomeContent)
       if (contentRes.data?.subtitle) setHeroSubtext(contentRes.data.subtitle)
     })
   }, [])
+
+  const headline = homeContent.hero_headline?.trim()
+    || customHeadline?.trim()
+    || (biz.name ? `${biz.name} — Professional Pest Control` : 'Professional Pest Control You Can Trust')
 
   const dialPhone = biz.phone ? `tel:${biz.phone.replace(/\D/g, '')}` : '#'
 
