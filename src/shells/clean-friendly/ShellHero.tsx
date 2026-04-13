@@ -50,7 +50,7 @@ export default function ShellHero() {
 
         <div className="relative z-10 text-center px-4 py-16">
           {biz.name && (
-            <p className="text-xl font-semibold tracking-widest uppercase mb-2" style={{ color: 'var(--color-primary)' }}>
+            <p className="text-xl font-semibold tracking-widest uppercase mb-2" style={{ color: 'rgba(255,255,255,0.9)' }}>
               {biz.name}
             </p>
           )}
@@ -70,7 +70,7 @@ export default function ShellHero() {
               {headline}
             </h1>
           )}
-          <p className="text-xl text-sky-200 mt-2 mb-6">{heroSubtext}</p>
+          <p className="text-xl mt-2 mb-6" style={{ color: 'rgba(255,255,255,0.8)' }}>{heroSubtext}</p>
           <Link
             to="/quote"
             style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }} className="inline-block font-bold px-8 py-4 rounded-full transition shadow-lg text-lg"

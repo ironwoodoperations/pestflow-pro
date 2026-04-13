@@ -72,7 +72,7 @@ export default function ShellHero() {
       <div className="relative z-10 max-w-3xl mx-auto text-center">
         {/* Tagline badge */}
         {biz.tagline && (
-          <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full mb-4" style={{ color: 'var(--color-primary)', border: '1px solid var(--color-primary-dark)' }}>
+          <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full mb-4" style={{ color: '#ffffff', border: '1px solid rgba(255,255,255,0.4)', backgroundColor: 'rgba(255,255,255,0.1)' }}>
             {biz.tagline}
           </span>
         )}
@@ -83,7 +83,7 @@ export default function ShellHero() {
         </h1>
 
         {/* Subtext */}
-        <p className="text-lg text-gray-300 mt-4 max-w-xl mx-auto">
+        <p className="text-lg mt-4 max-w-xl mx-auto" style={{ color: 'rgba(255,255,255,0.85)' }}>
           {subtext}
         </p>
 
@@ -107,7 +107,7 @@ export default function ShellHero() {
         </div>
 
         {/* Trust line */}
-        <p className="mt-6 text-sm text-gray-400">
+        <p className="mt-6 text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>
           {trustParts.join(' · ')}
         </p>
       </div>
