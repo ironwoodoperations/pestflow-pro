@@ -1,8 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import type { Prospect } from './types'
-import CredentialField from './CredentialField'
 import PreProvisionChecklist from './PreProvisionChecklist'
 
 const isValidEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)
@@ -18,11 +17,18 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
   const [showChecklist, setShowChecklist]   = useState(false)
   const [provisioning, setProvisioning]     = useState(false)
   const [error, setError]                   = useState<string | null>(null)
-  const [fbSaved, setFbSaved]               = useState(false)
-  const [gbSaved, setGbSaved]               = useState(false)
-  const [skipCreds, setSkipCreds]           = useState(false)
   const [sendingCreds, setSendingCreds]     = useState(false)
   const [sendingReveal, setSendingReveal]   = useState(false)
+  const [zernioAccounts, setZernioAccounts] = useState<Record<string, any> | null>(null)
+
+  useEffect(() => {
+    if (!form.tenant_id) return
+    supabase.from('settings').select('value')
+      .eq('tenant_id', form.tenant_id).eq('key', 'integrations').maybeSingle()
+      .then(({ data }) => {
+        if (data?.value?.zernio_accounts) setZernioAccounts(data.value.zernio_accounts)
+      })
+  }, [form.tenant_id])
 
   const resolvedAdminEmail =
     form.admin_email?.trim() ||
@@ -32,7 +38,7 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
     ''
 
   const canCreate = !!form.slug && !!resolvedAdminEmail && isValidEmail(resolvedAdminEmail)
-  const canReveal = skipCreds || (fbSaved && gbSaved)
+  const canReveal = true
 
   const sendCredentialsEmail = async () => {
     const adminEmail = form.admin_email?.trim() || form.email?.trim() || ''
@@ -216,35 +222,24 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
           <div className="border border-gray-700 rounded-lg p-4 space-y-4 bg-gray-900/40">
             <h4 className="font-semibold text-amber-300 text-sm">Reveal Call Checklist</h4>
 
-            <CredentialField
-              label="Facebook Page Access Token"
-              hint="Client authorizes during reveal call. Walk them to facebook.com/developers → their app → Access Token."
-              tenantId={form.tenant_id}
-              settingKey="facebook_access_token"
-              onSaved={() => setFbSaved(true)}
-            />
-
-            <CredentialField
-              label="Google Business Profile Token"
-              hint="Client authorizes via Google OAuth during reveal call."
-              tenantId={form.tenant_id}
-              settingKey="google_business_token"
-              onSaved={() => setGbSaved(true)}
-            />
+            {/* Zernio social connection status */}
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Social Media (via Zernio)</p>
+              {zernioAccounts && Object.keys(zernioAccounts).length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(zernioAccounts).map(([platform, info]: [string, any]) => (
+                    <span key={platform} className="inline-flex items-center gap-1 text-xs bg-emerald-900/50 text-emerald-300 border border-emerald-700 px-2 py-1 rounded">
+                      ✓ {platform.charAt(0).toUpperCase() + platform.slice(1)} connected
+                      {info?.page_name ? ` — ${info.page_name}` : ''}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-gray-500 italic">No social accounts connected via Zernio yet. Client connects during reveal call from their admin dashboard.</p>
+              )}
+            </div>
 
             <div className="space-y-1.5 pt-1">
-              <div className="flex items-center gap-2 text-sm text-gray-300">
-                <span className={fbSaved ? 'text-emerald-400' : 'text-gray-600'}>
-                  {fbSaved ? '☑' : '☐'}
-                </span>
-                Facebook token collected and saved
-              </div>
-              <div className="flex items-center gap-2 text-sm text-gray-300">
-                <span className={gbSaved ? 'text-emerald-400' : 'text-gray-600'}>
-                  {gbSaved ? '☑' : '☐'}
-                </span>
-                Google Business token collected and saved
-              </div>
               <div className="flex items-center gap-2 text-sm text-gray-300">
                 <span className="text-gray-600">☐</span>
                 Site URL confirmed working
@@ -254,11 +249,6 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
                 Admin login confirmed working
               </div>
             </div>
-
-            <label className="flex items-center gap-2 text-xs text-gray-500">
-              <input type="checkbox" checked={skipCreds} onChange={e => setSkipCreds(e.target.checked)} />
-              Skip credentials for now (override)
-            </label>
 
             <div className="flex flex-wrap gap-2 pt-1">
               <button
