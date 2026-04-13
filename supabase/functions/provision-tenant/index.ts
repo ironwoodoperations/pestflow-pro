@@ -329,6 +329,60 @@ Deno.serve(async (req: Request) => {
         .eq('id', onboarding_session_id)
     }
 
+    // Step 8: Create Zernio profile for social media posting (non-fatal)
+    try {
+      const ZERNIO_API_KEY = Deno.env.get('ZERNIO_API_KEY')
+      if (ZERNIO_API_KEY) {
+        const zernioRes = await fetch('https://zernio.com/api/v1/profiles', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${ZERNIO_API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: businessName || resolvedSlug,
+            description: `PestFlow Pro tenant: ${resolvedSlug}`,
+          }),
+        })
+        const zernioData = await zernioRes.json()
+        const zernioProfileId: string | undefined = zernioData?.profile?._id
+
+        if (zernioProfileId) {
+          console.log(`[provision-tenant] Zernio profile created: ${zernioProfileId}`)
+          const { data: existingIntg } = await supabase
+            .from('settings')
+            .select('value')
+            .eq('tenant_id', tenantId)
+            .eq('key', 'integrations')
+            .maybeSingle()
+          const currentIntg = existingIntg?.value ?? {}
+          await supabase
+            .from('settings')
+            .update({ value: { ...currentIntg, zernio_profile_id: zernioProfileId } })
+            .eq('tenant_id', tenantId)
+            .eq('key', 'integrations')
+
+          // Register webhook so Zernio sends account.connected + post status events
+          try {
+            const webhookUrl = `${SUPABASE_URL}/functions/v1/zernio-webhook`
+            await fetch('https://zernio.com/api/v1/webhooks', {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${ZERNIO_API_KEY}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                url: webhookUrl,
+                events: ['account.connected', 'post.published', 'post.failed', 'post.partial'],
+                profileId: zernioProfileId,
+              }),
+            })
+            console.log(`[provision-tenant] Zernio webhook registered: ${webhookUrl}`)
+          } catch (webhookErr: any) {
+            console.error('Zernio webhook registration failed (non-fatal):', webhookErr?.message)
+          }
+        } else {
+          console.warn('[provision-tenant] Zernio profile creation returned no ID:', JSON.stringify(zernioData))
+        }
+      }
+    } catch (zernioErr: any) {
+      console.error('Zernio profile creation failed (non-fatal):', zernioErr?.message)
+    }
+
     const liveUrl = `https://${resolvedSlug}.pestflowpro.com`
     return new Response(JSON.stringify({ success: true, tenant_id: tenantId, slug: resolvedSlug, url: liveUrl }), {
       headers: { 'Content-Type': 'application/json', ...CORS },
