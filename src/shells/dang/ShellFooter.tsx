@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { X } from "lucide-react";
+import { supabase } from "../../lib/supabase";
+import { resolveTenantId } from "../../lib/tenant";
 
 const FacebookIcon = () => (
   <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -22,6 +24,21 @@ const LinkedinIcon = () => (
 import dangLogo from "./assets/dang-logo.png";
 
 const Footer = () => {
+  const [linkedinUrl, setLinkedinUrl] = useState<string>('')
+
+  useEffect(() => {
+    resolveTenantId().then(async (tenantId) => {
+      if (!tenantId) return
+      const { data } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('tenant_id', tenantId)
+        .eq('key', 'social_links')
+        .maybeSingle()
+      if (data?.value?.linkedin) setLinkedinUrl(data.value.linkedin)
+    })
+  }, [])
+
   return (
     <footer className="bg-white py-12">
       <div className="container mx-auto px-4">
@@ -67,9 +84,11 @@ const Footer = () => {
           <a href="https://instagram.com/dangpestcontrol" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="w-14 h-14 rounded-full flex items-center justify-center text-white transition-all hover:brightness-110" style={{ backgroundColor: 'hsl(28, 100%, 50%)' }}>
             <InstagramIcon />
           </a>
-          <a href="https://www.linkedin.com/company/dangpestcontrol/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="w-14 h-14 rounded-full flex items-center justify-center text-white transition-all hover:brightness-110" style={{ backgroundColor: 'hsl(28, 100%, 50%)' }}>
-            <LinkedinIcon />
-          </a>
+          {linkedinUrl && (
+            <a href={linkedinUrl} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="w-14 h-14 rounded-full flex items-center justify-center text-white transition-all hover:brightness-110" style={{ backgroundColor: 'hsl(28, 100%, 50%)' }}>
+              <LinkedinIcon />
+            </a>
+          )}
           <a href="https://x.com/dangpestcontrol" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)" className="w-14 h-14 rounded-full flex items-center justify-center text-white transition-all hover:brightness-110" style={{ backgroundColor: 'hsl(28, 100%, 50%)' }}>
             <X className="w-6 h-6" />
           </a>
