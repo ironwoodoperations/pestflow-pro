@@ -5,33 +5,45 @@ interface Props {
   tenantId: string
 }
 
-const STEPS = [
-  'Client has a bundle.social account (create at bundle.social if needed)',
-  'Connect client\'s Facebook page in bundle.social workspace',
-  'Connect client\'s Instagram account in bundle.social workspace',
-  'Copy the bundle.social Team ID from workspace settings → General',
-  'Save Team ID below and confirm posts are scheduled successfully',
+// Late (getlate.dev) per-platform account IDs stored in settings.integrations.late_accounts
+const PLATFORMS = [
+  { key: 'facebook',        label: 'Facebook',        placeholder: 'e.g. acc_abc123' },
+  { key: 'instagram',       label: 'Instagram',       placeholder: 'e.g. acc_def456' },
+  { key: 'youtube',         label: 'YouTube',         placeholder: 'e.g. acc_ghi789' },
+  { key: 'google_business', label: 'Google Business', placeholder: 'e.g. acc_jkl012' },
 ]
+
+const STEPS = [
+  'Log in to Late dashboard (getlate.dev)',
+  'Connect client\'s Facebook page via Late OAuth',
+  'Connect client\'s Instagram account via Late OAuth',
+  'Copy each Account ID from Late dashboard → Accounts',
+  'Paste each Account ID below and save',
+]
+
+type LateAccounts = Record<string, string>
 
 export default function BundleSocialSetup({ tenantId }: Props) {
   const [open, setOpen]         = useState(false)
-  const [teamId, setTeamId]     = useState('')
+  const [accounts, setAccounts] = useState<LateAccounts>({
+    facebook: '', instagram: '', youtube: '', google_business: '',
+  })
   const [progress, setProgress] = useState<boolean[]>(Array(STEPS.length).fill(false))
-  const [saving, setSaving]     = useState(false)
-  const [saved, setSaved]       = useState(false)
+  const [saving, setSaving]     = useState<string | null>(null)
+  const [savedPlatform, setSavedPlatform] = useState<string | null>(null)
 
   useEffect(() => {
     if (!open) return
     async function load() {
-      // Load existing team ID from integrations settings
+      // Load existing Late account IDs from integrations settings
       const { data: integ } = await supabase
         .from('settings')
         .select('value')
         .eq('tenant_id', tenantId)
         .eq('key', 'integrations')
         .maybeSingle()
-      if (integ?.value?.bundle_social_team_id) {
-        setTeamId(integ.value.bundle_social_team_id)
+      if (integ?.value?.late_accounts) {
+        setAccounts(prev => ({ ...prev, ...integ.value.late_accounts }))
       }
       // Load checklist progress
       const { data: prog } = await supabase
@@ -47,26 +59,28 @@ export default function BundleSocialSetup({ tenantId }: Props) {
     load()
   }, [open, tenantId])
 
-  const saveTeamId = async () => {
-    if (!teamId.trim()) return
-    setSaving(true)
+  const savePlatformId = async (platformKey: string) => {
+    const accountId = accounts[platformKey]?.trim()
+    if (!accountId) return
+    setSaving(platformKey)
     try {
-      // Merge into existing integrations value
       const { data: existing } = await supabase
         .from('settings')
         .select('value')
         .eq('tenant_id', tenantId)
         .eq('key', 'integrations')
         .maybeSingle()
-      const merged = { ...(existing?.value || {}), bundle_social_team_id: teamId.trim() }
+      const currentInteg = existing?.value || {}
+      const currentLate = currentInteg.late_accounts || {}
+      const merged = { ...currentInteg, late_accounts: { ...currentLate, [platformKey]: accountId } }
       await supabase.from('settings').upsert(
         { tenant_id: tenantId, key: 'integrations', value: merged },
         { onConflict: 'tenant_id,key' }
       )
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
+      setSavedPlatform(platformKey)
+      setTimeout(() => setSavedPlatform(null), 2000)
     } finally {
-      setSaving(false)
+      setSaving(null)
     }
   }
 
@@ -80,7 +94,7 @@ export default function BundleSocialSetup({ tenantId }: Props) {
   }
 
   const allDone = progress.every(Boolean)
-  const hasTeamId = !!teamId.trim()
+  const connectedCount = PLATFORMS.filter(p => !!accounts[p.key]?.trim()).length
 
   return (
     <div className="border border-gray-700 rounded-lg overflow-hidden">
@@ -89,10 +103,10 @@ export default function BundleSocialSetup({ tenantId }: Props) {
         className="w-full flex items-center justify-between px-4 py-3 bg-gray-900 hover:bg-gray-800 transition text-left"
       >
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-gray-200">📱 bundle.social Setup</span>
-          {hasTeamId && (
+          <span className="text-sm font-semibold text-gray-200">📱 Social Media Setup (Late)</span>
+          {connectedCount > 0 && (
             <span className="text-xs px-1.5 py-0.5 rounded bg-indigo-900/50 text-indigo-300">
-              team ID saved
+              {connectedCount} account{connectedCount !== 1 ? 's' : ''} connected
             </span>
           )}
           {allDone && (
@@ -104,27 +118,32 @@ export default function BundleSocialSetup({ tenantId }: Props) {
 
       {open && (
         <div className="px-4 py-4 space-y-4 bg-gray-950">
-          {/* Team ID input */}
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-gray-400">bundle.social Team ID</label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={teamId}
-                onChange={e => setTeamId(e.target.value)}
-                placeholder="e.g. bdbe4976-6563-431d-affd-232eba8b143a"
-                className="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 font-mono"
-              />
-              <button
-                onClick={saveTeamId}
-                disabled={saving || !teamId.trim()}
-                className="px-3 py-1.5 bg-indigo-700 hover:bg-indigo-600 text-white text-xs font-medium rounded transition disabled:opacity-50"
-              >
-                {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save'}
-              </button>
-            </div>
+          {/* Per-platform Late Account ID inputs */}
+          <div className="space-y-3">
+            <label className="text-xs font-medium text-gray-400">Late Account IDs (getlate.dev)</label>
+            {PLATFORMS.map(({ key, label, placeholder }) => (
+              <div key={key} className="space-y-1">
+                <p className="text-xs text-gray-500">{label}</p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={accounts[key] ?? ''}
+                    onChange={e => setAccounts(prev => ({ ...prev, [key]: e.target.value }))}
+                    placeholder={placeholder}
+                    className="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 font-mono"
+                  />
+                  <button
+                    onClick={() => savePlatformId(key)}
+                    disabled={saving === key || !accounts[key]?.trim()}
+                    className="px-3 py-1.5 bg-indigo-700 hover:bg-indigo-600 text-white text-xs font-medium rounded transition disabled:opacity-50"
+                  >
+                    {saving === key ? 'Saving…' : savedPlatform === key ? '✓ Saved' : 'Save'}
+                  </button>
+                </div>
+              </div>
+            ))}
             <p className="text-xs text-gray-500">
-              Found in bundle.social workspace → Settings → General → Team ID
+              Found in Late dashboard → Accounts → copy the Account ID for each connected platform.
             </p>
           </div>
 
@@ -146,10 +165,10 @@ export default function BundleSocialSetup({ tenantId }: Props) {
             ))}
           </div>
 
-          {allDone && hasTeamId && (
+          {allDone && connectedCount > 0 && (
             <div className="bg-emerald-900/20 border border-emerald-700 rounded px-3 py-2">
-              <p className="text-xs text-emerald-400 font-medium">✓ bundle.social setup complete</p>
-              <p className="text-xs text-gray-500 mt-0.5">Social posting is enabled for this tenant.</p>
+              <p className="text-xs text-emerald-400 font-medium">✓ Social media setup complete</p>
+              <p className="text-xs text-gray-500 mt-0.5">Social posting via Late is enabled for this tenant.</p>
             </div>
           )}
         </div>

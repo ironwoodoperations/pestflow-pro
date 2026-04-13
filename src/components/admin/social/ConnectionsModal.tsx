@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Lock } from 'lucide-react'
+import { Lock, CheckCircle2, Circle } from 'lucide-react'
 import { usePlan } from '../../../hooks/usePlan'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../hooks/useTenant'
@@ -10,15 +10,15 @@ interface Props {
   onNavigate?: (tab: string) => void
 }
 
-type ProviderTab = 'export' | 'diy' | 'bundle' | 'full_auto'
+type ProviderTab = 'export' | 'diy' | 'connected' | 'full_auto'
 const TABS: { id: ProviderTab; label: string; tier: number }[] = [
   { id: 'export',    label: 'Hands On',      tier: 1 },
   { id: 'diy',       label: 'DIY',           tier: 2 },
-  { id: 'bundle',    label: 'Semi-Auto',     tier: 3 },
+  { id: 'connected', label: 'Semi-Auto',     tier: 3 },
   { id: 'full_auto', label: 'Full Autopilot', tier: 4 },
 ]
 
-const TIER_PROVIDER: Record<number, ProviderTab> = { 1: 'export', 2: 'diy', 3: 'bundle', 4: 'full_auto' }
+const TIER_PROVIDER: Record<number, ProviderTab> = { 1: 'export', 2: 'diy', 3: 'connected', 4: 'full_auto' }
 const PLAN_INFO: Record<number, { name: string; price: number }> = {
   1: { name: 'Starter', price: 149 },
   2: { name: 'Grow',    price: 249 },
@@ -26,38 +26,59 @@ const PLAN_INFO: Record<number, { name: string; price: number }> = {
   4: { name: 'Elite',   price: 499 },
 }
 
+const PLATFORMS = [
+  { key: 'facebook',         label: 'Facebook',         icon: '📘' },
+  { key: 'instagram',        label: 'Instagram',        icon: '📷' },
+  { key: 'youtube',          label: 'YouTube',          icon: '▶️' },
+  { key: 'google_business',  label: 'Google Business',  icon: '🔍' },
+]
+
+type LateAccounts = Record<string, string>
+
 export default function ConnectionsModal({ onClose, onNavigate }: Props) {
   const { tier } = usePlan()
   const { tenantId } = useTenant()
   const [activeTab, setActiveTab] = useState<ProviderTab>('export')
-  const [accountId, setAccountId] = useState('')
-  const [saving, setSaving] = useState(false)
+  // Single state object: { facebook: 'acc_xxx', instagram: '', ... }
+  const [lateAccounts, setLateAccounts] = useState<LateAccounts>({
+    facebook: '', instagram: '', youtube: '', google_business: '',
+  })
+  // Track which platform is currently saving
+  const [saving, setSaving] = useState<string | null>(null)
+
   const activeProvider = TIER_PROVIDER[tier] || 'export'
 
-  // Load existing accountId from settings.integrations
+  // Load existing Late account IDs from settings.integrations
   useEffect(() => {
     if (!tenantId) return
     supabase.from('settings').select('value')
       .eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle()
       .then(({ data }) => {
-        if (data?.value?.bundle_social_account_id) {
-          setAccountId(data.value.bundle_social_account_id)
-        }
+        const stored: LateAccounts = data?.value?.late_accounts ?? {}
+        setLateAccounts(prev => ({ ...prev, ...stored }))
       })
   }, [tenantId])
 
-  async function saveAccountId() {
+  async function savePlatformAccountId(platformKey: string) {
     if (!tenantId) return
-    setSaving(true)
-    const { data: existing } = await supabase.from('settings').select('value')
-      .eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle()
-    const current = existing?.value || {}
-    const { error } = await supabase.from('settings')
-      .upsert({ tenant_id: tenantId, key: 'integrations', value: { ...current, bundle_social_account_id: accountId.trim() } },
-        { onConflict: 'tenant_id,key' })
-    setSaving(false)
-    if (error) { toast.error('Failed to save account ID.') }
-    else { toast.success('Bundle.social account ID saved!') }
+    const accountId = lateAccounts[platformKey]?.trim()
+    setSaving(platformKey)
+    try {
+      const { data: existing } = await supabase.from('settings').select('value')
+        .eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle()
+      const current = existing?.value || {}
+      const currentLateAccounts = current.late_accounts || {}
+      const updatedLateAccounts = { ...currentLateAccounts, [platformKey]: accountId }
+      const { error } = await supabase.from('settings')
+        .upsert(
+          { tenant_id: tenantId, key: 'integrations', value: { ...current, late_accounts: updatedLateAccounts } },
+          { onConflict: 'tenant_id,key' }
+        )
+      if (error) { toast.error('Failed to save account ID.') }
+      else { toast.success(`${platformKey.replace('_', ' ')} account ID saved!`) }
+    } finally {
+      setSaving(null)
+    }
   }
 
   function ActiveBadge() {
@@ -74,6 +95,47 @@ export default function ConnectionsModal({ onClose, onNavigate }: Props) {
           ? <button onClick={() => { onClose(); onNavigate('billing') }} className="text-xs px-3 py-1.5 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600">Upgrade Plan →</button>
           : <a href="mailto:support@pestflow.ai?subject=Plan Upgrade Request" className="text-xs px-3 py-1.5 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 inline-block">Upgrade Plan →</a>
         }
+      </div>
+    )
+  }
+
+  function PlatformRows() {
+    return (
+      <div className="space-y-3">
+        {PLATFORMS.map(({ key, label, icon }) => {
+          const accountId = lateAccounts[key] ?? ''
+          const isConnected = !!accountId.trim()
+          return (
+            <div key={key} className="border border-gray-200 rounded-lg p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-700">{icon} {label}</span>
+                {isConnected
+                  ? <span className="flex items-center gap-1 text-xs text-emerald-600 font-medium"><CheckCircle2 className="w-3.5 h-3.5" />Connected</span>
+                  : <span className="flex items-center gap-1 text-xs text-gray-400"><Circle className="w-3.5 h-3.5" />Not connected</span>
+                }
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={accountId}
+                  onChange={e => setLateAccounts(prev => ({ ...prev, [key]: e.target.value }))}
+                  placeholder="Late Account ID (e.g. acc_abc123)"
+                  className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-400 font-mono"
+                />
+                <button
+                  onClick={() => savePlatformAccountId(key)}
+                  disabled={saving === key || !lateAccounts[key]?.trim()}
+                  className="text-xs px-3 py-1.5 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 disabled:opacity-50 whitespace-nowrap"
+                >
+                  {saving === key ? 'Saving…' : 'Save'}
+                </button>
+              </div>
+            </div>
+          )
+        })}
+        <p className="text-xs text-gray-400 pt-1">
+          To connect: go to Late dashboard → Connect → OAuth → copy the Account ID → paste above.
+        </p>
       </div>
     )
   }
@@ -132,10 +194,10 @@ export default function ConnectionsModal({ onClose, onNavigate }: Props) {
             </div>
           )}
 
-          {activeTab === 'bundle' && (
+          {activeTab === 'connected' && (
             <div className="space-y-3">
-              <h4 className="font-semibold text-gray-800">Multi-platform scheduling via bundle.social</h4>
-              <p className="text-xs text-gray-500">Approved posts in your Content Queue are automatically sent to your social accounts via bundle.social. No token required — posting is managed by PestFlow Pro on your behalf.</p>
+              <h4 className="font-semibold text-gray-800">Multi-platform scheduling</h4>
+              <p className="text-xs text-gray-500">Approved posts in your Content Queue are automatically published to your connected social accounts. Connect each platform below.</p>
               {tier < 3 ? <LockedBadge tabTier={3} /> : (
                 <>
                   <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-xs text-emerald-700 space-y-1">
@@ -143,26 +205,12 @@ export default function ConnectionsModal({ onClose, onNavigate }: Props) {
                     <ol className="list-decimal list-inside space-y-1 text-emerald-600">
                       <li>Write or generate posts in the Content Queue</li>
                       <li>Approve the post — it enters the publishing queue</li>
-                      <li>bundle.social delivers it to your connected accounts</li>
+                      <li>It's automatically delivered to your connected accounts</li>
                       <li>Track results in the Analytics tab</li>
                     </ol>
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-medium text-gray-700">Bundle.social Account ID</label>
-                    <input
-                      type="text"
-                      value={accountId}
-                      onChange={e => setAccountId(e.target.value)}
-                      placeholder="Enter your bundle.social account ID"
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
-                    />
-                    <button onClick={saveAccountId} disabled={saving || !accountId.trim()}
-                      className="text-xs px-3 py-1.5 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 disabled:opacity-50">
-                      {saving ? 'Saving…' : 'Save Account ID'}
-                    </button>
-                    <p className="text-xs text-gray-400">Provided by your PestFlow Pro account manager during setup.</p>
-                  </div>
-                  {activeProvider === 'bundle' && <ActiveBadge />}
+                  <PlatformRows />
+                  {activeProvider === 'connected' && <ActiveBadge />}
                 </>
               )}
             </div>
@@ -170,37 +218,25 @@ export default function ConnectionsModal({ onClose, onNavigate }: Props) {
 
           {activeTab === 'full_auto' && (
             <div className="space-y-3">
-              <h4 className="font-semibold text-gray-800">Full multi-platform posting via bundle.social</h4>
-              <p className="text-xs text-gray-500">Sit back and let us handle everything. We connect your accounts and manage your posting schedule across Facebook, Instagram, and more. Your posts go out consistently — without you lifting a finger. Included with your Elite plan.</p>
+              <h4 className="font-semibold text-gray-800">Full multi-platform posting</h4>
+              <p className="text-xs text-gray-500">Sit back and let us handle everything. We manage your posting schedule across Facebook, Instagram, and more. Your posts go out consistently — without you lifting a finger. Included with your Elite plan.</p>
               <ul className="text-xs text-gray-600 space-y-1">
                 {['Facebook', 'Instagram', 'Google Business Posts', 'Consistent weekly posting schedule', 'AI-generated captions tailored to your business'].map(item => (
                   <li key={item} className="flex items-center gap-2"><span className="text-emerald-500 font-bold">✓</span>{item}</li>
                 ))}
               </ul>
-              {tier >= 4 && (
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-medium text-gray-700">Bundle.social Account ID</label>
-                  <input
-                    type="text"
-                    value={accountId}
-                    onChange={e => setAccountId(e.target.value)}
-                    placeholder="Enter your bundle.social account ID"
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
-                  />
-                  <button onClick={saveAccountId} disabled={saving || !accountId.trim()}
-                    className="text-xs px-3 py-1.5 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 disabled:opacity-50">
-                    {saving ? 'Saving…' : 'Save Account ID'}
-                  </button>
-                  <p className="text-xs text-gray-400">Provided by your PestFlow Pro account manager during setup.</p>
-                </div>
+              {tier < 4 ? <LockedBadge tabTier={4} /> : (
+                <>
+                  <PlatformRows />
+                  {activeProvider === 'full_auto' && <ActiveBadge />}
+                </>
               )}
-              {tier < 4 ? <LockedBadge tabTier={4} /> : activeProvider === 'full_auto' && <ActiveBadge />}
             </div>
           )}
         </div>
 
         <div className="px-5 py-3 border-t bg-gray-50 text-xs text-gray-500">
-          Active mode: <span className="font-medium text-gray-700">{TABS.find(t => t.id === activeProvider || (t.id === 'bundle' && activeProvider === 'bundle'))?.label ?? 'Hands On'}</span>
+          Active mode: <span className="font-medium text-gray-700">{TABS.find(t => t.id === activeProvider)?.label ?? 'Hands On'}</span>
           <span className="ml-2 text-gray-400">(set by {PLAN_INFO[tier]?.name} plan)</span>
         </div>
       </div>
