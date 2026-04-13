@@ -1,5 +1,5 @@
 // Edge function: post-to-social
-// Posts content to social media via bundle.social API.
+// Posts content to social media via Late (getlate.dev) API.
 // JWT: true (requires auth token)
 // DEPLOY:
 //   supabase functions deploy post-to-social --project-ref biezzykcgzkrwdgqpsar
@@ -18,6 +18,17 @@ interface PostBody {
   scheduledFor?: string
   tenantId: string
   postId?: string  // existing social_posts row to update (created by frontend)
+  mediaUrl?: string
+}
+
+// Map frontend platform names to Late API platform keys
+const PLATFORM_MAP: Record<string, string> = {
+  facebook: 'facebook',
+  instagram: 'instagram',
+  youtube: 'youtube',
+  linkedin: 'linkedin',
+  google: 'google_business',
+  tiktok: 'tiktok',
 }
 
 serve(async (req) => {
@@ -36,11 +47,11 @@ serve(async (req) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-  const bundleApiKey = Deno.env.get('BUNDLE_SOCIAL_API') ?? ''
+  const lateApiKey = Deno.env.get('LATE_API_KEY') ?? ''
 
-  if (!bundleApiKey) {
+  if (!lateApiKey) {
     return new Response(
-      JSON.stringify({ error: 'Social posting not configured — BUNDLE_SOCIAL_API missing. Contact your account manager.' }),
+      JSON.stringify({ error: 'Social posting not configured — LATE_API_KEY missing. Contact your account manager.' }),
       { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
@@ -55,7 +66,7 @@ serve(async (req) => {
     })
   }
 
-  const { content, platforms, scheduledFor, tenantId, postId } = body
+  const { content, platforms, scheduledFor, tenantId, postId, mediaUrl } = body
 
   if (!content || !platforms?.length || !tenantId) {
     return new Response(JSON.stringify({ error: 'content, platforms, and tenantId are required' }), {
@@ -73,8 +84,6 @@ serve(async (req) => {
   ])
 
   const tier: number = subRes.data?.value?.tier ?? 1
-  const bundleAccountId: string | null = intgRes.data?.value?.bundle_social_account_id ?? null
-  const bundleTeamId: string | null = intgRes.data?.value?.bundle_social_team_id ?? null
 
   // Tier 1 (Starter): no scheduling allowed
   if (tier === 1) {
@@ -84,13 +93,8 @@ serve(async (req) => {
     )
   }
 
-  // bundle.social accountId required for posting
-  if (!bundleAccountId) {
-    return new Response(
-      JSON.stringify({ error: 'bundle.social account ID not configured. Add it in Social → Connections.' }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-  }
+  // Late account IDs stored in settings.integrations.late_accounts as { facebook: 'acc_xxx', ... }
+  const lateAccounts: Record<string, string> = intgRes.data?.value?.late_accounts ?? {}
 
   // Tier 2 (Grow): hard cap of 2 posts/day
   if (tier === 2) {
@@ -111,127 +115,106 @@ serve(async (req) => {
     }
   }
 
-  // bundle.social team ID (workspace ID) — stored in settings.integrations.bundle_social_team_id
-  if (!bundleTeamId) {
-    return new Response(
-      JSON.stringify({ error: 'bundle.social team ID not configured. Contact your account manager.' }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-  }
-  const teamId = bundleTeamId
+  // Post to each requested platform via Late API
+  const results: { platform: string; ok: boolean; latePostId?: string; error?: string }[] = []
 
-  // Map frontend platform names to bundle.social uppercase keys
-  const platformMap: Record<string, string> = {
-    facebook: 'FACEBOOK',
-    instagram: 'INSTAGRAM',
-    twitter: 'TWITTER',
-    linkedin: 'LINKEDIN',
-    tiktok: 'TIKTOK',
-    youtube: 'YOUTUBE',
-    pinterest: 'PINTEREST',
-    reddit: 'REDDIT',
-  }
-  const socialAccountTypes = platforms
-    .map((p) => platformMap[p.toLowerCase()] ?? p.toUpperCase())
+  for (const platform of platforms) {
+    const accountId = lateAccounts[platform]
 
-  // Build platform-specific data object
-  const postData: Record<string, unknown> = {}
-  for (const platform of socialAccountTypes) {
-    if (platform === 'FACEBOOK' || platform === 'INSTAGRAM') {
-      postData[platform] = { type: 'POST', text: content }
-    } else {
-      postData[platform] = { text: content }
-    }
-  }
-
-  // postDate: use scheduledFor if provided, otherwise now (immediate post)
-  const postDate = scheduledFor ?? new Date().toISOString()
-
-  // title: truncate content for bundle.social title field
-  const title = content.length > 80 ? content.slice(0, 77) + '...' : content
-
-  const bundleBody: Record<string, unknown> = {
-    teamId,
-    title,
-    postDate,
-    status: 'SCHEDULED',
-    socialAccountTypes,
-    data: postData,
-  }
-
-  console.log('[post-to-social] bundle.social request body:', JSON.stringify(bundleBody))
-
-  try {
-    const res = await fetch('https://api.bundle.social/api/v1/post', {
-      method: 'POST',
-      headers: {
-        'x-api-key': bundleApiKey,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(bundleBody),
-    })
-
-    const resData = await res.json()
-    console.log('[post-to-social] bundle.social response:', JSON.stringify(resData))
-
-    if (!res.ok) {
-      const errMsg = resData?.message || resData?.error || `bundle.social error: ${res.status}`
-      console.error('[post-to-social] bundle.social API error:', JSON.stringify(resData))
-
-      // Update existing post row to failed if postId provided
-      if (postId) {
-        await supabase.from('social_posts')
-          .update({ status: 'failed', error_msg: errMsg })
-          .eq('id', postId)
-      }
-
-      return new Response(
-        JSON.stringify({ error: errMsg }),
-        { status: res.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+    if (!accountId) {
+      results.push({ platform, ok: false, error: `No Late account connected for ${platform}` })
+      continue
     }
 
-    // Success — update existing post row if provided, otherwise insert
-    const platform = platforms.length > 1 ? 'both' : (platforms[0] as 'facebook' | 'instagram' | 'both')
-    const newStatus = scheduledFor ? 'scheduled' : 'published'
+    const lateBody: Record<string, unknown> = {
+      accountId,
+      platforms: [PLATFORM_MAP[platform] ?? platform],
+      content,
+    }
+    if (scheduledFor) lateBody.scheduledFor = scheduledFor
+    if (mediaUrl) lateBody.mediaUrls = [mediaUrl]
 
-    if (postId) {
-      await supabase.from('social_posts').update({
-        status: newStatus,
-        scheduled_for: scheduledFor || null,
-        published_at: scheduledFor ? null : new Date().toISOString(),
-        fb_post_id: resData?.id || 'bundle-social',
-        error_msg: null,
-      }).eq('id', postId)
-    } else {
-      await supabase.from('social_posts').insert({
-        tenant_id: tenantId,
-        platform,
-        caption: content,
-        status: newStatus,
-        scheduled_for: scheduledFor || null,
-        published_at: scheduledFor ? null : new Date().toISOString(),
-        fb_post_id: resData?.id || 'bundle-social',
+    console.log(`[post-to-social] Late API request for ${platform}:`, JSON.stringify(lateBody))
+
+    try {
+      const lateRes = await fetch('https://api.getlate.dev/v1/posts', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${lateApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(lateBody),
       })
-    }
 
-    return new Response(
-      JSON.stringify({ success: true, postId: resData?.id }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Network error'
-    console.error('[post-to-social] unexpected error:', msg)
+      const lateData = await lateRes.json()
+      console.log(`[post-to-social] Late API response for ${platform}:`, JSON.stringify(lateData))
+
+      if (!lateRes.ok) {
+        const errMsg = lateData?.error || lateData?.message || `Late API error: ${lateRes.status}`
+        results.push({ platform, ok: false, error: errMsg })
+      } else {
+        results.push({ platform, ok: true, latePostId: lateData?.id })
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Network error'
+      console.error(`[post-to-social] Late API network error for ${platform}:`, msg)
+      results.push({ platform, ok: false, error: msg })
+    }
+  }
+
+  const anyOk = results.some(r => r.ok)
+  const allFailed = results.every(r => !r.ok)
+
+  // Determine overall error message (if all failed)
+  if (allFailed) {
+    const errMsg = results.map(r => `${r.platform}: ${r.error}`).join('; ')
+    console.error('[post-to-social] all platforms failed:', errMsg)
 
     if (postId) {
       await supabase.from('social_posts')
-        .update({ status: 'failed', error_msg: msg })
+        .update({ status: 'failed', error_msg: errMsg })
         .eq('id', postId)
     }
 
     return new Response(
-      JSON.stringify({ error: msg }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: errMsg }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
+
+  // At least one platform succeeded — update the post row
+  const platform = platforms.length > 1 ? 'both' : (platforms[0] as 'facebook' | 'instagram' | 'both')
+  const newStatus = scheduledFor ? 'scheduled' : 'published'
+  const firstSuccessId = results.find(r => r.ok)?.latePostId ?? 'late-social'
+
+  if (postId) {
+    await supabase.from('social_posts').update({
+      status: newStatus,
+      scheduled_for: scheduledFor || null,
+      published_at: scheduledFor ? null : new Date().toISOString(),
+      fb_post_id: firstSuccessId,
+      error_msg: null,
+    }).eq('id', postId)
+  } else {
+    await supabase.from('social_posts').insert({
+      tenant_id: tenantId,
+      platform,
+      caption: content,
+      status: newStatus,
+      scheduled_for: scheduledFor || null,
+      published_at: scheduledFor ? null : new Date().toISOString(),
+      fb_post_id: firstSuccessId,
+    })
+  }
+
+  // Report partial failures if any
+  const failedPlatforms = results.filter(r => !r.ok)
+  const partialNote = failedPlatforms.length > 0
+    ? ` (${failedPlatforms.map(r => r.platform).join(', ')} failed)`
+    : ''
+
+  return new Response(
+    JSON.stringify({ success: true, postId: firstSuccessId, note: partialNote || undefined }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
 })

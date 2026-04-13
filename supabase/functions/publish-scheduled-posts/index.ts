@@ -4,10 +4,9 @@
 // If post_id is passed in the request body, only that specific post is processed
 // (used by the "Publish Now" button in the admin social tab).
 //
-// Posting provider priority:
-//   1. bundle.social  (if bundle_social_team_id is set in settings.integrations)
-//   2. Ayrshare       (if ayrshare_api_key is set — legacy)
-//   3. Facebook Graph API (fallback with facebook_access_token + facebook_page_id)
+// Posting provider: Late (getlate.dev)
+//   Per-platform accountIds stored in settings.integrations.late_accounts
+//   Fallback: Facebook Graph API (facebook_access_token + facebook_page_id)
 //
 // DEPLOY:
 //   supabase functions deploy publish-scheduled-posts --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
@@ -47,17 +46,21 @@ interface SocialPost {
 }
 
 interface IntegrationSettings {
-  bundle_social_team_id?: string
+  late_accounts?: Record<string, string>  // { facebook: 'acc_xxx', instagram: 'acc_yyy', ... }
+  bundle_social_team_id?: string          // kept for backwards compatibility
   facebook_access_token?: string
   facebook_page_id?: string
   ayrshare_api_key?: string
 }
 
-const PLATFORM_MAP: Record<string, string> = {
-  facebook: 'FACEBOOK',
-  instagram: 'INSTAGRAM',
-  twitter: 'TWITTER',
-  linkedin: 'LINKEDIN',
+// Map frontend platform names to Late API platform keys
+const LATE_PLATFORM_MAP: Record<string, string> = {
+  facebook: 'facebook',
+  instagram: 'instagram',
+  youtube: 'youtube',
+  linkedin: 'linkedin',
+  google: 'google_business',
+  tiktok: 'tiktok',
 }
 
 function toPlatformArray(platform: string): string[] {
@@ -71,7 +74,7 @@ serve(async (req) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-  const bundleApiKey = Deno.env.get('BUNDLE_SOCIAL_API') ?? ''
+  const lateApiKey = Deno.env.get('LATE_API_KEY') ?? ''
   const supabase = createClient(supabaseUrl, serviceRoleKey)
 
   let specificPostId: string | null = null
@@ -119,59 +122,63 @@ serve(async (req) => {
       .maybeSingle()
 
     const intg = (settingsData?.value ?? {}) as IntegrationSettings
+    const lateAccounts = intg.late_accounts ?? {}
 
-    // ── 1. bundle.social (primary) ──────────────────────────────────────────
-    if (intg.bundle_social_team_id && bundleApiKey) {
+    // ── 1. Late (getlate.dev) — primary provider ────────────────────────────
+    if (lateApiKey && Object.keys(lateAccounts).length > 0) {
       const platforms = toPlatformArray(post.platform)
-      const socialAccountTypes = platforms.map(p => PLATFORM_MAP[p.toLowerCase()] ?? p.toUpperCase())
+      let anyOk = false
+      const errors: string[] = []
 
-      const postData: Record<string, unknown> = {}
-      for (const platform of socialAccountTypes) {
-        postData[platform] = platform === 'FACEBOOK' || platform === 'INSTAGRAM'
-          ? { type: 'POST', text: post.caption }
-          : { text: post.caption }
-      }
-
-      const bundleBody: Record<string, unknown> = {
-        teamId: intg.bundle_social_team_id,
-        title: post.caption.length > 80 ? post.caption.slice(0, 77) + '...' : post.caption,
-        postDate: new Date().toISOString(),
-        status: 'SCHEDULED',
-        socialAccountTypes,
-        data: postData,
-      }
-
-      console.log(`[publish-scheduled-posts] bundle.social post ${post.id}:`, JSON.stringify(bundleBody))
-
-      try {
-        const res = await fetch('https://api.bundle.social/api/v1/post', {
-          method: 'POST',
-          headers: { 'x-api-key': bundleApiKey, 'Content-Type': 'application/json' },
-          body: JSON.stringify(bundleBody),
-        })
-        const data = await res.json()
-        console.log(`[publish-scheduled-posts] bundle.social response ${post.id}:`, JSON.stringify(data))
-
-        if (!res.ok) {
-          const errMsg = data?.message || data?.error || `bundle.social HTTP ${res.status}`
-          await supabase.from('social_posts')
-            .update({ status: 'failed', error_msg: errMsg })
-            .eq('id', post.id)
-          failed++
-        } else {
-          await supabase.from('social_posts').update({
-            status: 'published',
-            published_at: new Date().toISOString(),
-            fb_post_id: data?.id || 'bundle-social',
-            error_msg: null,
-          }).eq('id', post.id)
-          published++
+      for (const platform of platforms) {
+        const accountId = lateAccounts[platform]
+        if (!accountId) {
+          errors.push(`No Late account connected for ${platform}`)
+          continue
         }
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : 'Network error'
-        console.error(`[publish-scheduled-posts] bundle.social error ${post.id}:`, msg)
+
+        const lateBody: Record<string, unknown> = {
+          accountId,
+          platforms: [LATE_PLATFORM_MAP[platform] ?? platform],
+          content: post.caption,
+        }
+        if (post.image_url) lateBody.mediaUrls = [post.image_url]
+
+        console.log(`[publish-scheduled-posts] Late API post ${post.id} / ${platform}:`, JSON.stringify(lateBody))
+
+        try {
+          const res = await fetch('https://api.getlate.dev/v1/posts', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${lateApiKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(lateBody),
+          })
+          const data = await res.json()
+          console.log(`[publish-scheduled-posts] Late API response ${post.id} / ${platform}:`, JSON.stringify(data))
+
+          if (!res.ok) {
+            errors.push(`${platform}: ${data?.error || data?.message || `HTTP ${res.status}`}`)
+          } else {
+            anyOk = true
+          }
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : 'Network error'
+          console.error(`[publish-scheduled-posts] Late API error ${post.id} / ${platform}:`, msg)
+          errors.push(`${platform}: ${msg}`)
+        }
+      }
+
+      if (anyOk) {
+        await supabase.from('social_posts').update({
+          status: 'published',
+          published_at: new Date().toISOString(),
+          fb_post_id: 'late-social',
+          error_msg: errors.length > 0 ? errors.join('; ') : null,
+        }).eq('id', post.id)
+        published++
+      } else {
+        const errMsg = errors.join('; ') || 'Late API: no accounts configured'
         await supabase.from('social_posts')
-          .update({ status: 'failed', error_msg: msg })
+          .update({ status: 'failed', error_msg: errMsg })
           .eq('id', post.id)
         failed++
       }
