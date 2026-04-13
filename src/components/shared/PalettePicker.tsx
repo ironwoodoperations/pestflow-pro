@@ -1,16 +1,18 @@
-import { PALETTES } from '../../lib/shellThemes'
+import { PALETTES, type ShellPalette } from '../../lib/shellThemes'
 
 interface Props {
   primary: string
   accent: string
   onSelect: (primary: string, accent: string) => void
   dark?: boolean
+  palettes?: ShellPalette[]
 }
 
-export default function PalettePicker({ primary, accent, onSelect, dark = false }: Props) {
+export default function PalettePicker({ primary, accent, onSelect, dark = false, palettes }: Props) {
+  const displayPalettes = palettes ?? PALETTES
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-      {PALETTES.map(p => {
+      {displayPalettes.map(p => {
         const isActive = primary === p.primary && accent === p.accent
         return (
           <button

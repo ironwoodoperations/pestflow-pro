@@ -1,12 +1,13 @@
 import type { Prospect } from './types'
 import PaletteSwatches from './PaletteSwatches'
 
-const SHELLS = [
-  { id: 'modern-pro',     name: 'Modern Pro' },
-  { id: 'bold-local',     name: 'Bold & Local' },
-  { id: 'clean-friendly', name: 'Clean & Friendly' },
-  { id: 'rustic-rugged',  name: 'Rustic & Rugged' },
-  { id: 'youpest',        name: 'YouPest (Pro/Elite)' },
+const ALL_SHELLS = [
+  { id: 'metro-pro',     name: 'Metro Pro',         proOnly: true },
+  { id: 'modern-pro',    name: 'Modern Pro',         proOnly: false },
+  { id: 'bold-local',    name: 'Bold & Local',       proOnly: false },
+  { id: 'clean-friendly', name: 'Clean & Friendly',  proOnly: false },
+  { id: 'rustic-rugged', name: 'Rustic & Rugged',    proOnly: false },
+  { id: 'youpest',       name: 'YouPest (Pro/Elite)', proOnly: true },
 ]
 const CU_TOGGLES: [string, string][] = [
   ['show_license','Show License #'],['show_years','Show Years in Business'],
@@ -24,35 +25,52 @@ export default function BrandingSection({ form, setField, onBlur }: Props) {
   const br = (form.branding || {}) as Record<string, any>
   const cu = (form.customization || {}) as Record<string, any>
   const isProOrElite = form.tier === 'pro' || form.tier === 'elite'
+  const isFullCustom = form.build_path === 'full_custom'
 
   const setBr = (k: string, v: any) => setField('branding', { ...br, [k]: v })
   const setCu = (k: string, v: any) => setField('customization', { ...cu, [k]: v })
 
+  const availableShells = ALL_SHELLS.filter(s => !s.proOnly || isProOrElite)
+
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-2">
-        <div>
-          <label className="text-xs text-gray-400">Shell</label>
-          <select className={inp} value={br.template || ''}
-            onChange={e => { setBr('template', e.target.value); onBlur() }}>
-            <option value="">— Select —</option>
-            {SHELLS.filter(s => s.id !== 'youpest' || isProOrElite).map(s => (
-              <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="text-xs text-gray-400">CTA Button Text</label>
-          <input className={inp} value={br.cta_text || ''} onChange={e => setBr('cta_text', e.target.value)} onBlur={onBlur} />
-        </div>
-        {br.template && (
-          <PaletteSwatches
-            shell={br.template}
-            primary={br.primary_color || ''}
-            accent={br.accent_color || ''}
-            onSelect={(p, a) => { setField('branding', { ...br, primary_color: p, accent_color: a }); onBlur() }}
-          />
+
+        {/* Shell picker — hidden for full_custom */}
+        {isFullCustom ? (
+          <div className="col-span-2 rounded-lg bg-gray-700/40 border border-gray-600 p-3 text-xs text-gray-400 leading-relaxed">
+            <span className="font-semibold text-gray-300">Custom Build</span> — Shell and palette are determined during the custom build process. Colors will be extracted from the client's existing site.
+          </div>
+        ) : (
+          <>
+            <div>
+              <label className="text-xs text-gray-400">Shell</label>
+              <select className={inp} value={br.template || ''}
+                onChange={e => { setBr('template', e.target.value); onBlur() }}>
+                <option value="">— Select —</option>
+                {availableShells.map(s => (
+                  <option key={s.id} value={s.id}>
+                    {s.id === 'metro-pro' && isProOrElite ? `★ ${s.name} — Recommended for Pro` : s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-gray-400">CTA Button Text</label>
+              <input className={inp} value={br.cta_text || ''} onChange={e => setBr('cta_text', e.target.value)} onBlur={onBlur} />
+            </div>
+            {/* Palette picker — hidden for full_custom */}
+            {br.template && (
+              <PaletteSwatches
+                shell={br.template}
+                primary={br.primary_color || ''}
+                accent={br.accent_color || ''}
+                onSelect={(p, a) => { setField('branding', { ...br, primary_color: p, accent_color: a }); onBlur() }}
+              />
+            )}
+          </>
         )}
+
         <div>
           <label className="text-xs text-gray-400">Primary Color</label>
           <div className="flex gap-2">

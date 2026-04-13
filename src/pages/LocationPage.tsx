@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Shield, Leaf, MapPin, Star } from 'lucide-react'
 import { supabase } from '../lib/supabase'
@@ -8,6 +8,9 @@ import VideoImage from '../components/VideoImage'
 import LocationMap from '../components/shared/LocationMap'
 import { formatPhone } from '../lib/formatPhone'
 import { PEST_VIDEOS } from '../data/pestVideos'
+import { useTemplate } from '../context/TemplateContext'
+
+const MetroProCityPage = lazy(() => import('../shells/metro-pro/MetroProCityPage'))
 
 interface LocationData { city: string; hero_title: string; intro_video_url: string; meta_title?: string; meta_description?: string; focus_keyword?: string }
 interface OtherLocation { slug: string; city: string }
@@ -22,6 +25,7 @@ const SERVICES = [
 ]
 
 export default function LocationPage({ slug }: { slug: string }) {
+  const { template } = useTemplate()
   const [location, setLocation] = useState<LocationData>({ city: '', hero_title: '', intro_video_url: '' })
   const [otherLocations, setOtherLocations] = useState<OtherLocation[]>([])
   const [phone, setPhone] = useState('')
@@ -62,6 +66,10 @@ export default function LocationPage({ slug }: { slug: string }) {
     if (location.meta_description) setMeta('description', location.meta_description)
     if (location.focus_keyword) setMeta('keywords', location.focus_keyword)
   }, [location, city, bizName])
+
+  if (template === 'metro-pro') {
+    return <Suspense fallback={null}><MetroProCityPage slug={slug} /></Suspense>
+  }
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>

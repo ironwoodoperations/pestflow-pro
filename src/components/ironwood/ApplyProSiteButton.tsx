@@ -69,7 +69,7 @@ export default function ApplyProSiteButton({ prospectId, form, layout }: Props) 
           branding: {
             primary_color: br.primary_color || '#E87800',
             accent_color:  br.accent_color  || '#1a1a1a',
-            template:      'youpest',
+            template:      'metro-pro',
             cta_text:      br.cta_text      || 'Get a Free Quote',
             logo_url:      br.logo_url      || null,
             favicon_url:   br.favicon_url   || null,

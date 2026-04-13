@@ -1,10 +1,13 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Shield, Leaf, MapPin, Star } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
 import StructuredData from './StructuredData'
 import { PEST_PAGE_IMG, FALLBACK_PEST_IMG } from '../data/pestImages'
+import { useTemplate } from '../context/TemplateContext'
+
+const MetroProServicePage = lazy(() => import('../shells/metro-pro/MetroProServicePage'))
 
 export interface TreatmentStep { title: string; desc: string }
 export interface SpecialCard { title: string; desc: string }
@@ -28,6 +31,7 @@ const WHY = [
 ]
 
 export default function PestPageTemplate(props: PestPageProps) {
+  const { template } = useTemplate()
   const [content, setContent] = useState({ title: '', subtitle: '', intro: '', image_url: '', image_urls: [] as string[] })
   const [phone, setPhone] = useState('')
 
@@ -42,6 +46,10 @@ export default function PestPageTemplate(props: PestPageProps) {
       if (settingsRes.data?.value?.phone) setPhone(settingsRes.data.value.phone)
     })
   }, [props.pageSlug])
+
+  if (template === 'metro-pro') {
+    return <Suspense fallback={null}><MetroProServicePage {...props} /></Suspense>
+  }
 
   const heroTitle = content.title || props.heroTitle
   const pestImg = content.image_urls?.[0] || content.image_url || PEST_PAGE_IMG[props.pageSlug] || props.introImage || FALLBACK_PEST_IMG
