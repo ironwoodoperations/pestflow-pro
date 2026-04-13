@@ -48,7 +48,7 @@ export function usePublishPost({ tenantId, tier, form, aiCaptions, editingPostId
       resetForm(); setPublishing(false); onPosted?.(); return
     }
 
-    // Grow+ (tier 2+): call bundle.social via post-to-social edge function
+    // Grow+ (tier 2+): call Late API via post-to-social edge function
     const scheduledFor = (form.scheduleMode === 'later' || form.scheduleMode === 'smart') && form.scheduledFor
       ? new Date(form.scheduledFor).toISOString() : undefined
 
@@ -89,7 +89,7 @@ export function usePublishPost({ tenantId, tier, form, aiCaptions, editingPostId
         await supabase.from('social_posts').update({ status: 'failed', error_msg: errMsg }).eq('id', postId)
         toast.error(errMsg)
       } else {
-        toast.success(scheduledFor ? 'Post scheduled via bundle.social!' : 'Post published via bundle.social!')
+        toast.success(scheduledFor ? 'Post scheduled!' : 'Post published!')
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Network error'

@@ -3,7 +3,7 @@
 
 export const SOCIAL_LIMITS = {
   1: { // Starter — manual copy/paste only
-    postsPerDay: 0,         // no scheduling via bundle.social
+    postsPerDay: 0,         // no scheduling
     aiGenerationsPerDay: 0, // no AI generation
     captionsPerClick: 0,
     daysAhead: 0,
@@ -12,17 +12,17 @@ export const SOCIAL_LIMITS = {
     canUseCampaigns: false,
     provider: 'none',
   },
-  2: { // Grow — bundle.social with hard cap
-    postsPerDay: 2,         // HARD CAP 2 posts/day via bundle.social
+  2: { // Grow — Late API with hard cap
+    postsPerDay: 2,         // HARD CAP 2 posts/day via Late
     aiGenerationsPerDay: 5,
     captionsPerClick: 2,
     daysAhead: 0,           // today only
     canSchedule: true,
     canUseAI: true,
     canUseCampaigns: false,
-    provider: 'bundle_social',
+    provider: 'late',
   },
-  3: { // Pro — unlimited bundle.social
+  3: { // Pro — unlimited Late API
     postsPerDay: 999,
     aiGenerationsPerDay: 999,
     captionsPerClick: 999,
@@ -30,7 +30,7 @@ export const SOCIAL_LIMITS = {
     canSchedule: true,
     canUseAI: true,
     canUseCampaigns: true,
-    provider: 'bundle_social',
+    provider: 'late',
   },
   4: { // Elite — unlimited, 30-day window
     postsPerDay: 999,
@@ -40,7 +40,7 @@ export const SOCIAL_LIMITS = {
     canSchedule: true,
     canUseAI: true,
     canUseCampaigns: true,
-    provider: 'bundle_social',
+    provider: 'late',
   },
 } as const
 

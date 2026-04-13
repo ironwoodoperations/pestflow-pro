@@ -49,7 +49,7 @@ export default function SocialTab({ onNavigate }: Props) {
           <Lock className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
           <div>
             <p className="text-sm font-semibold text-amber-800">Starter plan — Hands On mode</p>
-            <p className="text-xs text-amber-700 mt-0.5">Write posts manually and copy/paste to your social accounts. Upgrade to Grow for AI captions and social scheduling (2 posts/day via bundle.social).</p>
+            <p className="text-xs text-amber-700 mt-0.5">Write posts manually and copy/paste to your social accounts. Upgrade to Grow for AI captions and social scheduling (2 posts/day via connected social accounts).</p>
           </div>
         </div>
       )}
