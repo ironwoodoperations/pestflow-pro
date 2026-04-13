@@ -70,4 +70,8 @@ export interface Prospect {
   redirect_map: RedirectRow[]
   redirect_map_complete: boolean
   source_url: string | null
+  ps_desktop_old: number | null
+  ps_mobile_old: number | null
+  ps_desktop_new: number | null
+  ps_mobile_new: number | null
 }

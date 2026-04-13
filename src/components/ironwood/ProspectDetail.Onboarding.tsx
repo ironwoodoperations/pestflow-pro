@@ -13,10 +13,6 @@ const PLANS = [
   { id: 'pro',     name: 'Pro',     price: 349, tier: 3 },
   { id: 'elite',   name: 'Elite',   price: 499, tier: 4 },
 ]
-const SOCIALS: [keyof Prospect, string][] = [
-  ['social_facebook','Facebook'],['social_instagram','Instagram'],
-  ['social_google','Google Business'],['social_youtube','YouTube'],['social_tiktok','TikTok'],
-]
 
 const inp = 'w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-emerald-500'
 
@@ -26,7 +22,7 @@ interface Props {
   onBlur: () => void
   prospect: Partial<Prospect>
   onUpdate: (updates: Partial<Prospect>) => void
-  onFocusSection?: (section: 'payment' | 'social') => void
+  onFocusSection?: (section: 'payment') => void
 }
 
 export default function OnboardingSection({ form, setField, onBlur, prospect, onUpdate, onFocusSection }: Props) {
@@ -49,8 +45,6 @@ export default function OnboardingSection({ form, setField, onBlur, prospect, on
 
   return (
     <div className="space-y-4">
-      {/* Section 2 — Package & Payment */}
-      <h3 className="font-semibold text-gray-200 border-b border-gray-700 pb-1">Package & Payment</h3>
       <div className="grid grid-cols-3 gap-3" onFocus={() => onFocusSection?.('payment')}>
         <div>
           <label className="text-xs text-gray-400">Package</label>
@@ -62,10 +56,7 @@ export default function OnboardingSection({ form, setField, onBlur, prospect, on
         <div>
           <label className="text-xs text-gray-400">Setup Fee ($)</label>
           <input
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            className={inp}
+            type="text" inputMode="numeric" pattern="[0-9]*" className={inp}
             value={form.setup_fee_amount ? String(form.setup_fee_amount) : ''}
             placeholder="e.g. 500"
             onChange={e => {
@@ -83,28 +74,7 @@ export default function OnboardingSection({ form, setField, onBlur, prospect, on
           </select>
         </div>
       </div>
-
       <PaymentLinkPanel prospect={prospect as Prospect} onUpdate={onUpdate} />
-
-      {/* Section 3 — Social Media */}
-      <div onFocus={() => onFocusSection?.('social')}>
-      <h3 className="font-semibold text-gray-200 border-b border-gray-700 pb-1 pt-2">Social Media</h3>
-      <label className="flex items-center gap-2 text-sm text-gray-300">
-        <input type="checkbox" checked={form.has_existing_social || false}
-          onChange={e => { setField('has_existing_social', e.target.checked); onBlur() }} />
-        Has existing social profiles
-      </label>
-      <div className="grid grid-cols-2 gap-3">
-        {SOCIALS.map(([key, label]) => (
-          <div key={String(key)}>
-            <label className="text-xs text-gray-400">{label}</label>
-            <input className={inp} value={(form as any)[key] || ''}
-              onChange={e => setField(String(key), e.target.value)} onBlur={onBlur} />
-          </div>
-        ))}
-      </div>
-      <p className="text-xs text-gray-500 italic">Confirm and seed these before the reveal call.</p>
-      </div>
     </div>
   )
 }

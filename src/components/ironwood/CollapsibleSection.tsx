@@ -6,6 +6,9 @@ interface CollapsibleSectionProps {
   isLocked?: boolean
   completedLabel?: string
   defaultOpen?: boolean
+  /** Controlled mode — if provided, internal state is ignored */
+  open?: boolean
+  onToggle?: () => void
   children: React.ReactNode
 }
 
@@ -15,17 +18,22 @@ export default function CollapsibleSection({
   isLocked = false,
   completedLabel,
   defaultOpen,
+  open: controlledOpen,
+  onToggle,
   children,
 }: CollapsibleSectionProps) {
-  const [open, setOpen] = useState(defaultOpen ?? !isComplete)
+  const [internalOpen, setInternalOpen] = useState(defaultOpen ?? !isComplete)
+  const isControlled = controlledOpen !== undefined
+  const open = isControlled ? controlledOpen : internalOpen
 
+  const toggle = () => isControlled ? onToggle?.() : setInternalOpen(o => !o)
   const complete = isComplete
 
   return (
     <div className={`border rounded-lg overflow-hidden ${complete ? 'border-green-800/70' : 'border-gray-700'}`}>
       <button
         type="button"
-        onClick={() => setOpen(o => !o)}
+        onClick={toggle}
         className={`w-full flex items-center justify-between px-4 py-2.5 text-left transition ${
           complete
             ? 'bg-green-950/50 hover:bg-green-950/80 text-green-300'
