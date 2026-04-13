@@ -12,17 +12,17 @@ export const SOCIAL_LIMITS = {
     canUseCampaigns: false,
     provider: 'none',
   },
-  2: { // Grow — Late API with hard cap
-    postsPerDay: 2,         // HARD CAP 2 posts/day via Late
+  2: { // Grow — Zernio with hard cap
+    postsPerDay: 2,         // HARD CAP 2 posts/day via Zernio
     aiGenerationsPerDay: 5,
     captionsPerClick: 2,
     daysAhead: 0,           // today only
     canSchedule: true,
     canUseAI: true,
     canUseCampaigns: false,
-    provider: 'late',
+    provider: 'zernio',
   },
-  3: { // Pro — unlimited Late API
+  3: { // Pro — unlimited Zernio
     postsPerDay: 999,
     aiGenerationsPerDay: 999,
     captionsPerClick: 999,
@@ -30,7 +30,7 @@ export const SOCIAL_LIMITS = {
     canSchedule: true,
     canUseAI: true,
     canUseCampaigns: true,
-    provider: 'late',
+    provider: 'zernio',
   },
   4: { // Elite — unlimited, 30-day window
     postsPerDay: 999,
@@ -40,7 +40,7 @@ export const SOCIAL_LIMITS = {
     canSchedule: true,
     canUseAI: true,
     canUseCampaigns: true,
-    provider: 'late',
+    provider: 'zernio',
   },
 } as const
 

@@ -48,7 +48,7 @@ export function usePublishPost({ tenantId, tier, form, aiCaptions, editingPostId
       resetForm(); setPublishing(false); onPosted?.(); return
     }
 
-    // Grow+ (tier 2+): call Late API via post-to-social edge function
+    // Grow+ (tier 2+): call Zernio via post-to-social edge function
     const scheduledFor = (form.scheduleMode === 'later' || form.scheduleMode === 'smart') && form.scheduledFor
       ? new Date(form.scheduledFor).toISOString() : undefined
 

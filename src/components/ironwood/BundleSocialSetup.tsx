@@ -1,100 +1,58 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
+import { toast } from 'sonner'
 
 interface Props {
   tenantId: string
 }
 
-// Late (getlate.dev) per-platform account IDs stored in settings.integrations.late_accounts
-const PLATFORMS = [
-  { key: 'facebook',        label: 'Facebook',        placeholder: 'e.g. acc_abc123' },
-  { key: 'instagram',       label: 'Instagram',       placeholder: 'e.g. acc_def456' },
-  { key: 'youtube',         label: 'YouTube',         placeholder: 'e.g. acc_ghi789' },
-  { key: 'google_business', label: 'Google Business', placeholder: 'e.g. acc_jkl012' },
-]
+// Zernio account IDs synced automatically via OAuth — stored in settings.integrations.zernio_accounts
+// This panel shows the current connection status for Scott's reference.
+// Clients connect their own accounts via the admin Social → Connections tab.
 
-const STEPS = [
-  'Log in to Late dashboard (getlate.dev)',
-  'Connect client\'s Facebook page via Late OAuth',
-  'Connect client\'s Instagram account via Late OAuth',
-  'Copy each Account ID from Late dashboard → Accounts',
-  'Paste each Account ID below and save',
-]
+interface ZernioAccount {
+  platform: string
+  accountId: string
+}
 
-type LateAccounts = Record<string, string>
+const PLATFORM_LABELS: Record<string, string> = {
+  facebook:       'Facebook',
+  instagram:      'Instagram',
+  youtube:        'YouTube',
+  googlebusiness: 'Google Business',
+  linkedin:       'LinkedIn',
+  tiktok:         'TikTok',
+}
 
 export default function BundleSocialSetup({ tenantId }: Props) {
   const [open, setOpen]         = useState(false)
-  const [accounts, setAccounts] = useState<LateAccounts>({
-    facebook: '', instagram: '', youtube: '', google_business: '',
-  })
-  const [progress, setProgress] = useState<boolean[]>(Array(STEPS.length).fill(false))
-  const [saving, setSaving]     = useState<string | null>(null)
-  const [savedPlatform, setSavedPlatform] = useState<string | null>(null)
+  const [accounts, setAccounts] = useState<ZernioAccount[]>([])
+  const [profileId, setProfileId] = useState('')
+  const [loading, setLoading]   = useState(false)
 
   useEffect(() => {
     if (!open) return
     async function load() {
-      // Load existing Late account IDs from integrations settings
+      setLoading(true)
       const { data: integ } = await supabase
         .from('settings')
         .select('value')
         .eq('tenant_id', tenantId)
         .eq('key', 'integrations')
         .maybeSingle()
-      if (integ?.value?.late_accounts) {
-        setAccounts(prev => ({ ...prev, ...integ.value.late_accounts }))
+      if (integ?.value) {
+        setProfileId(integ.value.zernio_profile_id ?? '')
+        const accs: ZernioAccount[] = Object.entries(integ.value.zernio_accounts ?? {}).map(
+          ([platform, accountId]) => ({ platform, accountId: accountId as string })
+        )
+        setAccounts(accs)
       }
-      // Load checklist progress
-      const { data: prog } = await supabase
-        .from('settings')
-        .select('value')
-        .eq('tenant_id', tenantId)
-        .eq('key', 'social_setup_progress')
-        .maybeSingle()
-      if (prog?.value?.steps) {
-        setProgress(prog.value.steps)
-      }
+      setLoading(false)
     }
     load()
   }, [open, tenantId])
 
-  const savePlatformId = async (platformKey: string) => {
-    const accountId = accounts[platformKey]?.trim()
-    if (!accountId) return
-    setSaving(platformKey)
-    try {
-      const { data: existing } = await supabase
-        .from('settings')
-        .select('value')
-        .eq('tenant_id', tenantId)
-        .eq('key', 'integrations')
-        .maybeSingle()
-      const currentInteg = existing?.value || {}
-      const currentLate = currentInteg.late_accounts || {}
-      const merged = { ...currentInteg, late_accounts: { ...currentLate, [platformKey]: accountId } }
-      await supabase.from('settings').upsert(
-        { tenant_id: tenantId, key: 'integrations', value: merged },
-        { onConflict: 'tenant_id,key' }
-      )
-      setSavedPlatform(platformKey)
-      setTimeout(() => setSavedPlatform(null), 2000)
-    } finally {
-      setSaving(null)
-    }
-  }
-
-  const toggleStep = async (i: number) => {
-    const next = progress.map((v, j) => j === i ? !v : v)
-    setProgress(next)
-    await supabase.from('settings').upsert(
-      { tenant_id: tenantId, key: 'social_setup_progress', value: { steps: next } },
-      { onConflict: 'tenant_id,key' }
-    )
-  }
-
-  const allDone = progress.every(Boolean)
-  const connectedCount = PLATFORMS.filter(p => !!accounts[p.key]?.trim()).length
+  const connectedCount = accounts.length
 
   return (
     <div className="border border-gray-700 rounded-lg overflow-hidden">
@@ -103,14 +61,16 @@ export default function BundleSocialSetup({ tenantId }: Props) {
         className="w-full flex items-center justify-between px-4 py-3 bg-gray-900 hover:bg-gray-800 transition text-left"
       >
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-gray-200">📱 Social Media Setup (Late)</span>
+          <span className="text-sm font-semibold text-gray-200">📱 Social Media Setup (Zernio)</span>
           {connectedCount > 0 && (
-            <span className="text-xs px-1.5 py-0.5 rounded bg-indigo-900/50 text-indigo-300">
+            <span className="text-xs px-1.5 py-0.5 rounded bg-emerald-900/50 text-emerald-400">
               {connectedCount} account{connectedCount !== 1 ? 's' : ''} connected
             </span>
           )}
-          {allDone && (
-            <span className="text-xs bg-emerald-900/50 text-emerald-400 px-1.5 py-0.5 rounded">✓ complete</span>
+          {!connectedCount && profileId && (
+            <span className="text-xs px-1.5 py-0.5 rounded bg-indigo-900/50 text-indigo-300">
+              profile ready — no accounts yet
+            </span>
           )}
         </div>
         <span className="text-gray-500 text-xs">{open ? '▲' : '▼'}</span>
@@ -118,58 +78,46 @@ export default function BundleSocialSetup({ tenantId }: Props) {
 
       {open && (
         <div className="px-4 py-4 space-y-4 bg-gray-950">
-          {/* Per-platform Late Account ID inputs */}
-          <div className="space-y-3">
-            <label className="text-xs font-medium text-gray-400">Late Account IDs (getlate.dev)</label>
-            {PLATFORMS.map(({ key, label, placeholder }) => (
-              <div key={key} className="space-y-1">
-                <p className="text-xs text-gray-500">{label}</p>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={accounts[key] ?? ''}
-                    onChange={e => setAccounts(prev => ({ ...prev, [key]: e.target.value }))}
-                    placeholder={placeholder}
-                    className="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 font-mono"
-                  />
-                  <button
-                    onClick={() => savePlatformId(key)}
-                    disabled={saving === key || !accounts[key]?.trim()}
-                    className="px-3 py-1.5 bg-indigo-700 hover:bg-indigo-600 text-white text-xs font-medium rounded transition disabled:opacity-50"
-                  >
-                    {saving === key ? 'Saving…' : savedPlatform === key ? '✓ Saved' : 'Save'}
-                  </button>
-                </div>
+          {loading ? (
+            <p className="text-xs text-gray-400">Loading…</p>
+          ) : (
+            <>
+              {/* Profile ID */}
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-gray-400">Zernio Profile ID</p>
+                {profileId
+                  ? <p className="text-xs text-emerald-400 font-mono">{profileId}</p>
+                  : <p className="text-xs text-amber-400">No Zernio profile — re-provision this tenant to generate one.</p>
+                }
               </div>
-            ))}
-            <p className="text-xs text-gray-500">
-              Found in Late dashboard → Accounts → copy the Account ID for each connected platform.
-            </p>
-          </div>
 
-          {/* 5-step checklist */}
-          <div className="space-y-2">
-            <p className="text-xs font-medium text-gray-400">Setup Checklist</p>
-            {STEPS.map((step, i) => (
-              <label key={i} className="flex items-start gap-2 cursor-pointer group">
-                <input
-                  type="checkbox"
-                  checked={progress[i]}
-                  onChange={() => toggleStep(i)}
-                  className="mt-0.5 accent-emerald-500"
-                />
-                <span className={`text-xs ${progress[i] ? 'text-emerald-400 line-through' : 'text-gray-300 group-hover:text-white'} transition`}>
-                  {step}
-                </span>
-              </label>
-            ))}
-          </div>
+              {/* Connected accounts */}
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-gray-400">Connected Accounts</p>
+                {accounts.length === 0 ? (
+                  <p className="text-xs text-gray-500">
+                    No accounts connected yet. Client connects their own accounts via the admin Social → Connections tab.
+                  </p>
+                ) : (
+                  accounts.map(({ platform, accountId }) => (
+                    <div key={platform} className="flex items-center justify-between">
+                      <span className="text-xs text-gray-300">{PLATFORM_LABELS[platform] ?? platform}</span>
+                      <span className="text-xs text-emerald-400 font-mono">{accountId}</span>
+                    </div>
+                  ))
+                )}
+              </div>
 
-          {allDone && connectedCount > 0 && (
-            <div className="bg-emerald-900/20 border border-emerald-700 rounded px-3 py-2">
-              <p className="text-xs text-emerald-400 font-medium">✓ Social media setup complete</p>
-              <p className="text-xs text-gray-500 mt-0.5">Social posting via Late is enabled for this tenant.</p>
-            </div>
+              {profileId && (
+                <div className="bg-emerald-900/20 border border-emerald-700 rounded px-3 py-2">
+                  <p className="text-xs text-emerald-400 font-medium">✓ Zernio profile provisioned</p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Client self-connects social accounts from their admin dashboard.
+                    Posting goes live the moment they connect.
+                  </p>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
