@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
 import RedirectMapTable, { type RedirectRow, type MatchType, STANDARD_ROUTES } from './RedirectMapTable'
@@ -63,11 +63,23 @@ function parseCsvRows(text: string): RedirectRow[] {
   return rows
 }
 
-function buildVercelJson(rows: RedirectRow[]): string {
+function normalizePath(p: string): string {
+  const s = p.trim()
+  return s.startsWith('/') ? s : `/${s}`
+}
+
+function buildVercelJson(rows: RedirectRow[]): { json: string; skipped: number } {
+  let skipped = 0
   const redirects = rows
-    .filter(r => r.match_type !== 'exact' && r.old_url && r.new_url && r.old_url !== r.new_url)
-    .map(r => ({ source: r.old_url, destination: r.new_url, permanent: true }))
-  return JSON.stringify({ redirects }, null, 2)
+    .filter(r => {
+      if (!r.old_url || !r.new_url) return false
+      const src = normalizePath(r.old_url)
+      const dst = normalizePath(r.new_url)
+      if (src === dst) { skipped++; return false }
+      return true
+    })
+    .map(r => ({ source: normalizePath(r.old_url), destination: normalizePath(r.new_url), permanent: true }))
+  return { json: JSON.stringify({ redirects }, null, 2), skipped }
 }
 
 export default function RedirectMapPanel({ prospectId, tenantId, redirectMap, redirectMapComplete, sourceUrl, onUpdated }: Props) {
@@ -79,6 +91,7 @@ export default function RedirectMapPanel({ prospectId, tenantId, redirectMap, re
   const [copied, setCopied]       = useState(false)
   const [srcUrl, setSrcUrl]       = useState(sourceUrl || '')
   const [autoMapping, setAutoMapping] = useState(false)
+  const [skippedDismissed, setSkippedDismissed] = useState(false)
   const saveTimer                 = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   // Load custom pages for this tenant
@@ -219,7 +232,7 @@ Return ONLY a valid JSON array, no markdown, no explanation:
     }
   }
 
-  const vercelJson = buildVercelJson(rows)
+  const { json: vercelJson, skipped: skippedCount } = useMemo(() => buildVercelJson(rows), [rows])
   const counts = {
     exact:  rows.filter(r => r.match_type === 'exact').length,
     slug:   rows.filter(r => r.match_type === 'slug_change').length,
@@ -315,6 +328,14 @@ Return ONLY a valid JSON array, no markdown, no explanation:
       {/* vercel.json output */}
       {rows.length > 0 && (
         <div>
+          {skippedCount > 0 && !skippedDismissed && (
+            <div className="flex items-center justify-between bg-amber-900/40 border border-amber-600/50 rounded px-3 py-2 mb-2">
+              <span className="text-xs text-amber-300">
+                ⚠ {skippedCount} redirect{skippedCount > 1 ? 's' : ''} skipped — source and destination were identical. These would cause redirect loops.
+              </span>
+              <button onClick={() => setSkippedDismissed(true)} className="text-amber-500 hover:text-amber-300 text-xs ml-3 leading-none">✕</button>
+            </div>
+          )}
           <div className="flex items-center justify-between mb-1">
             <label className="text-xs text-gray-400">Generated vercel.json redirects</label>
             <button
