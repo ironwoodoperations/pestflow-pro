@@ -98,7 +98,7 @@ export default function BillingTab() {
         bizRes.data?.value?.email ||
         ''
       setClientEmail(email)
-      const demoActive = demoRes.data?.value?.active === true || clientSlug === 'pestflow-pro'
+      const demoActive = demoRes.data?.value?.active === true || clientSlug === 'pestflow-pro' || clientSlug === ''
       setIsDemoTenant(demoActive)
       setLoading(false)
     })

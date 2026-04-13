@@ -13,8 +13,15 @@ import LegacyComposer from './social/LegacyComposer'
 import NewCampaignModal from './social/NewCampaignModal'
 import SocialUpgradeNudge from './social/SocialUpgradeNudge'
 import ZernioOnboardingBanner from './social/ZernioOnboardingBanner'
+import { FeatureGate } from '../common/FeatureGate'
 
 const TENANT_ID = import.meta.env.VITE_TENANT_ID
+
+function useIsDemoTenant() {
+  const parts = window.location.hostname.split('.')
+  const slug = parts.length >= 3 && window.location.hostname.endsWith('.pestflowpro.com') ? parts[0] : ''
+  return slug === 'pestflow-pro' || slug === ''
+}
 
 interface Props {
   onNavigate?: (tab: string) => void
@@ -40,6 +47,7 @@ export default function SocialTab({ onNavigate }: Props) {
 
   const failedCount = posts.filter(p => p.status === 'failed').length
   const isStarter = tier === 1
+  const isDemoTenant = useIsDemoTenant()
 
   // Check if client has connected any Zernio social accounts
   useEffect(() => {
@@ -79,9 +87,11 @@ export default function SocialTab({ onNavigate }: Props) {
             <p className="text-sm font-semibold text-amber-800">Starter plan — Hands On mode</p>
             <p className="text-xs text-amber-700 mt-0.5">
               Social media scheduling is available on the Growth plan.
-              {onNavigate
-                ? <button onClick={() => onNavigate('billing')} className="underline ml-1">Upgrade to connect your accounts.</button>
-                : ' Upgrade to connect your accounts.'}
+              {isDemoTenant
+                ? (onNavigate
+                    ? <button onClick={() => onNavigate('billing')} className="underline ml-1">Upgrade to connect your accounts.</button>
+                    : ' Upgrade to connect your accounts.')
+                : ' Contact us to enable social scheduling.'}
             </p>
           </div>
         </div>
@@ -128,8 +138,10 @@ export default function SocialTab({ onNavigate }: Props) {
             selectedCampaignId={selectedCampaignId}
             onCampaignSelect={id => { setSelectedCampaignId(id); if (id) setActiveTab('queue') }}
             onRefresh={refresh} />
-        ) : (
+        ) : isDemoTenant ? (
           <SocialUpgradeNudge planName="Pro" price="$349" onNavigate={onNavigate} />
+        ) : (
+          <FeatureGate minTier={3} featureName="Campaign Manager"><></></FeatureGate>
         )
       )}
 
@@ -141,8 +153,10 @@ export default function SocialTab({ onNavigate }: Props) {
       {activeTab === 'analytics' && (
         canAccess(4) ? (
           <SocialAnalyticsTab />
-        ) : (
+        ) : isDemoTenant ? (
           <SocialUpgradeNudge planName="Elite" price="$499" onNavigate={onNavigate} />
+        ) : (
+          <FeatureGate minTier={4} featureName="Social Analytics"><></></FeatureGate>
         )
       )}
 
@@ -175,7 +189,7 @@ export default function SocialTab({ onNavigate }: Props) {
                 </button>
               )}
             </div>
-            {!canAccess(3) && (
+            {!canAccess(3) && isDemoTenant && (
               <p className="text-xs text-gray-400 mb-4 text-center">Upgrade to Pro to unlock AI Campaign creation.</p>
             )}
             <button onClick={() => setPostFlow('none')} className="text-sm text-gray-400 hover:text-gray-600 w-full text-center">Cancel</button>
@@ -196,7 +210,7 @@ export default function SocialTab({ onNavigate }: Props) {
       )}
 
       {showConnections && (
-        <ConnectionsModal onClose={handleConnectionsClose} onNavigate={onNavigate} />
+        <ConnectionsModal onClose={handleConnectionsClose} onNavigate={onNavigate} isDemoTenant={isDemoTenant} />
       )}
     </div>
   )

@@ -50,7 +50,7 @@ export default function ComposerScheduler({
             onChange={e => onScheduledForChange(e.target.value)}
             min={new Date().toISOString().substring(0, 16)} max={maxDate} className={inputClass} />
           {schedulingDayCap && (
-            <p className="text-xs text-gray-400 mt-1">Pro plan scheduling limited to {schedulingDayCap} days. Upgrade to Elite for unlimited scheduling.</p>
+            <p className="text-xs text-gray-400 mt-1">Scheduling limited to {schedulingDayCap} days ahead on your current plan.</p>
           )}
         </div>
       )}
@@ -95,7 +95,7 @@ export default function ComposerScheduler({
 
       {isStarter && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
-          <p className="text-xs text-amber-800">Starter plan: posts are saved for you to copy and paste manually to your Facebook page. Upgrade to Grow to enable direct posting.</p>
+          <p className="text-xs text-amber-800">Posts are saved as drafts for you to copy and post manually. Contact us to enable direct posting.</p>
         </div>
       )}
 
