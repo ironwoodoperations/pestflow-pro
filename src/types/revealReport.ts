@@ -1,10 +1,3 @@
-export interface PageSpeedScores {
-  performance: number
-  seo: number
-  accessibility: number
-  bestPractices: number
-}
-
 export interface RevealReportData {
   // Business
   businessName: string
@@ -13,12 +6,6 @@ export interface RevealReportData {
   accentColor: string
   tier: string
   generatedAt: string
-
-  // PageSpeed (live from Google API)
-  desktop: PageSpeedScores | null
-  mobile: PageSpeedScores | null
-  oldSiteDesktop?: number
-  oldSiteMobile?: number
 
   // SEO
   seoScore: number

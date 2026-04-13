@@ -15,17 +15,37 @@ interface RevealProspect {
   pipeline_stage: string
   slug: string | null
   tenant_id: string | null
+  ps_desktop_old: number | null
+  ps_mobile_old: number | null
+  ps_desktop_new: number | null
+  ps_mobile_new: number | null
 }
 
 interface ReportTarget {
-  prospectId:    string
-  tenantId:      string
-  siteUrl:       string
-  oldSiteDesktop?: number
-  oldSiteMobile?:  number
+  prospectId:   string
+  tenantId:     string
+  siteUrl:      string
+  psDesktopOld: number | null
+  psMobileOld:  number | null
+  psDesktopNew: number | null
+  psMobileNew:  number | null
 }
 
-interface OldScores { desktop: string; mobile: string }
+interface Scores {
+  desktopOld: string
+  mobileOld:  string
+  desktopNew: string
+  mobileNew:  string
+}
+
+type ScoreField = keyof Scores
+
+const SCORE_COL: Record<ScoreField, string> = {
+  desktopOld: 'ps_desktop_old',
+  mobileOld:  'ps_mobile_old',
+  desktopNew: 'ps_desktop_new',
+  mobileNew:  'ps_mobile_new',
+}
 
 interface RevisionModal {
   prospectId: string
@@ -39,12 +59,13 @@ export default function RevealQueue() {
   const [revNotes, setRevNotes]   = useState('')
   const [saving, setSaving]       = useState<string | null>(null)
   const [reportTarget, setReportTarget] = useState<ReportTarget | null>(null)
-  const [oldScores, setOldScores]       = useState<Record<string, OldScores>>({})
+  const [scores, setScores]       = useState<Record<string, Scores>>({})
+  const [savedFlash, setSavedFlash] = useState<Record<string, boolean>>({})
 
   const load = useCallback(async () => {
     const { data } = await supabase
       .from('prospects')
-      .select('id, company_name, contact_name, phone, tier, build_path, pipeline_stage, slug, tenant_id')
+      .select('id, company_name, contact_name, phone, tier, build_path, pipeline_stage, slug, tenant_id, ps_desktop_old, ps_mobile_old, ps_desktop_new, ps_mobile_new')
       .eq('pipeline_stage', 'reveal_ready')
       .order('updated_at', { ascending: true })
     if (!data) { setLoading(false); return }
@@ -65,10 +86,37 @@ export default function RevealQueue() {
       return new Date(a.qa_passed_at).getTime() - new Date(b.qa_passed_at).getTime()
     })
     setProspects(enriched)
+
+    // Init score inputs from DB values
+    const init: Record<string, Scores> = {}
+    enriched.forEach(p => {
+      init[p.id] = {
+        desktopOld: p.ps_desktop_old != null ? String(p.ps_desktop_old) : '',
+        mobileOld:  p.ps_mobile_old  != null ? String(p.ps_mobile_old)  : '',
+        desktopNew: p.ps_desktop_new != null ? String(p.ps_desktop_new) : '',
+        mobileNew:  p.ps_mobile_new  != null ? String(p.ps_mobile_new)  : '',
+      }
+    })
+    setScores(init)
     setLoading(false)
   }, [])
 
   useEffect(() => { load() }, [load])
+
+  function setScore(prospectId: string, field: ScoreField, val: string) {
+    const num = val.replace(/\D/g, '').slice(0, 3)
+    setScores(prev => ({
+      ...prev,
+      [prospectId]: { ...(prev[prospectId] || { desktopOld: '', mobileOld: '', desktopNew: '', mobileNew: '' }), [field]: num },
+    }))
+  }
+
+  async function saveScore(prospectId: string, field: ScoreField, val: string) {
+    const num = val.trim() !== '' ? parseInt(val) : null
+    await supabase.from('prospects').update({ [SCORE_COL[field]]: num }).eq('id', prospectId)
+    setSavedFlash(prev => ({ ...prev, [prospectId]: true }))
+    setTimeout(() => setSavedFlash(prev => ({ ...prev, [prospectId]: false })), 1500)
+  }
 
   async function handleLaunch(p: RevealProspect) {
     setSaving(p.id)
@@ -125,19 +173,16 @@ export default function RevealQueue() {
 
   function openReport(p: RevealProspect) {
     if (!p.tenant_id || !p.slug) { toast.error('Missing tenant or slug — cannot generate report'); return }
-    const scores = oldScores[p.id] || { desktop: '', mobile: '' }
+    const s = scores[p.id] || { desktopOld: '', mobileOld: '', desktopNew: '', mobileNew: '' }
     setReportTarget({
-      prospectId:    p.id,
-      tenantId:      p.tenant_id,
-      siteUrl:       `https://${p.slug}.pestflowpro.com`,
-      oldSiteDesktop: scores.desktop ? parseInt(scores.desktop) : undefined,
-      oldSiteMobile:  scores.mobile  ? parseInt(scores.mobile)  : undefined,
+      prospectId:   p.id,
+      tenantId:     p.tenant_id,
+      siteUrl:      `https://${p.slug}.pestflowpro.com`,
+      psDesktopOld: s.desktopOld ? parseInt(s.desktopOld) : null,
+      psMobileOld:  s.mobileOld  ? parseInt(s.mobileOld)  : null,
+      psDesktopNew: s.desktopNew ? parseInt(s.desktopNew) : null,
+      psMobileNew:  s.mobileNew  ? parseInt(s.mobileNew)  : null,
     })
-  }
-
-  function setScore(prospectId: string, field: 'desktop' | 'mobile', val: string) {
-    const num = val.replace(/\D/g, '').slice(0, 3)
-    setOldScores(prev => ({ ...prev, [prospectId]: { ...(prev[prospectId] || { desktop: '', mobile: '' }), [field]: num } }))
   }
 
   if (loading) return <div className="p-8 text-gray-500 text-sm">Loading reveal queue…</div>
@@ -157,85 +202,110 @@ export default function RevealQueue() {
         </div>
       ) : (
         <div className="space-y-4">
-          {prospects.map((p, i) => (
-            <div key={p.id} className="bg-gray-900 border border-gray-700 rounded-xl p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs text-gray-500 font-mono">#{i + 1}</span>
-                    <h3 className="font-semibold text-white">{p.company_name}</h3>
-                    {tierBadge(p.tier)}
-                    <span className="text-xs text-gray-400">{pathLabel(p.build_path)}</span>
-                  </div>
-                  {p.contact_name && (
-                    <div className="text-xs text-gray-400 mt-1">
-                      {p.contact_name}{p.phone ? ` · ${p.phone}` : ''}
+          {prospects.map((p, i) => {
+            const s = scores[p.id] || { desktopOld: '', mobileOld: '', desktopNew: '', mobileNew: '' }
+            const allEmpty = !s.desktopOld && !s.mobileOld && !s.desktopNew && !s.mobileNew
+
+            return (
+              <div key={p.id} className="bg-gray-900 border border-gray-700 rounded-xl p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs text-gray-500 font-mono">#{i + 1}</span>
+                      <h3 className="font-semibold text-white">{p.company_name}</h3>
+                      {tierBadge(p.tier)}
+                      <span className="text-xs text-gray-400">{pathLabel(p.build_path)}</span>
                     </div>
-                  )}
-                  <div className="text-xs text-emerald-500 mt-1">
-                    ✓ QA passed {fmtDate(p.qa_passed_at)}
+                    {p.contact_name && (
+                      <div className="text-xs text-gray-400 mt-1">
+                        {p.contact_name}{p.phone ? ` · ${p.phone}` : ''}
+                      </div>
+                    )}
+                    <div className="text-xs text-emerald-500 mt-1">
+                      ✓ QA passed {fmtDate(p.qa_passed_at)}
+                    </div>
+
+                    {/* PageSpeed score inputs — 2×2 grid */}
+                    <div className="mt-3">
+                      {allEmpty && (
+                        <p className="text-xs text-gray-500 mb-2">
+                          Run PageSpeed at{' '}
+                          <a
+                            href="https://pagespeed.web.dev"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-violet-400 underline hover:text-violet-300"
+                          >
+                            pagespeed.web.dev
+                          </a>
+                          {' '}before the reveal call, then enter scores below.
+                        </p>
+                      )}
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-2" style={{ maxWidth: '260px' }}>
+                        {([
+                          { field: 'desktopOld' as ScoreField, label: 'Old Desktop' },
+                          { field: 'mobileOld'  as ScoreField, label: 'Old Mobile'  },
+                          { field: 'desktopNew' as ScoreField, label: 'New Desktop' },
+                          { field: 'mobileNew'  as ScoreField, label: 'New Mobile'  },
+                        ] as const).map(({ field, label }) => (
+                          <label key={field} className="flex flex-col gap-0.5">
+                            <span className="text-xs text-gray-500">{label}</span>
+                            <input
+                              type="number"
+                              min={0}
+                              max={100}
+                              placeholder="—"
+                              value={s[field]}
+                              onChange={e => setScore(p.id, field, e.target.value)}
+                              onBlur={e => saveScore(p.id, field, e.target.value)}
+                              className="w-16 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-center text-white text-xs focus:outline-none focus:border-gray-500"
+                            />
+                          </label>
+                        ))}
+                      </div>
+                      {savedFlash[p.id] && (
+                        <span className="text-xs text-emerald-400 mt-1 block">Saved ✓</span>
+                      )}
+                    </div>
                   </div>
-                  {/* Old site score inputs */}
-                  <div className="flex items-center gap-3 mt-2">
-                    <span className="text-xs text-gray-500">Old site scores (optional):</span>
-                    <label className="flex items-center gap-1 text-xs text-gray-400">
-                      Desktop
-                      <input
-                        type="text" inputMode="numeric" maxLength={3}
-                        value={oldScores[p.id]?.desktop || ''}
-                        onChange={e => setScore(p.id, 'desktop', e.target.value)}
-                        placeholder="—"
-                        className="w-10 bg-gray-800 border border-gray-700 rounded px-1.5 py-0.5 text-center text-white text-xs focus:outline-none focus:border-gray-500"
-                      />
-                    </label>
-                    <label className="flex items-center gap-1 text-xs text-gray-400">
-                      Mobile
-                      <input
-                        type="text" inputMode="numeric" maxLength={3}
-                        value={oldScores[p.id]?.mobile || ''}
-                        onChange={e => setScore(p.id, 'mobile', e.target.value)}
-                        placeholder="—"
-                        className="w-10 bg-gray-800 border border-gray-700 rounded px-1.5 py-0.5 text-center text-white text-xs focus:outline-none focus:border-gray-500"
-                      />
-                    </label>
-                  </div>
-                </div>
-                <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => openReport(p)}
-                      className="px-3 py-1.5 bg-violet-700 hover:bg-violet-600 text-white text-xs font-medium rounded-lg transition"
-                    >
-                      📄 Reveal Report
-                    </button>
-                    <a
-                      href="https://outlook.office.com/book/PestFlowProOnboarding@ironwoodoperationsgroup.com/?ismsaljsauthenabled"
-                      target="_blank" rel="noopener noreferrer"
-                      className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-lg transition"
-                    >
-                      📅 Book Reveal Call
-                    </a>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleLaunch(p)}
-                      disabled={saving === p.id}
-                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded-lg transition disabled:opacity-50"
-                    >
-                      {saving === p.id ? '…' : '🚀 Launch Approved'}
-                    </button>
-                    <button
-                      onClick={() => { setRevModal({ prospectId: p.id, companyName: p.company_name }); setRevNotes('') }}
-                      disabled={saving === p.id}
-                      className="px-3 py-1.5 bg-amber-700 hover:bg-amber-600 text-white text-xs rounded-lg transition disabled:opacity-50"
-                    >
-                      🔁 Revisions
-                    </button>
+
+                  <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => openReport(p)}
+                        className="px-3 py-1.5 bg-violet-700 hover:bg-violet-600 text-white text-xs font-medium rounded-lg transition"
+                      >
+                        📄 Reveal Report
+                      </button>
+                      <a
+                        href="https://outlook.office.com/book/PestFlowProOnboarding@ironwoodoperationsgroup.com/?ismsaljsauthenabled"
+                        target="_blank" rel="noopener noreferrer"
+                        className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-lg transition"
+                      >
+                        📅 Book Reveal Call
+                      </a>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleLaunch(p)}
+                        disabled={saving === p.id}
+                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded-lg transition disabled:opacity-50"
+                      >
+                        {saving === p.id ? '…' : '🚀 Launch Approved'}
+                      </button>
+                      <button
+                        onClick={() => { setRevModal({ prospectId: p.id, companyName: p.company_name }); setRevNotes('') }}
+                        disabled={saving === p.id}
+                        className="px-3 py-1.5 bg-amber-700 hover:bg-amber-600 text-white text-xs rounded-lg transition disabled:opacity-50"
+                      >
+                        🔁 Revisions
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
@@ -245,8 +315,10 @@ export default function RevealQueue() {
           prospectId={reportTarget.prospectId}
           tenantId={reportTarget.tenantId}
           siteUrl={reportTarget.siteUrl}
-          oldSiteDesktop={reportTarget.oldSiteDesktop}
-          oldSiteMobile={reportTarget.oldSiteMobile}
+          psDesktopOld={reportTarget.psDesktopOld}
+          psMobileOld={reportTarget.psMobileOld}
+          psDesktopNew={reportTarget.psDesktopNew}
+          psMobileNew={reportTarget.psMobileNew}
           onClose={() => setReportTarget(null)}
         />
       )}

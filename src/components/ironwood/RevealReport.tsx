@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect } from 'react'
 import { useRevealReportData } from '../../hooks/useRevealReportData'
 import ReportCover       from './report/ReportCover'
 import ReportPerformance from './report/ReportPerformance'
@@ -8,40 +8,19 @@ import ReportLocal       from './report/ReportLocal'
 import ReportTechnical   from './report/ReportTechnical'
 import ReportNextSteps   from './report/ReportNextSteps'
 
-const COUNTDOWN_START = 60
-
 interface Props {
-  prospectId: string
-  tenantId:   string
-  siteUrl:    string
-  oldSiteDesktop?: number
-  oldSiteMobile?:  number
+  prospectId:   string
+  tenantId:     string
+  siteUrl:      string
+  psDesktopOld: number | null
+  psMobileOld:  number | null
+  psDesktopNew: number | null
+  psMobileNew:  number | null
   onClose: () => void
 }
 
-export default function RevealReport({ prospectId, tenantId, siteUrl, oldSiteDesktop, oldSiteMobile, onClose }: Props) {
-  const { loading, pagespeedLoading, pagespeedError, error, data } = useRevealReportData({ prospectId, tenantId, siteUrl, oldSiteDesktop, oldSiteMobile })
-  const [countdown, setCountdown] = useState(COUNTDOWN_START)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-
-  // Countdown while PageSpeed is loading
-  useEffect(() => {
-    if (!pagespeedLoading) {
-      if (intervalRef.current) clearInterval(intervalRef.current)
-      return
-    }
-    setCountdown(COUNTDOWN_START)
-    intervalRef.current = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) {
-          if (intervalRef.current) clearInterval(intervalRef.current)
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
-  }, [pagespeedLoading])
+export default function RevealReport({ prospectId, tenantId, siteUrl, psDesktopOld, psMobileOld, psDesktopNew, psMobileNew, onClose }: Props) {
+  const { loading, error, data } = useRevealReportData({ prospectId, tenantId, siteUrl })
 
   // Close on Escape
   useEffect(() => {
@@ -80,44 +59,6 @@ export default function RevealReport({ prospectId, tenantId, siteUrl, oldSiteDes
     setTimeout(() => { printWindow.print() }, 500)
   }
 
-  const printBtn = pagespeedError ? (
-    // Scores failed (quota/rate limit) — still allow printing without scores
-    <button
-      onClick={handlePrint}
-      title={pagespeedError}
-      style={{
-        backgroundColor: '#d97706',
-        color: 'white',
-        padding: '8px 16px',
-        borderRadius: '6px',
-        border: 'none',
-        cursor: 'pointer',
-        fontSize: '14px',
-        fontWeight: 600,
-      }}
-    >
-      ⚠️ Scores Unavailable — Print Anyway
-    </button>
-  ) : (
-    <button
-      onClick={pagespeedLoading ? undefined : handlePrint}
-      disabled={pagespeedLoading}
-      style={{
-        backgroundColor: pagespeedLoading ? '#6b7280' : '#22c55e',
-        color: 'white',
-        padding: '8px 16px',
-        borderRadius: '6px',
-        border: 'none',
-        cursor: pagespeedLoading ? 'not-allowed' : 'pointer',
-        opacity: pagespeedLoading ? 0.7 : 1,
-        fontSize: '14px',
-        fontWeight: 600,
-      }}
-    >
-      {pagespeedLoading ? `⏳ Loading Scores... (${countdown}s)` : '🖨️ Print / Save PDF'}
-    </button>
-  )
-
   return (
     <div
       style={{
@@ -140,7 +81,21 @@ export default function RevealReport({ prospectId, tenantId, siteUrl, oldSiteDes
           {data && <span style={{ color: '#9ca3af', fontWeight: 400 }}> · {data.businessName}</span>}
         </span>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          {printBtn}
+          <button
+            onClick={handlePrint}
+            style={{
+              backgroundColor: '#22c55e',
+              color: 'white',
+              padding: '8px 16px',
+              borderRadius: '6px',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: 600,
+            }}
+          >
+            🖨️ Print Report
+          </button>
           <button
             onClick={onClose}
             style={{
@@ -191,7 +146,13 @@ export default function RevealReport({ prospectId, tenantId, siteUrl, oldSiteDes
           {data && (
             <>
               <ReportCover       data={data} />
-              <ReportPerformance data={data} pagespeedLoading={pagespeedLoading} />
+              <ReportPerformance
+                data={data}
+                desktopNew={psDesktopNew}
+                mobileNew={psMobileNew}
+                desktopOld={psDesktopOld}
+                mobileOld={psMobileOld}
+              />
               <ReportSEO         data={data} />
               <ReportAISearch    data={data} />
               <ReportLocal       data={data} />
