@@ -189,7 +189,7 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
       const result = await res.json()
       if (!result.success) { setError(result.error || 'Provision failed'); return }
       const now = new Date().toISOString()
-      onProvisioned({ tenant_id: result.tenant_id, provisioned_at: now, status: 'provisioned' })
+      onProvisioned({ tenant_id: result.tenant_id, provisioned_at: now, status: 'provisioned', pipeline_stage: 'it_in_progress' })
     } catch (e: any) {
       setError(e.message || 'Network error')
     } finally {
