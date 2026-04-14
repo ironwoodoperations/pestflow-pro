@@ -7,6 +7,7 @@ interface Props {
   setForm: (f: Record<string, any>) => void
   token: string
   tier?: string
+  buildPath?: string | null
 }
 
 const TEMPLATES = [
@@ -17,7 +18,7 @@ const TEMPLATES = [
   { value: 'metro-pro',     label: 'Metro Pro',          desc: 'Dark primary nav, sharp corners, diagonal hero. Enterprise and professional.', proOnly: true },
 ]
 
-export default function IntakeStep2Branding({ form, setForm, token, tier }: Props) {
+export default function IntakeStep2Branding({ form, setForm, token, tier, buildPath }: Props) {
   const [uploading, setUploading] = useState(false)
   const set = (k: string, v: any) => setForm({ ...form, [k]: v })
   const currentTemplate = form.template || 'modern-pro'
@@ -57,7 +58,7 @@ export default function IntakeStep2Branding({ form, setForm, token, tier }: Prop
         <p className="text-xs text-gray-400 mt-1">Best: PNG with transparent background, 200×60px</p>
       </div>
 
-      {tier === 'pro' ? (
+      {buildPath === 'full_custom' ? (
         <div className="rounded-xl border-l-4 border-indigo-500 bg-indigo-50 p-5 space-y-3">
           <p className="text-xs font-semibold text-indigo-500 uppercase tracking-widest">⚡ Pro Custom Build</p>
           <p className="text-sm text-indigo-900 font-medium leading-relaxed">
