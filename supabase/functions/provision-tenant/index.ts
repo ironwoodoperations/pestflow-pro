@@ -483,21 +483,50 @@ Deno.serve(async (req: Request) => {
           console.log('[provision-tenant] per-page SEO meta seeded')
         }
 
-        // 9c: Seed location_data row for primary city
+        // 9c: Seed location_data rows — primary city + nearby cities from zip-prefix lookup
         if (city) {
-          const citySlug = city.toLowerCase().replace(/[^a-z0-9]+/g, '-')
-          await supabase.from('location_data').upsert({
-            tenant_id:        tenantId,
-            city,
-            slug:             citySlug,
-            hero_title:       `Pest Control in ${city}${state ? ', ' + state : ''}`,
-            intro:            `${bizForSeo} provides professional pest control in ${city}${state ? ', ' + state : ''}. Call today for a free estimate.`,
-            is_live:          false,
-            meta_title:       `Pest Control ${city}${state ? ', ' + state : ''} | ${bizForSeo}`,
-            meta_description: metaDesc,
-            focus_keyword:    `pest control ${city.toLowerCase()}`,
-          }, { onConflict: 'tenant_id,city' })
-          console.log(`[provision-tenant] location_data seeded for ${city}`)
+          // Zip-prefix → nearby cities mapping for common TX/US metros
+          const ZIP_CITIES: Record<string, string[]> = {
+            '787': ['Austin', 'Round Rock', 'Cedar Park', 'Georgetown', 'Pflugerville', 'Kyle', 'Buda'],
+            '786': ['Austin', 'Round Rock', 'Cedar Park', 'Georgetown', 'Pflugerville', 'Kyle', 'Buda'],
+            '756': ['Tyler', 'Longview', 'Jacksonville', 'Lindale', 'Bullard', 'Whitehouse'],
+            '757': ['Tyler', 'Longview', 'Jacksonville', 'Lindale', 'Bullard', 'Whitehouse'],
+            '770': ['Houston', 'Sugar Land', 'Pearland', 'Pasadena', 'League City', 'Friendswood', 'Missouri City'],
+            '771': ['Houston', 'Sugar Land', 'Pearland', 'Pasadena', 'League City', 'Friendswood', 'Missouri City'],
+            '752': ['Dallas', 'Plano', 'Richardson', 'Garland', 'Irving', 'Mesquite', 'Arlington'],
+            '750': ['Dallas', 'Plano', 'Richardson', 'Garland', 'Irving', 'Mesquite', 'Arlington'],
+            '760': ['Fort Worth', 'Arlington', 'Hurst', 'Euless', 'Bedford', 'Keller', 'Grapevine'],
+            '761': ['Fort Worth', 'Arlington', 'Hurst', 'Euless', 'Bedford', 'Keller', 'Grapevine'],
+            '782': ['San Antonio', 'Schertz', 'Seguin', 'New Braunfels', 'Boerne', 'Converse', 'Universal City'],
+            '783': ['San Antonio', 'Schertz', 'Seguin', 'New Braunfels', 'Boerne', 'Converse', 'Universal City'],
+            '850': ['Phoenix', 'Scottsdale', 'Tempe', 'Mesa', 'Chandler', 'Gilbert', 'Glendale'],
+            '852': ['Phoenix', 'Scottsdale', 'Tempe', 'Mesa', 'Chandler', 'Gilbert', 'Glendale'],
+          }
+          // Extract zip from address (ib.zip preferred, else look for 5-digit in full address)
+          const zipRaw = (ib.zip || '').toString().trim()
+          const zipPrefix = zipRaw.length >= 3 ? zipRaw.slice(0, 3) : ''
+          const citiesForArea: string[] = zipPrefix && ZIP_CITIES[zipPrefix]
+            ? ZIP_CITIES[zipPrefix]
+            : [city]
+
+          // Always include the primary city if not already in the list
+          const allCities = citiesForArea.includes(city) ? citiesForArea : [city, ...citiesForArea]
+
+          for (const c of allCities) {
+            const cSlug = c.toLowerCase().replace(/[^a-z0-9]+/g, '-') + (state ? '-' + state.toLowerCase() : '')
+            const cMeta = c === city ? metaDesc : `Professional pest control services in ${c}${state ? ', ' + state : ''}. Licensed, insured, and locally trusted.`
+            await supabase.from('location_data').upsert({
+              tenant_id:        tenantId,
+              city:             c,
+              slug:             cSlug,
+              hero_title:       `${c} Pest Control`,
+              is_live:          false,
+              meta_title:       `${c} Pest Control | ${bizForSeo}`,
+              meta_description: cMeta,
+              focus_keyword:    `${c.toLowerCase()} pest control`,
+            }, { onConflict: 'tenant_id,city' })
+          }
+          console.log(`[provision-tenant] location_data seeded for ${allCities.length} cities (zip prefix: ${zipPrefix || 'none'})`)
         }
 
         // 9d: Seed 3 starter blog posts
