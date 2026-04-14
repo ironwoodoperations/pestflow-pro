@@ -27,20 +27,23 @@ export default function ShellHero() {
     subtitle: cached.subtitle,
   })
   const [customHeadline, setCustomHeadline] = useState(cached.customHeadline || '')
+  const [ctaText, setCtaText] = useState(cached.ctaText || 'Get a Free Quote')
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const [bizRes, mediaRes, custRes, contentRes] = await Promise.all([
+      const [bizRes, mediaRes, custRes, contentRes, brandRes] = await Promise.all([
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'hero_media').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'customization').maybeSingle(),
         supabase.from('page_content').select('hero_headline,subtitle').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
       ])
       if (bizRes.data?.value) setBiz(bizRes.data.value)
       if (mediaRes.data?.value) setHeroMedia(mediaRes.data.value)
       if (custRes.data?.value?.hero_headline) setCustomHeadline(custRes.data.value.hero_headline)
       if (contentRes.data) setHomeContent(contentRes.data as HomeContent)
+      if (brandRes.data?.value?.cta_text) setCtaText(brandRes.data.value.cta_text)
 
       writeHeroCache({
         headline: contentRes.data?.hero_headline,
@@ -51,6 +54,7 @@ export default function ShellHero() {
         phone: bizRes.data?.value?.phone,
         thumbnailUrl: mediaRes.data?.value?.thumbnail_url,
         youtubeId: mediaRes.data?.value?.youtube_id,
+        ctaText: brandRes.data?.value?.cta_text,
       })
     })
   }, [])
@@ -79,7 +83,7 @@ export default function ShellHero() {
           <div className="flex flex-wrap gap-3 justify-center">
             <a href="/quote" className="font-bold rounded-full px-8 py-3 transition hover:opacity-90"
               style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-text-on-primary)' }}>
-              Get a Quote
+              {ctaText}
             </a>
             {biz.phone && (
               <a href={`tel:${biz.phone.replace(/\D/g, '')}`}

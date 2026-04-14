@@ -8,15 +8,13 @@ interface Props {
   form: Partial<Prospect>
 }
 
-const FIELDS: { key: string; label: string; placeholder: string; secret?: boolean }[] = [
-  { key: 'google_place_id',          label: 'Google Place ID',          placeholder: 'ChIJ…' },
-  { key: 'facebook_page_id',         label: 'Facebook Page ID',         placeholder: '1234567890' },
-  { key: 'facebook_access_token',    label: 'Facebook Access Token',    placeholder: 'EAAxx…', secret: true },
-  { key: 'google_maps_embed_url',    label: 'Google Maps Embed URL',    placeholder: 'https://www.google.com/maps/embed?pb=…' },
-  { key: 'google_analytics_id',      label: 'Google Analytics ID',      placeholder: 'G-XXXXXXXXXX' },
-  { key: 'google_search_console_url',label: 'Google Search Console URL',placeholder: 'https://search.google.com/search-console/…' },
-  { key: 'google_api_key',           label: 'Google API Key',           placeholder: 'AIzaSy…', secret: true },
-  { key: 'owner_sms_number',         label: 'Owner SMS Number',         placeholder: '+15551234567' },
+const FIELDS: { key: string; label: string; placeholder: string; hint: string; secret?: boolean }[] = [
+  { key: 'google_place_id',          label: 'Google Place ID',          placeholder: 'ChIJ…',                           hint: 'Search for the business on Google Maps → look in the URL for "place/" or use PlaceID Finder.' },
+  { key: 'google_maps_embed_url',    label: 'Google Maps Embed URL',    placeholder: 'https://www.google.com/maps/embed?pb=…', hint: 'Google Maps → Share → Embed a map → copy the src URL from the iframe code.' },
+  { key: 'google_analytics_id',      label: 'Google Analytics ID',      placeholder: 'G-XXXXXXXXXX',                    hint: 'Google Analytics → Admin → Data Streams → select stream → Measurement ID (starts with G-).' },
+  { key: 'google_search_console_url',label: 'Google Search Console URL',placeholder: 'https://search.google.com/…',     hint: 'From Google Search Console → copy the property URL from the property selector dropdown.' },
+  { key: 'google_api_key',           label: 'Google API Key',           placeholder: 'AIzaSy…',                         hint: 'Google Cloud Console → APIs & Services → Credentials → create or copy an API key.', secret: true },
+  { key: 'owner_sms_number',         label: 'Owner SMS Number',         placeholder: '+15551234567',                    hint: 'E.164 format required (country code + area code + number, no dashes or spaces).' },
 ]
 
 const GSC_KEY = 'google_search_console_verification'
@@ -82,10 +80,13 @@ export default function IntegrationsSection({ prospectId, form }: Props) {
       {open && (
         <div className="bg-gray-900 rounded-lg p-4 space-y-3">
           <p className="text-xs text-gray-500">Per-client keys collected during or after the reveal call. Platform keys (Pexels, Textbelt) are Doppler-only and not shown here.</p>
-          <div className="grid grid-cols-1 gap-3">
+          <div className="text-xs bg-indigo-950 border border-indigo-700 rounded px-3 py-2 text-indigo-300">
+            <span className="font-semibold">Facebook:</span> Handled via Zernio OAuth in the Social section — no Facebook credentials needed here.
+          </div>
+          <div className="grid grid-cols-1 gap-4">
             {FIELDS.map(f => (
               <div key={f.key}>
-                <label className="block text-xs text-gray-400 mb-0.5">{f.label}</label>
+                <label className="block text-xs font-medium text-gray-300 mb-0.5">{f.label}</label>
                 <div className="flex gap-2">
                   <input
                     type={f.secret && !show[f.key] ? 'password' : 'text'}
@@ -101,6 +102,7 @@ export default function IntegrationsSection({ prospectId, form }: Props) {
                     </button>
                   )}
                 </div>
+                <p className="text-xs text-gray-600 mt-0.5">{f.hint}</p>
               </div>
             ))}
           </div>
