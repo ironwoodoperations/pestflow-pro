@@ -27,9 +27,7 @@ interface Props {
 
 export default function OnboardingSection({ form, setField, onBlur, prospect, onUpdate, onFocusSection }: Props) {
   const handlePackage = (id: string) => {
-    const pkg = PACKAGES.find(p => p.id === id)
     setField('package_id', id)
-    if (pkg) setField('setup_fee_amount', pkg.fee)
     onBlur()
   }
   const handlePlan = (id: string) => {
@@ -45,26 +43,13 @@ export default function OnboardingSection({ form, setField, onBlur, prospect, on
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-3 gap-3" onFocus={() => onFocusSection?.('payment')}>
+      <div className="grid grid-cols-2 gap-3" onFocus={() => onFocusSection?.('payment')}>
         <div>
           <label className="text-xs text-gray-400">Package</label>
           <select className={inp} value={form.package_id || ''} onChange={e => handlePackage(e.target.value)}>
             <option value="">— Select —</option>
             {PACKAGES.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
-        </div>
-        <div>
-          <label className="text-xs text-gray-400">Setup Fee ($)</label>
-          <input
-            type="text" inputMode="numeric" pattern="[0-9]*" className={inp}
-            value={form.setup_fee_amount ? String(form.setup_fee_amount) : ''}
-            placeholder="e.g. 500"
-            onChange={e => {
-              const raw = e.target.value.replace(/[^0-9]/g, '')
-              setField('setup_fee_amount', raw === '' ? 0 : parseInt(raw, 10))
-            }}
-            onBlur={onBlur}
-          />
         </div>
         <div>
           <label className="text-xs text-gray-400">Plan</label>

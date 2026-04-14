@@ -1,8 +1,21 @@
-// S67 - force rebuild
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import type { Prospect } from './types'
+
+// Tier-based preset fee options
+const FEE_OPTIONS: Record<number, number[]> = {
+  1: [0, 500, 750, 1000],
+  2: [1000, 1250, 1500],
+  3: [2000, 2500, 3000, 3500],
+  4: [4000, 5000, 7500, 10000],
+}
+const DEFAULT_FEE: Record<number, number> = { 1: 500, 2: 1000, 3: 2000, 4: 4000 }
+
+function getInitialFee(prospect: Partial<Prospect>): number {
+  if (prospect.setup_fee_amount != null && prospect.setup_fee_amount > 0) return prospect.setup_fee_amount
+  return DEFAULT_FEE[prospect.plan_tier || 1] ?? 500
+}
 
 interface Props {
   prospect: Partial<Prospect>
@@ -16,9 +29,13 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
   const [confirmWaive, setConfirmWaive]       = useState(false)
   const [sendingInvoice, setSendingInvoice]   = useState(false)
   const [markingSent, setMarkingSent]         = useState(false)
+  const [feeAmount, setFeeAmount]             = useState<number>(() => getInitialFee(prospect))
+  const [customFee, setCustomFee]             = useState(false)
 
-  const setupFeeAmount = prospect.setup_fee_amount || 0
-  const hasSetupFee    = setupFeeAmount > 0
+  const tier = prospect.plan_tier || 1
+  const feeOptions = FEE_OPTIONS[tier] || FEE_OPTIONS[1]
+  const isPreset = feeOptions.includes(feeAmount)
+  const hasSetupFee = feeAmount > 0
   const resolvedEmail  =
     prospect.email?.trim() ||
     (prospect as any).business_info?.email?.trim() ||
@@ -32,6 +49,12 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
     if (!resolvedEmail) {
       setError('No email address found. Add an email in the Contact section or import intake data first.')
       return
+    }
+
+    // Persist the selected fee so it's visible in other views
+    if (prospect.id) {
+      await supabase.from('prospects').update({ setup_fee_amount: feeAmount }).eq('id', prospect.id)
+      onUpdate({ setup_fee_amount: feeAmount })
     }
 
     // $0 fee: show waive confirmation instead of calling Stripe
@@ -52,7 +75,7 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
         return
       }
       const accessToken = session.access_token
-      const amountCents = Math.round(setupFeeAmount * 100)
+      const amountCents = Math.round(feeAmount * 100)
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-setup-invoice`, {
         method: 'POST',
         headers: {
@@ -80,7 +103,7 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
       })
       // Notify Teams — fire and forget
       const biz2 = prospect.company_name || ''
-      const amt2 = setupFeeAmount ? `$${setupFeeAmount.toLocaleString()}` : '$0'
+      const amt2 = feeAmount ? `$${feeAmount.toLocaleString()}` : '$0'
       fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-teams`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
@@ -125,7 +148,7 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
     } catch (e) { console.error('[activity log]', e) }
     // Notify Teams — fire and forget
     const biz = prospect.company_name || ''
-    const amt = setupFeeAmount ? `$${setupFeeAmount.toLocaleString()}` : '$0'
+    const amt = feeAmount ? `$${feeAmount.toLocaleString()}` : '$0'
     fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-teams`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
@@ -234,9 +257,42 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
 
       {/* SECTION 1 — Setup Fee */}
       <div className="p-3 bg-gray-800/60 border border-gray-700 rounded">
-        <p className="text-xs font-semibold text-amber-400 mb-2">
-          Step 1 — Setup Fee {hasSetupFee ? `($${setupFeeAmount.toLocaleString()})` : '($0 — waived)'}
-        </p>
+        <div className="flex items-center gap-3 mb-2 flex-wrap">
+          <p className="text-xs font-semibold text-amber-400">Step 1 — Setup Fee</p>
+          {!prospect.setup_invoice_url && !prospect.payment_confirmed_at && (
+            <div className="flex items-center gap-2">
+              {!customFee ? (
+                <select
+                  className="bg-gray-900 border border-gray-600 rounded px-2 py-0.5 text-xs text-white focus:outline-none focus:border-amber-500"
+                  value={isPreset ? feeAmount : 'custom'}
+                  onChange={e => {
+                    if (e.target.value === 'custom') { setCustomFee(true) }
+                    else { setFeeAmount(Number(e.target.value)); setCustomFee(false) }
+                  }}
+                >
+                  {feeOptions.map(opt => (
+                    <option key={opt} value={opt}>{opt === 0 ? 'Waived ($0)' : `$${opt.toLocaleString()}`}</option>
+                  ))}
+                  <option value="custom">Custom…</option>
+                </select>
+              ) : (
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-gray-400">$</span>
+                  <input
+                    type="text" inputMode="numeric" pattern="[0-9]*"
+                    className="bg-gray-900 border border-gray-600 rounded px-2 py-0.5 text-xs text-white w-20 focus:outline-none focus:border-amber-500"
+                    value={feeAmount || ''}
+                    onChange={e => setFeeAmount(parseInt(e.target.value.replace(/\D/g, '') || '0', 10))}
+                  />
+                  <button type="button" onClick={() => setCustomFee(false)} className="text-xs text-gray-500 hover:text-white">✕</button>
+                </div>
+              )}
+            </div>
+          )}
+          {(prospect.setup_invoice_url || prospect.payment_confirmed_at) && (
+            <span className="text-xs text-gray-400">{feeAmount > 0 ? `$${feeAmount.toLocaleString()}` : '$0 — waived'}</span>
+          )}
+        </div>
 
         {/* $0 waive confirmation */}
         {confirmWaive && (
