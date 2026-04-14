@@ -248,7 +248,7 @@ Deno.serve(async (req: Request) => {
     // Step 4: Seed page_content rows for the new tenant
     const businessName = wbi.name || bi?.name || resolvedSlug
     const pageContentRows = [
-      { tenant_id: tenantId, page_slug: 'home',                title: `${businessName} — Professional Pest Control`,  subtitle: 'Licensed & insured professionals. Fast, effective results.', intro: '' },
+      { tenant_id: tenantId, page_slug: 'home',                title: `${businessName} — Professional Pest Control`,  subtitle: 'Licensed & insured professionals. Fast, effective results.', intro: '', hero_headline: businessName },
       { tenant_id: tenantId, page_slug: 'about',               title: `About ${businessName}`, subtitle: 'Locally owned and operated.', intro: '' },
       { tenant_id: tenantId, page_slug: 'pest-control',        title: 'Pest Control Services', subtitle: 'Comprehensive pest management solutions.', intro: '' },
       { tenant_id: tenantId, page_slug: 'termite-control',     title: 'Termite Control', subtitle: 'Protect your home from termite damage.', intro: '' },
