@@ -76,9 +76,14 @@ export default function ContentTab() {
     let cancelled = false
     async function run() {
       setLoading(true)
-      const { data } = await supabase.from('page_content').select('title, subtitle, intro, video_url, image_url').eq('tenant_id', tenantId).eq('page_slug', selectedSlug).maybeSingle()
+      const { data } = await supabase.from('page_content').select('title, subtitle, intro, video_url, image_url, hero_headline').eq('tenant_id', tenantId).eq('page_slug', selectedSlug).maybeSingle()
       if (!cancelled) {
         setForm({ title: data?.title || '', subtitle: data?.subtitle || '', intro: data?.intro || '', video_url: data?.video_url || '', image_url: data?.image_url || '' })
+        // For home page, initialize hero headline from page_content (preferred) or fall back to title
+        if (selectedSlug === 'home') {
+          const fromPage = (data as any)?.hero_headline?.trim() || data?.title?.trim() || ''
+          if (fromPage) setHeroHeadline(fromPage)
+        }
         setLoading(false)
       }
     }

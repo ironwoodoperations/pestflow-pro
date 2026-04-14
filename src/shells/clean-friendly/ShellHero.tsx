@@ -6,7 +6,7 @@ import { formatPhone } from '../../lib/formatPhone'
 import { readHeroCache, writeHeroCache } from '../../lib/heroCache'
 
 interface Biz { name?: string; phone?: string }
-interface HomeContent { hero_headline?: string; subtitle?: string }
+interface HomeContent { hero_headline?: string; title?: string; subtitle?: string }
 
 const HERO_IMAGE = '/images/pests/tech_1.jpg'
 
@@ -36,7 +36,7 @@ export default function ShellHero() {
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'customization').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
-        supabase.from('page_content').select('hero_headline,subtitle').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
+        supabase.from('page_content').select('hero_headline,title,subtitle').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
       ])
       if (bizRes.data?.value) setBiz({ name: bizRes.data.value.name, phone: bizRes.data.value.phone })
       if (custRes.data?.value?.hero_headline) setCustomHeadline(custRes.data.value.hero_headline)
@@ -56,6 +56,7 @@ export default function ShellHero() {
   }, [])
 
   const headline = homeContent.hero_headline?.trim()
+    || homeContent.title?.trim()
     || customHeadline?.trim()
     || (biz.name ? `${biz.name} — Professional Pest Control` : 'Professional Pest Control You Can Trust')
 

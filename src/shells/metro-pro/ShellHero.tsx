@@ -7,7 +7,7 @@ import { readHeroCache, writeHeroCache } from '../../lib/heroCache'
 interface BusinessInfo { name?: string; phone?: string; tagline?: string; address?: string; founded_year?: string | number; num_technicians?: number }
 interface Customization { hero_headline?: string }
 interface HeroMedia { youtube_id?: string; thumbnail_url?: string }
-interface HomeContent { hero_headline?: string; subtitle?: string; intro?: string }
+interface HomeContent { hero_headline?: string; title?: string; subtitle?: string; intro?: string }
 
 const STRIPE = 'repeating-linear-gradient(15deg, transparent, transparent 30px, rgba(255,255,255,0.025) 30px, rgba(255,255,255,0.025) 60px)'
 
@@ -35,7 +35,7 @@ export default function MetroProHero() {
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'hero_media').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'customization').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
-        supabase.from('page_content').select('hero_headline,subtitle,intro').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
+        supabase.from('page_content').select('hero_headline,title,subtitle,intro').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
       ])
       if (bizRes.data?.value) setBiz(bizRes.data.value)
       if (mediaRes.data?.value) setHeroMedia(mediaRes.data.value)
@@ -63,6 +63,7 @@ export default function MetroProHero() {
 
   // Priority: page_content.hero_headline → customization.hero_headline → generic fallback
   const headline = homeContent.hero_headline?.trim()
+    || homeContent.title?.trim()
     || custom.hero_headline?.trim()
     || (biz.name ? `${biz.name} — Professional Pest Control` : 'Professional Pest Control You Can Trust')
 

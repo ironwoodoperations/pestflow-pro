@@ -17,10 +17,11 @@ export default function ShellHero() {
       const [contentRes, brandingRes, pageRes] = await Promise.all([
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'customization').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
-        supabase.from('page_content').select('hero_headline,subtitle').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
+        supabase.from('page_content').select('hero_headline,title,subtitle').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
       ])
       // Priority: page_content.hero_headline → customization.hero_headline → keep current state
       const resolvedHeadline = pageRes.data?.hero_headline?.trim()
+        || (pageRes.data as any)?.title?.trim()
         || contentRes.data?.value?.hero_headline?.trim()
       if (resolvedHeadline) setHeadline(resolvedHeadline)
       if (brandingRes.data?.value?.cta_text) setCta(brandingRes.data.value.cta_text)

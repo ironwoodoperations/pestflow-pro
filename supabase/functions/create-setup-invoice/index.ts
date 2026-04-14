@@ -20,14 +20,24 @@ Deno.serve(async (req: Request) => {
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
     const STRIPE_SECRET_KEY        = Deno.env.get('STRIPE_SECRET_KEY') || ''
 
-    // JWT verification
-    const authHeader = req.headers.get('authorization') || ''
-    const token = authHeader.replace('Bearer ', '')
-    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || ''
-    const anonClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-    const { data: { user }, error: userError } = await anonClient.auth.getUser(token)
+    // JWT verification — use service role client so we can verify any valid JWT
+    const authHeader = req.headers.get('authorization') || req.headers.get('Authorization') || ''
+    const token = authHeader.replace(/^[Bb]earer\s+/, '')
+    console.log('create-setup-invoice | auth header present:', !!authHeader, '| token length:', token.length)
+
+    if (!token) {
+      console.log('create-setup-invoice | no token in request')
+      return new Response(JSON.stringify({ error: 'Unauthorized — no token' }), {
+        status: 401, headers: { 'Content-Type': 'application/json', ...CORS },
+      })
+    }
+
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token)
+    console.log('create-setup-invoice | user:', user?.email, '| error:', userError?.message)
+
     if (userError || !user || !IRONWOOD_ALLOWED.includes(user.email ?? '')) {
+      console.log('create-setup-invoice | UNAUTHORIZED — user:', user?.email, 'allowed:', IRONWOOD_ALLOWED)
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401, headers: { 'Content-Type': 'application/json', ...CORS },
       })

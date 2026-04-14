@@ -8,7 +8,7 @@ const FALLBACK_PHOTO = 'https://images.pexels.com/photos/3807517/pexels-photo-38
 
 interface BizState { name?: string; phone?: string; tagline?: string }
 interface HeroMedia { thumbnail_url?: string; youtube_id?: string }
-interface HomeContent { hero_headline?: string; subtitle?: string }
+interface HomeContent { hero_headline?: string; title?: string; subtitle?: string }
 
 export default function ShellHero() {
   // Seed from localStorage to avoid the fallback→real headline flash on load.
@@ -36,7 +36,7 @@ export default function ShellHero() {
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'hero_media').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'customization').maybeSingle(),
-        supabase.from('page_content').select('hero_headline,subtitle').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
+        supabase.from('page_content').select('hero_headline,title,subtitle').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
       ])
       if (bizRes.data?.value) setBiz(bizRes.data.value)
@@ -64,6 +64,7 @@ export default function ShellHero() {
     || FALLBACK_PHOTO
 
   const headline = homeContent.hero_headline?.trim()
+    || homeContent.title?.trim()
     || customHeadline?.trim()
     || (biz.name ? `${biz.name} — Expert Pest Control` : 'Expert Pest Control You Can Count On')
   const subtitle = homeContent.subtitle || biz.tagline || 'Professional and personalized service for your home and business'
