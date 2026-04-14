@@ -187,11 +187,13 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
             google: form.social_google, youtube: form.social_youtube,
           },
           subscription: (() => {
+            // Always derive subscription from form.tier (tier selector) — the source of truth.
+            // form.plan_tier/plan_name/monthly_price may be stale from a prior plan selection.
             const td = TIER_PROVISION[form.tier || 'growth'] ?? TIER_PROVISION.growth
             return {
-              tier:          form.plan_tier     || td.tier,
-              plan_name:     form.plan_name     || td.plan_name,
-              monthly_price: form.monthly_price || td.monthly_price,
+              tier:          td.tier,
+              plan_name:     td.plan_name,
+              monthly_price: td.monthly_price,
             }
           })(),
         }),
