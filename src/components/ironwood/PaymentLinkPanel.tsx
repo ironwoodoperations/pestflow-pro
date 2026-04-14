@@ -3,18 +3,23 @@ import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import type { Prospect } from './types'
 
-// Tier-based preset fee options
-const FEE_OPTIONS: Record<number, number[]> = {
-  1: [0, 500, 750, 1000],
-  2: [1000, 1250, 1500],
-  3: [2000, 2500, 3000, 3500],
-  4: [4000, 5000, 7500, 10000],
-}
-const DEFAULT_FEE: Record<number, number> = { 1: 500, 2: 1000, 3: 2000, 4: 4000 }
+const SETUP_OPTIONS: { label: string; amount: number; priceId: string | null }[] = [
+  { label: 'Waived (No Setup Fee)',  amount: 0,    priceId: null },
+  { label: 'Starter Setup 1',       amount: 500,  priceId: 'price_1TM94WCZBM0TUusS56cSxTQW' },
+  { label: 'Starter Setup 2',       amount: 750,  priceId: 'price_1TM97KCZBM0TUusShePFV2Us' },
+  { label: 'Growth Setup 1',        amount: 1000, priceId: 'price_1TM97zCZBM0TUusS4YNFBefV' },
+  { label: 'Growth Setup 2',        amount: 1250, priceId: 'price_1TM99FCZBM0TUusSj8tvEvHB' },
+  { label: 'Custom Setup 1',        amount: 1500, priceId: 'price_1TM99oCZBM0TUusSafHCaIDB' },
+  { label: 'Custom Setup 2',        amount: 2000, priceId: 'price_1TIZ1rCZBM0TUusSm3PEXfLu' },
+  { label: 'Premium Setup 1',       amount: 2500, priceId: 'price_1TM9B2CZBM0TUusS3Vo9xq2R' },
+  { label: 'Premium Setup 2',       amount: 3500, priceId: 'price_1TIZ3XCZBM0TUusSZmWrD0VW' },
+  { label: 'Elite Setup',           amount: 5000, priceId: 'price_1TM9BrCZBM0TUusSFfytjmgo' },
+]
 
-function getInitialFee(prospect: Partial<Prospect>): number {
-  if (prospect.setup_fee_amount != null && prospect.setup_fee_amount > 0) return prospect.setup_fee_amount
-  return DEFAULT_FEE[prospect.plan_tier || 1] ?? 500
+function getInitialIdx(prospect: Partial<Prospect>): number {
+  if (!prospect.setup_fee_amount) return 0
+  const idx = SETUP_OPTIONS.findIndex(o => o.amount === prospect.setup_fee_amount)
+  return idx >= 0 ? idx : 0
 }
 
 interface Props {
@@ -29,13 +34,10 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
   const [confirmWaive, setConfirmWaive]       = useState(false)
   const [sendingInvoice, setSendingInvoice]   = useState(false)
   const [markingSent, setMarkingSent]         = useState(false)
-  const [feeAmount, setFeeAmount]             = useState<number>(() => getInitialFee(prospect))
-  const [customFee, setCustomFee]             = useState(false)
+  const [selectedIdx, setSelectedIdx]         = useState<number>(() => getInitialIdx(prospect))
 
-  const tier = prospect.plan_tier || 1
-  const feeOptions = FEE_OPTIONS[tier] || FEE_OPTIONS[1]
-  const isPreset = feeOptions.includes(feeAmount)
-  const hasSetupFee = feeAmount > 0
+  const selectedOption = SETUP_OPTIONS[selectedIdx]
+  const hasSetupFee = selectedOption.amount > 0
   const resolvedEmail  =
     prospect.email?.trim() ||
     (prospect as any).business_info?.email?.trim() ||
@@ -53,11 +55,11 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
 
     // Persist the selected fee so it's visible in other views
     if (prospect.id) {
-      await supabase.from('prospects').update({ setup_fee_amount: feeAmount }).eq('id', prospect.id)
-      onUpdate({ setup_fee_amount: feeAmount })
+      await supabase.from('prospects').update({ setup_fee_amount: selectedOption.amount }).eq('id', prospect.id)
+      onUpdate({ setup_fee_amount: selectedOption.amount })
     }
 
-    // $0 fee: show waive confirmation instead of calling Stripe
+    // Waived: show confirmation instead of calling Stripe
     if (!hasSetupFee) {
       setConfirmWaive(true)
       return
@@ -75,7 +77,6 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
         return
       }
       const accessToken = session.access_token
-      const amountCents = Math.round(feeAmount * 100)
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-setup-invoice`, {
         method: 'POST',
         headers: {
@@ -84,7 +85,7 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
           'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
         },
         body: JSON.stringify({
-          amountCents,
+          priceId:     selectedOption.priceId,
           clientEmail: resolvedEmail,
           companyName: prospect.company_name,
           prospectId:  prospect.id,
@@ -92,7 +93,6 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
       })
       const data = await res.json()
       if (data.skipped) {
-        // Edge function handled zero case — update local state
         onUpdate({ status: 'paid', payment_confirmed_at: new Date().toISOString() })
         return
       }
@@ -103,7 +103,7 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
       })
       // Notify Teams — fire and forget
       const biz2 = prospect.company_name || ''
-      const amt2 = feeAmount ? `$${feeAmount.toLocaleString()}` : '$0'
+      const amt2 = selectedOption.amount ? `$${selectedOption.amount.toLocaleString()}` : '$0'
       fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-teams`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
@@ -148,7 +148,7 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
     } catch (e) { console.error('[activity log]', e) }
     // Notify Teams — fire and forget
     const biz = prospect.company_name || ''
-    const amt = feeAmount ? `$${feeAmount.toLocaleString()}` : '$0'
+    const amt = selectedOption.amount ? `$${selectedOption.amount.toLocaleString()}` : '$0'
     fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-teams`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
@@ -179,7 +179,7 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
           prospectName:  prospect.contact_name || prospect.company_name || '',
           businessName:  prospect.company_name || '',
           invoiceUrl:    prospect.setup_invoice_url,
-          amount:        setupFeeAmount,
+          amount:        selectedOption.amount,
         }),
       })
       const data = await res.json()
@@ -260,37 +260,20 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
         <div className="flex items-center gap-3 mb-2 flex-wrap">
           <p className="text-xs font-semibold text-amber-400">Step 1 — Setup Fee</p>
           {!prospect.setup_invoice_url && !prospect.payment_confirmed_at && (
-            <div className="flex items-center gap-2">
-              {!customFee ? (
-                <select
-                  className="bg-gray-900 border border-gray-600 rounded px-2 py-0.5 text-xs text-white focus:outline-none focus:border-amber-500"
-                  value={isPreset ? feeAmount : 'custom'}
-                  onChange={e => {
-                    if (e.target.value === 'custom') { setCustomFee(true) }
-                    else { setFeeAmount(Number(e.target.value)); setCustomFee(false) }
-                  }}
-                >
-                  {feeOptions.map(opt => (
-                    <option key={opt} value={opt}>{opt === 0 ? 'Waived ($0)' : `$${opt.toLocaleString()}`}</option>
-                  ))}
-                  <option value="custom">Custom…</option>
-                </select>
-              ) : (
-                <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-400">$</span>
-                  <input
-                    type="text" inputMode="numeric" pattern="[0-9]*"
-                    className="bg-gray-900 border border-gray-600 rounded px-2 py-0.5 text-xs text-white w-20 focus:outline-none focus:border-amber-500"
-                    value={feeAmount || ''}
-                    onChange={e => setFeeAmount(parseInt(e.target.value.replace(/\D/g, '') || '0', 10))}
-                  />
-                  <button type="button" onClick={() => setCustomFee(false)} className="text-xs text-gray-500 hover:text-white">✕</button>
-                </div>
-              )}
-            </div>
+            <select
+              className="bg-gray-900 border border-gray-600 rounded px-2 py-0.5 text-xs text-white focus:outline-none focus:border-amber-500"
+              value={selectedIdx}
+              onChange={e => setSelectedIdx(Number(e.target.value))}
+            >
+              {SETUP_OPTIONS.map((opt, i) => (
+                <option key={i} value={i}>
+                  {opt.amount === 0 ? opt.label : `${opt.label} — $${opt.amount.toLocaleString()}`}
+                </option>
+              ))}
+            </select>
           )}
           {(prospect.setup_invoice_url || prospect.payment_confirmed_at) && (
-            <span className="text-xs text-gray-400">{feeAmount > 0 ? `$${feeAmount.toLocaleString()}` : '$0 — waived'}</span>
+            <span className="text-xs text-gray-400">{selectedOption.amount > 0 ? `$${selectedOption.amount.toLocaleString()}` : '$0 — waived'}</span>
           )}
         </div>
 

@@ -33,7 +33,7 @@ Deno.serve(async (req: Request) => {
       })
     }
 
-    const { amountCents, clientEmail, companyName, prospectId } = await req.json()
+    const { priceId, clientEmail, companyName, prospectId } = await req.json()
 
     if (!clientEmail || !companyName || !prospectId) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
@@ -41,8 +41,8 @@ Deno.serve(async (req: Request) => {
       })
     }
 
-    // If setup fee is 0, skip invoice — mark prospect as paid and return skipped
-    if (!amountCents || amountCents === 0) {
+    // No priceId (waived) — mark prospect as paid and return skipped
+    if (!priceId) {
       await supabase
         .from('prospects')
         .update({ status: 'paid', payment_confirmed_at: new Date().toISOString() })
@@ -58,9 +58,7 @@ Deno.serve(async (req: Request) => {
 
     await stripe.invoiceItems.create({
       customer: customer.id,
-      amount: amountCents,
-      currency: 'usd',
-      description: `PestFlow Pro Setup Fee — ${companyName}`,
+      price: priceId,
     })
 
     const invoice = await stripe.invoices.create({
