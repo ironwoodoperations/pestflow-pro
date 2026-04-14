@@ -5,10 +5,21 @@
 // Deploy: supabase functions deploy send-intake-email --project-ref biezzykcgzkrwdgqpsar
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { sendEmail } from '../_shared/sendEmail.ts'
 
 const SUPABASE_URL             = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+
+async function sendEmail({ to, subject, html, replyTo }: { to: string; subject: string; html: string; replyTo?: string }) {
+  const key = Deno.env.get('RESEND_API_KEY') || ''
+  const payload: Record<string, unknown> = { from: 'PestFlow Pro <noreply@pestflow.ai>', to, subject, html }
+  if (replyTo) payload.reply_to = replyTo
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) throw new Error(`Resend failed: ${await res.text()}`)
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
