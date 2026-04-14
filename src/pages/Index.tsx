@@ -43,8 +43,8 @@ export default function Index() {
     })
   }, [])
 
-  // youpest and dang shells own their own hero — skip the standard hero
-  if (template === 'youpest' || template === 'dang') {
+  // These shells own their own hero inside ShellSectionsRenderer — skip the standard hero
+  if (template === 'youpest' || template === 'dang' || template === 'metro-pro') {
     return (
       <div style={{ backgroundColor: 'var(--color-bg-section)' }}>
         <StructuredData type="LocalBusiness" />
