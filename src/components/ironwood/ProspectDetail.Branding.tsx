@@ -57,7 +57,13 @@ export default function BrandingSection({ form, setField, onBlur }: Props) {
             </div>
             <div>
               <label className="text-xs text-gray-400">CTA Button Text</label>
-              <input className={inp} value={br.cta_text || ''} onChange={e => setBr('cta_text', e.target.value)} onBlur={onBlur} />
+              <input
+                className={`${inp} ${!br.cta_text ? 'border-red-500' : ''}`}
+                value={br.cta_text || ''}
+                onChange={e => setBr('cta_text', e.target.value)}
+                onBlur={onBlur}
+              />
+              {!br.cta_text && <p className="text-red-500 text-xs mt-1">Required before provisioning</p>}
             </div>
             {/* Palette picker — hidden for full_custom */}
             {br.template && (

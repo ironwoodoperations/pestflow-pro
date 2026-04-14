@@ -49,10 +49,17 @@ export default function SiteContentSection({ form, setField, onBlur }: Props) {
 
       <div>
         <label className="text-xs text-gray-400">Service Areas</label>
-        <input className={inp} value={form.service_areas || ''}
+        <input
+          className={`${inp} ${!form.service_areas ? 'border-red-500' : ''}`}
+          value={form.service_areas || ''}
           placeholder="e.g. Phoenix, Scottsdale, Tempe, Mesa"
-          onChange={e => setField('service_areas', e.target.value)} onBlur={onBlur} />
-        <p className="text-xs text-gray-600 mt-0.5">Comma-separated cities or counties</p>
+          onChange={e => setField('service_areas', e.target.value)}
+          onBlur={onBlur}
+        />
+        {!form.service_areas
+          ? <p className="text-red-500 text-xs mt-1">Required before provisioning</p>
+          : <p className="text-xs text-gray-600 mt-0.5">Comma-separated cities or counties</p>
+        }
       </div>
     </div>
   )
