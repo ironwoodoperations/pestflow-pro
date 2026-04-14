@@ -20,7 +20,7 @@ export interface PexelsPhoto {
   alt: string
 }
 
-export function useComposer(onPosted?: () => void) {
+export function useComposer(onPosted?: () => void, onCaptionGenerated?: () => void) {
   const { tenantId } = useTenant()
   const { tier } = usePlan()
   const aiDailyLimit = AI_DAILY_LIMITS[tier] ?? 2
@@ -86,11 +86,12 @@ export function useComposer(onPosted?: () => void) {
       const captions = text.split('---CAPTION---').map((c: string) => c.trim()).filter((c: string) => c.length > 0)
       setAiCaptions(captions.slice(0, count))
       setAiDailyCount(c => c + 1)
+      onCaptionGenerated?.()
     } catch (err: unknown) {
       setAiError(err instanceof Error ? err.message : 'Failed to generate captions.')
     }
     setAiLoading(false)
-  }, [aiTopic, industry, businessName, aiDailyLimit, aiDailyCount, postsPerGeneration])
+  }, [aiTopic, industry, businessName, aiDailyLimit, aiDailyCount, postsPerGeneration, onCaptionGenerated])
 
   async function searchPexels() {
     if (!pexelsApiKey || !form.pexelsQuery.trim()) return

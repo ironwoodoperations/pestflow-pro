@@ -18,6 +18,7 @@ interface Props {
   onSelectCaption: (c: string) => void
   onAppendEmoji: (e: string) => void
   editingPostId: string | null
+  isStarter?: boolean
 }
 
 const emojis = ['🐜', '🦟', '🪳', '🕷️', '🐭', '🐝', '🦂', '🌿', '✅', '🔥', '📞', '⭐']
@@ -28,7 +29,7 @@ export default function ComposerCaptionEditor({
   caption, onCaptionChange, captionRef, charLimit,
   aiTopic, onAiTopicChange, aiCaptions, aiLoading, aiError,
   aiDailyCount, aiDailyLimit, postsPerGeneration = 3,
-  onGenerate, onSelectCaption, onAppendEmoji, editingPostId,
+  onGenerate, onSelectCaption, onAppendEmoji, editingPostId, isStarter,
 }: Props) {
   const atLimit = aiDailyLimit !== Infinity && aiDailyCount >= aiDailyLimit
   const generateLabel = postsPerGeneration === 1 ? 'Generate Caption' : `Generate ${postsPerGeneration} Captions`
@@ -48,9 +49,16 @@ export default function ComposerCaptionEditor({
             {aiLoading ? <><Loader2 size={14} className="animate-spin" /> Asking AI...</> : generateLabel}
           </button>
         </div>
+        {isStarter && !atLimit && (
+          <p className="text-xs text-gray-500 mb-3">
+            AI caption (1/1 remaining today)
+          </p>
+        )}
         {atLimit && (
           <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
-            AI generation limit reached for today ({aiDailyCount}/{aiDailyLimit}). You can still write posts manually.
+            {isStarter
+              ? 'Daily limit reached (1/day) — resets tomorrow'
+              : `AI generation limit reached for today (${aiDailyCount}/${aiDailyLimit}). You can still write posts manually.`}
           </p>
         )}
         {aiError && <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4"><p className="text-sm text-red-700">{aiError}</p></div>}

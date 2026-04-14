@@ -1,4 +1,7 @@
 import { useComposer } from './useComposer'
+import { useSocialTier } from '../useSocialTier'
+import { useAiCaptionQuota } from '../useAiCaptionQuota'
+import { useTenant } from '../../../hooks/useTenant'
 import ComposerPlatformSelector from './ComposerPlatformSelector'
 import ComposerTemplates from './ComposerTemplates'
 import ComposerCaptionEditor from './ComposerCaptionEditor'
@@ -11,9 +14,16 @@ interface Props {
 }
 
 export default function LegacyComposer({ onClose, onPosted }: Props) {
-  const c = useComposer(onPosted)
+  const { isStarter } = useSocialTier()
+  const { tenantId } = useTenant()
+  const quota = useAiCaptionQuota(tenantId ?? '')
+  const c = useComposer(onPosted, isStarter ? quota.increment : undefined)
 
   if (c.loading) return <div className="p-6 text-center text-gray-400">Loading composer...</div>
+
+  // Starters: use localStorage quota instead of DB-based daily count
+  const displayAiDailyCount = isStarter ? quota.used : c.aiDailyCount
+  const displayAiDailyLimit = isStarter ? quota.limit : c.aiDailyLimit
 
   return (
     <div>
@@ -50,13 +60,14 @@ export default function LegacyComposer({ onClose, onPosted }: Props) {
           aiCaptions={c.aiCaptions}
           aiLoading={c.aiLoading}
           aiError={c.aiError}
-          aiDailyCount={c.aiDailyCount}
-          aiDailyLimit={c.aiDailyLimit}
+          aiDailyCount={displayAiDailyCount}
+          aiDailyLimit={displayAiDailyLimit}
           postsPerGeneration={c.postsPerGeneration}
           onGenerate={c.generateCaptions}
           onSelectCaption={cap => c.setForm(prev => ({ ...prev, caption: cap }))}
           onAppendEmoji={c.appendEmoji}
           editingPostId={c.editingPostId}
+          isStarter={isStarter}
         />
 
         <ComposerImagePicker
@@ -74,7 +85,7 @@ export default function LegacyComposer({ onClose, onPosted }: Props) {
           saving={c.saving}
           editingPostId={c.editingPostId}
           schedulingDayCap={c.schedulingDayCap}
-          isStarter={c.tier < 2}
+          isStarter={isStarter}
           onScheduleModeChange={m => c.setForm(prev => ({ ...prev, scheduleMode: m }))}
           onScheduledForChange={v => c.setForm(prev => ({ ...prev, scheduledFor: v }))}
           onGetSmartSchedule={c.getSmartSchedule}

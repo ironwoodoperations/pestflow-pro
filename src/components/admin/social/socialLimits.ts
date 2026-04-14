@@ -4,8 +4,8 @@
 export const SOCIAL_LIMITS = {
   1: { // Starter — manual copy/paste only
     postsPerDay: 0,         // no scheduling
-    aiGenerationsPerDay: 0, // no AI generation
-    captionsPerClick: 0,
+    aiGenerationsPerDay: 1, // 1 AI caption per day (tracked via localStorage)
+    captionsPerClick: 1,
     daysAhead: 0,
     canSchedule: false,
     canUseAI: false,
