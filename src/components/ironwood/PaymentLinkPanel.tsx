@@ -34,6 +34,7 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
   const [confirmWaive, setConfirmWaive]       = useState(false)
   const [sendingInvoice, setSendingInvoice]   = useState(false)
   const [markingSent, setMarkingSent]         = useState(false)
+  const [voidingInvoice, setVoidingInvoice]   = useState(false)
   const [selectedIdx, setSelectedIdx]         = useState<number>(() => getInitialIdx(prospect))
 
   const selectedOption = SETUP_OPTIONS[selectedIdx]
@@ -186,6 +187,31 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
     }
   }
 
+  async function voidAndReissue() {
+    if (!prospect.id) return
+    setVoidingInvoice(true); setError(null)
+    try {
+      const { data: r } = await supabase.auth.refreshSession()
+      const session = r.session
+      if (!session) { setError('Session expired — please sign out and sign back in.'); return }
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-setup-invoice`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ action: 'void', prospectId: prospect.id }),
+      })
+      const data = await res.json()
+      if (!data.success) { setError(data.error || 'Failed to void invoice'); return }
+      onUpdate({ setup_invoice_url: null, setup_invoice_sent_at: null })
+      // Now re-generate immediately
+      await generateInvoice()
+    } catch (e: any) { setError(e.message || 'Network error') }
+    finally { setVoidingInvoice(false) }
+  }
+
   // SECTION 2 — Subscription Link
   async function generateSubscriptionLink() {
     if (!resolvedEmail || !prospect.plan_name) {
@@ -316,6 +342,12 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
                   <button onClick={markSetupPaid}
                     className="px-3 py-1.5 bg-green-700 text-white text-xs rounded hover:bg-green-600">
                     ✓ Mark Setup Paid
+                  </button>
+                )}
+                {!prospect.payment_confirmed_at && (
+                  <button onClick={voidAndReissue} disabled={voidingInvoice}
+                    className="px-3 py-1.5 bg-red-900 text-white text-xs rounded hover:bg-red-800 disabled:opacity-50">
+                    {voidingInvoice ? 'Voiding…' : '↩ Void & Reissue'}
                   </button>
                 )}
                 {prospect.payment_confirmed_at && (
