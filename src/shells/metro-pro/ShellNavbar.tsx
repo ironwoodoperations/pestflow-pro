@@ -19,6 +19,7 @@ const SERVICE_LINKS = [
 
 const NAV_LINKS = [
   { label: 'About', href: '/about' },
+  { label: 'Blog', href: '/blog' },
   { label: 'Contact', href: '/contact' },
 ]
 
@@ -27,6 +28,7 @@ export default function MetroProNavbar() {
   const [businessName, setBusinessName] = useState(ctxName)
   const [logoUrl, setLogoUrl] = useState('')
   const [phone, setPhone] = useState('')
+  const [ctaText, setCtaText] = useState('Get Free Quote')
   const [mobileOpen, setMobileOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -44,6 +46,7 @@ export default function MetroProNavbar() {
       if (bizRes.data?.value?.name) setBusinessName(bizRes.data.value.name)
       if (bizRes.data?.value?.phone) setPhone(bizRes.data.value.phone)
       if (brandRes.data?.value?.logo_url) setLogoUrl(brandRes.data.value.logo_url)
+      if (brandRes.data?.value?.cta_text) setCtaText(brandRes.data.value.cta_text)
     })
   }, [])
 
@@ -69,9 +72,10 @@ export default function MetroProNavbar() {
 
   return (
     <nav
-      className={`sticky top-0 z-50 bg-white transition-shadow ${scrolled ? 'shadow-md' : 'border-b border-gray-100'}`}
+      style={{ backgroundColor: 'var(--color-nav-bg)' }}
+      className={`sticky top-0 z-50 transition-shadow ${scrolled ? 'shadow-lg' : 'border-b border-white/10'}`}
     >
-      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 px-4 py-2 rounded-lg z-[60] text-white" style={{ backgroundColor: 'var(--color-primary)' }}>
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 px-4 py-2 rounded z-[60] text-white" style={{ backgroundColor: 'var(--color-accent)' }}>
         Skip to main content
       </a>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -81,11 +85,11 @@ export default function MetroProNavbar() {
             <Link to="/" className="flex items-center">
               {logoUrl
                 ? <img src={logoUrl} alt={businessName} style={{ height: '38px', objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
-                : <span className="text-xl font-bold" style={{ color: '#1a1a1a', fontFamily: 'Inter, sans-serif' }}>{businessName}</span>
+                : <span className="text-xl font-bold tracking-tight" style={{ color: 'var(--color-nav-text)', fontFamily: 'var(--font-heading)' }}>{businessName}</span>
               }
             </Link>
             {phone && (
-              <a href={`tel:${phone.replace(/\D/g, '')}`} className="hidden md:flex items-center gap-1.5 text-sm font-medium transition hover:opacity-80" style={{ color: 'var(--color-primary)' }}>
+              <a href={`tel:${phone.replace(/\D/g, '')}`} className="hidden md:flex items-center gap-1.5 text-sm font-medium text-white/70 hover:text-white transition">
                 <Phone className="w-4 h-4" />
                 {formatPhone(phone)}
               </a>
@@ -94,17 +98,17 @@ export default function MetroProNavbar() {
 
           {/* Desktop nav */}
           <div className="hidden lg:flex items-center gap-6">
-            <Link to="/" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition">Home</Link>
+            <Link to="/" className="text-sm font-medium text-white/70 hover:text-white transition">Home</Link>
 
             <div ref={dropdownRef} className="relative" onMouseEnter={onEnter} onMouseLeave={onLeave}>
-              <button aria-haspopup="true" aria-expanded={dropdownOpen} className="text-sm font-medium text-gray-600 hover:text-gray-900 transition flex items-center gap-1">
+              <button aria-haspopup="true" aria-expanded={dropdownOpen} className="text-sm font-medium text-white/70 hover:text-white transition flex items-center gap-1">
                 Services <ChevronDown className="w-3.5 h-3.5" />
               </button>
               {dropdownOpen && (
-                <div role="menu" className="absolute top-full left-0 mt-1 w-56 bg-white shadow-xl rounded-lg border border-gray-100 py-2 z-50">
+                <div role="menu" className="absolute top-full left-0 mt-1 w-56 shadow-xl border border-white/10 py-2 z-50" style={{ backgroundColor: 'var(--color-nav-bg)' }}>
                   {SERVICE_LINKS.map((link) => (
                     <Link key={link.href} to={link.href} onClick={() => setDropdownOpen(false)}
-                      className="block px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition">
+                      className="block px-4 py-2 text-sm text-white/70 hover:text-white hover:bg-white/5 transition">
                       {link.label}
                     </Link>
                   ))}
@@ -113,39 +117,39 @@ export default function MetroProNavbar() {
             </div>
 
             {NAV_LINKS.map((link) => (
-              <Link key={link.href} to={link.href} className="text-sm font-medium text-gray-600 hover:text-gray-900 transition">{link.label}</Link>
+              <Link key={link.href} to={link.href} className="text-sm font-medium text-white/70 hover:text-white transition">{link.label}</Link>
             ))}
 
-            <Link to="/quote" className="text-sm font-semibold px-5 py-2 rounded-full text-white transition hover:opacity-90" style={{ backgroundColor: 'var(--color-primary)' }}>
-              Get Free Quote
+            <Link to="/quote" className="text-sm font-semibold px-5 py-2 text-white transition hover:opacity-90" style={{ backgroundColor: 'var(--color-accent)' }}>
+              {ctaText}
             </Link>
           </div>
 
-          <button className="lg:hidden p-2 text-gray-600" onClick={() => setMobileOpen(!mobileOpen)} aria-label={mobileOpen ? 'Close menu' : 'Open menu'} aria-expanded={mobileOpen}>
+          <button className="lg:hidden p-2 text-white/80 hover:text-white" onClick={() => setMobileOpen(!mobileOpen)} aria-label={mobileOpen ? 'Close menu' : 'Open menu'} aria-expanded={mobileOpen}>
             {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
       </div>
 
       {mobileOpen && (
-        <div ref={menuRef} className="lg:hidden border-t border-gray-100 bg-white max-h-[80vh] overflow-y-auto">
+        <div ref={menuRef} style={{ backgroundColor: 'var(--color-nav-bg)' }} className="lg:hidden border-t border-white/10 max-h-[80vh] overflow-y-auto">
           <div className="px-4 py-4 space-y-1">
             {phone && (
-              <a href={`tel:${phone.replace(/\D/g, '')}`} className="flex items-center gap-2 px-2 py-2 text-sm font-medium" style={{ color: 'var(--color-primary)' }}>
+              <a href={`tel:${phone.replace(/\D/g, '')}`} className="flex items-center gap-2 px-2 py-2 text-sm font-medium text-white/70">
                 <Phone className="w-4 h-4" />{formatPhone(phone)}
               </a>
             )}
-            <Link to="/" onClick={() => setMobileOpen(false)} className="block px-2 py-2 text-sm font-medium text-gray-700">Home</Link>
-            <p className="text-xs font-semibold text-gray-400 uppercase px-2 pt-2 pb-1">Services</p>
+            <Link to="/" onClick={() => setMobileOpen(false)} className="block px-2 py-2 text-sm font-medium text-white/80 hover:text-white">Home</Link>
+            <p className="text-xs font-semibold text-white/40 uppercase px-2 pt-2 pb-1">Services</p>
             {SERVICE_LINKS.map((link) => (
-              <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} className="block px-2 py-2 text-sm text-gray-600 hover:text-gray-900 transition">{link.label}</Link>
+              <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} className="block px-2 py-2 text-sm text-white/70 hover:text-white transition">{link.label}</Link>
             ))}
-            <div className="border-t border-gray-100 my-2" />
+            <div className="border-t border-white/10 my-2" />
             {NAV_LINKS.map((link) => (
-              <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} className="block px-2 py-2 text-sm font-medium text-gray-700">{link.label}</Link>
+              <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} className="block px-2 py-2 text-sm font-medium text-white/80 hover:text-white">{link.label}</Link>
             ))}
-            <Link to="/quote" onClick={() => setMobileOpen(false)} className="block text-center font-semibold rounded-full px-5 py-2.5 text-white mt-3 transition hover:opacity-90" style={{ backgroundColor: 'var(--color-primary)' }}>
-              Get Free Quote
+            <Link to="/quote" onClick={() => setMobileOpen(false)} className="block text-center font-semibold px-5 py-2.5 text-white mt-3 transition hover:opacity-90" style={{ backgroundColor: 'var(--color-accent)' }}>
+              {ctaText}
             </Link>
           </div>
         </div>

@@ -30,6 +30,13 @@ const SHELLS = [
     swatches: ['#b5451b', '#166534', '#b45309'],
   },
   {
+    key: 'metro-pro',
+    name: 'Metro Pro',
+    desc: 'Enterprise dark navbar. Sharp, metropolitan, professional. Pro & Elite only.',
+    swatches: ['#1565C0', '#0D2137', '#2D3748'],
+    proOnly: true,
+  },
+  {
     key: 'youpest',
     name: 'YouPest AI Quick Build',
     desc: 'AI-generated layout from scraped site. Same-day launch.',

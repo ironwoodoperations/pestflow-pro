@@ -60,11 +60,11 @@ const PALETTE_HERO: Record<string, { hero: string; end: string; cta: string; nav
   '#78350f': { hero: '#2d1305', end: '#1a0a02', cta: '#2d1305', nav: '#78350f',  navText: '#ffffff', footer: '#3b1a05' }, // Brown & Tan
   '#365314': { hero: '#162105', end: '#0d1503', cta: '#162105', nav: '#365314',  navText: '#ffffff', footer: '#1a2d08' }, // Green & Earth
   '#9a3412': { hero: '#3b1205', end: '#1a0802', cta: '#3b1205', nav: '#9a3412',  navText: '#ffffff', footer: '#3b1205' }, // Rust & Cream
-  // metro-pro primaries — white nav, dark footer
-  '#1565c0': { hero: '#0a1628', end: '#0d1f35', cta: '#0a1628', nav: '#ffffff',  navText: '#1a1a1a', footer: '#0d1f2d' }, // Corporate Blue
-  '#0d2137': { hero: '#060f1a', end: '#091525', cta: '#060f1a', nav: '#ffffff',  navText: '#1a1a1a', footer: '#060f1a' }, // Executive Navy
-  '#2d3748': { hero: '#1a2030', end: '#1e2838', cta: '#1a2030', nav: '#ffffff',  navText: '#1a1a1a', footer: '#1a2030' }, // Slate & Electric
-  '#1b4332': { hero: '#0d2b1e', end: '#0a1f15', cta: '#0d2b1e', nav: '#ffffff',  navText: '#1a1a1a', footer: '#0d2b1e' }, // Forest & White
+  // metro-pro primaries — dark primary nav, dark footer
+  '#1565c0': { hero: '#0a1628', end: '#0d1f35', cta: '#0a1628', nav: '#1565C0', navText: '#ffffff', footer: '#0d1f2d' }, // Corporate Blue
+  '#0d2137': { hero: '#060f1a', end: '#091525', cta: '#060f1a', nav: '#0D2137', navText: '#ffffff', footer: '#060f1a' }, // Executive Navy
+  '#2d3748': { hero: '#1a2030', end: '#1e2838', cta: '#1a2030', nav: '#2D3748', navText: '#ffffff', footer: '#1a2030' }, // Slate & Electric
+  '#1b4332': { hero: '#0d2b1e', end: '#0a1f15', cta: '#0d2b1e', nav: '#1B4332', navText: '#ffffff', footer: '#0d2b1e' }, // Forest & White
 }
 
 export const SHELL_THEMES: Record<string, Record<string, string>> = {
@@ -148,7 +148,7 @@ export const SHELL_THEMES: Record<string, Record<string, string>> = {
     '--font-heading':          'Oswald, sans-serif',
     '--font-body':             'Inter, sans-serif',
   },
-  // metro-pro shell — white-navbar corporate/enterprise style (Pro/Elite only)
+  // metro-pro shell — dark primary navbar, enterprise/Pro/Elite only
   'metro-pro-shell': {
     '--color-primary':         '#1565C0',
     '--color-primary-dark':    '#0d47a1',
@@ -159,11 +159,11 @@ export const SHELL_THEMES: Record<string, Record<string, string>> = {
     '--color-bg-hero-end':     '#0d1f35',
     '--color-bg-section':      '#f8f9fa',
     '--color-bg-cta':          '#0a1628',
-    '--color-nav-bg':          '#ffffff',
-    '--color-nav-text':        '#1a1a1a',
+    '--color-nav-bg':          '#1565C0',
+    '--color-nav-text':        '#ffffff',
     '--color-footer-bg':       '#0d1f2d',
     '--color-footer-text':     '#ffffff',
-    '--color-btn-bg':          '#1565C0',
+    '--color-btn-bg':          '#00ACC1',
     '--color-btn-text':        '#ffffff',
     '--color-heading':         '#1a1a1a',
     '--font-heading':          'Inter, sans-serif',

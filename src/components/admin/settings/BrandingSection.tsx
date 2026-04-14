@@ -19,6 +19,7 @@ const templates: { value: BrandingForm['template']; label: string; desc: string;
   { value: 'bold-local',     label: 'Bold & Local',            desc: 'Charcoal background, amber accents. High-energy.',         bg: '#1c1c1c', accent: '#d97706' },
   { value: 'clean-friendly', label: 'Clean & Friendly',        desc: 'White navbar, sky-blue accents. Approachable.',            bg: '#ffffff', accent: '#0284c7' },
   { value: 'rustic-rugged',  label: 'Rustic & Rugged',         desc: 'Warm brown, rust orange. Established & trustworthy.',      bg: '#3b1f0e', accent: '#c2410c' },
+  { value: 'metro-pro',      label: 'Metro Pro',               desc: 'Dark enterprise navbar, strong typography, metropolitan. Pro & Elite.', bg: '#0D2137', accent: '#00ACC1', proOnly: true },
   { value: 'youpest',        label: 'YouPest AI Quick Build',  desc: 'AI-generated layout from your scraped site. Same-day launch.', bg: '#312e81', accent: '#818cf8', proOnly: true },
 ]
 
