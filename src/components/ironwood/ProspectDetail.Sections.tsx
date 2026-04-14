@@ -118,7 +118,7 @@ export default function ProspectSections({ id, form, openSection, setOpenSection
       </Acc>
 
       {/* 4. Site Content */}
-      <Acc id="site_content" title="Site Content" isComplete={!!form.intake_submitted_at} completedLabel={form.intake_submitted_at ? `Intake submitted ${fmt(form.intake_submitted_at)}` : undefined} {...acc}>
+      <Acc id="site_content" title="Site Content" isComplete={!!((form.business_info as any)?.address && (form.business_info as any)?.hours)} completedLabel={(form.business_info as any)?.address ? 'Content fields filled' : undefined} {...acc}>
         <SiteContentSection form={form} setField={wrappedSetField} onBlur={onBlur} />
       </Acc>
 

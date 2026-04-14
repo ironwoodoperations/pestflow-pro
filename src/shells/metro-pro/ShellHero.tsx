@@ -24,7 +24,7 @@ export default function MetroProHero() {
   })
   const [ctaText, setCtaText] = useState(cached.ctaText || 'Get Free Quote')
   const [homeContent, setHomeContent] = useState<HomeContent>({
-    hero_headline: cached.headline, subtitle: cached.subtitle, intro: cached.intro,
+    hero_headline: cached.heroHeadline, subtitle: cached.subtitle, intro: cached.intro,
   })
 
   useEffect(() => {
@@ -44,7 +44,7 @@ export default function MetroProHero() {
       if (contentRes.data) setHomeContent(contentRes.data)
 
       writeHeroCache({
-        headline: contentRes.data?.hero_headline,
+        heroHeadline: contentRes.data?.hero_headline,
         subtitle: contentRes.data?.subtitle,
         intro: contentRes.data?.intro,
         customHeadline: custRes.data?.value?.hero_headline,

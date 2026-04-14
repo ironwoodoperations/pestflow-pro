@@ -6,6 +6,7 @@ import DashboardPlanCard from './DashboardPlanCard'
 
 interface Props {
   onNavigate: (tab: string) => void
+  demoActive?: boolean
 }
 
 const PLAN_DETAILS: Record<number, { subtitle: string; features: string[] }> = {
@@ -51,12 +52,13 @@ const PLAN_DETAILS: Record<number, { subtitle: string; features: string[] }> = {
   },
 }
 
-export default function DashboardPlanSection({ onNavigate }: Props) {
+export default function DashboardPlanSection({ onNavigate, demoActive }: Props) {
   const { tier, loading } = usePlan()
   const [accordionOpen, setAccordionOpen] = useState(false)
 
   if (loading) return null
-  if (tier >= 4) return null  // Elite — no upgrade options to show
+  if (!demoActive) return null  // Only show upgrade cards on the demo tenant
+  if (tier >= 4) return null    // Elite — no upgrade options to show
 
   const currentPlan = MONTHLY_PLANS.find(p => p.tier === tier) ?? MONTHLY_PLANS[0]
   const currentDetails = PLAN_DETAILS[tier] ?? PLAN_DETAILS[1]

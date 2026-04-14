@@ -26,6 +26,7 @@ export function useProspectDetail(
   const [qaPassedAt, setQaPassedAt]   = useState<string | null>(null)
   const [seoScore, setSeoScore]       = useState(0)
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const hasAutoImported = useRef(false)
 
   useEffect(() => {
     if (!prospectId) return
@@ -40,6 +41,35 @@ export function useProspectDetail(
     supabase.from('qa_checklists').select('qa_passed_at').eq('prospect_id', prospectId).maybeSingle()
       .then(({ data }) => { if (data?.qa_passed_at) setQaPassedAt(data.qa_passed_at) })
   }, [prospectId])
+
+  // Auto-import intake data when intake is submitted and business_info is empty
+  useEffect(() => {
+    if (!form.intake_submitted_at) return
+    if (hasAutoImported.current) return
+    const bi = (form.business_info || {}) as Record<string, any>
+    const isEmpty = !bi.address && !bi.hours && !bi.phone
+    if (!isEmpty) return
+    const d = (form.intake_data || {}) as Record<string, any>
+    const biz = (d.business || {}) as Record<string, any>
+    if (!biz.business_name && !biz.phone) return
+    hasAutoImported.current = true
+    setForm(f => {
+      const existingBi = { ...(f.business_info || {}) } as Record<string, any>
+      const newBi: Record<string, any> = { ...existingBi }
+      if (biz.address)          newBi.address          = [biz.address, biz.city, biz.state, biz.zip].filter(Boolean).join(', ')
+      if (biz.hours)            newBi.hours            = biz.hours
+      if (biz.tagline)          newBi.tagline          = biz.tagline
+      if (biz.founded_year)     newBi.founded_year     = biz.founded_year
+      if (biz.license_number)   newBi.license          = biz.license_number
+      if (biz.num_technicians)  newBi.num_technicians  = biz.num_technicians
+      const u: Partial<Prospect> = { business_info: newBi }
+      if (biz.business_name) u.company_name  = biz.business_name
+      if (biz.owner_name)    u.contact_name  = biz.owner_name
+      if (biz.phone)         u.phone         = biz.phone
+      if (biz.email)         u.email         = biz.email
+      return { ...f, ...u }
+    })
+  }, [form.intake_submitted_at, form.intake_data, form.business_info])
 
   // Auto-collapse Intake Link when submitted
   useEffect(() => {

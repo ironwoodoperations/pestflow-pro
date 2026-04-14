@@ -37,7 +37,7 @@ export default function ShellHero() {
   })
   const [heroMedia, setHeroMedia] = useState<HeroMedia>({ thumbnail_url: cached.thumbnailUrl })
   const [homeContent, setHomeContent] = useState<HomeContent>({
-    hero_headline: cached.headline,
+    hero_headline: cached.heroHeadline,
     subtitle: cached.subtitle,
   })
   const [customHeadline, setCustomHeadline] = useState(cached.customHeadline || '')
@@ -60,7 +60,7 @@ export default function ShellHero() {
       if (brandRes.data?.value?.cta_text) setCtaText(brandRes.data.value.cta_text)
 
       writeHeroCache({
-        headline: contentRes.data?.hero_headline,
+        heroHeadline: contentRes.data?.hero_headline,
         subtitle: contentRes.data?.subtitle,
         customHeadline: custRes.data?.value?.hero_headline,
         bizName: bizRes.data?.value?.name,

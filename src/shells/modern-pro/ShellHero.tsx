@@ -14,7 +14,7 @@ interface BusinessInfo {
 }
 interface Customization { hero_headline?: string }
 interface HeroMedia { youtube_id?: string; thumbnail_url?: string }
-interface HomeContent { hero_headline?: string; title?: string; subtitle?: string; intro?: string }
+interface HomeContent { hero_headline?: string; subtitle?: string; intro?: string }
 
 export default function ShellHero() {
   // Seed state synchronously from localStorage so the first paint matches the
@@ -35,7 +35,7 @@ export default function ShellHero() {
   })
   const [ctaText, setCtaText] = useState(cached.ctaText || 'Get a Free Quote')
   const [homeContent, setHomeContent] = useState<HomeContent>({
-    hero_headline: cached.headline,
+    hero_headline: cached.heroHeadline,
     subtitle: cached.subtitle,
     intro: cached.intro,
   })
@@ -48,7 +48,7 @@ export default function ShellHero() {
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'hero_media').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'customization').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
-        supabase.from('page_content').select('hero_headline,title,subtitle,intro').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
+        supabase.from('page_content').select('hero_headline,subtitle,intro').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
       ])
       if (bizRes.data?.value) setBiz(bizRes.data.value)
       if (mediaRes.data?.value) setHeroMedia(mediaRes.data.value)
@@ -57,7 +57,7 @@ export default function ShellHero() {
       if (contentRes.data) setHomeContent(contentRes.data)
 
       writeHeroCache({
-        headline: contentRes.data?.hero_headline,
+        heroHeadline: contentRes.data?.hero_headline,
         subtitle: contentRes.data?.subtitle,
         intro: contentRes.data?.intro,
         customHeadline: custRes.data?.value?.hero_headline,

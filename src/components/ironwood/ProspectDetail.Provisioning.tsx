@@ -6,6 +6,13 @@ import PreProvisionChecklist from './PreProvisionChecklist'
 
 const isValidEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)
 
+const TIER_PROVISION: Record<string, { tier: number; plan_name: string; monthly_price: number }> = {
+  starter: { tier: 1, plan_name: 'Starter', monthly_price: 149 },
+  growth:  { tier: 2, plan_name: 'Grow',    monthly_price: 249 },
+  pro:     { tier: 3, plan_name: 'Pro',     monthly_price: 349 },
+  elite:   { tier: 4, plan_name: 'Elite',   monthly_price: 499 },
+}
+
 interface Props {
   form: Partial<Prospect>
   prospectId: string | null
@@ -179,7 +186,14 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
             facebook: form.social_facebook, instagram: form.social_instagram,
             google: form.social_google, youtube: form.social_youtube,
           },
-          subscription: { tier: form.plan_tier || 1, plan_name: form.plan_name || 'Starter', monthly_price: form.monthly_price || 149 },
+          subscription: (() => {
+            const td = TIER_PROVISION[form.tier || 'growth'] ?? TIER_PROVISION.growth
+            return {
+              tier:          form.plan_tier     || td.tier,
+              plan_name:     form.plan_name     || td.plan_name,
+              monthly_price: form.monthly_price || td.monthly_price,
+            }
+          })(),
         }),
       })
       if (res.status === 401) {

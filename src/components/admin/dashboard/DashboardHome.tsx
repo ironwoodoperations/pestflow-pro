@@ -80,7 +80,7 @@ export default function DashboardHome({ onboardingComplete, demoActive, onDemoSe
 
       {/* Row 1: Plan card section */}
       <div className="mb-6">
-        <DashboardPlanSection onNavigate={onNavigate} />
+        <DashboardPlanSection onNavigate={onNavigate} demoActive={demoActive} />
       </div>
 
       {/* Row 2: Stats */}

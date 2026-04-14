@@ -6,9 +6,14 @@
 //
 // Keyed by hostname + ?tenant=<slug> query param so dev/preview environments
 // testing multiple tenants via query string don't leak cached data between them.
+//
+// v:2 — added heroHeadline field (sourced exclusively from page_content.hero_headline).
+// Caches without v:2 are treated as stale for the headline field only.
 
 export interface HeroCache {
-  headline?: string
+  v?: number
+  heroHeadline?: string
+  headline?: string       // deprecated — use heroHeadline; kept for subtitle compat
   subtitle?: string
   intro?: string
   customHeadline?: string
@@ -38,7 +43,14 @@ export function readHeroCache(): HeroCache {
     const raw = localStorage.getItem(cacheKey())
     if (!raw) return {}
     const parsed = JSON.parse(raw)
-    return (parsed && typeof parsed === 'object') ? parsed as HeroCache : {}
+    if (!parsed || typeof parsed !== 'object') return {}
+    const cache = parsed as HeroCache
+    // If cache pre-dates v2, strip the headline fields so shells re-fetch fresh.
+    if (cache.v !== 2) {
+      const { headline: _h, heroHeadline: _hh, ...rest } = cache
+      return rest
+    }
+    return cache
   } catch {
     return {}
   }
@@ -46,7 +58,7 @@ export function readHeroCache(): HeroCache {
 
 export function writeHeroCache(next: HeroCache) {
   try {
-    const merged = { ...readHeroCache(), ...next }
+    const merged = { ...readHeroCache(), ...next, v: 2 }
     localStorage.setItem(cacheKey(), JSON.stringify(merged))
   } catch {
     /* quota exceeded or SSR — non-fatal */

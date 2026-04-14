@@ -67,13 +67,10 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
 
     setLoadingInvoice(true); setError(null)
     try {
-      let { data: { session } } = await supabase.auth.getSession()
+      const { data: refreshData } = await supabase.auth.refreshSession()
+      const session = refreshData.session
       if (!session) {
-        const { data: refreshData } = await supabase.auth.refreshSession()
-        session = refreshData.session
-      }
-      if (!session) {
-        setError('Unable to authenticate. Please sign out and sign back in.')
+        setError('Session expired — please sign out and sign back in.')
         return
       }
       const accessToken = session.access_token
@@ -161,12 +158,9 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
     if (!resolvedEmail || !prospect.setup_invoice_url) return
     setSendingInvoice(true)
     try {
-      let { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
-        const { data: r } = await supabase.auth.refreshSession()
-        session = r.session
-      }
-      if (!session) { toast.error('Session expired — please refresh.'); return }
+      const { data: r } = await supabase.auth.refreshSession()
+      const session = r.session
+      if (!session) { toast.error('Session expired — please sign out and sign back in.'); return }
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-invoice-email`, {
         method: 'POST',
         headers: {
@@ -199,13 +193,10 @@ export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
     }
     setLoadingLink(true); setError(null)
     try {
-      let { data: { session } } = await supabase.auth.getSession()
+      const { data: refreshData } = await supabase.auth.refreshSession()
+      const session = refreshData.session
       if (!session) {
-        const { data: refreshData } = await supabase.auth.refreshSession()
-        session = refreshData.session
-      }
-      if (!session) {
-        setError('Unable to authenticate. Please sign out and sign back in.')
+        setError('Session expired — please sign out and sign back in.')
         return
       }
       const accessToken = session.access_token

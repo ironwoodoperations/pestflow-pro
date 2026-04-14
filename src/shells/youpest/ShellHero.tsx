@@ -7,7 +7,7 @@ import { readHeroCache, writeHeroCache } from '../../lib/heroCache'
 export default function ShellHero() {
   // Seed from localStorage so first paint already shows the real hero.
   const cached = readHeroCache()
-  const [headline, setHeadline] = useState(cached.customHeadline || cached.headline || 'Your Home. Protected.')
+  const [headline, setHeadline] = useState(cached.heroHeadline || cached.customHeadline || 'Your Home. Protected.')
   const [sub, setSub] = useState(cached.subtitle || 'Fast, effective pest control you can trust.')
   const [cta, setCta] = useState(cached.ctaText || 'Get a Free Quote')
 
@@ -17,13 +17,17 @@ export default function ShellHero() {
       const [contentRes, brandingRes, pageRes] = await Promise.all([
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'customization').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
-        supabase.from('page_content').select('subtitle').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
+        supabase.from('page_content').select('hero_headline,subtitle').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
       ])
-      if (contentRes.data?.value?.hero_headline) setHeadline(contentRes.data.value.hero_headline)
+      // Priority: page_content.hero_headline → customization.hero_headline → keep current state
+      const resolvedHeadline = pageRes.data?.hero_headline?.trim()
+        || contentRes.data?.value?.hero_headline?.trim()
+      if (resolvedHeadline) setHeadline(resolvedHeadline)
       if (brandingRes.data?.value?.cta_text) setCta(brandingRes.data.value.cta_text)
       if (pageRes.data?.subtitle) setSub(pageRes.data.subtitle)
 
       writeHeroCache({
+        heroHeadline: pageRes.data?.hero_headline,
         customHeadline: contentRes.data?.value?.hero_headline,
         subtitle: pageRes.data?.subtitle,
         ctaText: brandingRes.data?.value?.cta_text,

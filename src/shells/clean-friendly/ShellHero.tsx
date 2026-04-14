@@ -22,7 +22,7 @@ export default function ShellHero() {
   const cached = readHeroCache()
   const [biz, setBiz] = useState<Biz>({ name: cached.bizName, phone: cached.phone })
   const [homeContent, setHomeContent] = useState<HomeContent>({
-    hero_headline: cached.headline,
+    hero_headline: cached.heroHeadline,
     subtitle: cached.subtitle,
   })
   const [customHeadline, setCustomHeadline] = useState(cached.customHeadline || '')
@@ -45,7 +45,7 @@ export default function ShellHero() {
       if (contentRes.data?.subtitle) setHeroSubtext(contentRes.data.subtitle)
 
       writeHeroCache({
-        headline: contentRes.data?.hero_headline,
+        heroHeadline: contentRes.data?.hero_headline,
         subtitle: contentRes.data?.subtitle,
         customHeadline: custRes.data?.value?.hero_headline,
         bizName: bizRes.data?.value?.name,
