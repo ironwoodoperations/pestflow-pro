@@ -82,7 +82,7 @@ export default function ShellHero() {
       {/* Left — text on textured bg */}
       <div className="md:w-[60%] flex flex-col justify-center px-8 md:px-14 py-16" style={DOT_BG}>
         <h1 className="font-bold leading-tight mb-2" style={{ fontSize: 'clamp(32px,4.5vw,52px)', color: '#1a1a1a' }}>
-          {homeContent.hero_headline?.trim() || homeContent.title?.trim() || customHeadline?.trim() || (biz.name ? `${biz.name} — Expert Pest Control` : 'Expert Pest Control')}
+          {homeContent.hero_headline?.trim() || customHeadline?.trim() || biz.name?.trim() || 'Expert Pest Control'}
         </h1>
         <p className="font-bold italic mb-4" style={{ fontSize: 'clamp(28px,3.5vw,44px)', color: 'var(--color-primary)', lineHeight: 1.1 }}>
           {homeContent.subtitle || biz.tagline || 'Pest Control'}
