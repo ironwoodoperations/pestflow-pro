@@ -53,6 +53,28 @@ export default function IntakeStep1Business({ form, setForm }: Props) {
         <label className="block text-sm font-medium text-gray-700 mb-1">Tagline / Slogan</label>
         <input className={inp} value={form.tagline || ''} onChange={e => set('tagline', e.target.value)} placeholder="Protecting homes, one treatment at a time." />
       </div>
+
+      <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide pt-2">About Your Business <span className="font-normal normal-case text-gray-400">— optional, fills in your site automatically</span></p>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Owner Name</label>
+        <input className={inp} value={form.owner_name || ''} onChange={e => set('owner_name', e.target.value)} placeholder="Your name (as it appears on your license)" />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Founded Year</label>
+          <input className={inp} value={form.founded_year || ''} onChange={e => set('founded_year', e.target.value)} placeholder="2014" maxLength={4} />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">License Number</label>
+          <input className={inp} value={form.license_number || ''} onChange={e => set('license_number', e.target.value)} placeholder="TPCL 0123456" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">No. of Technicians</label>
+          <input type="number" min={1} className={inp} value={form.num_technicians || ''} onChange={e => set('num_technicians', e.target.value)} placeholder="4" />
+        </div>
+      </div>
     </div>
   )
 }

@@ -409,7 +409,7 @@ Deno.serve(async (req: Request) => {
         const bizForSeo = ib.business_name || businessName
 
         // 9a: Overlay business_info with intake data
-        if (city || state || ib.zip || ib.address) {
+        if (city || state || ib.zip || ib.address || ib.business_name || ib.phone || ib.email || ib.hours || ib.tagline || ib.owner_name || ib.founded_year || ib.license_number || ib.num_technicians) {
           const { data: existingBiRow } = await supabase.from('settings').select('value')
             .eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle()
           const currentBi = existingBiRow?.value ?? {}
@@ -417,12 +417,16 @@ Deno.serve(async (req: Request) => {
           await supabase.from('settings').update({
             value: {
               ...currentBi,
-              ...(ib.business_name ? { name: ib.business_name } : {}),
-              ...(ib.phone    ? { phone: ib.phone }       : {}),
-              ...(ib.email    ? { email: ib.email }       : {}),
-              ...(fullAddress ? { address: fullAddress }  : {}),
-              ...(ib.hours    ? { hours: ib.hours }       : {}),
-              ...(ib.tagline  ? { tagline: ib.tagline }   : {}),
+              ...(ib.business_name    ? { name:            ib.business_name }    : {}),
+              ...(ib.phone            ? { phone:           ib.phone }            : {}),
+              ...(ib.email            ? { email:           ib.email }            : {}),
+              ...(fullAddress         ? { address:         fullAddress }         : {}),
+              ...(ib.hours            ? { hours:           ib.hours }            : {}),
+              ...(ib.tagline          ? { tagline:         ib.tagline }          : {}),
+              ...(ib.owner_name       ? { owner_name:      ib.owner_name }       : {}),
+              ...(ib.founded_year     ? { founded_year:    ib.founded_year }     : {}),
+              ...(ib.license_number   ? { license:         ib.license_number }   : {}),
+              ...(ib.num_technicians  ? { num_technicians: ib.num_technicians }  : {}),
             }
           }).eq('tenant_id', tenantId).eq('key', 'business_info')
           console.log('[provision-tenant] business_info overlaid from intake_data')
