@@ -14,6 +14,7 @@ const TEMPLATES = [
   { value: 'bold-local',     label: 'Bold & Local',      desc: 'Charcoal background, amber accents. High-energy, community-first.' },
   { value: 'clean-friendly', label: 'Clean & Friendly',  desc: 'White navbar, sky-blue accents. Approachable and residential.' },
   { value: 'rustic-rugged',  label: 'Rustic & Rugged',   desc: 'Warm brown, rust orange. Established and trustworthy.' },
+  { value: 'metro-pro',     label: 'Metro Pro',          desc: 'Dark primary nav, sharp corners, diagonal hero. Enterprise and professional.', proOnly: true },
 ]
 
 export default function IntakeStep2Branding({ form, setForm, token, tier }: Props) {
@@ -79,7 +80,7 @@ export default function IntakeStep2Branding({ form, setForm, token, tier }: Prop
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3">Website Style</label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {TEMPLATES.map(t => (
+              {TEMPLATES.filter(t => !t.proOnly || tier === 'pro' || tier === 'elite').map(t => (
                 <button key={t.value} type="button"
                   onClick={() => setForm({ ...form, template: t.value, primary_color: undefined, accent_color: undefined })}
                   className={`text-left p-4 rounded-xl border-2 transition ${currentTemplate === t.value ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-gray-300'}`}>
