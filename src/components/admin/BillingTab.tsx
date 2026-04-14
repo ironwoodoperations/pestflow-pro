@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
 import PageHelpBanner from './PageHelpBanner'
+import UpgradeCards from './UpgradeCards'
 import { CreditCard, Calendar, CheckCircle, Clock, XCircle } from 'lucide-react'
 
 interface PaymentRow {
@@ -70,6 +71,7 @@ export default function BillingTab() {
   const [clientEmail, setClientEmail] = useState('')
   const [upgradeError, setUpgradeError] = useState<string | null>(null)
   const [isDemoTenant, setIsDemoTenant] = useState(false)
+  const [businessName, setBusinessName] = useState('')
 
   // Slug from hostname: cypress-creek-pest-control.pestflowpro.com → "cypress-creek-pest-control"
   const clientSlug = (() => {
@@ -98,6 +100,7 @@ export default function BillingTab() {
         bizRes.data?.value?.email ||
         ''
       setClientEmail(email)
+      if (bizRes.data?.value?.name) setBusinessName(bizRes.data.value.name)
       const demoActive = demoRes.data?.value?.active === true || clientSlug === 'pestflow-pro' || clientSlug === ''
       setIsDemoTenant(demoActive)
       setLoading(false)
@@ -245,6 +248,11 @@ export default function BillingTab() {
           </a>
         </div>
       </div>
+
+      {/* Upgrade cards — only shown on real (non-demo) clients below Elite */}
+      {!isDemoTenant && subscription && subscription.tier < 4 && (
+        <UpgradeCards currentTier={subscription.tier} businessName={businessName} />
+      )}
 
       {/* Payment history */}
       <div className="bg-white rounded-xl border border-gray-200">
