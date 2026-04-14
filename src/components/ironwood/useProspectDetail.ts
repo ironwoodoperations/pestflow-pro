@@ -47,7 +47,9 @@ export function useProspectDetail(
     if (!form.intake_submitted_at) return
     if (hasAutoImported.current) return
     const bi = (form.business_info || {}) as Record<string, any>
-    const isEmpty = !bi.address && !bi.hours && !bi.phone
+    // Only skip if address AND hours are already populated — phone is synced from Contact
+    // and should not block auto-import of intake address/hours/tagline/etc.
+    const isEmpty = !bi.address && !bi.hours
     if (!isEmpty) return
     const d = (form.intake_data || {}) as Record<string, any>
     const biz = (d.business || {}) as Record<string, any>
