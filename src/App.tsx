@@ -12,6 +12,7 @@ import Login from './pages/admin/Login'
 import ProtectedRoute from './components/ProtectedRoute'
 import { PlanProvider } from './context/PlanContext'
 import { TemplateProvider } from './context/TemplateContext'
+import { TenantBootProvider } from './context/TenantBootProvider'
 import PublicShell from './components/PublicShell'
 
 // Critical path — eager
@@ -86,6 +87,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <PlanProvider>
+      <TenantBootProvider>
       <TemplateProvider>
       <ScrollToTop />
       <Toaster richColors position="top-right" />
@@ -162,6 +164,7 @@ export default function App() {
       </Routes>
       </ErrorBoundary>
       </TemplateProvider>
+      </TenantBootProvider>
       </PlanProvider>
     </BrowserRouter>
   )
