@@ -75,9 +75,9 @@ export default function ShellHero() {
   }, [])
 
   const headline = homeContent.hero_headline?.trim()
-    || homeContent.title?.trim()
     || custom.hero_headline?.trim()
-    || (biz.name ? `${biz.name} — Professional Pest Control` : 'Professional Pest Control You Can Trust')
+    || biz.name?.trim()
+    || 'Professional Pest Control You Can Trust'
 
   // Subtext: use page_content intro, then subtitle, then city-based fallback
   const city = biz.address ? biz.address.split(',')[0].trim() : null
