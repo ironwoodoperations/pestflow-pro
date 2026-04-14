@@ -182,6 +182,26 @@ Deno.serve(async (req: Request) => {
     // Step 3: Seed all 11 required settings keys using wizard data where available
     const email = wbi.email || bi.email || ''
 
+    // Resolve subscription tier — supports numeric tier (from Provisioning.tsx) or string plan name
+    const _tierFromStr = (s: string): number => {
+      const sl = s.toLowerCase().trim()
+      if (sl === 'elite') return 4
+      if (sl === 'pro') return 3
+      if (sl === 'growth' || sl === 'grow') return 2
+      return 1
+    }
+    const _rawTier = wsub.tier ?? subscription?.tier
+    const _planStr  = wsub.plan_name || subscription?.plan_name || body.plan || ''
+    const resolvedTier: number =
+      typeof _rawTier === 'number' ? _rawTier
+      : typeof _rawTier === 'string' && _rawTier ? _tierFromStr(_rawTier)
+      : _planStr ? _tierFromStr(_planStr)
+      : 1
+    const _tierNames: Record<number, string> = { 1: 'Starter', 2: 'Grow', 3: 'Pro', 4: 'Elite' }
+    const _tierPrices: Record<number, number> = { 1: 149, 2: 249, 3: 349, 4: 499 }
+    const resolvedPlanName  = _tierNames[resolvedTier]  || 'Starter'
+    const resolvedMonthlyPrice = wsub.monthly_price || subscription?.monthly_price || _tierPrices[resolvedTier] || 149
+
     const settingsRows = [
       { tenant_id: tenantId, key: 'business_info', value: {
         name:            wbi.name            || bi.name    || '',
@@ -234,9 +254,10 @@ Deno.serve(async (req: Request) => {
       { tenant_id: tenantId, key: 'notifications',        value: { cc_email: '', lead_email: resolvedAdminEmail || email } },
       { tenant_id: tenantId, key: 'demo_mode',            value: { active: false, seeded_at: '' } },
       { tenant_id: tenantId, key: 'subscription', value: {
-        tier:          wsub.tier          ?? subscription?.tier          ?? 1,
-        plan_name:     wsub.plan_name     || subscription?.plan_name     || 'Starter',
-        monthly_price: wsub.monthly_price || subscription?.monthly_price || 149,
+        tier:          resolvedTier,
+        plan_name:     resolvedPlanName,
+        monthly_price: resolvedMonthlyPrice,
+        status:        'active',
       }},
     ]
 
