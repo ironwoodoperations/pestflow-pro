@@ -39,7 +39,7 @@ export default function OnboardingSection({ form, setField, onBlur, prospect, on
     }
     onBlur()
   }
-  const planKey = PLANS.find(p => p.name === form.plan_name)?.id || ''
+  const planKey = PLANS.find(p => p.name === form.plan_name)?.id || 'grow'
 
   return (
     <div className="space-y-4">
