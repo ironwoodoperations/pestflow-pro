@@ -4,7 +4,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
+const SUPABASE_URL             = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 
 const CORS = {
@@ -19,14 +19,14 @@ Deno.serve(async (req: Request) => {
     new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', ...CORS } })
 
   try {
-    // Verify JWT
-    const token = (req.headers.get('Authorization') || '').replace('Bearer ', '').trim()
+    // Verify JWT — use service role client (reliable for any valid JWT)
+    const authHeader = req.headers.get('Authorization') || req.headers.get('authorization') || ''
+    const token = authHeader.replace(/^[Bb]earer\s+/, '').trim()
     if (!token) return json({ error: 'Unauthorized' }, 401)
 
-    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || ''
-    const anonClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-    const { data: { user }, error: authError } = await anonClient.auth.getUser(token)
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+    console.log('ironwood-provision | user:', user?.email, '| error:', authError?.message)
     if (authError || !user || user.email !== 'admin@pestflowpro.com') {
       return json({ error: 'Forbidden' }, 403)
     }

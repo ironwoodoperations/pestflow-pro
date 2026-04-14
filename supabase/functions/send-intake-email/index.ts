@@ -7,8 +7,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { sendEmail } from '../_shared/sendEmail.ts'
 
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
-const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || ''
+const SUPABASE_URL             = Deno.env.get('SUPABASE_URL') || ''
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -16,11 +16,13 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Verify JWT
-    const authHeader = req.headers.get('Authorization') || ''
-    const anonClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-    const { data: { user }, error: authErr } = await anonClient.auth.getUser(authHeader.replace('Bearer ', ''))
+    // Verify JWT — use service role client (reliable for any valid JWT)
+    const authHeader = req.headers.get('Authorization') || req.headers.get('authorization') || ''
+    const token = authHeader.replace(/^[Bb]earer\s+/, '')
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    const { data: { user }, error: authErr } = await supabase.auth.getUser(token)
     if (authErr || !user) {
+      console.log('[send-intake-email] Unauthorized — user:', user?.email, 'error:', authErr?.message)
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
     }
 
