@@ -160,6 +160,12 @@ export default function IntakeLinkSection({ prospectId, adminEmail, companyName,
         youtube:   mergeIfBlank(existingSl.youtube,   social.youtube_url),
       }
 
+      // domain → website_url (only if not already set)
+      const domainName = d.domain?.domain_name?.trim()
+      if (domainName && !prospect.website_url?.trim()) {
+        updates.website_url = domainName.startsWith('http') ? domainName : `https://${domainName}`
+      }
+
       await supabase.from('prospects').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', prospectId)
 
       // Reload fresh prospect record

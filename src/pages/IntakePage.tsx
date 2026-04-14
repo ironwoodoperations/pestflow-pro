@@ -90,6 +90,10 @@ export default function IntakePage() {
           address: [b.address, b.city, b.state, b.zip].filter(Boolean).join(', '),
           hours:   b.hours         || '',
           tagline: b.tagline       || '',
+          owner_name:      b.owner_name      || '',
+          founded_year:    b.founded_year    || '',
+          license:         b.license_number  || '',
+          num_technicians: b.num_technicians  || '',
         },
         branding: {
           ...existingBr,
@@ -97,6 +101,12 @@ export default function IntakePage() {
           primary_color: br.primary_color || existingBr.primary_color || '#E87800',
           accent_color:  br.accent_color  || existingBr.accent_color  || '#1a1a1a',
         },
+        // Store domain in website_url if provided and not already set
+        ...(form.domain.domain_name?.trim() ? {
+          website_url: form.domain.domain_name.startsWith('http')
+            ? form.domain.domain_name.trim()
+            : `https://${form.domain.domain_name.trim()}`,
+        } : {}),
       }).eq('id', tokenRow.prospect_id),
       supabase.from('intake_tokens').update({ submitted_at: now }).eq('token', token!),
     ])
