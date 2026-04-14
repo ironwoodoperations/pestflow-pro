@@ -115,7 +115,7 @@ export default function ProspectSections({ id, form, openSection, setOpenSection
       {/* 3. Intake Link */}
       <Acc id="intake_link" title="Intake Link" isComplete={!!form.intake_submitted_at} isLocked={!!form.intake_submitted_at} completedLabel={form.intake_submitted_at ? `Submitted ${fmt(form.intake_submitted_at)}` : undefined} {...acc}>
         <div className="flex justify-end mb-2"><RepGuideButton section="intake" onOpen={setGuideSection} /></div>
-        <IntakeLinkSection prospectId={id} adminEmail={form.admin_email ?? undefined} companyName={form.company_name ?? undefined} onImportSuccess={data => onUpdate(data as Partial<Prospect>)} />
+        <IntakeLinkSection prospectId={id} adminEmail={form.email ?? undefined} companyName={form.company_name ?? undefined} onImportSuccess={data => onUpdate(data as Partial<Prospect>)} />
       </Acc>
 
       {/* 4. Site Content */}

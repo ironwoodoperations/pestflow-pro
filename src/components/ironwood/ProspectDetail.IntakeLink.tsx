@@ -69,7 +69,7 @@ export default function IntakeLinkSection({ prospectId, adminEmail, companyName,
   }
 
   async function sendIntakeEmail() {
-    if (!tokenRow || !adminEmail) { toast.error('No email address on file for this prospect.'); return }
+    if (!tokenRow || !adminEmail) { toast.error('Add a contact email in the Contact & Pipeline section before sending.'); return }
     setSendingEmail(true)
     try {
       let { data: { session } } = await supabase.auth.getSession()
