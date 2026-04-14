@@ -8,6 +8,8 @@ import DashboardSocialWidget from './DashboardSocialWidget'
 import DashboardPlanSection from './DashboardPlanSection'
 import DemoControls from './DemoControls'
 
+const DEMO_TENANT_ID = '9215b06b-3eb5-49a1-a16e-7ff214bf6783'
+
 interface Props {
   onboardingComplete: boolean
   demoActive: boolean
@@ -97,7 +99,7 @@ export default function DashboardHome({ onboardingComplete, demoActive, onDemoSe
         <DashboardSocialWidget onNavigate={onNavigate} />
       </div>
 
-      {!demoActive && tenantId && tier < 4 && (
+      {tenantId === DEMO_TENANT_ID && !demoActive && tier < 4 && (
         <DemoControls tenantId={tenantId} onSeeded={onDemoSeeded} />
       )}
 
