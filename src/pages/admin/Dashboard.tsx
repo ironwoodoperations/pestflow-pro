@@ -111,7 +111,7 @@ export default function Dashboard() {
       <aside className="w-64 flex-shrink-0 flex flex-col" style={{ background: template === 'dang' ? '#0a0a0a' : '#1a1f2e', '--brand-primary': primaryColor, '--brand-accent': accentColor } as React.CSSProperties}>
         <div className="px-6 py-5" style={{ background: template === 'dang' ? '#0a0a0a' : '#141922', borderBottom: template === 'dang' ? '1px solid #1a1a1a' : undefined }}>
           <h1 className="font-oswald text-xl text-white tracking-wide">PestFlow Pro</h1>
-          <p className="text-xs uppercase tracking-widest mt-0.5" style={{ color: template === 'dang' ? '#e5e7eb' : undefined }}>Operations Platform</p>
+          <p className="text-xs uppercase tracking-widest mt-0.5" style={{ color: '#94a3b8' }}>Operations Platform</p>
           {logoUrl && (
             <img src={logoUrl} alt="logo" style={{ maxHeight: '40px', maxWidth: '120px', objectFit: 'contain', marginTop: '8px' }} />
           )}
@@ -127,17 +127,15 @@ export default function Dashboard() {
                 className={`w-full flex items-center gap-3 px-4 py-3 mx-0 rounded-lg text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
                   activeTab === key
                     ? 'text-white border-l-4'
-                    : template === 'dang'
-                      ? 'border-l-4 border-transparent'
-                      : 'text-gray-300 hover:bg-[#22304a] hover:text-white border-l-4 border-transparent'
+                    : 'border-l-4 border-transparent'
                 } ${locked ? 'opacity-50' : ''}`}
                 style={isDangActive
                   ? { borderLeftColor: '#F97316', backgroundColor: '#F97316', color: '#ffffff' }
                   : isDangInactive
-                    ? { color: '#e5e7eb' }
+                    ? { color: '#d1d5db' }
                     : activeTab === key
-                      ? { borderLeftColor: primaryColor, backgroundColor: primaryColor + '26' }
-                      : undefined
+                      ? { borderLeftColor: primaryColor, backgroundColor: primaryColor + '26', color: '#ffffff' }
+                      : { color: '#d1d5db' }
                 }>
                 <Icon size={20} aria-hidden="true" />
                 <span className="flex-1 text-left">{label}</span>
@@ -148,7 +146,7 @@ export default function Dashboard() {
         </nav>
         <TierToggle />
         <div className="px-2 py-4" style={{ borderTop: template === 'dang' ? '1px solid #1a1a1a' : '1px solid rgba(255,255,255,0.1)' }}>
-          <p className="px-4 py-1 text-xs truncate mb-1" style={{ color: template === 'dang' ? '#e5e7eb' : undefined, opacity: template === 'dang' ? 0.6 : undefined }}>{businessName}</p>
+          <p className="px-4 py-1 text-xs truncate mb-1" style={{ color: '#94a3b8' }}>{businessName}</p>
           <button onClick={handleSignOut} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-400 hover:text-red-400 hover:bg-red-400/10 transition-all">
             <LogOut size={20} /> Sign Out
           </button>
