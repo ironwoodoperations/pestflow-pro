@@ -135,9 +135,16 @@ Deno.serve(async (req: Request) => {
         password:      resolvedAdminPassword,
         email_confirm: true,
       })
+
+      // Resolve the user ID — from fresh creation or existing user lookup
+      let resolvedUserId: string | null = authData?.user?.id || null
       if (createUserError) {
         if (createUserError.message?.includes('already been registered') || createUserError.message?.includes('already exists')) {
-          console.warn('Auth user already exists for email:', resolvedAdminEmail, '— proceeding with existing user')
+          console.warn('Auth user already exists for email:', resolvedAdminEmail, '— looking up existing user ID')
+          const { data: { users } } = await supabase.auth.admin.listUsers()
+          const existing = users.find((u: any) => u.email === resolvedAdminEmail)
+          resolvedUserId = existing?.id || null
+          if (!resolvedUserId) console.error('Could not find existing user ID for:', resolvedAdminEmail)
         } else {
           console.error('createUser failed:', createUserError.message)
           return new Response(JSON.stringify({ success: false, error: `Failed to create admin user: ${createUserError.message}` }), {
@@ -145,26 +152,25 @@ Deno.serve(async (req: Request) => {
           })
         }
       }
-      if (!createUserError && authData?.user) {
+
+      if (resolvedUserId) {
         const companyName = wbi.name || bi?.name || resolvedSlug
         // tenant_users
         const { error: tuError } = await supabase
           .from('tenant_users')
-          .insert({ tenant_id: tenantId, user_id: authData.user.id, role: 'admin' })
+          .insert({ tenant_id: tenantId, user_id: resolvedUserId, role: 'admin' })
         if (tuError && tuError.code !== '23505') {
           console.error('Failed to insert tenant_users:', tuError.message)
         }
-        // BUG A: profiles
+        // profiles
         const { error: profError } = await supabase
           .from('profiles')
-          .insert({ id: authData.user.id, tenant_id: tenantId, full_name: companyName + ' Admin', role: 'admin' })
-        if (profError && profError.code !== '23505') {
-          console.error('Failed to insert profiles:', profError.message)
-        }
-        // BUG B: user_roles
+          .upsert({ id: resolvedUserId, tenant_id: tenantId, full_name: companyName + ' Admin', role: 'admin' }, { onConflict: 'id' })
+        if (profError) console.error('Failed to upsert profiles:', profError.message)
+        // user_roles
         const { error: roleError } = await supabase
           .from('user_roles')
-          .insert({ user_id: authData.user.id, role: 'admin' })
+          .insert({ user_id: resolvedUserId, role: 'admin' })
         if (roleError && roleError.code !== '23505') {
           console.error('Failed to insert user_roles:', roleError.message)
         }
