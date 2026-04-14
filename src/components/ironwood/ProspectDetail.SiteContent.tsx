@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import type { Prospect } from './types'
 
 const BI_FIELDS: [string, string][] = [
@@ -17,6 +18,29 @@ interface Props {
 export default function SiteContentSection({ form, setField, onBlur }: Props) {
   const bi = (form.business_info || {}) as Record<string, any>
   const setBi = (k: string, v: any) => setField('business_info', { ...bi, [k]: v })
+
+  // Auto-populate business_info from intake_data after intake submission
+  useEffect(() => {
+    if (!form.intake_submitted_at || !form.intake_data) return
+    const ib = (form.intake_data as any)?.business || {}
+    if (!ib || Object.keys(ib).length === 0) return
+    const currentBi = (form.business_info || {}) as Record<string, any>
+    const fullAddress = [ib.address, ib.city, ib.state, ib.zip].filter(Boolean).join(', ')
+    const merged: Record<string, any> = {
+      ...currentBi,
+      ...((!currentBi.address    && fullAddress)           ? { address:         fullAddress }           : {}),
+      ...((!currentBi.hours      && ib.hours)              ? { hours:           ib.hours }              : {}),
+      ...((!currentBi.tagline    && ib.tagline)            ? { tagline:         ib.tagline }            : {}),
+      ...((!currentBi.license    && ib.license_number)     ? { license:         ib.license_number }     : {}),
+      ...((!currentBi.founded_year && ib.founded_year)     ? { founded_year:    ib.founded_year }       : {}),
+      ...((!currentBi.num_technicians && ib.num_technicians) ? { num_technicians: ib.num_technicians } : {}),
+      ...((!currentBi.owner_name && ib.owner_name)         ? { owner_name:      ib.owner_name }         : {}),
+    }
+    // Only call setField if something actually changed
+    const changed = Object.keys(merged).some(k => merged[k] !== currentBi[k])
+    if (changed) setField('business_info', merged)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.intake_submitted_at])
 
   return (
     <div className="space-y-3">
