@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
+import { readHeroCache, writeHeroCache } from '../../lib/heroCache'
 
 interface BizInfo { name?: string; phone?: string; tagline?: string; address?: string }
 interface SeoSettings { service_areas?: string[] }
@@ -9,11 +10,21 @@ interface Customization { hero_headline?: string }
 interface HeroMedia { youtube_id?: string; thumbnail_url?: string }
 
 export default function MetroProHero() {
-  const [biz, setBiz] = useState<BizInfo>({})
+  // Seed from localStorage to prevent the fallback→real headline flash.
+  const cached = readHeroCache()
+  const [biz, setBiz] = useState<BizInfo>({
+    name: cached.bizName,
+    phone: cached.phone,
+    tagline: cached.tagline,
+    address: cached.address,
+  })
   const [seo, setSeo] = useState<SeoSettings>({})
-  const [custom, setCustom] = useState<Customization>({})
-  const [heroMedia, setHeroMedia] = useState<HeroMedia>({})
-  const [ctaText, setCtaText] = useState('Schedule Inspection')
+  const [custom, setCustom] = useState<Customization>({ hero_headline: cached.customHeadline })
+  const [heroMedia, setHeroMedia] = useState<HeroMedia>({
+    thumbnail_url: cached.thumbnailUrl,
+    youtube_id: cached.youtubeId,
+  })
+  const [ctaText, setCtaText] = useState(cached.ctaText || 'Schedule Inspection')
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
@@ -30,6 +41,17 @@ export default function MetroProHero() {
       if (custRes.data?.value) setCustom(custRes.data.value)
       if (brandRes.data?.value?.cta_text) setCtaText(brandRes.data.value.cta_text)
       if (mediaRes.data?.value) setHeroMedia(mediaRes.data.value)
+
+      writeHeroCache({
+        customHeadline: custRes.data?.value?.hero_headline,
+        bizName: bizRes.data?.value?.name,
+        tagline: bizRes.data?.value?.tagline,
+        phone: bizRes.data?.value?.phone,
+        address: bizRes.data?.value?.address,
+        ctaText: brandRes.data?.value?.cta_text,
+        thumbnailUrl: mediaRes.data?.value?.thumbnail_url,
+        youtubeId: mediaRes.data?.value?.youtube_id,
+      })
     })
   }, [])
 

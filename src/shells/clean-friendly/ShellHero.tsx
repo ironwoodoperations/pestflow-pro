@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
 import { formatPhone } from '../../lib/formatPhone'
+import { readHeroCache, writeHeroCache } from '../../lib/heroCache'
 
 interface Biz { name?: string; phone?: string }
 interface HomeContent { hero_headline?: string; subtitle?: string }
@@ -16,11 +17,17 @@ const STRIPS = [
 ]
 
 export default function ShellHero() {
-  const [biz, setBiz] = useState<Biz>({})
-  const [homeContent, setHomeContent] = useState<HomeContent>({})
-  const [customHeadline, setCustomHeadline] = useState('')
-  const [ctaText, setCtaText] = useState('Get a Free Quote')
-  const [heroSubtext, setHeroSubtext] = useState('Call for Same-Day Service')
+  // Seed from localStorage so the first paint matches the tenant's saved
+  // headline/phone/name instead of the generic fallback.
+  const cached = readHeroCache()
+  const [biz, setBiz] = useState<Biz>({ name: cached.bizName, phone: cached.phone })
+  const [homeContent, setHomeContent] = useState<HomeContent>({
+    hero_headline: cached.headline,
+    subtitle: cached.subtitle,
+  })
+  const [customHeadline, setCustomHeadline] = useState(cached.customHeadline || '')
+  const [ctaText, setCtaText] = useState(cached.ctaText || 'Get a Free Quote')
+  const [heroSubtext, setHeroSubtext] = useState(cached.subtitle || 'Call for Same-Day Service')
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
@@ -36,6 +43,15 @@ export default function ShellHero() {
       if (brandRes.data?.value?.cta_text) setCtaText(brandRes.data.value.cta_text)
       if (contentRes.data) setHomeContent(contentRes.data as HomeContent)
       if (contentRes.data?.subtitle) setHeroSubtext(contentRes.data.subtitle)
+
+      writeHeroCache({
+        headline: contentRes.data?.hero_headline,
+        subtitle: contentRes.data?.subtitle,
+        customHeadline: custRes.data?.value?.hero_headline,
+        bizName: bizRes.data?.value?.name,
+        phone: bizRes.data?.value?.phone,
+        ctaText: brandRes.data?.value?.cta_text,
+      })
     })
   }, [])
 

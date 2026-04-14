@@ -2,11 +2,14 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
+import { readHeroCache, writeHeroCache } from '../../lib/heroCache'
 
 export default function ShellHero() {
-  const [headline, setHeadline] = useState('Your Home. Protected.')
-  const [sub, setSub] = useState('Fast, effective pest control you can trust.')
-  const [cta, setCta] = useState('Get a Free Quote')
+  // Seed from localStorage so first paint already shows the real hero.
+  const cached = readHeroCache()
+  const [headline, setHeadline] = useState(cached.customHeadline || cached.headline || 'Your Home. Protected.')
+  const [sub, setSub] = useState(cached.subtitle || 'Fast, effective pest control you can trust.')
+  const [cta, setCta] = useState(cached.ctaText || 'Get a Free Quote')
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
@@ -19,6 +22,12 @@ export default function ShellHero() {
       if (contentRes.data?.value?.hero_headline) setHeadline(contentRes.data.value.hero_headline)
       if (brandingRes.data?.value?.cta_text) setCta(brandingRes.data.value.cta_text)
       if (pageRes.data?.subtitle) setSub(pageRes.data.subtitle)
+
+      writeHeroCache({
+        customHeadline: contentRes.data?.value?.hero_headline,
+        subtitle: pageRes.data?.subtitle,
+        ctaText: brandingRes.data?.value?.cta_text,
+      })
     })
   }, [])
 

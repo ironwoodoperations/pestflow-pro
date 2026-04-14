@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
 import { formatPhone } from '../../lib/formatPhone'
+import { readHeroCache, writeHeroCache } from '../../lib/heroCache'
 
 const PHOTOS = [
   'https://images.pexels.com/photos/4252163/pexels-photo-4252163.jpeg?auto=compress&cs=tinysrgb&w=400',
@@ -26,10 +27,20 @@ const Circle = ({ src, alt, style }: { src: string; alt: string; style: React.CS
 )
 
 export default function ShellHero() {
-  const [biz, setBiz] = useState<Biz>({})
-  const [heroMedia, setHeroMedia] = useState<HeroMedia>({})
-  const [homeContent, setHomeContent] = useState<HomeContent>({})
-  const [customHeadline, setCustomHeadline] = useState('')
+  // Seed from localStorage so the first paint already shows the real headline.
+  const cached = readHeroCache()
+  const [biz, setBiz] = useState<Biz>({
+    name: cached.bizName,
+    phone: cached.phone,
+    tagline: cached.tagline,
+    address: cached.address,
+  })
+  const [heroMedia, setHeroMedia] = useState<HeroMedia>({ thumbnail_url: cached.thumbnailUrl })
+  const [homeContent, setHomeContent] = useState<HomeContent>({
+    hero_headline: cached.headline,
+    subtitle: cached.subtitle,
+  })
+  const [customHeadline, setCustomHeadline] = useState(cached.customHeadline || '')
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
@@ -44,6 +55,17 @@ export default function ShellHero() {
       if (mediaRes.data?.value) setHeroMedia(mediaRes.data.value)
       if (custRes.data?.value?.hero_headline) setCustomHeadline(custRes.data.value.hero_headline)
       if (contentRes.data) setHomeContent(contentRes.data as HomeContent)
+
+      writeHeroCache({
+        headline: contentRes.data?.hero_headline,
+        subtitle: contentRes.data?.subtitle,
+        customHeadline: custRes.data?.value?.hero_headline,
+        bizName: bizRes.data?.value?.name,
+        tagline: bizRes.data?.value?.tagline,
+        phone: bizRes.data?.value?.phone,
+        address: bizRes.data?.value?.address,
+        thumbnailUrl: mediaRes.data?.value?.thumbnail_url,
+      })
     })
   }, [])
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
 import { formatPhone } from '../../lib/formatPhone'
+import { readHeroCache, writeHeroCache } from '../../lib/heroCache'
 
 const FALLBACK_PHOTO = 'https://images.pexels.com/photos/3807517/pexels-photo-3807517.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750'
 
@@ -10,10 +11,22 @@ interface HeroMedia { thumbnail_url?: string; youtube_id?: string }
 interface HomeContent { hero_headline?: string; subtitle?: string }
 
 export default function ShellHero() {
-  const [biz, setBiz] = useState<BizState>({})
-  const [heroMedia, setHeroMedia] = useState<HeroMedia>({})
-  const [homeContent, setHomeContent] = useState<HomeContent>({})
-  const [customHeadline, setCustomHeadline] = useState('')
+  // Seed from localStorage to avoid the fallback→real headline flash on load.
+  const cached = readHeroCache()
+  const [biz, setBiz] = useState<BizState>({
+    name: cached.bizName,
+    phone: cached.phone,
+    tagline: cached.tagline,
+  })
+  const [heroMedia, setHeroMedia] = useState<HeroMedia>({
+    thumbnail_url: cached.thumbnailUrl,
+    youtube_id: cached.youtubeId,
+  })
+  const [homeContent, setHomeContent] = useState<HomeContent>({
+    hero_headline: cached.headline,
+    subtitle: cached.subtitle,
+  })
+  const [customHeadline, setCustomHeadline] = useState(cached.customHeadline || '')
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
@@ -28,6 +41,17 @@ export default function ShellHero() {
       if (mediaRes.data?.value) setHeroMedia(mediaRes.data.value)
       if (custRes.data?.value?.hero_headline) setCustomHeadline(custRes.data.value.hero_headline)
       if (contentRes.data) setHomeContent(contentRes.data as HomeContent)
+
+      writeHeroCache({
+        headline: contentRes.data?.hero_headline,
+        subtitle: contentRes.data?.subtitle,
+        customHeadline: custRes.data?.value?.hero_headline,
+        bizName: bizRes.data?.value?.name,
+        tagline: bizRes.data?.value?.tagline,
+        phone: bizRes.data?.value?.phone,
+        thumbnailUrl: mediaRes.data?.value?.thumbnail_url,
+        youtubeId: mediaRes.data?.value?.youtube_id,
+      })
     })
   }, [])
 

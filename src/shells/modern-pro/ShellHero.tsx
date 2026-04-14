@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
+import { readHeroCache, writeHeroCache } from '../../lib/heroCache'
 
 interface BusinessInfo {
   name?: string
@@ -16,11 +17,28 @@ interface HeroMedia { youtube_id?: string; thumbnail_url?: string }
 interface HomeContent { hero_headline?: string; title?: string; subtitle?: string; intro?: string }
 
 export default function ShellHero() {
-  const [biz, setBiz] = useState<BusinessInfo>({})
-  const [custom, setCustom] = useState<Customization>({})
-  const [heroMedia, setHeroMedia] = useState<HeroMedia>({})
-  const [ctaText, setCtaText] = useState('Get a Free Quote')
-  const [homeContent, setHomeContent] = useState<HomeContent>({})
+  // Seed state synchronously from localStorage so the first paint matches the
+  // tenant's real hero content instead of the generic fallback. See heroCache.ts.
+  const cached = readHeroCache()
+  const [biz, setBiz] = useState<BusinessInfo>({
+    name: cached.bizName,
+    tagline: cached.tagline,
+    phone: cached.phone,
+    address: cached.address,
+    founded_year: cached.foundedYear,
+    num_technicians: cached.numTechnicians,
+  })
+  const [custom, setCustom] = useState<Customization>({ hero_headline: cached.customHeadline })
+  const [heroMedia, setHeroMedia] = useState<HeroMedia>({
+    thumbnail_url: cached.thumbnailUrl,
+    youtube_id: cached.youtubeId,
+  })
+  const [ctaText, setCtaText] = useState(cached.ctaText || 'Get a Free Quote')
+  const [homeContent, setHomeContent] = useState<HomeContent>({
+    hero_headline: cached.headline,
+    subtitle: cached.subtitle,
+    intro: cached.intro,
+  })
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
@@ -37,6 +55,22 @@ export default function ShellHero() {
       if (custRes.data?.value) setCustom(custRes.data.value)
       if (brandRes.data?.value?.cta_text) setCtaText(brandRes.data.value.cta_text)
       if (contentRes.data) setHomeContent(contentRes.data)
+
+      writeHeroCache({
+        headline: contentRes.data?.hero_headline,
+        subtitle: contentRes.data?.subtitle,
+        intro: contentRes.data?.intro,
+        customHeadline: custRes.data?.value?.hero_headline,
+        bizName: bizRes.data?.value?.name,
+        tagline: bizRes.data?.value?.tagline,
+        phone: bizRes.data?.value?.phone,
+        address: bizRes.data?.value?.address,
+        foundedYear: bizRes.data?.value?.founded_year,
+        numTechnicians: bizRes.data?.value?.num_technicians,
+        ctaText: brandRes.data?.value?.cta_text,
+        thumbnailUrl: mediaRes.data?.value?.thumbnail_url,
+        youtubeId: mediaRes.data?.value?.youtube_id,
+      })
     })
   }, [])
 
