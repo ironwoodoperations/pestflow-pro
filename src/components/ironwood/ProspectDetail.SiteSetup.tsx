@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import type { Prospect } from './types'
 
 const isValidEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)
@@ -17,6 +18,14 @@ export default function SiteSetupSection({ form, setField, onBlur }: Props) {
     bi.email?.trim() ||
     (form as any).intake_data?.business?.email?.trim() ||
     ''
+
+  // Auto-fill admin email from contact email when blank
+  useEffect(() => {
+    if (!form.admin_email && fallbackEmail) {
+      setField('admin_email', fallbackEmail)
+      onBlur()
+    }
+  }, [fallbackEmail]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="space-y-3">
