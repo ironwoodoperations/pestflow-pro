@@ -348,7 +348,10 @@ Deno.serve(async (req: Request) => {
           }),
         })
         const zernioData = await zernioRes.json()
-        const zernioProfileId: string | undefined = zernioData?.profile?._id
+        console.log('[provision-tenant] Zernio raw response:', JSON.stringify(zernioData))
+        // Zernio may return profile._id, profile.id, or id at root
+        const zernioProfileId: string | undefined =
+          zernioData?.profile?._id || zernioData?.profile?.id || zernioData?.id || zernioData?._id
 
         if (zernioProfileId) {
           console.log(`[provision-tenant] Zernio profile created: ${zernioProfileId}`)
@@ -359,11 +362,12 @@ Deno.serve(async (req: Request) => {
             .eq('key', 'integrations')
             .maybeSingle()
           const currentIntg = existingIntg?.value ?? {}
-          await supabase
+          const { error: zernioSaveErr } = await supabase
             .from('settings')
             .update({ value: { ...currentIntg, zernio_profile_id: zernioProfileId } })
             .eq('tenant_id', tenantId)
             .eq('key', 'integrations')
+          if (zernioSaveErr) console.error('[provision-tenant] Failed to save zernio_profile_id:', zernioSaveErr.message)
 
           // Register webhook so Zernio sends account.connected + post status events
           try {
