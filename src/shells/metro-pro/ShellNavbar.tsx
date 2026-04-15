@@ -4,6 +4,7 @@ import { Menu, X, Phone, ChevronDown } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
 import { useTemplate } from '../../context/TemplateContext'
+import { useTenantBoot } from '../../context/TenantBootProvider'
 import { formatPhone } from '../../lib/formatPhone'
 
 const SERVICE_LINKS = [
@@ -24,11 +25,11 @@ const NAV_LINKS = [
 ]
 
 export default function MetroProNavbar() {
-  const { businessName: ctxName } = useTemplate()
-  const [businessName, setBusinessName] = useState(ctxName)
-  const [logoUrl, setLogoUrl] = useState('')
+  const { businessName } = useTemplate()
+  const { tenant } = useTenantBoot()
+  const logoUrl = tenant?.logoUrl || ''
+  const ctaText = tenant?.ctaText || 'Get Free Quote'
   const [phone, setPhone] = useState('')
-  const [ctaText, setCtaText] = useState('Get Free Quote')
   const [mobileOpen, setMobileOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -39,14 +40,8 @@ export default function MetroProNavbar() {
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const [bizRes, brandRes] = await Promise.all([
-        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
-        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
-      ])
-      if (bizRes.data?.value?.name) setBusinessName(bizRes.data.value.name)
-      if (bizRes.data?.value?.phone) setPhone(bizRes.data.value.phone)
-      if (brandRes.data?.value?.logo_url) setLogoUrl(brandRes.data.value.logo_url)
-      if (brandRes.data?.value?.cta_text) setCtaText(brandRes.data.value.cta_text)
+      const { data } = await supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle()
+      if (data?.value?.phone) setPhone(data.value.phone)
     })
   }, [])
 

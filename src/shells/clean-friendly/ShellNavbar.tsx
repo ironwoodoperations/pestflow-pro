@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { Menu, X, ChevronDown } from 'lucide-react'
-import { supabase } from '../../lib/supabase'
-import { resolveTenantId } from '../../lib/tenant'
 import { useTemplate } from '../../context/TemplateContext'
+import { useTenantBoot } from '../../context/TenantBootProvider'
 
 const SERVICE_LINKS = [
   { label: 'Mosquito Control', href: '/mosquito-control' },
@@ -29,28 +28,15 @@ const NAV_LINKS = [
 ]
 
 export default function ShellNavbar() {
-  const { businessName: ctxBusinessName } = useTemplate()
-  const [businessName, setBusinessName] = useState(ctxBusinessName)
-  const [logoUrl, setLogoUrl] = useState('')
-  const [ctaText, setCtaText] = useState('Get a Free Quote')
+  const { businessName } = useTemplate()
+  const { tenant } = useTenantBoot()
+  const logoUrl = tenant?.logoUrl || ''
+  const ctaText = tenant?.ctaText || 'Get a Free Quote'
   const [mobileOpen, setMobileOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  useEffect(() => {
-    resolveTenantId().then(async (tenantId) => {
-      if (!tenantId) return
-      const [bizRes, brandRes] = await Promise.all([
-        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
-        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
-      ])
-      if (bizRes.data?.value?.name) setBusinessName(bizRes.data.value.name)
-      if (brandRes.data?.value?.logo_url) setLogoUrl(brandRes.data.value.logo_url)
-      if (brandRes.data?.value?.cta_text) setCtaText(brandRes.data.value.cta_text)
-    })
-  }, [])
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === 'Escape') { setMobileOpen(false); setDropdownOpen(false) } }
