@@ -70,7 +70,7 @@ export default function MarketingHero() {
           </h1>
 
           <p style={{ fontFamily: F.b, fontSize: 18, color: C.muted, lineHeight: 1.7, margin: '0 0 36px', maxWidth: 520 }}>
-            Professional website. Local SEO. Social media. Lead capture. All done for you — so you can focus on running your business.
+            Professional website. Local SEO. Social media. Lead capture. All done for you — and always in your control. No agency gatekeeping. Update your site, your content, and your services on your schedule.
           </p>
 
           <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 28 }}>
