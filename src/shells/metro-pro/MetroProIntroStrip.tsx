@@ -5,18 +5,30 @@ interface Props {
   city: string
   aboutIntro: string
   phone: string
+  imageUrl?: string
 }
 
-export default function MetroProIntroStrip({ businessName, city, aboutIntro, phone }: Props) {
-  const heading = businessName
-    ? `${businessName} — ${city ? `${city} ` : ''}Pest Control, Termite and Mosquito Professionals`
-    : 'Your Local Pest Control, Termite and Mosquito Professionals'
+function formatPhone(raw: string): string {
+  const digits = raw.replace(/\D/g, '')
+  if (digits.length === 10) return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`
+  if (digits.length === 11 && digits[0] === '1') return `(${digits.slice(1,4)}) ${digits.slice(4,7)}-${digits.slice(7)}`
+  return raw
+}
+
+const FALLBACK_IMAGE = '/images/pests/pest_control.jpg'
+
+export default function MetroProIntroStrip({ businessName, aboutIntro, phone, imageUrl }: Props) {
+  const image = imageUrl || FALLBACK_IMAGE
 
   return (
     <section className="py-16" style={{ backgroundColor: '#f8f9fa' }}>
       <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-        {/* Left: placeholder image */}
-        <div className="relative rounded-xl overflow-hidden" style={{ minHeight: '320px', background: 'linear-gradient(135deg, var(--color-bg-hero) 0%, var(--color-primary) 100%)' }}>
+        {/* Left: image */}
+        <div
+          className="relative rounded-xl overflow-hidden"
+          style={{ minHeight: '320px', backgroundImage: `url(${image})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+        >
+          <div className="absolute inset-0" style={{ backgroundColor: 'rgba(0,0,0,0.35)' }} />
           <div className="absolute inset-0 flex items-end p-6">
             <div className="bg-black/50 backdrop-blur-sm rounded-lg px-4 py-2">
               <p className="text-white font-semibold text-sm">{businessName || 'Your Pest Control Team'}</p>
@@ -29,7 +41,7 @@ export default function MetroProIntroStrip({ businessName, city, aboutIntro, pho
         <div>
           <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--color-accent)' }}>About Us</p>
           <h2 className="text-2xl md:text-3xl font-bold mb-5 leading-tight" style={{ color: 'var(--color-primary)' }}>
-            {heading}
+            {businessName || 'Your Local Pest Control Professionals'}
           </h2>
           <p className="text-gray-600 mb-4 leading-relaxed">
             {aboutIntro || `${businessName || 'Our team'} provides industry-leading pest control solutions for residential and commercial properties. We combine cutting-edge technology with proven techniques to deliver lasting results.`}
@@ -47,7 +59,7 @@ export default function MetroProIntroStrip({ businessName, city, aboutIntro, pho
           </div>
           {phone && (
             <p className="mt-4 text-sm text-gray-500">
-              Or call us: <a href={`tel:${phone.replace(/\D/g, '')}`} className="font-semibold hover:underline" style={{ color: 'var(--color-primary)' }}>{phone}</a>
+              Or call us: <a href={`tel:${phone.replace(/\D/g, '')}`} className="font-semibold hover:underline" style={{ color: 'var(--color-primary)' }}>{formatPhone(phone)}</a>
             </p>
           )}
         </div>
