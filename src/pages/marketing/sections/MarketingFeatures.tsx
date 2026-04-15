@@ -12,7 +12,7 @@ const FEATURES = [
 
 export default function MarketingFeatures() {
   return (
-    <section id="features" style={{ background: C.bg, padding: '96px 32px' }}>
+    <section id="features" style={{ background: C.bg, padding: '64px 32px 96px' }}>
       <div style={{ maxWidth: 1160, margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: 64 }}>
           <div style={{ fontFamily: F.b, fontSize: 12, fontWeight: 700, color: C.green, letterSpacing: 2, marginBottom: 12, textTransform: 'uppercase' }}>

@@ -51,7 +51,7 @@ export default function MarketingHero() {
   const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
 
   return (
-    <section style={{ background: C.bg, padding: '80px 32px', position: 'relative', overflow: 'hidden' }}>
+    <section style={{ background: C.bg, padding: '80px 32px 48px', position: 'relative', overflow: 'hidden' }}>
       {/* Background glow */}
       <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
         <div style={{ position: 'absolute', top: '-10%', left: '20%', width: 600, height: 500, background: 'radial-gradient(ellipse, rgba(34,197,94,0.12) 0%, transparent 70%)' }} />
@@ -90,8 +90,17 @@ export default function MarketingHero() {
           </p>
         </div>
 
-        {/* Right: mockup */}
-        <div style={{ flex: '1 1 380px', display: 'flex', justifyContent: 'center' }}>
+        {/* Right: logo shield + mockup */}
+        <div style={{ flex: '1 1 380px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0 }}>
+          <div style={{
+            background: '#ffffff', borderRadius: 16,
+            padding: '16px 20px',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.18)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            marginBottom: 16,
+          }}>
+            <img src="/pestflow-pro.png" alt="PestFlow Pro" style={{ height: 72, width: 'auto' }} />
+          </div>
           <BrowserMockup />
         </div>
       </div>
