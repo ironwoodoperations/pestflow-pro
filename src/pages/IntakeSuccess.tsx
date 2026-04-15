@@ -90,9 +90,10 @@ export default function IntakeSuccess() {
           <div className="h-5 w-64 rounded animate-pulse bg-gray-100 mx-auto mb-3" />
           <div className="h-3 w-full rounded animate-pulse bg-gray-100 mb-2" />
           <div className="h-3 w-4/5 rounded animate-pulse bg-gray-100 mx-auto mb-6" />
-          <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-full" style={{ background: '#1a1a2e' }}>
-            <img src="/images/pests/pestflow-pro-white.png" alt="PestFlow Pro" style={{ height: 22 }} />
-          </span>
+          <div>
+            <p className="text-xs text-gray-400 uppercase tracking-widest mb-2">Powered by</p>
+            <img src="/images/pests/pestflow-pro-white.png" alt="PestFlow Pro" style={{ height: 56, margin: '0 auto', filter: 'brightness(0)' }} />
+          </div>
         </div>
       </div>
     )
@@ -124,9 +125,10 @@ export default function IntakeSuccess() {
             Your New Site Is Being Built!
           </h1>
           <p className="text-gray-500 text-sm mb-6 leading-relaxed">{subtext}</p>
-          <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-full" style={{ background: '#1a1a2e' }}>
-            <img src="/images/pests/pestflow-pro-white.png" alt="PestFlow Pro" style={{ height: 22 }} />
-          </span>
+          <div>
+            <p className="text-xs text-gray-400 uppercase tracking-widest mb-2">Powered by</p>
+            <img src="/images/pests/pestflow-pro-white.png" alt="PestFlow Pro" style={{ height: 56, margin: '0 auto', filter: 'brightness(0)' }} />
+          </div>
         </div>
       </div>
     </div>
