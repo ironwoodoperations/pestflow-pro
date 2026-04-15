@@ -119,7 +119,7 @@ const QuotePage = () => {
             submitting={submitting}
             smsMarketing={smsMarketing}
             onSmsMarketingChange={setSmsMarketing}
-            onSmsTransactionalChange={setSmsTransactional}
+            onSmsTransactionalChange={() => {}}
             onSubmit={handleSubmit(onSubmit)}
           />
         </div>
