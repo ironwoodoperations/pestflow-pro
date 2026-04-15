@@ -81,17 +81,34 @@ export default function IntakeSuccess() {
     accentColor:  brand.accentColor,
   }
 
+  // While loading, show a clean centered card on a dark background — no flash, no placeholder text
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#0f172a' }}>
+        <div className="bg-white rounded-2xl shadow-2xl p-8 md:p-12 max-w-lg w-full text-center">
+          <div className="h-8 w-48 rounded-lg animate-pulse bg-gray-100 mx-auto mb-4" />
+          <div className="h-5 w-64 rounded animate-pulse bg-gray-100 mx-auto mb-3" />
+          <div className="h-3 w-full rounded animate-pulse bg-gray-100 mb-2" />
+          <div className="h-3 w-4/5 rounded animate-pulse bg-gray-100 mx-auto mb-6" />
+          <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-full" style={{ background: '#1a1a2e' }}>
+            <img src="/images/pests/pestflow-pro-white.png" alt="PestFlow Pro" style={{ height: 22 }} />
+          </span>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div
       className="relative min-h-screen overflow-hidden"
       style={{ '--color-primary': brand.primaryColor, '--color-accent': brand.accentColor } as React.CSSProperties}
     >
-      {/* Blurred shell mockup — purely decorative backdrop */}
+      {/* Blurred shell mockup — purely decorative backdrop, only renders after data is ready */}
       <div
         aria-hidden
         style={{ filter: 'blur(3px)', opacity: 0.4, pointerEvents: 'none', userSelect: 'none' }}
       >
-        {!loading && <Preview {...previewProps} />}
+        <Preview {...previewProps} />
       </div>
 
       {/* Dark scrim */}
