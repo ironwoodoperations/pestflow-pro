@@ -85,9 +85,14 @@ export default function MarketingCRM() {
           <LeadFeedMockup />
         </div>
 
-        <p style={{ textAlign: 'center', fontFamily: F.b, fontSize: 12, color: C.muted, marginTop: 16 }}>
-          Demo login: admin@pestflowpro.com / pf123demo
-        </p>
+        <div style={{ textAlign: 'center', marginTop: '12px', display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <a href="https://pestflow-pro.pestflowpro.com/admin" target="_blank" rel="noopener noreferrer" style={{ color: '#22c55e', fontSize: '14px', fontWeight: 500, textDecoration: 'underline' }}>
+            Try the live dashboard →
+          </a>
+          <span style={{ fontSize: '13px', color: '#6b7280' }}>
+            Login: admin@pestflowpro.com / pf123demo
+          </span>
+        </div>
       </div>
     </section>
   )

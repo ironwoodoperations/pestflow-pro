@@ -44,6 +44,14 @@ export default function MarketingHero() {
           <p style={{ fontFamily: F.b, fontSize: 13, color: C.muted, margin: 0 }}>
             Trusted by pest control companies across Texas
           </p>
+          <div style={{ display: 'flex', gap: '24px', marginTop: '12px', flexWrap: 'wrap' }}>
+            <a href="https://pestflow-pro.pestflowpro.com" target="_blank" rel="noopener noreferrer" style={{ color: '#22c55e', fontSize: '14px', textDecoration: 'underline' }}>
+              View live demo site →
+            </a>
+            <a href="https://pestflow-pro.pestflowpro.com/admin" target="_blank" rel="noopener noreferrer" style={{ color: '#22c55e', fontSize: '14px', textDecoration: 'underline' }}>
+              Explore the dashboard →
+            </a>
+          </div>
         </div>
 
         {/* Right: logo + carousel */}
