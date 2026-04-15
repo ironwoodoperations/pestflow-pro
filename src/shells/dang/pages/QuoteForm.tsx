@@ -161,11 +161,11 @@ const QuoteForm = ({
       <button
         type="submit"
         disabled={submitting}
-        className="disabled:opacity-50 transition-all"
+        className="disabled:opacity-50 transition-all text-white"
         style={{
           width: '100%',
           padding: '12px 32px',
-          background: '#F97316',
+          backgroundColor: '#F97316',
           color: '#ffffff',
           borderRadius: '6px',
           fontWeight: 600,
@@ -173,8 +173,8 @@ const QuoteForm = ({
           border: 'none',
           cursor: 'pointer',
         }}
-        onMouseOver={e => (e.currentTarget.style.background = '#ea6c0a')}
-        onMouseOut={e => (e.currentTarget.style.background = '#F97316')}
+        onMouseOver={e => (e.currentTarget.style.backgroundColor = '#ea6c0a')}
+        onMouseOut={e => (e.currentTarget.style.backgroundColor = '#F97316')}
       >
         <Send className="w-5 h-5 mr-2 inline" /> {submitting ? "Submitting..." : "Submit Quote Request"}
       </button>
