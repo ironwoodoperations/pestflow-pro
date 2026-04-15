@@ -26,7 +26,6 @@ const quoteSchema = z.object({
 
 const QuotePage = () => {
   const [submitting, setSubmitting] = useState(false);
-  const [smsTransactional, setSmsTransactional] = useState(false);
   const [smsMarketing, setSmsMarketing] = useState(false);
   const {
     register,
