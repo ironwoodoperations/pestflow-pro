@@ -1,13 +1,13 @@
 import { useState } from 'react'
 
-const C = { bg: '#0a0f1e', bgAlt: '#111827', teal: '#06B6D4', green: '#10B981', white: '#f9fafb', muted: '#9ca3af' }
+const C = { bg: '#0f1a2e', bgAlt: '#1e2d4a', green: '#22c55e', white: '#ffffff', muted: 'rgba(255,255,255,0.6)' }
 const F = { h: "'Bricolage Grotesque', sans-serif", b: "'Plus Jakarta Sans', sans-serif" }
 const EDGE_URL = 'https://biezzykcgzkrwdgqpsar.supabase.co/functions/v1/send-marketing-lead'
 
 const inputStyle = {
   width: '100%', padding: '11px 14px',
-  background: 'rgba(255,255,255,0.05)',
-  border: '1px solid rgba(255,255,255,0.1)',
+  background: 'rgba(255,255,255,0.06)',
+  border: '1px solid rgba(255,255,255,0.12)',
   borderRadius: 10, color: C.white,
   fontSize: 14, fontFamily: F.b,
   outline: 'none', boxSizing: 'border-box' as const,
@@ -107,7 +107,7 @@ export default function MarketingCTA() {
               {error && (
                 <p style={{ fontFamily: F.b, fontSize: 13, color: '#f87171', margin: 0 }}>{error}</p>
               )}
-              <button type="submit" disabled={loading} style={{ padding: '14px', borderRadius: 10, background: loading ? 'rgba(6,182,212,0.5)' : C.teal, color: '#0a0f1e', fontSize: 15, fontWeight: 700, fontFamily: F.b, border: 'none', cursor: loading ? 'default' : 'pointer', boxShadow: '0 4px 20px rgba(6,182,212,0.3)' }}>
+              <button type="submit" disabled={loading} style={{ padding: '14px', borderRadius: 10, background: loading ? 'rgba(34,197,94,0.5)' : C.green, color: '#ffffff', fontSize: 15, fontWeight: 700, fontFamily: F.b, border: 'none', cursor: loading ? 'default' : 'pointer', boxShadow: '0 4px 20px rgba(34,197,94,0.3)' }}>
                 {loading ? 'Sending…' : 'Send Message'}
               </button>
             </form>

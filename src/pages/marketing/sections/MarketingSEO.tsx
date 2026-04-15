@@ -1,4 +1,4 @@
-const C = { bg: '#0a0f1e', teal: '#06B6D4', green: '#10B981', white: '#f9fafb', muted: '#9ca3af' }
+const C = { bg: '#ffffff', green: '#22c55e', navy: '#1e3a5f', text: '#1e293b', muted: '#64748b' }
 const F = { h: "'Bricolage Grotesque', sans-serif", b: "'Plus Jakarta Sans', sans-serif" }
 
 const STATS = [
@@ -12,10 +12,10 @@ export default function MarketingSEO() {
     <section style={{ background: C.bg, padding: '96px 32px' }}>
       <div style={{ maxWidth: 1160, margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: 64 }}>
-          <div style={{ fontFamily: F.b, fontSize: 12, fontWeight: 700, color: C.teal, letterSpacing: 2, marginBottom: 12, textTransform: 'uppercase' }}>
+          <div style={{ fontFamily: F.b, fontSize: 12, fontWeight: 700, color: C.green, letterSpacing: 2, marginBottom: 12, textTransform: 'uppercase' }}>
             Local SEO
           </div>
-          <h2 style={{ fontFamily: F.h, fontWeight: 800, fontSize: 'clamp(28px,4vw,46px)', letterSpacing: '-0.03em', color: C.white, margin: '0 0 20px', lineHeight: 1.15 }}>
+          <h2 style={{ fontFamily: F.h, fontWeight: 800, fontSize: 'clamp(28px,4vw,46px)', letterSpacing: '-0.03em', color: C.navy, margin: '0 0 20px', lineHeight: 1.15 }}>
             Rank #1 When Homeowners Search for Pest Control
           </h2>
           <p style={{ fontFamily: F.b, fontSize: 17, color: C.muted, maxWidth: 660, margin: '0 auto' }}>
@@ -28,14 +28,14 @@ export default function MarketingSEO() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginBottom: 48 }}>
           {STATS.map(s => (
             <div key={s.label} style={{
-              background: 'rgba(6,182,212,0.06)',
-              border: '1px solid rgba(6,182,212,0.2)',
+              background: 'rgba(34,197,94,0.05)',
+              border: '1px solid rgba(34,197,94,0.2)',
               borderRadius: 16, padding: '32px 28px', textAlign: 'center',
             }}>
-              <div style={{ fontFamily: F.h, fontWeight: 800, fontSize: 36, color: C.teal, letterSpacing: '-0.02em', marginBottom: 8 }}>
+              <div style={{ fontFamily: F.h, fontWeight: 800, fontSize: 36, color: C.green, letterSpacing: '-0.02em', marginBottom: 8 }}>
                 {s.val}
               </div>
-              <div style={{ fontFamily: F.b, fontWeight: 600, fontSize: 14, color: C.white, marginBottom: 6 }}>
+              <div style={{ fontFamily: F.b, fontWeight: 600, fontSize: 14, color: C.navy, marginBottom: 6 }}>
                 {s.label}
               </div>
               <div style={{ fontFamily: F.b, fontSize: 12, color: C.muted }}>
@@ -49,7 +49,7 @@ export default function MarketingSEO() {
           <a
             href="https://pagespeed.web.dev"
             target="_blank" rel="noopener noreferrer"
-            style={{ fontFamily: F.b, fontSize: 14, fontWeight: 600, color: C.teal, textDecoration: 'none' }}
+            style={{ fontFamily: F.b, fontSize: 14, fontWeight: 600, color: C.green, textDecoration: 'none' }}
           >
             See your PageSpeed score →
           </a>

@@ -1,4 +1,4 @@
-const C = { bg: '#060b14', teal: '#06B6D4', white: '#f9fafb', muted: '#9ca3af' }
+const C = { bg: '#0f1a2e', green: '#22c55e', white: '#ffffff', muted: 'rgba(255,255,255,0.5)' }
 const F = { h: "'Bricolage Grotesque', sans-serif", b: "'Plus Jakarta Sans', sans-serif" }
 
 const NAV_LINKS = [
@@ -20,8 +20,11 @@ export default function MarketingFooter() {
           {/* Brand */}
           <div style={{ maxWidth: 280 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-              <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg, #06B6D4, #10B981)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 14, color: '#0a0f1e', flexShrink: 0 }}>P</div>
-              <span style={{ fontFamily: F.h, fontWeight: 800, fontSize: 17, color: C.white, letterSpacing: '-0.3px' }}>PestFlow Pro</span>
+              <img
+                src="/pestflow-pro-white.png"
+                alt="PestFlow Pro"
+                style={{ height: 36, width: 'auto' }}
+              />
             </div>
             <p style={{ fontFamily: F.b, fontSize: 13, color: C.muted, lineHeight: 1.65, margin: 0 }}>
               The operating system for pest control companies. Professional website, SEO, social media, and lead capture — all done for you.
@@ -61,7 +64,7 @@ export default function MarketingFooter() {
           </span>
           <span style={{ fontFamily: F.b, fontSize: 12, color: C.muted }}>
             Powered by{' '}
-            <a href="https://pestflowpro.com" style={{ color: C.teal, textDecoration: 'none', fontWeight: 600 }}>
+            <a href="https://pestflowpro.com" style={{ color: C.green, textDecoration: 'none', fontWeight: 600 }}>
               PestFlow Pro
             </a>
           </span>

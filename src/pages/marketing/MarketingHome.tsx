@@ -20,7 +20,7 @@ export default function MarketingHome() {
   }, [])
 
   return (
-    <div style={{ background: '#0a0f1e', minHeight: '100vh', color: '#f9fafb' }}>
+    <div style={{ background: '#ffffff', minHeight: '100vh', color: '#1e293b' }}>
       <MarketingNav />
       <MarketingHero />
       <MarketingFeatures />

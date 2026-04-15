@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-const C = { bg: '#0a0f1e', teal: '#06B6D4', white: '#f9fafb', muted: '#9ca3af' }
+const C = { bg: '#ffffff', green: '#22c55e', navy: '#1e3a5f', text: '#1e293b', muted: '#64748b' }
 const F = { h: "'Bricolage Grotesque', sans-serif", b: "'Plus Jakarta Sans', sans-serif" }
 
 export default function MarketingNav() {
@@ -20,23 +20,16 @@ export default function MarketingNav() {
   return (
     <nav style={{
       position: 'sticky', top: 0, zIndex: 100,
-      background: 'rgba(10,15,30,0.95)',
+      background: 'rgba(255,255,255,0.97)',
       backdropFilter: 'blur(12px)',
-      borderBottom: '1px solid rgba(255,255,255,0.07)',
+      borderBottom: '1px solid rgba(30,58,95,0.08)',
+      boxShadow: '0 1px 8px rgba(30,58,95,0.06)',
       padding: '0 32px', height: 64,
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
     }}>
       {/* Logo */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{
-          width: 32, height: 32, borderRadius: '50%',
-          background: 'linear-gradient(135deg, #06B6D4, #10B981)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontWeight: 800, fontSize: 15, color: '#0a0f1e', flexShrink: 0,
-        }}>P</div>
-        <span style={{ fontFamily: F.h, fontWeight: 800, fontSize: 18, color: C.white, letterSpacing: '-0.3px' }}>
-          PestFlow Pro
-        </span>
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+        <img src="/pestflow-pro-white.png" alt="PestFlow Pro" style={{ height: 40, width: 'auto' }} />
       </div>
 
       {/* Desktop links */}
@@ -49,7 +42,7 @@ export default function MarketingNav() {
 
       {/* Right CTA */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-        <a href="tel:4303675601" style={{ fontFamily: F.b, fontSize: 14, color: C.muted, textDecoration: 'none', fontWeight: 500 }}>
+        <a href="tel:4303675601" style={{ fontFamily: F.b, fontSize: 14, color: C.text, textDecoration: 'none', fontWeight: 500 }}>
           (430) 367-5601
         </a>
         <a
@@ -57,7 +50,7 @@ export default function MarketingNav() {
           onClick={e => { e.preventDefault(); scrollTo('contact') }}
           style={{
             padding: '8px 18px', borderRadius: 8,
-            background: C.teal, color: '#0a0f1e',
+            background: C.green, color: '#ffffff',
             fontSize: 14, fontWeight: 700, fontFamily: F.b,
             textDecoration: 'none',
           }}

@@ -1,4 +1,4 @@
-const C = { bg: '#0a0f1e', bgAlt: '#111827', teal: '#06B6D4', green: '#10B981', white: '#f9fafb', muted: '#9ca3af' }
+const C = { bg: '#ffffff', bgAlt: '#f8fafc', green: '#22c55e', navy: '#1e3a5f', text: '#1e293b', muted: '#64748b' }
 const F = { h: "'Bricolage Grotesque', sans-serif", b: "'Plus Jakarta Sans', sans-serif" }
 
 const FEATURES = [
@@ -15,10 +15,10 @@ export default function MarketingFeatures() {
     <section id="features" style={{ background: C.bg, padding: '96px 32px' }}>
       <div style={{ maxWidth: 1160, margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: 64 }}>
-          <div style={{ fontFamily: F.b, fontSize: 12, fontWeight: 700, color: C.teal, letterSpacing: 2, marginBottom: 12, textTransform: 'uppercase' }}>
+          <div style={{ fontFamily: F.b, fontSize: 12, fontWeight: 700, color: C.green, letterSpacing: 2, marginBottom: 12, textTransform: 'uppercase' }}>
             Everything You Need
           </div>
-          <h2 id="how-it-works" style={{ fontFamily: F.h, fontWeight: 800, fontSize: 'clamp(28px,4vw,46px)', letterSpacing: '-0.03em', color: C.white, margin: '0 0 16px', lineHeight: 1.15 }}>
+          <h2 id="how-it-works" style={{ fontFamily: F.h, fontWeight: 800, fontSize: 'clamp(28px,4vw,46px)', letterSpacing: '-0.03em', color: C.navy, margin: '0 0 16px', lineHeight: 1.15 }}>
             One Platform. Zero Headaches.
           </h2>
           <p style={{ fontFamily: F.b, fontSize: 17, color: C.muted, margin: '0 auto', maxWidth: 480 }}>
@@ -29,13 +29,12 @@ export default function MarketingFeatures() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
           {FEATURES.map(f => (
             <div key={f.title} style={{
-              background: '#0d1526',
-              border: '1px solid rgba(255,255,255,0.07)',
+              background: C.bgAlt,
+              border: '1px solid rgba(30,58,95,0.08)',
               borderRadius: 16, padding: '28px 26px',
-              transition: 'border-color 0.2s',
             }}>
               <div style={{ fontSize: 32, marginBottom: 14 }}>{f.icon}</div>
-              <h3 style={{ fontFamily: F.h, fontWeight: 700, fontSize: 17, color: C.white, margin: '0 0 10px' }}>
+              <h3 style={{ fontFamily: F.h, fontWeight: 700, fontSize: 17, color: C.navy, margin: '0 0 10px' }}>
                 {f.title}
               </h3>
               <p style={{ fontFamily: F.b, fontSize: 14, color: C.muted, lineHeight: 1.65, margin: 0 }}>
