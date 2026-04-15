@@ -9,6 +9,7 @@ import GoogleMapEmbed from '../components/common/GoogleMapEmbed'
 import { useTemplate } from '../context/TemplateContext'
 
 const DangServiceAreaMap = lazy(() => import('../shells/dang/components/DangServiceAreaMap'))
+const MetroProLocationPage = lazy(() => import('../shells/metro-pro/MetroProLocationPage'))
 
 interface LocationItem { slug: string; city: string }
 
@@ -46,6 +47,10 @@ export default function ServiceArea() {
   }, [])
 
   const isDang = template === 'dang'
+
+  if (template === 'metro-pro') {
+    return <Suspense fallback={null}><MetroProLocationPage /></Suspense>
+  }
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: isDang ? '#faf7f4' : 'var(--color-bg-section)' }}>

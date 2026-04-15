@@ -7,7 +7,7 @@ import { useTemplate } from '../../context/TemplateContext'
 import { useTenantBoot } from '../../context/TenantBootProvider'
 import { formatPhone } from '../../lib/formatPhone'
 
-const SERVICE_LINKS = [
+const DEFAULT_SERVICE_LINKS = [
   { label: 'General Pest Control', href: '/pest-control' },
   { label: 'Termite Control', href: '/termite-control' },
   { label: 'Rodent Control', href: '/rodent-control' },
@@ -17,6 +17,8 @@ const SERVICE_LINKS = [
   { label: 'Ant Control', href: '/ant-control' },
   { label: 'Wasp & Hornet', href: '/wasp-hornet-control' },
 ]
+
+const EXCLUDED_SLUGS = ['home', 'about', 'contact', 'faq', 'quote']
 
 const NAV_LINKS = [
   { label: 'About', href: '/about' },
@@ -30,6 +32,7 @@ export default function MetroProNavbar() {
   const logoUrl = tenant?.logoUrl || ''
   const ctaText = tenant?.ctaText || 'Get Free Quote'
   const [phone, setPhone] = useState('')
+  const [serviceLinks, setServiceLinks] = useState(DEFAULT_SERVICE_LINKS)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -40,8 +43,17 @@ export default function MetroProNavbar() {
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const { data } = await supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle()
-      if (data?.value?.phone) setPhone(data.value.phone)
+      const [bizRes, pagesRes] = await Promise.all([
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
+        supabase.from('page_content').select('page_slug, title').eq('tenant_id', tenantId).not('page_slug', 'in', `(${EXCLUDED_SLUGS.join(',')})`),
+      ])
+      if (bizRes.data?.value?.phone) setPhone(bizRes.data.value.phone)
+      if ((pagesRes.data ?? []).length > 0) {
+        setServiceLinks((pagesRes.data ?? []).map(p => ({
+          label: p.title || p.page_slug.replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()),
+          href: `/${p.page_slug}`,
+        })))
+      }
     })
   }, [])
 
@@ -101,7 +113,7 @@ export default function MetroProNavbar() {
               </button>
               {dropdownOpen && (
                 <div role="menu" className="absolute top-full left-0 mt-1 w-56 shadow-xl border border-white/10 py-2 z-50" style={{ backgroundColor: 'var(--color-nav-bg)' }}>
-                  {SERVICE_LINKS.map((link) => (
+                  {serviceLinks.map((link) => (
                     <Link key={link.href} to={link.href} onClick={() => setDropdownOpen(false)}
                       className="block px-4 py-2 text-sm text-white/70 hover:text-white hover:bg-white/5 transition">
                       {link.label}
@@ -136,7 +148,7 @@ export default function MetroProNavbar() {
             )}
             <Link to="/" onClick={() => setMobileOpen(false)} className="block px-2 py-2 text-sm font-medium text-white/80 hover:text-white">Home</Link>
             <p className="text-xs font-semibold text-white/40 uppercase px-2 pt-2 pb-1">Services</p>
-            {SERVICE_LINKS.map((link) => (
+            {serviceLinks.map((link) => (
               <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} className="block px-2 py-2 text-sm text-white/70 hover:text-white transition">{link.label}</Link>
             ))}
             <div className="border-t border-white/10 my-2" />

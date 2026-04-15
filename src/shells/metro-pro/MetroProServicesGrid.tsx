@@ -11,17 +11,16 @@ const SERVICES = [
   { name: 'Wasp & Hornet Control', slug: 'wasp-hornet-control', desc: 'Safe removal of wasp nests, yellow jacket colonies, and hornets by licensed technicians with protective equipment.' },
 ]
 
-// Gradient backgrounds for service cards (no images needed)
-const CARD_GRADIENTS = [
-  'linear-gradient(135deg, #1a4332 0%, #2d6a4f 100%)',
-  'linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)',
-  'linear-gradient(135deg, #3b1205 0%, #c2410c 100%)',
-  'linear-gradient(135deg, #0d2137 0%, #0ea5e9 100%)',
-  'linear-gradient(135deg, #1c1c1e 0%, #374151 100%)',
-  'linear-gradient(135deg, #4a1942 0%, #7c3aed 100%)',
-  'linear-gradient(135deg, #0a2d1a 0%, #15803d 100%)',
-  'linear-gradient(135deg, #2d1a00 0%, #d97706 100%)',
-]
+const PEST_IMAGES: Record<string, string> = {
+  'pest-control':      'https://source.unsplash.com/400x300/?cockroach',
+  'termite-control':   'https://source.unsplash.com/400x300/?termite',
+  'rodent-control':    'https://source.unsplash.com/400x300/?rodent,pest',
+  'mosquito-control':  'https://source.unsplash.com/400x300/?mosquito',
+  'bed-bug-control':   'https://source.unsplash.com/400x300/?bed+bug',
+  'spider-control':    'https://source.unsplash.com/400x300/?spider',
+  'ant-control':       'https://source.unsplash.com/400x300/?ant,insect',
+  'wasp-hornet-control': 'https://source.unsplash.com/400x300/?wasp',
+}
 
 export default function MetroProServicesGrid() {
   return (
@@ -35,18 +34,23 @@ export default function MetroProServicesGrid() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {SERVICES.map((svc, i) => (
+          {SERVICES.map((svc) => (
             <Link
               key={svc.slug}
               to={`/${svc.slug}`}
               className="rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all group border border-gray-100"
             >
-              {/* Image placeholder */}
+              {/* Pest image with dark overlay */}
               <div
-                className="h-32 flex items-center justify-center"
-                style={{ background: CARD_GRADIENTS[i % CARD_GRADIENTS.length] }}
+                className="h-32 relative overflow-hidden flex items-center justify-center"
+                style={{
+                  backgroundImage: `url(${PEST_IMAGES[svc.slug] || 'https://source.unsplash.com/400x300/?pest,insect'})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                }}
               >
-                <span className="text-white/90 font-semibold text-sm text-center px-3">{svc.name}</span>
+                <div className="absolute inset-0" style={{ backgroundColor: 'rgba(0,0,0,0.45)' }} />
+                <span className="relative z-10 text-white font-semibold text-sm text-center px-3">{svc.name}</span>
               </div>
               {/* Card body */}
               <div className="p-4 bg-white">
