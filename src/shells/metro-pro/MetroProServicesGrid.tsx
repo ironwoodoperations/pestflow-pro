@@ -12,14 +12,17 @@ const SERVICES = [
 ]
 
 const PEST_IMAGES: Record<string, string> = {
-  'pest-control':      'https://source.unsplash.com/400x300/?cockroach',
-  'termite-control':   'https://source.unsplash.com/400x300/?termite',
-  'rodent-control':    'https://source.unsplash.com/400x300/?rodent,pest',
-  'mosquito-control':  'https://source.unsplash.com/400x300/?mosquito',
-  'bed-bug-control':   'https://source.unsplash.com/400x300/?bed+bug',
-  'spider-control':    'https://source.unsplash.com/400x300/?spider',
-  'ant-control':       'https://source.unsplash.com/400x300/?ant,insect',
-  'wasp-hornet-control': 'https://source.unsplash.com/400x300/?wasp',
+  'pest-control':        'https://images.unsplash.com/photo-1632163190024-f34e99c47a58?w=600&q=80',
+  'roach-control':       'https://images.unsplash.com/photo-1506146332389-18140dc7b2fb?w=600&q=80',
+  'rodent-control':      'https://images.unsplash.com/photo-1425082661705-1834bfd09dca?w=600&q=80',
+  'mosquito-control':    'https://images.unsplash.com/photo-1592417817098-8fd3d9eb14a5?w=600&q=80',
+  'termite-control':     'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80',
+  'ant-control':         'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=600&q=80',
+  'spider-control':      'https://images.unsplash.com/photo-1559963110-71b394e7494d?w=600&q=80',
+  'bed-bug-control':     'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=600&q=80',
+  'wasp-hornet-control': 'https://images.unsplash.com/photo-1471086569966-db3eebc25a59?w=600&q=80',
+  'scorpion-control':    'https://images.unsplash.com/photo-1590418606746-018840f9cd0f?w=600&q=80',
+  'flea-tick-control':   'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=600&q=80',
 }
 
 export default function MetroProServicesGrid() {
@@ -44,7 +47,7 @@ export default function MetroProServicesGrid() {
               <div
                 className="h-32 relative overflow-hidden flex items-center justify-center"
                 style={{
-                  backgroundImage: `url(${PEST_IMAGES[svc.slug] || 'https://source.unsplash.com/400x300/?pest,insect'})`,
+                  backgroundImage: `url(${PEST_IMAGES[svc.slug] || 'https://images.unsplash.com/photo-1632163190024-f34e99c47a58?w=600&q=80'})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                 }}

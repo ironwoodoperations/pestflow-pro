@@ -7,6 +7,20 @@ import type { PestPageProps } from '../../components/PestPageTemplate'
 
 const SERVICE_TABS = ['Service FAQ\'s', 'Pest Facts', 'Prevention Tips']
 
+const PEST_IMAGES: Record<string, string> = {
+  'pest-control':        'https://images.unsplash.com/photo-1632163190024-f34e99c47a58?w=600&q=80',
+  'roach-control':       'https://images.unsplash.com/photo-1506146332389-18140dc7b2fb?w=600&q=80',
+  'rodent-control':      'https://images.unsplash.com/photo-1425082661705-1834bfd09dca?w=600&q=80',
+  'mosquito-control':    'https://images.unsplash.com/photo-1592417817098-8fd3d9eb14a5?w=600&q=80',
+  'termite-control':     'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80',
+  'ant-control':         'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=600&q=80',
+  'spider-control':      'https://images.unsplash.com/photo-1559963110-71b394e7494d?w=600&q=80',
+  'bed-bug-control':     'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=600&q=80',
+  'wasp-hornet-control': 'https://images.unsplash.com/photo-1471086569966-db3eebc25a59?w=600&q=80',
+  'scorpion-control':    'https://images.unsplash.com/photo-1590418606746-018840f9cd0f?w=600&q=80',
+  'flea-tick-control':   'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=600&q=80',
+}
+
 const GUARANTEES = [
   'Satisfaction guaranteed on all service plans',
   'Free callbacks between scheduled services',
@@ -98,10 +112,19 @@ export default function MetroProServicePage(props: PestPageProps) {
       {/* Split intro */}
       <section className="py-16 bg-white">
         <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          {/* Image placeholder */}
-          <div className="rounded-xl overflow-hidden" style={{ minHeight: '280px', background: 'linear-gradient(135deg, var(--color-bg-hero) 0%, var(--color-primary) 100%)' }}>
-            <div className="h-full min-h-[280px] flex items-center justify-center">
-              <span className="text-white/60 text-xl font-semibold">{serviceName}</span>
+          {/* Service image */}
+          <div
+            className="rounded-xl overflow-hidden relative"
+            style={{
+              minHeight: '280px',
+              backgroundImage: `url(${PEST_IMAGES[props.pageSlug] || 'https://images.unsplash.com/photo-1632163190024-f34e99c47a58?w=600&q=80'})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
+          >
+            <div className="absolute inset-0" style={{ backgroundColor: 'rgba(0,0,0,0.45)' }} />
+            <div className="relative z-10 h-full min-h-[280px] flex items-center justify-center">
+              <span className="text-white text-xl font-semibold">{serviceName}</span>
             </div>
           </div>
           <div>
