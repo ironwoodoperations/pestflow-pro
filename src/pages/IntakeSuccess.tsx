@@ -100,18 +100,15 @@ export default function IntakeSuccess() {
       {/* Overlay card */}
       <div className="absolute inset-0 flex items-center justify-center px-4" style={{ zIndex: 10 }}>
         <div className="bg-white rounded-2xl shadow-2xl p-8 md:p-12 max-w-lg w-full text-center">
-          <div className="text-5xl mb-4 animate-bounce select-none">🚀</div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+          <p className="font-bold mb-3 leading-tight" style={{ fontSize: '32px', color: 'var(--color-primary)' }}>
+            {previewProps.businessName}
+          </p>
+          <h1 className="text-lg md:text-xl font-bold text-gray-900 mb-4">
             Your New Site Is Being Built!
           </h1>
-          {brand.businessName && (
-            <p className="text-xl font-bold mb-4" style={{ color: 'var(--color-primary)' }}>
-              {brand.businessName}
-            </p>
-          )}
           <p className="text-gray-500 text-sm mb-6 leading-relaxed">{subtext}</p>
-          <span className="inline-block bg-orange-50 text-orange-600 text-xs font-semibold px-3 py-1 rounded-full border border-orange-200">
-            ⚡ Powered by PestFlow Pro
+          <span className="inline-block text-sm font-bold" style={{ color: 'var(--color-accent)' }}>
+            ⚡ PestFlow Pro
           </span>
         </div>
       </div>
