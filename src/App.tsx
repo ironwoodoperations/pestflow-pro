@@ -29,6 +29,9 @@ const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'))
 // Intake form — public, no shell needed
 const IntakePage = lazy(() => import('./pages/IntakePage'))
 
+// Post-intake branded preview — public, no shell needed
+const IntakeSuccess = lazy(() => import('./pages/IntakeSuccess'))
+
 // Secondary marketing pages — lazy
 const About           = lazy(() => import('./pages/About'))
 const FAQPage         = lazy(() => import('./pages/FAQPage'))
@@ -148,6 +151,9 @@ export default function App() {
 
         {/* ─── Public intake form — must be before /:slug ─── */}
         <Route path="/intake/:token" element={<Suspense fallback={LOADING}><IntakePage /></Suspense>} />
+
+        {/* ─── Post-intake branded preview — must be before /:slug ─── */}
+        <Route path="/intake-success" element={<Suspense fallback={LOADING}><IntakeSuccess /></Suspense>} />
 
         {/* ─── Dang city SEO pages — before /:slug ─── */}
         <Route path="/lindale-tx"     element={<DangPageRouter slug="lindale-tx"     fallback={<PublicShell><SlugRouter /></PublicShell>} />} />
