@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 const C = { bg: '#0a0f1e', bgAlt: '#111827', teal: '#06B6D4', green: '#10B981', white: '#f9fafb', muted: '#9ca3af' }
 const F = { h: "'Bricolage Grotesque', sans-serif", b: "'Plus Jakarta Sans', sans-serif" }
+const EDGE_URL = 'https://biezzykcgzkrwdgqpsar.supabase.co/functions/v1/send-marketing-lead'
 
 const inputStyle = {
   width: '100%', padding: '11px 14px',
@@ -14,14 +15,30 @@ const inputStyle = {
 
 export default function MarketingCTA() {
   const [form, setForm] = useState({ name: '', company: '', phone: '', email: '', message: '' })
+  const [loading, setLoading] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
+  const [error, setError] = useState('')
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const body = `Name: ${form.name}\nCompany: ${form.company}\nPhone: ${form.phone}\nEmail: ${form.email}\nMessage: ${form.message}`
-    window.location.href = `mailto:pfpsales@pestflowpro.com?subject=PestFlow Pro Inquiry — ${encodeURIComponent(form.company || form.name)}&body=${encodeURIComponent(body)}`
+    setLoading(true)
+    setError('')
+    try {
+      const res = await fetch(EDGE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      setSubmitted(true)
+    } catch {
+      setError('Something went wrong. Call us at (430) 367-5601.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -64,21 +81,37 @@ export default function MarketingCTA() {
             </div>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-              <input name="name" value={form.name} onChange={handleChange} placeholder="Your Name" required style={inputStyle} />
-              <input name="company" value={form.company} onChange={handleChange} placeholder="Company Name" style={inputStyle} />
+          {/* Form / Success / Error */}
+          {submitted ? (
+            <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: 16, padding: '40px 32px', textAlign: 'center' }}>
+              <div style={{ fontSize: 40, marginBottom: 16 }}>✅</div>
+              <h3 style={{ fontFamily: F.h, fontWeight: 800, fontSize: 22, color: C.white, margin: '0 0 12px' }}>
+                Thanks {form.name.split(' ')[0]}!
+              </h3>
+              <p style={{ fontFamily: F.b, fontSize: 15, color: C.muted, lineHeight: 1.65, margin: 0 }}>
+                We'll be in touch within 1 business hour.<br />
+                Check your email for a preview of what we can build for you.
+              </p>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-              <input name="phone" value={form.phone} onChange={handleChange} placeholder="Phone Number" style={inputStyle} />
-              <input name="email" value={form.email} onChange={handleChange} placeholder="Email Address" type="email" style={inputStyle} />
-            </div>
-            <textarea name="message" value={form.message} onChange={handleChange} placeholder="Message (optional)" rows={4} style={{ ...inputStyle, resize: 'vertical' }} />
-            <button type="submit" style={{ padding: '14px', borderRadius: 10, background: C.teal, color: '#0a0f1e', fontSize: 15, fontWeight: 700, fontFamily: F.b, border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(6,182,212,0.3)' }}>
-              Send Message
-            </button>
-          </form>
+          ) : (
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                <input name="name" value={form.name} onChange={handleChange} placeholder="Your Name" required style={inputStyle} />
+                <input name="company" value={form.company} onChange={handleChange} placeholder="Company Name" style={inputStyle} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                <input name="phone" value={form.phone} onChange={handleChange} placeholder="Phone Number" style={inputStyle} />
+                <input name="email" value={form.email} onChange={handleChange} placeholder="Email Address" type="email" required style={inputStyle} />
+              </div>
+              <textarea name="message" value={form.message} onChange={handleChange} placeholder="Message (optional)" rows={4} style={{ ...inputStyle, resize: 'vertical' }} />
+              {error && (
+                <p style={{ fontFamily: F.b, fontSize: 13, color: '#f87171', margin: 0 }}>{error}</p>
+              )}
+              <button type="submit" disabled={loading} style={{ padding: '14px', borderRadius: 10, background: loading ? 'rgba(6,182,212,0.5)' : C.teal, color: '#0a0f1e', fontSize: 15, fontWeight: 700, fontFamily: F.b, border: 'none', cursor: loading ? 'default' : 'pointer', boxShadow: '0 4px 20px rgba(6,182,212,0.3)' }}>
+                {loading ? 'Sending…' : 'Send Message'}
+              </button>
+            </form>
+          )}
         </div>
       </div>
     </section>
