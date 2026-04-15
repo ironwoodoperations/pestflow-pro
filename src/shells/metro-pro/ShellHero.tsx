@@ -71,7 +71,7 @@ export default function MetroProHero() {
   const fallbackSubtext = city
     ? `Serving ${city} and surrounding areas. Licensed, insured, and ready to help.`
     : 'Licensed, insured, and ready to protect your home and business.'
-  const subtext = homeContent.intro || homeContent.subtitle || fallbackSubtext
+  const subtext = homeContent.subtitle || fallbackSubtext
 
   const bgImage = heroMedia.thumbnail_url
     || (heroMedia.youtube_id ? `https://img.youtube.com/vi/${heroMedia.youtube_id}/maxresdefault.jpg` : null)
