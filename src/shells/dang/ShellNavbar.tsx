@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Phone, Menu, X, ChevronDown } from "lucide-react";
 import dangLogo from "./assets/dang-logo.png";
 import DangMobileMenu from "./DangMobileMenu";
+import { useTenantBoot } from "../../context/TenantBootProvider";
 
 const pestLinks = [
   { label: "General Pest Control", href: "/pest-control" },
@@ -58,6 +59,8 @@ const DesktopNavLinks = ({ openDropdown, onEnter, onLeave }: DesktopNavLinksProp
 );
 
 const Navbar = () => {
+  const { tenant } = useTenantBoot();
+  const logoSrc = tenant?.logoUrl || dangLogo;
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
@@ -89,10 +92,10 @@ const Navbar = () => {
           <div className="flex items-center justify-between px-6 md:px-8 py-3.5 relative">
             <DesktopNavLinks openDropdown={openDropdown} onEnter={handleMouseEnter} onLeave={handleMouseLeave} />
             <Link to="/" aria-label="Dang Pest Control home" className="hidden md:block absolute left-1/2 -translate-x-1/2">
-              <img src={dangLogo} alt="Dang Pest Control" width={96} height={68} className="w-24 h-auto drop-shadow-md" />
+              <img src={logoSrc} alt="Dang Pest Control" width={96} height={68} className="w-24 h-auto drop-shadow-md" />
             </Link>
             <Link to="/" aria-label="Dang Pest Control home" className="md:hidden">
-              <img src={dangLogo} alt="Dang Pest Control" width={48} height={34} className="w-12 h-auto" />
+              <img src={logoSrc} alt="Dang Pest Control" width={48} height={34} className="w-12 h-auto" />
             </Link>
             <div className="hidden md:flex items-center gap-5">
               <a href="tel:9038710550" className="flex items-center gap-2 font-bold" style={{ color: '#000000' }}>
@@ -124,7 +127,7 @@ const Navbar = () => {
 
             {/* Logo — centered, floating above pill */}
             <Link to="/" aria-label="Dang Pest Control home" className="hidden md:block absolute left-1/2 -translate-x-1/2 z-10" style={{ top: '-60px' }}>
-              <img src={dangLogo} alt="Dang Pest Control" width={267} height={189} style={{ width: '267px' }} className="h-auto drop-shadow-lg" />
+              <img src={logoSrc} alt="Dang Pest Control" width={267} height={189} style={{ width: '267px' }} className="h-auto drop-shadow-lg" />
             </Link>
 
             {/* Right: phone + CTA */}
@@ -145,7 +148,7 @@ const Navbar = () => {
 
             {/* Mobile */}
             <Link to="/" aria-label="Dang Pest Control home" className="md:hidden">
-              <img src={dangLogo} alt="Dang Pest Control" width={48} height={34} className="w-12 h-auto" />
+              <img src={logoSrc} alt="Dang Pest Control" width={48} height={34} className="w-12 h-auto" />
             </Link>
             <button className="md:hidden" aria-label={mobileOpen ? "Close menu" : "Open menu"} onClick={() => setMobileOpen(!mobileOpen)} style={{ color: 'hsl(20, 40%, 12%)' }}>
               {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}

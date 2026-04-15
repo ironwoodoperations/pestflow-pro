@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { X } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { resolveTenantId } from "../../lib/tenant";
+import { useTenantBoot } from "../../context/TenantBootProvider";
 
 const FacebookIcon = () => (
   <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -24,6 +25,8 @@ const LinkedinIcon = () => (
 import dangLogo from "./assets/dang-logo.png";
 
 const Footer = () => {
+  const { tenant } = useTenantBoot();
+  const logoSrc = tenant?.logoUrl || dangLogo;
   const [linkedinUrl, setLinkedinUrl] = useState<string>('')
 
   useEffect(() => {
@@ -57,7 +60,7 @@ const Footer = () => {
 
           <div className="flex flex-col items-center text-center gap-4">
             <Link to="/" aria-label="Dang Pest Control home">
-              <img src={dangLogo} alt="Dang Pest Control" width={320} height={120} className="w-80 h-auto object-contain" />
+              <img src={logoSrc} alt="Dang Pest Control" width={320} height={120} className="w-80 h-auto object-contain" />
             </Link>
             <p className="text-sm leading-relaxed max-w-xs" style={{ color: 'hsl(20, 20%, 40%)' }}>
               At Dang Pest Control, we know pest problems can seriously disrupt your life. That's why we offer a wide array of reliable pest control services tailored to meet your specific needs.
