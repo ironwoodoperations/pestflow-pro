@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../hooks/useTenant'
 
 interface BusinessInfoForm {
   name: string; phone: string; email: string; address: string; hours: string
-  tagline: string; license: string; after_hours_phone: string; year_founded: string
+  tagline: string; license: string; after_hours_phone: string; founded_year: string
   industry: string
 }
 
@@ -15,13 +15,21 @@ export default function BusinessInfoSection() {
   const { tenantId } = useTenant()
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [form, setForm] = useState<BusinessInfoForm>({ name: '', phone: '', email: '', address: '', hours: '', tagline: '', license: '', after_hours_phone: '', year_founded: '', industry: 'Pest Control' })
+  const [form, setForm] = useState<BusinessInfoForm>({ name: '', phone: '', email: '', address: '', hours: '', tagline: '', license: '', after_hours_phone: '', founded_year: '', industry: 'Pest Control' })
+  // Preserve extra DB fields (num_technicians, owner_name, certifications, etc.) not exposed in this form
+  const extraDbFields = useRef<Record<string, unknown>>({})
 
   useEffect(() => {
     if (!tenantId) return
     supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle()
       .then(({ data }) => {
-        if (data?.value) setForm(prev => ({ ...prev, name: data.value.name || '', phone: data.value.phone || '', email: data.value.email || '', address: data.value.address || '', hours: data.value.hours || '', tagline: data.value.tagline || '', license: data.value.license || '', after_hours_phone: data.value.after_hours_phone || '', year_founded: data.value.year_founded || '', industry: data.value.industry || 'Pest Control' }))
+        if (data?.value) {
+          const v = data.value
+          setForm(prev => ({ ...prev, name: v.name || '', phone: v.phone || '', email: v.email || '', address: v.address || '', hours: v.hours || '', tagline: v.tagline || '', license: v.license || '', after_hours_phone: v.after_hours_phone || '', founded_year: v.founded_year || '', industry: v.industry || 'Pest Control' }))
+          // Store extra fields that are in the DB but not in this form (prevent data loss on save)
+          const { name: _n, phone: _p, email: _e, address: _a, hours: _h, tagline: _t, license: _l, after_hours_phone: _ah, founded_year: _fy, industry: _i, ...extras } = v
+          extraDbFields.current = extras
+        }
         setLoading(false)
       })
   }, [tenantId])
@@ -29,7 +37,9 @@ export default function BusinessInfoSection() {
   async function handleSave() {
     if (!tenantId) return
     setSaving(true)
-    const { error } = await supabase.from('settings').upsert({ tenant_id: tenantId, key: 'business_info', value: form }, { onConflict: 'tenant_id,key' })
+    // Merge form with extra fields so provisioned data (num_technicians, owner_name, etc.) isn't erased
+    const value = { ...extraDbFields.current, ...form }
+    const { error } = await supabase.from('settings').upsert({ tenant_id: tenantId, key: 'business_info', value }, { onConflict: 'tenant_id,key' })
     setSaving(false)
     if (error) toast.error('Failed to save business info.'); else toast.success('Business info saved!')
   }
@@ -45,7 +55,7 @@ export default function BusinessInfoSection() {
     { label: 'Tagline', key: 'tagline', placeholder: 'Fast. Effective. Guaranteed.' },
     { label: 'License Number', key: 'license', placeholder: 'TPCL #12345' },
     { label: 'After-Hours Phone', key: 'after_hours_phone', placeholder: '(903) 555-0199' },
-    { label: 'Year Founded', key: 'year_founded', placeholder: '2010' },
+    { label: 'Year Founded', key: 'founded_year', placeholder: '2010' },
     { label: 'Industry / Business Type', key: 'industry', placeholder: 'e.g. Pest Control, HVAC, Plumbing, Roofing' },
   ]
 
