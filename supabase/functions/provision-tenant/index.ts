@@ -182,25 +182,26 @@ Deno.serve(async (req: Request) => {
     // Step 3: Seed all 11 required settings keys using wizard data where available
     const email = wbi.email || bi.email || ''
 
-    // Resolve subscription tier — supports numeric tier (from Provisioning.tsx) or string plan name
-    const _tierFromStr = (s: string): number => {
-      const sl = s.toLowerCase().trim()
-      if (sl === 'elite') return 4
-      if (sl === 'pro') return 3
-      if (sl === 'growth' || sl === 'grow') return 2
-      return 1
+    // Resolve subscription tier — store as lowercase string: starter|growth|pro|elite
+    const _toTierStr = (raw: string | number | undefined): string => {
+      if (typeof raw === 'number') {
+        return raw === 4 ? 'elite' : raw === 3 ? 'pro' : raw === 2 ? 'growth' : 'starter'
+      }
+      if (typeof raw === 'string' && raw) {
+        const sl = raw.toLowerCase().trim()
+        if (sl === 'elite') return 'elite'
+        if (sl === 'pro') return 'pro'
+        if (sl === 'growth' || sl === 'grow') return 'growth'
+        if (sl === 'starter') return 'starter'
+      }
+      return 'starter'
     }
     const _rawTier = wsub.tier ?? subscription?.tier
     const _planStr  = wsub.plan_name || subscription?.plan_name || body.plan || ''
-    const resolvedTier: number =
-      typeof _rawTier === 'number' ? _rawTier
-      : typeof _rawTier === 'string' && _rawTier ? _tierFromStr(_rawTier)
-      : _planStr ? _tierFromStr(_planStr)
-      : 1
-    const _tierNames: Record<number, string> = { 1: 'Starter', 2: 'Grow', 3: 'Pro', 4: 'Elite' }
-    const _tierPrices: Record<number, number> = { 1: 149, 2: 249, 3: 349, 4: 499 }
-    const resolvedPlanName  = _tierNames[resolvedTier]  || 'Starter'
-    const resolvedMonthlyPrice = wsub.monthly_price || subscription?.monthly_price || _tierPrices[resolvedTier] || 149
+    const tierStr: string = _rawTier != null ? _toTierStr(_rawTier) : (_planStr ? _toTierStr(_planStr) : 'starter')
+    const _tierPrices: Record<string, number> = { starter: 149, growth: 249, pro: 349, elite: 499 }
+    const resolvedPlanName  = tierStr.charAt(0).toUpperCase() + tierStr.slice(1)
+    const resolvedMonthlyPrice = wsub.monthly_price || subscription?.monthly_price || _tierPrices[tierStr] || 149
 
     const settingsRows = [
       { tenant_id: tenantId, key: 'business_info', value: {
@@ -254,7 +255,8 @@ Deno.serve(async (req: Request) => {
       { tenant_id: tenantId, key: 'notifications',        value: { cc_email: '', lead_email: resolvedAdminEmail || email } },
       { tenant_id: tenantId, key: 'demo_mode',            value: { active: false, seeded_at: '' } },
       { tenant_id: tenantId, key: 'subscription', value: {
-        tier:          resolvedTier,
+        tier:          tierStr,
+        plan:          tierStr,
         plan_name:     resolvedPlanName,
         monthly_price: resolvedMonthlyPrice,
         status:        'active',

@@ -16,9 +16,20 @@ interface PaymentRow {
 }
 
 interface SubscriptionSettings {
-  tier: number
+  tier: number | string
   plan_name: string
   monthly_price: number
+}
+
+// Convert tier to numeric for comparisons — handles legacy number or new string format
+function tierNum(tier: number | string | undefined): number {
+  if (typeof tier === 'number') return tier
+  if (!tier) return 1
+  const s = String(tier).toLowerCase()
+  if (s === 'elite') return 4
+  if (s === 'pro') return 3
+  if (s === 'growth' || s === 'grow') return 2
+  return 1
 }
 
 const PLAN_PRICE_LABELS: Record<string, string> = {
@@ -163,14 +174,14 @@ export default function BillingTab() {
       )}
 
       {/* Tier upgrade cards — only shown on demo tenant */}
-      {isDemoTenant && subscription && subscription.tier < 4 && (
+      {isDemoTenant && subscription && tierNum(subscription.tier) < 4 && (
         <div className="mb-6">
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Plans</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {TIERS.map(tier => {
-              const isCurrent = subscription.tier === tier.tier
-              const isUpgrade = tier.tier > subscription.tier
-              const isDowngrade = tier.tier < subscription.tier
+              const isCurrent = tierNum(subscription.tier) === tier.tier
+              const isUpgrade = tier.tier > tierNum(subscription.tier)
+              const isDowngrade = tier.tier < tierNum(subscription.tier)
               return (
                 <div key={tier.tier}
                   className={`bg-white rounded-xl border-2 p-5 flex flex-col ${isCurrent ? 'border-emerald-500 shadow-md' : 'border-gray-200'}`}>
@@ -230,7 +241,7 @@ export default function BillingTab() {
                   — ${subscription.monthly_price}/mo
                 </span>
               </p>
-              <p className="text-sm text-gray-500 mt-1">Tier {subscription.tier}</p>
+              <p className="text-sm text-gray-500 mt-1">Tier {tierNum(subscription.tier)}</p>
             </div>
           </div>
         ) : loading ? (
@@ -250,8 +261,8 @@ export default function BillingTab() {
       </div>
 
       {/* Upgrade cards — only shown on real (non-demo) clients below Elite */}
-      {!isDemoTenant && subscription && subscription.tier < 4 && (
-        <UpgradeCards currentTier={subscription.tier} businessName={businessName} />
+      {!isDemoTenant && subscription && tierNum(subscription.tier) < 4 && (
+        <UpgradeCards currentTier={tierNum(subscription.tier)} businessName={businessName} />
       )}
 
       {/* Payment history */}
