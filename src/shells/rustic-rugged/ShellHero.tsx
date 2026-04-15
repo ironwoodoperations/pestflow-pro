@@ -11,7 +11,7 @@ const PHOTOS = [
 ]
 
 interface Biz { name?: string; phone?: string; tagline?: string; address?: string }
-interface HeroMedia { thumbnail_url?: string }
+interface HeroMedia { thumbnail_url?: string; image_url?: string }
 interface HomeContent { hero_headline?: string; title?: string; subtitle?: string }
 
 const DOT_BG: React.CSSProperties = {
@@ -68,13 +68,14 @@ export default function ShellHero() {
         phone: bizRes.data?.value?.phone,
         address: bizRes.data?.value?.address,
         thumbnailUrl: mediaRes.data?.value?.thumbnail_url,
+        imageUrl: mediaRes.data?.value?.image_url,
         ctaText: brandRes.data?.value?.cta_text,
       })
     })
   }, [])
 
   const city = biz.address ? biz.address.split(',')[0].trim() : null
-  const heroPhoto = heroMedia.thumbnail_url
+  const heroPhoto = heroMedia.image_url || heroMedia.thumbnail_url
   const photos = heroPhoto ? [heroPhoto, PHOTOS[1], PHOTOS[2]] : PHOTOS
 
   return (

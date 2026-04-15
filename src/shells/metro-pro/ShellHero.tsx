@@ -6,7 +6,7 @@ import { readHeroCache, writeHeroCache } from '../../lib/heroCache'
 
 interface BusinessInfo { name?: string; phone?: string; tagline?: string; address?: string; founded_year?: string | number; num_technicians?: number }
 interface Customization { hero_headline?: string }
-interface HeroMedia { youtube_id?: string; thumbnail_url?: string }
+interface HeroMedia { youtube_id?: string; thumbnail_url?: string; image_url?: string }
 interface HomeContent { hero_headline?: string; title?: string; subtitle?: string; intro?: string }
 
 const STRIPE = 'repeating-linear-gradient(15deg, transparent, transparent 30px, rgba(255,255,255,0.025) 30px, rgba(255,255,255,0.025) 60px)'
@@ -56,6 +56,7 @@ export default function MetroProHero() {
         numTechnicians: bizRes.data?.value?.num_technicians,
         ctaText: brandRes.data?.value?.cta_text,
         thumbnailUrl: mediaRes.data?.value?.thumbnail_url,
+        imageUrl: mediaRes.data?.value?.image_url,
         youtubeId: mediaRes.data?.value?.youtube_id,
       })
     })
@@ -73,7 +74,8 @@ export default function MetroProHero() {
     : 'Licensed, insured, and ready to protect your home and business.'
   const subtext = homeContent.subtitle || fallbackSubtext
 
-  const bgImage = heroMedia.thumbnail_url
+  const bgImage = heroMedia.image_url
+    || heroMedia.thumbnail_url
     || (heroMedia.youtube_id ? `https://img.youtube.com/vi/${heroMedia.youtube_id}/maxresdefault.jpg` : null)
 
   return (

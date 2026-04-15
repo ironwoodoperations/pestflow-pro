@@ -13,7 +13,7 @@ interface BusinessInfo {
   num_technicians?: number
 }
 interface Customization { hero_headline?: string }
-interface HeroMedia { youtube_id?: string; thumbnail_url?: string }
+interface HeroMedia { youtube_id?: string; thumbnail_url?: string; image_url?: string }
 interface HomeContent { hero_headline?: string; subtitle?: string; intro?: string }
 
 export default function ShellHero() {
@@ -69,6 +69,7 @@ export default function ShellHero() {
         numTechnicians: bizRes.data?.value?.num_technicians,
         ctaText: brandRes.data?.value?.cta_text,
         thumbnailUrl: mediaRes.data?.value?.thumbnail_url,
+        imageUrl: mediaRes.data?.value?.image_url,
         youtubeId: mediaRes.data?.value?.youtube_id,
       })
     })
@@ -92,8 +93,9 @@ export default function ShellHero() {
   if (biz.num_technicians) trustParts.push(`${biz.num_technicians}+ Technicians`)
   if (biz.founded_year) trustParts.push(`Est. ${biz.founded_year}`)
 
-  // Background image: prefer thumbnail_url, then construct from youtube_id
-  const bgImage = heroMedia.thumbnail_url
+  // Background image: prefer image_url (new canonical), then thumbnail_url, then youtube thumbnail
+  const bgImage = heroMedia.image_url
+    || heroMedia.thumbnail_url
     || (heroMedia.youtube_id ? `https://img.youtube.com/vi/${heroMedia.youtube_id}/maxresdefault.jpg` : null)
 
   const sectionStyle = bgImage

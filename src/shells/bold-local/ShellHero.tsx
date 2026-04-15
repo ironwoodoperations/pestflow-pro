@@ -7,7 +7,7 @@ import { readHeroCache, writeHeroCache } from '../../lib/heroCache'
 const FALLBACK_PHOTO = 'https://images.pexels.com/photos/3807517/pexels-photo-3807517.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750'
 
 interface BizState { name?: string; phone?: string; tagline?: string }
-interface HeroMedia { thumbnail_url?: string; youtube_id?: string }
+interface HeroMedia { thumbnail_url?: string; image_url?: string; youtube_id?: string }
 interface HomeContent { hero_headline?: string; title?: string; subtitle?: string }
 
 export default function ShellHero() {
@@ -53,13 +53,15 @@ export default function ShellHero() {
         tagline: bizRes.data?.value?.tagline,
         phone: bizRes.data?.value?.phone,
         thumbnailUrl: mediaRes.data?.value?.thumbnail_url,
+        imageUrl: mediaRes.data?.value?.image_url,
         youtubeId: mediaRes.data?.value?.youtube_id,
         ctaText: brandRes.data?.value?.cta_text,
       })
     })
   }, [])
 
-  const bgPhoto = heroMedia.thumbnail_url
+  const bgPhoto = heroMedia.image_url
+    || heroMedia.thumbnail_url
     || (heroMedia.youtube_id ? `https://img.youtube.com/vi/${heroMedia.youtube_id}/maxresdefault.jpg` : null)
     || FALLBACK_PHOTO
 

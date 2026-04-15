@@ -29,8 +29,15 @@ export default function BrandingHeroMedia() {
     supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'hero_media').maybeSingle()
       .then(({ data }) => {
         const v = data?.value
-        if (v?.type) {
-          // New format saved by this component: { type, url, thumbnail_url?, youtube_id? }
+        if (v?.mode === 'image') {
+          setMedia({ type: 'image', url: v.image_url || v.url || v.thumbnail_url || '' })
+          setMode('image')
+        } else if (v?.mode === 'video') {
+          const isYt = !!v.youtube_id
+          setMedia({ type: isYt ? 'youtube' : 'upload', url: isYt ? `https://www.youtube.com/watch?v=${v.youtube_id}` : (v.video_url || v.url || '') })
+          setMode('video'); setVideoSub(isYt ? 'youtube' : 'upload')
+        } else if (v?.type) {
+          // Previous save format: { type, url, thumbnail_url, youtube_id }
           setMedia({ type: v.type, url: v.url || v.thumbnail_url || '' })
           if (v.type === 'image') setMode('image')
           else { setMode('video'); setVideoSub(v.type as 'youtube' | 'upload') }
@@ -62,18 +69,13 @@ export default function BrandingHeroMedia() {
 
   async function handleSave() {
     if (!tenantId) return
-    // Save with both the type/url fields AND the shell-compatible thumbnail_url/youtube_id fields
-    // so all shell ShellHero components (modern-pro, bold-local, rustic-rugged, metro-pro, clean-friendly)
-    // can render the hero image without any shell-side changes.
-    let value: Record<string, string>
-    if (mode === 'image') {
-      value = { type: 'image', url: media.url, thumbnail_url: media.url, youtube_id: '' }
-    } else if (videoSub === 'youtube') {
-      const youtubeId = extractYouTubeId(media.url)
-      value = { type: 'youtube', url: media.url, youtube_id: youtubeId, thumbnail_url: '' }
-    } else {
-      value = { type: 'upload', url: media.url, thumbnail_url: media.url, youtube_id: '' }
-    }
+    // Save mode+image_url (canonical) + thumbnail_url+youtube_id (shell compat)
+    const ytId = videoSub === 'youtube' ? extractYouTubeId(media.url) : ''
+    const value: Record<string, string> = mode === 'image'
+      ? { mode: 'image', image_url: media.url, video_url: '', type: 'image', url: media.url, thumbnail_url: media.url, youtube_id: '' }
+      : videoSub === 'youtube'
+        ? { mode: 'video', image_url: '', video_url: media.url, type: 'youtube', url: media.url, youtube_id: ytId, thumbnail_url: '' }
+        : { mode: 'video', image_url: '', video_url: media.url, type: 'upload', url: media.url, thumbnail_url: '', youtube_id: '' }
     setSaving(true)
     const { error } = await supabase.from('settings').upsert({ tenant_id: tenantId, key: 'hero_media', value }, { onConflict: 'tenant_id,key' })
     setSaving(false)

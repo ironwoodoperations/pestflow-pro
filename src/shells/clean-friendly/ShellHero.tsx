@@ -7,7 +7,7 @@ import { readHeroCache, writeHeroCache } from '../../lib/heroCache'
 
 interface Biz { name?: string; phone?: string }
 interface HomeContent { hero_headline?: string; title?: string; subtitle?: string }
-interface HeroMedia { thumbnail_url?: string; youtube_id?: string }
+interface HeroMedia { thumbnail_url?: string; image_url?: string; youtube_id?: string }
 
 const HERO_IMAGE = '/images/pests/tech_1.jpg'
 
@@ -56,6 +56,7 @@ export default function ShellHero() {
         phone: bizRes.data?.value?.phone,
         ctaText: brandRes.data?.value?.cta_text,
         thumbnailUrl: mediaRes.data?.value?.thumbnail_url,
+        imageUrl: mediaRes.data?.value?.image_url,
       })
     })
   }, [])
@@ -66,7 +67,8 @@ export default function ShellHero() {
     || (biz.name ? `${biz.name} — Professional Pest Control` : 'Professional Pest Control You Can Trust')
 
   const dialPhone = biz.phone ? `tel:${biz.phone.replace(/\D/g, '')}` : '#'
-  const bgImage = heroMedia.thumbnail_url
+  const bgImage = heroMedia.image_url
+    || heroMedia.thumbnail_url
     || (heroMedia.youtube_id ? `https://img.youtube.com/vi/${heroMedia.youtube_id}/maxresdefault.jpg` : null)
     || HERO_IMAGE
 

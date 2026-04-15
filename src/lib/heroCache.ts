@@ -25,6 +25,7 @@ export interface HeroCache {
   numTechnicians?: number
   ctaText?: string
   thumbnailUrl?: string
+  imageUrl?: string
   youtubeId?: string
 }
 
