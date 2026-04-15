@@ -90,7 +90,7 @@ export default function IntakeSuccess() {
           <div className="h-5 w-64 rounded animate-pulse bg-gray-100 mx-auto mb-3" />
           <div className="h-3 w-full rounded animate-pulse bg-gray-100 mb-2" />
           <div className="h-3 w-4/5 rounded animate-pulse bg-gray-100 mx-auto mb-6" />
-          <span className="inline-block text-sm font-bold" style={{ color: 'var(--color-accent)' }}>
+          <span className="inline-block text-sm font-bold" style={{ color: '#10b981' }}>
             ⚡ Powered by PestFlow Pro
           </span>
         </div>
@@ -124,7 +124,7 @@ export default function IntakeSuccess() {
             Your New Site Is Being Built!
           </h1>
           <p className="text-gray-500 text-sm mb-6 leading-relaxed">{subtext}</p>
-          <span className="inline-block text-sm font-bold" style={{ color: 'var(--color-accent)' }}>
+          <span className="inline-block text-sm font-bold" style={{ color: '#10b981' }}>
             ⚡ Powered by PestFlow Pro
           </span>
         </div>
