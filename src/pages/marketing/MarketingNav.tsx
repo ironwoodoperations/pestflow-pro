@@ -29,7 +29,7 @@ export default function MarketingNav() {
     }}>
       {/* Logo */}
       <div style={{ display: 'flex', alignItems: 'center' }}>
-        <img src="/pestflow-pro-white.png" alt="PestFlow Pro" style={{ height: 40, width: 'auto' }} />
+        <img src="/images/pests/pestflow-pro-white.png" alt="PestFlow Pro" style={{ height: 40, width: 'auto' }} />
       </div>
 
       {/* Desktop links */}
