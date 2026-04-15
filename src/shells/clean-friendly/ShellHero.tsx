@@ -7,6 +7,7 @@ import { readHeroCache, writeHeroCache } from '../../lib/heroCache'
 
 interface Biz { name?: string; phone?: string }
 interface HomeContent { hero_headline?: string; title?: string; subtitle?: string }
+interface HeroMedia { thumbnail_url?: string; youtube_id?: string }
 
 const HERO_IMAGE = '/images/pests/tech_1.jpg'
 
@@ -28,17 +29,20 @@ export default function ShellHero() {
   const [customHeadline, setCustomHeadline] = useState(cached.customHeadline || '')
   const [ctaText, setCtaText] = useState(cached.ctaText || 'Get a Free Quote')
   const [heroSubtext, setHeroSubtext] = useState(cached.subtitle || 'Call for Same-Day Service')
+  const [heroMedia, setHeroMedia] = useState<HeroMedia>({ thumbnail_url: cached.thumbnailUrl })
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
-      const [bizRes, custRes, brandRes, contentRes] = await Promise.all([
+      const [bizRes, mediaRes, custRes, brandRes, contentRes] = await Promise.all([
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'hero_media').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'customization').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
         supabase.from('page_content').select('hero_headline,title,subtitle').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
       ])
       if (bizRes.data?.value) setBiz({ name: bizRes.data.value.name, phone: bizRes.data.value.phone })
+      if (mediaRes.data?.value) setHeroMedia(mediaRes.data.value)
       if (custRes.data?.value?.hero_headline) setCustomHeadline(custRes.data.value.hero_headline)
       if (brandRes.data?.value?.cta_text) setCtaText(brandRes.data.value.cta_text)
       if (contentRes.data) setHomeContent(contentRes.data as HomeContent)
@@ -51,6 +55,7 @@ export default function ShellHero() {
         bizName: bizRes.data?.value?.name,
         phone: bizRes.data?.value?.phone,
         ctaText: brandRes.data?.value?.cta_text,
+        thumbnailUrl: mediaRes.data?.value?.thumbnail_url,
       })
     })
   }, [])
@@ -61,13 +66,16 @@ export default function ShellHero() {
     || (biz.name ? `${biz.name} — Professional Pest Control` : 'Professional Pest Control You Can Trust')
 
   const dialPhone = biz.phone ? `tel:${biz.phone.replace(/\D/g, '')}` : '#'
+  const bgImage = heroMedia.thumbnail_url
+    || (heroMedia.youtube_id ? `https://img.youtube.com/vi/${heroMedia.youtube_id}/maxresdefault.jpg` : null)
+    || HERO_IMAGE
 
   return (
     <>
       {/* Hero section */}
       <section
         className="relative flex items-center justify-center min-h-[65vh] bg-cover bg-center"
-        style={{ backgroundImage: `url(${HERO_IMAGE})` }}
+        style={{ backgroundImage: `url(${bgImage})` }}
       >
         {/* Overlay — tinted with palette primary */}
         <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, color-mix(in srgb, var(--color-primary) 40%, #000), color-mix(in srgb, var(--color-primary) 30%, #000))' }} />

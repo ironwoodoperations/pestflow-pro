@@ -7,6 +7,11 @@ type MediaType = 'image' | 'youtube' | 'upload'
 
 interface HeroMedia { type: MediaType; url: string }
 
+function extractYouTubeId(url: string): string {
+  const m = url.match(/(?:v=|youtu\.be\/)([A-Za-z0-9_-]{11})/)
+  return m ? m[1] : ''
+}
+
 const inp = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-400'
 
 export default function BrandingHeroMedia() {
@@ -25,9 +30,17 @@ export default function BrandingHeroMedia() {
       .then(({ data }) => {
         const v = data?.value
         if (v?.type) {
-          setMedia({ type: v.type, url: v.url || '' })
+          // New format saved by this component: { type, url, thumbnail_url?, youtube_id? }
+          setMedia({ type: v.type, url: v.url || v.thumbnail_url || '' })
           if (v.type === 'image') setMode('image')
           else { setMode('video'); setVideoSub(v.type as 'youtube' | 'upload') }
+        } else if (v?.thumbnail_url) {
+          // Legacy seed format: { thumbnail_url, youtube_id }
+          setMedia({ type: 'image', url: v.thumbnail_url })
+          setMode('image')
+        } else if (v?.youtube_id) {
+          setMedia({ type: 'youtube', url: `https://www.youtube.com/watch?v=${v.youtube_id}` })
+          setMode('video'); setVideoSub('youtube')
         }
         setLoading(false)
       })
@@ -49,9 +62,18 @@ export default function BrandingHeroMedia() {
 
   async function handleSave() {
     if (!tenantId) return
-    const value: HeroMedia = mode === 'image'
-      ? { type: 'image', url: media.url }
-      : { type: videoSub, url: media.url }
+    // Save with both the type/url fields AND the shell-compatible thumbnail_url/youtube_id fields
+    // so all shell ShellHero components (modern-pro, bold-local, rustic-rugged, metro-pro, clean-friendly)
+    // can render the hero image without any shell-side changes.
+    let value: Record<string, string>
+    if (mode === 'image') {
+      value = { type: 'image', url: media.url, thumbnail_url: media.url, youtube_id: '' }
+    } else if (videoSub === 'youtube') {
+      const youtubeId = extractYouTubeId(media.url)
+      value = { type: 'youtube', url: media.url, youtube_id: youtubeId, thumbnail_url: '' }
+    } else {
+      value = { type: 'upload', url: media.url, thumbnail_url: media.url, youtube_id: '' }
+    }
     setSaving(true)
     const { error } = await supabase.from('settings').upsert({ tenant_id: tenantId, key: 'hero_media', value }, { onConflict: 'tenant_id,key' })
     setSaving(false)
