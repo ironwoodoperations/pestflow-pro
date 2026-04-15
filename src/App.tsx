@@ -1,8 +1,8 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Suspense, lazy } from 'react'
 
-// Marketing landing — lazy (keeps bundle under 450 kB)
-const MarketingLanding = lazy(() => import('./pages/MarketingLanding'))
+// Marketing homepage — lazy (keeps bundle under 450 kB)
+const MarketingLanding = lazy(() => import('./pages/marketing/MarketingHome'))
 import DangPageRouter from './shells/dang/DangPageRouter'
 import { Toaster } from 'sonner'
 import { ErrorBoundary } from './components/ErrorBoundary'

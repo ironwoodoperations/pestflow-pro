@@ -1,0 +1,224 @@
+Read CLAUDE.md before doing anything.
+
+CONTEXT: Rebuild the PestFlow Pro marketing homepage at pestflowpro.com. This replaces
+the existing MarketingLanding component. The site must look competitive against
+GorillaDesk and ServiceTitan — professional, bold, industry-specific. Target audience
+is small pest control business owners who want a done-for-you digital presence.
+
+We do NOT sell field service software, scheduling, invoicing, or chemical tracking.
+We sell: a professional website, local SEO, social media management, and a simple CRM
+for lead capture and notifications. That is the entire product.
+
+FILE STRUCTURE: Create these files:
+  src/pages/marketing/MarketingHome.tsx         — main homepage (orchestrator, <200 lines)
+  src/pages/marketing/sections/MarketingHero.tsx
+  src/pages/marketing/sections/MarketingFeatures.tsx
+  src/pages/marketing/sections/MarketingWebsiteShowcase.tsx
+  src/pages/marketing/sections/MarketingSEO.tsx
+  src/pages/marketing/sections/MarketingSocial.tsx
+  src/pages/marketing/sections/MarketingCRM.tsx
+  src/pages/marketing/sections/MarketingPricing.tsx
+  src/pages/marketing/sections/MarketingCTA.tsx
+  src/pages/marketing/MarketingNav.tsx
+  src/pages/marketing/MarketingFooter.tsx
+
+Replace the existing MarketingLanding import in src/pages/Index.tsx (or wherever the
+root route renders) with MarketingHome.
+
+All files under 200 lines. Relative imports only. No @/ aliases.
+Use Tailwind for layout/spacing. Hardcoded hex is fine for marketing page (not a shell).
+
+---
+
+DESIGN DIRECTION: Bold, dark-navy + teal/green accent. Professional but not corporate.
+Think "built for the trades" — confident, direct, zero fluff. Similar energy to
+GorillaDesk but pest-control specific. Font weights heavy on headlines (font-bold,
+text-4xl to text-6xl on hero). Dark backgrounds with bright accent CTAs.
+
+Primary palette for marketing page:
+  Dark navy bg: #0a0f1e
+  Section bg alternate: #111827
+  Accent teal: #06B6D4
+  Accent green: #10B981
+  White text on dark: #f9fafb
+  Muted text: #9ca3af
+
+---
+
+SECTION 1 — MarketingNav.tsx
+Sticky nav. Logo left (PestFlow Pro text or use /pestflow-logo.png if exists in public/).
+Nav links: Features | How It Works | Pricing | Contact
+Right side: phone number (430) 367-5601 as a tel link + "Get Started" teal button
+that scrolls to the contact form or links to #contact.
+Dark navy background. Clean and minimal.
+
+---
+
+SECTION 2 — MarketingHero.tsx
+Full-height dark hero section.
+Headline (large, bold, white):
+  "The Complete Digital Presence for Pest Control Companies"
+Subheadline (muted):
+  "Professional website. Local SEO. Social media. Lead capture. All done for you —
+  so you can focus on running your business."
+Two CTA buttons side by side:
+  Primary (teal): "See How It Works" — scrolls to features
+  Secondary (outline white): "Call (430) 367-5601"
+Below buttons: small trust line — "Trusted by pest control companies across Texas"
+Right side or background: a browser mockup showing lone-star-pest-solutions.pestflowpro.com
+  Use an iframe or a styled div showing the actual live site preview.
+  If iframe causes issues, use a screenshot image instead —
+  use a simple styled card with the URL bar showing "lone-star-pest-solutions.pestflowpro.com"
+  and text "Live client site — Lone Star Pest Solutions — Austin, TX"
+
+---
+
+SECTION 3 — MarketingFeatures.tsx
+3-column feature grid. Dark navy background.
+Label above: "EVERYTHING YOU NEED"
+Headline: "One Platform. Zero Headaches."
+Subtext: "We handle the tech. You handle the bugs."
+
+6 feature cards (icon + title + 2-line description):
+1. 🌐 Professional Website — "Custom-branded, mobile-first site live in days. Not weeks."
+2. 📍 Local SEO — "Show up when homeowners search for pest control in your city."
+3. 📱 Social Media — "Scheduled posts, AI-generated captions, one dashboard."
+4. 📋 Lead CRM — "Every quote request captured, logged, and sent to your phone instantly."
+5. ✏️ Content Control — "Update your services, hours, photos, and more — any time."
+6. 🚀 Done For You — "We build it, we optimize it, we maintain it. You just answer the phone."
+
+---
+
+SECTION 4 — MarketingWebsiteShowcase.tsx
+Split layout. Left: text. Right: live site preview mockup.
+Label: "YOUR WEBSITE"
+Headline: "A Site That Actually Gets You Calls"
+Body: "We build you a fast, mobile-optimized website with real content about your
+business — not generic templates. Service pages for every pest you treat, city pages
+for every area you serve, and a quote form that sends leads straight to your phone."
+Feature list:
+  ✓ Live in 48–72 hours
+  ✓ Custom domain or we host it
+  ✓ Service pages for every pest type
+  ✓ City-specific SEO landing pages
+  ✓ Quote form with instant SMS + email alerts
+CTA: "See a live example →" linking to https://lone-star-pest-solutions.pestflowpro.com
+
+Right side: Styled browser mockup card showing lone-star-pest-solutions.pestflowpro.com with a
+  "Live Client Site" badge. Style it like a floating browser window.
+
+---
+
+SECTION 5 — MarketingSEO.tsx
+Dark background. Full-width section.
+Label: "LOCAL SEO"
+Headline: "Rank #1 When Homeowners Search for Pest Control"
+Body: "We optimize every page for the searches your customers are actually making.
+Ant control Austin TX. Termite inspection Tyler TX. Mosquito treatment near me.
+Your site is built to rank — not just look good."
+3 stat cards in a row:
+  91 / 100 PageSpeed score (vs avg 54 before)
+  City pages for every service area
+  Schema markup, sitemap, robots.txt built in
+Below stats: "See your PageSpeed score →" linking to https://pagespeed.web.dev
+
+---
+
+SECTION 6 — MarketingSocial.tsx
+Split layout. Left: mockup of social post. Right: text.
+Label: "SOCIAL MEDIA"
+Headline: "Stay Active Online Without Lifting a Finger"
+Body: "We connect your Facebook, Instagram, Google Business, and more. Generate
+AI-written captions, schedule posts in advance, and track performance — all from
+your dashboard."
+Feature list:
+  ✓ Facebook, Instagram, YouTube, LinkedIn, Google Business
+  ✓ AI caption generator
+  ✓ Post scheduling calendar
+  ✓ One-click publish
+Left side: Styled card showing a mock social post with the client's brand colors,
+  a pest control image, and example caption text.
+
+---
+
+SECTION 7 — MarketingCRM.tsx
+Label: "LEAD MANAGEMENT"
+Headline: "Never Miss a Lead Again"
+Body: "Every quote request from your website goes into your CRM and fires an
+instant SMS and email to your phone. See every lead, track every conversation,
+and follow up fast — from any device."
+3-column mini feature grid:
+  📲 Instant SMS Alert — "Get a text the second a lead comes in"
+  📧 Email Notification — "Full lead details sent to your inbox"
+  📊 Lead Dashboard — "All your leads in one place, organized and searchable"
+Right or below: Link to admin demo — "See the dashboard →"
+  href: https://pestflow-pro.pestflowpro.com/admin
+  Note below link: "Demo login: admin@pestflowpro.com / pf123demo"
+
+---
+
+SECTION 8 — MarketingPricing.tsx
+Label: "SIMPLE PRICING"
+Headline: "Plans Built for Pest Control Companies"
+Subtext: "No long-term contracts. Cancel any time."
+
+4 pricing cards side by side (or 2x2 on mobile):
+Starter — $149/mo
+  Setup: $0–$1,000
+  Bullet list: Website, Quote form, Lead email alerts, Basic SEO
+  CTA: "Get Started"
+
+Growth — $249/mo  ← highlight as "Most Popular" with teal border
+  Setup: $1,000–$1,500
+  Bullet list: Everything in Starter + Social media (3 platforms), AI captions, SMS alerts, City SEO pages
+  CTA: "Get Started"
+
+Pro — $349/mo
+  Setup: $2,000–$3,500
+  Bullet list: Everything in Growth + Premium shell design, Full social suite, Priority support
+  CTA: "Get Started"
+
+Elite — $499/mo
+  Setup: $4,000–$10,000
+  Bullet list: Everything in Pro + Custom shell, Dedicated onboarding, White-glove setup
+  CTA: "Contact Us"
+
+Below cards: small text — "Setup fee is a one-time charge. Monthly subscription billed automatically."
+All CTA buttons scroll to #contact section or tel link.
+
+---
+
+SECTION 9 — MarketingCTA.tsx
+This is the contact/bottom CTA section. Give it id="contact".
+Dark background with strong visual weight.
+Headline: "Ready to Get More Calls?"
+Subtext: "Talk to us about getting your pest control business online the right way."
+
+Two-column layout:
+LEFT — contact info:
+  📞 (430) 367-5601 — tel link
+  ✉️ pfpsales@pestflowpro.com — mailto link
+  Small note: "We typically respond within 1 business hour during business days."
+
+RIGHT — simple contact form (no backend needed yet — use mailto action):
+  Fields: Name, Company Name, Phone, Email, Message (optional)
+  Submit button: teal "Send Message" button
+  Form action: mailto:pfpsales@pestflowpro.com
+
+---
+
+SECTION 10 — MarketingFooter.tsx
+Dark navy. Clean minimal footer.
+Left: PestFlow Pro logo/text + tagline "The operating system for pest control companies."
+Center: nav links — Features | Pricing | Privacy | Terms | SMS Terms
+Right: (430) 367-5601 | pfpsales@pestflowpro.com
+Bottom bar: © 2026 Ironwood Operations Group. All rights reserved.
+Links to /privacy, /terms, /sms-terms (these already exist on the platform).
+
+---
+
+After all sections are built and wired into MarketingHome.tsx:
+1. Run: npx tsc --noEmit
+2. Fix any TypeScript errors
+3. Run: npx vite build — confirm bundle stays under 450 kB
+4. git add . && git commit -m "feat: rebuild pestflowpro.com marketing homepage" && git push
