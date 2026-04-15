@@ -36,7 +36,7 @@ export default function ServiceArea() {
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle(),
         supabase.from('page_content').select('title, subtitle').eq('tenant_id', tenantId).eq('page_slug', 'service-area').maybeSingle(),
       ])
-      if (locRes.data && locRes.data.length > 0) setLocations(locRes.data)
+      if ((locRes.data ?? []).length > 0) setLocations(locRes.data ?? [])
       if (bizRes.data?.value?.address) setAddress(bizRes.data.value.address)
       if (bizRes.data?.value?.phone) setPhone(bizRes.data.value.phone)
       if (intgRes.data?.value?.google_maps_api_key) setMapsApiKey(intgRes.data.value.google_maps_api_key)

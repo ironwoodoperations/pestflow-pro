@@ -37,7 +37,7 @@ export default function ModernProServicesGrid({ services }: Props) {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {services.map((s) => {
+          {(services ?? []).map((s) => {
             const img = PEST_IMAGES[s.slug]
             return (
               <Link

@@ -43,7 +43,7 @@ export default function LocationPage({ slug }: { slug: string }) {
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
       ])
       if (locRes.data) setLocation(locRes.data)
-      if (allLocsRes.data) setOtherLocations(allLocsRes.data)
+      setOtherLocations(allLocsRes.data ?? [])
       const biz = settingsRes.data?.value || {}
       if (biz.phone) setPhone(biz.phone)
       if (biz.address) setBizAddress(biz.address)

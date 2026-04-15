@@ -82,7 +82,15 @@ function SEOManager() {
         supabase.from('settings').select('google_search_console_verification').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle(),
       ])
       if (bizRes.data?.value) setBizInfo(bizRes.data.value as BusinessInfo)
-      if (seoRes.data?.value) setSeoSettings(seoRes.data.value as SeoSettings)
+      if (seoRes.data?.value) {
+        const raw = seoRes.data.value as Partial<SeoSettings>
+        setSeoSettings({
+          ...EMPTY_SEO,
+          ...raw,
+          service_areas: Array.isArray(raw.service_areas) ? raw.service_areas : [],
+          certifications: Array.isArray(raw.certifications) ? raw.certifications : [],
+        })
+      }
       if (schemaRes.data?.value) setSchemaConfig(schemaRes.data.value as SchemaConfig)
       if (socialRes.data?.value) setSocialLinks(socialRes.data.value as SocialLinks)
       if (brandRes.data?.value?.tagline) setTagline(brandRes.data.value.tagline)

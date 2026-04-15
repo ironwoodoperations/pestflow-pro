@@ -63,11 +63,11 @@ export function generateLocalBusinessSchema(
     },
     url: siteUrl,
     ...(sameAs.length > 0 ? { sameAs } : {}),
-    areaServed: seo.service_areas.map(area => ({
+    areaServed: (seo.service_areas ?? []).map(area => ({
       '@type': 'City',
       name: area,
     })),
-    hasCredential: seo.certifications.map(cert => ({
+    hasCredential: (seo.certifications ?? []).map(cert => ({
       '@type': 'EducationalOccupationalCredential',
       credentialCategory: cert,
     })),
