@@ -107,8 +107,8 @@ export default function IntakeSuccess() {
             Your New Site Is Being Built!
           </h1>
           <p className="text-gray-500 text-sm mb-6 leading-relaxed">{subtext}</p>
-          <span className="inline-block text-sm font-bold" style={{ color: 'var(--color-accent)' }}>
-            ⚡ PestFlow Pro
+          <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-full" style={{ background: '#1a1a2e' }}>
+            <img src="/images/pests/pestflow-pro-white.png" alt="PestFlow Pro" style={{ height: 22 }} />
           </span>
         </div>
       </div>
