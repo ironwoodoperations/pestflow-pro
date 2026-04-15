@@ -99,7 +99,7 @@ export default function MarketingHero() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             marginBottom: 16,
           }}>
-            <img src="/pestflow-pro.png" alt="PestFlow Pro" style={{ height: 72, width: 'auto' }} />
+            <img src="/pestflow-pro-white.png" alt="PestFlow Pro" style={{ height: 72, width: 'auto' }} />
           </div>
           <BrowserMockup />
         </div>

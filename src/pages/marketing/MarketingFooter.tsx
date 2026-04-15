@@ -23,7 +23,7 @@ export default function MarketingFooter() {
               <img
                 src="/pestflow-pro-white.png"
                 alt="PestFlow Pro"
-                style={{ height: 36, width: 'auto' }}
+                style={{ height: 56, width: 'auto' }}
               />
             </div>
             <p style={{ fontFamily: F.b, fontSize: 13, color: C.muted, lineHeight: 1.65, margin: 0 }}>

@@ -76,7 +76,7 @@ export default function MarketingCTA() {
 
             <div style={{ background: 'rgba(6,182,212,0.06)', border: '1px solid rgba(6,182,212,0.15)', borderRadius: 12, padding: '18px 20px' }}>
               <p style={{ fontFamily: F.b, fontSize: 13, color: C.muted, margin: 0, lineHeight: 1.6 }}>
-                We typically respond within 1 business hour during business days. Scott handles every sales conversation personally.
+                We typically respond within 1 business hour during business days.
               </p>
             </div>
           </div>
