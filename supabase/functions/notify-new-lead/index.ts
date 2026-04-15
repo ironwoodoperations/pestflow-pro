@@ -187,7 +187,7 @@ Deno.serve(async (req) => {
 
     // ── SMS (owner) ───────────────────────────────────────────────────────
     if (ownerSms) {
-      const smsMsg = `New lead from ${lead.name} — ${services}. Phone: ${lead.phone}.`
+      const smsMsg = `New lead — ${lead.name} | ${formatPhone(lead.phone || '')} | ${services}. Submitted ${timestamp}`
       console.log('[notify-new-lead] calling send-sms, to:', ownerSms, 'key_len:', textbeltKey.length)
       try {
         const smsRes = await fetch(`${SUPABASE_URL}/functions/v1/send-sms`, {
