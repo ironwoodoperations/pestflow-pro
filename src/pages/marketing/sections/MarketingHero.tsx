@@ -93,7 +93,7 @@ export default function MarketingHero() {
         {/* Right: logo shield + mockup */}
         <div style={{ flex: '1 1 380px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
-            <img src="/pestflow-pro-white.png" alt="PestFlow Pro" style={{ height: 120, width: 'auto' }} />
+            <img src="/pestflow-pro-white.png" alt="PestFlow Pro" style={{ height: 240, width: 'auto' }} />
           </div>
           <BrowserMockup />
         </div>
