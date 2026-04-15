@@ -27,26 +27,12 @@ function FloatingBrowser() {
         </div>
         <div style={{ background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 4, padding: '2px 8px', fontSize: 9, color: '#22c55e', fontFamily: F.b, fontWeight: 600 }}>LIVE</div>
       </div>
-      {/* Page content preview */}
-      <div style={{ padding: '20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, padding: '8px 12px', background: 'rgba(0,0,0,0.3)', borderRadius: 8 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#ffffff', fontFamily: F.h }}>Lone Star Pest Solutions</span>
-          <span style={{ fontSize: 9, color: '#22c55e', fontFamily: F.b }}>Services | About | Contact</span>
-        </div>
-        <div style={{ background: 'linear-gradient(135deg, #1a3a5c, #0f2744)', borderRadius: 10, padding: '20px 16px', textAlign: 'center', marginBottom: 14 }}>
-          <div style={{ fontSize: 14, fontWeight: 800, fontFamily: F.h, color: '#ffffff', marginBottom: 8 }}>Pest Control Austin TX</div>
-          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', fontFamily: F.b, marginBottom: 12, lineHeight: 1.5 }}>Fast, reliable pest control for homes and businesses</div>
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-            <span style={{ background: '#22c55e', color: '#ffffff', fontSize: 9, fontWeight: 700, padding: '4px 10px', borderRadius: 5, fontFamily: F.b }}>Free Quote</span>
-            <span style={{ border: '1px solid rgba(255,255,255,0.2)', color: '#ffffff', fontSize: 9, padding: '4px 10px', borderRadius: 5, fontFamily: F.b }}>(512) 555-0100</span>
-          </div>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-          {['🐜 Ants','🦟 Mosquito','🐀 Rodents'].map(s => (
-            <div key={s} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '10px 8px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.06)', fontSize: 10, color: 'rgba(255,255,255,0.5)', fontFamily: F.b }}>{s}</div>
-          ))}
-        </div>
-      </div>
+      {/* Real screenshot */}
+      <img
+        src="/images/sites/lone-star-site.jpg"
+        alt="Lone Star Pest Solutions"
+        style={{ width: '100%', height: '380px', objectFit: 'cover', objectPosition: 'top', display: 'block' }}
+      />
     </div>
   )
 }
