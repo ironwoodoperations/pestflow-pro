@@ -31,12 +31,15 @@ Deno.serve(async (req) => {
         { status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
       )
     }
-    console.log(`[send-sms] Sending ${type || 'sms'} to ${to?.slice(0, 6)}…`)
+    // Normalize to E.164-style: strip non-digits, prepend 1 if 10-digit US number
+    const digits = to.replace(/\D/g, '')
+    const phone = digits.length === 10 ? `1${digits}` : digits
+    console.log(`[send-sms] Sending ${type || 'sms'} to ${phone.slice(0, 6)}…`)
 
     const textbeltRes = await fetch('https://textbelt.com/text', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone: to, message, key: TEXTBELT_API_KEY }),
+      body: JSON.stringify({ phone, message, key: TEXTBELT_API_KEY }),
     })
 
     const result = await textbeltRes.json()
