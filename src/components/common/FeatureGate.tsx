@@ -21,12 +21,12 @@ export function FeatureGate({ minTier, featureName, children, fallback }: Props)
           ? <h3 className="text-lg font-semibold text-gray-700 mb-1">{featureName}</h3>
           : <p className="text-gray-600 font-medium mb-1">This feature requires a higher plan</p>
         }
-        <p className="text-sm text-gray-500 mb-4">Upgrade your plan to access this feature.</p>
+        <p className="text-sm text-gray-500 mb-4">Available on Growth and above. Contact us to unlock.</p>
         <a
-          href="mailto:scott@ironwoodoperations.com?subject=PestFlow Pro Upgrade Request"
+          href="mailto:support@pestflowpro.com?subject=Upgrade Request - PestFlow Pro"
           className="inline-block px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors"
         >
-          Contact us to upgrade
+          Upgrade to Growth →
         </a>
       </div>
     )

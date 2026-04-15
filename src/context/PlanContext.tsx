@@ -39,7 +39,14 @@ export function PlanProvider({ children }: { children: ReactNode }) {
       .eq('key', 'subscription')
       .maybeSingle()
       .then(({ data }) => {
-        if (data?.value?.tier) setTierState(data.value.tier)
+        if (data?.value?.tier != null) {
+          const raw = data.value.tier
+          // Convert string tier ('growth', 'pro', etc.) to numeric for all comparisons
+          const num = typeof raw === 'number' ? raw
+            : raw === 'elite' ? 4 : raw === 'pro' ? 3
+            : (raw === 'growth' || raw === 'grow') ? 2 : 1
+          setTierState(num)
+        }
         setLoading(false)
       })
   }, [tenantId])
