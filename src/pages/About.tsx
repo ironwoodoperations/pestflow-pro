@@ -4,6 +4,7 @@ import { Shield, Home, Bug, Star, Heart, Eye, Award, Zap } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
 import StructuredData from '../components/StructuredData'
+import { usePageHeroImage } from '../hooks/usePageHeroImage'
 
 interface TeamMember { id: string; name: string; title?: string; bio?: string; photo_url?: string }
 
@@ -16,6 +17,7 @@ const VALUES = [
 ]
 
 export default function About() {
+  const heroImageUrl = usePageHeroImage('about')
   const [heroTitle, setHeroTitle] = useState('About Us')
   const [heroSubtitle, setHeroSubtitle] = useState('Family-owned. Science-backed. Trusted since 2009.')
   const [aboutImage, setAboutImage] = useState<string | null>(null)
@@ -39,8 +41,9 @@ export default function About() {
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
       <StructuredData type="WebPage" pageSlug="about" />
 
-      <section className="py-20 md:py-28" style={{ background: 'linear-gradient(135deg, var(--color-bg-hero) 0%, var(--color-bg-hero-end) 100%)' }}>
-        <div className="max-w-4xl mx-auto px-4 text-center">
+      <section className="relative py-20 md:py-28" style={heroImageUrl ? { backgroundImage: `url(${heroImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: 'linear-gradient(135deg, var(--color-bg-hero) 0%, var(--color-bg-hero-end) 100%)' }}>
+        {heroImageUrl && <div className="absolute inset-0 bg-black/60" style={{ zIndex: 0 }} />}
+        <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
           <h1 className="font-oswald tracking-wide text-5xl md:text-7xl mb-4" style={{ color: 'var(--color-nav-text)' }} dangerouslySetInnerHTML={{ __html: heroTitle }} />
           <p className="text-xl" style={{ color: 'var(--color-nav-text)', opacity: 0.75 }}>{heroSubtitle}</p>
         </div>

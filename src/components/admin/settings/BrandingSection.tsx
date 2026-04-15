@@ -9,7 +9,7 @@ import PalettePicker from '../../shared/PalettePicker'
 interface BrandingForm {
   logo_url: string; favicon_url: string; primary_color: string; accent_color: string
   template: 'modern-pro' | 'bold-local' | 'clean-friendly' | 'rustic-rugged' | 'youpest' | 'dang' | (string & {})
-  cta_text: string
+  cta_text: string; apply_hero_to_all_pages: boolean
 }
 
 const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-400'
@@ -29,7 +29,7 @@ export default function BrandingSection() {
   const [loading, setLoading] = useState(true)
   const [tierNum, setTierNum] = useState(1)
   const [form, setForm] = useState<BrandingForm>({
-    logo_url: '', favicon_url: '', primary_color: '#10b981', accent_color: '#f5c518', template: 'modern-pro', cta_text: ''
+    logo_url: '', favicon_url: '', primary_color: '#10b981', accent_color: '#f5c518', template: 'modern-pro', cta_text: '', apply_hero_to_all_pages: false
   })
 
   useEffect(() => {
@@ -47,7 +47,8 @@ export default function BrandingSection() {
           primary_color: v.primary_color ?? prev.primary_color,
           accent_color:  v.accent_color  ?? prev.accent_color,
           template:      v.template      ?? prev.template,
-          cta_text:      v.cta_text      ?? prev.cta_text,
+          cta_text:                v.cta_text                ?? prev.cta_text,
+          apply_hero_to_all_pages: v.apply_hero_to_all_pages ?? false,
         }))
       }
       if (subRes.data?.value?.tier) setTierNum(Number(subRes.data!.value.tier) || 1)
@@ -154,6 +155,16 @@ export default function BrandingSection() {
           <input type="text" maxLength={40} value={form.cta_text} onChange={e => setForm(prev => ({ ...prev, cta_text: e.target.value }))}
             placeholder="Get a Free Quote" className={inputClass} />
           <p className="text-xs text-gray-400 mt-1">The primary call-to-action button on your site</p>
+        </div>
+
+        <div className="flex items-center gap-3 py-1">
+          <input type="checkbox" id="applyHeroToAll" checked={form.apply_hero_to_all_pages}
+            onChange={e => setForm(f => ({ ...f, apply_hero_to_all_pages: e.target.checked }))}
+            className="w-4 h-4 cursor-pointer accent-emerald-500" />
+          <label htmlFor="applyHeroToAll" className="text-sm font-medium text-gray-700 cursor-pointer">
+            Apply hero image to all pages
+          </label>
+          <span className="text-xs text-gray-400">— When checked, uses the global Hero Media image on every page.</span>
         </div>
 
         <button onClick={handleSave} disabled={saving}

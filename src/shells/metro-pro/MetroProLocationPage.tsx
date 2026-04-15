@@ -4,8 +4,10 @@ import { MapPin } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
 import { formatPhone } from '../../lib/formatPhone'
+import { usePageHeroImage } from '../../hooks/usePageHeroImage'
 
 export default function MetroProLocationPage() {
+  const heroImageUrl = usePageHeroImage('service-area')
   const [areas, setAreas] = useState<string[]>([])
   const [phone, setPhone] = useState('')
   const [heroTitle, setHeroTitle] = useState('Our Service Area')
@@ -30,11 +32,12 @@ export default function MetroProLocationPage() {
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
 
       {/* Hero */}
-      <section className="py-20 md:py-28 px-6 text-center" style={{ background: 'linear-gradient(135deg, var(--color-bg-hero) 0%, var(--color-bg-hero-end) 100%)' }}>
-        <h1 className="text-5xl md:text-7xl font-bold mb-4 tracking-tight" style={{ color: 'var(--color-nav-text)', fontFamily: 'var(--font-heading)' }}>
+      <section className="relative py-20 md:py-28 px-6 text-center" style={heroImageUrl ? { backgroundImage: `url(${heroImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: 'linear-gradient(135deg, var(--color-bg-hero) 0%, var(--color-bg-hero-end) 100%)' }}>
+        {heroImageUrl && <div className="absolute inset-0 bg-black/60" style={{ zIndex: 0 }} />}
+        <h1 className="relative z-10 text-5xl md:text-7xl font-bold mb-4 tracking-tight" style={{ color: 'var(--color-nav-text)', fontFamily: 'var(--font-heading)' }}>
           {heroTitle}
         </h1>
-        <p className="text-xl max-w-2xl mx-auto" style={{ color: 'var(--color-nav-text)', opacity: 0.75 }}>
+        <p className="relative z-10 text-xl max-w-2xl mx-auto" style={{ color: 'var(--color-nav-text)', opacity: 0.75 }}>
           {heroSubtitle}
         </p>
       </section>

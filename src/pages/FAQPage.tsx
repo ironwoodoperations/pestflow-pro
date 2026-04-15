@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
 import StructuredData from '../components/StructuredData'
+import { usePageHeroImage } from '../hooks/usePageHeroImage'
 
 const FAQ_CATEGORIES = [
   {
@@ -36,6 +37,7 @@ const FAQ_CATEGORIES = [
 interface FaqItem { id: string; question: string; answer: string; sort_order: number }
 
 export default function FAQPage() {
+  const heroImageUrl = usePageHeroImage('faq')
   const [heroTitle, setHeroTitle] = useState('Frequently Asked Questions')
   const [heroSubtitle, setHeroSubtitle] = useState('Everything you need to know about our pest control services.')
   const [faqItems, setFaqItems] = useState<FaqItem[]>([])
@@ -60,8 +62,9 @@ export default function FAQPage() {
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
       <StructuredData type="WebPage" pageSlug="faq" />
 
-      <section className="py-20 md:py-28" style={{ background: 'linear-gradient(135deg, var(--color-bg-hero) 0%, var(--color-bg-hero-end) 100%)' }}>
-        <div className="max-w-4xl mx-auto px-4 text-center">
+      <section className="relative py-20 md:py-28" style={heroImageUrl ? { backgroundImage: `url(${heroImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: 'linear-gradient(135deg, var(--color-bg-hero) 0%, var(--color-bg-hero-end) 100%)' }}>
+        {heroImageUrl && <div className="absolute inset-0 bg-black/60" style={{ zIndex: 0 }} />}
+        <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
           <h1 className="font-oswald tracking-wide text-5xl md:text-7xl mb-4" style={{ color: 'var(--color-nav-text)' }}>{heroTitle}</h1>
           <p className="text-xl" style={{ color: 'var(--color-nav-text)', opacity: 0.75 }}>{heroSubtitle}</p>
         </div>

@@ -30,7 +30,7 @@ function PageImageUpload({ slug, index }: { slug: string; index: number }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [currentUrl, setCurrentUrl] = useState<string | null>(null)
-  const label = `Image ${index + 2}`
+  const label = `Image ${index + 1}`
 
   useEffect(() => {
     if (!tenantId) return
@@ -93,6 +93,44 @@ function PageImageUpload({ slug, index }: { slug: string; index: number }) {
   )
 }
 
+function HeroImageUpload({ slug }: { slug: string }) {
+  const { tenantId } = useTenant()
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+  const [currentUrl, setCurrentUrl] = useState<string | null>(null)
+  useEffect(() => {
+    if (!tenantId) return
+    supabase.from('page_content').select('image_url').eq('tenant_id', tenantId).eq('page_slug', slug).maybeSingle()
+      .then(({ data }) => { if (data?.image_url) setCurrentUrl(data.image_url) })
+  }, [tenantId, slug])
+  async function handleFile(file: File) {
+    if (!tenantId || !file) return
+    setUploading(true)
+    const { data, error } = await supabase.storage.from('tenant-assets').upload(`${tenantId}/pages/${slug}/hero.${file.name.split('.').pop()}`, file, { upsert: true })
+    setUploading(false)
+    if (error) { toast.error('Upload failed: ' + error.message); return }
+    const { data: { publicUrl } } = supabase.storage.from('tenant-assets').getPublicUrl(data.path)
+    await supabase.from('page_content').upsert({ tenant_id: tenantId, page_slug: slug, image_url: publicUrl }, { onConflict: 'tenant_id,page_slug' })
+    setCurrentUrl(publicUrl); toast.success('Hero image uploaded!')
+  }
+  async function handleRemove() {
+    if (!tenantId) return
+    await supabase.from('page_content').upsert({ tenant_id: tenantId, page_slug: slug, image_url: '' }, { onConflict: 'tenant_id,page_slug' })
+    setCurrentUrl(null); toast.success('Hero image removed.')
+  }
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">Hero Image</label>
+      <p className="text-xs text-gray-400 mb-2">Background image for the page hero banner. Recommended: 1600×600px.</p>
+      {currentUrl && <div className="mb-3 relative inline-block"><img src={currentUrl} alt="" className="h-24 w-40 object-cover rounded-lg border border-gray-200" /><button onClick={handleRemove} className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hover:bg-red-600" title="Remove">×</button></div>}
+      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = '' }} />
+      <button onClick={() => inputRef.current?.click()} disabled={uploading} className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition disabled:opacity-50">
+        {uploading ? 'Uploading...' : currentUrl ? '🔄 Replace Hero' : '🖼️ Upload Hero Image'}
+      </button>
+    </div>
+  )
+}
+
 const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-400'
 
 export default function ContentPageForm({ selectedSlug, form, loading, saving, aiLoading, reverting, isPestPage, apiKey, heroHeadline, onHeroHeadlineChange, updateField, onSave, onGenerateAI, onRevert }: Props) {
@@ -131,7 +169,8 @@ export default function ContentPageForm({ selectedSlug, form, loading, saving, a
 
           {PAGES_WITH_IMAGES.has(selectedSlug) && (
             <div className="space-y-4 border-t border-gray-100 pt-4">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Page Images (image_urls)</p>
+              <HeroImageUpload slug={selectedSlug} />
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider pt-2">Additional Images</p>
               <PageImageUpload slug={selectedSlug} index={0} />
               <PageImageUpload slug={selectedSlug} index={1} />
               <PageImageUpload slug={selectedSlug} index={2} />

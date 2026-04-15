@@ -4,6 +4,7 @@ import { ChevronRight } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
 import { formatPhone } from '../../lib/formatPhone'
+import { usePageHeroImage } from '../../hooks/usePageHeroImage'
 import MetroProWhyChooseUs from './MetroProWhyChooseUs'
 import MetroProProcess from './MetroProProcess'
 import MetroProReviews from './MetroProReviews'
@@ -26,6 +27,7 @@ function titleCase(s: string) {
 interface Props { slug: string }
 
 export default function MetroProCityPage({ slug }: Props) {
+  const heroImageUrl = usePageHeroImage(slug)
   const [location, setLocation] = useState<LocationData>({ city: '', hero_title: '' })
   const [biz, setBiz] = useState<BizInfo>({ name: '', phone: '', address: '' })
 
@@ -49,7 +51,8 @@ export default function MetroProCityPage({ slug }: Props) {
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
       {/* Hero */}
-      <section className="py-16 md:py-24 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, var(--color-bg-hero) 0%, var(--color-bg-hero-end) 100%)' }}>
+      <section className="py-16 md:py-24 relative overflow-hidden" style={heroImageUrl ? { backgroundImage: `url(${heroImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: 'linear-gradient(135deg, var(--color-bg-hero) 0%, var(--color-bg-hero-end) 100%)' }}>
+        {heroImageUrl && <div className="absolute inset-0 bg-black/60" style={{ zIndex: 0 }} />}
         <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
           <span className="inline-block text-xs font-semibold px-4 py-1.5 rounded-full mb-5 border border-white/30 text-white/90 bg-white/10">
             {city} Service Area

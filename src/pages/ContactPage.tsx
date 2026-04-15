@@ -4,12 +4,14 @@ import { toast } from 'sonner'
 import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
 import { formatPhone } from '../lib/formatPhone'
+import { usePageHeroImage } from '../hooks/usePageHeroImage'
 
 interface BusinessInfo { name: string; phone: string; email: string; address: string; hours: string }
 interface SocialLinks { facebook: string; instagram: string; google: string }
 interface FormState { name: string; email: string; phone: string; message: string; smsConsent: boolean }
 
 export default function ContactPage() {
+  const heroImageUrl = usePageHeroImage('contact')
   const [tenantId, setTenantId] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [info, setInfo] = useState<BusinessInfo>({ name: '', phone: '', email: '', address: '', hours: '' })
@@ -74,8 +76,9 @@ export default function ContactPage() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
 
-      <section className="py-16" style={{ background: 'linear-gradient(135deg, var(--color-bg-hero) 0%, var(--color-bg-hero-end) 100%)' }}>
-        <div className="max-w-4xl mx-auto px-4 text-center">
+      <section className="relative py-16" style={heroImageUrl ? { backgroundImage: `url(${heroImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: 'linear-gradient(135deg, var(--color-bg-hero) 0%, var(--color-bg-hero-end) 100%)' }}>
+        {heroImageUrl && <div className="absolute inset-0 bg-black/60" style={{ zIndex: 0 }} />}
+        <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
           <h1 className="font-oswald tracking-wide text-4xl md:text-6xl mb-4" style={{ color: 'var(--color-nav-text)' }}>{heroTitle}</h1>
           <p className="text-lg" style={{ color: 'var(--color-nav-text)', opacity: 0.75 }}>
             {heroSubtitle || <>Have a question or need service? Call us at{' '}
