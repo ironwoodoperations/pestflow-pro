@@ -161,22 +161,29 @@ const QuoteForm = ({
       <button
         type="submit"
         disabled={submitting}
-        className="disabled:opacity-50 transition-all text-white"
-        style={{
-          width: '100%',
-          padding: '12px 32px',
-          backgroundColor: '#F97316',
-          color: '#ffffff',
-          borderRadius: '6px',
-          fontWeight: 600,
-          fontSize: '16px',
-          border: 'none',
-          cursor: 'pointer',
-        }}
         onMouseOver={e => (e.currentTarget.style.backgroundColor = '#ea6c0a')}
         onMouseOut={e => (e.currentTarget.style.backgroundColor = '#F97316')}
+        style={{
+          display: 'block',
+          width: '100%',
+          padding: '14px 32px',
+          backgroundColor: '#F97316',
+          color: '#ffffff',
+          borderRadius: '9999px',
+          fontWeight: 700,
+          fontSize: '16px',
+          fontFamily: "'Open Sans', sans-serif",
+          border: 'none',
+          cursor: submitting ? 'not-allowed' : 'pointer',
+          opacity: submitting ? 0.6 : 1,
+          position: 'relative',
+          zIndex: 10,
+          textAlign: 'center',
+          letterSpacing: '0.02em',
+        }}
       >
-        <Send className="w-5 h-5 mr-2 inline" /> {submitting ? "Submitting..." : "Submit Quote Request"}
+        <Send style={{ display: 'inline', verticalAlign: 'middle', marginRight: '8px', width: '18px', height: '18px' }} />
+        {submitting ? "Submitting..." : "Submit Quote Request"}
       </button>
     </form>
   );
