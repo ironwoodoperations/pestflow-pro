@@ -92,19 +92,8 @@ export default function MarketingHero() {
 
         {/* Right: logo shield + mockup */}
         <div style={{ flex: '1 1 380px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0 }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
-            <div style={{
-              width: '100px',
-              height: '120px',
-              background: 'linear-gradient(180deg, #1e3a5f 60%, #1a3356 100%)',
-              clipPath: 'polygon(50% 0%, 100% 15%, 100% 60%, 50% 100%, 0% 60%, 0% 15%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '16px',
-            }}>
-              <img src="/pestflow-pro-white.png" alt="PestFlow Pro" style={{ width: '70px', height: 'auto' }} />
-            </div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
+            <img src="/pestflow-pro-white.png" alt="PestFlow Pro" style={{ height: 120, width: 'auto' }} />
           </div>
           <BrowserMockup />
         </div>
