@@ -38,29 +38,27 @@ const QuotePage = () => {
     defaultValues: { services: [], consentTransactional: false },
   });
 
+  const DANG_TENANT_ID = '1611b16f-381b-4d4f-ba3a-fbde56ad425b';
+
   const onSubmit = async (data: QuoteFormData) => {
     setSubmitting(true);
     try {
       const leadData = {
+        tenant_id: DANG_TENANT_ID,
         name: `${data.firstName} ${data.lastName}`,
         email: data.email,
         phone: data.phone,
-        service: data.services.join(", "),
+        services: data.services,
         message: data.message || null,
-        sms_transactional_consent: smsTransactional,
-        sms_marketing_consent: smsMarketing,
       };
 
       const { error } = await supabase.from("leads").insert(leadData);
       if (error) throw error;
 
-      supabase.functions.invoke("notify-new-lead", { body: { ...leadData, form_type: 'quote' } }).catch(() => {});
-
-      if (smsTransactional && data.phone) {
-        supabase.functions.invoke("send-sms-confirmation", {
-          body: { phone: data.phone, firstName: data.firstName },
-        }).catch(() => {});
-      }
+      // Fire notification — webhook also triggers this automatically on insert
+      supabase.functions.invoke("notify-new-lead", {
+        body: { type: 'INSERT', table: 'leads', record: { ...leadData, created_at: new Date().toISOString() } },
+      }).catch(() => {});
 
       toast.success("Quote Request Sent!", { description: "We'll get back to you as soon as possible." });
       reset();

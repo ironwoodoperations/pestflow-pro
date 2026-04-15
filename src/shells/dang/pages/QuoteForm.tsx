@@ -158,7 +158,24 @@ const QuoteForm = ({
         </span>
       </label>
 
-      <button type="submit" disabled={submitting} className="w-full font-bold rounded-full py-3 text-white text-base transition-all hover:brightness-110 disabled:opacity-50" style={{background: 'hsl(var(--primary))'}}>
+      <button
+        type="submit"
+        disabled={submitting}
+        className="disabled:opacity-50 transition-all"
+        style={{
+          width: '100%',
+          padding: '12px 32px',
+          background: '#F97316',
+          color: '#ffffff',
+          borderRadius: '6px',
+          fontWeight: 600,
+          fontSize: '16px',
+          border: 'none',
+          cursor: 'pointer',
+        }}
+        onMouseOver={e => (e.currentTarget.style.background = '#ea6c0a')}
+        onMouseOut={e => (e.currentTarget.style.background = '#F97316')}
+      >
         <Send className="w-5 h-5 mr-2 inline" /> {submitting ? "Submitting..." : "Submit Quote Request"}
       </button>
     </form>
