@@ -62,7 +62,7 @@ export default function MarketingWebsiteShowcase() {
             A Site That Actually Gets You Calls
           </h2>
           <p style={{ fontFamily: F.b, fontSize: 15, color: C.muted, lineHeight: 1.75, margin: '0 0 28px' }}>
-            We build you a fast, mobile-optimized website with real content about your business — not generic templates. Service pages for every pest you treat, city pages for every area you serve, and a quote form that sends leads straight to your phone.
+            We build you a fast, mobile-optimized website around your business — your services, your cities, your brand. And you can update any of it, any time, right from your dashboard.
           </p>
           <div style={{ marginBottom: 32 }}>
             {BULLETS.map(b => (

@@ -3,8 +3,8 @@ const F = { h: "'Bricolage Grotesque', sans-serif", b: "'Plus Jakarta Sans', san
 
 const FEATURES = [
   { icon: '🌐', title: 'Professional Website', body: 'Custom-branded, mobile-first site live in days. Not weeks.' },
-  { icon: '📍', title: 'Local SEO', body: 'Show up when homeowners search for pest control in your city.' },
-  { icon: '📱', title: 'Social Media', body: 'Scheduled posts, AI-generated captions, one dashboard.' },
+  { icon: '📍', title: 'Local SEO', body: 'Show up when homeowners search for pest control in your city — and update your service areas, keywords, and content any time things change.' },
+  { icon: '📱', title: 'Social Media', body: 'Scheduled posts, AI-generated captions, one dashboard. You approve, edit, or swap content whenever you want to stay current — no agency bottleneck.' },
   { icon: '📋', title: 'Lead CRM', body: 'Every quote request captured, logged, and sent to your phone instantly.' },
   { icon: '✏️', title: 'Content Control', body: 'Update your services, hours, photos, and more — any time.' },
   { icon: '🚀', title: 'Done For You', body: 'We build it, we optimize it, we maintain it. You just answer the phone.' },
