@@ -3,20 +3,20 @@ const F = { h: "'Bricolage Grotesque', sans-serif", b: "'Plus Jakarta Sans', san
 
 const PLANS = [
   {
-    name: 'Starter', price: 149, setup: '$0–$1,000', featured: false, cta: 'Get Started',
+    name: 'Starter', price: 149, featured: false, cta: 'Get Started',
     features: ['Professional website', 'Quote form', 'Lead email alerts', 'Basic SEO'],
   },
   {
-    name: 'Growth', price: 249, setup: '$1,000–$1,500', featured: true, cta: 'Get Started',
+    name: 'Growth', price: 249, featured: false, cta: 'Get Started',
     features: ['Everything in Starter', 'Social media (3 platforms)', 'AI captions', 'SMS alerts', 'City SEO pages'],
   },
   {
-    name: 'Pro', price: 349, setup: '$2,000–$3,500', featured: false, cta: 'Get Started',
-    features: ['Everything in Growth', 'Premium shell design', 'Full social suite', 'Priority support'],
+    name: 'Pro', price: 349, featured: true, cta: 'Get Started',
+    features: ['Everything in Growth', 'Your current site re-imagined', 'Full social suite', 'Priority support'],
   },
   {
-    name: 'Elite', price: 499, setup: '$4,000–$10,000', featured: false, cta: 'Contact Us',
-    features: ['Everything in Pro', 'Custom shell', 'Dedicated onboarding', 'White-glove setup'],
+    name: 'Elite', price: 499, featured: false, cta: 'Contact Us',
+    features: ['Everything in Pro', 'Full custom site — or keep your current site', 'Dedicated onboarding', 'White-glove setup'],
   },
 ]
 
@@ -50,11 +50,10 @@ export default function MarketingPricing() {
               )}
 
               <div style={{ fontFamily: F.h, fontWeight: 700, fontSize: 16, color: C.white, marginBottom: 6 }}>{plan.name}</div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 6 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 20 }}>
                 <span style={{ fontFamily: F.h, fontWeight: 800, fontSize: 34, letterSpacing: '-0.03em', color: plan.featured ? C.teal : C.white }}>${plan.price}</span>
                 <span style={{ fontFamily: F.b, fontSize: 13, color: C.muted }}>/mo</span>
               </div>
-              <div style={{ fontFamily: F.b, fontSize: 11, color: C.muted, marginBottom: 20 }}>Setup: {plan.setup}</div>
 
               <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 18, marginBottom: 22 }}>
                 {plan.features.map(f => (
@@ -81,7 +80,7 @@ export default function MarketingPricing() {
         </div>
 
         <p style={{ fontFamily: F.b, fontSize: 12, color: C.muted, textAlign: 'center', marginTop: 28 }}>
-          Setup fee is a one-time charge. Monthly subscription billed automatically.
+          No long-term contracts. Monthly subscription billed automatically.
         </p>
       </div>
     </section>
