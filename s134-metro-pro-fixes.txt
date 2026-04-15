@@ -1,0 +1,43 @@
+Read CLAUDE.md before doing anything.
+
+CONTEXT: The metro-pro shell is rendering at lone-star-pest-solutions.pestflowpro.com. Three issues to fix.
+
+TASK 1 - Fix empty services dropdown in nav
+Find the metro-pro nav component. It has a Services dropdown that is rendering empty.
+The services/pest pages are stored in page_content table. The nav needs to query page_content
+for all rows belonging to this tenant where page_slug is NOT in:
+  home, about, contact, faq, quote
+Those are the service pages. Fetch them and render them in the dropdown as nav links.
+If the component already fetches them, check that the query result is being passed correctly
+and is not undefined or empty due to a missing ?? [] fallback.
+
+TASK 2 - Fix missing location page
+Check if a /locations or /service-area route exists in the metro-pro shell routing.
+If it does not exist, create a basic MetroProLocationPage.tsx under src/shells/metro-pro/
+that displays the tenant's service areas from the seo settings key (service_areas array).
+Register the route in the metro-pro shell router or PublicShell.tsx route list.
+The page should show a simple list/grid of service areas with the tenant's primary color.
+Use CSS custom properties for all colors. No hardcoded hex. File under 200 lines.
+
+TASK 3 - Replace colored backgrounds on pest cards with real pest images
+Find the pest card components in src/shells/metro-pro/ (likely a grid or card component
+showing pest types like roaches, rodents, ants etc).
+Currently each card shows a solid color background. Replace with actual pest images.
+Use free Unsplash source images with specific pest search terms. Format:
+  https://source.unsplash.com/400x300/?cockroach
+  https://source.unsplash.com/400x300/?rodent,pest
+  https://source.unsplash.com/400x300/?ant,insect
+  https://source.unsplash.com/400x300/?mosquito
+  https://source.unsplash.com/400x300/?spider
+  https://source.unsplash.com/400x300/?termite
+  https://source.unsplash.com/400x300/?wasp
+  https://source.unsplash.com/400x300/?scorpion
+  https://source.unsplash.com/400x300/?bed+bug
+  https://source.unsplash.com/400x300/?flea,tick
+Map each pest card to its matching search term. Use the image as a background-image with
+object-fit: cover. Keep the card overlay and text readable — add a dark overlay
+(rgba 0,0,0,0.45) over the image so the pest name stays legible.
+
+Do NOT rebuild any components from scratch. Edit only. Relative imports only. Files under 200 lines.
+
+After all fixes: git add . && git commit -m "fix: metro-pro services nav, location page, pest card images" && git push

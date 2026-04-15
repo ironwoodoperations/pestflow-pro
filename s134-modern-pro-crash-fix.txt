@@ -1,0 +1,13 @@
+Read CLAUDE.md before doing anything.
+
+CONTEXT: The Modern Pro shell at lone-star-pest-solutions.pestflowpro.com crashes with TypeError: Cannot read properties of undefined (reading map). The shell loads briefly then the React error boundary catches this crash. The settings table is fully seeded. The crash is caused by one or more components calling .map() on a value that is undefined, null, or missing entirely from team_members, location_data, faq_items, or any other Supabase query that returns null instead of an empty array.
+
+TASK 1 - Audit every .map() call in all files under src/shells/modern-pro/ and any components it imports. For every .map() call ensure the value is defensively coerced. Wrong: items.map(...) Right: (items ?? []).map(...). Also fix any useState setter that receives a Supabase result directly. Wrong: setItems(data) Right: setItems(data ?? [])
+
+TASK 2 - Apply the same defensive fix to any shared components used by modern-pro in src/components/shells/. Every .map() must have a ?? [] fallback.
+
+TASK 3 - Find where modern-pro fetches team_members and location_data from Supabase and ensure both handle empty results with ?? []
+
+Do NOT rebuild any components from scratch. Edit only. Files must stay under 200 lines. Relative imports only.
+
+After all fixes: git add . && git commit -m fix: defensive map fallbacks in modern-pro shell && git push
