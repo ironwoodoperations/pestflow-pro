@@ -45,9 +45,9 @@ export function readHeroCache(): HeroCache {
     const parsed = JSON.parse(raw)
     if (!parsed || typeof parsed !== 'object') return {}
     const cache = parsed as HeroCache
-    // If cache pre-dates v2, strip the headline fields so shells re-fetch fresh.
-    if (cache.v !== 2) {
-      const { headline: _h, heroHeadline: _hh, ...rest } = cache
+    // If cache pre-dates v3, strip the headline fields so shells re-fetch fresh.
+    if (cache.v !== 3) {
+      const { headline: _h, heroHeadline: _hh, customHeadline: _ch, ...rest } = cache
       return rest
     }
     return cache
@@ -58,7 +58,7 @@ export function readHeroCache(): HeroCache {
 
 export function writeHeroCache(next: HeroCache) {
   try {
-    const merged = { ...readHeroCache(), ...next, v: 2 }
+    const merged = { ...readHeroCache(), ...next, v: 3 }
     localStorage.setItem(cacheKey(), JSON.stringify(merged))
   } catch {
     /* quota exceeded or SSR — non-fatal */

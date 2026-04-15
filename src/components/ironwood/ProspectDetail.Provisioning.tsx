@@ -176,7 +176,7 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
             favicon_url:   br.favicon_url   || null,
           },
           customization: {
-            hero_headline:       cu.hero_headline       || (form.company_name ? `${form.company_name} — Professional Pest Control` : ''),
+            hero_headline:       cu.hero_headline       || form.company_name || '',
             show_license:        cu.show_license        ?? true,
             show_years:          cu.show_years          ?? true,
             show_technicians:    cu.show_technicians    ?? true,

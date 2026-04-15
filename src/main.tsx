@@ -10,7 +10,7 @@ import { applyShellTheme } from './lib/shellThemes.ts'
   try {
     const p = window.location.pathname
     if (p.startsWith('/admin') || p.startsWith('/ironwood')) return
-    const raw = localStorage.getItem('pfp_tenant_boot_v1')
+    const raw = localStorage.getItem('pfp_tenant_boot_v2')
     if (!raw) return
     const boot = JSON.parse(raw) as { slug?: string; template?: string; primaryColor?: string; accentColor?: string }
     if (!boot.template) return

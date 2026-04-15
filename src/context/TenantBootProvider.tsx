@@ -24,7 +24,7 @@ interface TenantBootContextValue {
   refetch: () => void
 }
 
-const CACHE_KEY = 'pfp_tenant_boot_v1'
+const CACHE_KEY = 'pfp_tenant_boot_v2'
 const Ctx = createContext<TenantBootContextValue | null>(null)
 
 function isAdminPath(): boolean {
