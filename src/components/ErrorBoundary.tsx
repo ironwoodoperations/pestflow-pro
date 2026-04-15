@@ -15,6 +15,14 @@ export class ErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false };
 
   static getDerivedStateFromError(error: Error): State {
+    // Stale deployment: chunk hash changed after redeploy — auto-reload once to get fresh HTML
+    if (error.message?.includes('dynamically imported module') || error.message?.includes('Loading chunk')) {
+      const reloaded = sessionStorage.getItem('pfp_chunk_reload')
+      if (!reloaded) {
+        sessionStorage.setItem('pfp_chunk_reload', '1')
+        window.location.reload()
+      }
+    }
     return { hasError: true, error };
   }
 
