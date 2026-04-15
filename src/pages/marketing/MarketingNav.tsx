@@ -4,7 +4,7 @@ const C = { bg: '#0a0f1e', teal: '#06B6D4', white: '#f9fafb', muted: '#9ca3af' }
 const F = { h: "'Bricolage Grotesque', sans-serif", b: "'Plus Jakarta Sans', sans-serif" }
 
 export default function MarketingNav() {
-  const [menuOpen, setMenuOpen] = useState(false)
+  const [, setMenuOpen] = useState(false)
 
   const scrollTo = (id: string) => {
     setMenuOpen(false)
