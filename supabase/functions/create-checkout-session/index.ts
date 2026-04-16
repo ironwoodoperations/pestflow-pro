@@ -1,4 +1,4 @@
-// Edge Function: create-checkout-session v16
+// Edge Function: create-checkout-session v17
 // mode: 'subscription' — recurring only.
 // Setup fee is handled separately by create-setup-invoice.
 // No initial_invoice_items — Stripe rejects that param in checkout sessions.
@@ -11,11 +11,17 @@ const CORS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const PLAN_PRICE_MAP: Record<string, string> = {
-  starter: 'price_1TIZ6DCZBM0TUusSaC2UdcYG',
-  grow:    'price_1TIrvGCZBM0TUusSNBntvS6l',
-  pro:     'price_1TIrvcCZBM0TUusS4BJt8oQi',
-  elite:   'price_1TIrw3CZBM0TUusSomA1hsT4',
+// Accepts numeric tier (1-4) or string name (starter/growth/grow/pro/elite)
+const PRICE_IDS: Record<string, string> = {
+  '1':       Deno.env.get('STRIPE_PRICE_STARTER') || 'price_1TIZ6DCZBM0TUusSaC2UdcYG',
+  '2':       Deno.env.get('STRIPE_PRICE_GROWTH')  || 'price_1TIrvGCZBM0TUusSNBntvS6l',
+  '3':       Deno.env.get('STRIPE_PRICE_PRO')     || 'price_1TIrvcCZBM0TUusS4BJt8oQi',
+  '4':       Deno.env.get('STRIPE_PRICE_ELITE')   || 'price_1TIrw3CZBM0TUusSomA1hsT4',
+  'starter': Deno.env.get('STRIPE_PRICE_STARTER') || 'price_1TIZ6DCZBM0TUusSaC2UdcYG',
+  'growth':  Deno.env.get('STRIPE_PRICE_GROWTH')  || 'price_1TIrvGCZBM0TUusSNBntvS6l',
+  'grow':    Deno.env.get('STRIPE_PRICE_GROWTH')  || 'price_1TIrvGCZBM0TUusSNBntvS6l',
+  'pro':     Deno.env.get('STRIPE_PRICE_PRO')     || 'price_1TIrvcCZBM0TUusS4BJt8oQi',
+  'elite':   Deno.env.get('STRIPE_PRICE_ELITE')   || 'price_1TIrw3CZBM0TUusSomA1hsT4',
 }
 
 interface RequestBody {
@@ -47,8 +53,9 @@ Deno.serve(async (req: Request) => {
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY')
     if (!stripeKey) return json({ error: 'STRIPE_SECRET_KEY not configured' }, 500)
 
-    const recurringPriceId = PLAN_PRICE_MAP[plan.toLowerCase()]
-    if (!recurringPriceId) return json({ error: `Price ID not configured for plan: ${plan}` }, 500)
+    const planKey = String(plan).toLowerCase()
+    const recurringPriceId = PRICE_IDS[planKey]
+    if (!recurringPriceId) return json({ error: `Invalid tier: ${plan}. Use starter/growth/pro/elite or 1-4` }, 400)
 
     const stripe = new Stripe(stripeKey, { apiVersion: '2023-10-16' as any })
 
@@ -82,8 +89,8 @@ Deno.serve(async (req: Request) => {
         client_email,
         onboarding_session_id: onboarding_session_id || '',
       },
-      success_url: 'https://pestflowpro.com/ironwood?payment=success',
-      cancel_url:  'https://pestflowpro.com/ironwood?payment=cancelled',
+      success_url: 'https://pestflowpro.com/payment-success?session_id={CHECKOUT_SESSION_ID}',
+      cancel_url:  'https://pestflowpro.com/payment-cancel',
     })
 
     console.log(`Checkout session created: ${session.id}`)
