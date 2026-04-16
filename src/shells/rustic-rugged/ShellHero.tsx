@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
 import { formatPhone } from '../../lib/formatPhone'
 import { readHeroCache, writeHeroCache } from '../../lib/heroCache'
+import { resolveHeroImage } from '../../lib/resolveHeroImage'
 
 const PHOTOS = [
   'https://images.pexels.com/photos/4252163/pexels-photo-4252163.jpeg?auto=compress&cs=tinysrgb&w=400',
@@ -11,7 +12,7 @@ const PHOTOS = [
 ]
 
 interface Biz { name?: string; phone?: string; tagline?: string; address?: string }
-interface HeroMedia { thumbnail_url?: string; image_url?: string }
+interface HeroMedia { mode?: string; thumbnail_url?: string; image_url?: string; url?: string }
 interface HomeContent { hero_headline?: string; title?: string; subtitle?: string }
 
 const DOT_BG: React.CSSProperties = {
@@ -27,18 +28,13 @@ const Circle = ({ src, alt, style }: { src: string; alt: string; style: React.CS
 )
 
 export default function ShellHero() {
-  // Seed from localStorage so the first paint already shows the real headline.
   const cached = readHeroCache()
   const [biz, setBiz] = useState<Biz>({
-    name: cached.bizName,
-    phone: cached.phone,
-    tagline: cached.tagline,
-    address: cached.address,
+    name: cached.bizName, phone: cached.phone, tagline: cached.tagline, address: cached.address,
   })
   const [heroMedia, setHeroMedia] = useState<HeroMedia>({ thumbnail_url: cached.thumbnailUrl })
   const [homeContent, setHomeContent] = useState<HomeContent>({
-    hero_headline: cached.heroHeadline,
-    subtitle: cached.subtitle,
+    hero_headline: cached.heroHeadline, subtitle: cached.subtitle,
   })
   const [customHeadline, setCustomHeadline] = useState(cached.customHeadline || '')
   const [ctaText, setCtaText] = useState(cached.ctaText || 'Get a Free Quote')
@@ -68,20 +64,36 @@ export default function ShellHero() {
         phone: bizRes.data?.value?.phone,
         address: bizRes.data?.value?.address,
         thumbnailUrl: mediaRes.data?.value?.thumbnail_url,
-        imageUrl: mediaRes.data?.value?.image_url,
+        imageUrl: resolveHeroImage(mediaRes.data?.value) ?? undefined,
         ctaText: brandRes.data?.value?.cta_text,
       })
     })
   }, [])
 
   const city = biz.address ? biz.address.split(',')[0].trim() : null
-  const heroPhoto = heroMedia.image_url || heroMedia.thumbnail_url
+  const heroPhoto = resolveHeroImage(heroMedia)
   const photos = heroPhoto ? [heroPhoto, PHOTOS[1], PHOTOS[2]] : PHOTOS
 
   return (
-    <section className="flex flex-col md:flex-row min-h-[520px]">
+    <section
+      className="relative flex flex-col md:flex-row min-h-[520px]"
+      style={{
+        backgroundImage: heroPhoto ? `url(${heroPhoto})` : undefined,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
+      {heroPhoto && (
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'rgba(0,0,0,0.55)',
+          zIndex: 0, pointerEvents: 'none',
+        }} />
+      )}
+
       {/* Left — text on textured bg */}
-      <div className="md:w-[60%] flex flex-col justify-center px-8 md:px-14 py-16" style={DOT_BG}>
+      <div className="md:w-[60%] flex flex-col justify-center px-8 md:px-14 py-16" style={{ ...DOT_BG, position: 'relative', zIndex: 1 }}>
         <h1 className="font-bold leading-tight mb-2" style={{ fontSize: 'clamp(32px,4.5vw,52px)', color: '#1a1a1a' }}>
           {homeContent.hero_headline?.trim() || customHeadline?.trim() || biz.name?.trim() || 'Expert Pest Control'}
         </h1>
@@ -108,7 +120,7 @@ export default function ShellHero() {
       </div>
 
       {/* Right — staggered circles */}
-      <div className="md:w-[40%] flex items-center justify-center py-10 px-6" style={{ backgroundColor: '#f8f5f0' }}>
+      <div className="md:w-[40%] flex items-center justify-center py-10 px-6" style={{ backgroundColor: '#f8f5f0', position: 'relative', zIndex: 1 }}>
         <div style={{ position: 'relative', width: '380px', height: '440px', maxWidth: '100%' }}>
           <Circle src={photos[0]} alt="Pest control service" style={{ top: 0, left: 0 }} />
           <Circle src={photos[1]} alt="Home protection" style={{ top: '40px', right: 0 }} />

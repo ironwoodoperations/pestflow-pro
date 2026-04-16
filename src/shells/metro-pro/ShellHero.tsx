@@ -3,16 +3,16 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
 import { readHeroCache, writeHeroCache } from '../../lib/heroCache'
+import { resolveHeroImage } from '../../lib/resolveHeroImage'
 
 interface BusinessInfo { name?: string; phone?: string; tagline?: string; address?: string; founded_year?: string | number; num_technicians?: number }
 interface Customization { hero_headline?: string }
-interface HeroMedia { youtube_id?: string; thumbnail_url?: string; image_url?: string }
+interface HeroMedia { mode?: string; youtube_id?: string; thumbnail_url?: string; image_url?: string; url?: string }
 interface HomeContent { hero_headline?: string; title?: string; subtitle?: string; intro?: string }
 
 const STRIPE = 'repeating-linear-gradient(15deg, transparent, transparent 30px, rgba(255,255,255,0.025) 30px, rgba(255,255,255,0.025) 60px)'
 
 export default function MetroProHero() {
-  // Seed from localStorage to prevent fallback→real headline flash.
   const cached = readHeroCache()
   const [biz, setBiz] = useState<BusinessInfo>({
     name: cached.bizName, phone: cached.phone, tagline: cached.tagline,
@@ -56,13 +56,12 @@ export default function MetroProHero() {
         numTechnicians: bizRes.data?.value?.num_technicians,
         ctaText: brandRes.data?.value?.cta_text,
         thumbnailUrl: mediaRes.data?.value?.thumbnail_url,
-        imageUrl: mediaRes.data?.value?.image_url,
+        imageUrl: resolveHeroImage(mediaRes.data?.value) ?? undefined,
         youtubeId: mediaRes.data?.value?.youtube_id,
       })
     })
   }, [])
 
-  // Priority: page_content.hero_headline → customization.hero_headline → generic fallback
   const headline = homeContent.hero_headline?.trim()
     || homeContent.title?.trim()
     || custom.hero_headline?.trim()
@@ -74,39 +73,40 @@ export default function MetroProHero() {
     : 'Licensed, insured, and ready to protect your home and business.'
   const subtext = homeContent.subtitle || fallbackSubtext
 
-  const bgImage = heroMedia.image_url
-    || heroMedia.thumbnail_url
-    || (heroMedia.youtube_id ? `https://img.youtube.com/vi/${heroMedia.youtube_id}/maxresdefault.jpg` : null)
+  const bgImage = resolveHeroImage(heroMedia)
 
   return (
     <section
       id="main-content"
       className="relative min-h-screen flex items-center justify-center px-4 overflow-hidden"
-      style={{
+      style={bgImage ? {
+        backgroundImage: `url(${bgImage})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        position: 'relative',
+      } : {
         background: `${STRIPE}, linear-gradient(135deg, var(--color-bg-hero) 0%, var(--color-bg-hero-end) 100%)`,
-        ...(bgImage ? { backgroundImage: `url(${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}),
+        position: 'relative',
       }}
     >
-      {/* Dark overlay when bg image is present */}
-      {bgImage && <div className="absolute inset-0" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }} />}
-      {/* Stripe pattern over image */}
+      {bgImage && (
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'rgba(0,0,0,0.55)',
+          zIndex: 0, pointerEvents: 'none',
+        }} />
+      )}
       {bgImage && <div className="absolute inset-0 pointer-events-none" style={{ background: STRIPE }} />}
 
       <div className="relative z-10 max-w-4xl mx-auto text-center py-20">
-        {/* H1 */}
         <h1 className="text-5xl md:text-7xl font-extrabold text-white leading-tight tracking-tight mb-4">
           {headline}
         </h1>
-
-        {/* Accent divider — 4px tall, 60px wide */}
         <div className="w-16 h-1 mx-auto mb-6" style={{ backgroundColor: 'var(--color-accent)' }} />
-
-        {/* Subtitle */}
         <p className="text-xl max-w-2xl mx-auto mb-10" style={{ color: 'rgba(255,255,255,0.70)' }}>
           {subtext}
         </p>
-
-        {/* CTA buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
             to="/quote"

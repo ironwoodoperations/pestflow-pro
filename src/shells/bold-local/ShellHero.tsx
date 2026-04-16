@@ -3,28 +3,22 @@ import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
 import { formatPhone } from '../../lib/formatPhone'
 import { readHeroCache, writeHeroCache } from '../../lib/heroCache'
+import { resolveHeroImage } from '../../lib/resolveHeroImage'
 
 const FALLBACK_PHOTO = 'https://images.pexels.com/photos/3807517/pexels-photo-3807517.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750'
 
 interface BizState { name?: string; phone?: string; tagline?: string }
-interface HeroMedia { thumbnail_url?: string; image_url?: string; youtube_id?: string }
+interface HeroMedia { mode?: string; thumbnail_url?: string; image_url?: string; url?: string; youtube_id?: string }
 interface HomeContent { hero_headline?: string; title?: string; subtitle?: string }
 
 export default function ShellHero() {
-  // Seed from localStorage to avoid the fallback→real headline flash on load.
   const cached = readHeroCache()
   const [biz, setBiz] = useState<BizState>({
-    name: cached.bizName,
-    phone: cached.phone,
-    tagline: cached.tagline,
+    name: cached.bizName, phone: cached.phone, tagline: cached.tagline,
   })
-  const [heroMedia, setHeroMedia] = useState<HeroMedia>({
-    thumbnail_url: cached.thumbnailUrl,
-    youtube_id: cached.youtubeId,
-  })
+  const [heroMedia, setHeroMedia] = useState<HeroMedia>({ thumbnail_url: cached.thumbnailUrl })
   const [homeContent, setHomeContent] = useState<HomeContent>({
-    hero_headline: cached.heroHeadline,
-    subtitle: cached.subtitle,
+    hero_headline: cached.heroHeadline, subtitle: cached.subtitle,
   })
   const [customHeadline, setCustomHeadline] = useState(cached.customHeadline || '')
   const [ctaText, setCtaText] = useState(cached.ctaText || 'Get a Free Quote')
@@ -53,17 +47,14 @@ export default function ShellHero() {
         tagline: bizRes.data?.value?.tagline,
         phone: bizRes.data?.value?.phone,
         thumbnailUrl: mediaRes.data?.value?.thumbnail_url,
-        imageUrl: mediaRes.data?.value?.image_url,
+        imageUrl: resolveHeroImage(mediaRes.data?.value) ?? undefined,
         youtubeId: mediaRes.data?.value?.youtube_id,
         ctaText: brandRes.data?.value?.cta_text,
       })
     })
   }, [])
 
-  const bgPhoto = heroMedia.image_url
-    || heroMedia.thumbnail_url
-    || (heroMedia.youtube_id ? `https://img.youtube.com/vi/${heroMedia.youtube_id}/maxresdefault.jpg` : null)
-    || FALLBACK_PHOTO
+  const bgPhoto = resolveHeroImage(heroMedia) ?? FALLBACK_PHOTO
 
   const headline = homeContent.hero_headline?.trim()
     || homeContent.title?.trim()
@@ -72,9 +63,23 @@ export default function ShellHero() {
   const subtitle = homeContent.subtitle || biz.tagline || 'Professional and personalized service for your home and business'
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      <img src={bgPhoto} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover" />
-      <div className="absolute inset-0" style={{ backgroundColor: 'rgba(0,0,0,0.55)' }} />
+    <section
+      className="relative min-h-screen flex items-center justify-center overflow-hidden"
+      style={{
+        backgroundImage: bgPhoto ? `url(${bgPhoto})` : undefined,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        position: 'relative',
+      }}
+    >
+      {bgPhoto && (
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'rgba(0,0,0,0.55)',
+          zIndex: 0, pointerEvents: 'none',
+        }} />
+      )}
       <div className="relative z-10 flex items-center justify-center px-4 w-full py-16">
         <div className="text-center w-full" style={{ background: 'rgba(0,0,0,0.72)', borderRadius: '16px', padding: '48px 40px', maxWidth: '640px' }}>
           <h1 className="font-bold text-white" style={{ fontSize: 'clamp(28px,5vw,48px)', lineHeight: 1.2, marginBottom: '16px' }}>

@@ -4,10 +4,11 @@ import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
 import { formatPhone } from '../../lib/formatPhone'
 import { readHeroCache, writeHeroCache } from '../../lib/heroCache'
+import { resolveHeroImage } from '../../lib/resolveHeroImage'
 
 interface Biz { name?: string; phone?: string }
 interface HomeContent { hero_headline?: string; title?: string; subtitle?: string }
-interface HeroMedia { thumbnail_url?: string; image_url?: string; youtube_id?: string }
+interface HeroMedia { mode?: string; thumbnail_url?: string; image_url?: string; url?: string; youtube_id?: string }
 
 const HERO_IMAGE = '/images/pests/tech_1.jpg'
 
@@ -18,13 +19,10 @@ const STRIPS = [
 ]
 
 export default function ShellHero() {
-  // Seed from localStorage so the first paint matches the tenant's saved
-  // headline/phone/name instead of the generic fallback.
   const cached = readHeroCache()
   const [biz, setBiz] = useState<Biz>({ name: cached.bizName, phone: cached.phone })
   const [homeContent, setHomeContent] = useState<HomeContent>({
-    hero_headline: cached.heroHeadline,
-    subtitle: cached.subtitle,
+    hero_headline: cached.heroHeadline, subtitle: cached.subtitle,
   })
   const [customHeadline, setCustomHeadline] = useState(cached.customHeadline || '')
   const [ctaText, setCtaText] = useState(cached.ctaText || 'Get a Free Quote')
@@ -56,7 +54,7 @@ export default function ShellHero() {
         phone: bizRes.data?.value?.phone,
         ctaText: brandRes.data?.value?.cta_text,
         thumbnailUrl: mediaRes.data?.value?.thumbnail_url,
-        imageUrl: mediaRes.data?.value?.image_url,
+        imageUrl: resolveHeroImage(mediaRes.data?.value) ?? undefined,
       })
     })
   }, [])
@@ -67,21 +65,27 @@ export default function ShellHero() {
     || (biz.name ? `${biz.name} — Professional Pest Control` : 'Professional Pest Control You Can Trust')
 
   const dialPhone = biz.phone ? `tel:${biz.phone.replace(/\D/g, '')}` : '#'
-  const bgImage = heroMedia.image_url
-    || heroMedia.thumbnail_url
-    || (heroMedia.youtube_id ? `https://img.youtube.com/vi/${heroMedia.youtube_id}/maxresdefault.jpg` : null)
-    || HERO_IMAGE
+  const bgImage = resolveHeroImage(heroMedia) ?? HERO_IMAGE
 
   return (
     <>
-      {/* Hero section */}
       <section
-        className="relative flex items-center justify-center min-h-[65vh] bg-cover bg-center"
-        style={{ backgroundImage: `url(${bgImage})` }}
+        className="relative flex items-center justify-center min-h-[65vh]"
+        style={{
+          backgroundImage: `url(${bgImage})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          position: 'relative',
+        }}
       >
-        {/* Overlay — tinted with palette primary */}
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, color-mix(in srgb, var(--color-primary) 40%, #000), color-mix(in srgb, var(--color-primary) 30%, #000))' }} />
-
+        {bgImage && (
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: 'rgba(0,0,0,0.55)',
+            zIndex: 0, pointerEvents: 'none',
+          }} />
+        )}
         <div className="relative z-10 text-center px-4 py-16">
           {biz.name && (
             <p className="text-xl font-semibold tracking-widest uppercase mb-2" style={{ color: 'rgba(255,255,255,0.9)' }}>
@@ -89,40 +93,30 @@ export default function ShellHero() {
             </p>
           )}
           {biz.phone ? (
-            <a
-              href={dialPhone}
-              className="block text-6xl md:text-8xl font-black text-white tracking-tight leading-none mb-3 drop-shadow-lg hover:text-sky-100 transition"
-              style={{ textShadow: '0 4px 24px rgba(0,0,0,0.5)' }}
-            >
+            <a href={dialPhone} className="block text-6xl md:text-8xl font-black text-white tracking-tight leading-none mb-3 drop-shadow-lg hover:text-sky-100 transition"
+              style={{ textShadow: '0 4px 24px rgba(0,0,0,0.5)' }}>
               {formatPhone(biz.phone)}
             </a>
           ) : (
-            <h1
-              className="block text-4xl md:text-6xl font-black text-white tracking-tight leading-none mb-3 drop-shadow-lg"
-              style={{ textShadow: '0 4px 24px rgba(0,0,0,0.5)' }}
-            >
+            <h1 className="block text-4xl md:text-6xl font-black text-white tracking-tight leading-none mb-3 drop-shadow-lg"
+              style={{ textShadow: '0 4px 24px rgba(0,0,0,0.5)' }}>
               {headline}
             </h1>
           )}
           <p className="text-xl mt-2 mb-6" style={{ color: 'rgba(255,255,255,0.8)' }}>{heroSubtext}</p>
-          <Link
-            to="/quote"
-            style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }} className="inline-block font-bold px-8 py-4 rounded-full transition shadow-lg text-lg"
-          >
+          <Link to="/quote"
+            style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}
+            className="inline-block font-bold px-8 py-4 rounded-full transition shadow-lg text-lg">
             {ctaText}
           </Link>
         </div>
       </section>
 
-      {/* Service strips */}
       <div className="bg-gray-900">
         <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-gray-700">
           {STRIPS.map((s, i) => (
-            <Link
-              key={i}
-              to={s.href}
-              className="flex flex-col items-start py-6 px-8 cursor-pointer hover:bg-gray-800 transition group"
-            >
+            <Link key={i} to={s.href}
+              className="flex flex-col items-start py-6 px-8 cursor-pointer hover:bg-gray-800 transition group">
               <span className="text-3xl mb-2" aria-hidden="true">{s.icon}</span>
               <span className="text-white font-bold text-lg transition group-hover:text-[color:var(--color-primary)]">{s.title}</span>
               <span className="text-gray-400 text-sm mt-1">{s.sub}</span>
