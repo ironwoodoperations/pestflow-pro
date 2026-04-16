@@ -7,8 +7,10 @@
 // Keyed by hostname + ?tenant=<slug> query param so dev/preview environments
 // testing multiple tenants via query string don't leak cached data between them.
 //
-// v:2 — added heroHeadline field (sourced exclusively from page_content.hero_headline).
-// Caches without v:2 are treated as stale for the headline field only.
+// v:4 — imageUrl normalized via resolveHeroImage (drops stale multi-field variants).
+// Caches without v:4 are treated as stale for headline fields.
+
+import { resolveHeroImage } from './resolveHeroImage'
 
 export interface HeroCache {
   v?: number
@@ -46,8 +48,8 @@ export function readHeroCache(): HeroCache {
     const parsed = JSON.parse(raw)
     if (!parsed || typeof parsed !== 'object') return {}
     const cache = parsed as HeroCache
-    // If cache pre-dates v3, strip the headline fields so shells re-fetch fresh.
-    if (cache.v !== 3) {
+    // If cache pre-dates v4, strip the headline fields so shells re-fetch fresh.
+    if (cache.v !== 4) {
       const { headline: _h, heroHeadline: _hh, customHeadline: _ch, ...rest } = cache
       return rest
     }
@@ -59,7 +61,13 @@ export function readHeroCache(): HeroCache {
 
 export function writeHeroCache(next: HeroCache) {
   try {
-    const merged = { ...readHeroCache(), ...next, v: 3 }
+    // Normalize imageUrl: if caller passed a heroMedia-shaped object accidentally,
+    // resolve it. Otherwise pass through as-is (already a string or undefined).
+    const normalized: HeroCache = { ...next }
+    if (normalized.imageUrl && typeof normalized.imageUrl === 'object') {
+      normalized.imageUrl = resolveHeroImage(normalized.imageUrl as any) ?? undefined
+    }
+    const merged = { ...readHeroCache(), ...normalized, v: 4 }
     localStorage.setItem(cacheKey(), JSON.stringify(merged))
   } catch {
     /* quota exceeded or SSR — non-fatal */
