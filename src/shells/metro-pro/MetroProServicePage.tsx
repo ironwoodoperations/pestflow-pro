@@ -95,7 +95,7 @@ export default function MetroProServicePage(props: PestPageProps) {
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
       {/* Interior hero */}
       <section className="py-16 md:py-20 relative overflow-hidden" style={heroImageUrl ? { backgroundImage: `url(${heroImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: 'linear-gradient(135deg, var(--color-bg-hero) 0%, var(--color-bg-hero-end) 100%)' }}>
-        {heroImageUrl && <div className="absolute inset-0 bg-black/60" style={{ zIndex: 0 }} />}
+        {heroImageUrl && <div className="absolute inset-0 bg-black/60" style={{ zIndex: 0, pointerEvents: 'none' }} />}
         <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
           <h1 className="text-4xl md:text-6xl font-bold text-white mb-3">{heroTitle}</h1>
           <p className="text-white/70 text-lg">{content.subtitle || props.heroSubtitle}</p>

@@ -52,7 +52,7 @@ export default function MetroProCityPage({ slug }: Props) {
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
       {/* Hero */}
       <section className="py-16 md:py-24 relative overflow-hidden" style={heroImageUrl ? { backgroundImage: `url(${heroImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: 'linear-gradient(135deg, var(--color-bg-hero) 0%, var(--color-bg-hero-end) 100%)' }}>
-        {heroImageUrl && <div className="absolute inset-0 bg-black/60" style={{ zIndex: 0 }} />}
+        {heroImageUrl && <div className="absolute inset-0 bg-black/60" style={{ zIndex: 0, pointerEvents: 'none' }} />}
         <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
           <span className="inline-block text-xs font-semibold px-4 py-1.5 rounded-full mb-5 border border-white/30 text-white/90 bg-white/10">
             {city} Service Area

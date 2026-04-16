@@ -77,7 +77,7 @@ export default function ContactPage() {
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
 
       <section className="relative py-16" style={heroImageUrl ? { backgroundImage: `url(${heroImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: 'linear-gradient(135deg, var(--color-bg-hero) 0%, var(--color-bg-hero-end) 100%)' }}>
-        {heroImageUrl && <div className="absolute inset-0 bg-black/60" style={{ zIndex: 0 }} />}
+        {heroImageUrl && <div className="absolute inset-0 bg-black/60" style={{ zIndex: 0, pointerEvents: 'none' }} />}
         <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
           <h1 className="font-oswald tracking-wide text-4xl md:text-6xl mb-4" style={{ color: 'var(--color-nav-text)' }}>{heroTitle}</h1>
           <p className="text-lg" style={{ color: 'var(--color-nav-text)', opacity: 0.75 }}>

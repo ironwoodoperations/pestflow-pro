@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { Menu, X, ChevronDown } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
@@ -38,6 +38,13 @@ export default function ShellNavbar() {
   const [scrolled, setScrolled] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const location = useLocation()
+
+  useEffect(() => {
+    if (closeTimer.current) clearTimeout(closeTimer.current)
+    setDropdownOpen(false)
+    setMobileOpen(false)
+  }, [location.pathname])
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {

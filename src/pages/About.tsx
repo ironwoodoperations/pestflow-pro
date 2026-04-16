@@ -42,7 +42,7 @@ export default function About() {
       <StructuredData type="WebPage" pageSlug="about" />
 
       <section className="relative py-20 md:py-28" style={heroImageUrl ? { backgroundImage: `url(${heroImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: 'linear-gradient(135deg, var(--color-bg-hero) 0%, var(--color-bg-hero-end) 100%)' }}>
-        {heroImageUrl && <div className="absolute inset-0 bg-black/60" style={{ zIndex: 0 }} />}
+        {heroImageUrl && <div className="absolute inset-0 bg-black/60" style={{ zIndex: 0, pointerEvents: 'none' }} />}
         <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
           <h1 className="font-oswald tracking-wide text-5xl md:text-7xl mb-4" style={{ color: 'var(--color-nav-text)' }} dangerouslySetInnerHTML={{ __html: heroTitle }} />
           <p className="text-xl" style={{ color: 'var(--color-nav-text)', opacity: 0.75 }}>{heroSubtitle}</p>

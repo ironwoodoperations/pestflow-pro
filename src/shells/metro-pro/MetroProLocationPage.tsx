@@ -33,7 +33,7 @@ export default function MetroProLocationPage() {
 
       {/* Hero */}
       <section className="relative py-20 md:py-28 px-6 text-center" style={heroImageUrl ? { backgroundImage: `url(${heroImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: 'linear-gradient(135deg, var(--color-bg-hero) 0%, var(--color-bg-hero-end) 100%)' }}>
-        {heroImageUrl && <div className="absolute inset-0 bg-black/60" style={{ zIndex: 0 }} />}
+        {heroImageUrl && <div className="absolute inset-0 bg-black/60" style={{ zIndex: 0, pointerEvents: 'none' }} />}
         <h1 className="relative z-10 text-5xl md:text-7xl font-bold mb-4 tracking-tight" style={{ color: 'var(--color-nav-text)', fontFamily: 'var(--font-heading)' }}>
           {heroTitle}
         </h1>

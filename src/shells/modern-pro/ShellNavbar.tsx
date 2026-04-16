@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { Menu, X, ChevronDown } from 'lucide-react'
 import { useTemplate } from '../../context/TemplateContext'
 import { useTenantBoot } from '../../context/TenantBootProvider'
@@ -38,6 +38,13 @@ export default function ShellNavbar() {
   const menuRef = useRef<HTMLDivElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const location = useLocation()
+
+  useEffect(() => {
+    if (closeTimer.current) clearTimeout(closeTimer.current)
+    setDropdownOpen(false)
+    setMobileOpen(false)
+  }, [location.pathname])
 
   useEffect(() => {
     function handleEscape(e: KeyboardEvent) { if (e.key === 'Escape') { setMobileOpen(false); setDropdownOpen(false) } }
