@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
 import { applyShellTheme } from '../lib/shellThemes'
 import TenantBootSkeleton from './TenantBootSkeleton'
+import { prefetchAllPageContent } from '../hooks/usePageContent'
 
 export type TenantBoot = {
   id: string
@@ -107,6 +108,8 @@ export function TenantBootProvider({ children }: { children: ReactNode }) {
         writeCache(boot)
         setTenant(boot)
         setStatus('ready')
+        // Pre-warm all page_content for instant navigation — fire and forget
+        prefetchAllPageContent(t.id).catch(() => {})
       } catch (e: any) {
         if (!isBackground) { setStatus('error'); setError(e?.message || 'Boot failed') }
       }
