@@ -1,42 +1,68 @@
-import { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
-import { resolveTenantId } from '../lib/tenant'
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 
-export interface PageContent {
-  slug: string
-  title: string | null
-  subtitle: string | null
-  intro: string | null
-  body: string | null
-  meta_title: string | null
-  meta_description: string | null
-  video_url: string | null
-  image_url: string | null
-  image_urls: string[] | null
-  [key: string]: unknown
-}
+// Module-level cache — lives for the entire browser session
+// key: `${tenantId}:${pageSlug}`
+const cache = new Map<string, Record<string, any>>();
+const pending = new Set<string>();
 
-export function usePageContent(slug: string) {
-  const [content, setContent] = useState<PageContent | null>(null)
-  const [loading, setLoading] = useState(true)
+export function usePageContent(tenantId: string | null, pageSlug: string) {
+  const cacheKey = tenantId ? `${tenantId}:${pageSlug}` : null;
+  const [content, setContent] = useState<Record<string, any> | null>(
+    () => (cacheKey ? cache.get(cacheKey) ?? null : null)
+  );
+  const [loading, setLoading] = useState(!cacheKey || !cache.has(cacheKey));
 
   useEffect(() => {
-    let cancelled = false
-    resolveTenantId().then(async (tenantId) => {
-      if (!tenantId || cancelled) { setLoading(false); return }
-      const { data } = await supabase
-        .from('page_content')
-        .select('*')
-        .eq('tenant_id', tenantId)
-        .eq('page_slug', slug)
-        .maybeSingle()
-      if (!cancelled) {
-        if (data) setContent(data as PageContent)
-        setLoading(false)
-      }
-    })
-    return () => { cancelled = true }
-  }, [slug])
+    if (!cacheKey || !tenantId) return;
 
-  return { content, loading }
+    // Already cached — use it immediately
+    if (cache.has(cacheKey)) {
+      setContent(cache.get(cacheKey) ?? null);
+      setLoading(false);
+      return;
+    }
+
+    // Already fetching — wait for it
+    if (pending.has(cacheKey)) return;
+
+    pending.add(cacheKey);
+    supabase
+      .from('page_content')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .eq('page_slug', pageSlug)
+      .maybeSingle()
+      .then(({ data }) => {
+        const result = data ?? {};
+        cache.set(cacheKey, result);
+        pending.delete(cacheKey);
+        setContent(result);
+        setLoading(false);
+      })
+      .catch(() => {
+        pending.delete(cacheKey);
+        setLoading(false);
+      });
+  }, [cacheKey, tenantId, pageSlug]);
+
+  return { content, loading };
+}
+
+// Call this after admin content saves to invalidate a specific page
+export function invalidatePageContent(tenantId: string, pageSlug: string) {
+  cache.delete(`${tenantId}:${pageSlug}`);
+}
+
+// Pre-warm cache for all pages at once (call from TenantBootProvider)
+export async function prefetchAllPageContent(tenantId: string) {
+  const { data } = await supabase
+    .from('page_content')
+    .select('*')
+    .eq('tenant_id', tenantId);
+  if (data) {
+    data.forEach((row) => {
+      cache.set(`${tenantId}:${row.page_slug}`, row);
+    });
+  }
 }
