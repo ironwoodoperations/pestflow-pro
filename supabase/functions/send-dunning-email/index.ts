@@ -1,5 +1,5 @@
 // Edge Function: send-dunning-email
-// Triggered by Stripe webhook on invoice.payment_failed (or Zapier ZAP 9).
+// Triggered by Stripe webhook on invoice.payment_failed.
 // Sends escalating dunning emails based on attemptCount.
 // No JWT required — called by Stripe webhook automation.
 //
