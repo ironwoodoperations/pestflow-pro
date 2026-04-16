@@ -11,8 +11,10 @@ const SupportPanel    = lazy(() => import('../components/ironwood/SupportPanel')
 const RevealQueue     = lazy(() => import('../components/ironwood/RevealQueue'))
 const AllClients      = lazy(() => import('../components/ironwood/AllClients'))
 const TrainingManual  = lazy(() => import('../components/ironwood/TrainingManual'))
+const IronwoodSEO     = lazy(() => import('../components/ironwood/IronwoodSEO'))
+const IronwoodSocial  = lazy(() => import('../components/ironwood/IronwoodSocial'))
 
-type Tab = 'pipeline' | 'prospects' | 'reveal_queue' | 'all_clients' | 'reports' | 'integrations' | 'team' | 'support' | 'training'
+type Tab = 'pipeline' | 'prospects' | 'reveal_queue' | 'all_clients' | 'reports' | 'integrations' | 'team' | 'support' | 'training' | 'seo' | 'social'
 
 const NAV: { id: Tab; label: string; icon: string }[] = [
   { id: 'pipeline',     label: 'Pipeline',         icon: '📋' },
@@ -24,6 +26,8 @@ const NAV: { id: Tab; label: string; icon: string }[] = [
   { id: 'team',         label: 'Team',             icon: '👥' },
   { id: 'support',      label: 'Support',          icon: '🎟️' },
   { id: 'training',     label: 'Training Manual',  icon: '📖' },
+  { id: 'seo',          label: 'SEO',              icon: '🔍' },
+  { id: 'social',       label: 'Social',           icon: '📣' },
 ]
 
 const SPIN = <div className="p-8 text-gray-500 text-sm">Loading...</div>
@@ -119,6 +123,8 @@ export default function IronwoodOps() {
           {tab === 'team'         && <TeamTab />}
           {tab === 'support'      && <SupportPanel />}
           {tab === 'training'     && <TrainingManual />}
+          {tab === 'seo'          && <IronwoodSEO />}
+          {tab === 'social'       && <IronwoodSocial />}
         </Suspense>
       </main>
     </div>
