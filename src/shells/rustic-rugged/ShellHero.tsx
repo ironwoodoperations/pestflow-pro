@@ -4,6 +4,7 @@ import { resolveTenantId } from '../../lib/tenant'
 import { formatPhone } from '../../lib/formatPhone'
 import { readHeroCache, writeHeroCache } from '../../lib/heroCache'
 import { resolveHeroImage } from '../../lib/resolveHeroImage'
+import { usePageContent } from '../../hooks/usePageContent'
 
 const PHOTOS = [
   'https://images.pexels.com/photos/4252163/pexels-photo-4252163.jpeg?auto=compress&cs=tinysrgb&w=400',
@@ -29,35 +30,30 @@ const Circle = ({ src, alt, style }: { src: string; alt: string; style: React.CS
 
 export default function ShellHero() {
   const cached = readHeroCache()
-  const [biz, setBiz] = useState<Biz>({
-    name: cached.bizName, phone: cached.phone, tagline: cached.tagline, address: cached.address,
-  })
+  const [tenantId, setTenantId] = useState<string | null>(null)
+  const [biz, setBiz] = useState<Biz>({ name: cached.bizName, phone: cached.phone, tagline: cached.tagline, address: cached.address })
   const [heroMedia, setHeroMedia] = useState<HeroMedia>({ thumbnail_url: cached.thumbnailUrl })
-  const [homeContent, setHomeContent] = useState<HomeContent>({
-    hero_headline: cached.heroHeadline, subtitle: cached.subtitle,
-  })
+  const [homeContent, setHomeContent] = useState<HomeContent>({ hero_headline: cached.heroHeadline, subtitle: cached.subtitle })
   const [customHeadline, setCustomHeadline] = useState(cached.customHeadline || '')
   const [ctaText, setCtaText] = useState(cached.ctaText || 'Get a Free Quote')
 
+  const { content } = usePageContent(tenantId, 'home')
+
   useEffect(() => {
-    resolveTenantId().then(async (tenantId) => {
-      if (!tenantId) return
-      const [bizRes, mediaRes, custRes, contentRes, brandRes] = await Promise.all([
-        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
-        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'hero_media').maybeSingle(),
-        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'customization').maybeSingle(),
-        supabase.from('page_content').select('hero_headline,title,subtitle').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
-        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
+    resolveTenantId().then(async (id) => {
+      if (!id) return
+      setTenantId(id)
+      const [bizRes, mediaRes, custRes, brandRes] = await Promise.all([
+        supabase.from('settings').select('value').eq('tenant_id', id).eq('key', 'business_info').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', id).eq('key', 'hero_media').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', id).eq('key', 'customization').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', id).eq('key', 'branding').maybeSingle(),
       ])
       if (bizRes.data?.value) setBiz(bizRes.data.value)
       if (mediaRes.data?.value) setHeroMedia(mediaRes.data.value)
       if (custRes.data?.value?.hero_headline) setCustomHeadline(custRes.data.value.hero_headline)
-      if (contentRes.data) setHomeContent(contentRes.data as HomeContent)
       if (brandRes.data?.value?.cta_text) setCtaText(brandRes.data.value.cta_text)
-
       writeHeroCache({
-        heroHeadline: contentRes.data?.hero_headline,
-        subtitle: contentRes.data?.subtitle,
         customHeadline: custRes.data?.value?.hero_headline,
         bizName: bizRes.data?.value?.name,
         tagline: bizRes.data?.value?.tagline,
@@ -70,29 +66,21 @@ export default function ShellHero() {
     })
   }, [])
 
+  useEffect(() => {
+    if (!content) return
+    const c = content as HomeContent
+    setHomeContent(c)
+    writeHeroCache({ heroHeadline: c.hero_headline || undefined, subtitle: c.subtitle || undefined })
+  }, [content])
+
   const city = biz.address ? biz.address.split(',')[0].trim() : null
   const heroPhoto = resolveHeroImage(heroMedia)
   const photos = heroPhoto ? [heroPhoto, PHOTOS[1], PHOTOS[2]] : PHOTOS
 
   return (
-    <section
-      className="relative flex flex-col md:flex-row min-h-[520px]"
-      style={{
-        backgroundImage: heroPhoto ? `url(${heroPhoto})` : undefined,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-      }}
-    >
-      {heroPhoto && (
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: 'rgba(0,0,0,0.55)',
-          zIndex: 0, pointerEvents: 'none',
-        }} />
-      )}
-
-      {/* Left — text on textured bg */}
+    <section className="relative flex flex-col md:flex-row min-h-[520px]"
+      style={{ backgroundImage: heroPhoto ? `url(${heroPhoto})` : undefined, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
+      {heroPhoto && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 0, pointerEvents: 'none' }} />}
       <div className="md:w-[60%] flex flex-col justify-center px-8 md:px-14 py-16" style={{ ...DOT_BG, position: 'relative', zIndex: 1 }}>
         <h1 className="font-bold leading-tight mb-2" style={{ fontSize: 'clamp(32px,4.5vw,52px)', color: '#1a1a1a' }}>
           {homeContent.hero_headline?.trim() || customHeadline?.trim() || biz.name?.trim() || 'Expert Pest Control'}
@@ -100,26 +88,18 @@ export default function ShellHero() {
         <p className="font-bold italic mb-4" style={{ fontSize: 'clamp(28px,3.5vw,44px)', color: 'var(--color-primary)', lineHeight: 1.1 }}>
           {homeContent.subtitle || biz.tagline || 'Pest Control'}
         </p>
-        {city && (
-          <p className="text-gray-500 mb-2 text-sm">Serving {city} and the Surrounding Area</p>
-        )}
+        {city && <p className="text-gray-500 mb-2 text-sm">Serving {city} and the Surrounding Area</p>}
         {biz.phone && (
           <a href={`tel:${biz.phone.replace(/\D/g,'')}`} className="font-bold uppercase tracking-widest mb-6 text-sm inline-block" style={{ color: 'var(--color-primary)' }}>
             📞 CALL TODAY: {formatPhone(biz.phone)}
           </a>
         )}
         <div className="flex gap-3 flex-wrap">
-          <a href="/quote" className="font-bold rounded px-7 py-3 text-white transition hover:opacity-90" style={{ backgroundColor: 'var(--color-primary)' }}>
-            {ctaText}
-          </a>
+          <a href="/quote" className="font-bold rounded px-7 py-3 text-white transition hover:opacity-90" style={{ backgroundColor: 'var(--color-primary)' }}>{ctaText}</a>
           <a href="/pest-control" className="font-bold rounded px-7 py-3 text-white transition hover:opacity-90"
-            style={{ backgroundColor: 'var(--color-primary)', opacity: 0.8, border: '2px solid var(--color-primary)' }}>
-            Our Services
-          </a>
+            style={{ backgroundColor: 'var(--color-primary)', opacity: 0.8, border: '2px solid var(--color-primary)' }}>Our Services</a>
         </div>
       </div>
-
-      {/* Right — staggered circles */}
       <div className="md:w-[40%] flex items-center justify-center py-10 px-6" style={{ backgroundColor: '#f8f5f0', position: 'relative', zIndex: 1 }}>
         <div style={{ position: 'relative', width: '380px', height: '440px', maxWidth: '100%' }}>
           <Circle src={photos[0]} alt="Pest control service" style={{ top: 0, left: 0 }} />

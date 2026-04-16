@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
 import { readHeroCache, writeHeroCache } from '../../lib/heroCache'
 import { resolveHeroImage } from '../../lib/resolveHeroImage'
+import { usePageContent } from '../../hooks/usePageContent'
 
 interface BusinessInfo {
   name?: string
@@ -19,6 +20,7 @@ interface HomeContent { hero_headline?: string; subtitle?: string; intro?: strin
 
 export default function ShellHero() {
   const cached = readHeroCache()
+  const [tenantId, setTenantId] = useState<string | null>(null)
   const [biz, setBiz] = useState<BusinessInfo>({
     name: cached.bizName, tagline: cached.tagline, phone: cached.phone,
     address: cached.address, founded_year: cached.foundedYear, num_technicians: cached.numTechnicians,
@@ -32,26 +34,23 @@ export default function ShellHero() {
     hero_headline: cached.heroHeadline, subtitle: cached.subtitle, intro: cached.intro,
   })
 
+  const { content } = usePageContent(tenantId, 'home')
+
   useEffect(() => {
-    resolveTenantId().then(async (tenantId) => {
-      if (!tenantId) return
-      const [bizRes, mediaRes, custRes, brandRes, contentRes] = await Promise.all([
-        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
-        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'hero_media').maybeSingle(),
-        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'customization').maybeSingle(),
-        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
-        supabase.from('page_content').select('hero_headline,subtitle,intro').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
+    resolveTenantId().then(async (id) => {
+      if (!id) return
+      setTenantId(id)
+      const [bizRes, mediaRes, custRes, brandRes] = await Promise.all([
+        supabase.from('settings').select('value').eq('tenant_id', id).eq('key', 'business_info').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', id).eq('key', 'hero_media').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', id).eq('key', 'customization').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', id).eq('key', 'branding').maybeSingle(),
       ])
       if (bizRes.data?.value) setBiz(bizRes.data.value)
       if (mediaRes.data?.value) setHeroMedia(mediaRes.data.value)
       if (custRes.data?.value) setCustom(custRes.data.value)
       if (brandRes.data?.value?.cta_text) setCtaText(brandRes.data.value.cta_text)
-      if (contentRes.data) setHomeContent(contentRes.data)
-
       writeHeroCache({
-        heroHeadline: contentRes.data?.hero_headline,
-        subtitle: contentRes.data?.subtitle,
-        intro: contentRes.data?.intro,
         customHeadline: custRes.data?.value?.hero_headline,
         bizName: bizRes.data?.value?.name,
         tagline: bizRes.data?.value?.tagline,
@@ -66,6 +65,13 @@ export default function ShellHero() {
       })
     })
   }, [])
+
+  useEffect(() => {
+    if (!content) return
+    const c = content as HomeContent
+    setHomeContent(c)
+    writeHeroCache({ heroHeadline: c.hero_headline || undefined, subtitle: c.subtitle || undefined, intro: c.intro || undefined })
+  }, [content])
 
   const headline = homeContent.hero_headline?.trim()
     || custom.hero_headline?.trim()
@@ -100,45 +106,27 @@ export default function ShellHero() {
       }}
     >
       {bgImage && (
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: 'rgba(0,0,0,0.55)',
-          zIndex: 0, pointerEvents: 'none',
-        }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 0, pointerEvents: 'none' }} />
       )}
-
       <div className="relative z-10 max-w-3xl mx-auto text-center">
         {biz.tagline && (
           <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full mb-4" style={{ color: '#ffffff', border: '1px solid rgba(255,255,255,0.4)', backgroundColor: 'rgba(255,255,255,0.1)' }}>
             {biz.tagline}
           </span>
         )}
-        <h1 className="text-4xl md:text-6xl font-bold text-white leading-tight">
-          {headline}
-        </h1>
-        <p className="text-lg mt-4 max-w-xl mx-auto" style={{ color: 'rgba(255,255,255,0.85)' }}>
-          {subtext}
-        </p>
+        <h1 className="text-4xl md:text-6xl font-bold text-white leading-tight">{headline}</h1>
+        <p className="text-lg mt-4 max-w-xl mx-auto" style={{ color: 'rgba(255,255,255,0.85)' }}>{subtext}</p>
         <div className="flex flex-wrap gap-4 justify-center mt-8">
-          <Link
-            to="/quote"
-            style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}
-            className="font-semibold px-8 py-3 rounded-lg transition"
-          >
+          <Link to="/quote" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }} className="font-semibold px-8 py-3 rounded-lg transition">
             {ctaText}
           </Link>
           {biz.phone && (
-            <a
-              href={`tel:${biz.phone.replace(/\D/g, '')}`}
-              className="border border-white text-white hover:bg-white/10 px-8 py-3 rounded-lg font-semibold transition"
-            >
+            <a href={`tel:${biz.phone.replace(/\D/g, '')}`} className="border border-white text-white hover:bg-white/10 px-8 py-3 rounded-lg font-semibold transition">
               Call Now
             </a>
           )}
         </div>
-        <p className="mt-6 text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>
-          {trustParts.join(' · ')}
-        </p>
+        <p className="mt-6 text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>{trustParts.join(' · ')}</p>
       </div>
     </section>
   )
