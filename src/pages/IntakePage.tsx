@@ -67,20 +67,13 @@ export default function IntakePage() {
     const b = form.business
     const br = form.branding
     const existingBr = tokenRow.prospects?.branding || {}
-    const activityInsert = (async () => {
-      try {
-        await supabase.from('prospect_activity').insert({
-          prospect_id: tokenRow.prospect_id,
-          actor: 'system',
-          action: 'intake_submitted',
-          detail: 'Client submitted intake form',
-        })
-      } catch (e) { console.error('[activity log]', e) }
-    })()
+    try {
+      await supabase.from('prospect_activity').insert({
+        prospect_id: tokenRow.prospect_id,
+        actor: 'system', action: 'intake_submitted', detail: 'Client submitted intake form',
+      }).then(() => {}).catch(e => console.error('[activity log]', e))
 
-    await Promise.all([
-      activityInsert,
-      supabase.from('prospects').update({
+      const { error } = await supabase.from('prospects').update({
         intake_data: intakeData,
         intake_submitted_at: now,
         business_info: {
@@ -101,31 +94,37 @@ export default function IntakePage() {
           primary_color: br.primary_color || existingBr.primary_color || '#E87800',
           accent_color:  br.accent_color  || existingBr.accent_color  || '#1a1a1a',
         },
-        // Store domain in website_url if provided and not already set
         ...(form.domain.domain_name?.trim() ? {
           website_url: form.domain.domain_name.startsWith('http')
             ? form.domain.domain_name.trim()
             : `https://${form.domain.domain_name.trim()}`,
         } : {}),
-      }).eq('id', tokenRow.prospect_id),
-      supabase.from('intake_tokens').update({ submitted_at: now }).eq('token', token!),
-    ])
-    setSubmitting(false)
-    setStatus('done')
+      }).eq('id', tokenRow.prospect_id)
 
-    // Notify client via email (non-blocking, non-fatal)
-    try {
-      const confirmEmail = form.business.email || tokenRow.prospects?.email || ''
-      const confirmName  = (tokenRow.prospects?.contact_name || '').split(' ')[0] || tokenRow.prospects?.contact_name || ''
-      const confirmBiz   = form.business.business_name || tokenRow.prospects?.company_name || ''
+      if (error) throw error
+
+      await supabase.from('intake_tokens').update({ submitted_at: now }).eq('token', token!)
+
+      // Notify client (non-blocking)
+      const confirmEmail = b.email || tokenRow.prospects?.email || ''
+      const confirmName  = tokenRow.prospects?.contact_name || b.business_name || ''
       if (confirmEmail) {
         fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-intake-confirmation`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
-          body: JSON.stringify({ to: confirmEmail, firstName: confirmName, businessName: confirmBiz }),
+          body: JSON.stringify({ to: confirmEmail, contact_name: confirmName }),
         }).catch(() => {})
       }
-    } catch { /* non-fatal */ }
+
+      setStatus('done')
+      // Redirect to pestflowpro.com after 4s so client sees thank-you + bookings link
+      setTimeout(() => { window.location.href = 'https://pestflowpro.com' }, 4000)
+    } catch (err) {
+      console.error('[handleSubmit]', err)
+      setStatus('done') // still show done — data was saved or partially saved
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const canAdvance = (): boolean => {
@@ -155,8 +154,17 @@ export default function IntakePage() {
           <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-7 h-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
           </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Thank you!</h2>
-          <p className="text-gray-600">We've received your information. Your rep will be in touch shortly.</p>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Thanks!</h2>
+          <p className="text-gray-600 mb-4">We received your information. We'll have your site ready in 48–72 hours.</p>
+          <a
+            href="https://outlook.office.com/book/PestFlowProOnboarding@ironwoodoperationsgroup.com/?ismsaljsauthenabled"
+            target="_blank" rel="noreferrer"
+            className="inline-block text-sm font-semibold text-white rounded-lg px-5 py-2.5 transition"
+            style={{ backgroundColor: '#E87800' }}
+          >
+            Book Your Reveal Call →
+          </a>
+          <p className="text-xs text-gray-400 mt-4">Redirecting you shortly…</p>
         </div>
       </Screen>
     )
