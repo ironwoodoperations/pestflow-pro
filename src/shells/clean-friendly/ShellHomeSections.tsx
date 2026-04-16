@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
+import { usePageContent } from '../../hooks/usePageContent'
 import CleanFriendlyTrustBar from './CleanFriendlyTrustBar'
 import CleanFriendlyServicesGrid from './CleanFriendlyServicesGrid'
 import CleanFriendlyAboutStrip from './CleanFriendlyAboutStrip'
@@ -9,46 +10,27 @@ import CleanFriendlyTestimonials from './CleanFriendlyTestimonials'
 import CleanFriendlyFaqStrip from './CleanFriendlyFaqStrip'
 import CleanFriendlyCtaBanner from './CleanFriendlyCtaBanner'
 
-interface BizInfo {
-  name?: string
-  phone?: string
-  founded_year?: string | number
-  num_technicians?: number
-}
-
-interface State {
-  biz: BizInfo
-  ctaText: string
-  aboutIntro: string
-  aboutImage: string
-}
+interface BizInfo { name?: string; phone?: string; founded_year?: string | number; num_technicians?: number }
 
 export default function ShellHomeSections() {
-  const [state, setState] = useState<State>({
-    biz: {},
-    ctaText: 'Get a Free Quote',
-    aboutIntro: '',
-    aboutImage: '',
-  })
+  const [tenantId, setTenantId] = useState<string | null>(null)
+  const [biz, setBiz] = useState<BizInfo>({})
+  const [ctaText, setCtaText] = useState('Get a Free Quote')
+
+  const { content: aboutContent } = usePageContent(tenantId, 'about')
 
   useEffect(() => {
-    resolveTenantId().then(async (tenantId) => {
-      if (!tenantId) return
-      const [bizRes, brandRes, aboutRes] = await Promise.all([
-        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
-        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
-        supabase.from('page_content').select('intro,image_url').eq('tenant_id', tenantId).eq('page_slug', 'about').maybeSingle(),
+    resolveTenantId().then(async (id) => {
+      if (!id) return
+      setTenantId(id)
+      const [bizRes, brandRes] = await Promise.all([
+        supabase.from('settings').select('value').eq('tenant_id', id).eq('key', 'business_info').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', id).eq('key', 'branding').maybeSingle(),
       ])
-      setState({
-        biz:        bizRes.data?.value   ?? {},
-        ctaText:    brandRes.data?.value?.cta_text || 'Get a Free Quote',
-        aboutIntro: aboutRes.data?.intro     || '',
-        aboutImage: aboutRes.data?.image_url || '',
-      })
+      setBiz(bizRes.data?.value ?? {})
+      setCtaText(brandRes.data?.value?.cta_text || 'Get a Free Quote')
     })
   }, [])
-
-  const { biz, ctaText, aboutIntro, aboutImage } = state
 
   return (
     <>
@@ -56,10 +38,10 @@ export default function ShellHomeSections() {
       <CleanFriendlyServicesGrid />
       <CleanFriendlyAboutStrip
         businessName={biz.name || ''}
-        intro={aboutIntro}
+        intro={aboutContent?.intro || ''}
         foundedYear={biz.founded_year ? String(biz.founded_year) : undefined}
         techCount={biz.num_technicians ? String(biz.num_technicians) : undefined}
-        imageUrl={aboutImage || undefined}
+        imageUrl={aboutContent?.image_url || undefined}
       />
       <CleanFriendlyWhyChooseUs businessName={biz.name || ''} />
       <CleanFriendlyTestimonials />

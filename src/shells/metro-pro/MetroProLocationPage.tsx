@@ -5,28 +5,35 @@ import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
 import { formatPhone } from '../../lib/formatPhone'
 import { usePageHeroImage } from '../../hooks/usePageHeroImage'
+import { usePageContent } from '../../hooks/usePageContent'
 
 export default function MetroProLocationPage() {
   const heroImageUrl = usePageHeroImage('service-area')
+  const [tenantId, setTenantId] = useState<string | null>(null)
   const [areas, setAreas] = useState<string[]>([])
   const [phone, setPhone] = useState('')
   const [heroTitle, setHeroTitle] = useState('Our Service Area')
   const [heroSubtitle, setHeroSubtitle] = useState('Professional pest control in your community')
 
+  const { content: locationContent } = usePageContent(tenantId, 'service-area')
+
   useEffect(() => {
-    resolveTenantId().then(async (tenantId) => {
-      if (!tenantId) return
-      const [seoRes, bizRes, contentRes] = await Promise.all([
-        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'seo').maybeSingle(),
-        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
-        supabase.from('page_content').select('title, subtitle').eq('tenant_id', tenantId).eq('page_slug', 'service-area').maybeSingle(),
+    resolveTenantId().then(async (id) => {
+      if (!id) return
+      setTenantId(id)
+      const [seoRes, bizRes] = await Promise.all([
+        supabase.from('settings').select('value').eq('tenant_id', id).eq('key', 'seo').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', id).eq('key', 'business_info').maybeSingle(),
       ])
       setAreas(Array.isArray(seoRes.data?.value?.service_areas) ? seoRes.data.value.service_areas : [])
       if (bizRes.data?.value?.phone) setPhone(bizRes.data.value.phone)
-      if (contentRes.data?.title) setHeroTitle(contentRes.data.title)
-      if (contentRes.data?.subtitle) setHeroSubtitle(contentRes.data.subtitle)
     })
   }, [])
+
+  useEffect(() => {
+    if (locationContent?.title) setHeroTitle(locationContent.title)
+    if (locationContent?.subtitle) setHeroSubtitle(locationContent.subtitle)
+  }, [locationContent])
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>

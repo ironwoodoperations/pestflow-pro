@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
+import { usePageContent } from '../../hooks/usePageContent'
 import MetroProHero from './ShellHero'
 import MetroProServicesGrid from './MetroProServicesGrid'
 import MetroProWhyChooseUs from './MetroProWhyChooseUs'
@@ -15,41 +16,29 @@ interface FaqItem { question: string; answer: string }
 interface Testimonial { id: string; name: string; review_text: string; rating?: number }
 interface BlogPost { id: string; title: string; slug: string; published_at?: string; excerpt?: string }
 
-interface State {
-  biz: BizInfo
-  faqs: FaqItem[]
-  testimonials: Testimonial[]
-  blogPosts: BlogPost[]
-}
-
 export default function MetroProShellHomeSections() {
-  const [state, setState] = useState<State>({
-    biz: {},
-    faqs: [],
-    testimonials: [],
-    blogPosts: [],
-  })
+  const [tenantId, setTenantId] = useState<string | null>(null)
+  const [biz, setBiz] = useState<BizInfo>({})
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([])
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([])
+
+  const { content: faqContent } = usePageContent(tenantId, 'faq')
+  const faqs = (faqContent?.faqs as FaqItem[] | null) || []
 
   useEffect(() => {
-    resolveTenantId().then(async (tenantId) => {
-      if (!tenantId) return
-      const [bizRes, faqRes, testimonialRes, blogRes] = await Promise.all([
-        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
-        supabase.from('page_content').select('faqs').eq('tenant_id', tenantId).eq('page_slug', 'faq').maybeSingle(),
-        supabase.from('testimonials').select('id,name,review_text,rating').eq('tenant_id', tenantId).order('created_at', { ascending: false }).limit(3),
-        supabase.from('blog_posts').select('id,title,slug,published_at,excerpt').eq('tenant_id', tenantId).not('published_at', 'is', null).order('published_at', { ascending: false }).limit(3),
+    resolveTenantId().then(async (id) => {
+      if (!id) return
+      setTenantId(id)
+      const [bizRes, testimonialRes, blogRes] = await Promise.all([
+        supabase.from('settings').select('value').eq('tenant_id', id).eq('key', 'business_info').maybeSingle(),
+        supabase.from('testimonials').select('id,name,review_text,rating').eq('tenant_id', id).order('created_at', { ascending: false }).limit(3),
+        supabase.from('blog_posts').select('id,title,slug,published_at,excerpt').eq('tenant_id', id).not('published_at', 'is', null).order('published_at', { ascending: false }).limit(3),
       ])
-
-      setState({
-        biz: bizRes.data?.value || {},
-        faqs: (faqRes.data?.faqs as FaqItem[] | null) || [],
-        testimonials: (testimonialRes.data as Testimonial[] | null) || [],
-        blogPosts: (blogRes.data as BlogPost[] | null) || [],
-      })
+      setBiz(bizRes.data?.value || {})
+      setTestimonials((testimonialRes.data as Testimonial[] | null) || [])
+      setBlogPosts((blogRes.data as BlogPost[] | null) || [])
     })
   }, [])
-
-  const { biz, faqs, testimonials, blogPosts } = state
 
   return (
     <>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
+import { usePageContent } from '../../hooks/usePageContent'
 import ModernProTrustBar from './ModernProTrustBar'
 import ModernProServicesGrid from './ModernProServicesGrid'
 import ModernProAboutStrip from './ModernProAboutStrip'
@@ -9,61 +10,38 @@ import ModernProTestimonials from './ModernProTestimonials'
 import ModernProCtaBanner from './ModernProCtaBanner'
 
 const DEFAULT_SERVICES = [
-  { name: 'Pest Control',          slug: 'pest-control'        },
-  { name: 'Termite Control',       slug: 'termite-control'     },
-  { name: 'Termite Inspections',   slug: 'termite-inspections' },
-  { name: 'Mosquito Control',      slug: 'mosquito-control'    },
-  { name: 'Roach Control',         slug: 'roach-control'       },
-  { name: 'Ant Control',           slug: 'ant-control'         },
-  { name: 'Spider Control',        slug: 'spider-control'      },
-  { name: 'Scorpion Control',      slug: 'scorpion-control'    },
-  { name: 'Rodent Control',        slug: 'rodent-control'      },
-  { name: 'Flea & Tick Control',   slug: 'flea-tick-control'   },
-  { name: 'Bed Bug Control',       slug: 'bed-bug-control'     },
-  { name: 'Wasp & Hornet Control', slug: 'wasp-hornet-control' },
+  { name: 'Pest Control', slug: 'pest-control' }, { name: 'Termite Control', slug: 'termite-control' },
+  { name: 'Termite Inspections', slug: 'termite-inspections' }, { name: 'Mosquito Control', slug: 'mosquito-control' },
+  { name: 'Roach Control', slug: 'roach-control' }, { name: 'Ant Control', slug: 'ant-control' },
+  { name: 'Spider Control', slug: 'spider-control' }, { name: 'Scorpion Control', slug: 'scorpion-control' },
+  { name: 'Rodent Control', slug: 'rodent-control' }, { name: 'Flea & Tick Control', slug: 'flea-tick-control' },
+  { name: 'Bed Bug Control', slug: 'bed-bug-control' }, { name: 'Wasp & Hornet Control', slug: 'wasp-hornet-control' },
 ]
 
-interface BizInfo {
-  name?: string
-  phone?: string
-  founded_year?: string | number
-  num_technicians?: number
-  license?: string
-}
-
-interface State {
-  biz: BizInfo
-  ctaText: string
-  aboutIntro: string
-  aboutImage: string
-}
+interface BizInfo { name?: string; phone?: string; founded_year?: string | number; num_technicians?: number; license?: string }
 
 export default function ShellHomeSections() {
-  const [state, setState] = useState<State>({
-    biz: {},
-    ctaText: 'Get a Free Quote',
-    aboutIntro: '',
-    aboutImage: '',
-  })
+  const [tenantId, setTenantId] = useState<string | null>(null)
+  const [biz, setBiz] = useState<BizInfo>({})
+  const [ctaText, setCtaText] = useState('Get a Free Quote')
+
+  const { content: aboutContent } = usePageContent(tenantId, 'about')
 
   useEffect(() => {
-    resolveTenantId().then(async (tenantId) => {
-      if (!tenantId) return
-      const [bizRes, brandRes, aboutRes] = await Promise.all([
-        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
-        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
-        supabase.from('page_content').select('intro,image_url').eq('tenant_id', tenantId).eq('page_slug', 'about').maybeSingle(),
+    resolveTenantId().then(async (id) => {
+      if (!id) return
+      setTenantId(id)
+      const [bizRes, brandRes] = await Promise.all([
+        supabase.from('settings').select('value').eq('tenant_id', id).eq('key', 'business_info').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', id).eq('key', 'branding').maybeSingle(),
       ])
-      setState({
-        biz: bizRes.data?.value ?? {},
-        ctaText: brandRes.data?.value?.cta_text || 'Get a Free Quote',
-        aboutIntro: aboutRes.data?.intro || '',
-        aboutImage: aboutRes.data?.image_url || '',
-      })
+      setBiz(bizRes.data?.value ?? {})
+      setCtaText(brandRes.data?.value?.cta_text || 'Get a Free Quote')
     })
   }, [])
 
-  const { biz, ctaText, aboutIntro, aboutImage } = state
+  const aboutIntro = aboutContent?.intro || ''
+  const aboutImage = aboutContent?.image_url || ''
 
   return (
     <>

@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
 import type { PestPageProps } from '../../components/PestPageTemplate'
 import { usePageHeroImage } from '../../hooks/usePageHeroImage'
+import { usePageContent } from '../../hooks/usePageContent'
 
 const SERVICE_TABS = ['Service FAQ\'s', 'Pest Facts', 'Prevention Tips']
 
@@ -53,23 +54,30 @@ function Accordion({ items }: { items: { q: string; a: string }[] }) {
 
 export default function MetroProServicePage(props: PestPageProps) {
   const heroImageUrl = usePageHeroImage(props.pageSlug)
+  const [tenantId, setTenantId] = useState<string | null>(null)
   const [phone, setPhone] = useState('')
   const [bizName, setBizName] = useState('')
   const [activeTab, setActiveTab] = useState(0)
   const [content, setContent] = useState({ title: '', subtitle: '', intro: '' })
 
+  const { content: pageContent } = usePageContent(tenantId, props.pageSlug)
+
   useEffect(() => {
-    resolveTenantId().then(async (tenantId) => {
-      if (!tenantId) return
-      const [bizRes, pageRes] = await Promise.all([
-        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
-        supabase.from('page_content').select('title,subtitle,intro').eq('tenant_id', tenantId).eq('page_slug', props.pageSlug).maybeSingle(),
-      ])
-      if (bizRes.data?.value?.phone) setPhone(bizRes.data.value.phone)
-      if (bizRes.data?.value?.name) setBizName(bizRes.data.value.name)
-      if (pageRes.data) setContent({ title: pageRes.data.title || '', subtitle: pageRes.data.subtitle || '', intro: pageRes.data.intro || '' })
-    })
-  }, [props.pageSlug])
+    resolveTenantId().then(id => setTenantId(id ?? null))
+  }, [])
+
+  useEffect(() => {
+    if (!tenantId) return
+    supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle()
+      .then(({ data }) => {
+        if (data?.value?.phone) setPhone(data.value.phone)
+        if (data?.value?.name) setBizName(data.value.name)
+      })
+  }, [tenantId])
+
+  useEffect(() => {
+    if (pageContent) setContent({ title: pageContent.title || '', subtitle: pageContent.subtitle || '', intro: pageContent.intro || '' })
+  }, [pageContent])
 
   const heroTitle = content.title || props.heroTitle
   const serviceName = props.heroHighlight
