@@ -1,7 +1,6 @@
 // Edge Function: send-intake-confirmation
 // Triggered after a prospect submits their intake form.
-// Called manually from Ironwood or via Zapier ZAP 2.
-// No JWT required — called by automation.
+// No JWT required — called from client after form submit.
 //
 // Deploy: supabase functions deploy send-intake-confirmation --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
 
@@ -11,80 +10,42 @@ const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
-
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', ...CORS } })
 
-function buildHtml(firstName: string, businessName: string): string {
+const BOOKINGS_URL = 'https://outlook.office.com/book/PestFlowProOnboarding@ironwoodoperationsgroup.com/?ismsaljsauthenabled'
+
+function buildHtml(name: string): string {
   return `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f9fafb;font-family:Arial,Helvetica,sans-serif">
   <div style="max-width:600px;margin:0 auto;padding:40px 16px">
     <div style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08)">
-
-      <!-- Header -->
       <div style="background:#1a3a2a;padding:24px 32px">
-        <span style="color:#ffffff;font-size:22px;font-weight:bold;letter-spacing:0.5px">PestFlow Pro</span>
+        <span style="color:#ffffff;font-size:22px;font-weight:bold">PestFlow Pro</span>
       </div>
-
-      <!-- Body -->
       <div style="padding:36px 32px">
-        <h1 style="margin:0 0 16px;font-size:24px;color:#111827">You're in good hands, ${firstName}.</h1>
-
-        <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6">
-          Thanks for submitting your business information for <strong>${businessName}</strong>.
-          We've received everything and our team is already reviewing it.
+        <h1 style="margin:0 0 16px;font-size:24px;color:#111827">Got it! We're building your site now.</h1>
+        <p style="margin:0 0 20px;font-size:15px;color:#374151;line-height:1.6">
+          Hi ${name}, we received your information — thank you! Your site build starts now.
         </p>
-
-        <p style="margin:0 0 12px;font-size:15px;color:#374151;font-weight:600">Here's what happens next:</p>
-
-        <table style="width:100%;border-collapse:collapse;margin:0 0 24px">
-          <tr>
-            <td style="width:36px;vertical-align:top;padding:8px 12px 8px 0">
-              <div style="background:#16a34a;color:#fff;width:24px;height:24px;border-radius:50%;text-align:center;font-size:13px;font-weight:bold;line-height:24px">1</div>
-            </td>
-            <td style="padding:8px 0;font-size:14px;color:#374151;line-height:1.5">
-              We'll review your info and reach out within 1 business day to confirm your setup details.
-            </td>
-          </tr>
-          <tr>
-            <td style="width:36px;vertical-align:top;padding:8px 12px 8px 0">
-              <div style="background:#16a34a;color:#fff;width:24px;height:24px;border-radius:50%;text-align:center;font-size:13px;font-weight:bold;line-height:24px">2</div>
-            </td>
-            <td style="padding:8px 0;font-size:14px;color:#374151;line-height:1.5">
-              Once confirmed, we'll send your setup invoice.
-            </td>
-          </tr>
-          <tr>
-            <td style="width:36px;vertical-align:top;padding:8px 12px 8px 0">
-              <div style="background:#16a34a;color:#fff;width:24px;height:24px;border-radius:50%;text-align:center;font-size:13px;font-weight:bold;line-height:24px">3</div>
-            </td>
-            <td style="padding:8px 0;font-size:14px;color:#374151;line-height:1.5">
-              After payment, your site build begins — most sites are ready for review within 3–5 business days.
-            </td>
-          </tr>
-        </table>
-
-        <p style="margin:0 0 28px;font-size:14px;color:#6b7280;line-height:1.5">
-          Questions? Just reply to this email — we're here.
-        </p>
-
-        <a href="https://pestflowpro.com"
-           style="display:inline-block;background:#16a34a;color:#ffffff;font-size:15px;font-weight:600;padding:12px 28px;border-radius:6px;text-decoration:none">
-          Visit PestFlow Pro
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:20px 24px;margin:0 0 24px">
+          <p style="margin:0 0 8px;font-size:14px;font-weight:600;color:#166534">What happens next:</p>
+          <p style="margin:4px 0;font-size:14px;color:#374151">✓ We'll have your site ready to review in 48–72 hours</p>
+          <p style="margin:4px 0;font-size:14px;color:#374151">✓ You'll get an email as soon as it's done</p>
+        </div>
+        <p style="margin:0 0 12px;font-size:15px;color:#374151;font-weight:600">Want to get your reveal call on the calendar now?</p>
+        <a href="${BOOKINGS_URL}"
+           style="display:inline-block;background:#16a34a;color:#ffffff;font-size:15px;font-weight:600;padding:14px 32px;border-radius:6px;text-decoration:none;margin-bottom:24px">
+          Book Your Reveal Call →
         </a>
+        <p style="margin:0 0 4px;font-size:13px;color:#6b7280">Questions? Reply to this email or call (430) 367-5601.</p>
+        <p style="margin:0;font-size:13px;color:#6b7280">— The PestFlow Pro Team</p>
       </div>
-
-      <!-- Footer -->
       <div style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:20px 32px;text-align:center">
-        <p style="margin:0;font-size:12px;color:#9ca3af">
-          PestFlow Pro &nbsp;·&nbsp;
-          <a href="https://pestflowpro.com" style="color:#9ca3af;text-decoration:none">pestflowpro.com</a>
-          &nbsp;·&nbsp; Powered by Ironwood Operations Group
-        </p>
+        <p style="margin:0;font-size:12px;color:#9ca3af">PestFlow Pro &nbsp;·&nbsp; <a href="https://pestflowpro.com" style="color:#9ca3af;text-decoration:none">pestflowpro.com</a></p>
       </div>
-
     </div>
   </div>
 </body>
@@ -93,18 +54,17 @@ function buildHtml(firstName: string, businessName: string): string {
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS })
-
   try {
-    const { to, firstName, businessName } = await req.json()
-    if (!to || !firstName || !businessName) return json({ error: 'to, firstName, businessName required' }, 400)
+    const { to, firstName, businessName, contact_name, company_name } = await req.json()
+    const name = contact_name || firstName || company_name || businessName || ''
+    if (!to || !name) return json({ error: 'to and (contact_name or firstName or company_name) required' }, 400)
 
     await sendEmail({
       to,
-      subject: `We've got your info, ${firstName} — here's what happens next`,
-      html: buildHtml(firstName, businessName),
-      replyTo: 'onboarding@pestflowpro.com',
+      subject: `Got it! We're building your site now`,
+      html: buildHtml(name),
+      replyTo: 'pfpsales@pestflowpro.com',
     })
-
     return json({ success: true })
   } catch (err: any) {
     console.error('[send-intake-confirmation]', err?.message)
