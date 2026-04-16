@@ -92,6 +92,7 @@ export default function BrandingHeroMedia() {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-5">
       <h3 className="text-base font-semibold text-gray-900 pb-3 border-b border-gray-100">Hero Media</h3>
+      <p className="text-sm text-gray-500">Set the main image or video shown on your homepage. This image also serves as the fallback hero for all other pages — any page without its own hero image will use this one automatically.</p>
 
       {/* Mode toggle */}
       <div className="flex gap-2">

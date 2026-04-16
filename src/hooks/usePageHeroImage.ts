@@ -22,16 +22,14 @@ export function usePageHeroImage(pageSlug: string): string | null {
       ])
 
       const applyToAll = brandingRes.data?.value?.apply_hero_to_all_pages ?? false
+      const pageImg = pageRes.data?.image_url
+      const globalImg = globalRes.data?.value?.image_url ?? null
 
-      if (applyToAll) {
-        // Global mode: use hero_media image_url (or thumbnail_url for legacy format)
-        const globalImg = globalRes.data?.value?.image_url || globalRes.data?.value?.thumbnail_url || null
-        setImageUrl(globalImg || null)
-      } else {
-        // Per-page mode: use this page's own hero image
-        const pageImg = pageRes.data?.image_url || null
-        setImageUrl(pageImg)
-      }
+      const resolved = (applyToAll || !pageImg || pageImg.trim() === '')
+        ? globalImg
+        : pageImg
+
+      setImageUrl(resolved ?? null)
     })
   }, [pageSlug])
 

@@ -164,7 +164,7 @@ export default function BrandingSection() {
           <label htmlFor="applyHeroToAll" className="text-sm font-medium text-gray-700 cursor-pointer">
             Apply hero image to all pages
           </label>
-          <span className="text-xs text-gray-400">— When checked, uses the global Hero Media image on every page.</span>
+          <span className="text-xs text-gray-400">When checked, this image overrides all pages — even ones with their own hero image uploaded.</span>
         </div>
 
         <button onClick={handleSave} disabled={saving}
