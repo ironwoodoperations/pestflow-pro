@@ -69,13 +69,12 @@ export default function BrandingHeroMedia() {
 
   async function handleSave() {
     if (!tenantId) return
-    // Save mode+image_url (canonical) + thumbnail_url+youtube_id (shell compat)
-    const ytId = videoSub === 'youtube' ? extractYouTubeId(media.url) : ''
+    const imageUrl = media.url
+    const videoUrl = media.url
+    const youtubeId = videoSub === 'youtube' ? extractYouTubeId(media.url) : ''
     const value: Record<string, string> = mode === 'image'
-      ? { mode: 'image', image_url: media.url, video_url: '', type: 'image', url: media.url, thumbnail_url: media.url, youtube_id: '' }
-      : videoSub === 'youtube'
-        ? { mode: 'video', image_url: '', video_url: media.url, type: 'youtube', url: media.url, youtube_id: ytId, thumbnail_url: '' }
-        : { mode: 'video', image_url: '', video_url: media.url, type: 'upload', url: media.url, thumbnail_url: '', youtube_id: '' }
+      ? { mode: 'image', image_url: imageUrl, url: imageUrl, thumbnail_url: imageUrl, video_url: '', youtube_id: '' }
+      : { mode: 'video', image_url: '', url: videoUrl, video_url: videoUrl, youtube_id: youtubeId, thumbnail_url: '' }
     setSaving(true)
     const { error } = await supabase.from('settings').upsert({ tenant_id: tenantId, key: 'hero_media', value }, { onConflict: 'tenant_id,key' })
     setSaving(false)
