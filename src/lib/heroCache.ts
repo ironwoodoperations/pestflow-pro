@@ -7,13 +7,14 @@
 // Keyed by hostname + ?tenant=<slug> query param so dev/preview environments
 // testing multiple tenants via query string don't leak cached data between them.
 //
-// v:4 — imageUrl normalized via resolveHeroImage (drops stale multi-field variants).
+// v:4 — imageUrl normalized via resolveHeroImage; savedAt added for cache-bust.
 // Caches without v:4 are treated as stale for headline fields.
 
 import { resolveHeroImage } from './resolveHeroImage'
 
 export interface HeroCache {
   v?: number
+  savedAt?: number
   heroHeadline?: string
   headline?: string       // deprecated — use heroHeadline; kept for subtitle compat
   subtitle?: string
@@ -48,12 +49,19 @@ export function readHeroCache(): HeroCache {
     const parsed = JSON.parse(raw)
     if (!parsed || typeof parsed !== 'object') return {}
     const cache = parsed as HeroCache
+    let result: HeroCache
     // If cache pre-dates v4, strip the headline fields so shells re-fetch fresh.
     if (cache.v !== 4) {
       const { headline: _h, heroHeadline: _hh, customHeadline: _ch, ...rest } = cache
-      return rest
+      result = rest
+    } else {
+      result = { ...cache }
     }
-    return cache
+    // For old-style fixed filenames (hero.jpg), append cache-bust if missing.
+    if (result.imageUrl && !result.imageUrl.includes('?v=') && /\/hero\./.test(result.imageUrl)) {
+      result.imageUrl = `${result.imageUrl}?v=${result.savedAt || Date.now()}`
+    }
+    return result
   } catch {
     return {}
   }
@@ -67,9 +75,22 @@ export function writeHeroCache(next: HeroCache) {
     if (normalized.imageUrl && typeof normalized.imageUrl === 'object') {
       normalized.imageUrl = resolveHeroImage(normalized.imageUrl as any) ?? undefined
     }
-    const merged = { ...readHeroCache(), ...normalized, v: 4 }
+    const merged = { ...readHeroCache(), ...normalized, v: 4, savedAt: Date.now() }
     localStorage.setItem(cacheKey(), JSON.stringify(merged))
   } catch {
     /* quota exceeded or SSR — non-fatal */
   }
+}
+
+/** Call after saving a new hero image so the shell re-fetches from DB on next load. */
+export function clearHeroCacheImageUrl() {
+  try {
+    const raw = localStorage.getItem(cacheKey())
+    if (!raw) return
+    const entry = JSON.parse(raw)
+    if (!entry || typeof entry !== 'object') return
+    delete entry.imageUrl
+    delete entry.thumbnailUrl
+    localStorage.setItem(cacheKey(), JSON.stringify(entry))
+  } catch { /* non-fatal */ }
 }

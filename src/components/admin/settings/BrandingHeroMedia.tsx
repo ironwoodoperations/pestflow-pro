@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../hooks/useTenant'
+import { clearHeroCacheImageUrl } from '../../../lib/heroCache'
 
 type MediaType = 'image' | 'youtube' | 'upload'
 
@@ -37,12 +38,10 @@ export default function BrandingHeroMedia() {
           setMedia({ type: isYt ? 'youtube' : 'upload', url: isYt ? `https://www.youtube.com/watch?v=${v.youtube_id}` : (v.video_url || v.url || '') })
           setMode('video'); setVideoSub(isYt ? 'youtube' : 'upload')
         } else if (v?.type) {
-          // Previous save format: { type, url, thumbnail_url, youtube_id }
           setMedia({ type: v.type, url: v.url || v.thumbnail_url || '' })
           if (v.type === 'image') setMode('image')
           else { setMode('video'); setVideoSub(v.type as 'youtube' | 'upload') }
         } else if (v?.thumbnail_url) {
-          // Legacy seed format: { thumbnail_url, youtube_id }
           setMedia({ type: 'image', url: v.thumbnail_url })
           setMode('image')
         } else if (v?.youtube_id) {
@@ -56,35 +55,33 @@ export default function BrandingHeroMedia() {
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>, isVideo: boolean) {
     if (!tenantId || !e.target.files?.length) return
     const file = e.target.files[0]
-    const ext  = file.name.split('.').pop()?.toLowerCase() || (isVideo ? 'mp4' : 'jpg')
-    const path = `${tenantId}/${isVideo ? 'hero-video' : 'hero'}.${ext}`
+    const ext = file.name.split('.').pop()?.toLowerCase() || (isVideo ? 'mp4' : 'jpg')
+    const timestamp = Date.now()
+    const filePath = `${tenantId}/${isVideo ? 'hero-video' : 'hero'}_${timestamp}.${ext}`
     setUploading(true)
-    const { error } = await supabase.storage.from('tenant-assets').upload(path, file, { upsert: true })
+    const { error } = await supabase.storage.from('tenant-assets').upload(filePath, file, { upsert: true })
     if (error) { toast.error('Upload failed: ' + error.message); setUploading(false); return }
-    const { data } = supabase.storage.from('tenant-assets').getPublicUrl(path)
-    setMedia({ type: isVideo ? 'upload' : 'image', url: data.publicUrl })
+    const publicUrl = supabase.storage.from('tenant-assets').getPublicUrl(filePath).data.publicUrl
+    // Store URL with cache-bust param so admin preview always shows the fresh image
+    setMedia({ type: isVideo ? 'upload' : 'image', url: `${publicUrl}?v=${timestamp}` })
     setUploading(false)
     toast.success('File uploaded — save to apply.')
   }
 
   async function handleSave() {
     if (!tenantId) return
-    const imageUrl = media.url
-    const videoUrl = media.url
-    const youtubeId = videoSub === 'youtube' ? extractYouTubeId(media.url) : ''
+    const cleanUrl = media.url.split('?v=')[0]  // strip cache-bust before saving to DB
+    const youtubeId = videoSub === 'youtube' ? extractYouTubeId(cleanUrl) : ''
     const value: Record<string, string> = mode === 'image'
-      ? { mode: 'image', image_url: imageUrl, url: imageUrl, thumbnail_url: imageUrl, video_url: '', youtube_id: '' }
-      : { mode: 'video', image_url: '', url: videoUrl, video_url: videoUrl, youtube_id: youtubeId, thumbnail_url: '' }
+      ? { mode: 'image', image_url: cleanUrl, url: cleanUrl, thumbnail_url: cleanUrl, video_url: '', youtube_id: '' }
+      : { mode: 'video', image_url: '', url: cleanUrl, video_url: cleanUrl, youtube_id: youtubeId, thumbnail_url: '' }
     setSaving(true)
     const { error } = await supabase.from('settings').upsert({ tenant_id: tenantId, key: 'hero_media', value }, { onConflict: 'tenant_id,key' })
     setSaving(false)
-    if (error) toast.error('Failed to save.'); else toast.success('Hero media saved!')
+    if (error) toast.error('Failed to save.'); else { clearHeroCacheImageUrl(); toast.success('Hero media saved!') }
   }
 
-  function handleRemove() {
-    setMedia({ type: mode === 'image' ? 'image' : videoSub, url: '' })
-    setConfirm(false)
-  }
+  function handleRemove() { setMedia({ type: mode === 'image' ? 'image' : videoSub, url: '' }); setConfirm(false) }
 
   if (loading) return <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"><p className="text-gray-400">Loading...</p></div>
 
