@@ -46,7 +46,7 @@ export const resolveTenantBySlug = cache(async (slug: string): Promise<Tenant | 
     tagline: business.tagline ?? null,
     owner_name: business.owner_name ?? null,
     founded_year: business.founded_year != null ? Number(business.founded_year) : null,
-    license_number: business.license_number ?? null,
+    license_number: business.license ?? business.license_number ?? null,
     certifications: business.certifications ?? null,
     num_technicians: business.num_technicians != null ? Number(business.num_technicians) : null,
 
