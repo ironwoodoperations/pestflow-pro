@@ -1,5 +1,5 @@
 import { resolveTenantBySlug } from '../../../shared/lib/tenant/resolve';
-import { getPageContent, getTestimonials, getAllBlogPosts, getHeroMedia } from './_lib/queries';
+import { getPageContent, getTestimonials, getAllBlogPosts } from './_lib/queries';
 import { MetroHero } from './_components/MetroHero';
 import { ServicesGrid } from './_components/sections/ServicesGrid';
 import { WhyChooseUs } from './_components/sections/WhyChooseUs';
@@ -15,16 +15,15 @@ export default async function TenantHome({ params }: Params) {
   const tenant = await resolveTenantBySlug(params.slug);
   if (!tenant) return null;
 
-  const [content, testimonials, blogPosts, heroMedia] = await Promise.all([
+  const [content, testimonials, blogPosts] = await Promise.all([
     getPageContent(tenant.id, 'home'),
     getTestimonials(tenant.id),
     getAllBlogPosts(tenant.id),
-    getHeroMedia(tenant.id),
   ]);
 
   return (
     <>
-      <MetroHero tenant={tenant} content={content} heroMedia={heroMedia} />
+      <MetroHero tenant={tenant} content={content} />
       <ServicesGrid />
       <WhyChooseUs businessName={tenant.business_name || tenant.name} />
       <Process />

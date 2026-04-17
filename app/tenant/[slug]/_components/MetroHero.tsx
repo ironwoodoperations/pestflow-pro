@@ -1,17 +1,15 @@
 import Link from 'next/link';
 import type { Tenant } from '../../../../shared/lib/tenant/types';
-import { resolveHeroImage } from '../../../../shared/lib/resolveHeroImage';
 
 const STRIPE = 'repeating-linear-gradient(15deg, transparent, transparent 30px, rgba(255,255,255,0.025) 30px, rgba(255,255,255,0.025) 60px)';
 
 interface Props {
   tenant: Tenant;
   content: Record<string, unknown> | null;
-  heroMedia: Record<string, unknown> | null;
 }
 
-export function MetroHero({ tenant, content, heroMedia }: Props) {
-  const c = content as { hero_headline?: string; title?: string; subtitle?: string } | null;
+export function MetroHero({ tenant, content }: Props) {
+  const c = content as { hero_headline?: string; title?: string; subtitle?: string; image_urls?: string[]; image_url?: string } | null;
 
   const headline = c?.hero_headline?.trim()
     || c?.title?.trim()
@@ -23,7 +21,7 @@ export function MetroHero({ tenant, content, heroMedia }: Props) {
     : 'Licensed, insured, and ready to protect your home and business.';
   const subtext = c?.subtitle || fallbackSubtext;
 
-  const bgImage = resolveHeroImage(heroMedia);
+  const bgImage = c?.image_urls?.[0] || c?.image_url || null;
 
   return (
     <section
@@ -32,7 +30,7 @@ export function MetroHero({ tenant, content, heroMedia }: Props) {
       style={
         bgImage
           ? { backgroundImage: `url(${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', position: 'relative' }
-          : { background: `${STRIPE}, linear-gradient(135deg, var(--color-bg-hero) 0%, var(--color-bg-hero-end, var(--color-primary)) 100%)`, position: 'relative' }
+          : { background: `${STRIPE}, linear-gradient(135deg, var(--color-bg-hero, #0a1628) 0%, var(--color-bg-hero-end, var(--color-primary, #1565C0)) 100%)`, position: 'relative' }
       }
     >
       {bgImage && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 0, pointerEvents: 'none' }} />}
