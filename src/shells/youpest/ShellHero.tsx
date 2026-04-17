@@ -40,7 +40,7 @@ export default function ShellHero() {
 
   useEffect(() => {
     if (!content) return
-    const resolvedH = content.hero_headline?.trim() || content.title?.trim()
+    const resolvedH = content.hero_headline?.trim()
     if (resolvedH) setHeadline(resolvedH)
     if (content.subtitle) setSub(content.subtitle)
     writeHeroCache({ heroHeadline: content.hero_headline || undefined, subtitle: content.subtitle || undefined })
