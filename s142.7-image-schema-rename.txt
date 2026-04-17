@@ -1,0 +1,382 @@
+Read CLAUDE.md, SKILL.md, and PROJECT_MANIFEST.md first.
+Then run: git log --oneline -10
+
+Then read each of these files before touching anything:
+  app/tenant/[slug]/_components/MetroHero.tsx
+  app/tenant/[slug]/_lib/queries.ts
+  app/tenant/[slug]/page.tsx
+  app/tenant/[slug]/[service]/page.tsx
+  app/tenant/[slug]/about/page.tsx
+  app/tenant/[slug]/layout.tsx
+  src/components/admin/ContentPageForm.tsx
+  src/components/admin/ContentTab.tsx
+  src/components/admin/settings/BrandingHeroMedia.tsx
+
+When done reading, proceed through Tasks 1–10 in order. Commit after every task.
+
+---
+
+## CONTEXT
+
+Session S142.6 wired MetroHero to read the home hero from page_content. That was correct.
+But the column names being used are legacy inconsistent names shared with the Dang Vite shell.
+
+This session renames them to clean unambiguous names and migrates the data.
+The Dang Vite shell STILL reads the old column names — do NOT touch anything in src/shells/dang/.
+After this session the old columns are frozen: Dang reads them (unchanged), Next.js writes only new ones.
+
+COLUMN RENAME MAP:
+  page_content.image_url        → page_content.page_hero_image_url   (per-page hero background)
+  page_content.image_urls[0]    → page_content.image_1_url            (additional image slot 1)
+  page_content.image_urls[1]    → page_content.image_2_url            (additional image slot 2)
+  page_content.image_urls[2]    → page_content.image_3_url            (additional image slot 3)
+  settings.hero_media.image_url → settings.hero_media.master_hero_image_url  (master fallback)
+
+After the migration, data exists in BOTH old and new columns. The write path moves to new columns only.
+Old columns become frozen data. Dang reads old, Next.js reads new.
+
+---
+
+## TASK 1: Supabase migration — add new columns to page_content
+
+Create file: supabase/migrations/20260417_s142_7_image_schema_rename.sql
+
+Content:
+  -- S142.7: Rename image columns — add clean names alongside legacy names
+  -- OLD columns (image_url, image_urls) are NOT dropped — Dang Vite shell reads them
+  ALTER TABLE page_content
+    ADD COLUMN IF NOT EXISTS page_hero_image_url TEXT,
+    ADD COLUMN IF NOT EXISTS image_1_url TEXT,
+    ADD COLUMN IF NOT EXISTS image_2_url TEXT,
+    ADD COLUMN IF NOT EXISTS image_3_url TEXT;
+
+Apply via mcp__claude_ai_Supabase__apply_migration (project ID: biezzykcgzkrwdgqpsar).
+
+Commit: git add . && git commit -m "s142.7 task1: add page_hero_image_url + image_N_url columns to page_content" && git push
+
+---
+
+## TASK 2: Data copy — populate new columns from old
+
+Run each SQL block via mcp__claude_ai_Supabase__execute_sql. Report ALL counts before proceeding to Task 3.
+
+BLOCK 2a — copy page_content.image_url → page_hero_image_url:
+  UPDATE page_content
+  SET page_hero_image_url = image_url
+  WHERE image_url IS NOT NULL AND image_url != '' AND page_hero_image_url IS NULL;
+
+  SELECT COUNT(*) AS rows_with_page_hero_image_url FROM page_content WHERE page_hero_image_url IS NOT NULL;
+
+BLOCK 2b — copy image_urls array to individual columns:
+  UPDATE page_content
+  SET
+    image_1_url = NULLIF(image_urls->>0, ''),
+    image_2_url = NULLIF(image_urls->>1, ''),
+    image_3_url = NULLIF(image_urls->>2, '')
+  WHERE image_urls IS NOT NULL AND jsonb_array_length(image_urls) > 0;
+
+  SELECT
+    COUNT(*) FILTER (WHERE image_1_url IS NOT NULL) AS rows_with_image_1,
+    COUNT(*) FILTER (WHERE image_2_url IS NOT NULL) AS rows_with_image_2,
+    COUNT(*) FILTER (WHERE image_3_url IS NOT NULL) AS rows_with_image_3
+  FROM page_content;
+
+BLOCK 2c — copy settings.hero_media.image_url → master_hero_image_url key:
+  UPDATE settings
+  SET value = value || jsonb_build_object('master_hero_image_url', value->>'image_url')
+  WHERE key = 'hero_media'
+    AND (value->>'image_url') IS NOT NULL
+    AND value->>'image_url' != ''
+    AND (value->'master_hero_image_url') IS NULL;
+
+  SELECT tenant_id,
+    LEFT(value->>'image_url', 60) AS old_key,
+    LEFT(value->>'master_hero_image_url', 60) AS new_key
+  FROM settings WHERE key = 'hero_media' AND (value->>'image_url') IS NOT NULL;
+
+BLOCK 2d — Dang verification (tenant_id = 1611b16f-381b-4d4f-ba3a-fbde56ad425b):
+  SELECT
+    page_slug,
+    LEFT(COALESCE(image_url,''), 55) AS old_hero,
+    LEFT(COALESCE(page_hero_image_url,''), 55) AS new_hero,
+    jsonb_array_length(COALESCE(image_urls, '[]'::jsonb)) AS old_img_count,
+    (CASE WHEN image_1_url IS NOT NULL THEN 1 ELSE 0 END
+     + CASE WHEN image_2_url IS NOT NULL THEN 1 ELSE 0 END
+     + CASE WHEN image_3_url IS NOT NULL THEN 1 ELSE 0 END) AS new_img_count
+  FROM page_content
+  WHERE tenant_id = '1611b16f-381b-4d4f-ba3a-fbde56ad425b'
+  ORDER BY page_slug;
+
+STOP RULE: if any Dang row has old_hero set but new_hero is NULL — stop and report before continuing.
+
+Commit: git add . && git commit -m "s142.7 task2: data migration — copy image_url to page_hero_image_url, image_urls to image_N_url, hero_media master key" && git push
+
+---
+
+## TASK 3: queries.ts — update getAllServicePages
+
+File: app/tenant/[slug]/_lib/queries.ts
+
+In getAllServicePages, change the .select() from:
+  .select('page_slug, title, subtitle, image_url')
+to:
+  .select('page_slug, title, subtitle, page_hero_image_url')
+
+No other changes to this file.
+
+Commit: git add . && git commit -m "s142.7 task3: queries.ts getAllServicePages selects page_hero_image_url" && git push
+
+---
+
+## TASK 4: Next.js Metro-Pro read paths — remove legacy fallbacks
+
+Four sub-changes. Read each file fully before editing.
+
+### 4a: MetroHero.tsx
+
+File: app/tenant/[slug]/_components/MetroHero.tsx
+
+Add heroMedia to the Props interface:
+  interface Props {
+    tenant: Tenant;
+    content: Record<string, unknown> | null;
+    heroMedia: Record<string, string | null> | null;
+  }
+
+Update the cast type (remove image_urls and image_url — those are Dang-only):
+  const c = content as { hero_headline?: string; title?: string; subtitle?: string; page_hero_image_url?: string } | null;
+
+Update bgImage resolution:
+  const bgImage = c?.page_hero_image_url
+    || heroMedia?.master_hero_image_url
+    || heroMedia?.image_url
+    || null;
+
+### 4b: Home page.tsx
+
+File: app/tenant/[slug]/page.tsx
+
+Add getHeroMedia import if not already present.
+Add heroMedia to the Promise.all fetch:
+  const [content, testimonials, blogPosts, heroMedia] = await Promise.all([
+    getPageContent(tenant.id, 'home'),
+    getTestimonials(tenant.id),
+    getAllBlogPosts(tenant.id),
+    getHeroMedia(tenant.id),
+  ]);
+
+Pass to MetroHero:
+  <MetroHero
+    tenant={tenant}
+    content={content}
+    heroMedia={heroMedia as Record<string, string | null> | null}
+  />
+
+### 4c: Service page.tsx — add per-page hero image support
+
+File: app/tenant/[slug]/[service]/page.tsx
+
+In the SERVICE_SLUGS branch (after: const svc = SERVICE_DATA[params.service]):
+Change:
+  const content = await getPageContent(tenant.id, params.service);
+To:
+  const [content, heroMedia] = await Promise.all([
+    getPageContent(tenant.id, params.service),
+    getHeroMedia(tenant.id),
+  ]);
+
+Add import for getHeroMedia if not already imported.
+
+After resolving heroTitle, heroSubtitle, introP1, add:
+  const hm = heroMedia as Record<string, string | null> | null;
+  const pageHeroImg = (content as { page_hero_image_url?: string } | null)?.page_hero_image_url
+    || hm?.master_hero_image_url
+    || hm?.image_url
+    || null;
+
+Update the service hero <section> to use pageHeroImg when available.
+Current service hero <section> uses a gradient background.
+When pageHeroImg is set, use it as a background image with a dark overlay — same pattern as MetroHero:
+  style={pageHeroImg
+    ? { backgroundImage: `url(${pageHeroImg})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+    : { background: 'linear-gradient(135deg, var(--color-bg-hero, #0a1628) 0%, var(--color-bg-hero-end, var(--color-primary)) 100%)' }
+  }
+And add a dark overlay div inside the section when pageHeroImg is set (same as MetroHero pattern):
+  {pageHeroImg && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 0, pointerEvents: 'none' }} />}
+Make the section position: relative and content div position: relative z-index: 10 to sit above overlay.
+
+### 4d: About page.tsx
+
+File: app/tenant/[slug]/about/page.tsx
+
+Change:
+  const c = content as { title?: string; subtitle?: string; image_urls?: string[] } | null;
+  const aboutImage = c?.image_urls?.[0] || '/images/pests/team.jpg';
+To:
+  const c = content as { title?: string; subtitle?: string; image_1_url?: string } | null;
+  const aboutImage = c?.image_1_url || '/images/pests/team.jpg';
+
+Commit: git add . && git commit -m "s142.7 task4: Next.js reads page_hero_image_url+master_hero_image_url — removes content.image_url/image_urls fallbacks" && git push
+
+---
+
+## TASK 5: Do NOT touch Dang shell
+
+src/shells/dang/ is off-limits this session. No changes. No commit needed.
+
+Dang's shell reads page_content.image_url and page_content.image_urls from the Vite build.
+Those old columns are now frozen — they were copied to new columns in Task 2.
+The Dang read path migration happens in S143, after Kirk's DNS flip confirms Dang is stable.
+
+---
+
+## TASK 6: ContentPageForm.tsx + ContentTab.tsx — stop writing to old page_content columns
+
+Read both files fully before editing.
+
+### ContentPageForm.tsx
+
+File: src/components/admin/ContentPageForm.tsx
+
+HeroImageUpload component changes:
+  - In useEffect .select(): change 'image_url' → 'page_hero_image_url'
+  - In useEffect data read: change data?.image_url → data?.page_hero_image_url
+  - In handleFile upsert: change { ..., image_url: publicUrl } → { ..., page_hero_image_url: publicUrl }
+  - In handleRemove upsert: change { ..., image_url: '' } → { ..., page_hero_image_url: null }
+    (null not empty string — cleaner for IS NULL checks)
+
+PageImageUpload component changes:
+  - In useEffect: change .select('image_urls') → .select('image_1_url, image_2_url, image_3_url')
+  - In useEffect data read: instead of data?.image_urls?.[index], use:
+      index === 0 ? data?.image_1_url :
+      index === 1 ? data?.image_2_url :
+                    data?.image_3_url
+  - In handleFile: remove the image_urls array read/update. Instead upsert the specific column:
+      const colName = ['image_1_url', 'image_2_url', 'image_3_url'][index]
+      await supabase.from('page_content').upsert(
+        { tenant_id: tenantId, page_slug: slug, [colName]: publicUrl },
+        { onConflict: 'tenant_id,page_slug' }
+      )
+  - In handleRemove: remove the image_urls array read/update. Instead upsert:
+      const colName = ['image_1_url', 'image_2_url', 'image_3_url'][index]
+      await supabase.from('page_content').upsert(
+        { tenant_id: tenantId, page_slug: slug, [colName]: null },
+        { onConflict: 'tenant_id,page_slug' }
+      )
+
+### ContentTab.tsx
+
+File: src/components/admin/ContentTab.tsx
+
+The ContentForm interface has image_url: string. Image upload is handled separately by HeroImageUpload.
+Remove image_url from:
+  - ContentForm interface (delete the field)
+  - EMPTY_FORM constant (delete the field)
+  - .select() in useEffect (remove 'image_url' from the select string)
+  - setForm() call (remove image_url from the object)
+  - handleSave() pageRow construction (image_url must not be included in the upsert)
+  - handleRevert() orig cast and setForm (remove image_url from the object)
+
+After removing, the content form saves only: title, subtitle, intro, video_url, hero_headline.
+Image fields are saved independently by HeroImageUpload and PageImageUpload components.
+
+Commit: git add . && git commit -m "s142.7 task6: ContentPageForm+ContentTab write page_hero_image_url+image_N_url — stop writing old columns" && git push
+
+---
+
+## TASK 7: BrandingHeroMedia.tsx — write master_hero_image_url
+
+File: src/components/admin/settings/BrandingHeroMedia.tsx
+
+On READ (useEffect):
+  When v.mode === 'image', prefer v.master_hero_image_url over v.image_url:
+    setMedia({ type: 'image', url: v.master_hero_image_url || v.image_url || v.url || v.thumbnail_url || '' })
+  Leave all other mode/type branches unchanged.
+
+On SAVE (handleSave):
+  Write master_hero_image_url AS WELL AS the existing image_url key.
+  The existing save builds a `value` object — add master_hero_image_url to it:
+    mode === 'image':
+      { mode: 'image', master_hero_image_url: cleanUrl, image_url: cleanUrl, url: cleanUrl, thumbnail_url: cleanUrl, video_url: '', youtube_id: '' }
+    mode === 'video':
+      { mode: 'video', master_hero_image_url: '', image_url: '', url: cleanUrl, video_url: cleanUrl, youtube_id: youtubeId, thumbnail_url: '' }
+
+  Keeping image_url in the blob is intentional — Dang Vite reads settings.hero_media.image_url.
+  master_hero_image_url is what Next.js reads as primary. Both coexist in the JSONB.
+
+Commit: git add . && git commit -m "s142.7 task7: BrandingHeroMedia writes master_hero_image_url — reads new key, keeps image_url for Dang Vite compat" && git push
+
+---
+
+## TASK 8: Build check
+
+Run: npm run build:next
+
+Report:
+  - TypeScript errors (list ALL — file + line + message)
+  - Build exit code
+
+Fix any TypeScript errors before committing. Common issues to watch for:
+  - MetroHero called without heroMedia prop (home page.tsx)
+  - getAllServicePages returning image_url field still referenced somewhere
+  - Type cast on page_content rows still referencing image_url or image_urls
+
+Commit if any files changed: git add . && git commit -m "s142.7 task8: TS build clean after image schema rename" && git push
+
+---
+
+## TASK 9: PROJECT_MANIFEST.md — add open items + session log
+
+File: PROJECT_MANIFEST.md
+
+Update "Last Updated" line at top to: 2026-04-17 by Claude Code (S142.7)
+
+Add to Open Items table (after the last numbered item):
+  | 14 | **S143 post-hotfix: Dang read path migration** | 🟡 High | Claude Code | After Kirk DNS flip + Dang confirmed stable on new domain: change src/shells/dang/ to read page_hero_image_url / image_1_url / image_2_url / image_3_url. Data already in new columns from S142.7 Task 2 migration. |
+  | 15 | **S144 cleanup: drop old image columns** | 🟢 Low | Claude Code | After S143: DROP page_content.image_url and image_urls. Remove image_url key from settings.hero_media JSONB. Run ONLY after Dang read path is fully migrated and verified. |
+  | 16 | **Backlog: per-shell image slot config (Option C)** | 🟢 Low | Claude Code | After all shells ported to Next.js (post-S147): build SHELL_IMAGE_SLOTS config mapping each shell to its image slot count. Gate ContentTab Additional Image boxes by tenant template. Requires knowing each shell's actual image usage post-port. |
+
+Add to Session Log table:
+  | S142.7 | 2026-04-17 | Image schema rename hotfix: new columns page_hero_image_url + image_N_url on page_content; master_hero_image_url in settings.hero_media; Next.js + admin write to new columns only; Dang frozen on old columns |
+
+Commit: git add . && git commit -m "s142.7 task9: PROJECT_MANIFEST open items S143/S144/backlog + session log" && git push
+
+---
+
+## TASK 10: SKILL.md schema documentation
+
+File: SKILL.md
+
+Find the "## SETTINGS KEYS" section. After it, add a new section:
+
+## page_content IMAGE COLUMNS (as of S142.7)
+
+| Column | Purpose | Written by | Read by |
+|--------|---------|-----------|---------|
+| page_hero_image_url | Per-page hero background image | ContentPageForm HeroImageUpload | Next.js MetroHero, service page hero |
+| image_1_url | Additional image slot 1 | ContentPageForm PageImageUpload idx 0 | Next.js about page, Dang shell post-S143 |
+| image_2_url | Additional image slot 2 | ContentPageForm PageImageUpload idx 1 | shell-specific |
+| image_3_url | Additional image slot 3 | ContentPageForm PageImageUpload idx 2 | shell-specific |
+| image_url | LEGACY — frozen, no new writes | nothing writes this anymore | Dang Vite shell only |
+| image_urls | LEGACY — frozen, no new writes | nothing writes this anymore | Dang Vite shell only |
+
+## settings.hero_media JSONB KEYS (as of S142.7)
+
+| Key | Purpose | Written by | Read by |
+|-----|---------|-----------|---------|
+| master_hero_image_url | Master fallback hero for all pages without a per-page hero | BrandingHeroMedia Settings tab | Next.js MetroHero, service pages (primary read) |
+| image_url | Legacy key — still written alongside master_hero_image_url for Dang Vite compat | BrandingHeroMedia | Dang Vite shell, Next.js (transition fallback only) |
+
+Commit: git add . && git commit -m "s142.7 task10: SKILL.md schema docs for page_content image columns and hero_media keys" && git push
+
+---
+
+## SESSION REPORT FORMAT
+
+When all 10 tasks are done, report:
+1. SQL verification counts from Task 2 (copy/paste the number rows)
+2. Dang 2d verification table (paste full output)
+3. Files modified (list)
+4. Build status (clean / errors)
+5. Any workarounds used
+6. What's left: S143 Dang read path migration (after Kirk DNS flip)

@@ -98,6 +98,9 @@ Bundle size:      ~354 kB (limit: 450 kB ✅)
 | 11 | **Add New Page — public routing for Dang** | 🟢 Low | Claude Code | CustomPage uses PublicShell. Dang shell uses DangPageRouter. Custom pages on Dang tenant won't use Dang styling. Acceptable for now. |
 | 12 | **Static site export** | 🟢 Low | Claude Code | HTML snapshot for backup/offboarding. Paid handoff feature ($500–$1,000). |
 | 13 | **Firecrawl upgrade** | 🟢 Low | Scott (manual) | Upgrade to Hobby plan ($16/mo) at firecrawl.dev for YouPest scraping. Free tier works for demo. |
+| 14 | **S143 post-hotfix: Dang read path migration** | 🟡 High | Claude Code | After Kirk DNS flip + Dang confirmed stable on new domain: change src/shells/dang/ to read page_hero_image_url / image_1_url / image_2_url / image_3_url. Data already in new columns from S142.7 migration. |
+| 15 | **S144 cleanup: drop old image columns** | 🟢 Low | Claude Code | After S143: DROP page_content.image_url and image_urls. Remove legacy image_url key from settings.hero_media JSONB. Run ONLY after Dang read path is fully migrated and verified. |
+| 16 | **Backlog: per-shell image slot config (Option C)** | 🟢 Low | Claude Code | After all shells ported to Next.js (post-S147): build SHELL_IMAGE_SLOTS config mapping each shell to its slot count. Gate ContentTab Additional Image boxes by tenant template. Requires knowing each shell's actual image usage post-port. |
 
 ---
 
@@ -178,3 +181,5 @@ doppler run -- claude --dangerously-skip-permissions \
 | S115 | Apr 2026 | Mailbox wiring, support ticket system, Add New Page, PROJECT_MANIFEST created |
 | S116 | Apr 2026 | 5 HTML email templates (intake, welcome, reveal, credentials, dunning), Reveal Ready button in Ironwood Provisioning |
 | S117 | Apr 2026 | pg_cron + publish-scheduled-posts → bundle.social cron live, ZAPIER_WEBHOOK_SETUP.md created |
+| S142–S142.6 | Apr 2026 | Next.js metro-pro shell port: layout, nav, footer, home, services, blog, about, contact, faq, quote, reviews, service-area, CSS vars, Google fonts |
+| S142.7 | 2026-04-17 | Image schema rename hotfix: new columns page_hero_image_url + image_N_url on page_content; master_hero_image_url in settings.hero_media; Next.js + admin write to new columns only; Dang frozen on old columns (pending S143) |
