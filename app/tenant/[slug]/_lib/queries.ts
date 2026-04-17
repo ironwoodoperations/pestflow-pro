@@ -85,7 +85,7 @@ export const getSocialLinks = cache(async (tenantId: string) => {
     .eq('tenant_id', tenantId)
     .eq('key', 'social_links')
     .maybeSingle();
-  return (data?.value ?? {}) as { facebook?: string; instagram?: string; youtube?: string };
+  return (data?.value ?? {}) as { facebook?: string; instagram?: string; youtube?: string; google?: string };
 });
 
 export const getFaqItems = cache(async (tenantId: string) => {
