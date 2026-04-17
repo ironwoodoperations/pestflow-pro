@@ -1,0 +1,71 @@
+import Link from 'next/link';
+import { MapPin } from 'lucide-react';
+import { notFound } from 'next/navigation';
+import { resolveTenantBySlug } from '../../../../shared/lib/tenant/resolve';
+import { getAllLocations, getPageContent } from '../_lib/queries';
+import { formatPhone } from '../../../../shared/lib/formatPhone';
+
+const FALLBACK_CITIES = [
+  { slug: 'tyler-tx', city: 'Tyler' }, { slug: 'longview-tx', city: 'Longview' },
+  { slug: 'jacksonville-tx', city: 'Jacksonville' }, { slug: 'lindale-tx', city: 'Lindale' },
+];
+
+type Params = { params: { slug: string } };
+
+export default async function ServiceAreaPage({ params }: Params) {
+  const tenant = await resolveTenantBySlug(params.slug);
+  if (!tenant) notFound();
+
+  const [rawLocs, content] = await Promise.all([
+    getAllLocations(tenant.id),
+    getPageContent(tenant.id, 'service-area'),
+  ]);
+
+  const c = content as { title?: string; subtitle?: string } | null;
+  const heroTitle = c?.title    || 'Our Service Area';
+  const heroSub   = c?.subtitle || 'Professional pest control in your community and surrounding areas.';
+
+  type LocItem = { slug: string; city: string };
+  const locations: LocItem[] = (rawLocs.length > 0 ? rawLocs : FALLBACK_CITIES) as LocItem[];
+  const phone = tenant.phone ?? '';
+
+  return (
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
+
+      <section className="relative py-20 md:py-28 px-6 text-center" style={{ background: 'linear-gradient(135deg, var(--color-bg-hero, #0a1628) 0%, var(--color-bg-hero-end, var(--color-primary)) 100%)' }}>
+        <h1 className="text-5xl md:text-7xl font-bold mb-4 text-white">{heroTitle}</h1>
+        <p className="text-xl max-w-2xl mx-auto text-white/75">{heroSub}</p>
+      </section>
+
+      <section className="py-16 px-6">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-10" style={{ color: 'var(--color-heading, #1a1a1a)' }}>Communities We Serve</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {locations.map(loc => (
+              <Link key={loc.slug} href={`/${loc.slug}`} className="flex items-center gap-2 bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition group">
+                <MapPin className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--color-accent)' }} />
+                <span className="font-medium text-sm" style={{ color: 'var(--color-heading, #1a1a1a)' }}>{loc.city}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-16 px-6 text-center" style={{ backgroundColor: 'var(--color-bg-cta, #0a1628)' }}>
+        <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Don&apos;t See Your City?</h2>
+        <p className="mb-8 text-lg text-white/75">We may still serve your area — give us a call to find out.</p>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          {phone && (
+            <a href={`tel:${phone.replace(/\D/g, '')}`} className="font-bold rounded-lg px-8 py-4 text-lg transition hover:opacity-90 text-white" style={{ backgroundColor: 'var(--color-accent)' }}>
+              Call {formatPhone(phone)}
+            </a>
+          )}
+          <Link href="/quote" className="font-bold rounded-lg px-8 py-4 text-lg transition hover:opacity-90 border-2 text-white" style={{ borderColor: 'var(--color-accent)' }}>
+            Get a Free Quote
+          </Link>
+        </div>
+      </section>
+
+    </div>
+  );
+}
