@@ -116,7 +116,13 @@ export const getHeroMedia = cache(async (tenantId: string) => {
     .eq('tenant_id', tenantId)
     .eq('key', 'hero_media')
     .maybeSingle();
-  return data?.value ?? null;
+  return (data?.value ?? null) as {
+    master_hero_image_url?: string;
+    image_url?: string;
+    video_url?: string;
+    youtube_id?: string;
+    mode?: string;
+  } | null;
 });
 
 export const getIntegrations = cache(async (tenantId: string) => {
