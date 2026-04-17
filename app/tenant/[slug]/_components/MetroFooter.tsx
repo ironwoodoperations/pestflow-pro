@@ -25,7 +25,7 @@ export function MetroFooter({ tenant, social = {} }: Props) {
   const license = tenant.license_number;
 
   return (
-    <footer style={{ backgroundColor: 'var(--color-footer-bg)', color: 'var(--color-footer-text)' }}>
+    <footer style={{ backgroundColor: 'var(--color-footer-bg, #0d1f2d)', color: 'var(--color-footer-text, #ffffff)' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           <div>

@@ -82,7 +82,7 @@ export function MetroNavbar({ servicePages }: Props) {
 
   return (
     <nav
-      style={{ backgroundColor: 'var(--color-nav-bg)' }}
+      style={{ backgroundColor: 'var(--color-nav-bg, var(--color-primary, #1565C0))' }}
       className={`sticky top-0 z-50 transition-shadow ${scrolled ? 'shadow-lg' : 'border-b border-white/10'}`}
     >
       <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 px-4 py-2 rounded z-[60] text-white" style={{ backgroundColor: 'var(--color-accent)' }}>
@@ -112,7 +112,7 @@ export function MetroNavbar({ servicePages }: Props) {
                 Services <ChevronDown className="w-3.5 h-3.5" />
               </button>
               {dropdownOpen && (
-                <div role="menu" className="absolute top-full left-0 mt-1 w-56 shadow-xl border border-white/10 py-2 z-50" style={{ backgroundColor: 'var(--color-nav-bg)' }}>
+                <div role="menu" className="absolute top-full left-0 mt-1 w-56 shadow-xl border border-white/10 py-2 z-50" style={{ backgroundColor: 'var(--color-nav-bg, var(--color-primary, #1565C0))' }}>
                   {serviceLinks.map((link) => (
                     <Link key={link.href} href={link.href} onClick={() => setDropdownOpen(false)}
                       className="block px-4 py-2 text-sm text-white/70 hover:text-white hover:bg-white/5 transition">
@@ -137,7 +137,7 @@ export function MetroNavbar({ servicePages }: Props) {
       </div>
 
       {mobileOpen && (
-        <div ref={menuRef} style={{ backgroundColor: 'var(--color-nav-bg)' }} className="lg:hidden border-t border-white/10 max-h-[80vh] overflow-y-auto">
+        <div ref={menuRef} style={{ backgroundColor: 'var(--color-nav-bg, var(--color-primary, #1565C0))' }} className="lg:hidden border-t border-white/10 max-h-[80vh] overflow-y-auto">
           <div className="px-4 py-4 space-y-1">
             {phone && (
               <a href={`tel:${phone.replace(/\D/g, '')}`} className="flex items-center gap-2 px-2 py-2 text-sm font-medium text-white/70">
