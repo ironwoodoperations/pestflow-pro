@@ -35,7 +35,11 @@
       "Bash(wc -l src/pages/*Control.tsx src/pages/BedBugControl.tsx src/pages/ScorpionControl.tsx src/pages/PestControlPage.tsx src/pages/TermiteInspections.tsx)",
       "Bash(wc -l src/shells/*/ShellHomeSections.tsx)",
       "Bash(nslookup lonestarpest.pestflowpro.com)",
-      "mcp__claude_ai_Supabase__get_publishable_keys"
+      "mcp__claude_ai_Supabase__get_publishable_keys",
+      "Bash(rm -rf node_modules*)",
+      "Bash(rm -rf .next*)",
+      "Bash(rm -rf public/_admin*)",
+      "Bash(rm -rf dist*)"
     ],
     "deny": [
       "Bash(git push --force *)",
