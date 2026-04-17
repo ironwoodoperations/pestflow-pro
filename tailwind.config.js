@@ -8,6 +8,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
+        sans: ['var(--font-sans)', 'Inter', 'system-ui', 'sans-serif'],
         oswald: ['"Oswald"', 'sans-serif'],
         raleway: ['"Raleway"', 'sans-serif'],
         'space-grotesk': ['"Space Grotesk"', 'sans-serif'],
