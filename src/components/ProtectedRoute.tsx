@@ -1,18 +1,25 @@
 import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { resolveTenantId } from '../lib/tenant'
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [authed, setAuthed] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { setLoading(false); return }
-      supabase.rpc('has_role', { required_role: 'admin' }).then(({ data }) => {
-        setAuthed(!!data)
-        setLoading(false)
-      })
+      const tenantId = await resolveTenantId()
+      const { data } = await supabase
+        .from('tenant_users')
+        .select('id')
+        .eq('tenant_id', tenantId)
+        .eq('user_id', session.user.id)
+        .eq('role', 'admin')
+        .maybeSingle()
+      setAuthed(!!data)
+      setLoading(false)
     })
   }, [])
 

@@ -77,9 +77,23 @@ export default function BrandingHeroMedia() {
       ? { mode: 'image', master_hero_image_url: cleanUrl, image_url: cleanUrl, url: cleanUrl, thumbnail_url: cleanUrl, video_url: '', youtube_id: '' }
       : { mode: 'video', master_hero_image_url: '', image_url: '', url: cleanUrl, video_url: cleanUrl, youtube_id: youtubeId, thumbnail_url: '' }
     setSaving(true)
-    const { error } = await supabase.from('settings').upsert({ tenant_id: tenantId, key: 'hero_media', value }, { onConflict: 'tenant_id,key' })
+    const { data, error } = await supabase.from('settings')
+      .upsert({ tenant_id: tenantId, key: 'hero_media', value }, { onConflict: 'tenant_id,key' })
+      .select('tenant_id')
     setSaving(false)
-    if (error) toast.error('Failed to save.'); else { clearHeroCacheImageUrl(); if (tenantId) clearHeroMemCache(tenantId); try { localStorage.removeItem(`pfp_tenant_boot_v2:${window.location.hostname}`); delete (window as any).__TENANT_BOOT__ } catch {}; toast.success('Hero media saved!') }
+    if (error) {
+      console.error('Hero media save failed:', error)
+      toast.error('Save failed: ' + error.message)
+      return
+    }
+    if (!data || data.length === 0) {
+      toast.error('Save failed — please log out and log back in.')
+      return
+    }
+    clearHeroCacheImageUrl()
+    if (tenantId) clearHeroMemCache(tenantId)
+    try { localStorage.removeItem(`pfp_tenant_boot_v2:${window.location.hostname}`); delete (window as any).__TENANT_BOOT__ } catch {}
+    toast.success('Hero media saved!')
   }
 
   function handleRemove() { setMedia({ type: mode === 'image' ? 'image' : videoSub, url: '' }); setConfirm(false) }
