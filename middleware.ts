@@ -55,10 +55,10 @@ export function middleware(req: NextRequest) {
   // Subdomain public shell → Next.js App Router
   const url = req.nextUrl.clone();
   const suffix = pathname === '/' ? '' : pathname;
-  url.pathname = `/_tenant/${slug}${suffix}`;
+  url.pathname = `/tenant/${slug}${suffix}`;
   return NextResponse.rewrite(url);
 }
 
 export const config = {
-  matcher: ['/((?!_next|_admin|_tenant|favicon.ico|api).*)'],
+  matcher: ['/((?!_next|_admin|tenant|favicon.ico|api).*)'],
 };
