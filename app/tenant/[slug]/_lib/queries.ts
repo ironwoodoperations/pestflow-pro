@@ -118,3 +118,14 @@ export const getHeroMedia = cache(async (tenantId: string) => {
     .maybeSingle();
   return data?.value ?? null;
 });
+
+export const getIntegrations = cache(async (tenantId: string) => {
+  const supabase = getServerSupabase();
+  const { data } = await supabase
+    .from('settings')
+    .select('value')
+    .eq('tenant_id', tenantId)
+    .eq('key', 'integrations')
+    .maybeSingle();
+  return (data?.value ?? {}) as Record<string, string | null>;
+});
