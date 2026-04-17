@@ -56,20 +56,22 @@ function PageImageUpload({ slug, index }: { slug: string; index: number }) {
     setUploading(false)
     if (error) { toast.error('Upload failed: ' + error.message); return }
     const { data: { publicUrl } } = supabase.storage.from('tenant-assets').getPublicUrl(data.path)
-    await supabase.from('page_content').upsert(
+    const { error: saveError } = await supabase.from('page_content').upsert(
       { tenant_id: tenantId, page_slug: slug, [colName]: publicUrl },
       { onConflict: 'tenant_id,page_slug' }
     )
+    if (saveError) { toast.error('Save failed: ' + saveError.message); return }
     setCurrentUrl(publicUrl)
     toast.success('Image uploaded!')
   }
 
   async function handleRemove() {
     if (!tenantId) return
-    await supabase.from('page_content').upsert(
+    const { error } = await supabase.from('page_content').upsert(
       { tenant_id: tenantId, page_slug: slug, [colName]: '' },
       { onConflict: 'tenant_id,page_slug' }
     )
+    if (error) { toast.error('Remove failed: ' + error.message); return }
     setCurrentUrl(null)
     toast.success('Image removed.')
   }
@@ -122,19 +124,21 @@ function HeroImageUpload({ slug }: { slug: string }) {
     setUploading(false)
     if (error) { toast.error('Upload failed: ' + error.message); return }
     const { data: { publicUrl } } = supabase.storage.from('tenant-assets').getPublicUrl(data.path)
-    await supabase.from('page_content').upsert(
+    const { error: saveError } = await supabase.from('page_content').upsert(
       { tenant_id: tenantId, page_slug: slug, page_hero_image_url: publicUrl },
       { onConflict: 'tenant_id,page_slug' }
     )
+    if (saveError) { toast.error('Save failed: ' + saveError.message); return }
     setCurrentUrl(publicUrl); toast.success('Hero image uploaded!')
   }
 
   async function handleRemove() {
     if (!tenantId) return
-    await supabase.from('page_content').upsert(
+    const { error } = await supabase.from('page_content').upsert(
       { tenant_id: tenantId, page_slug: slug, page_hero_image_url: '' },
       { onConflict: 'tenant_id,page_slug' }
     )
+    if (error) { toast.error('Remove failed: ' + error.message); return }
     setCurrentUrl(null); toast.success('Hero image removed.')
   }
 
