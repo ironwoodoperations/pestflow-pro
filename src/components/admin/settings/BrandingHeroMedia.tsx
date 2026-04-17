@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../hooks/useTenant'
 import { clearHeroCacheImageUrl } from '../../../lib/heroCache'
+import { clearHeroMemCache } from '../../../hooks/usePageHeroImage'
 
 type MediaType = 'image' | 'youtube' | 'upload'
 
@@ -78,7 +79,7 @@ export default function BrandingHeroMedia() {
     setSaving(true)
     const { error } = await supabase.from('settings').upsert({ tenant_id: tenantId, key: 'hero_media', value }, { onConflict: 'tenant_id,key' })
     setSaving(false)
-    if (error) toast.error('Failed to save.'); else { clearHeroCacheImageUrl(); toast.success('Hero media saved!') }
+    if (error) toast.error('Failed to save.'); else { clearHeroCacheImageUrl(); if (tenantId) clearHeroMemCache(tenantId); toast.success('Hero media saved!') }
   }
 
   function handleRemove() { setMedia({ type: mode === 'image' ? 'image' : videoSub, url: '' }); setConfirm(false) }

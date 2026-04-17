@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { Plus, X } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
+import { invalidatePageContent } from '../../hooks/usePageContent'
 import PageHelpBanner from './PageHelpBanner'
 import ContentPageForm from './ContentPageForm'
 import FaqTab from './FaqTab'
@@ -164,7 +165,8 @@ export default function ContentTab() {
       await supabase.from('settings').upsert({ tenant_id: tenantId, key: 'customization', value: merged }, { onConflict: 'tenant_id,key' })
     }
     setSaving(false)
-    if (error) toast.error('Failed to save content.'); else toast.success('Content saved!')
+    if (error) toast.error('Failed to save content.')
+    else { invalidatePageContent(tenantId, selectedSlug); toast.success('Content saved!') }
   }
 
   async function handleRevert() {
