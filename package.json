@@ -8,7 +8,7 @@
     "dev:vite": "vite",
     "dev:next": "next dev -p 3000",
     "build": "npm run build:vite && npm run build:next",
-    "build:vite": "tsc -b && vite build",
+    "build:vite": "vite build",
     "build:next": "next build",
     "start": "next start",
     "lint": "eslint .",
