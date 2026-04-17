@@ -32,7 +32,7 @@ export default function BrandingHeroMedia() {
       .then(({ data }) => {
         const v = data?.value
         if (v?.mode === 'image') {
-          setMedia({ type: 'image', url: v.image_url || v.url || v.thumbnail_url || '' })
+          setMedia({ type: 'image', url: v.master_hero_image_url || v.image_url || v.url || v.thumbnail_url || '' })
           setMode('image')
         } else if (v?.mode === 'video') {
           const isYt = !!v.youtube_id
@@ -74,8 +74,8 @@ export default function BrandingHeroMedia() {
     const cleanUrl = media.url.split('?v=')[0]  // strip cache-bust before saving to DB
     const youtubeId = videoSub === 'youtube' ? extractYouTubeId(cleanUrl) : ''
     const value: Record<string, string> = mode === 'image'
-      ? { mode: 'image', image_url: cleanUrl, url: cleanUrl, thumbnail_url: cleanUrl, video_url: '', youtube_id: '' }
-      : { mode: 'video', image_url: '', url: cleanUrl, video_url: cleanUrl, youtube_id: youtubeId, thumbnail_url: '' }
+      ? { mode: 'image', master_hero_image_url: cleanUrl, image_url: cleanUrl, url: cleanUrl, thumbnail_url: cleanUrl, video_url: '', youtube_id: '' }
+      : { mode: 'video', master_hero_image_url: '', image_url: '', url: cleanUrl, video_url: cleanUrl, youtube_id: youtubeId, thumbnail_url: '' }
     setSaving(true)
     const { error } = await supabase.from('settings').upsert({ tenant_id: tenantId, key: 'hero_media', value }, { onConflict: 'tenant_id,key' })
     setSaving(false)
@@ -88,8 +88,8 @@ export default function BrandingHeroMedia() {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-5">
-      <h3 className="text-base font-semibold text-gray-900 pb-3 border-b border-gray-100">Hero Media</h3>
-      <p className="text-sm text-gray-500">Set the main image or video shown on your homepage. This image also serves as the fallback hero for all other pages — any page without its own hero image will use this one automatically.</p>
+      <h3 className="text-base font-semibold text-gray-900 pb-3 border-b border-gray-100">Master Hero Image</h3>
+      <p className="text-sm text-gray-500">Set the default hero image shown across your entire site. Individual pages can override this by uploading their own Page Hero Image in the Content tab.</p>
 
       {/* Mode toggle */}
       <div className="flex gap-2">
@@ -190,7 +190,7 @@ export default function BrandingHeroMedia() {
 
       <button onClick={handleSave} disabled={saving}
         className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
-        {saving ? 'Saving…' : 'Save Hero Media'}
+        {saving ? 'Saving…' : 'Save Master Hero'}
       </button>
     </div>
   )
