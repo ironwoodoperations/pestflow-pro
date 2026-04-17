@@ -12,6 +12,8 @@ const PAGES_WITH_IMAGES = new Set([
   'bed-bug-control','flea-tick-control','rodent-control','wasp-hornet-control',
 ])
 
+const IMAGE_COL = ['image_1_url', 'image_2_url', 'image_3_url'] as const
+
 interface Props {
   selectedSlug: string
   form: ContentForm
@@ -30,13 +32,20 @@ function PageImageUpload({ slug, index }: { slug: string; index: number }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [currentUrl, setCurrentUrl] = useState<string | null>(null)
+  const colName = IMAGE_COL[index]
   const label = `Image ${index + 1}`
 
   useEffect(() => {
     if (!tenantId) return
-    supabase.from('page_content').select('image_urls').eq('tenant_id', tenantId).eq('page_slug', slug).maybeSingle()
-      .then(({ data }) => { if (data?.image_urls?.[index]) setCurrentUrl(data.image_urls[index]) })
-  }, [tenantId, slug, index])
+    supabase.from('page_content')
+      .select('image_1_url, image_2_url, image_3_url, image_urls')
+      .eq('tenant_id', tenantId).eq('page_slug', slug).maybeSingle()
+      .then(({ data }) => {
+        const newVal = (data as Record<string, unknown> | null)?.[colName] as string | null
+        const legacyVal = (data as { image_urls?: string[] } | null)?.image_urls?.[index] ?? null
+        setCurrentUrl(newVal || legacyVal || null)
+      })
+  }, [tenantId, slug, colName, index])
 
   async function handleFile(file: File) {
     if (!tenantId || !file) return
@@ -47,11 +56,8 @@ function PageImageUpload({ slug, index }: { slug: string; index: number }) {
     setUploading(false)
     if (error) { toast.error('Upload failed: ' + error.message); return }
     const { data: { publicUrl } } = supabase.storage.from('tenant-assets').getPublicUrl(data.path)
-    const { data: existing } = await supabase.from('page_content').select('image_urls').eq('tenant_id', tenantId).eq('page_slug', slug).maybeSingle()
-    const arr = [...(existing?.image_urls || [])]
-    arr[index] = publicUrl
     await supabase.from('page_content').upsert(
-      { tenant_id: tenantId, page_slug: slug, image_urls: arr },
+      { tenant_id: tenantId, page_slug: slug, [colName]: publicUrl },
       { onConflict: 'tenant_id,page_slug' }
     )
     setCurrentUrl(publicUrl)
@@ -60,11 +66,8 @@ function PageImageUpload({ slug, index }: { slug: string; index: number }) {
 
   async function handleRemove() {
     if (!tenantId) return
-    const { data: existing } = await supabase.from('page_content').select('image_urls').eq('tenant_id', tenantId).eq('page_slug', slug).maybeSingle()
-    const arr = [...(existing?.image_urls || [])]
-    arr[index] = null
     await supabase.from('page_content').upsert(
-      { tenant_id: tenantId, page_slug: slug, image_urls: arr },
+      { tenant_id: tenantId, page_slug: slug, [colName]: '' },
       { onConflict: 'tenant_id,page_slug' }
     )
     setCurrentUrl(null)
@@ -98,34 +101,60 @@ function HeroImageUpload({ slug }: { slug: string }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [currentUrl, setCurrentUrl] = useState<string | null>(null)
+
   useEffect(() => {
     if (!tenantId) return
-    supabase.from('page_content').select('image_url').eq('tenant_id', tenantId).eq('page_slug', slug).maybeSingle()
-      .then(({ data }) => { if (data?.image_url) setCurrentUrl(data.image_url) })
+    supabase.from('page_content')
+      .select('page_hero_image_url, image_url')
+      .eq('tenant_id', tenantId).eq('page_slug', slug).maybeSingle()
+      .then(({ data }) => {
+        const d = data as { page_hero_image_url?: string | null; image_url?: string | null } | null
+        setCurrentUrl(d?.page_hero_image_url || d?.image_url || null)
+      })
   }, [tenantId, slug])
+
   async function handleFile(file: File) {
     if (!tenantId || !file) return
     setUploading(true)
-    const { data, error } = await supabase.storage.from('tenant-assets').upload(`${tenantId}/pages/${slug}/hero.${file.name.split('.').pop()}`, file, { upsert: true })
+    const { data, error } = await supabase.storage.from('tenant-assets').upload(
+      `${tenantId}/pages/${slug}/hero.${file.name.split('.').pop()}`, file, { upsert: true }
+    )
     setUploading(false)
     if (error) { toast.error('Upload failed: ' + error.message); return }
     const { data: { publicUrl } } = supabase.storage.from('tenant-assets').getPublicUrl(data.path)
-    await supabase.from('page_content').upsert({ tenant_id: tenantId, page_slug: slug, image_url: publicUrl }, { onConflict: 'tenant_id,page_slug' })
+    await supabase.from('page_content').upsert(
+      { tenant_id: tenantId, page_slug: slug, page_hero_image_url: publicUrl },
+      { onConflict: 'tenant_id,page_slug' }
+    )
     setCurrentUrl(publicUrl); toast.success('Hero image uploaded!')
   }
+
   async function handleRemove() {
     if (!tenantId) return
-    await supabase.from('page_content').upsert({ tenant_id: tenantId, page_slug: slug, image_url: '' }, { onConflict: 'tenant_id,page_slug' })
+    await supabase.from('page_content').upsert(
+      { tenant_id: tenantId, page_slug: slug, page_hero_image_url: '' },
+      { onConflict: 'tenant_id,page_slug' }
+    )
     setCurrentUrl(null); toast.success('Hero image removed.')
   }
+
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">Hero Image</label>
-      <p className="text-xs text-gray-400 mb-2">Background image for the page hero banner. Recommended: 1600×600px.</p>
-      {currentUrl && <div className="mb-3 relative inline-block"><img src={currentUrl} alt="" className="h-24 w-40 object-cover rounded-lg border border-gray-200" /><button onClick={handleRemove} className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hover:bg-red-600" title="Remove">×</button></div>}
-      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = '' }} />
-      <button onClick={() => inputRef.current?.click()} disabled={uploading} className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition disabled:opacity-50">
-        {uploading ? 'Uploading...' : currentUrl ? '🔄 Replace Hero' : '🖼️ Upload Hero Image'}
+      <label className="block text-sm font-medium text-gray-700 mb-1">Page Hero Image</label>
+      <p className="text-xs text-gray-400 mb-2">
+        Optional. Overrides the Master Hero for this page only. Leave blank to use the Master Hero set in Settings → Hero Media.
+      </p>
+      {currentUrl && (
+        <div className="mb-3 relative inline-block">
+          <img src={currentUrl} alt="" className="h-24 w-40 object-cover rounded-lg border border-gray-200" />
+          <button onClick={handleRemove} className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hover:bg-red-600" title="Remove">×</button>
+        </div>
+      )}
+      <input ref={inputRef} type="file" accept="image/*" className="hidden"
+        onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = '' }} />
+      <button onClick={() => inputRef.current?.click()} disabled={uploading}
+        className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition disabled:opacity-50">
+        {uploading ? 'Uploading...' : currentUrl ? '🔄 Replace Hero' : '🖼️ Upload Page Hero Image'}
       </button>
     </div>
   )
