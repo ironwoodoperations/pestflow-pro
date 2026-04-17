@@ -64,6 +64,7 @@ export default function BrandingSection() {
     if (error) { toast.error('Failed to save branding settings.'); return }
     applyShellTheme(form.template, form.primary_color, form.accent_color)
     localStorage.setItem('pfp_template', form.template)
+    try { localStorage.removeItem(`pfp_tenant_boot_v2:${window.location.hostname}`); delete (window as any).__TENANT_BOOT__ } catch {}
     toast.success('Branding settings saved!')
   }
 

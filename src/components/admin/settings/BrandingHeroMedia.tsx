@@ -79,7 +79,7 @@ export default function BrandingHeroMedia() {
     setSaving(true)
     const { error } = await supabase.from('settings').upsert({ tenant_id: tenantId, key: 'hero_media', value }, { onConflict: 'tenant_id,key' })
     setSaving(false)
-    if (error) toast.error('Failed to save.'); else { clearHeroCacheImageUrl(); if (tenantId) clearHeroMemCache(tenantId); toast.success('Hero media saved!') }
+    if (error) toast.error('Failed to save.'); else { clearHeroCacheImageUrl(); if (tenantId) clearHeroMemCache(tenantId); try { localStorage.removeItem(`pfp_tenant_boot_v2:${window.location.hostname}`); delete (window as any).__TENANT_BOOT__ } catch {}; toast.success('Hero media saved!') }
   }
 
   function handleRemove() { setMedia({ type: mode === 'image' ? 'image' : videoSub, url: '' }); setConfirm(false) }
