@@ -252,7 +252,7 @@ Deno.serve(async (req: Request) => {
         facebook_page_id:    '',
       }},
       { tenant_id: tenantId, key: 'onboarding_complete', value: { complete: false } },
-      { tenant_id: tenantId, key: 'hero_media',           value: { youtube_id: '', thumbnail_url: '' } },
+      { tenant_id: tenantId, key: 'hero_media',           value: { master_hero_image_url: '', image_url: '', mode: 'image', url: '', thumbnail_url: '', video_url: '', youtube_id: '' } },
       { tenant_id: tenantId, key: 'holiday_mode',         value: { enabled: false, holiday: '', message: '', auto_schedule: '' } },
       { tenant_id: tenantId, key: 'notifications',        value: { cc_email: '', lead_email: resolvedAdminEmail || email } },
       { tenant_id: tenantId, key: 'demo_mode',            value: { active: false, seeded_at: '' } },
