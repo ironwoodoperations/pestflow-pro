@@ -60,5 +60,15 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next|_admin|tenant|favicon.ico|api).*)'],
+  matcher: [
+    /*
+     * Match all paths except:
+     * - _next (Next.js internals)
+     * - _admin (Vite SPA assets)
+     * - _tenant (internal rewrite target)
+     * - api (API routes)
+     * - Paths with a file extension (images, fonts, manifest.json, etc.)
+     */
+    '/((?!_next|_admin|_tenant|api|.*\\..*).*)',
+  ],
 };
