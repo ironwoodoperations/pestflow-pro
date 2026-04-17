@@ -1,6 +1,43 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <script>
+      (function() {
+        try {
+          var host = window.location.hostname;
+          var key = 'pfp_tenant_boot_v2:' + host;
+          var raw = localStorage.getItem(key);
+          if (raw) {
+            var t = JSON.parse(raw);
+            if (t && t.primary_color) {
+              var r = document.documentElement;
+              r.style.setProperty('--color-primary', t.primary_color);
+              r.style.setProperty('--color-accent', t.accent_color || '#f59e0b');
+              r.style.setProperty('--color-nav-bg', t.primary_color);
+              r.style.setProperty('--color-footer-bg', t.primary_color);
+              r.style.setProperty('--color-btn-bg', t.accent_color || '#f59e0b');
+              r.style.setProperty('--color-bg-hero', t.primary_color);
+              r.style.setProperty('--color-heading', t.primary_color);
+              r.style.setProperty('--color-nav-text', '#ffffff');
+              r.style.setProperty('--color-footer-text', '#ffffff');
+              if (t.id) window.__TENANT_BOOT__ = t;
+            }
+          }
+        } catch(e) {}
+      })();
+    </script>
+    <style id="tenant-base">
+      html, body {
+        background: #ffffff;
+        margin: 0;
+        padding: 0;
+        font-family: system-ui, sans-serif;
+      }
+      #root {
+        min-height: 100vh;
+        background: #ffffff;
+      }
+    </style>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#10b981" />
