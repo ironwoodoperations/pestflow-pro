@@ -68,10 +68,10 @@ export default function IntakePage() {
     const br = form.branding
     const existingBr = tokenRow.prospects?.branding || {}
     try {
-      await supabase.from('prospect_activity').insert({
+      await Promise.resolve(supabase.from('prospect_activity').insert({
         prospect_id: tokenRow.prospect_id,
         actor: 'system', action: 'intake_submitted', detail: 'Client submitted intake form',
-      }).then(() => {}).catch(e => console.error('[activity log]', e))
+      })).then(() => {}).catch((e: unknown) => console.error('[activity log]', e))
 
       const { error } = await supabase.from('prospects').update({
         intake_data: intakeData,

@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase';
 const cache = new Map<string, Record<string, any>>();
 const pending = new Set<string>();
 
-export function usePageContent(tenantId: string | null, pageSlug: string) {
+export function usePageContent(tenantId: string | null, pageSlug: string = '') {
   const cacheKey = tenantId ? `${tenantId}:${pageSlug}` : null;
   const [content, setContent] = useState<Record<string, any> | null>(
     () => (cacheKey ? cache.get(cacheKey) ?? null : null)
@@ -27,23 +27,23 @@ export function usePageContent(tenantId: string | null, pageSlug: string) {
     if (pending.has(cacheKey)) return;
 
     pending.add(cacheKey);
-    supabase
-      .from('page_content')
-      .select('*')
-      .eq('tenant_id', tenantId)
-      .eq('page_slug', pageSlug)
-      .maybeSingle()
-      .then(({ data }) => {
-        const result = data ?? {};
-        cache.set(cacheKey, result);
-        pending.delete(cacheKey);
-        setContent(result);
-        setLoading(false);
-      })
-      .catch(() => {
-        pending.delete(cacheKey);
-        setLoading(false);
-      });
+    Promise.resolve(
+      supabase
+        .from('page_content')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .eq('page_slug', pageSlug)
+        .maybeSingle()
+    ).then(({ data }) => {
+      const result = data ?? {};
+      cache.set(cacheKey, result);
+      pending.delete(cacheKey);
+      setContent(result);
+      setLoading(false);
+    }).catch(() => {
+      pending.delete(cacheKey);
+      setLoading(false);
+    });
   }, [cacheKey, tenantId, pageSlug]);
 
   return { content, loading };
