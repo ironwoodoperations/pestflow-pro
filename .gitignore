@@ -31,3 +31,9 @@ dist-ssr
 # AI session context files
 pestflow-pro-context-s*.md
 *-context-session*.md
+
+# Next.js
+.next/
+
+# Vite build output (now inside Next.js public folder)
+public/_admin/
