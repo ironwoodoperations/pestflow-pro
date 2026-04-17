@@ -1,7 +1,6 @@
 {
+  "framework": "nextjs",
   "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "framework": "vite",
   "redirects": [
     { "source": "/about/", "destination": "/about", "permanent": true },
     { "source": "/accessibility/", "destination": "/", "permanent": true },
@@ -37,6 +36,5 @@
     { "source": "/termite-inspections/", "destination": "/termite-inspections", "permanent": true },
     { "source": "/wasp-hornet-control/", "destination": "/wasp-hornet-control", "permanent": true },
     { "source": "/whitehouse-tx/", "destination": "/whitehouse-tx", "permanent": true }
-  ],
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  ]
 }
