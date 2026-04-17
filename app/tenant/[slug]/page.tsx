@@ -1,38 +1,37 @@
-'use client';
+import { resolveTenantBySlug } from '../../../shared/lib/tenant/resolve';
+import { getPageContent, getTestimonials, getAllBlogPosts, getHeroMedia } from './_lib/queries';
+import { MetroHero } from './_components/MetroHero';
+import { ServicesGrid } from './_components/sections/ServicesGrid';
+import { WhyChooseUs } from './_components/sections/WhyChooseUs';
+import { Process } from './_components/sections/Process';
+import { FaqTabs } from './_components/sections/FaqTabs';
+import { Reviews } from './_components/sections/Reviews';
+import { CtaBanner } from './_components/sections/CtaBanner';
+import { BlogCarousel } from './_components/sections/BlogCarousel';
 
-import { useTenant } from './TenantProvider';
+type Params = { params: { slug: string } };
 
-export default function TenantPage() {
-  const tenant = useTenant();
+export default async function TenantHome({ params }: Params) {
+  const tenant = await resolveTenantBySlug(params.slug);
+  if (!tenant) return null;
+
+  const [content, testimonials, blogPosts, heroMedia] = await Promise.all([
+    getPageContent(tenant.id, 'home'),
+    getTestimonials(tenant.id),
+    getAllBlogPosts(tenant.id),
+    getHeroMedia(tenant.id),
+  ]);
 
   return (
-    <main
-      style={{
-        padding: '4rem 2rem',
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-        maxWidth: 720,
-        margin: '0 auto',
-      }}
-    >
-      <h1
-        style={{
-          color: 'var(--color-primary)',
-          fontSize: '2.5rem',
-          margin: 0,
-          lineHeight: 1.1,
-        }}
-      >
-        Hello from {tenant.name}
-      </h1>
-
-      <p style={{ color: 'var(--color-accent)', marginTop: '1rem' }}>
-        Template: {tenant.template} · Primary: {tenant.primary_color} ·
-        Accent: {tenant.accent_color}
-      </p>
-
-      <p style={{ marginTop: '2rem', opacity: 0.6, fontSize: '0.9rem' }}>
-        Server-rendered. Shell port begins S142.
-      </p>
-    </main>
+    <>
+      <MetroHero tenant={tenant} content={content} heroMedia={heroMedia} />
+      <ServicesGrid />
+      <WhyChooseUs businessName={tenant.business_name || tenant.name} />
+      <Process />
+      <FaqTabs />
+      <Reviews testimonials={testimonials as { id: string; name: string; review_text: string; rating?: number }[]} />
+      <CtaBanner phone={tenant.phone} businessName={tenant.business_name || tenant.name} />
+      <BlogCarousel posts={blogPosts as { id: string; title: string; slug: string; published_at?: string; excerpt?: string }[]} />
+    </>
   );
 }
