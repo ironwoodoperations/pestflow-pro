@@ -6,10 +6,11 @@ const STRIPE = 'repeating-linear-gradient(15deg, transparent, transparent 30px, 
 interface Props {
   tenant: Tenant;
   content: Record<string, unknown> | null;
+  heroImageUrl?: string | null;
 }
 
-export function MetroHero({ tenant, content }: Props) {
-  const c = content as { hero_headline?: string; title?: string; subtitle?: string; image_urls?: string[]; image_url?: string } | null;
+export function MetroHero({ tenant, content, heroImageUrl = null }: Props) {
+  const c = content as { hero_headline?: string; title?: string; subtitle?: string } | null;
 
   const headline = c?.hero_headline?.trim()
     || c?.title?.trim()
@@ -21,7 +22,7 @@ export function MetroHero({ tenant, content }: Props) {
     : 'Licensed, insured, and ready to protect your home and business.';
   const subtext = c?.subtitle || fallbackSubtext;
 
-  const bgImage = c?.image_urls?.[0] || c?.image_url || null;
+  const bgImage = heroImageUrl;
 
   return (
     <section

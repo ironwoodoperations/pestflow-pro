@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChevronRight, Shield, Leaf, MapPin, Star } from 'lucide-react';
 import { resolveTenantBySlug } from '../../../../shared/lib/tenant/resolve';
-import { getPageContent, getLocation, getAllLocations } from '../_lib/queries';
+import { getPageContent, getLocation, getAllLocations, getHeroMedia } from '../_lib/queries';
+import { resolveHeroImage } from '../_lib/heroImage';
 import { SERVICE_DATA, PEST_IMAGES, SERVICE_SLUGS } from '../_lib/serviceData';
 import { ServiceTabs } from '../_components/service/ServiceTabs';
 import { WhyChooseUs } from '../_components/sections/WhyChooseUs';
@@ -119,8 +120,12 @@ export default async function ServicePage({ params }: Params) {
   }
 
   const svc = SERVICE_DATA[params.service];
-  const content = await getPageContent(tenant.id, params.service);
+  const [content, heroMedia] = await Promise.all([
+    getPageContent(tenant.id, params.service),
+    getHeroMedia(tenant.id),
+  ]);
 
+  const heroImageUrl = resolveHeroImage(content, heroMedia);
   const heroTitle = (content as { title?: string } | null)?.title || svc.heroTitle;
   const heroSubtitle = (content as { subtitle?: string } | null)?.subtitle || svc.heroSubtitle;
   const introP1 = (content as { intro?: string } | null)?.intro || svc.introP1;
@@ -132,7 +137,10 @@ export default async function ServicePage({ params }: Params) {
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
 
       <section className="py-16 md:py-20 relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, var(--color-bg-hero, #0a1628) 0%, var(--color-bg-hero-end, var(--color-primary)) 100%)' }}>
+        style={heroImageUrl
+          ? { backgroundImage: `url(${heroImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+          : { background: 'linear-gradient(135deg, var(--color-bg-hero, #0a1628) 0%, var(--color-bg-hero-end, var(--color-primary)) 100%)' }}>
+        {heroImageUrl && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 0, pointerEvents: 'none' }} />}
         <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
           <h1 className="text-4xl md:text-6xl font-bold text-white mb-3">{heroTitle}</h1>
           <p className="text-white/70 text-lg">{heroSubtitle}</p>

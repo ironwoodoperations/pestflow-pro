@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { resolveTenantBySlug } from '../../../../shared/lib/tenant/resolve';
-import { getAllBlogPosts, getPageContent } from '../_lib/queries';
+import { getAllBlogPosts, getPageContent, getHeroMedia } from '../_lib/queries';
+import { resolveHeroImage } from '../_lib/heroImage';
 
 const PLACEHOLDER_POSTS = [
   { id: '1', title: '5 Signs You Have a Termite Problem', slug: '5-signs-termite-problem', excerpt: 'Learn the early warning signs of termite damage before it becomes costly.', published_at: '2026-03-15', intro_image: null },
@@ -15,14 +16,16 @@ export default async function BlogPage({ params }: Params) {
   const tenant = await resolveTenantBySlug(params.slug);
   if (!tenant) notFound();
 
-  const [rawPosts, content] = await Promise.all([
+  const [rawPosts, content, heroMedia] = await Promise.all([
     getAllBlogPosts(tenant.id),
     getPageContent(tenant.id, 'blog'),
+    getHeroMedia(tenant.id),
   ]);
 
   const c = content as { title?: string; subtitle?: string } | null;
   const heroTitle = c?.title    || 'Pest Control Blog';
   const heroSub   = c?.subtitle || 'Tips, guides, and news from our pest control experts.';
+  const heroImageUrl = resolveHeroImage(content, heroMedia);
 
   type BlogPost = { id: string; title: string; slug: string; excerpt?: string | null; published_at?: string | null; intro_image?: string | null };
   const posts: BlogPost[] = (rawPosts.length > 0 ? rawPosts : PLACEHOLDER_POSTS) as BlogPost[];
@@ -30,8 +33,11 @@ export default async function BlogPage({ params }: Params) {
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
 
-      <section className="py-20 md:py-28" style={{ background: 'linear-gradient(135deg, var(--color-bg-hero, #0a1628) 0%, var(--color-bg-hero-end, var(--color-primary)) 100%)' }}>
-        <div className="max-w-4xl mx-auto px-4 text-center">
+      <section className="relative py-20 md:py-28" style={heroImageUrl
+        ? { backgroundImage: `url(${heroImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+        : { background: 'linear-gradient(135deg, var(--color-bg-hero, #0a1628) 0%, var(--color-bg-hero-end, var(--color-primary)) 100%)' }}>
+        {heroImageUrl && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 0, pointerEvents: 'none' }} />}
+        <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
           <h1 className="text-5xl md:text-7xl font-bold mb-4 text-white">{heroTitle}</h1>
           <p className="text-xl text-white/75">{heroSub}</p>
         </div>

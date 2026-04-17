@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { Star } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { resolveTenantBySlug } from '../../../../shared/lib/tenant/resolve';
-import { getTestimonials, getPageContent } from '../_lib/queries';
+import { getTestimonials, getPageContent, getHeroMedia } from '../_lib/queries';
+import { resolveHeroImage } from '../_lib/heroImage';
 
 const PLACEHOLDER_REVIEWS = [
   { id: '1', author_name: 'Sarah M.', review_text: 'They showed up same day and solved our ant problem completely. Best pest company around!', rating: 5, source: 'Google' },
@@ -19,14 +20,16 @@ export default async function ReviewsPage({ params }: Params) {
   const tenant = await resolveTenantBySlug(params.slug);
   if (!tenant) notFound();
 
-  const [rawReviews, content] = await Promise.all([
+  const [rawReviews, content, heroMedia] = await Promise.all([
     getTestimonials(tenant.id),
     getPageContent(tenant.id, 'reviews'),
+    getHeroMedia(tenant.id),
   ]);
 
   const c = content as { title?: string; subtitle?: string } | null;
   const heroTitle = c?.title    || 'What Our Customers Say';
   const heroSub   = c?.subtitle || 'Real reviews from real customers.';
+  const heroImageUrl = resolveHeroImage(content, heroMedia);
 
   type Review = { id: string; author_name: string; review_text: string; rating: number; source?: string | null };
   const reviews: Review[] = (rawReviews.length > 0 ? rawReviews : PLACEHOLDER_REVIEWS) as Review[];
@@ -34,8 +37,11 @@ export default async function ReviewsPage({ params }: Params) {
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
 
-      <section className="py-20 md:py-28" style={{ background: 'linear-gradient(135deg, var(--color-bg-hero, #0a1628) 0%, var(--color-bg-hero-end, var(--color-primary)) 100%)' }}>
-        <div className="max-w-4xl mx-auto px-4 text-center">
+      <section className="relative py-20 md:py-28" style={heroImageUrl
+        ? { backgroundImage: `url(${heroImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+        : { background: 'linear-gradient(135deg, var(--color-bg-hero, #0a1628) 0%, var(--color-bg-hero-end, var(--color-primary)) 100%)' }}>
+        {heroImageUrl && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 0, pointerEvents: 'none' }} />}
+        <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
           <h1 className="text-5xl md:text-7xl font-bold mb-4 text-white">{heroTitle}</h1>
           <p className="text-xl text-white/75">{heroSub}</p>
         </div>

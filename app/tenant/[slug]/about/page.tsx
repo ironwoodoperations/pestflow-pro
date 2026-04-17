@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { Shield, Eye, Award, Zap, Star, Home, Heart, Bug } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { resolveTenantBySlug } from '../../../../shared/lib/tenant/resolve';
-import { getPageContent, getTeamMembers } from '../_lib/queries';
+import { getPageContent, getTeamMembers, getHeroMedia } from '../_lib/queries';
+import { resolveHeroImage } from '../_lib/heroImage';
 
 const VALUES = [
   { Icon: Shield, title: 'Science-Backed Solutions', desc: 'Every treatment plan is based on Integrated Pest Management (IPM) principles. We target the root cause, not just the symptoms.' },
@@ -19,20 +20,25 @@ export default async function AboutPage({ params }: Params) {
   const tenant = await resolveTenantBySlug(params.slug);
   if (!tenant) notFound();
 
-  const [content, team] = await Promise.all([
+  const [content, team, heroMedia] = await Promise.all([
     getPageContent(tenant.id, 'about'),
     getTeamMembers(tenant.id),
+    getHeroMedia(tenant.id),
   ]);
 
-  const c = content as { title?: string; subtitle?: string; image_urls?: string[] } | null;
+  const c = content as { title?: string; subtitle?: string; image_1_url?: string; image_urls?: string[] } | null;
   const heroTitle  = c?.title    || 'About Us';
   const heroSub    = c?.subtitle || 'Family-owned. Science-backed.';
-  const aboutImage = c?.image_urls?.[0] || '/images/pests/team.jpg';
+  const aboutImage = c?.image_1_url || c?.image_urls?.[0] || '/images/pests/team.jpg';
+  const heroImageUrl = resolveHeroImage(content, heroMedia);
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
 
-      <section className="relative py-20 md:py-28" style={{ background: 'linear-gradient(135deg, var(--color-bg-hero, #0a1628) 0%, var(--color-bg-hero-end, var(--color-primary)) 100%)' }}>
+      <section className="relative py-20 md:py-28" style={heroImageUrl
+        ? { backgroundImage: `url(${heroImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+        : { background: 'linear-gradient(135deg, var(--color-bg-hero, #0a1628) 0%, var(--color-bg-hero-end, var(--color-primary)) 100%)' }}>
+        {heroImageUrl && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 0, pointerEvents: 'none' }} />}
         <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
           <h1 className="text-5xl md:text-7xl font-bold mb-4 text-white">{heroTitle}</h1>
           <p className="text-xl text-white/75">{heroSub}</p>

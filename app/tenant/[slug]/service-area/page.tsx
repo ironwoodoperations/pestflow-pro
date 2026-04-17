@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { MapPin } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { resolveTenantBySlug } from '../../../../shared/lib/tenant/resolve';
-import { getAllLocations, getPageContent } from '../_lib/queries';
+import { getAllLocations, getPageContent, getHeroMedia } from '../_lib/queries';
+import { resolveHeroImage } from '../_lib/heroImage';
 import { formatPhone } from '../../../../shared/lib/formatPhone';
 
 const FALLBACK_CITIES = [
@@ -16,14 +17,16 @@ export default async function ServiceAreaPage({ params }: Params) {
   const tenant = await resolveTenantBySlug(params.slug);
   if (!tenant) notFound();
 
-  const [rawLocs, content] = await Promise.all([
+  const [rawLocs, content, heroMedia] = await Promise.all([
     getAllLocations(tenant.id),
     getPageContent(tenant.id, 'service-area'),
+    getHeroMedia(tenant.id),
   ]);
 
   const c = content as { title?: string; subtitle?: string } | null;
   const heroTitle = c?.title    || 'Our Service Area';
   const heroSub   = c?.subtitle || 'Professional pest control in your community and surrounding areas.';
+  const heroImageUrl = resolveHeroImage(content, heroMedia);
 
   type LocItem = { slug: string; city: string };
   const locations: LocItem[] = (rawLocs.length > 0 ? rawLocs : FALLBACK_CITIES) as LocItem[];
@@ -32,9 +35,14 @@ export default async function ServiceAreaPage({ params }: Params) {
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
 
-      <section className="relative py-20 md:py-28 px-6 text-center" style={{ background: 'linear-gradient(135deg, var(--color-bg-hero, #0a1628) 0%, var(--color-bg-hero-end, var(--color-primary)) 100%)' }}>
-        <h1 className="text-5xl md:text-7xl font-bold mb-4 text-white">{heroTitle}</h1>
-        <p className="text-xl max-w-2xl mx-auto text-white/75">{heroSub}</p>
+      <section className="relative py-20 md:py-28 px-6 text-center" style={heroImageUrl
+        ? { backgroundImage: `url(${heroImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+        : { background: 'linear-gradient(135deg, var(--color-bg-hero, #0a1628) 0%, var(--color-bg-hero-end, var(--color-primary)) 100%)' }}>
+        {heroImageUrl && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 0, pointerEvents: 'none' }} />}
+        <div className="relative z-10">
+          <h1 className="text-5xl md:text-7xl font-bold mb-4 text-white">{heroTitle}</h1>
+          <p className="text-xl max-w-2xl mx-auto text-white/75">{heroSub}</p>
+        </div>
       </section>
 
       <section className="py-16 px-6">
