@@ -3,6 +3,8 @@ import { Star } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { resolveTenantBySlug } from '../../../../shared/lib/tenant/resolve';
 
+export const revalidate = 300;
+
 export async function generateStaticParams() {
   return [];
 }
