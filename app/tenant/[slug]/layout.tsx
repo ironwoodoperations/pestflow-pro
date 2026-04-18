@@ -1,5 +1,3 @@
-export const revalidate = 300;
-
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { resolveTenantBySlug } from '../../../shared/lib/tenant/resolve';
