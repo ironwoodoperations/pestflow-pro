@@ -175,7 +175,7 @@ export default async function ServicePage({ params }: Params) {
               </Link>
               {phone && (
                 <a href={`tel:${phone.replace(/\D/g, '')}`} className="font-semibold px-6 py-3 rounded-lg text-center transition hover:bg-gray-50" style={{ border: '2px solid var(--color-primary)', color: 'var(--color-primary)' }}>
-                  Call {phone}
+                  Call {formatPhone(phone)}
                 </a>
               )}
             </div>

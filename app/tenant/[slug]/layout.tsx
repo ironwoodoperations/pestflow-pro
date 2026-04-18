@@ -7,6 +7,7 @@ import { MetroNavbar } from './_components/MetroNavbar';
 import { MetroFooter } from './_components/MetroFooter';
 import { ModernProNavbar } from './_shells/modern-pro/ModernProNavbar';
 import { ModernProFooter } from './_shells/modern-pro/ModernProFooter';
+import { computeShellCssVars, shellCssVarsString } from '../../../shared/lib/shellCssVars';
 
 type Params = { params: { slug: string } };
 
@@ -34,11 +35,9 @@ export default async function TenantLayout({
     getSocialLinks(tenant.id),
   ]);
 
-  const cssVars =
-    `:root{` +
-    `--color-primary:${tenant.primary_color};` +
-    `--color-accent:${tenant.accent_color};` +
-    `}`;
+  const cssVars = shellCssVarsString(
+    computeShellCssVars(tenant.template, tenant.primary_color, tenant.accent_color)
+  );
 
   const shell = tenant.template;
 
