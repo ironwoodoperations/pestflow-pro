@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
     }
     revalidateTag(cacheTags.page(body.tenantId, body.slug));
     revalidateTag(cacheTags.allPages(body.tenantId));
-    revalidatePath(`/tenant/${body.tenantSlug}/${body.slug}`);
+    revalidatePath('/tenant/[slug]', 'layout');
   } else if (body.type === 'settings') {
     revalidateTag(cacheTags.settings(body.tenantId));
     revalidatePath(`/tenant/${body.tenantSlug}`, 'layout');
