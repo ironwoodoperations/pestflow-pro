@@ -1,9 +1,1 @@
 export { ModernProNavbar } from './ModernProNavbar';
-export { ModernProHero } from './ModernProHero';
-export { ModernProFooter } from './ModernProFooter';
-export { ModernProTrustBar } from './ModernProTrustBar';
-export { ModernProServicesGrid } from './ModernProServicesGrid';
-export { ModernProAboutStrip } from './ModernProAboutStrip';
-export { ModernProWhyChooseUs } from './ModernProWhyChooseUs';
-export { ModernProTestimonials } from './ModernProTestimonials';
-export { ModernProCtaBanner } from './ModernProCtaBanner';
