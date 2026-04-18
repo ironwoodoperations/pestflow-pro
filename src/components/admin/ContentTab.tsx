@@ -180,11 +180,17 @@ export default function ContentTab() {
     if (error) { console.error('Save failed:', error); toast.error(`Save failed: ${error.message}`) }
     else {
       invalidatePageContent(tenantId, selectedSlug)
-      toast.success('Content saved!')
       const { data: sessionData } = await supabase.auth.getSession()
       const accessToken = sessionData.session?.access_token
       if (accessToken) {
-        await triggerRevalidate({ type: 'page', tenantId, slug: selectedSlug }, accessToken)
+        const ok = await triggerRevalidate({ type: 'page', tenantId, slug: selectedSlug }, accessToken)
+        if (ok) {
+          toast.success('Content saved!')
+        } else {
+          toast.success('Saved to DB — site refresh may take up to 60 min', { description: 'Cache refresh failed. Content was saved but the public page may show stale copy until the cache expires.' })
+        }
+      } else {
+        toast.success('Content saved!')
       }
     }
   }
