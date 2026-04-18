@@ -1,16 +1,28 @@
 import { cache } from 'react';
+import { unstable_cache } from 'next/cache';
 import { getServerSupabase } from '../../../../shared/lib/supabase/server';
+import { cacheTags } from '../../../_lib/cacheTags';
 
-export const getPageContent = cache(async (tenantId: string, pageSlug: string) => {
-  const supabase = getServerSupabase();
-  const { data } = await supabase
-    .from('page_content')
-    .select('*')
-    .eq('tenant_id', tenantId)
-    .eq('page_slug', pageSlug)
-    .maybeSingle();
-  return data;
-});
+export const getPageContent = cache(
+  (tenantId: string, pageSlug: string) =>
+    unstable_cache(
+      async () => {
+        const supabase = getServerSupabase();
+        const { data } = await supabase
+          .from('page_content')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .eq('page_slug', pageSlug)
+          .maybeSingle();
+        return data;
+      },
+      ['page_content', tenantId, pageSlug],
+      {
+        tags: [cacheTags.page(tenantId, pageSlug), cacheTags.allPages(tenantId)],
+        revalidate: 3600,
+      }
+    )()
+);
 
 export const getAllBlogPosts = cache(async (tenantId: string) => {
   const supabase = getServerSupabase();
@@ -66,16 +78,26 @@ export const getTestimonials = cache(async (tenantId: string) => {
   return data ?? [];
 });
 
-export const getAllServicePages = cache(async (tenantId: string) => {
-  const EXCLUDE = ['home', 'about', 'contact', 'faq', 'quote'];
-  const supabase = getServerSupabase();
-  const { data } = await supabase
-    .from('page_content')
-    .select('page_slug, title, subtitle, image_url')
-    .eq('tenant_id', tenantId)
-    .not('page_slug', 'in', `(${EXCLUDE.map((s) => `"${s}"`).join(',')})`);
-  return data ?? [];
-});
+export const getAllServicePages = cache(
+  (tenantId: string) =>
+    unstable_cache(
+      async () => {
+        const EXCLUDE = ['home', 'about', 'contact', 'faq', 'quote'];
+        const supabase = getServerSupabase();
+        const { data } = await supabase
+          .from('page_content')
+          .select('page_slug, title, subtitle, image_url')
+          .eq('tenant_id', tenantId)
+          .not('page_slug', 'in', `(${EXCLUDE.map((s) => `"${s}"`).join(',')})`);
+        return data ?? [];
+      },
+      ['all_service_pages', tenantId],
+      {
+        tags: [cacheTags.allPages(tenantId)],
+        revalidate: 3600,
+      }
+    )()
+);
 
 export const getSocialLinks = cache(async (tenantId: string) => {
   const supabase = getServerSupabase();
