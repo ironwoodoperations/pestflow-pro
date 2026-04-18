@@ -20,8 +20,8 @@ const STANDARD_SLUGS = [
 const toSlug = (title: string) =>
   title.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
-interface ContentForm { title: string; subtitle: string; intro: string; video_url: string; image_url: string }
-const EMPTY_FORM: ContentForm = { title: '', subtitle: '', intro: '', video_url: '', image_url: '' }
+interface ContentForm { title: string; subtitle: string; intro: string; video_url: string; image_url: string; pageHeroImageUrl: string; image1Url: string; image2Url: string; image3Url: string }
+const EMPTY_FORM: ContentForm = { title: '', subtitle: '', intro: '', video_url: '', image_url: '', pageHeroImageUrl: '', image1Url: '', image2Url: '', image3Url: '' }
 
 const PEST_SLUGS = ['spider-control', 'mosquito-control', 'ant-control', 'wasp-hornet-control', 'roach-control', 'flea-tick-control', 'rodent-control', 'scorpion-control', 'bed-bug-control', 'pest-control', 'termite-control', 'termite-inspections']
 
@@ -77,9 +77,10 @@ export default function ContentTab() {
     let cancelled = false
     async function run() {
       setLoading(true)
-      const { data } = await supabase.from('page_content').select('title, subtitle, intro, video_url, image_url, hero_headline').eq('tenant_id', tenantId).eq('page_slug', selectedSlug).maybeSingle()
+      const { data } = await supabase.from('page_content').select('title, subtitle, intro, video_url, image_url, hero_headline, page_hero_image_url, image_1_url, image_2_url, image_3_url').eq('tenant_id', tenantId).eq('page_slug', selectedSlug).maybeSingle()
       if (!cancelled) {
-        setForm({ title: data?.title || '', subtitle: data?.subtitle || '', intro: data?.intro || '', video_url: data?.video_url || '', image_url: data?.image_url || '' })
+        const d = data as Record<string, string | null> | null
+        setForm({ title: d?.title || '', subtitle: d?.subtitle || '', intro: d?.intro || '', video_url: d?.video_url || '', image_url: d?.image_url || '', pageHeroImageUrl: d?.page_hero_image_url || '', image1Url: d?.image_1_url || '', image2Url: d?.image_2_url || '', image3Url: d?.image_3_url || '' })
         // For home page, initialize hero headline from page_content (preferred) or fall back to title
         if (selectedSlug === 'home') {
           const fromPage = (data as any)?.hero_headline?.trim() || data?.title?.trim() || ''
@@ -155,8 +156,18 @@ export default function ContentTab() {
       const { data: current } = await supabase.from('page_content').select('title, subtitle, intro, video_url, image_url').eq('tenant_id', tenantId).eq('page_slug', selectedSlug).maybeSingle()
       if (current) await supabase.from('page_snapshots').insert({ tenant_id: tenantId, page_slug: selectedSlug, snapshot_type: 'original', snapshot_data: current })
     }
-    const pageRow: Record<string, unknown> = { tenant_id: tenantId, page_slug: selectedSlug, ...form }
+    const pageRow: Record<string, unknown> = {
+      tenant_id: tenantId, page_slug: selectedSlug,
+      title: form.title, subtitle: form.subtitle, intro: form.intro, video_url: form.video_url,
+      page_hero_image_url: form.pageHeroImageUrl || null,
+      image_1_url: form.image1Url || null,
+      image_2_url: form.image2Url || null,
+      image_3_url: form.image3Url || null,
+      image_url: form.pageHeroImageUrl || form.image_url || '',
+      image_urls: [form.image1Url, form.image2Url, form.image3Url].filter(Boolean),
+    }
     if (selectedSlug === 'home') pageRow.hero_headline = heroHeadline
+    console.log('[ContentSave] upserting page_content:', pageRow)
     const { error } = await supabase.from('page_content').upsert(pageRow, { onConflict: 'tenant_id,page_slug' })
     if (selectedSlug === 'home') {
       // Also keep customization in sync for backwards compat with existing tenants
@@ -165,7 +176,7 @@ export default function ContentTab() {
       await supabase.from('settings').upsert({ tenant_id: tenantId, key: 'customization', value: merged }, { onConflict: 'tenant_id,key' })
     }
     setSaving(false)
-    if (error) toast.error('Failed to save content.')
+    if (error) { console.error('Save failed:', error); toast.error(`Save failed: ${error.message}`) }
     else { invalidatePageContent(tenantId, selectedSlug); toast.success('Content saved!') }
   }
 
@@ -175,7 +186,7 @@ export default function ContentTab() {
     const { data: snap } = await supabase.from('page_snapshots').select('snapshot_data').eq('tenant_id', tenantId).eq('page_slug', selectedSlug).eq('snapshot_type', 'original').maybeSingle()
     if (!snap?.snapshot_data) { toast.error('No original snapshot found for this page.'); setReverting(false); return }
     const orig = snap.snapshot_data as ContentForm
-    setForm({ title: orig.title || '', subtitle: orig.subtitle || '', intro: orig.intro || '', video_url: orig.video_url || '', image_url: orig.image_url || '' })
+    setForm({ title: orig.title || '', subtitle: orig.subtitle || '', intro: orig.intro || '', video_url: orig.video_url || '', image_url: orig.image_url || '', pageHeroImageUrl: '', image1Url: '', image2Url: '', image3Url: '' })
     const { error } = await supabase.from('page_content').upsert({ tenant_id: tenantId, page_slug: selectedSlug, ...orig }, { onConflict: 'tenant_id,page_slug' })
     setReverting(false)
     if (error) toast.error('Failed to revert.'); else toast.success('Reverted to original content!')
@@ -272,6 +283,7 @@ export default function ContentTab() {
               aiLoading={aiLoading} reverting={reverting} isPestPage={isPestPage}
               apiKey={apiKey} heroHeadline={heroHeadline} onHeroHeadlineChange={setHeroHeadline}
               updateField={updateField} onSave={handleSave} onGenerateAI={generateAI} onRevert={handleRevert}
+              onImageUpdate={(field, url) => updateField(field, url)}
             />
           )}
         </div>

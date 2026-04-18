@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
 import { toast } from 'sonner'
 
-interface ContentForm { title: string; subtitle: string; intro: string; video_url: string; image_url: string }
+interface ContentForm { title: string; subtitle: string; intro: string; video_url: string; image_url: string; pageHeroImageUrl: string; image1Url: string; image2Url: string; image3Url: string }
 
 const PAGES_WITH_IMAGES = new Set([
   'home','about','pest-control','termite-control','termite-inspections',
@@ -25,9 +25,10 @@ interface Props {
   onSave: () => void
   onGenerateAI: () => void
   onRevert: () => void
+  onImageUpdate?: (field: 'pageHeroImageUrl' | 'image1Url' | 'image2Url' | 'image3Url', url: string) => void
 }
 
-function PageImageUpload({ slug, index }: { slug: string; index: number }) {
+function PageImageUpload({ slug, index, onUpdate }: { slug: string; index: number; onUpdate?: (url: string) => void }) {
   const { tenantId } = useTenant()
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
@@ -62,6 +63,7 @@ function PageImageUpload({ slug, index }: { slug: string; index: number }) {
     )
     if (saveError) { toast.error('Save failed: ' + saveError.message); return }
     setCurrentUrl(publicUrl)
+    onUpdate?.(publicUrl)
     toast.success('Image uploaded!')
   }
 
@@ -73,6 +75,7 @@ function PageImageUpload({ slug, index }: { slug: string; index: number }) {
     )
     if (error) { toast.error('Remove failed: ' + error.message); return }
     setCurrentUrl(null)
+    onUpdate?.('')
     toast.success('Image removed.')
   }
 
@@ -98,7 +101,7 @@ function PageImageUpload({ slug, index }: { slug: string; index: number }) {
   )
 }
 
-function HeroImageUpload({ slug }: { slug: string }) {
+function HeroImageUpload({ slug, onUpdate }: { slug: string; onUpdate?: (url: string) => void }) {
   const { tenantId } = useTenant()
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
@@ -129,7 +132,7 @@ function HeroImageUpload({ slug }: { slug: string }) {
       { onConflict: 'tenant_id,page_slug' }
     )
     if (saveError) { toast.error('Save failed: ' + saveError.message); return }
-    setCurrentUrl(publicUrl); toast.success('Hero image uploaded!')
+    setCurrentUrl(publicUrl); onUpdate?.(publicUrl); toast.success('Hero image uploaded!')
   }
 
   async function handleRemove() {
@@ -139,7 +142,7 @@ function HeroImageUpload({ slug }: { slug: string }) {
       { onConflict: 'tenant_id,page_slug' }
     )
     if (error) { toast.error('Remove failed: ' + error.message); return }
-    setCurrentUrl(null); toast.success('Hero image removed.')
+    setCurrentUrl(null); onUpdate?.(''); toast.success('Hero image removed.')
   }
 
   return (
@@ -166,7 +169,7 @@ function HeroImageUpload({ slug }: { slug: string }) {
 
 const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-400'
 
-export default function ContentPageForm({ selectedSlug, form, loading, saving, aiLoading, reverting, isPestPage, apiKey, heroHeadline, onHeroHeadlineChange, updateField, onSave, onGenerateAI, onRevert }: Props) {
+export default function ContentPageForm({ selectedSlug, form, loading, saving, aiLoading, reverting, isPestPage, apiKey, heroHeadline, onHeroHeadlineChange, updateField, onSave, onGenerateAI, onRevert, onImageUpdate }: Props) {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
       <h3 className="text-base font-semibold text-gray-900 mb-1">Editing: <span className="text-emerald-600">{selectedSlug}</span></h3>
@@ -202,11 +205,11 @@ export default function ContentPageForm({ selectedSlug, form, loading, saving, a
 
           {PAGES_WITH_IMAGES.has(selectedSlug) && (
             <div className="space-y-4 border-t border-gray-100 pt-4">
-              <HeroImageUpload slug={selectedSlug} />
+              <HeroImageUpload slug={selectedSlug} onUpdate={url => onImageUpdate?.('pageHeroImageUrl', url)} />
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider pt-2">Additional Images</p>
-              <PageImageUpload slug={selectedSlug} index={0} />
-              <PageImageUpload slug={selectedSlug} index={1} />
-              <PageImageUpload slug={selectedSlug} index={2} />
+              <PageImageUpload slug={selectedSlug} index={0} onUpdate={url => onImageUpdate?.('image1Url', url)} />
+              <PageImageUpload slug={selectedSlug} index={1} onUpdate={url => onImageUpdate?.('image2Url', url)} />
+              <PageImageUpload slug={selectedSlug} index={2} onUpdate={url => onImageUpdate?.('image3Url', url)} />
             </div>
           )}
 
