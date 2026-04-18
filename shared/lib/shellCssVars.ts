@@ -25,7 +25,7 @@ const SHELL_THEMES: Record<string, ShellVars> = {
     '--color-btn-bg':          '#10b981',
     '--color-btn-text':        '#ffffff',
     '--color-heading':         '#0f172a',
-    '--font-heading':          'Oswald, sans-serif',
+    '--font-heading':          'var(--font-oswald), Oswald, sans-serif',
     '--font-body':             'Inter, sans-serif',
   },
   'bold-local': {
@@ -45,7 +45,7 @@ const SHELL_THEMES: Record<string, ShellVars> = {
     '--color-btn-bg':          '#f59e0b',
     '--color-btn-text':        '#1c1c1e',
     '--color-heading':         '#1c1c1e',
-    '--font-heading':          'Oswald, sans-serif',
+    '--font-heading':          'var(--font-oswald), Oswald, sans-serif',
     '--font-body':             'Inter, sans-serif',
   },
   'clean-friendly': {
@@ -65,7 +65,7 @@ const SHELL_THEMES: Record<string, ShellVars> = {
     '--color-btn-bg':          '#3b82f6',
     '--color-btn-text':        '#ffffff',
     '--color-heading':         '#1e293b',
-    '--font-heading':          'Raleway, sans-serif',
+    '--font-heading':          'var(--font-raleway), Raleway, sans-serif',
     '--font-body':             'Inter, sans-serif',
   },
   'rustic-rugged': {
@@ -85,7 +85,7 @@ const SHELL_THEMES: Record<string, ShellVars> = {
     '--color-btn-bg':          '#c2410c',
     '--color-btn-text':        '#ffffff',
     '--color-heading':         '#3b1a08',
-    '--font-heading':          'Oswald, sans-serif',
+    '--font-heading':          'var(--font-oswald), Oswald, sans-serif',
     '--font-body':             'Inter, sans-serif',
   },
   // metro-pro maps to 'metro-pro-shell' key in Vite; we keep the same here
@@ -110,6 +110,7 @@ const SHELL_THEMES: Record<string, ShellVars> = {
     '--font-body':             'Inter, sans-serif',
   },
 };
+
 
 // Per-palette hero/nav/footer overrides keyed by lowercase primary hex
 // (mirrors PALETTE_HERO in shellThemes.ts)

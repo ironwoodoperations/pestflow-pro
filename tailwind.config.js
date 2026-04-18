@@ -9,7 +9,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ['var(--font-sans)', 'Inter', 'system-ui', 'sans-serif'],
-        oswald: ['"Oswald"', 'sans-serif'],
+        oswald: ['var(--font-oswald)', '"Oswald"', 'sans-serif'],
         raleway: ['var(--font-raleway)', '"Raleway"', 'sans-serif'],
         'space-grotesk': ['"Space Grotesk"', 'sans-serif'],
         playfair: ['"Playfair Display"', 'serif'],

@@ -1,6 +1,6 @@
 import './globals.css';
 import type { ReactNode } from 'react';
-import { Inter, Raleway } from 'next/font/google';
+import { Inter, Raleway, Oswald } from 'next/font/google';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -14,13 +14,19 @@ const raleway = Raleway({
   variable: '--font-raleway',
 });
 
+const oswald = Oswald({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-oswald',
+});
+
 export const metadata = {
   title: 'PestFlow Pro',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${raleway.variable}`}>
+    <html lang="en" className={`${inter.variable} ${raleway.variable} ${oswald.variable}`}>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
