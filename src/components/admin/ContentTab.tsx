@@ -4,6 +4,7 @@ import { Plus, X } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
 import { invalidatePageContent } from '../../hooks/usePageContent'
+import { triggerRevalidate } from '../../lib/revalidate'
 import PageHelpBanner from './PageHelpBanner'
 import ContentPageForm from './ContentPageForm'
 import FaqTab from './FaqTab'
@@ -177,7 +178,15 @@ export default function ContentTab() {
     }
     setSaving(false)
     if (error) { console.error('Save failed:', error); toast.error(`Save failed: ${error.message}`) }
-    else { invalidatePageContent(tenantId, selectedSlug); toast.success('Content saved!') }
+    else {
+      invalidatePageContent(tenantId, selectedSlug)
+      toast.success('Content saved!')
+      const { data: sessionData } = await supabase.auth.getSession()
+      const accessToken = sessionData.session?.access_token
+      if (accessToken) {
+        await triggerRevalidate({ type: 'page', tenantId, slug: selectedSlug }, accessToken)
+      }
+    }
   }
 
   async function handleRevert() {
