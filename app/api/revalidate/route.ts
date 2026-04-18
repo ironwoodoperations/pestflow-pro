@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { revalidateTag } from 'next/cache';
+import { revalidateTag, revalidatePath } from 'next/cache';
 import { createClient } from '@supabase/supabase-js';
 import { cacheTags, type RevalidatePayload } from '../../_lib/cacheTags';
 
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
   }
-  if (!body.type || !body.tenantId) {
+  if (!body.type || !body.tenantId || !body.tenantSlug) {
     return NextResponse.json({ error: 'missing_fields' }, { status: 400 });
   }
 
@@ -50,15 +50,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
-  // 5. Revalidate by tag
+  // 5. Revalidate by tag + Full Route Cache
   if (body.type === 'page') {
     if (!('slug' in body) || !body.slug) {
       return NextResponse.json({ error: 'slug_required_for_page' }, { status: 400 });
     }
     revalidateTag(cacheTags.page(body.tenantId, body.slug));
     revalidateTag(cacheTags.allPages(body.tenantId));
+    revalidatePath(`/tenant/${body.tenantSlug}/${body.slug}`);
   } else if (body.type === 'settings') {
     revalidateTag(cacheTags.settings(body.tenantId));
+    revalidatePath(`/tenant/${body.tenantSlug}`, 'layout');
   } else {
     return NextResponse.json({ error: 'invalid_type' }, { status: 400 });
   }
