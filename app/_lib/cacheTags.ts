@@ -12,8 +12,23 @@ export const cacheTags = {
     `tenant:${tenantId}:pages`,
   settings: (tenantId: string) =>
     `tenant:${tenantId}:settings`,
+  testimonials: (tenantId: string) =>
+    `tenant:${tenantId}:testimonials`,
+  blog: (tenantId: string) =>
+    `tenant:${tenantId}:blog`,
+  locations: (tenantId: string) =>
+    `tenant:${tenantId}:locations`,
+  team: (tenantId: string) =>
+    `tenant:${tenantId}:team`,
+  faq: (tenantId: string) =>
+    `tenant:${tenantId}:faq`,
 } as const;
 
 export type RevalidatePayload =
-  | { type: 'page'; tenantId: string; slug: string }
-  | { type: 'settings'; tenantId: string };
+  | { type: 'page'; tenantId: string; tenantSlug: string; slug: string }
+  | { type: 'settings'; tenantId: string; tenantSlug: string }
+  | { type: 'testimonials'; tenantId: string; tenantSlug: string }
+  | { type: 'blog'; tenantId: string; tenantSlug: string }
+  | { type: 'locations'; tenantId: string; tenantSlug: string }
+  | { type: 'team'; tenantId: string; tenantSlug: string }
+  | { type: 'faq'; tenantId: string; tenantSlug: string };
