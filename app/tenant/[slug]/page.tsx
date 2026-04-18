@@ -16,6 +16,14 @@ import { ModernProAboutStrip } from './_shells/modern-pro/ModernProAboutStrip';
 import { ModernProWhyChooseUs } from './_shells/modern-pro/ModernProWhyChooseUs';
 import { ModernProTestimonials } from './_shells/modern-pro/ModernProTestimonials';
 import { ModernProCtaBanner } from './_shells/modern-pro/ModernProCtaBanner';
+import { CleanFriendlyHero } from './_shells/clean-friendly/CleanFriendlyHero';
+import { CleanFriendlyTrustBar } from './_shells/clean-friendly/CleanFriendlyTrustBar';
+import { CleanFriendlyServicesGrid } from './_shells/clean-friendly/CleanFriendlyServicesGrid';
+import { CleanFriendlyAboutStrip } from './_shells/clean-friendly/CleanFriendlyAboutStrip';
+import { CleanFriendlyWhyChooseUs } from './_shells/clean-friendly/CleanFriendlyWhyChooseUs';
+import { CleanFriendlyTestimonials } from './_shells/clean-friendly/CleanFriendlyTestimonials';
+import { CleanFriendlyFaqStrip } from './_shells/clean-friendly/CleanFriendlyFaqStrip';
+import { CleanFriendlyCtaBanner } from './_shells/clean-friendly/CleanFriendlyCtaBanner';
 
 const MODERN_PRO_SERVICES = [
   { name: 'Pest Control', slug: 'pest-control' }, { name: 'Termite Control', slug: 'termite-control' },
@@ -62,6 +70,31 @@ export default async function TenantHome({ params }: Params) {
         <ModernProWhyChooseUs businessName={tenant.business_name || tenant.name} />
         <ModernProTestimonials />
         <ModernProCtaBanner phone={tenant.phone || ''} ctaText={tenant.cta_text || 'Get a Free Quote'} />
+      </>
+    );
+  }
+
+  if (tenant.template === 'clean-friendly') {
+    const aboutContent = await getPageContent(tenant.id, 'about');
+    const aboutIntro = (aboutContent as { intro?: string } | null)?.intro || '';
+    const aboutImage = (aboutContent as { image_url?: string } | null)?.image_url || '';
+
+    return (
+      <>
+        <CleanFriendlyHero tenant={tenant} content={content} heroImageUrl={heroImageUrl} />
+        <CleanFriendlyTrustBar />
+        <CleanFriendlyServicesGrid />
+        <CleanFriendlyAboutStrip
+          businessName={tenant.business_name || tenant.name}
+          intro={aboutIntro}
+          foundedYear={tenant.founded_year ? String(tenant.founded_year) : undefined}
+          techCount={tenant.num_technicians ? String(tenant.num_technicians) : undefined}
+          imageUrl={aboutImage || undefined}
+        />
+        <CleanFriendlyWhyChooseUs businessName={tenant.business_name || tenant.name} />
+        <CleanFriendlyTestimonials testimonials={testimonials as { id: string; author_name: string; review_text: string; rating: number }[]} />
+        <CleanFriendlyFaqStrip />
+        <CleanFriendlyCtaBanner phone={tenant.phone || ''} ctaText={tenant.cta_text || 'Get a Free Quote'} />
       </>
     );
   }

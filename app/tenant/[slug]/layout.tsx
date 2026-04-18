@@ -7,6 +7,8 @@ import { MetroNavbar } from './_components/MetroNavbar';
 import { MetroFooter } from './_components/MetroFooter';
 import { ModernProNavbar } from './_shells/modern-pro/ModernProNavbar';
 import { ModernProFooter } from './_shells/modern-pro/ModernProFooter';
+import { CleanFriendlyNavbar } from './_shells/clean-friendly/CleanFriendlyNavbar';
+import { CleanFriendlyFooter } from './_shells/clean-friendly/CleanFriendlyFooter';
 import { computeShellCssVars, shellCssVarsString } from '../../../shared/lib/shellCssVars';
 
 type Params = { params: { slug: string } };
@@ -67,10 +69,23 @@ export default async function TenantLayout({
     );
   }
 
+  if (shell === 'clean-friendly') {
+    return (
+      <>
+        <style dangerouslySetInnerHTML={{ __html: cssVars }} />
+        <TenantProvider tenant={tenant}>
+          <CleanFriendlyNavbar servicePages={servicePages} />
+          <main id="main-content">{children}</main>
+          <CleanFriendlyFooter tenant={tenant} social={social} />
+        </TenantProvider>
+      </>
+    );
+  }
+
   return (
     <main style={{ padding: '4rem 2rem' }}>
       <h1>Shell not yet ported: {tenant.template}</h1>
-      <p>Metro-pro and modern-pro shells are live. Other shells ship in S146+.</p>
+      <p>Metro-pro, modern-pro, and clean-friendly shells are live. Other shells ship in S147+.</p>
     </main>
   );
 }
