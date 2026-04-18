@@ -1,27 +1,40 @@
 import { cache } from 'react';
 import { unstable_cache } from 'next/cache';
-import { getServerSupabase } from '../../../../shared/lib/supabase/server';
+import { getServerSupabase, getServerSupabaseForISR } from '../../../../shared/lib/supabase/server';
 import { cacheTags } from '../../../_lib/cacheTags';
 
 export const getPageContent = cache(
-  (tenantId: string, pageSlug: string) =>
-    unstable_cache(
-      async () => {
-        const supabase = getServerSupabase();
-        const { data } = await supabase
-          .from('page_content')
-          .select('*')
-          .eq('tenant_id', tenantId)
-          .eq('page_slug', pageSlug)
-          .maybeSingle();
-        return data;
-      },
-      ['page-content-v2', tenantId, pageSlug],
-      {
-        tags: [cacheTags.page(tenantId, pageSlug), cacheTags.allPages(tenantId)],
-        revalidate: 3600,
-      }
-    )()
+  async (tenantId: string, pageSlug: string) => {
+    const supabase = getServerSupabaseForISR();
+    const { data, error } = await supabase
+      .from('page_content')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .eq('page_slug', pageSlug)
+      .maybeSingle();
+
+    if (error) {
+      console.error('[getPageContent] supabase error', {
+        tenantId,
+        pageSlug,
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      });
+      return null;
+    }
+
+    console.log('[getPageContent] fetched', {
+      tenantId,
+      pageSlug,
+      hasRow: data !== null,
+      subtitle: data?.subtitle ?? null,
+      introLen: typeof data?.intro === 'string' ? data.intro.length : 0,
+    });
+
+    return data;
+  }
 );
 
 export const getAllBlogPosts = cache(
