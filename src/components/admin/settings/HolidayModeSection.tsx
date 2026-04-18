@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../hooks/useTenant'
+import { triggerRevalidate } from '../../../lib/revalidate'
 
 const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-400'
 
@@ -26,7 +27,11 @@ export default function HolidayModeSection() {
     setSaving(true)
     const { error } = await supabase.from('settings').upsert({ tenant_id: tenantId, key: 'holiday_mode', value }, { onConflict: 'tenant_id,key' })
     setSaving(false)
-    if (error) toast.error('Failed to save.'); else toast.success('Holiday mode updated!')
+    if (error) { toast.error('Failed to save.'); return }
+    toast.success('Holiday mode updated!')
+    const { data: sessionData } = await supabase.auth.getSession()
+    const accessToken = sessionData.session?.access_token
+    if (accessToken && tenantId) await triggerRevalidate({ type: 'settings', tenantId }, accessToken)
   }
 
   async function toggleEnabled() {

@@ -5,6 +5,7 @@ import { useTenant } from '../../../hooks/useTenant'
 import { applyShellTheme } from '../../../lib/shellThemes'
 import BrandingLogo from './BrandingLogo'
 import PalettePicker from '../../shared/PalettePicker'
+import { triggerRevalidate } from '../../../lib/revalidate'
 
 interface BrandingForm {
   logo_url: string; favicon_url: string; primary_color: string; accent_color: string
@@ -66,6 +67,9 @@ export default function BrandingSection() {
     localStorage.setItem('pfp_template', form.template)
     try { localStorage.removeItem(`pfp_tenant_boot_v2:${window.location.hostname}`); delete (window as any).__TENANT_BOOT__ } catch {}
     toast.success('Branding settings saved!')
+    const { data: sessionData } = await supabase.auth.getSession()
+    const accessToken = sessionData.session?.access_token
+    if (accessToken && tenantId) await triggerRevalidate({ type: 'settings', tenantId }, accessToken)
   }
 
   if (loading) return <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"><p className="text-gray-400">Loading...</p></div>

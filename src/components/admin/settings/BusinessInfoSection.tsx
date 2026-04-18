@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../hooks/useTenant'
+import { triggerRevalidate } from '../../../lib/revalidate'
 
 interface BusinessInfoForm {
   name: string; phone: string; email: string; address: string; hours: string
@@ -41,7 +42,11 @@ export default function BusinessInfoSection() {
     const value = { ...extraDbFields.current, ...form }
     const { error } = await supabase.from('settings').upsert({ tenant_id: tenantId, key: 'business_info', value }, { onConflict: 'tenant_id,key' })
     setSaving(false)
-    if (error) toast.error('Failed to save business info.'); else toast.success('Business info saved!')
+    if (error) { toast.error('Failed to save business info.'); return }
+    toast.success('Business info saved!')
+    const { data: sessionData } = await supabase.auth.getSession()
+    const accessToken = sessionData.session?.access_token
+    if (accessToken && tenantId) await triggerRevalidate({ type: 'settings', tenantId }, accessToken)
   }
 
   if (loading) return <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"><p className="text-gray-400">Loading...</p></div>

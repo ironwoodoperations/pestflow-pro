@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../hooks/useTenant'
+import { triggerRevalidate } from '../../../lib/revalidate'
 
 interface CustomizationForm {
   hero_headline: string
@@ -50,7 +51,11 @@ export default function HeroCustomizationSection() {
       { onConflict: 'tenant_id,key' }
     )
     setSaving(false)
-    if (error) toast.error('Failed to save customization.'); else toast.success('✅ Customization saved')
+    if (error) { toast.error('Failed to save customization.'); return }
+    toast.success('✅ Customization saved')
+    const { data: sessionData } = await supabase.auth.getSession()
+    const accessToken = sessionData.session?.access_token
+    if (accessToken && tenantId) await triggerRevalidate({ type: 'settings', tenantId }, accessToken)
   }
 
   if (loading) return null

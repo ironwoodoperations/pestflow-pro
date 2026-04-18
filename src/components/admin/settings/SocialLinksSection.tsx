@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../hooks/useTenant'
+import { triggerRevalidate } from '../../../lib/revalidate'
 
 const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-400'
 
@@ -29,7 +30,11 @@ export default function SocialLinksSection() {
     const merged = { ...(existing?.value || {}), owner_sms_number: form.owner_sms_number }
     const { error } = await supabase.from('settings').upsert({ tenant_id: tenantId, key: 'integrations', value: merged }, { onConflict: 'tenant_id,key' })
     setSaving(false)
-    if (error) toast.error('Failed to save.'); else toast.success('Saved!')
+    if (error) { toast.error('Failed to save.'); return }
+    toast.success('Saved!')
+    const { data: sessionData } = await supabase.auth.getSession()
+    const accessToken = sessionData.session?.access_token
+    if (accessToken && tenantId) await triggerRevalidate({ type: 'settings', tenantId }, accessToken)
   }
 
   if (loading) return <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"><p className="text-gray-400">Loading...</p></div>
