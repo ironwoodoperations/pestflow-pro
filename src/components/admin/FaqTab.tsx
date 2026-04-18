@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
+import { triggerRevalidate } from '../../lib/revalidate'
 import PageHelpBanner from './PageHelpBanner'
 import ConfirmDeleteModal from '../shared/ConfirmDeleteModal'
 import FaqItemForm, { FAQ_CATEGORIES, type FaqFormData } from './FaqItemForm'
@@ -48,6 +49,8 @@ export default function FaqTab() {
     setItems(prev => [...prev, data].sort((a, b) => a.category.localeCompare(b.category) || a.sort_order - b.sort_order))
     setAdding(false)
     toast.success('FAQ item added!')
+    const { data: s } = await supabase.auth.getSession()
+    if (s.session?.access_token && tenantId) await triggerRevalidate({ type: 'faq', tenantId }, s.session.access_token)
   }
 
   async function handleSaveEdit(id: string, form: FaqFormData) {
@@ -64,6 +67,8 @@ export default function FaqTab() {
       : i).sort((a, b) => a.category.localeCompare(b.category) || a.sort_order - b.sort_order))
     setEditId(null)
     toast.success('FAQ item updated!')
+    const { data: s } = await supabase.auth.getSession()
+    if (s.session?.access_token && tenantId) await triggerRevalidate({ type: 'faq', tenantId }, s.session.access_token)
   }
 
   async function handleDelete() {
@@ -73,6 +78,8 @@ export default function FaqTab() {
     setItems(prev => prev.filter(i => i.id !== deleteTarget.id))
     setDeleteTarget(null)
     toast.success('FAQ item deleted.')
+    const { data: s } = await supabase.auth.getSession()
+    if (s.session?.access_token && tenantId) await triggerRevalidate({ type: 'faq', tenantId }, s.session.access_token)
   }
 
   const grouped = FAQ_CATEGORIES.reduce((acc, cat) => {

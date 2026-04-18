@@ -9,6 +9,7 @@ import BlogPostEditor from './BlogPostEditor'
 import UndoToast from '../shared/UndoToast'
 import ConfirmDeleteModal from '../shared/ConfirmDeleteModal'
 import { archiveRecord, restoreRecord, hardDeleteRecord } from '../../lib/archiveUtils'
+import { triggerRevalidate } from '../../lib/revalidate'
 
 interface Post {
   id: string; title: string; slug: string; content: string; excerpt: string
@@ -65,6 +66,8 @@ export default function BlogTab() {
     await supabase.from('blog_posts').update({ published, published_at: published ? new Date().toISOString() : null }).eq('id', p.id)
     toast.success(published ? 'Published!' : 'Unpublished')
     setPosts(prev => prev.map(x => x.id === p.id ? { ...x, published, published_at: published ? new Date().toISOString() : null } : x))
+    const { data: s } = await supabase.auth.getSession()
+    if (s.session?.access_token && tenantId) await triggerRevalidate({ type: 'blog', tenantId }, s.session.access_token)
   }
 
   if (editing && tenantId) {

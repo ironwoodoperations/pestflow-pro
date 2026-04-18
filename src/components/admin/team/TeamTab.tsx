@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Plus } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../hooks/useTenant'
+import { triggerRevalidate } from '../../../lib/revalidate'
 import PageHelpBanner from '../PageHelpBanner'
 import TeamMemberCard, { type TeamMember } from './TeamMemberCard'
 import TeamMemberModal from './TeamMemberModal'
@@ -60,6 +61,8 @@ export default function TeamTab() {
     await supabase.from('team_members').delete().eq('id', deleteTarget.id)
     setMembers(prev => prev.filter(m => m.id !== deleteTarget.id))
     setDeleteTarget(null)
+    const { data: s } = await supabase.auth.getSession()
+    if (s.session?.access_token && tenantId) await triggerRevalidate({ type: 'team', tenantId }, s.session.access_token)
   }
 
   const handleSaved = () => { fetchMembers() }

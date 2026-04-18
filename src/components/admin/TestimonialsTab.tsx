@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { Plus, Download } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
+import { triggerRevalidate } from '../../lib/revalidate'
 import PageHelpBanner from './PageHelpBanner'
 import TestimonialCard from './TestimonialCard'
 import type { Testimonial } from './TestimonialCard'
@@ -55,10 +56,18 @@ export default function TestimonialsTab() {
     const payload = { author_name: form.author_name, author_email: form.author_email || null, review_text: form.review_text, rating: form.rating, source: form.source, featured: form.featured }
     if (editingId) {
       const { error } = await supabase.from('testimonials').update(payload).eq('id', editingId)
-      if (error) toast.error('Failed to update.'); else toast.success('Review updated!')
+      if (error) { toast.error('Failed to update.') } else {
+        toast.success('Review updated!')
+        const { data: s } = await supabase.auth.getSession()
+        if (s.session?.access_token && tenantId) await triggerRevalidate({ type: 'testimonials', tenantId }, s.session.access_token)
+      }
     } else {
       const { error } = await supabase.from('testimonials').insert({ tenant_id: tenantId, ...payload })
-      if (error) toast.error('Failed to add review.'); else toast.success('Review added!')
+      if (error) { toast.error('Failed to add review.') } else {
+        toast.success('Review added!')
+        const { data: s } = await supabase.auth.getSession()
+        if (s.session?.access_token && tenantId) await triggerRevalidate({ type: 'testimonials', tenantId }, s.session.access_token)
+      }
     }
     setSaving(false); setModalOpen(false); fetchReviews()
   }
@@ -69,12 +78,16 @@ export default function TestimonialsTab() {
     toast.success('Review deleted.')
     setDeleteTarget(null)
     fetchReviews()
+    const { data: s } = await supabase.auth.getSession()
+    if (s.session?.access_token && tenantId) await triggerRevalidate({ type: 'testimonials', tenantId }, s.session.access_token)
   }
 
   async function toggleFeatured(r: Testimonial) {
     await supabase.from('testimonials').update({ featured: !r.featured }).eq('id', r.id)
     toast.success(r.featured ? 'Unfeatured' : 'Featured!')
     setReviews(prev => prev.map(x => x.id === r.id ? { ...x, featured: !x.featured } : x))
+    const { data: s } = await supabase.auth.getSession()
+    if (s.session?.access_token && tenantId) await triggerRevalidate({ type: 'testimonials', tenantId }, s.session.access_token)
   }
 
   async function requestReview(r: Testimonial) {
@@ -112,6 +125,8 @@ export default function TestimonialsTab() {
         if (!error) imported++
       }
       toast.success(`Imported ${imported} Google review${imported !== 1 ? 's' : ''}!`); fetchReviews()
+      const { data: s } = await supabase.auth.getSession()
+      if (s.session?.access_token && tenantId) await triggerRevalidate({ type: 'testimonials', tenantId }, s.session.access_token)
     } catch { toast.error('Failed to fetch Google reviews. Check API key and Place ID.') }
     setImporting(false)
   }

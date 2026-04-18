@@ -1,11 +1,26 @@
 type Payload =
   | { type: 'page'; tenantId: string; slug: string }
-  | { type: 'settings'; tenantId: string };
+  | { type: 'settings'; tenantId: string }
+  | { type: 'testimonials'; tenantId: string }
+  | { type: 'blog'; tenantId: string }
+  | { type: 'locations'; tenantId: string }
+  | { type: 'team'; tenantId: string }
+  | { type: 'faq'; tenantId: string };
+
+function getTenantSlug(): string {
+  try {
+    // In production: slug.pestflowpro.com → subdomain is the tenant slug
+    return window.location.hostname.split('.')[0];
+  } catch {
+    return '';
+  }
+}
 
 export async function triggerRevalidate(
   payload: Payload,
   accessToken: string
 ): Promise<void> {
+  const body = { ...payload, tenantSlug: getTenantSlug() };
   try {
     const res = await fetch('/api/revalidate', {
       method: 'POST',
@@ -13,7 +28,7 @@ export async function triggerRevalidate(
         'Content-Type': 'application/json',
         Authorization: `Bearer ${accessToken}`,
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
     });
     if (!res.ok) {
       console.warn(`[revalidate] non-ok ${res.status} — falling back to TTL`);

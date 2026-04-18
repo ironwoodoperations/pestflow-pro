@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { Plus, X, Trash2, ExternalLink } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
+import { triggerRevalidate } from '../../lib/revalidate'
 import PageHelpBanner from './PageHelpBanner'
 import ConfirmDeleteModal from '../shared/ConfirmDeleteModal'
 
@@ -64,10 +65,18 @@ export default function LocationsTab() {
     const seoFields = { meta_title: form.meta_title || null, meta_description: form.meta_description || null, focus_keyword: form.focus_keyword || null }
     if (editingId) {
       const { error } = await supabase.from('location_data').update({ city: form.city, slug, hero_title, intro: form.intro, is_live: form.is_live, ...seoFields }).eq('id', editingId)
-      if (error) toast.error('Failed to update.'); else toast.success('Location updated!')
+      if (error) { toast.error('Failed to update.') } else {
+        toast.success('Location updated!')
+        const { data: s } = await supabase.auth.getSession()
+        if (s.session?.access_token && tenantId) await triggerRevalidate({ type: 'locations', tenantId }, s.session.access_token)
+      }
     } else {
       const { error } = await supabase.from('location_data').insert({ tenant_id: tenantId, city: form.city, slug, hero_title, intro: form.intro, is_live: form.is_live, ...seoFields })
-      if (error) toast.error('Failed to add location.'); else toast.success('Location added!')
+      if (error) { toast.error('Failed to add location.') } else {
+        toast.success('Location added!')
+        const { data: s } = await supabase.auth.getSession()
+        if (s.session?.access_token && tenantId) await triggerRevalidate({ type: 'locations', tenantId }, s.session.access_token)
+      }
     }
     setSaving(false); setModalOpen(false); fetchLocations()
   }
@@ -78,12 +87,16 @@ export default function LocationsTab() {
     toast.success('Location deleted.')
     setDeleteTarget(null)
     fetchLocations()
+    const { data: s } = await supabase.auth.getSession()
+    if (s.session?.access_token && tenantId) await triggerRevalidate({ type: 'locations', tenantId }, s.session.access_token)
   }
 
   async function toggleLive(loc: Location) {
     await supabase.from('location_data').update({ is_live: !loc.is_live }).eq('id', loc.id)
     toast.success(loc.is_live ? 'Hidden' : 'Live!')
     setLocations(prev => prev.map(x => x.id === loc.id ? { ...x, is_live: !x.is_live } : x))
+    const { data: s } = await supabase.auth.getSession()
+    if (s.session?.access_token && tenantId) await triggerRevalidate({ type: 'locations', tenantId }, s.session.access_token)
   }
 
   const activeCount = locations.filter(l => l.is_live).length

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
+import { triggerRevalidate } from '../../../lib/revalidate'
 import type { TeamMember } from './TeamMemberCard'
 
 interface Props {
@@ -64,6 +65,8 @@ export default function TeamMemberModal({ tenantId, member, onClose, onSaved }: 
       : await supabase.from('team_members').insert(payload)
     setSaving(false)
     if (dbErr) { setError(dbErr.message); return }
+    const { data: s } = await supabase.auth.getSession()
+    if (s.session?.access_token) await triggerRevalidate({ type: 'team', tenantId }, s.session.access_token)
     onSaved()
     onClose()
   }

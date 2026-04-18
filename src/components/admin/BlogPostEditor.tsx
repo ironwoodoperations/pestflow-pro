@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { ArrowLeft, Upload, X } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import { triggerRevalidate } from '../../lib/revalidate'
 
 interface Post {
   id: string; title: string; slug: string; content: string; excerpt: string
@@ -72,6 +73,8 @@ export default function BlogPostEditor({ editing, initialPost, tenantId, onSave,
     setSaving(false)
     if (error) { toast.error('Failed to save post.'); return }
     toast.success(editing === 'new' ? 'Post created!' : 'Post updated!')
+    const { data: s } = await supabase.auth.getSession()
+    if (s.session?.access_token) await triggerRevalidate({ type: 'blog', tenantId }, s.session.access_token)
     onSave()
   }
 
