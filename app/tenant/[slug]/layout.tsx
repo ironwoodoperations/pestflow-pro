@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+
+export const dynamic = 'force-dynamic';
 import { resolveTenantBySlug } from '../../../shared/lib/tenant/resolve';
 import { getAllServicePages, getSocialLinks } from './_lib/queries';
 import { TenantProvider } from './TenantProvider';
