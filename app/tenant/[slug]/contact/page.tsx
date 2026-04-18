@@ -1,5 +1,9 @@
 import { notFound } from 'next/navigation';
 import { resolveTenantBySlug } from '../../../../shared/lib/tenant/resolve';
+
+export async function generateStaticParams() {
+  return [];
+}
 import { getPageContent, getSocialLinks, getIntegrations, getHeroMedia } from '../_lib/queries';
 import { resolveHeroImage } from '../_lib/heroImage';
 import { ContactForm } from '../_components/forms/ContactForm';

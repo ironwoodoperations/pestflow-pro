@@ -1,4 +1,8 @@
 import { resolveTenantBySlug } from '../../../shared/lib/tenant/resolve';
+
+export async function generateStaticParams() {
+  return [];
+}
 import { getPageContent, getTestimonials, getAllBlogPosts, getHeroMedia } from './_lib/queries';
 import { resolveHeroImage } from './_lib/heroImage';
 import { MetroHero } from './_components/MetroHero';

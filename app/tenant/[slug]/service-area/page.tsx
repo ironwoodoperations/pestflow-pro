@@ -2,6 +2,10 @@ import Link from 'next/link';
 import { MapPin } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { resolveTenantBySlug } from '../../../../shared/lib/tenant/resolve';
+
+export async function generateStaticParams() {
+  return [];
+}
 import { getAllLocations, getPageContent, getHeroMedia } from '../_lib/queries';
 import { resolveHeroImage } from '../_lib/heroImage';
 import { formatPhone } from '../../../../shared/lib/formatPhone';

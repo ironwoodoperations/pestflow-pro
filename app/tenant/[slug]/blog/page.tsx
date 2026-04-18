@@ -1,6 +1,10 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { resolveTenantBySlug } from '../../../../shared/lib/tenant/resolve';
+
+export async function generateStaticParams() {
+  return [];
+}
 import { getAllBlogPosts, getPageContent, getHeroMedia } from '../_lib/queries';
 import { resolveHeroImage } from '../_lib/heroImage';
 

@@ -2,6 +2,10 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChevronRight, Shield, Leaf, MapPin, Star } from 'lucide-react';
 import { resolveTenantBySlug } from '../../../../shared/lib/tenant/resolve';
+
+export async function generateStaticParams() {
+  return [];
+}
 import { getPageContent, getLocation, getAllLocations, getHeroMedia } from '../_lib/queries';
 import { resolveHeroImage } from '../_lib/heroImage';
 import { SERVICE_DATA, PEST_IMAGES, SERVICE_SLUGS } from '../_lib/serviceData';

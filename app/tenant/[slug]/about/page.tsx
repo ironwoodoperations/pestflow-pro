@@ -2,6 +2,10 @@ import Link from 'next/link';
 import { Shield, Eye, Award, Zap, Star, Home, Heart, Bug } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { resolveTenantBySlug } from '../../../../shared/lib/tenant/resolve';
+
+export async function generateStaticParams() {
+  return [];
+}
 import { getPageContent, getTeamMembers, getHeroMedia } from '../_lib/queries';
 import { resolveHeroImage } from '../_lib/heroImage';
 

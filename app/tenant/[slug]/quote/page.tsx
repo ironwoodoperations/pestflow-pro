@@ -1,5 +1,9 @@
 import { notFound } from 'next/navigation';
 import { resolveTenantBySlug } from '../../../../shared/lib/tenant/resolve';
+
+export async function generateStaticParams() {
+  return [];
+}
 import { getIntegrations } from '../_lib/queries';
 import { QuoteForm } from '../_components/forms/QuoteForm';
 
