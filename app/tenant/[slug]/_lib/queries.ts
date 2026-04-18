@@ -99,16 +99,23 @@ export const getAllServicePages = cache(
     )()
 );
 
-export const getSocialLinks = cache(async (tenantId: string) => {
-  const supabase = getServerSupabase();
-  const { data } = await supabase
-    .from('settings')
-    .select('value')
-    .eq('tenant_id', tenantId)
-    .eq('key', 'social_links')
-    .maybeSingle();
-  return (data?.value ?? {}) as { facebook?: string; instagram?: string; youtube?: string; google?: string };
-});
+export const getSocialLinks = cache(
+  (tenantId: string) =>
+    unstable_cache(
+      async () => {
+        const supabase = getServerSupabase();
+        const { data } = await supabase
+          .from('settings')
+          .select('value')
+          .eq('tenant_id', tenantId)
+          .eq('key', 'social_links')
+          .maybeSingle();
+        return (data?.value ?? {}) as { facebook?: string; instagram?: string; youtube?: string; google?: string };
+      },
+      ['settings_social_links', tenantId],
+      { tags: [cacheTags.settings(tenantId)], revalidate: 3600 }
+    )()
+);
 
 export const getFaqItems = cache(async (tenantId: string) => {
   const supabase = getServerSupabase();
@@ -130,30 +137,44 @@ export const getTeamMembers = cache(async (tenantId: string) => {
   return data ?? [];
 });
 
-export const getHeroMedia = cache(async (tenantId: string) => {
-  const supabase = getServerSupabase();
-  const { data } = await supabase
-    .from('settings')
-    .select('value')
-    .eq('tenant_id', tenantId)
-    .eq('key', 'hero_media')
-    .maybeSingle();
-  return (data?.value ?? null) as {
-    master_hero_image_url?: string;
-    image_url?: string;
-    video_url?: string;
-    youtube_id?: string;
-    mode?: string;
-  } | null;
-});
+export const getHeroMedia = cache(
+  (tenantId: string) =>
+    unstable_cache(
+      async () => {
+        const supabase = getServerSupabase();
+        const { data } = await supabase
+          .from('settings')
+          .select('value')
+          .eq('tenant_id', tenantId)
+          .eq('key', 'hero_media')
+          .maybeSingle();
+        return (data?.value ?? null) as {
+          master_hero_image_url?: string;
+          image_url?: string;
+          video_url?: string;
+          youtube_id?: string;
+          mode?: string;
+        } | null;
+      },
+      ['settings_hero_media', tenantId],
+      { tags: [cacheTags.settings(tenantId)], revalidate: 3600 }
+    )()
+);
 
-export const getIntegrations = cache(async (tenantId: string) => {
-  const supabase = getServerSupabase();
-  const { data } = await supabase
-    .from('settings')
-    .select('value')
-    .eq('tenant_id', tenantId)
-    .eq('key', 'integrations')
-    .maybeSingle();
-  return (data?.value ?? {}) as Record<string, string | null>;
-});
+export const getIntegrations = cache(
+  (tenantId: string) =>
+    unstable_cache(
+      async () => {
+        const supabase = getServerSupabase();
+        const { data } = await supabase
+          .from('settings')
+          .select('value')
+          .eq('tenant_id', tenantId)
+          .eq('key', 'integrations')
+          .maybeSingle();
+        return (data?.value ?? {}) as Record<string, string | null>;
+      },
+      ['settings_integrations', tenantId],
+      { tags: [cacheTags.settings(tenantId)], revalidate: 3600 }
+    )()
+);
