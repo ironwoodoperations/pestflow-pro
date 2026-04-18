@@ -24,6 +24,15 @@ import { CleanFriendlyWhyChooseUs } from './_shells/clean-friendly/CleanFriendly
 import { CleanFriendlyTestimonials } from './_shells/clean-friendly/CleanFriendlyTestimonials';
 import { CleanFriendlyFaqStrip } from './_shells/clean-friendly/CleanFriendlyFaqStrip';
 import { CleanFriendlyCtaBanner } from './_shells/clean-friendly/CleanFriendlyCtaBanner';
+import { BoldLocalHero } from './_shells/bold-local/BoldLocalHero';
+import { BoldLocalTrustBar } from './_shells/bold-local/BoldLocalTrustBar';
+import { BoldLocalWhyUs } from './_shells/bold-local/BoldLocalWhyUs';
+import { BoldLocalServicesGrid } from './_shells/bold-local/BoldLocalServicesGrid';
+import { BoldLocalHowItWorks } from './_shells/bold-local/BoldLocalHowItWorks';
+import { BoldLocalAboutStrip } from './_shells/bold-local/BoldLocalAboutStrip';
+import { BoldLocalTrustCards } from './_shells/bold-local/BoldLocalTrustCards';
+import { BoldLocalTestimonials } from './_shells/bold-local/BoldLocalTestimonials';
+import { BoldLocalCtaBanner } from './_shells/bold-local/BoldLocalCtaBanner';
 
 const MODERN_PRO_SERVICES = [
   { name: 'Pest Control', slug: 'pest-control' }, { name: 'Termite Control', slug: 'termite-control' },
@@ -70,6 +79,40 @@ export default async function TenantHome({ params }: Params) {
         <ModernProWhyChooseUs businessName={tenant.business_name || tenant.name} />
         <ModernProTestimonials />
         <ModernProCtaBanner phone={tenant.phone || ''} ctaText={tenant.cta_text || 'Get a Free Quote'} />
+      </>
+    );
+  }
+
+  if (tenant.template === 'bold-local') {
+    const aboutContent = await getPageContent(tenant.id, 'about');
+    const aboutIntro = (aboutContent as { intro?: string } | null)?.intro || '';
+    const photoUrl = (heroMedia as { thumbnail_url?: string } | null)?.thumbnail_url || undefined;
+
+    return (
+      <>
+        <BoldLocalHero tenant={tenant} content={content} heroImageUrl={heroImageUrl} />
+        <BoldLocalTrustBar
+          certifications={tenant.certifications || undefined}
+          tagline={tenant.tagline || undefined}
+        />
+        <BoldLocalWhyUs
+          businessName={tenant.business_name || tenant.name}
+          intro={aboutIntro}
+        />
+        <BoldLocalServicesGrid />
+        <BoldLocalHowItWorks />
+        <BoldLocalAboutStrip
+          businessName={tenant.business_name || tenant.name}
+          intro={aboutIntro}
+          photoUrl={photoUrl}
+        />
+        <BoldLocalTrustCards
+          foundedYear={tenant.founded_year ? String(tenant.founded_year) : undefined}
+          tagline={tenant.tagline || undefined}
+          certifications={tenant.certifications || undefined}
+        />
+        <BoldLocalTestimonials testimonials={testimonials as { id: string; author_name: string; review_text: string; rating: number }[]} />
+        <BoldLocalCtaBanner phone={tenant.phone || undefined} />
       </>
     );
   }
