@@ -1,0 +1,11 @@
+export { BoldLocalNavbar } from './BoldLocalNavbar';
+export { BoldLocalHero } from './BoldLocalHero';
+export { BoldLocalFooter } from './BoldLocalFooter';
+export { BoldLocalTrustBar } from './BoldLocalTrustBar';
+export { BoldLocalWhyUs } from './BoldLocalWhyUs';
+export { BoldLocalServicesGrid } from './BoldLocalServicesGrid';
+export { BoldLocalHowItWorks } from './BoldLocalHowItWorks';
+export { BoldLocalAboutStrip } from './BoldLocalAboutStrip';
+export { BoldLocalTrustCards } from './BoldLocalTrustCards';
+export { BoldLocalTestimonials } from './BoldLocalTestimonials';
+export { BoldLocalCtaBanner } from './BoldLocalCtaBanner';
