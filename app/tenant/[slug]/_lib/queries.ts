@@ -16,7 +16,7 @@ export const getPageContent = cache(
           .maybeSingle();
         return data;
       },
-      ['page_content', tenantId, pageSlug],
+      ['page-content-v2', tenantId, pageSlug],
       {
         tags: [cacheTags.page(tenantId, pageSlug), cacheTags.allPages(tenantId)],
         revalidate: 3600,
