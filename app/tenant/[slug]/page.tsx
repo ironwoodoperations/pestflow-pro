@@ -33,6 +33,14 @@ import { BoldLocalAboutStrip } from './_shells/bold-local/BoldLocalAboutStrip';
 import { BoldLocalTrustCards } from './_shells/bold-local/BoldLocalTrustCards';
 import { BoldLocalTestimonials } from './_shells/bold-local/BoldLocalTestimonials';
 import { BoldLocalCtaBanner } from './_shells/bold-local/BoldLocalCtaBanner';
+import { RusticRuggedHero } from './_shells/rustic-rugged/RusticRuggedHero';
+import { RusticRuggedServiceStrips } from './_shells/rustic-rugged/RusticRuggedServiceStrips';
+import { RusticRuggedAboutTimeline } from './_shells/rustic-rugged/RusticRuggedAboutTimeline';
+import { RusticRuggedServicesGrid } from './_shells/rustic-rugged/RusticRuggedServicesGrid';
+import { RusticRuggedStatsBanner } from './_shells/rustic-rugged/RusticRuggedStatsBanner';
+import { RusticRuggedResComFac } from './_shells/rustic-rugged/RusticRuggedResComFac';
+import { RusticRuggedTestimonials } from './_shells/rustic-rugged/RusticRuggedTestimonials';
+import { RusticRuggedCtaBanner } from './_shells/rustic-rugged/RusticRuggedCtaBanner';
 
 const MODERN_PRO_SERVICES = [
   { name: 'Pest Control', slug: 'pest-control' }, { name: 'Termite Control', slug: 'termite-control' },
@@ -138,6 +146,27 @@ export default async function TenantHome({ params }: Params) {
         <CleanFriendlyTestimonials testimonials={testimonials as { id: string; author_name: string; review_text: string; rating: number }[]} />
         <CleanFriendlyFaqStrip />
         <CleanFriendlyCtaBanner phone={tenant.phone || ''} ctaText={tenant.cta_text || 'Get a Free Quote'} />
+      </>
+    );
+  }
+
+  if (tenant.template === 'rustic-rugged') {
+    const aboutContent = await getPageContent(tenant.id, 'about');
+    const aboutIntro = (aboutContent as { intro?: string } | null)?.intro || '';
+    const featuredTestimonial = (testimonials as { id: string; author_name: string; review_text: string; rating: number }[])[0] ?? null;
+    const address = (tenant as { address?: string }).address || '';
+    const city = address ? address.split(',')[0].trim() : undefined;
+
+    return (
+      <>
+        <RusticRuggedHero tenant={tenant} content={content} heroImageUrl={heroImageUrl} />
+        <RusticRuggedServiceStrips />
+        <RusticRuggedAboutTimeline intro={aboutIntro} />
+        <RusticRuggedServicesGrid tenantSlug={tenant.slug} />
+        <RusticRuggedStatsBanner foundedYear={tenant.founded_year ? String(tenant.founded_year) : undefined} city={city} />
+        <RusticRuggedResComFac />
+        <RusticRuggedTestimonials testimonial={featuredTestimonial} />
+        <RusticRuggedCtaBanner phone={tenant.phone || undefined} tenantSlug={tenant.slug} />
       </>
     );
   }

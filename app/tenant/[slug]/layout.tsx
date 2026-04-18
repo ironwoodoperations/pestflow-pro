@@ -11,6 +11,8 @@ import { CleanFriendlyNavbar } from './_shells/clean-friendly/CleanFriendlyNavba
 import { CleanFriendlyFooter } from './_shells/clean-friendly/CleanFriendlyFooter';
 import { BoldLocalNavbar } from './_shells/bold-local/BoldLocalNavbar';
 import { BoldLocalFooter } from './_shells/bold-local/BoldLocalFooter';
+import { RusticRuggedNavbar } from './_shells/rustic-rugged/RusticRuggedNavbar';
+import { RusticRuggedFooter } from './_shells/rustic-rugged/RusticRuggedFooter';
 import { computeShellCssVars, shellCssVarsString } from '../../../shared/lib/shellCssVars';
 
 type Params = { params: { slug: string } };
@@ -97,10 +99,22 @@ export default async function TenantLayout({
     );
   }
 
+  if (shell === 'rustic-rugged') {
+    return (
+      <>
+        <style dangerouslySetInnerHTML={{ __html: cssVars }} />
+        <TenantProvider tenant={tenant}>
+          <RusticRuggedNavbar servicePages={servicePages} />
+          <main id="main-content">{children}</main>
+          <RusticRuggedFooter tenant={tenant} social={social} />
+        </TenantProvider>
+      </>
+    );
+  }
+
   return (
     <main style={{ padding: '4rem 2rem' }}>
       <h1>Shell not yet ported: {tenant.template}</h1>
-      <p>Metro-pro, modern-pro, clean-friendly, and bold-local shells are live. rustic-rugged ships in S148.</p>
     </main>
   );
 }

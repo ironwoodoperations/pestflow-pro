@@ -28,8 +28,10 @@ const NAV_LINKS = [
   { label: 'Contact', href: '/contact' },
 ];
 
+interface ServiceLink { page_slug: string; title: string | null }
+
 interface Props {
-  servicePages?: { slug: string; title: string }[];
+  servicePages?: ServiceLink[];
 }
 
 export function RusticRuggedNavbar({ servicePages }: Props) {
@@ -63,7 +65,10 @@ export function RusticRuggedNavbar({ servicePages }: Props) {
   }, []);
 
   const serviceLinks = servicePages?.length
-    ? servicePages.map(p => ({ label: p.title, href: `/${p.slug}` }))
+    ? servicePages.map(p => ({
+        label: p.title || p.page_slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+        href: `/${p.page_slug}`,
+      }))
     : DEFAULT_SERVICE_LINKS;
 
   const base = `/tenant/${slug}`;
