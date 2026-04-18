@@ -5,6 +5,8 @@ import { getAllServicePages, getSocialLinks } from './_lib/queries';
 import { TenantProvider } from './TenantProvider';
 import { MetroNavbar } from './_components/MetroNavbar';
 import { MetroFooter } from './_components/MetroFooter';
+import { ModernProNavbar } from './_shells/modern-pro/ModernProNavbar';
+import { ModernProFooter } from './_shells/modern-pro/ModernProFooter';
 
 type Params = { params: { slug: string } };
 
@@ -38,25 +40,38 @@ export default async function TenantLayout({
     `--color-accent:${tenant.accent_color};` +
     `}`;
 
-  const isMetroPro = tenant.template === 'metro-pro';
+  const shell = tenant.template;
+
+  if (shell === 'metro-pro') {
+    return (
+      <>
+        <style dangerouslySetInnerHTML={{ __html: cssVars }} />
+        <TenantProvider tenant={tenant}>
+          <MetroNavbar servicePages={servicePages} />
+          <main id="main-content">{children}</main>
+          <MetroFooter tenant={tenant} social={social} />
+        </TenantProvider>
+      </>
+    );
+  }
+
+  if (shell === 'modern-pro') {
+    return (
+      <>
+        <style dangerouslySetInnerHTML={{ __html: cssVars }} />
+        <TenantProvider tenant={tenant}>
+          <ModernProNavbar servicePages={servicePages} />
+          <main id="main-content">{children}</main>
+          <ModernProFooter tenant={tenant} social={social} />
+        </TenantProvider>
+      </>
+    );
+  }
 
   return (
-    <>
-      <style dangerouslySetInnerHTML={{ __html: cssVars }} />
-      <TenantProvider tenant={tenant}>
-        {isMetroPro ? (
-          <>
-            <MetroNavbar servicePages={servicePages} />
-            <main id="main-content">{children}</main>
-            <MetroFooter tenant={tenant} social={social} />
-          </>
-        ) : (
-          <main style={{ padding: '4rem 2rem' }}>
-            <h1>Shell not yet ported: {tenant.template}</h1>
-            <p>Metro-pro shell is live as of S142. Other shells ship in S143+.</p>
-          </main>
-        )}
-      </TenantProvider>
-    </>
+    <main style={{ padding: '4rem 2rem' }}>
+      <h1>Shell not yet ported: {tenant.template}</h1>
+      <p>Metro-pro and modern-pro shells are live. Other shells ship in S146+.</p>
+    </main>
   );
 }
