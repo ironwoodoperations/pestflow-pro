@@ -15,5 +15,5 @@ export const cacheTags = {
 } as const;
 
 export type RevalidatePayload =
-  | { type: 'page'; tenantId: string; slug: string }
-  | { type: 'settings'; tenantId: string };
+  | { type: 'page'; tenantId: string; tenantSlug: string; slug: string }
+  | { type: 'settings'; tenantId: string; tenantSlug: string };
