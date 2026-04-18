@@ -24,59 +24,94 @@ export const getPageContent = cache(
     )()
 );
 
-export const getAllBlogPosts = cache(async (tenantId: string) => {
-  const supabase = getServerSupabase();
-  const { data } = await supabase
-    .from('blog_posts')
-    .select('*')
-    .eq('tenant_id', tenantId)
-    .not('published_at', 'is', null)
-    .order('published_at', { ascending: false });
-  return data ?? [];
-});
+export const getAllBlogPosts = cache(
+  (tenantId: string) =>
+    unstable_cache(
+      async () => {
+        const supabase = getServerSupabase();
+        const { data } = await supabase
+          .from('blog_posts')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .not('published_at', 'is', null)
+          .order('published_at', { ascending: false });
+        return data ?? [];
+      },
+      ['all_blog_posts', tenantId],
+      { tags: [cacheTags.blog(tenantId)], revalidate: 3600 }
+    )()
+);
 
-export const getBlogPost = cache(async (tenantId: string, postSlug: string) => {
-  const supabase = getServerSupabase();
-  const { data } = await supabase
-    .from('blog_posts')
-    .select('*')
-    .eq('tenant_id', tenantId)
-    .eq('slug', postSlug)
-    .maybeSingle();
-  return data;
-});
+export const getBlogPost = cache(
+  (tenantId: string, postSlug: string) =>
+    unstable_cache(
+      async () => {
+        const supabase = getServerSupabase();
+        const { data } = await supabase
+          .from('blog_posts')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .eq('slug', postSlug)
+          .maybeSingle();
+        return data;
+      },
+      ['blog_post', tenantId, postSlug],
+      { tags: [cacheTags.blog(tenantId)], revalidate: 3600 }
+    )()
+);
 
-export const getAllLocations = cache(async (tenantId: string) => {
-  const supabase = getServerSupabase();
-  const { data } = await supabase
-    .from('location_data')
-    .select('*')
-    .eq('tenant_id', tenantId)
-    .eq('is_live', true)
-    .order('city');
-  return data ?? [];
-});
+export const getAllLocations = cache(
+  (tenantId: string) =>
+    unstable_cache(
+      async () => {
+        const supabase = getServerSupabase();
+        const { data } = await supabase
+          .from('location_data')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .eq('is_live', true)
+          .order('city');
+        return data ?? [];
+      },
+      ['all_locations', tenantId],
+      { tags: [cacheTags.locations(tenantId)], revalidate: 3600 }
+    )()
+);
 
-export const getLocation = cache(async (tenantId: string, locationSlug: string) => {
-  const supabase = getServerSupabase();
-  const { data } = await supabase
-    .from('location_data')
-    .select('*')
-    .eq('tenant_id', tenantId)
-    .eq('slug', locationSlug)
-    .maybeSingle();
-  return data;
-});
+export const getLocation = cache(
+  (tenantId: string, locationSlug: string) =>
+    unstable_cache(
+      async () => {
+        const supabase = getServerSupabase();
+        const { data } = await supabase
+          .from('location_data')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .eq('slug', locationSlug)
+          .maybeSingle();
+        return data;
+      },
+      ['location', tenantId, locationSlug],
+      { tags: [cacheTags.locations(tenantId)], revalidate: 3600 }
+    )()
+);
 
-export const getTestimonials = cache(async (tenantId: string) => {
-  const supabase = getServerSupabase();
-  const { data } = await supabase
-    .from('testimonials')
-    .select('*')
-    .eq('tenant_id', tenantId)
-    .order('created_at', { ascending: false });
-  return data ?? [];
-});
+export const getTestimonials = cache(
+  (tenantId: string) =>
+    unstable_cache(
+      async () => {
+        const supabase = getServerSupabase();
+        const { data } = await supabase
+          .from('testimonials')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .order('created_at', { ascending: false });
+        return data ?? [];
+      },
+      ['testimonials', tenantId],
+      { tags: [cacheTags.testimonials(tenantId)], revalidate: 3600 }
+    )()
+);
 
 export const getAllServicePages = cache(
   (tenantId: string) =>
@@ -117,25 +152,39 @@ export const getSocialLinks = cache(
     )()
 );
 
-export const getFaqItems = cache(async (tenantId: string) => {
-  const supabase = getServerSupabase();
-  const { data } = await supabase
-    .from('faq_items')
-    .select('id, question, answer, sort_order')
-    .eq('tenant_id', tenantId)
-    .order('sort_order');
-  return data ?? [];
-});
+export const getFaqItems = cache(
+  (tenantId: string) =>
+    unstable_cache(
+      async () => {
+        const supabase = getServerSupabase();
+        const { data } = await supabase
+          .from('faq_items')
+          .select('id, question, answer, sort_order')
+          .eq('tenant_id', tenantId)
+          .order('sort_order');
+        return data ?? [];
+      },
+      ['faq_items', tenantId],
+      { tags: [cacheTags.faq(tenantId)], revalidate: 3600 }
+    )()
+);
 
-export const getTeamMembers = cache(async (tenantId: string) => {
-  const supabase = getServerSupabase();
-  const { data } = await supabase
-    .from('team_members')
-    .select('id, name, title, bio, photo_url')
-    .eq('tenant_id', tenantId)
-    .order('display_order');
-  return data ?? [];
-});
+export const getTeamMembers = cache(
+  (tenantId: string) =>
+    unstable_cache(
+      async () => {
+        const supabase = getServerSupabase();
+        const { data } = await supabase
+          .from('team_members')
+          .select('id, name, title, bio, photo_url')
+          .eq('tenant_id', tenantId)
+          .order('display_order');
+        return data ?? [];
+      },
+      ['team_members', tenantId],
+      { tags: [cacheTags.team(tenantId)], revalidate: 3600 }
+    )()
+);
 
 export const getHeroMedia = cache(
   (tenantId: string) =>
