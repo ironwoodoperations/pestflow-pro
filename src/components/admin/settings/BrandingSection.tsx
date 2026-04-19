@@ -148,8 +148,11 @@ export default function BrandingSection() {
             primary={form.primary_color}
             accent={form.accent_color}
             onSelect={(p, a) => {
-              setForm(prev => ({ ...prev, primary_color: p, accent_color: a }))
-              applyShellTheme(form.template, p, a)
+              // Only change colors — template is a separate user choice and must never be set here
+              setForm(prev => {
+                applyShellTheme(prev.template, p, a)
+                return { ...prev, primary_color: p, accent_color: a }
+              })
             }}
           />
           <p className="text-xs text-gray-400 mt-2">Pick a preset or use the color pickers below for custom colors.</p>
