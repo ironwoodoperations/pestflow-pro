@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../hooks/useTenant'
 
-interface Post { id: string; scheduled_at: string | null; status: string; created_at: string }
+interface Post { id: string; scheduled_for: string | null; status: string; created_at: string }
 
 interface Props {
   onNavigate: (tab: string) => void
@@ -21,7 +21,7 @@ export default function DashboardSocialWidget({ onNavigate }: Props) {
     if (!tenantId) return
     supabase
       .from('social_posts')
-      .select('id, scheduled_at, status, created_at')
+      .select('id, scheduled_for, status, created_at')
       .eq('tenant_id', tenantId)
       .order('created_at', { ascending: false })
       .then(({ data }) => { setPosts(data || []); setLoading(false) })
@@ -38,7 +38,7 @@ export default function DashboardSocialWidget({ onNavigate }: Props) {
   const now = new Date()
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
   const thisMonthPosts = posts.filter(p => {
-    const d = new Date(p.scheduled_at || p.created_at)
+    const d = new Date(p.scheduled_for || p.created_at)
     return d >= monthStart && (p.status === 'scheduled' || p.status === 'published')
   })
   const lastPost = posts.find(p => p.status === 'published')
@@ -82,7 +82,7 @@ export default function DashboardSocialWidget({ onNavigate }: Props) {
       </div>
       {lastPost && (
         <p className="text-xs text-gray-400 mb-3">
-          Last published: {fmtDate(lastPost.scheduled_at || lastPost.created_at)}
+          Last published: {fmtDate(lastPost.scheduled_for || lastPost.created_at)}
         </p>
       )}
       <button onClick={() => onNavigate('social')}
