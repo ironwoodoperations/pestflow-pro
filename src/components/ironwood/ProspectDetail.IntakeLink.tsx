@@ -118,8 +118,11 @@ export default function IntakeLinkSection({ prospectId, adminEmail, companyName,
       const biz = d.business || {}
       const brand = d.branding || {}
       const social = d.social || {}
+      const domain = d.domain || {}
 
-      const address = [biz.address, biz.city, biz.state, biz.zip].filter(Boolean).join(', ')
+      const addressParts = [biz.address, biz.city, biz.state, biz.zip]
+        .filter((p: any) => p && String(p).trim())
+      const fullAddress = addressParts.join(', ')
 
       const updates: Record<string, any> = {}
 
@@ -127,19 +130,23 @@ export default function IntakeLinkSection({ prospectId, adminEmail, companyName,
       if (!prospect.email?.trim() && biz.email?.trim())   updates.email = biz.email.trim()
       if (!prospect.phone?.trim() && biz.phone?.trim())   updates.phone = biz.phone.trim()
 
-      // business_info merge
+      // business_info merge — all intake fields including new owner_name, license, founded_year, num_technicians
       const existingBi = prospect.business_info || {}
       updates.business_info = {
         ...existingBi,
-        name:    mergeIfBlank(existingBi.name,    biz.name),
-        phone:   mergeIfBlank(existingBi.phone,   biz.phone),
-        email:   mergeIfBlank(existingBi.email,   biz.email),
-        address: mergeIfBlank(existingBi.address, address),
-        hours:   mergeIfBlank(existingBi.hours,   biz.hours),
-        tagline: mergeIfBlank(existingBi.tagline, biz.tagline),
+        name:            mergeIfBlank(existingBi.name,            biz.business_name || biz.name),
+        phone:           mergeIfBlank(existingBi.phone,           biz.phone),
+        email:           mergeIfBlank(existingBi.email,           biz.email),
+        address:         mergeIfBlank(existingBi.address,         fullAddress),
+        hours:           mergeIfBlank(existingBi.hours,           biz.hours),
+        tagline:         mergeIfBlank(existingBi.tagline,         biz.tagline),
+        license:         mergeIfBlank(existingBi.license,         biz.license_number),
+        founded_year:    mergeIfBlank(existingBi.founded_year,    biz.founded_year),
+        num_technicians: mergeIfBlank(existingBi.num_technicians, biz.num_technicians),
+        owner_name:      mergeIfBlank(existingBi.owner_name,      biz.owner_name),
       }
 
-      // branding merge
+      // branding merge — logo_url, cta_text, palette_id
       const existingBr = prospect.branding || {}
       updates.branding = {
         ...existingBr,
@@ -150,6 +157,24 @@ export default function IntakeLinkSection({ prospectId, adminEmail, companyName,
         cta_text:      mergeIfBlank(existingBr.cta_text,      brand.cta_text),
       }
       if (brand.palette_id && !existingBr.palette_id) updates.branding.palette_id = brand.palette_id
+
+      // customization merge — owner_name, founded_year, display toggles, hero_headline
+      const existingCu = prospect.customization || {}
+      updates.customization = {
+        ...existingCu,
+        hero_headline:       existingCu.hero_headline       ?? biz.tagline ?? '',
+        owner_name:          mergeIfBlank(existingCu.owner_name,    biz.owner_name),
+        founded_year:        mergeIfBlank(existingCu.founded_year,  biz.founded_year),
+        show_license:        existingCu.show_license        ?? true,
+        show_years:          existingCu.show_years          ?? true,
+        show_technicians:    existingCu.show_technicians    ?? true,
+        show_certifications: existingCu.show_certifications ?? true,
+      }
+
+      // service_areas — seed with city if blank
+      if (!prospect.service_areas?.trim() && biz.city?.trim()) {
+        updates.service_areas = biz.city.trim()
+      }
 
       // social_links merge
       const existingSl = prospect.social_links || {}
@@ -162,9 +187,15 @@ export default function IntakeLinkSection({ prospectId, adminEmail, companyName,
       }
 
       // domain → website_url (only if not already set)
-      const domainName = d.domain?.domain_name?.trim()
+      const domainName = domain.domain_name?.trim()
       if (domainName && !prospect.website_url?.trim()) {
         updates.website_url = domainName.startsWith('http') ? domainName : `https://${domainName}`
+      }
+
+      // domain_registrar → append to notes if not already mentioned
+      if (domain.domain_registrar && !(prospect.notes ?? '').includes(domain.domain_registrar)) {
+        const domainNote = `Domain: ${domain.domain_name || '(not yet registered)'} — Registrar: ${domain.domain_registrar}`
+        updates.notes = [prospect.notes ?? '', '', domainNote].join('\n').trim()
       }
 
       await supabase.from('prospects').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', prospectId)
