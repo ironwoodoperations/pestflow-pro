@@ -16,7 +16,7 @@ const TemplateContext = createContext<TemplateContextValue>({
 })
 
 // Thin wrapper — all data comes from TenantBootProvider above.
-// Keeps providing the same interface to public shells (no shell changes needed).
+// Keeps providing the same interface to public themes (no theme changes needed).
 export function TemplateProvider({ children }: { children: ReactNode }) {
   const { status, tenant } = useTenantBoot()
 

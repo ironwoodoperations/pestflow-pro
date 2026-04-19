@@ -48,7 +48,7 @@ export default function PreProvisionChecklist({ prospect, onConfirm, onCancel }:
     { label: 'Email Address',          pass: !!(prospect.email?.trim() || prospect.admin_email?.trim()) },
     { label: 'Business Address',       pass: !!bi.address?.trim() },
     { label: 'Business Hours',         pass: !!bi.hours?.trim() },
-    { label: 'Shell selected',         pass: !!br.template },
+    { label: 'Theme selected',         pass: !!br.template },
     { label: 'Palette selected',       pass: !!br.primary_color },
     { label: 'CTA Button Text',        pass: !!br.cta_text?.trim() },
     { label: 'At least one service area', pass: !!prospect.service_areas?.trim() },

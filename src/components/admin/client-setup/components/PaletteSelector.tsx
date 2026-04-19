@@ -1,7 +1,7 @@
 import { PALETTES } from '../../../../lib/shellThemes'
 
 interface PaletteSelectorProps {
-  shell: string
+  theme: string
   selectedId: string
   onChange: (primary: string, accent: string, paletteId: string) => void
 }

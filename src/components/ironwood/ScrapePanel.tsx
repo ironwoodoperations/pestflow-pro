@@ -177,12 +177,12 @@ export default function ScrapePanel({ sourceUrl, onSourceUrlChange, prospectId, 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-xs font-medium text-gray-400 mb-1">⚡ AI Quick Build</p>
-              <p className="text-xs text-gray-600 mb-2">Same-day launch via YouPest shell</p>
+              <p className="text-xs text-gray-600 mb-2">Same-day launch via YouPest theme</p>
               <GenerateProLayout prospectId={prospectId} tier={tier ?? null} form={form ?? {}} />
             </div>
             <div>
               <p className="text-xs font-medium text-gray-400 mb-1">🛠 Full Custom Build</p>
-              <p className="text-xs text-gray-600">Custom shell built from your existing site — set Build Path to Full Custom, then download the Claude Code prompt below in Build Files.</p>
+              <p className="text-xs text-gray-600">Custom theme built from your existing site — set Build Path to Full Custom, then download the Claude Code prompt below in Build Files.</p>
             </div>
           </div>
         </div>

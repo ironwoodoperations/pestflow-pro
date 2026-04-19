@@ -12,7 +12,7 @@ interface Props {
   }
 }
 
-const SHELL_LABELS: Record<string, string> = {
+const THEME_LABELS: Record<string, string> = {
   'modern-pro':     'Modern Pro',
   'bold-local':     'Bold & Local',
   'clean-friendly': 'Clean & Friendly',
@@ -107,7 +107,7 @@ export default function IntakeSubmissionViewer({ isOpen, onClose, prospect }: Pr
 
           {/* Branding */}
           <Section title="Branding">
-            <Field label="Website Style" value={SHELL_LABELS[brand.template] ?? brand.template} />
+            <Field label="Website Style" value={THEME_LABELS[brand.template] ?? brand.template} />
             {brand.cta_text && <Field label="CTA Button Text" value={brand.cta_text} />}
             {(brand.primary_color || brand.accent_color) && (
               <div className="flex gap-3 py-1 border-b border-gray-100">

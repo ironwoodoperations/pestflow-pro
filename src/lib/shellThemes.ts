@@ -1,33 +1,33 @@
-export type ShellPalette = {
+export type ThemePalette = {
   id: string
   name: string
   primary: string
   accent: string
-  shell: 'modern-pro' | 'bold-local' | 'clean-friendly' | 'rustic-rugged' | 'metro-pro'
+  themeKey: 'modern-pro' | 'bold-local' | 'clean-friendly' | 'rustic-rugged' | 'metro-pro'
 }
 
-export const PALETTES: ShellPalette[] = [
-  { id: 'mp-1', name: 'Navy & Gold',    primary: '#1e3a5f', accent: '#f59e0b', shell: 'modern-pro' },
-  { id: 'mp-2', name: 'Forest & Cream', primary: '#2d6a4f', accent: '#fef3c7', shell: 'modern-pro' },
-  { id: 'mp-3', name: 'Slate & Orange', primary: '#334155', accent: '#E87800', shell: 'modern-pro' },
-  { id: 'bl-1', name: 'Orange & Black', primary: '#E87800', accent: '#1a1a1a', shell: 'bold-local' },
-  { id: 'bl-2', name: 'Red & Dark',     primary: '#b91c1c', accent: '#1a1a1a', shell: 'bold-local' },
-  { id: 'bl-3', name: 'Green & Black',  primary: '#15803d', accent: '#1a1a1a', shell: 'bold-local' },
-  { id: 'cf-1', name: 'Sky & White',    primary: '#0ea5e9', accent: '#ffffff', shell: 'clean-friendly' },
-  { id: 'cf-2', name: 'Teal & Light',   primary: '#0d9488', accent: '#f0fdfa', shell: 'clean-friendly' },
-  { id: 'cf-3', name: 'Purple & Soft',  primary: '#7c3aed', accent: '#faf5ff', shell: 'clean-friendly' },
-  { id: 'rr-1', name: 'Brown & Tan',    primary: '#78350f', accent: '#fef3c7', shell: 'rustic-rugged' },
-  { id: 'rr-2', name: 'Green & Earth',  primary: '#365314', accent: '#fef9c3', shell: 'rustic-rugged' },
-  { id: 'rr-3', name: 'Rust & Cream',   primary: '#9a3412', accent: '#fff7ed', shell: 'rustic-rugged' },
+export const PALETTES: ThemePalette[] = [
+  { id: 'mp-1', name: 'Navy & Gold',    primary: '#1e3a5f', accent: '#f59e0b', themeKey: 'modern-pro' },
+  { id: 'mp-2', name: 'Forest & Cream', primary: '#2d6a4f', accent: '#fef3c7', themeKey: 'modern-pro' },
+  { id: 'mp-3', name: 'Slate & Orange', primary: '#334155', accent: '#E87800', themeKey: 'modern-pro' },
+  { id: 'bl-1', name: 'Orange & Black', primary: '#E87800', accent: '#1a1a1a', themeKey: 'bold-local' },
+  { id: 'bl-2', name: 'Red & Dark',     primary: '#b91c1c', accent: '#1a1a1a', themeKey: 'bold-local' },
+  { id: 'bl-3', name: 'Green & Black',  primary: '#15803d', accent: '#1a1a1a', themeKey: 'bold-local' },
+  { id: 'cf-1', name: 'Sky & White',    primary: '#0ea5e9', accent: '#ffffff', themeKey: 'clean-friendly' },
+  { id: 'cf-2', name: 'Teal & Light',   primary: '#0d9488', accent: '#f0fdfa', themeKey: 'clean-friendly' },
+  { id: 'cf-3', name: 'Purple & Soft',  primary: '#7c3aed', accent: '#faf5ff', themeKey: 'clean-friendly' },
+  { id: 'rr-1', name: 'Brown & Tan',    primary: '#78350f', accent: '#fef3c7', themeKey: 'rustic-rugged' },
+  { id: 'rr-2', name: 'Green & Earth',  primary: '#365314', accent: '#fef9c3', themeKey: 'rustic-rugged' },
+  { id: 'rr-3', name: 'Rust & Cream',   primary: '#9a3412', accent: '#fff7ed', themeKey: 'rustic-rugged' },
   // metro-pro palettes — Pro/Elite only
-  { id: 'mtp-1', name: 'Corporate Blue',   primary: '#1565C0', accent: '#00ACC1', shell: 'metro-pro' },
-  { id: 'mtp-2', name: 'Executive Navy',   primary: '#0D2137', accent: '#C9A84C', shell: 'metro-pro' },
-  { id: 'mtp-3', name: 'Slate & Electric', primary: '#2D3748', accent: '#38A169', shell: 'metro-pro' },
-  { id: 'mtp-4', name: 'Forest & White',   primary: '#1B4332', accent: '#52B788', shell: 'metro-pro' },
+  { id: 'mtp-1', name: 'Corporate Blue',   primary: '#1565C0', accent: '#00ACC1', themeKey: 'metro-pro' },
+  { id: 'mtp-2', name: 'Executive Navy',   primary: '#0D2137', accent: '#C9A84C', themeKey: 'metro-pro' },
+  { id: 'mtp-3', name: 'Slate & Electric', primary: '#2D3748', accent: '#38A169', themeKey: 'metro-pro' },
+  { id: 'mtp-4', name: 'Forest & White',   primary: '#1B4332', accent: '#52B788', themeKey: 'metro-pro' },
 ]
 
-export function getPalettesForShell(shell: string): ShellPalette[] {
-  return PALETTES.filter(p => p.shell === shell)
+export function getPalettesForTheme(theme: string): ThemePalette[] {
+  return PALETTES.filter(p => p.themeKey === theme)
 }
 
 function darkenHex(hex: string, factor: number): string {
@@ -67,7 +67,7 @@ const PALETTE_HERO: Record<string, { hero: string; end: string; cta: string; nav
   '#1b4332': { hero: '#0d2b1e', end: '#0a1f15', cta: '#0d2b1e', nav: '#1B4332', navText: '#ffffff', footer: '#0d2b1e' }, // Forest & White
 }
 
-export const SHELL_THEMES: Record<string, Record<string, string>> = {
+export const THEME_CONFIGS: Record<string, Record<string, string>> = {
   'modern-pro': {
     '--color-primary':         '#10b981',
     '--color-primary-dark':    '#059669',
@@ -148,7 +148,7 @@ export const SHELL_THEMES: Record<string, Record<string, string>> = {
     '--font-heading':          'Oswald, sans-serif',
     '--font-body':             'Inter, sans-serif',
   },
-  // metro-pro shell — dark primary navbar, enterprise/Pro/Elite only
+  // metro-pro theme — dark primary navbar, enterprise/Pro/Elite only
   'metro-pro-shell': {
     '--color-primary':         '#1565C0',
     '--color-primary-dark':    '#0d47a1',
@@ -169,7 +169,7 @@ export const SHELL_THEMES: Record<string, Record<string, string>> = {
     '--font-heading':          'Inter, sans-serif',
     '--font-body':             'Inter, sans-serif',
   },
-  // Dang shell — custom comic-book brand for Dang Pest Control (Tyler, TX)
+  // dang theme — custom comic-book brand for Dang Pest Control (Tyler, TX)
   'dang': {
     '--color-primary':         '#F97316',
     '--color-primary-dark':    '#ea6c00',
@@ -192,14 +192,14 @@ export const SHELL_THEMES: Record<string, Record<string, string>> = {
   },
 }
 
-export function applyShellTheme(
+export function applyTheme(
   template: string,
   primaryOverride?: string,
   accentOverride?: string
 ) {
-  // 'metro-pro' template maps to 'metro-pro-shell' theme entry (avoid name conflict with existing 'modern-pro')
+  // 'metro-pro' template maps to 'metro-pro-shell' config entry (avoid name conflict with existing 'modern-pro')
   const themeKey = template === 'metro-pro' ? 'metro-pro-shell' : template
-  const theme = SHELL_THEMES[themeKey] || SHELL_THEMES['modern-pro']
+  const theme = THEME_CONFIGS[themeKey] || THEME_CONFIGS['modern-pro']
   const root = document.documentElement
   Object.entries(theme).forEach(([key, value]) => {
     root.style.setProperty(key, value)

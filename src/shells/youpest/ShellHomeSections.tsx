@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { resolveTenantId } from '../../lib/tenant'
-import { applyShellTheme } from '../../lib/shellThemes'
+import { applyTheme } from '../../lib/shellThemes'
 import SectionRenderer from './SectionRenderer'
 
 interface LayoutConfig {
@@ -29,7 +29,7 @@ export default function ShellHomeSections() {
         const lPrimary = lc.colors?.primary
         const lAccent  = lc.colors?.accent
         if (lPrimary) {
-          applyShellTheme('youpest', lPrimary, lAccent || undefined)
+          applyTheme('youpest', lPrimary, lAccent || undefined)
         }
       }
       setLoading(false)

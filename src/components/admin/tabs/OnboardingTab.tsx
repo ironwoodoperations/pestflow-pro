@@ -7,7 +7,7 @@ const ITEMS = [
   'Payment received — Stripe confirmed',
   'DNS pointed to Vercel',
   'Logo uploaded and applied',
-  'Colors / shell confirmed in admin Settings',
+  'Colors / theme confirmed in admin Settings',
   'Business info reviewed and saved',
   'Integrations filled in (admin Integrations tab)',
   'Social links confirmed',

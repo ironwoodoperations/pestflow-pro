@@ -41,9 +41,9 @@ export const termsSections: Section[] = [
   {
     heading: "5. INTELLECTUAL PROPERTY",
     body: [
-      "5.1 The Platform, including all software, design systems, website shells, AI tools, automation workflows, source code, and proprietary features, is and remains the exclusive intellectual property of Ironwood Operations Group LLC.",
+      "5.1 The Platform, including all software, design systems, website themes, AI tools, automation workflows, source code, and proprietary features, is and remains the exclusive intellectual property of Ironwood Operations Group LLC.",
       "5.2 You retain ownership of all business content you provide (business name, contact info, testimonials, blog posts, photos). You grant Provider a limited license to use this content solely to operate the Platform on your behalf.",
-      "5.3 All four website shell designs (Modern Pro, Bold & Local, Clean & Friendly, Rustic & Rugged) are Provider's proprietary Template Designs and are not transferred to you under any circumstances.",
+      "5.3 All four website theme designs (Modern Pro, Bold & Local, Clean & Friendly, Rustic & Rugged) are Provider's proprietary Template Designs and are not transferred to you under any circumstances.",
     ],
   },
   {

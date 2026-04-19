@@ -23,13 +23,13 @@ import NotFound from './pages/NotFound'
 import Sitemap from './pages/Sitemap'
 import SlugRouter from './pages/SlugRouter'
 
-// Payment success — public, no shell needed
+// Payment success — public, no theme needed
 const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'))
 
-// Intake form — public, no shell needed
+// Intake form — public, no theme needed
 const IntakePage = lazy(() => import('./pages/IntakePage'))
 
-// Post-intake branded preview — public, no shell needed
+// Post-intake branded preview — public, no theme needed
 const IntakeSuccess = lazy(() => import('./pages/IntakeSuccess'))
 
 // Secondary marketing pages — lazy
@@ -96,7 +96,7 @@ export default function App() {
       <Toaster richColors position="top-right" />
       <ErrorBoundary>
       <Routes>
-        {/* ─── Root: MarketingLanding on pestflowpro.com, pest shell on subdomains ─── */}
+        {/* ─── Root: MarketingLanding on pestflowpro.com, pest theme on subdomains ─── */}
         <Route path="/" element={<RootRoute />} />
         <Route path="/contact" element={<DangPageRouter slug="contact" fallback={<PublicShell><ContactPage /></PublicShell>} />} />
         <Route path="/quote" element={<DangPageRouter slug="quote" fallback={<PublicShell><QuotePage /></PublicShell>} />} />

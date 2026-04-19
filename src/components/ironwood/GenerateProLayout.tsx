@@ -93,7 +93,7 @@ export default function GenerateProLayout({ prospectId, tier, form }: Props) {
       </div>
 
       <p className="text-xs text-gray-400">
-        Analyzes this prospect's scraped site and generates a custom youpest shell layout via Claude.
+        Analyzes this prospect's scraped site and generates a custom youpest theme layout via Claude.
         Review before provisioning.
       </p>
 

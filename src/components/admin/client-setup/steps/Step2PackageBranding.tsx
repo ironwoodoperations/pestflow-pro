@@ -1,6 +1,6 @@
 import type { ClientSetupForm } from '../types'
 import { IMPLEMENTATION_PACKAGES } from '../../../../lib/pricingConfig'
-import ShellSelector from '../components/ShellSelector'
+import ThemeSelector from '../components/ShellSelector'
 import PaletteSelector from '../components/PaletteSelector'
 import LogoUpload from '../components/LogoUpload'
 
@@ -84,13 +84,13 @@ export default function Step2PackageBranding({ form, setForm }: Props) {
         </p>
       </div>
 
-      {/* Template-based packages: shell + palette + logo */}
+      {/* Template-based packages: theme + palette + logo */}
       {selectedPkg && !selectedPkg.requiresCurrentSite && (
         <div className="space-y-5">
-          <ShellSelector value={form.template} onChange={shell => setForm({ template: shell, palette_id: '', primary_color: '#10b981', accent_color: '#0a0f1e' })} />
+          <ThemeSelector value={form.template} onChange={theme => setForm({ template: theme, palette_id: '', primary_color: '#10b981', accent_color: '#0a0f1e' })} />
           {form.template && (
             <PaletteSelector
-              shell={form.template}
+              theme={form.template}
               selectedId={form.palette_id}
               onChange={(primary, accent, id) => setForm({ primary_color: primary, accent_color: accent, palette_id: id })}
             />

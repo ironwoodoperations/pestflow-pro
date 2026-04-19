@@ -1,15 +1,15 @@
 import { useState } from 'react'
 
 export interface SiteRecreation {
-  shell: string
-  shellReason: string
+  themeKey: string
+  themeReason: string
   primaryColor: string
   accentColor: string
   heroHeadline: string
   ctaText: string
 }
 
-const SHELLS = [
+const THEMES = [
   { id: 'modern-pro',     name: 'Modern Pro' },
   { id: 'clean-friendly', name: 'Clean & Friendly' },
   { id: 'bold-local',     name: 'Bold & Local' },
@@ -45,14 +45,14 @@ export default function SiteRecreationCard({ initial, onApply }: Props) {
         Review and edit before applying to prospect
       </p>
 
-      {/* Shell */}
+      {/* Theme */}
       <div className="mb-3">
-        <label className="text-xs text-gray-400">Recommended Shell</label>
-        <select className={inp} value={rec.shell}
-          onChange={e => set('shell', e.target.value)}>
-          {SHELLS.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+        <label className="text-xs text-gray-400">Recommended Theme</label>
+        <select className={inp} value={rec.themeKey}
+          onChange={e => set('themeKey', e.target.value)}>
+          {THEMES.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>
-        <p className="text-xs text-gray-500 mt-1">{rec.shellReason}</p>
+        <p className="text-xs text-gray-500 mt-1">{rec.themeReason}</p>
       </div>
 
       {/* Colors */}

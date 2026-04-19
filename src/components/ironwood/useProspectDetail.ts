@@ -180,7 +180,7 @@ export function useProspectDetail(
   const onApplyRecreation = useCallback((data: SiteRecreation) => {
     setForm(f => ({
       ...f,
-      branding: { ...(f.branding || {}), template: data.shell, primary_color: data.primaryColor, accent_color: data.accentColor, cta_text: data.ctaText },
+      branding: { ...(f.branding || {}), template: data.themeKey, primary_color: data.primaryColor, accent_color: data.accentColor, cta_text: data.ctaText },
       customization: { ...(f.customization || {}), hero_headline: data.heroHeadline },
       hero_headline: data.heroHeadline,
     }))

@@ -1,7 +1,7 @@
 import type { Prospect } from './types'
 import PaletteSwatches from './PaletteSwatches'
 
-const ALL_SHELLS = [
+const ALL_THEMES = [
   { id: 'metro-pro',     name: 'Metro Pro',         proOnly: true },
   { id: 'modern-pro',    name: 'Modern Pro',         proOnly: false },
   { id: 'bold-local',    name: 'Bold & Local',       proOnly: false },
@@ -30,25 +30,25 @@ export default function BrandingSection({ form, setField, onBlur }: Props) {
   const setBr = (k: string, v: any) => setField('branding', { ...br, [k]: v })
   const setCu = (k: string, v: any) => setField('customization', { ...cu, [k]: v })
 
-  const availableShells = ALL_SHELLS.filter(s => !s.proOnly || isProOrElite)
+  const availableThemes = ALL_THEMES.filter(s => !s.proOnly || isProOrElite)
 
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-2">
 
-        {/* Shell picker — hidden for full_custom */}
+        {/* Theme picker — hidden for full_custom */}
         {isFullCustom ? (
           <div className="col-span-2 rounded-lg bg-gray-700/40 border border-gray-600 p-3 text-xs text-gray-400 leading-relaxed">
-            <span className="font-semibold text-gray-300">Custom Build</span> — Shell and palette are determined during the custom build process. Colors will be extracted from the client's existing site.
+            <span className="font-semibold text-gray-300">Custom Build</span> — Theme and palette are determined during the custom build process. Colors will be extracted from the client's existing site.
           </div>
         ) : (
           <>
             <div>
-              <label className="text-xs text-gray-400">Shell</label>
+              <label className="text-xs text-gray-400">Theme</label>
               <select className={inp} value={br.template || ''}
                 onChange={e => { setBr('template', e.target.value); onBlur() }}>
                 <option value="">— Select —</option>
-                {availableShells.map(s => (
+                {availableThemes.map(s => (
                   <option key={s.id} value={s.id}>
                     {s.id === 'metro-pro' && isProOrElite ? `★ ${s.name} — Recommended for Pro` : s.name}
                   </option>
@@ -68,7 +68,7 @@ export default function BrandingSection({ form, setField, onBlur }: Props) {
             {/* Palette picker — hidden for full_custom */}
             {br.template && (
               <PaletteSwatches
-                shell={br.template}
+                theme={br.template}
                 primary={br.primary_color || ''}
                 accent={br.accent_color || ''}
                 onSelect={(p, a) => { setField('branding', { ...br, primary_color: p, accent_color: a }); onBlur() }}

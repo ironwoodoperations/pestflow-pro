@@ -1,10 +1,10 @@
-interface ShellSelectorProps {
+interface ThemeSelectorProps {
   value: string
-  onChange: (shell: string) => void
+  onChange: (theme: string) => void
   tier?: number  // 1=Starter 2=Grow 3=Pro 4=Elite — youpest only shown for 3+
 }
 
-const SHELLS = [
+const THEMES = [
   {
     key: 'modern-pro',
     name: 'Modern Pro',
@@ -45,12 +45,12 @@ const SHELLS = [
   },
 ]
 
-export default function ShellSelector({ value, onChange, tier = 1 }: ShellSelectorProps) {
+export default function ThemeSelector({ value, onChange, tier = 1 }: ThemeSelectorProps) {
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-2">Site Template</label>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {SHELLS.filter(s => !s.proOnly || tier >= 3).map(s => {
+        {THEMES.filter(s => !s.proOnly || tier >= 3).map(s => {
           const selected = value === s.key
           return (
             <button

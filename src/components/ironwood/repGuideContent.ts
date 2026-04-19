@@ -32,10 +32,10 @@ export const GUIDE_SECTIONS: Record<string, GuideSection> = {
       { type: 'bullet',  text: 'Subscription tier: Starter $149 / Grow $249 / Pro $349 / Elite $499' },
     ],
   },
-  'shell-palette': {
-    title: 'Shell & Palette Selection',
+  'theme-palette': {
+    title: 'Theme & Palette Selection',
     items: [
-      { type: 'heading', text: 'The Four Shells' },
+      { type: 'heading', text: 'The Four Themes' },
       { type: 'step',    text: 'Modern Pro — Clean dark hero, bold type. Best for established companies wanting a premium look.' },
       { type: 'step',    text: 'Clean Friendly — Bright, light layouts, friendly fonts. Best for owner-operators and small family businesses.' },
       { type: 'step',    text: 'Bold Shield — Strong visuals, shield/badge motifs. Best for companies emphasizing guarantees and certifications.' },
@@ -59,7 +59,7 @@ export const GUIDE_SECTIONS: Record<string, GuideSection> = {
       { type: 'bullet',  text: 'Business Name — exactly as it should appear on the site' },
       { type: 'bullet',  text: 'Phone — displayed in header, hero, and contact page' },
       { type: 'bullet',  text: 'Admin Email + Password — client\'s login credentials' },
-      { type: 'bullet',  text: 'Shell and Palette — locks the site\'s look and feel' },
+      { type: 'bullet',  text: 'Theme and Palette — locks the site\'s look and feel' },
       { type: 'heading', text: 'Integrations' },
       { type: 'step',    text: 'Google Maps Embed URL: maps.google.com → Share → Embed a map → copy src URL from the iframe' },
       { type: 'step',    text: 'Google Place ID: developers.google.com/maps → Places → Place ID Finder → search business → copy ID' },
@@ -120,7 +120,7 @@ export const GUIDE_SECTIONS: Record<string, GuideSection> = {
       { type: 'bullet',  text: 'Email Address' },
       { type: 'bullet',  text: 'Business Address' },
       { type: 'bullet',  text: 'Business Hours' },
-      { type: 'bullet',  text: 'Shell selected' },
+      { type: 'bullet',  text: 'Theme selected' },
       { type: 'bullet',  text: 'Palette selected' },
       { type: 'bullet',  text: 'CTA Button Text' },
       { type: 'bullet',  text: 'At least one service area' },

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
-import { getPalettesForShell } from '../../lib/shellThemes'
+import { getPalettesForTheme } from '../../lib/shellThemes'
 
 interface Props {
   form: Record<string, any>
@@ -98,7 +98,7 @@ export default function IntakeStep2Branding({ form, setForm, token, tier, buildP
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3">Color Palette</label>
             <div className="grid grid-cols-3 gap-3">
-              {getPalettesForShell(currentTemplate).map(p => {
+              {getPalettesForTheme(currentTemplate).map(p => {
                 const isActive = form.primary_color === p.primary && form.accent_color === p.accent
                 return (
                   <button key={p.id} type="button"

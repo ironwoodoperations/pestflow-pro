@@ -2,7 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
-import { applyShellTheme } from './lib/shellThemes.ts'
+import { applyTheme } from './lib/shellThemes.ts'
 
 // Pre-mount theme injection — runs before React, eliminates any flash on repeat visits.
 // Reads from the TenantBootProvider cache key written on first visit.
@@ -21,7 +21,7 @@ import { applyShellTheme } from './lib/shellThemes.ts'
       const sub = parts.length === 3 ? parts[0] : null
       if (sub && boot.slug !== sub) return
     }
-    applyShellTheme(boot.template, boot.primaryColor || undefined, boot.accentColor || undefined)
+    applyTheme(boot.template, boot.primaryColor || undefined, boot.accentColor || undefined)
   } catch { /* silent — never block mount */ }
 })()
 

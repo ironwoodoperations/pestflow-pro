@@ -132,7 +132,7 @@ export default async function ServicePage({ params }: Params) {
     );
   }
 
-  // Shell-specific pest page branches
+  // Theme-specific pest page branches
   if (tenant.template === 'clean-friendly') {
     return <CleanFriendlyPestPage tenant={tenant} pestSlug={params.service} />;
   }

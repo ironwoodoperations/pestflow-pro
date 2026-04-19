@@ -1,11 +1,11 @@
-import { PALETTES, type ShellPalette } from '../../lib/shellThemes'
+import { PALETTES, type ThemePalette } from '../../lib/shellThemes'
 
 interface Props {
   primary: string
   accent: string
   onSelect: (primary: string, accent: string) => void
   dark?: boolean
-  palettes?: ShellPalette[]
+  palettes?: ThemePalette[]
 }
 
 export default function PalettePicker({ primary, accent, onSelect, dark = false, palettes }: Props) {

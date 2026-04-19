@@ -103,7 +103,7 @@ export default function IntakeSuccess() {
       className="relative min-h-screen overflow-hidden"
       style={{ '--color-primary': brand.primaryColor, '--color-accent': brand.accentColor } as React.CSSProperties}
     >
-      {/* Blurred shell mockup — purely decorative backdrop, only renders after data is ready */}
+      {/* Blurred theme mockup — purely decorative backdrop, only renders after data is ready */}
       <div
         aria-hidden
         style={{ filter: 'blur(3px)', opacity: 0.4, pointerEvents: 'none', userSelect: 'none' }}

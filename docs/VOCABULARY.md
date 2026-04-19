@@ -42,7 +42,14 @@ These will be addressed in follow-up sessions:
 
 ## Naming debt as of S159.2
 
-File src/shells/shellCssVars.ts (and similar) keep their filenames even though their exported symbols are renamed to theme*. This is visible drift — tracked here, resolved in the file-rename session. Exact list of affected files will be appended at the end of S159.2 task 3.
+The following files keep their old "shell" filenames even though their exported symbols are now renamed to theme*. This is visible drift — tracked here, resolved in the dedicated file-rename session:
+
+- src/lib/shellThemes.ts — exports ThemePalette, THEME_CONFIGS, getPalettesForTheme, applyTheme
+- src/components/admin/client-setup/components/ShellSelector.tsx — exports ThemeSelector, ThemeSelectorProps
+- src/shells/youpest/ShellHomeSections.tsx — uses applyTheme (file is in src/shells/ dir, dir rename deferred)
+- Directory src/shells/ itself — rename to src/themes/ deferred (no test suite, relative imports, high blast radius)
+
+DB column `settings.branding->template` stores the chosen visual system under key "template" (not "theme"). Code uses "theme" conceptually while the JSONB key remains "template" until S159.3 migrations.
 
 ## Historical record
 

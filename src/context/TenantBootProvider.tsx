@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useLayoutEffect, type ReactNode } from 'react'
 import { supabase } from '../lib/supabase'
-import { applyShellTheme } from '../lib/shellThemes'
+import { applyTheme } from '../lib/shellThemes'
 import TenantBootSkeleton from './TenantBootSkeleton'
 import { prefetchAllPageContent } from '../hooks/usePageContent'
 
@@ -53,7 +53,7 @@ export function TenantBootProvider({ children }: { children: ReactNode }) {
 
   useLayoutEffect(() => {
     const cached = readCache()
-    if (cached) applyShellTheme(cached.template, cached.primaryColor || undefined, cached.accentColor || undefined)
+    if (cached) applyTheme(cached.template, cached.primaryColor || undefined, cached.accentColor || undefined)
   }, []) // eslint-disable-line
 
   useEffect(() => {
@@ -70,7 +70,7 @@ export function TenantBootProvider({ children }: { children: ReactNode }) {
         if (err || !data) { setStatus('error'); setError('Tenant not found'); return }
         const raw = data as RawBoot
         const boot = mapRaw(raw)
-        applyShellTheme(boot.template, boot.primaryColor || undefined, boot.accentColor || undefined)
+        applyTheme(boot.template, boot.primaryColor || undefined, boot.accentColor || undefined)
         writeCache(raw)
         setTenant(boot)
         setStatus('ready')

@@ -1,5 +1,5 @@
-// Per-hostname localStorage cache for shell hero content.
-// Prevents the flash where shells render a generic fallback headline on first
+// Per-hostname localStorage cache for theme hero content.
+// Prevents the flash where themes render a generic fallback headline on first
 // paint, then repaint with the tenant's real hero_headline once Supabase
 // resolves. On subsequent visits we seed useState() synchronously from this
 // cache, so the first paint already shows the correct text.
@@ -82,7 +82,7 @@ export function writeHeroCache(next: HeroCache) {
   }
 }
 
-/** Call after saving a new hero image so the shell re-fetches from DB on next load. */
+/** Call after saving a new hero image so the theme re-fetches from DB on next load. */
 export function clearHeroCacheImageUrl() {
   try {
     const raw = localStorage.getItem(cacheKey())

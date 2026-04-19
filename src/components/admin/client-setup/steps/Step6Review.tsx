@@ -1,7 +1,7 @@
 import { PLAN_LABELS, type ClientSetupForm } from '../types'
 import { IMPLEMENTATION_PACKAGES } from '../../../../lib/pricingConfig'
 
-const SHELL_NAMES: Record<string, string> = {
+const THEME_NAMES: Record<string, string> = {
   'modern-pro':     'Modern Pro',
   'bold-local':     'Bold Local',
   'clean-friendly': 'Clean & Friendly',
@@ -49,7 +49,7 @@ export default function Step6Review({ form, onNext, onBack }: Props) {
         } />
         {pkg && !pkg.requiresCurrentSite && (
           <>
-            <Row label="Template" value={SHELL_NAMES[form.template] || form.template || '—'} />
+            <Row label="Template" value={THEME_NAMES[form.template] || form.template || '—'} />
             <Row label="Palette" value={
               form.primary_color
                 ? <span className="flex items-center gap-2">

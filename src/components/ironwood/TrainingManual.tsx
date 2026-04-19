@@ -68,14 +68,14 @@ const BUILD_TIERS = [
   { name: 'Starter',  fee: '$0 – $1,000',    color: 'border-gray-600', badge: 'bg-gray-700', desc: 'Template website, no existing site needed, fastest launch' },
   { name: 'Growth',   fee: '$1,000 – $1,500', color: 'border-blue-700', badge: 'bg-blue-800',  desc: 'Template + content migration from existing site' },
   { name: 'Pro',      fee: '$2,000 – $3,500', color: 'border-purple-700', badge: 'bg-purple-800', desc: 'Firecrawl migration + redirect map + city pages' },
-  { name: 'Elite',    fee: '$4,000 – $10,000',color: 'border-amber-600', badge: 'bg-amber-700', desc: 'Full custom shell built by Claude Code, matches brand exactly' },
+  { name: 'Elite',    fee: '$4,000 – $10,000',color: 'border-amber-600', badge: 'bg-amber-700', desc: 'Full custom theme built by Claude Code, matches brand exactly' },
 ]
 
 const SUBSCRIPTION_TIERS = [
   { name: 'Starter', price: '$149/mo', features: 'Website, CRM, basic SEO, lead forms',                                            color: 'border-gray-600',    badge: 'bg-gray-700' },
   { name: 'Growth',  price: '$249/mo', features: 'Everything in Starter + blog, social scheduling, reviews page',                   color: 'border-blue-700',   badge: 'bg-blue-800' },
   { name: 'Pro',     price: '$349/mo', features: 'Everything in Growth + city pages, redirect map, priority support',              color: 'border-purple-700', badge: 'bg-purple-800' },
-  { name: 'Elite',   price: '$499/mo', features: 'Everything in Pro + custom shell, AI chat, full white-glove service',            color: 'border-amber-600',  badge: 'bg-amber-700' },
+  { name: 'Elite',   price: '$499/mo', features: 'Everything in Pro + custom theme, AI chat, full white-glove service',            color: 'border-amber-600',  badge: 'bg-amber-700' },
 ]
 
 function PricingSection() {
@@ -218,7 +218,7 @@ const PATH_A_STEPS = [
       'Scroll to "Site Setup" section',
       'Verify: Slug, Admin Email, Admin Password are filled in',
       'Verify: Business Name, Phone, Email are correct',
-      'Select the Shell template',
+      'Select the Theme',
       'Set Primary Color and Accent Color (from intake form)',
       'Click "🚀 Create Site"',
       'Wait ~30 seconds — site provisions automatically',

@@ -49,9 +49,9 @@ export default async function TenantLayout({
     computeShellCssVars(tenant.template, tenant.primary_color, tenant.accent_color)
   );
 
-  const shell = tenant.template;
+  const theme = tenant.template;
 
-  if (shell === 'metro-pro') {
+  if (theme === 'metro-pro') {
     return (
       <>
         <style dangerouslySetInnerHTML={{ __html: cssVars }} />
@@ -64,7 +64,7 @@ export default async function TenantLayout({
     );
   }
 
-  if (shell === 'modern-pro') {
+  if (theme === 'modern-pro') {
     return (
       <>
         <style dangerouslySetInnerHTML={{ __html: cssVars }} />
@@ -77,7 +77,7 @@ export default async function TenantLayout({
     );
   }
 
-  if (shell === 'clean-friendly') {
+  if (theme === 'clean-friendly') {
     return (
       <>
         <style dangerouslySetInnerHTML={{ __html: cssVars + `:root{${CF_TOKENS}}` }} />
@@ -92,7 +92,7 @@ export default async function TenantLayout({
     );
   }
 
-  if (shell === 'bold-local') {
+  if (theme === 'bold-local') {
     return (
       <>
         <style dangerouslySetInnerHTML={{ __html: cssVars + `:root{${BL_TOKENS}}` }} />
@@ -107,7 +107,7 @@ export default async function TenantLayout({
     );
   }
 
-  if (shell === 'rustic-rugged') {
+  if (theme === 'rustic-rugged') {
     return (
       <>
         <style dangerouslySetInnerHTML={{ __html: cssVars }} />
@@ -122,7 +122,7 @@ export default async function TenantLayout({
 
   return (
     <main style={{ padding: '4rem 2rem' }}>
-      <h1>Shell not yet ported: {tenant.template}</h1>
+      <h1>Theme not yet ported: {tenant.template}</h1>
     </main>
   );
 }

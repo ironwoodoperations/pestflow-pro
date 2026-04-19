@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../hooks/useTenant'
-import { applyShellTheme } from '../../../lib/shellThemes'
+import { applyTheme } from '../../../lib/shellThemes'
 import BrandingLogo from './BrandingLogo'
 import PalettePicker from '../../shared/PalettePicker'
 import { triggerRevalidate } from '../../../lib/revalidate'
@@ -68,7 +68,7 @@ export default function BrandingSection() {
     const { error } = await supabase.from('settings').upsert({ tenant_id: tenantId, key: 'branding', value: form }, { onConflict: 'tenant_id,key' })
     setSaving(false)
     if (error) { toast.error(`Failed to save branding settings: ${error.message}`); return }
-    applyShellTheme(form.template, form.primary_color, form.accent_color)
+    applyTheme(form.template, form.primary_color, form.accent_color)
     localStorage.setItem('pfp_template', form.template)
     try { localStorage.removeItem(`pfp_tenant_boot_v2:${window.location.hostname}`); delete (window as any).__TENANT_BOOT__ } catch {}
     toast.success('Branding settings saved!')
@@ -155,7 +155,7 @@ export default function BrandingSection() {
             onSelect={(p, a) => {
               // Only change colors — template is a separate user choice and must never be set here
               setForm(prev => {
-                applyShellTheme(prev.template, p, a)
+                applyTheme(prev.template, p, a)
                 return { ...prev, primary_color: p, accent_color: a }
               })
             }}

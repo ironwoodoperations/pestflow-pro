@@ -1,19 +1,19 @@
 import PalettePicker from '../shared/PalettePicker'
-import { getPalettesForShell } from '../../lib/shellThemes'
+import { getPalettesForTheme } from '../../lib/shellThemes'
 
 interface Props {
-  shell: string
+  theme: string
   primary: string
   accent: string
   onSelect: (primary: string, accent: string) => void
 }
 
-export default function PaletteSwatches({ shell, primary, accent, onSelect }: Props) {
-  const filteredPalettes = getPalettesForShell(shell)
-  const label = shell === 'metro-pro'
+export default function PaletteSwatches({ theme, primary, accent, onSelect }: Props) {
+  const filteredPalettes = getPalettesForTheme(theme)
+  const label = theme === 'metro-pro'
     ? 'Metro Pro Palettes (Pro/Elite)'
     : filteredPalettes.length > 0
-      ? `${filteredPalettes.length} palettes for this shell`
+      ? `${filteredPalettes.length} palettes for this theme`
       : 'All palettes available'
 
   return (
