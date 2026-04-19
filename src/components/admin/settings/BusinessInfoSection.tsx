@@ -42,7 +42,7 @@ export default function BusinessInfoSection() {
     const value = { ...extraDbFields.current, ...form }
     const { error } = await supabase.from('settings').upsert({ tenant_id: tenantId, key: 'business_info', value }, { onConflict: 'tenant_id,key' })
     setSaving(false)
-    if (error) { toast.error('Failed to save business info.'); return }
+    if (error) { toast.error(`Failed to save business info: ${error.message}`); return }
     toast.success('Business info saved!')
     const { data: sessionData } = await supabase.auth.getSession()
     const accessToken = sessionData.session?.access_token

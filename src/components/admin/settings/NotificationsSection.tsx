@@ -25,7 +25,7 @@ export default function NotificationsSection() {
     setSaving(true)
     const { error } = await supabase.from('settings').upsert({ tenant_id: tenantId, key: 'notifications', value: form }, { onConflict: 'tenant_id,key' })
     setSaving(false)
-    if (error) toast.error('Failed to save notification settings.'); else toast.success('Notification settings saved!')
+    if (error) toast.error(`Failed to save notification settings: ${error.message}`); else toast.success('Notification settings saved!')
   }
 
   if (loading) return <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"><p className="text-gray-400">Loading...</p></div>

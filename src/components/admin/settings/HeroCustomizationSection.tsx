@@ -51,7 +51,7 @@ export default function HeroCustomizationSection() {
       { onConflict: 'tenant_id,key' }
     )
     setSaving(false)
-    if (error) { toast.error('Failed to save customization.'); return }
+    if (error) { toast.error(`Failed to save customization: ${error.message}`); return }
     toast.success('✅ Customization saved')
     const { data: sessionData } = await supabase.auth.getSession()
     const accessToken = sessionData.session?.access_token

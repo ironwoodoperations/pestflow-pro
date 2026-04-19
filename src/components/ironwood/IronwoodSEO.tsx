@@ -79,7 +79,7 @@ export default function IronwoodSEO() {
       { onConflict: 'tenant_id,key' }
     )
     setSaving(false)
-    if (error) toast.error('Failed to save')
+    if (error) toast.error(`Save failed: ${error.message}`)
     else toast.success('Site-wide SEO saved')
   }
 

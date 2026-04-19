@@ -55,7 +55,7 @@ export default function SeoKeywordsTab() {
   async function addToTracker(keyword: string) {
     if (!tenantId) return
     const { error } = await supabase.from('keyword_tracker').insert({ tenant_id: tenantId, keyword, page_slug: page })
-    if (error) toast.error('Failed to add keyword.'); else toast.success(`"${keyword}" added to tracker!`)
+    if (error) toast.error(`Failed to add keyword: ${error.message}`); else toast.success(`"${keyword}" added to tracker!`)
   }
 
   const intentColor: Record<string, string> = { transactional: 'bg-emerald-100 text-emerald-700', informational: 'bg-blue-100 text-blue-700', local: 'bg-amber-100 text-amber-700' }

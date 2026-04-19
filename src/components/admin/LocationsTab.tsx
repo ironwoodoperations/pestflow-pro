@@ -65,14 +65,14 @@ export default function LocationsTab() {
     const seoFields = { meta_title: form.meta_title || null, meta_description: form.meta_description || null, focus_keyword: form.focus_keyword || null }
     if (editingId) {
       const { error } = await supabase.from('location_data').update({ city: form.city, slug, hero_title, intro: form.intro, is_live: form.is_live, ...seoFields }).eq('id', editingId)
-      if (error) { toast.error('Failed to update.') } else {
+      if (error) { toast.error(`Failed to update: ${error.message}`) } else {
         toast.success('Location updated!')
         const { data: s } = await supabase.auth.getSession()
         if (s.session?.access_token && tenantId) await triggerRevalidate({ type: 'locations', tenantId }, s.session.access_token)
       }
     } else {
       const { error } = await supabase.from('location_data').insert({ tenant_id: tenantId, city: form.city, slug, hero_title, intro: form.intro, is_live: form.is_live, ...seoFields })
-      if (error) { toast.error('Failed to add location.') } else {
+      if (error) { toast.error(`Failed to add location: ${error.message}`) } else {
         toast.success('Location added!')
         const { data: s } = await supabase.auth.getSession()
         if (s.session?.access_token && tenantId) await triggerRevalidate({ type: 'locations', tenantId }, s.session.access_token)

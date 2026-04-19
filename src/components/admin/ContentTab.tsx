@@ -114,7 +114,7 @@ export default function ContentTab() {
       subtitle: '',
       intro: '',
     })
-    if (error) { toast.error('Failed to create page'); setCreatingPage(false); return }
+    if (error) { toast.error(`Failed to create page: ${error.message}`); setCreatingPage(false); return }
     setCustomSlugs(prev => [...prev, slug])
     setSelectedSlug(slug)
     setShowNewPage(false)

@@ -56,14 +56,14 @@ export default function TestimonialsTab() {
     const payload = { author_name: form.author_name, author_email: form.author_email || null, review_text: form.review_text, rating: form.rating, source: form.source, featured: form.featured }
     if (editingId) {
       const { error } = await supabase.from('testimonials').update(payload).eq('id', editingId)
-      if (error) { toast.error('Failed to update.') } else {
+      if (error) { toast.error(`Failed to update: ${error.message}`) } else {
         toast.success('Review updated!')
         const { data: s } = await supabase.auth.getSession()
         if (s.session?.access_token && tenantId) await triggerRevalidate({ type: 'testimonials', tenantId }, s.session.access_token)
       }
     } else {
       const { error } = await supabase.from('testimonials').insert({ tenant_id: tenantId, ...payload })
-      if (error) { toast.error('Failed to add review.') } else {
+      if (error) { toast.error(`Failed to add review: ${error.message}`) } else {
         toast.success('Review added!')
         const { data: s } = await supabase.auth.getSession()
         if (s.session?.access_token && tenantId) await triggerRevalidate({ type: 'testimonials', tenantId }, s.session.access_token)

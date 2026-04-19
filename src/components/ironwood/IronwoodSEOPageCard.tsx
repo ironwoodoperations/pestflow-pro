@@ -22,7 +22,7 @@ export default function IronwoodSEOPageCard({ slug, label, initialTitle, initial
       { onConflict: 'tenant_id,page_slug' }
     )
     setSaving(false)
-    if (error) toast.error('Failed to save')
+    if (error) toast.error(`Save failed: ${error.message}`)
     else toast.success(`${label} meta saved`)
   }
 

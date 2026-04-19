@@ -27,7 +27,7 @@ export default function HolidayModeSection() {
     setSaving(true)
     const { error } = await supabase.from('settings').upsert({ tenant_id: tenantId, key: 'holiday_mode', value }, { onConflict: 'tenant_id,key' })
     setSaving(false)
-    if (error) { toast.error('Failed to save.'); return }
+    if (error) { toast.error(`Failed to save: ${error.message}`); return }
     toast.success('Holiday mode updated!')
     const { data: sessionData } = await supabase.auth.getSession()
     const accessToken = sessionData.session?.access_token

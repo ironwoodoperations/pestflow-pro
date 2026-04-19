@@ -45,7 +45,7 @@ export default function FaqTab() {
       sort_order: Number(form.sort_order) || 0,
     }).select('*').single()
     setSaving(false)
-    if (error) { toast.error('Failed to save.'); return }
+    if (error) { toast.error(`Failed to save: ${error.message}`); return }
     setItems(prev => [...prev, data].sort((a, b) => a.category.localeCompare(b.category) || a.sort_order - b.sort_order))
     setAdding(false)
     toast.success('FAQ item added!')
@@ -61,7 +61,7 @@ export default function FaqTab() {
       category: form.category, sort_order: Number(form.sort_order) || 0,
     }).eq('id', id)
     setSaving(false)
-    if (error) { toast.error('Failed to save.'); return }
+    if (error) { toast.error(`Failed to save: ${error.message}`); return }
     setItems(prev => prev.map(i => i.id === id
       ? { ...i, question: form.question.trim(), answer: form.answer.trim(), category: form.category, sort_order: Number(form.sort_order) || 0 }
       : i).sort((a, b) => a.category.localeCompare(b.category) || a.sort_order - b.sort_order))
@@ -74,7 +74,7 @@ export default function FaqTab() {
   async function handleDelete() {
     if (!deleteTarget) return
     const { error } = await supabase.from('faqs').delete().eq('id', deleteTarget.id)
-    if (error) { toast.error('Failed to delete.'); return }
+    if (error) { toast.error(`Failed to delete: ${error.message}`); return }
     setItems(prev => prev.filter(i => i.id !== deleteTarget.id))
     setDeleteTarget(null)
     toast.success('FAQ item deleted.')

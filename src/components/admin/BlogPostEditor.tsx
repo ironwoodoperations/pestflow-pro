@@ -71,7 +71,7 @@ export default function BlogPostEditor({ editing, initialPost, tenantId, onSave,
       error = res.error
     }
     setSaving(false)
-    if (error) { toast.error('Failed to save post.'); return }
+    if (error) { toast.error(`Failed to save post: ${error.message}`); return }
     toast.success(editing === 'new' ? 'Post created!' : 'Post updated!')
     const { data: s } = await supabase.auth.getSession()
     if (s.session?.access_token) await triggerRevalidate({ type: 'blog', tenantId }, s.session.access_token)

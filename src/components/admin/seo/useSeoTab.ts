@@ -122,7 +122,7 @@ export function useSeoTab() {
         { tenant_id: tenantId, page_slug: slug, ...editorForm, user_edited: true },
         { onConflict: 'tenant_id,page_slug' }
       )
-      if (error) { toast.error('Failed to save SEO data.'); return }
+      if (error) { toast.error(`Failed to save SEO data: ${error.message}`); return }
       toast.success('SEO data saved!')
       setPages(prev => prev.map(p => p.slug === slug
         ? { ...p, hasMeta: editorForm.meta_title.trim().length > 0, metaTitle: editorForm.meta_title, metaDescription: editorForm.meta_description }
@@ -140,7 +140,7 @@ export function useSeoTab() {
         { tenant_id: tenantId, key: 'integrations', value: { ...(current?.value || {}), [field]: connectForm[field] } },
         { onConflict: 'tenant_id,key' }
       )
-      if (error) { toast.error('Failed to save.'); return }
+      if (error) { toast.error(`Failed to save: ${error.message}`); return }
       toast.success('Saved!')
       setIntegrations(prev => ({ ...prev, [field]: connectForm[field] }))
     } finally { setConnectSaving(null) }

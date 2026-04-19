@@ -25,7 +25,7 @@ export default function DomainSection() {
     setSaving(true)
     const { error } = await supabase.from('tenants').update({ custom_domain: form.custom_domain || null, subdomain: form.subdomain || null }).eq('id', tenantId)
     setSaving(false)
-    if (error) toast.error('Failed to save domain settings.'); else toast.success('Domain settings saved!')
+    if (error) toast.error(`Failed to save domain settings: ${error.message}`); else toast.success('Domain settings saved!')
   }
 
   if (loading) return <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"><p className="text-gray-400">Loading...</p></div>
