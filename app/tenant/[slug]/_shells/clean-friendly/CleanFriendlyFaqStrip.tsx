@@ -17,7 +17,7 @@ const FAQS = [
   },
   {
     q: 'How soon will I see results?',
-    a: 'Most clients notice a significant difference within 24–48 hours. Some treatments take a little longer as pests return to treated areas — we'll set honest expectations on your service day.',
+    a: "Most clients notice a significant difference within 24–48 hours. Some treatments take a little longer as pests return to treated areas — we'll set honest expectations on your service day.",
   },
 ];
 

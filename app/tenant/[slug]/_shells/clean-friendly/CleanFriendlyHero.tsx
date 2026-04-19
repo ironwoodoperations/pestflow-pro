@@ -28,7 +28,10 @@ export function CleanFriendlyHero({ tenant, content, heroMedia, heroImageUrl }: 
     || tenant.tagline
     || 'Licensed technicians, transparent pricing, and treatments safe for your whole family.';
 
-  const resolvedImage = getShellImage({ content, heroMedia, heroImageUrl });
+  const resolvedImage = heroImageUrl || getShellImage({
+    pageContent: content as Parameters<typeof getShellImage>[0]['pageContent'],
+    settings: heroMedia ? { hero_media: heroMedia as { image_url?: string | null; master_hero_image_url?: string | null } } : null,
+  });
 
   const GRID: React.CSSProperties = {
     display: 'grid',
