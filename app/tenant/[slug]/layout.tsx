@@ -13,7 +13,8 @@ import { CleanFriendlyNavbar } from './_shells/clean-friendly/CleanFriendlyNavba
 import { CleanFriendlyFooter } from './_shells/clean-friendly/CleanFriendlyFooter';
 import { BoldLocalNavbar } from './_shells/bold-local/BoldLocalNavbar';
 import { BoldLocalFooter } from './_shells/bold-local/BoldLocalFooter';
-import { barlowFont, interFont, BL_TOKENS } from './_shells/bold-local/BoldLocalFonts';
+import { barlowFont, interFont as blInterFont, BL_TOKENS } from './_shells/bold-local/BoldLocalFonts';
+import { interFont as cfInterFont, CF_TOKENS } from './_shells/clean-friendly/CleanFriendlyFonts';
 import { RusticRuggedNavbar } from './_shells/rustic-rugged/RusticRuggedNavbar';
 import { RusticRuggedFooter } from './_shells/rustic-rugged/RusticRuggedFooter';
 import { computeShellCssVars, shellCssVarsString } from '../../../shared/lib/shellCssVars';
@@ -79,11 +80,13 @@ export default async function TenantLayout({
   if (shell === 'clean-friendly') {
     return (
       <>
-        <style dangerouslySetInnerHTML={{ __html: cssVars }} />
+        <style dangerouslySetInnerHTML={{ __html: cssVars + `:root{${CF_TOKENS}}` }} />
         <TenantProvider tenant={tenant}>
-          <CleanFriendlyNavbar servicePages={servicePages} />
-          <main id="main-content">{children}</main>
-          <CleanFriendlyFooter tenant={tenant} social={social} />
+          <div className={cfInterFont.variable} style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", backgroundColor: 'var(--cf-surface)', color: 'var(--cf-ink)' }}>
+            <CleanFriendlyNavbar servicePages={servicePages} />
+            <main id="main-content">{children}</main>
+            <CleanFriendlyFooter tenant={tenant} social={social} />
+          </div>
         </TenantProvider>
       </>
     );
@@ -94,7 +97,7 @@ export default async function TenantLayout({
       <>
         <style dangerouslySetInnerHTML={{ __html: cssVars + `:root{${BL_TOKENS}}` }} />
         <TenantProvider tenant={tenant}>
-          <div className={`${barlowFont.variable} ${interFont.variable}`} style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", backgroundColor: 'var(--bl-surface)', color: 'var(--bl-text)' }}>
+          <div className={`${barlowFont.variable} ${blInterFont.variable}`} style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", backgroundColor: 'var(--bl-surface)', color: 'var(--bl-text)' }}>
             <BoldLocalNavbar servicePages={servicePages} />
             <main id="main-content">{children}</main>
             <BoldLocalFooter tenant={tenant} social={social} />
