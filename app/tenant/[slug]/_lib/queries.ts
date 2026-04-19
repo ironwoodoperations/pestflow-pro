@@ -14,24 +14,8 @@ export const getPageContent = cache(
       .maybeSingle();
 
     if (error) {
-      console.error('[getPageContent] supabase error', {
-        tenantId,
-        pageSlug,
-        code: error.code,
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-      });
       return null;
     }
-
-    console.log('[getPageContent] fetched', {
-      tenantId,
-      pageSlug,
-      hasRow: data !== null,
-      subtitle: data?.subtitle ?? null,
-      introLen: typeof data?.intro === 'string' ? data.intro.length : 0,
-    });
 
     return data;
   }

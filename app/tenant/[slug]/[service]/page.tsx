@@ -130,12 +130,6 @@ export default async function ServicePage({ params }: Params) {
     getPageContent(tenant.id, params.service),
     getHeroMedia(tenant.id),
   ]);
-  console.log('[ServicePage] render', {
-    slug: params.slug,
-    service: params.service,
-    contentIsNull: content === null,
-    contentSubtitle: (content as { subtitle?: string } | null)?.subtitle ?? null,
-  });
 
   const heroImageUrl = resolveHeroImage(content, heroMedia);
   const heroTitle = (content as { title?: string } | null)?.title || svc.heroTitle;
