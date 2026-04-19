@@ -3,42 +3,65 @@ interface Testimonial {
   author_name: string;
   review_text: string;
   rating: number;
+  author_image_url?: string | null;
+  featured?: boolean;
 }
 
-const FALLBACK: Testimonial[] = [
-  { id: '1', author_name: 'Jennifer A.', review_text: "Extremely professional and thorough. They explained exactly what they were using and why, and I haven't had a single pest issue since. My family feels safe and that means everything.", rating: 5 },
-  { id: '2', author_name: 'Marcus T.',   review_text: 'Called with a bad ant problem on a Wednesday. They were out Thursday morning and fixed it completely. Friendly technician, fair price. We signed up for the quarterly plan on the spot.', rating: 5 },
-  { id: '3', author_name: 'Patricia W.', review_text: "Been with them for over a year now. They always call ahead, show up on time, and my house has never been pest-free like this. Couldn't recommend them more highly.", rating: 5 },
-];
+interface Props { testimonials?: Testimonial[] }
 
-interface Props {
-  testimonials?: Testimonial[];
+function initials(name: string): string {
+  return name.split(' ').filter(Boolean).slice(0, 2).map((p) => p[0].toUpperCase()).join('');
 }
 
-export function CleanFriendlyTestimonials({ testimonials }: Props) {
-  const reviews = testimonials && testimonials.length > 0 ? testimonials.slice(0, 3) : FALLBACK;
+function StarRow({ rating }: { rating: number }) {
+  return (
+    <div style={{ display: 'flex', gap: 2, marginBottom: '0.75rem' }}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <svg key={n} width={14} height={14} viewBox="0 0 24 24" aria-hidden="true">
+          <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" fill={n <= rating ? 'var(--cf-ochre)' : 'none'} stroke={n <= rating ? 'var(--cf-ochre)' : 'var(--cf-divider)'} strokeWidth="1.5" />
+        </svg>
+      ))}
+    </div>
+  );
+}
+
+export function CleanFriendlyTestimonials({ testimonials = [] }: Props) {
+  if (testimonials.length === 0) return null;
+
+  const sorted = [...testimonials].sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0)).slice(0, 6);
 
   return (
-    <section className="py-16 px-6 bg-white">
-      <div className="max-w-5xl mx-auto">
-        <div className="text-center mb-10">
-          <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'var(--color-primary)' }}>TESTIMONIALS</p>
-          <h2 className="text-3xl font-bold" style={{ color: 'var(--color-heading)' }}>
-            What Our Customers Say
+    <section style={{ backgroundColor: 'var(--cf-bg-sky)', borderBottom: '1px solid var(--cf-divider)', padding: '4rem 1rem' }}>
+      <div className="max-w-6xl mx-auto">
+        <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+          <p style={{ fontFamily: "Georgia,'Source Serif Pro',serif", fontStyle: 'italic', fontSize: 14, color: 'var(--cf-ink-secondary)', marginBottom: '0.5rem' }}>
+            from our neighbors
+          </p>
+          <h2 style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", fontWeight: 500, fontSize: 'clamp(24px,3.5vw,36px)', color: 'var(--cf-ink)', lineHeight: 1.2 }}>
+            What families are saying
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {reviews.map(r => (
-            <div key={r.id} className="rounded-2xl p-6 border border-gray-100" style={{ background: 'var(--color-bg-section)' }}>
-              <div className="text-lg mb-3" style={{ color: 'var(--color-accent)' }}>
-                {'★'.repeat(Math.min(r.rating, 5))}
-              </div>
-              <p className="text-sm italic leading-relaxed mb-4 text-gray-600">
-                &ldquo;{r.review_text}&rdquo;
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: '1.25rem' }}>
+          {sorted.map((t) => (
+            <div key={t.id} style={{ backgroundColor: 'var(--cf-surface-card)', border: '1px solid var(--cf-divider)', borderRadius: 16, padding: '1.5rem', boxShadow: '0 2px 12px rgba(31,58,77,0.06)', display: 'flex', flexDirection: 'column' }}>
+              <StarRow rating={t.rating} />
+              <p style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", fontWeight: 400, fontSize: 14, color: 'var(--cf-ink-secondary)', lineHeight: 1.65, flex: 1, marginBottom: '1.25rem' }}>
+                &ldquo;{t.review_text}&rdquo;
               </p>
-              <p className="font-semibold text-sm" style={{ color: 'var(--color-heading)' }}>{r.author_name}</p>
-              <p className="text-xs text-gray-400 mt-0.5">Verified Customer</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                {t.author_image_url ? (
+                  <img src={t.author_image_url} alt={t.author_name} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} loading="lazy" />
+                ) : (
+                  <div style={{ width: 40, height: 40, borderRadius: '50%', backgroundColor: 'var(--cf-bg-sky)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <span style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", fontWeight: 500, fontSize: 14, color: 'var(--cf-ink)' }}>{initials(t.author_name)}</span>
+                  </div>
+                )}
+                <div>
+                  <p style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", fontWeight: 500, fontSize: 14, color: 'var(--cf-ink)', margin: 0 }}>{t.author_name}</p>
+                  <p style={{ fontFamily: "Georgia,'Source Serif Pro',serif", fontStyle: 'italic', fontSize: 11, color: 'var(--cf-ink-muted)', margin: 0 }}>from our customer</p>
+                </div>
+              </div>
             </div>
           ))}
         </div>
