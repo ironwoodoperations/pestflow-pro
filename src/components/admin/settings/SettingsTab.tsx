@@ -11,8 +11,8 @@ import { useTenant } from '../../../hooks/useTenant'
 
 const IRONWOOD_TENANT_ID = '9215b06b-3eb5-49a1-a16e-7ff214bf6783'
 
-const CLIENT_TABS = ['Business Info', 'Branding', 'Social Links', 'Notifications', 'Hero Media', 'Holiday Mode'] as const
-const IRONWOOD_TABS = ['Business Info', 'Branding', 'Social Links', 'Notifications', 'Hero Media', 'Holiday Mode', 'Domain'] as const
+const CLIENT_TABS = ['Business Info', 'Branding', 'Social Links', 'Notifications', 'Master Hero Image', 'Holiday Mode'] as const
+const IRONWOOD_TABS = ['Business Info', 'Branding', 'Social Links', 'Notifications', 'Master Hero Image', 'Holiday Mode', 'Domain'] as const
 type SubTab = (typeof IRONWOOD_TABS)[number]
 
 export default function SettingsTab() {
@@ -43,7 +43,7 @@ export default function SettingsTab() {
       {activeSubTab === 'Branding'       && <BrandingSection />}
       {activeSubTab === 'Social Links'   && <SocialLinksSection />}
       {activeSubTab === 'Notifications'  && <NotificationsSection />}
-      {activeSubTab === 'Hero Media'     && <HeroMediaSection />}
+      {activeSubTab === 'Master Hero Image' && <HeroMediaSection />}
       {activeSubTab === 'Holiday Mode'   && <HolidayModeSection />}
       {activeSubTab === 'Domain'         && <DomainSection />}
     </div>
