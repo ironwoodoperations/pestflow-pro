@@ -79,7 +79,7 @@ export function useProspectDetail(
       setOpenSection(prev => prev === 'intake_link' ? null : prev)
   }, [form.intake_submitted_at])
 
-  // Auto-collapse Package & Payment when invoice sent
+  // Auto-collapse Plan & Payment when invoice sent
   useEffect(() => {
     if (form.setup_invoice_sent_at)
       setOpenSection(prev => prev === 'package_payment' ? null : prev)

@@ -126,7 +126,7 @@ export default function ClientSetupPayment({ form }: Props) {
 
       <div className="space-y-3 mb-6">
         <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-          <span className="text-xs text-gray-500 block">Package</span>
+          <span className="text-xs text-gray-500 block">Setup Type</span>
           <span className="text-sm font-semibold text-gray-900">
             {PACKAGE_LABELS[form.package_type] || '—'}
           </span>

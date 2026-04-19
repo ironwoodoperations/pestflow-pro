@@ -195,7 +195,7 @@ const PATH_A_STEPS = [
   {
     title: 'Send the invoice',
     bullets: [
-      'Scroll to "Package & Payment"',
+      'Scroll to "Plan & Payment"',
       'Enter the setup fee amount',
       'Select the subscription plan',
       'Click "Send Invoice" — this sends a Stripe payment link to the client',

@@ -7,7 +7,7 @@ export interface ClientSetupForm {
   address: string
   hours: string
   tagline: string
-  // Step 2 — Package + Branding
+  // Step 2 — Setup + Branding
   package_type: 'template-launch' | 'growth-setup' | 'site-migration' | 'custom-rebuild' | ''
   template: string
   palette_id: string

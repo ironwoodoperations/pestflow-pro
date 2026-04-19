@@ -23,7 +23,7 @@ export default function Step2PackageBranding({ form, setForm }: Props) {
 
   function handlePackageClick(id: ClientSetupForm['package_type']) {
     const patch: Partial<ClientSetupForm> = { package_type: id }
-    // Pre-fill setup fee with package default when user picks a package and hasn't customised it yet
+    // Pre-fill setup fee with default when user picks a setup type and hasn't customised it yet
     if (PACKAGE_FEE_DEFAULTS[id] !== undefined) {
       patch.setup_fee_amount = PACKAGE_FEE_DEFAULTS[id]
     }
@@ -34,10 +34,10 @@ export default function Step2PackageBranding({ form, setForm }: Props) {
 
   return (
     <div>
-      <h2 className="text-lg font-semibold text-gray-900 mb-1">Package & Branding</h2>
-      <p className="text-sm text-gray-500 mb-6">Select your setup package and visual identity.</p>
+      <h2 className="text-lg font-semibold text-gray-900 mb-1">Setup & Branding</h2>
+      <p className="text-sm text-gray-500 mb-6">Select your setup type and visual identity.</p>
 
-      {/* Package cards */}
+      {/* Setup type cards */}
       <div className="space-y-3 mb-4">
         {IMPLEMENTATION_PACKAGES.map(p => {
           const selected = form.package_type === p.id
@@ -63,7 +63,7 @@ export default function Step2PackageBranding({ form, setForm }: Props) {
         Migration and custom work are quoted based on complexity.
       </p>
 
-      {/* Setup fee — lives here so it's visible alongside the package cards */}
+      {/* Setup fee — lives here so it's visible alongside the setup type cards */}
       <div className="mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-1">
           Setup Fee to Charge ($)
@@ -80,7 +80,7 @@ export default function Step2PackageBranding({ form, setForm }: Props) {
           />
         </div>
         <p className="text-xs text-gray-400 mt-1">
-          Default for this package: ${defaultFee.toLocaleString()}. Enter 0 to waive.
+          Default for this setup type: ${defaultFee.toLocaleString()}. Enter 0 to waive.
         </p>
       </div>
 

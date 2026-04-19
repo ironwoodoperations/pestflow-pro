@@ -105,8 +105,8 @@ export default function ProspectSections({ id, form, openSection, setOpenSection
         ) : <p className="text-xs text-gray-500">Save the prospect first to select a build path.</p>}
       </Acc>
 
-      {/* 2. Package & Payment */}
-      <Acc id="package_payment" title="Package & Payment" isComplete={!!form.setup_invoice_sent_at} completedLabel={form.setup_invoice_sent_at ? `Invoice sent ${fmt(form.setup_invoice_sent_at)}` : undefined} {...acc}>
+      {/* 2. Plan & Payment */}
+      <Acc id="package_payment" title="Plan & Payment" isComplete={!!form.setup_invoice_sent_at} completedLabel={form.setup_invoice_sent_at ? `Invoice sent ${fmt(form.setup_invoice_sent_at)}` : undefined} {...acc}>
         <div className="flex justify-end mb-2"><RepGuideButton section="invoice" onOpen={setGuideSection} /></div>
         <OnboardingSection form={form} setField={wrappedSetField} onBlur={onBlur} prospect={form} onUpdate={onUpdate} onFocusSection={s => setActiveSection(s as any)} />
       </Acc>

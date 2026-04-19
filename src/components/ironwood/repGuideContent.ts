@@ -68,7 +68,7 @@ export const GUIDE_SECTIONS: Record<string, GuideSection> = {
     ],
   },
   'invoice': {
-    title: 'Package & Payment Guide',
+    title: 'Plan & Payment Guide',
     items: [
       { type: 'heading', text: 'Pricing Reference' },
       { type: 'bullet',  text: 'Starter  — $149/mo  |  Setup: $500–$1,000' },

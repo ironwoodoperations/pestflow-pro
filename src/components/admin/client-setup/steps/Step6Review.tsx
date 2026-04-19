@@ -43,7 +43,7 @@ export default function Step6Review({ form, onNext, onBack }: Props) {
         <Row label="Site URL" value={form.slug ? <span className="text-emerald-600 font-medium">{form.slug}.pestflowpro.com</span> : '— not set'} />
         <Row label="Contact" value={`${form.phone || '—'} · ${form.email || '—'}`} />
         <Row label="Address" value={form.address || '—'} />
-        <Row label="Package" value={pkg
+        <Row label="Setup Type" value={pkg
           ? <span>{pkg.label} <span className="text-gray-400 text-xs">{pkg.badge}</span></span>
           : '— not selected'
         } />

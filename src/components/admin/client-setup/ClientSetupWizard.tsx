@@ -70,7 +70,7 @@ export default function ClientSetupWizard() {
           <div className="mt-8 pt-4 border-t border-gray-100">
             {!canAdvance(step, form) && (step === 1 || step === 2 || step === 5) && (
               <p className="text-xs text-amber-600 mb-3 text-center">
-                {step === 1 ? 'Fill in all required fields (*) to continue.' : step === 2 ? 'Select a setup package to continue.' : 'Select a plan to continue.'}
+                {step === 1 ? 'Fill in all required fields (*) to continue.' : step === 2 ? 'Select a setup type to continue.' : 'Select a plan to continue.'}
               </p>
             )}
             <div className="flex justify-between">

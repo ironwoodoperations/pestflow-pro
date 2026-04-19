@@ -45,7 +45,7 @@ export default function OnboardingSection({ form, setField, onBlur, prospect, on
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3" onFocus={() => onFocusSection?.('payment')}>
         <div>
-          <label className="text-xs text-gray-400">Package</label>
+          <label className="text-xs text-gray-400">Setup Type</label>
           <select className={inp} value={form.package_id || ''} onChange={e => handlePackage(e.target.value)}>
             <option value="">— Select —</option>
             {PACKAGES.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
