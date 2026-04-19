@@ -49,6 +49,19 @@ export default async function TenantLayout({
 
   const shell = tenant.template;
 
+  const shellRendered = ['metro-pro', 'modern-pro', 'clean-friendly', 'bold-local', 'rustic-rugged'].includes(shell)
+    ? shell
+    : 'fallback';
+  console.log('[DIAG S153 dispatch]', {
+    slug: params.slug,
+    template_db: shell,
+    shell_rendered: shellRendered,
+    match: shell === shellRendered,
+    primary_color: tenant.primary_color,
+    accent_color: tenant.accent_color,
+    cta_text: tenant.cta_text,
+  });
+
   if (shell === 'metro-pro') {
     return (
       <>
