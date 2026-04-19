@@ -60,22 +60,22 @@ export async function POST(req: NextRequest) {
     revalidatePath('/tenant/[slug]', 'layout');
   } else if (body.type === 'settings') {
     revalidateTag(cacheTags.settings(body.tenantId));
-    revalidatePath(`/tenant/${body.tenantSlug}`, 'layout');
+    revalidatePath('/tenant/[slug]', 'layout');
   } else if (body.type === 'testimonials') {
     revalidateTag(cacheTags.testimonials(body.tenantId));
-    revalidatePath(`/tenant/${body.tenantSlug}`, 'layout');
+    revalidatePath('/tenant/[slug]', 'layout');
   } else if (body.type === 'blog') {
     revalidateTag(cacheTags.blog(body.tenantId));
-    revalidatePath(`/tenant/${body.tenantSlug}`, 'layout');
+    revalidatePath('/tenant/[slug]', 'layout');
   } else if (body.type === 'locations') {
     revalidateTag(cacheTags.locations(body.tenantId));
-    revalidatePath(`/tenant/${body.tenantSlug}`, 'layout');
+    revalidatePath('/tenant/[slug]', 'layout');
   } else if (body.type === 'team') {
     revalidateTag(cacheTags.team(body.tenantId));
-    revalidatePath(`/tenant/${body.tenantSlug}`, 'layout');
+    revalidatePath('/tenant/[slug]', 'layout');
   } else if (body.type === 'faq') {
     revalidateTag(cacheTags.faq(body.tenantId));
-    revalidatePath(`/tenant/${body.tenantSlug}`, 'layout');
+    revalidatePath('/tenant/[slug]', 'layout');
   } else {
     return NextResponse.json({ error: 'invalid_type' }, { status: 400 });
   }
