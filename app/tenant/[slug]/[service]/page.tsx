@@ -132,6 +132,11 @@ export default async function ServicePage({ params }: Params) {
   ]);
 
   const heroImageUrl = resolveHeroImage(content, heroMedia);
+  console.log('[DIAG S151 service]', {
+    slug: params.slug,
+    service: params.service,
+    resolvedHeroUrl: heroImageUrl,
+  });
   const heroTitle = (content as { title?: string } | null)?.title || svc.heroTitle;
   const heroSubtitle = (content as { subtitle?: string } | null)?.subtitle || svc.heroSubtitle;
   const introP1 = (content as { intro?: string } | null)?.intro || svc.introP1;

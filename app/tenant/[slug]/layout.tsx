@@ -3,7 +3,7 @@ export const revalidate = 300;
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { resolveTenantBySlug } from '../../../shared/lib/tenant/resolve';
-import { getAllServicePages, getSocialLinks } from './_lib/queries';
+import { getAllServicePages, getSocialLinks, getHeroMedia } from './_lib/queries';
 import { TenantProvider } from './TenantProvider';
 import { MetroNavbar } from './_components/MetroNavbar';
 import { MetroFooter } from './_components/MetroFooter';
@@ -38,10 +38,19 @@ export default async function TenantLayout({
   const tenant = await resolveTenantBySlug(params.slug);
   if (!tenant) notFound();
 
-  const [servicePages, social] = await Promise.all([
+  const [servicePages, social, heroMedia] = await Promise.all([
     getAllServicePages(tenant.id),
     getSocialLinks(tenant.id),
+    getHeroMedia(tenant.id),
   ]);
+
+  console.log('[DIAG S151 layout]', {
+    slug: params.slug,
+    template: tenant.template,
+    primary_color: tenant.primary_color,
+    apply_hero_to_all_pages: heroMedia?.apply_hero_to_all_pages ?? false,
+    master_hero_image_url: heroMedia?.master_hero_image_url ?? null,
+  });
 
   const cssVars = shellCssVarsString(
     computeShellCssVars(tenant.template, tenant.primary_color, tenant.accent_color)
