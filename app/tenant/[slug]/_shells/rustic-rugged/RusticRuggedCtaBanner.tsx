@@ -1,8 +1,8 @@
 import { formatPhone } from '../../../../../shared/lib/formatPhone';
 
-interface Props { phone?: string; tenantSlug: string }
+interface Props { phone?: string; tenantSlug: string; ctaText?: string }
 
-export function RusticRuggedCtaBanner({ phone, tenantSlug }: Props) {
+export function RusticRuggedCtaBanner({ phone, tenantSlug, ctaText }: Props) {
   return (
     <section className="py-14 px-4 text-center" style={{ backgroundColor: 'var(--color-primary)' }}>
       <div className="max-w-2xl mx-auto">
@@ -16,7 +16,7 @@ export function RusticRuggedCtaBanner({ phone, tenantSlug }: Props) {
         )}
         <a href={`/tenant/${tenantSlug}/quote`} className="inline-block font-bold rounded px-10 py-3 text-white transition hover:opacity-90"
           style={{ backgroundColor: '#1a1a1a' }}>
-          Free Estimate
+          {ctaText || 'Get a Free Quote'}
         </a>
       </div>
     </section>

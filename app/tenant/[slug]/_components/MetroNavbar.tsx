@@ -31,7 +31,7 @@ export function MetroNavbar({ servicePages }: Props) {
 
   const phone = tenant.phone ?? '';
   const logoUrl = tenant.logo_url ?? '';
-  const ctaText = tenant.cta_text ?? 'Get Free Quote';
+  const ctaText = tenant.cta_text || 'Get a Free Quote';
 
   const serviceLinks = servicePages.length > 0
     ? servicePages.map((p) => ({

@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import { formatPhone } from '../../../../../shared/lib/formatPhone';
 
-interface Props { phone?: string }
+interface Props { phone?: string; ctaText?: string }
 
-export function BoldLocalCtaBanner({ phone }: Props) {
+export function BoldLocalCtaBanner({ phone, ctaText }: Props) {
   return (
     <section className="py-16 px-4 text-center" style={{ backgroundColor: 'var(--color-primary)' }}>
       <div className="max-w-3xl mx-auto">
@@ -19,7 +19,7 @@ export function BoldLocalCtaBanner({ phone }: Props) {
         )}
         <Link href="/quote" className="inline-block font-bold rounded-full px-10 py-4 text-lg transition hover:opacity-90"
           style={{ backgroundColor: '#ffffff', color: 'var(--color-primary)' }}>
-          Get a Quote
+          {ctaText || 'Get a Free Quote'}
         </Link>
       </div>
     </section>

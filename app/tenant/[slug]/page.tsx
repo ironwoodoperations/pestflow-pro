@@ -126,7 +126,7 @@ export default async function TenantHome({ params }: Params) {
           certifications={tenant.certifications || undefined}
         />
         <BoldLocalTestimonials testimonials={testimonials as { id: string; author_name: string; review_text: string; rating: number }[]} />
-        <BoldLocalCtaBanner phone={tenant.phone || undefined} />
+        <BoldLocalCtaBanner phone={tenant.phone || undefined} ctaText={tenant.cta_text || 'Get a Free Quote'} />
       </>
     );
   }
@@ -172,7 +172,7 @@ export default async function TenantHome({ params }: Params) {
         <RusticRuggedStatsBanner foundedYear={tenant.founded_year ? String(tenant.founded_year) : undefined} city={city} />
         <RusticRuggedResComFac />
         <RusticRuggedTestimonials testimonial={featuredTestimonial} />
-        <RusticRuggedCtaBanner phone={tenant.phone || undefined} tenantSlug={tenant.slug} />
+        <RusticRuggedCtaBanner phone={tenant.phone || undefined} tenantSlug={tenant.slug} ctaText={tenant.cta_text || 'Get a Free Quote'} />
       </>
     );
   }
