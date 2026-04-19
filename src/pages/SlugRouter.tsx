@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import { Suspense, lazy, useEffect, useState } from 'react'
 import LocationPage from './LocationPage'
 import CustomPage from './CustomPage'
@@ -6,6 +6,42 @@ import NotFound from './NotFound'
 import SuspendedSite from '../components/SuspendedSite'
 import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
+
+function LocationNotFound() {
+  return (
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--color-bg-section)' }}>
+      <section
+        className="flex-1 flex items-center justify-center py-24 px-4"
+        style={{ background: 'linear-gradient(135deg, var(--color-bg-hero) 0%, var(--color-bg-hero-end) 100%)' }}
+      >
+        <div className="text-center max-w-lg">
+          <div className="text-[10rem] font-black opacity-20 select-none leading-none" style={{ color: 'var(--color-primary)' }}>
+            404
+          </div>
+          <div className="text-6xl -mt-8 mb-6">📍</div>
+          <h1 className="text-3xl md:text-4xl font-bold -mt-2 mb-3" style={{ color: 'var(--color-nav-text)' }}>
+            Location not found
+          </h1>
+          <p className="mb-8" style={{ color: 'var(--color-nav-text)', opacity: 0.65 }}>
+            We don't have a page for that city yet.{' '}
+            <Link to="/service-area" style={{ color: 'var(--color-primary)' }} className="underline hover:opacity-80 transition">
+              View all service areas
+            </Link>{' '}
+            to see where we operate.
+          </p>
+          <div className="flex flex-wrap gap-4 justify-center">
+            <Link to="/service-area" className="font-medium rounded-lg px-6 py-3 transition hover:opacity-90" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }}>
+              View Service Areas
+            </Link>
+            <Link to="/quote" className="border font-medium rounded-lg px-6 py-3 transition hover:opacity-80" style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}>
+              Get a Free Quote
+            </Link>
+          </div>
+        </div>
+      </section>
+    </div>
+  )
+}
 
 const MarketingLanding = lazy(() => import('./MarketingLanding'))
 
@@ -117,5 +153,5 @@ export default function SlugRouter() {
   if (type === 'suspended') return <SuspendedSite />
   if (type === 'location') return <LocationPage slug={slug!} />
   if (type === 'custom-page') return <CustomPage slug={slug!} />
-  return <NotFound />
+  return <LocationNotFound />
 }
