@@ -21,6 +21,7 @@ interface Props {
   isPestPage: boolean; apiKey: string
   heroHeadline?: string
   onHeroHeadlineChange?: (val: string) => void
+  applyHeroToAllPages?: boolean
   updateField: (field: keyof ContentForm, value: string) => void
   onSave: () => void
   onGenerateAI: () => void
@@ -101,7 +102,7 @@ function PageImageUpload({ slug, index, onUpdate }: { slug: string; index: numbe
   )
 }
 
-function HeroImageUpload({ slug, onUpdate }: { slug: string; onUpdate?: (url: string) => void }) {
+function HeroImageUpload({ slug, onUpdate, masterOverride = false }: { slug: string; onUpdate?: (url: string) => void; masterOverride?: boolean }) {
   const { tenantId } = useTenant()
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
@@ -151,15 +152,20 @@ function HeroImageUpload({ slug, onUpdate }: { slug: string; onUpdate?: (url: st
       <p className="text-xs text-gray-400 mb-2">
         Optional. Overrides the Master Hero for this page only. Leave blank to use the Master Hero set in Settings → Hero Media.
       </p>
-      {currentUrl && (
+      {masterOverride && (
+        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-2">
+          Master Hero is currently overriding per-page images. Uncheck &ldquo;Apply hero image to all pages&rdquo; in Settings → Hero Media to enable per-page images.
+        </p>
+      )}
+      {currentUrl && !masterOverride && (
         <div className="mb-3 relative inline-block">
           <img src={currentUrl} alt="" className="h-24 w-40 object-cover rounded-lg border border-gray-200" />
-          <button onClick={handleRemove} className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hover:bg-red-600" title="Remove">×</button>
+          <button onClick={handleRemove} disabled={masterOverride} className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hover:bg-red-600 disabled:opacity-50" title="Remove">×</button>
         </div>
       )}
       <input ref={inputRef} type="file" accept="image/*" className="hidden"
         onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = '' }} />
-      <button onClick={() => inputRef.current?.click()} disabled={uploading}
+      <button onClick={() => inputRef.current?.click()} disabled={uploading || masterOverride}
         className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition disabled:opacity-50">
         {uploading ? 'Uploading...' : currentUrl ? '🔄 Replace Hero' : '🖼️ Upload Page Hero Image'}
       </button>
@@ -169,7 +175,7 @@ function HeroImageUpload({ slug, onUpdate }: { slug: string; onUpdate?: (url: st
 
 const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-400'
 
-export default function ContentPageForm({ selectedSlug, form, loading, saving, aiLoading, reverting, isPestPage, apiKey, heroHeadline, onHeroHeadlineChange, updateField, onSave, onGenerateAI, onRevert, onImageUpdate }: Props) {
+export default function ContentPageForm({ selectedSlug, form, loading, saving, aiLoading, reverting, isPestPage, apiKey, heroHeadline, onHeroHeadlineChange, applyHeroToAllPages, updateField, onSave, onGenerateAI, onRevert, onImageUpdate }: Props) {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
       <h3 className="text-base font-semibold text-gray-900 mb-1">Editing: <span className="text-emerald-600">{selectedSlug}</span></h3>
@@ -205,7 +211,7 @@ export default function ContentPageForm({ selectedSlug, form, loading, saving, a
 
           {PAGES_WITH_IMAGES.has(selectedSlug) && (
             <div className="space-y-4 border-t border-gray-100 pt-4">
-              <HeroImageUpload slug={selectedSlug} onUpdate={url => onImageUpdate?.('pageHeroImageUrl', url)} />
+              <HeroImageUpload slug={selectedSlug} onUpdate={url => onImageUpdate?.('pageHeroImageUrl', url)} masterOverride={applyHeroToAllPages} />
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider pt-2">Additional Images</p>
               <PageImageUpload slug={selectedSlug} index={0} onUpdate={url => onImageUpdate?.('image1Url', url)} />
               <PageImageUpload slug={selectedSlug} index={1} onUpdate={url => onImageUpdate?.('image2Url', url)} />

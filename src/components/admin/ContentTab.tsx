@@ -41,6 +41,7 @@ export default function ContentTab() {
   const [showNewPage, setShowNewPage] = useState(false)
   const [newPageForm, setNewPageForm] = useState({ title: '', slug: '' })
   const [creatingPage, setCreatingPage] = useState(false)
+  const [applyHeroToAllPages, setApplyHeroToAllPages] = useState(false)
   const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
 
   // Load custom (non-standard) page slugs from DB
@@ -57,7 +58,7 @@ export default function ContentTab() {
       })
   }, [tenantId])
 
-  // Load business info + customization once
+  // Load business info + customization + hero flag once
   useEffect(() => {
     if (!tenantId) return
     supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle()
@@ -70,6 +71,8 @@ export default function ContentTab() {
       })
     supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'customization').maybeSingle()
       .then(({ data }) => { if (data?.value?.hero_headline) setHeroHeadline(data.value.hero_headline) })
+    supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle()
+      .then(({ data }) => { setApplyHeroToAllPages((data?.value as { apply_hero_to_all_pages?: boolean } | null)?.apply_hero_to_all_pages ?? false) })
   }, [tenantId])
 
   // Load page content when slug changes
@@ -297,6 +300,7 @@ export default function ContentTab() {
               selectedSlug={selectedSlug} form={form} loading={loading} saving={saving}
               aiLoading={aiLoading} reverting={reverting} isPestPage={isPestPage}
               apiKey={apiKey} heroHeadline={heroHeadline} onHeroHeadlineChange={setHeroHeadline}
+              applyHeroToAllPages={applyHeroToAllPages}
               updateField={updateField} onSave={handleSave} onGenerateAI={generateAI} onRevert={handleRevert}
               onImageUpdate={(field, url) => updateField(field, url)}
             />
