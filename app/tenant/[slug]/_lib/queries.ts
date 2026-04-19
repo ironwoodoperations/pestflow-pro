@@ -132,21 +132,20 @@ export const getAllServicePages = cache(
 );
 
 export const getSocialLinks = cache(
-  (tenantId: string) =>
-    unstable_cache(
-      async () => {
-        const supabase = getServerSupabase();
-        const { data } = await supabase
-          .from('settings')
-          .select('value')
-          .eq('tenant_id', tenantId)
-          .eq('key', 'social_links')
-          .maybeSingle();
-        return (data?.value ?? {}) as { facebook?: string; instagram?: string; youtube?: string; google?: string };
-      },
-      ['settings_social_links', tenantId],
-      { tags: [cacheTags.settings(tenantId)], revalidate: 3600 }
-    )()
+  async (tenantId: string) => {
+    const supabase = getServerSupabaseForISR();
+    const { data, error } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('tenant_id', tenantId)
+      .eq('key', 'social_links')
+      .maybeSingle();
+    if (error) {
+      console.error('[getSocialLinks] error', { tenantId, code: error.code, message: error.message });
+      return {} as { facebook?: string; instagram?: string; youtube?: string; google?: string };
+    }
+    return (data?.value ?? {}) as { facebook?: string; instagram?: string; youtube?: string; google?: string };
+  }
 );
 
 export const getFaqItems = cache(
@@ -211,19 +210,18 @@ export const getHeroMedia = cache(
 );
 
 export const getIntegrations = cache(
-  (tenantId: string) =>
-    unstable_cache(
-      async () => {
-        const supabase = getServerSupabase();
-        const { data } = await supabase
-          .from('settings')
-          .select('value')
-          .eq('tenant_id', tenantId)
-          .eq('key', 'integrations')
-          .maybeSingle();
-        return (data?.value ?? {}) as Record<string, string | null>;
-      },
-      ['settings_integrations', tenantId],
-      { tags: [cacheTags.settings(tenantId)], revalidate: 3600 }
-    )()
+  async (tenantId: string) => {
+    const supabase = getServerSupabaseForISR();
+    const { data, error } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('tenant_id', tenantId)
+      .eq('key', 'integrations')
+      .maybeSingle();
+    if (error) {
+      console.error('[getIntegrations] error', { tenantId, code: error.code, message: error.message });
+      return {} as Record<string, string | null>;
+    }
+    return (data?.value ?? {}) as Record<string, string | null>;
+  }
 );
