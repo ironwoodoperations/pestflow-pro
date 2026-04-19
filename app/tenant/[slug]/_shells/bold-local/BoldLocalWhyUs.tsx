@@ -1,32 +1,29 @@
-import Link from 'next/link';
-
 interface Props { businessName: string; intro?: string }
 
-export function BoldLocalWhyUs({ businessName, intro }: Props) {
+const REASONS = [
+  { num: '01', heading: 'No callbacks, no excuses', body: 'When we say the problem is gone, it\'s gone. We re-treat at no charge if pests come back between scheduled visits.' },
+  { num: '02', heading: 'Same-day and next-day service', body: 'We staff for urgency. Most customers get an appointment within 24 hours of calling — often the same day.' },
+  { num: '03', heading: 'Flat pricing, no surprises', body: 'You get a number upfront. No bait-and-switch add-ons, no "environmental fees" in the fine print.' },
+];
+
+export function BoldLocalWhyUs({ businessName }: Props) {
   return (
-    <section className="py-16 px-4" style={{ backgroundColor: '#ffffff' }}>
-      <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
-        <div>
-          <h2 className="text-3xl md:text-4xl font-bold" style={{ color: '#1a1a1a' }}>
-            Don&apos;t Settle For Any Pest Service
-          </h2>
-          <div className="mt-1 mb-5" style={{ width: '40px', height: '3px', backgroundColor: 'var(--color-primary)' }} />
-          <p className="text-gray-600 leading-relaxed text-base">
-            {intro || "Not all pest control is created equal. When pests invade your home or business, you need a team that shows up on time, treats your property with respect, and gets the job done right the first time."}
-          </p>
-        </div>
-        <div>
-          <h2 className="text-3xl md:text-4xl font-bold" style={{ color: '#1a1a1a' }}>
-            {businessName} Can Help
-          </h2>
-          <div className="mt-1 mb-5" style={{ width: '40px', height: '3px', backgroundColor: 'var(--color-primary)' }} />
-          <p className="text-gray-600 leading-relaxed text-base mb-6">
-            We&apos;re your local experts — licensed, insured, and committed to long-term pest prevention. From the first call to the final treatment, we provide personalized care that protects your family, home, and peace of mind.
-          </p>
-          <Link href="/contact" className="inline-block font-bold rounded-full px-7 py-3 transition hover:opacity-90"
-            style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-text-on-primary)' }}>
-            Contact Us Today
-          </Link>
+    <section style={{ backgroundColor: 'var(--bl-surface-2)', borderBottom: '1px solid var(--bl-border)', padding: '4rem 1rem' }}>
+      <div className="max-w-6xl mx-auto">
+        <p style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", fontSize: 11, fontWeight: 600, letterSpacing: '0.13em', textTransform: 'uppercase', color: 'var(--bl-text-muted)', marginBottom: '0.5rem' }}>
+          Why choose us
+        </p>
+        <h2 style={{ fontFamily: "var(--font-barlow,'Barlow Condensed','Oswald',sans-serif)", fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, letterSpacing: '-0.01em', color: 'var(--bl-text)', marginBottom: '2.5rem', lineHeight: 1.1 }}>
+          How {businessName} is different
+        </h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: '2rem' }}>
+          {REASONS.map((r) => (
+            <div key={r.num}>
+              <p style={{ fontFamily: "var(--font-barlow,'Barlow Condensed','Oswald',sans-serif)", fontSize: 36, fontWeight: 700, color: 'var(--bl-accent)', lineHeight: 1, marginBottom: '0.5rem', opacity: 0.6 }}>{r.num}</p>
+              <h3 style={{ fontFamily: "var(--font-barlow,'Barlow Condensed','Oswald',sans-serif)", fontSize: 20, fontWeight: 700, color: 'var(--bl-text)', marginBottom: '0.5rem', letterSpacing: '-0.01em' }}>{r.heading}</h3>
+              <p style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", fontSize: 14, color: 'var(--bl-text-secondary)', lineHeight: 1.6 }}>{r.body}</p>
+            </div>
+          ))}
         </div>
       </div>
     </section>

@@ -13,163 +13,101 @@ const NAV_LINKS = [
   { label: 'Contact', href: '/contact' },
 ];
 
-interface ServiceLink { page_slug: string; title: string | null }
-
-const DEFAULT_SERVICE_LINKS = [
+const DEFAULT_SERVICES = [
   { label: 'Mosquito Control', href: '/mosquito-control' },
   { label: 'Ant Control', href: '/ant-control' },
   { label: 'Roach Control', href: '/roach-control' },
-  { label: 'Spider Control', href: '/spider-control' },
   { label: 'Termite Control', href: '/termite-control' },
-  { label: 'Bed Bug Control', href: '/bed-bug-control' },
+  { label: 'Spider Control', href: '/spider-control' },
   { label: 'Rodent Control', href: '/rodent-control' },
-  { label: 'Wasp & Hornet', href: '/wasp-hornet-control' },
-  { label: 'Flea & Tick', href: '/flea-tick-control' },
-  { label: 'Scorpion Control', href: '/scorpion-control' },
-  { label: 'Pest Control', href: '/pest-control' },
-  { label: 'Termite Inspections', href: '/termite-inspections' },
 ];
 
-interface Props {
-  servicePages: ServiceLink[];
-}
+interface ServiceLink { page_slug: string; title: string | null }
+interface Props { servicePages: ServiceLink[] }
 
 export function BoldLocalNavbar({ servicePages }: Props) {
   const tenant = useTenant();
   const pathname = usePathname();
-  const logoUrl = tenant.logo_url ?? '';
   const phone = tenant.phone ?? '';
-  const businessName = tenant.business_name || tenant.name;
-  const ctaText = tenant.cta_text || 'Get a Free Quote';
+  const bizName = tenant.business_name || tenant.name;
 
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [dropOpen, setDropOpen] = useState(false);
+  const dropRef = useRef<HTMLDivElement>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const serviceLinks = servicePages.length > 0
-    ? servicePages.map((p) => ({
-        label: p.title || p.page_slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
-        href: `/${p.page_slug}`,
-      }))
-    : DEFAULT_SERVICE_LINKS;
+    ? servicePages.slice(0, 12).map((p) => ({ label: p.title || p.page_slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()), href: `/${p.page_slug}` }))
+    : DEFAULT_SERVICES;
 
+  useEffect(() => { setMobileOpen(false); setDropOpen(false); }, [pathname]);
   useEffect(() => {
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-    setDropdownOpen(false);
-    setMobileOpen(false);
-  }, [pathname]);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 10);
-    window.addEventListener('scroll', onScroll);
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') { setMobileOpen(false); setDropdownOpen(false); } }
-    function onClickOut(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setDropdownOpen(false);
-    }
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') { setMobileOpen(false); setDropOpen(false); } }
+    function onOut(e: MouseEvent) { if (dropRef.current && !dropRef.current.contains(e.target as Node)) setDropOpen(false); }
     document.addEventListener('keydown', onKey);
-    document.addEventListener('mousedown', onClickOut);
-    return () => { document.removeEventListener('keydown', onKey); document.removeEventListener('mousedown', onClickOut); };
+    document.addEventListener('mousedown', onOut);
+    return () => { document.removeEventListener('keydown', onKey); document.removeEventListener('mousedown', onOut); };
   }, []);
 
-  function onEnter() { if (closeTimer.current) clearTimeout(closeTimer.current); setDropdownOpen(true); }
-  function onLeave() { closeTimer.current = setTimeout(() => setDropdownOpen(false), 150); }
+  function onEnter() { if (closeTimer.current) clearTimeout(closeTimer.current); setDropOpen(true); }
+  function onLeave() { closeTimer.current = setTimeout(() => setDropOpen(false), 150); }
 
-  const navStyle: React.CSSProperties = {
-    backgroundColor: '#ffffff',
-    boxShadow: scrolled ? '0 2px 12px rgba(0,0,0,0.10)' : '0 1px 0 rgba(0,0,0,0.08)',
-  };
+  const NAV_BG = { backgroundColor: 'var(--bl-surface)', borderBottom: '1px solid var(--bl-accent)' };
+  const LINK_STYLE = { color: 'var(--bl-text-secondary)', fontFamily: "var(--font-inter,'Inter',sans-serif)", fontSize: 14, fontWeight: 500, textDecoration: 'none' };
 
   return (
-    <nav style={navStyle} className="sticky top-0 z-50 transition-shadow">
-      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 px-4 py-2 rounded-lg z-[60] text-white"
-        style={{ backgroundColor: 'var(--color-primary)' }}>Skip to main content</a>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 gap-4">
+    <nav style={NAV_BG} className="sticky top-0 z-50">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 px-4 py-2 z-[60]" style={{ backgroundColor: 'var(--bl-accent)', color: '#0F1216' }}>Skip to main content</a>
+      <div className="max-w-7xl mx-auto px-4" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 60 }}>
 
-          <Link href="/" className="flex items-center gap-2 shrink-0">
-            {logoUrl
-              ? <img src={logoUrl} alt={businessName} style={{ height: '40px', objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-              : <span className="font-bold text-xl" style={{ color: '#1a1a1a', fontFamily: 'var(--font-heading)' }}>{businessName}</span>
-            }
-          </Link>
+        <Link href="/" style={{ textDecoration: 'none', flexShrink: 0 }}>
+          {tenant.logo_url
+            ? <img src={tenant.logo_url} alt={bizName} style={{ height: 36, objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+            : <span style={{ fontFamily: "var(--font-barlow,'Barlow Condensed','Oswald',sans-serif)", fontWeight: 700, fontSize: 20, color: 'var(--bl-text)' }}>{bizName}</span>
+          }
+        </Link>
 
-          <div className="hidden lg:flex items-center gap-5 flex-1 justify-center">
-            <div ref={dropdownRef} className="relative" onMouseEnter={onEnter} onMouseLeave={onLeave}>
-              <button aria-haspopup="true" aria-expanded={dropdownOpen}
-                className="text-sm font-medium flex items-center gap-1 transition"
-                style={{ color: '#1a1a1a' }}
-                onFocus={() => setDropdownOpen(true)}>
-                Services <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />
-              </button>
-              {dropdownOpen && (
-                <div role="menu" className="absolute top-full left-0 mt-1 w-52 bg-white shadow-xl rounded-lg border border-gray-100 py-2 z-50">
-                  {serviceLinks.map((l) => (
-                    <Link key={l.href} href={l.href} onClick={() => setDropdownOpen(false)}
-                      className="block px-4 py-2 text-sm transition hover:text-[color:var(--color-primary)]"
-                      style={{ color: '#1a1a1a' }}>
-                      {l.label}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-            {NAV_LINKS.map((l) => (
-              <Link key={l.href} href={l.href}
-                className="text-sm font-medium transition hover:text-[color:var(--color-primary)]"
-                style={{ color: '#1a1a1a' }}>
-                {l.label}
-              </Link>
-            ))}
-          </div>
-
-          <div className="hidden lg:flex items-center gap-3 shrink-0">
-            {phone && (
-              <a href={`tel:${phone.replace(/\D/g, '')}`} className="text-sm font-semibold transition"
-                style={{ color: 'var(--color-primary)' }}>
-                {formatPhone(phone)}
-              </a>
+        <div className="hidden lg:flex items-center gap-6">
+          <div ref={dropRef} style={{ position: 'relative' }} onMouseEnter={onEnter} onMouseLeave={onLeave}>
+            <button style={{ ...LINK_STYLE, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }} onFocus={() => setDropOpen(true)} aria-haspopup="true" aria-expanded={dropOpen}>
+              Services <ChevronDown size={14} aria-hidden="true" />
+            </button>
+            {dropOpen && (
+              <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: 4, backgroundColor: 'var(--bl-surface-2)', border: '1px solid var(--bl-border)', minWidth: 200, zIndex: 50 }}>
+                {serviceLinks.map((l) => (
+                  <Link key={l.href} href={l.href} onClick={() => setDropOpen(false)} style={{ display: 'block', padding: '0.5rem 1rem', ...LINK_STYLE, textDecoration: 'none' }}>{l.label}</Link>
+                ))}
+              </div>
             )}
-            <Link href="/quote" className="font-bold rounded-full px-5 py-2.5 text-sm transition hover:opacity-90"
-              style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-text-on-primary)' }}>
-              {ctaText}
-            </Link>
           </div>
-
-          <button className="lg:hidden p-2" onClick={() => setMobileOpen(!mobileOpen)}
-            aria-label={mobileOpen ? 'Close menu' : 'Open menu'} style={{ color: '#1a1a1a' }}>
-            {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          {NAV_LINKS.map((l) => <Link key={l.href} href={l.href} style={LINK_STYLE}>{l.label}</Link>)}
         </div>
+
+        <div className="hidden lg:flex items-center gap-3">
+          {phone && (
+            <a href={`tel:${phone.replace(/\D/g, '')}`} style={{ display: 'inline-block', backgroundColor: 'var(--bl-accent)', color: '#0F1216', fontFamily: "var(--font-barlow,'Barlow Condensed','Oswald',sans-serif)", fontWeight: 700, fontSize: 15, padding: '0.55rem 1.25rem', borderRadius: 0, textDecoration: 'none' }}>
+              {formatPhone(phone)}
+            </a>
+          )}
+        </div>
+
+        <button className="lg:hidden" onClick={() => setMobileOpen(!mobileOpen)} aria-label={mobileOpen ? 'Close menu' : 'Open menu'} style={{ background: 'none', border: 'none', color: 'var(--bl-text)', cursor: 'pointer', padding: 4 }}>
+          {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
       </div>
 
       {mobileOpen && (
-        <div className="lg:hidden bg-white border-t border-gray-100 max-h-[80vh] overflow-y-auto">
-          <div className="px-4 py-4 space-y-1">
-            <p className="text-xs font-semibold text-gray-400 uppercase px-2 pb-1">Services</p>
-            {serviceLinks.map((l) => (
-              <Link key={l.href} href={l.href} onClick={() => setMobileOpen(false)}
-                className="block px-2 py-2 text-sm font-medium" style={{ color: '#1a1a1a' }}>{l.label}</Link>
-            ))}
-            <div className="border-t border-gray-100 my-2" />
-            {NAV_LINKS.map((l) => (
-              <Link key={l.href} href={l.href} onClick={() => setMobileOpen(false)}
-                className="block px-2 py-2 text-base font-medium" style={{ color: '#1a1a1a' }}>{l.label}</Link>
-            ))}
+        <div style={{ backgroundColor: 'var(--bl-surface-2)', borderTop: '1px solid var(--bl-border)', maxHeight: '80vh', overflowY: 'auto' }}>
+          <div style={{ padding: '1rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.13em', textTransform: 'uppercase', color: 'var(--bl-text-muted)', marginBottom: '0.25rem' }}>Services</p>
+            {serviceLinks.map((l) => <Link key={l.href} href={l.href} onClick={() => setMobileOpen(false)} style={{ ...LINK_STYLE, padding: '0.45rem 0', display: 'block' }}>{l.label}</Link>)}
+            <div style={{ borderTop: '1px solid var(--bl-border)', margin: '0.5rem 0' }} />
+            {NAV_LINKS.map((l) => <Link key={l.href} href={l.href} onClick={() => setMobileOpen(false)} style={{ ...LINK_STYLE, padding: '0.45rem 0', display: 'block', fontSize: 15 }}>{l.label}</Link>)}
             {phone && (
-              <a href={`tel:${phone.replace(/\D/g, '')}`} className="block px-2 py-2 text-base font-semibold"
-                style={{ color: 'var(--color-primary)' }}>{formatPhone(phone)}</a>
+              <a href={`tel:${phone.replace(/\D/g, '')}`} onClick={() => setMobileOpen(false)} style={{ display: 'block', marginTop: '0.75rem', backgroundColor: 'var(--bl-accent)', color: '#0F1216', fontFamily: "var(--font-barlow,'Barlow Condensed','Oswald',sans-serif)", fontWeight: 700, fontSize: 15, padding: '0.75rem', textAlign: 'center', textDecoration: 'none', borderRadius: 0 }}>
+                {formatPhone(phone)}
+              </a>
             )}
-            <Link href="/quote" onClick={() => setMobileOpen(false)}
-              className="block text-center font-bold rounded-full px-5 py-2.5 transition mt-3"
-              style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-text-on-primary)' }}>
-              {ctaText}
-            </Link>
           </div>
         </div>
       )}
