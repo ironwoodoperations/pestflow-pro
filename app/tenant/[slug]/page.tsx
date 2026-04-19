@@ -78,7 +78,7 @@ export default async function TenantHome({ params }: Params) {
 
     return (
       <>
-        <ModernProHero tenant={tenant} content={content} heroImageUrl={heroImageUrl} />
+        <ModernProHero tenant={tenant} content={content} heroMedia={heroMedia as Record<string, unknown> | null} heroImageUrl={heroImageUrl} />
         <ModernProTrustBar />
         <ModernProServicesGrid services={MODERN_PRO_SERVICES} />
         <ModernProAboutStrip
@@ -148,7 +148,7 @@ export default async function TenantHome({ params }: Params) {
 
     return (
       <>
-        <RusticRuggedHero tenant={tenant} content={content} heroImageUrl={heroImageUrl} />
+        <RusticRuggedHero tenant={tenant} content={content} heroMedia={heroMedia as Record<string, unknown> | null} heroImageUrl={heroImageUrl} />
         <RusticRuggedServiceStrips />
         <RusticRuggedAboutTimeline intro={aboutIntro} />
         <RusticRuggedServicesGrid tenantSlug={tenant.slug} />
@@ -162,7 +162,7 @@ export default async function TenantHome({ params }: Params) {
 
   return (
     <>
-      <MetroHero tenant={tenant} content={content} heroImageUrl={heroImageUrl} />
+      <MetroHero tenant={tenant} content={content} heroMedia={heroMedia as Record<string, unknown> | null} heroImageUrl={heroImageUrl} />
       <ServicesGrid />
       <WhyChooseUs businessName={tenant.business_name || tenant.name} />
       <Process />

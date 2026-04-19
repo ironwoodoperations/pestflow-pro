@@ -1,5 +1,7 @@
+import { Shield } from 'lucide-react';
 import type { Tenant } from '../../../../../shared/lib/tenant/types';
 import { formatPhone } from '../../../../../shared/lib/formatPhone';
+import { VideoPosterPlayer } from '../../../../../src/shells/_shared/VideoPosterPlayer';
 
 const DOT_BG: React.CSSProperties = {
   backgroundImage: 'radial-gradient(circle, #d0d0d0 1px, transparent 1px)',
@@ -7,13 +9,16 @@ const DOT_BG: React.CSSProperties = {
   backgroundColor: '#ffffff',
 };
 
+interface HeroMedia { youtube_id?: string; video_url?: string; image_url?: string; master_hero_image_url?: string; thumbnail_url?: string }
+
 interface Props {
   tenant: Tenant;
   content: Record<string, unknown> | null;
+  heroMedia?: Record<string, unknown> | null;
   heroImageUrl: string | null;
 }
 
-export function RusticRuggedHero({ tenant, content, heroImageUrl }: Props) {
+export function RusticRuggedHero({ tenant, content, heroMedia, heroImageUrl }: Props) {
   const businessName = tenant.business_name || tenant.name;
   const phone = tenant.phone || '';
   const tagline = tenant.tagline || '';
@@ -24,6 +29,12 @@ export function RusticRuggedHero({ tenant, content, heroImageUrl }: Props) {
   const heroHeadline = (content as { hero_headline?: string } | null)?.hero_headline?.trim() || '';
   const subtitle = (content as { subtitle?: string } | null)?.subtitle?.trim() || '';
   const city = address ? address.split(',')[0].trim() : null;
+
+  const hm = heroMedia as HeroMedia | null;
+  const youtubeId = hm?.youtube_id?.trim() || '';
+  const videoUrl = hm?.video_url?.trim() || '';
+  const posterUrl = hm?.thumbnail_url || hm?.image_url || heroImageUrl || '';
+  const hasVideo = !!(youtubeId || videoUrl);
 
   return (
     <section
@@ -42,7 +53,7 @@ export function RusticRuggedHero({ tenant, content, heroImageUrl }: Props) {
         {city && <p className="text-gray-500 mb-2 text-sm">Serving {city} and the Surrounding Area</p>}
         {phone && (
           <a href={`tel:${phone.replace(/\D/g, '')}`} className="font-bold uppercase tracking-widest mb-6 text-sm inline-block" style={{ color: 'var(--color-primary)' }}>
-            📞 CALL TODAY: {formatPhone(phone)}
+            Call today: {formatPhone(phone)}
           </a>
         )}
         <div className="flex gap-3 flex-wrap">
@@ -51,11 +62,17 @@ export function RusticRuggedHero({ tenant, content, heroImageUrl }: Props) {
             style={{ backgroundColor: 'var(--color-primary)', opacity: 0.8, border: '2px solid var(--color-primary)' }}>Our Services</a>
         </div>
       </div>
-      <div className="md:w-[40%] flex items-center justify-center py-10 px-6" style={{ backgroundColor: '#f8f5f0', position: 'relative', zIndex: 1 }}>
-        <div className="text-center text-gray-400 italic text-sm">
-          <div className="text-5xl mb-4">🛡️</div>
-          <p>Locally Owned &amp; Operated</p>
-        </div>
+      <div className="md:w-[40%] flex items-center justify-center py-10 px-6 overflow-hidden" style={{ backgroundColor: '#f8f5f0', position: 'relative', zIndex: 1 }}>
+        {hasVideo && posterUrl ? (
+          <VideoPosterPlayer posterUrl={posterUrl} youtubeId={youtubeId || undefined} videoUrl={videoUrl || undefined} playButtonColor="rgba(194,65,12,0.92)" aspectRatio="16 / 9" className="w-full" />
+        ) : heroImageUrl ? (
+          <img src={heroImageUrl} alt={businessName} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', aspectRatio: '16/9' }} />
+        ) : (
+          <div className="text-center text-gray-400 italic text-sm">
+            <Shield className="w-12 h-12 mx-auto mb-3" style={{ color: 'var(--color-primary)', opacity: 0.6 }} />
+            <p>Locally Owned &amp; Operated</p>
+          </div>
+        )}
       </div>
     </section>
   );
