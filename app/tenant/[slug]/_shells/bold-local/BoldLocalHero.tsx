@@ -1,54 +1,97 @@
 import Link from 'next/link';
 import type { Tenant } from '../../../../../shared/lib/tenant/types';
 import { formatPhone } from '../../../../../shared/lib/formatPhone';
+import { PestIcon } from '../../../../../src/shells/_shared/PestIcon';
+import { VideoPosterPlayer } from '../../../../../src/shells/_shared/VideoPosterPlayer';
+
+interface HeroMedia {
+  youtube_id?: string;
+  video_url?: string;
+  image_url?: string;
+  master_hero_image_url?: string;
+  thumbnail_url?: string;
+}
 
 interface Props {
   tenant: Tenant;
   content: Record<string, unknown> | null;
+  heroMedia?: HeroMedia | null;
   heroImageUrl?: string | null;
 }
 
-export function BoldLocalHero({ tenant, content, heroImageUrl }: Props) {
+const GRID_STYLE = {
+  display: 'grid',
+  gridTemplateColumns: '1fr',
+  gap: '2.5rem',
+  alignItems: 'center',
+} as React.CSSProperties;
+
+const H1_STYLE = {
+  fontFamily: "var(--font-barlow,'Barlow Condensed','Oswald',sans-serif)",
+  fontSize: 'clamp(32px,5vw,60px)',
+  fontWeight: 700,
+  lineHeight: 1.08,
+  letterSpacing: '-0.01em',
+  color: 'var(--bl-text)',
+  marginBottom: '1rem',
+} as React.CSSProperties;
+
+export function BoldLocalHero({ tenant, content, heroMedia, heroImageUrl }: Props) {
   const bizName = tenant.business_name || tenant.name;
   const phone = tenant.phone ?? '';
-  const ctaText = tenant.cta_text || 'Get a Free Quote';
+  const foundedYear = tenant.founded_year;
 
   const c = content as { hero_headline?: string; title?: string; subtitle?: string } | null;
   const headline = c?.hero_headline?.trim() || c?.title?.trim()
-    || (bizName ? `${bizName} — Expert Pest Control` : 'Expert Pest Control You Can Count On');
+    || `${bizName}. Local pest control that actually works.`;
   const subtitle = c?.subtitle?.trim()
     || tenant.tagline
-    || 'Professional and personalized service for your home and business';
+    || 'Licensed technicians. Transparent pricing. Real results.';
 
-  const bgStyle = heroImageUrl
-    ? { backgroundImage: `url(${heroImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }
-    : { background: 'linear-gradient(135deg, var(--color-bg-hero, #2d1a00) 0%, var(--color-bg-hero-end, #1a0f00) 100%)' };
+  const youtubeId = heroMedia?.youtube_id?.trim() || '';
+  const videoUrl = heroMedia?.video_url?.trim() || '';
+  const posterUrl = heroMedia?.thumbnail_url || heroMedia?.image_url || heroImageUrl || '';
+  const hasVideo = !!(youtubeId || videoUrl);
 
   return (
-    <section
-      className="relative min-h-screen flex items-center justify-center overflow-hidden"
-      style={{ ...bgStyle, position: 'relative' }}
-    >
-      {heroImageUrl && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 0, pointerEvents: 'none' }} />}
-      <div className="relative z-10 flex items-center justify-center px-4 w-full py-16">
-        <div className="text-center w-full" style={{ background: 'rgba(0,0,0,0.72)', borderRadius: '16px', padding: '48px 40px', maxWidth: '640px' }}>
-          <h1 className="font-bold text-white" style={{ fontSize: 'clamp(28px,5vw,48px)', lineHeight: 1.2, marginBottom: '16px' }}>
-            {headline}
-          </h1>
-          <p style={{ color: 'white', opacity: 0.9, marginBottom: '32px', fontSize: '18px', lineHeight: 1.6 }}>{subtitle}</p>
-          <div className="flex flex-wrap gap-3 justify-center">
-            <Link href="/quote" className="font-bold rounded-full px-8 py-3 transition hover:opacity-90"
-              style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-text-on-primary)' }}>
-              {ctaText}
+    <section style={{ backgroundColor: 'var(--bl-surface)', borderBottom: '1px solid var(--bl-border)' }}>
+      <style>{`@media(min-width:768px){.bl-hero-grid{grid-template-columns:55% 45% !important}}.bl-right-col{order:-1}.@media(min-width:768px){.bl-right-col{order:1}}`}</style>
+      <div className="max-w-6xl mx-auto px-4 py-12 md:py-20 bl-hero-grid" style={GRID_STYLE}>
+
+        {/* Left — text */}
+        <div>
+          {foundedYear && (
+            <p style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", fontSize: 11, fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--bl-accent)', marginBottom: '0.75rem', borderLeft: '3px solid var(--bl-accent)', paddingLeft: '0.5rem' }}>
+              Since {foundedYear}
+            </p>
+          )}
+          <h1 style={H1_STYLE}>{headline}</h1>
+          <p style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", fontSize: 18, fontWeight: 400, color: 'var(--bl-text-secondary)', lineHeight: 1.55, marginBottom: '2rem', maxWidth: '42ch' }}>
+            {subtitle}
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+            <Link href="/quote" style={{ display: 'inline-block', backgroundColor: 'var(--bl-accent)', color: '#0F1216', fontFamily: "var(--font-barlow,'Barlow Condensed','Oswald',sans-serif)", fontWeight: 700, fontSize: 16, letterSpacing: '0.02em', padding: '0.8rem 1.75rem', borderRadius: 0, textDecoration: 'none' }}>
+              Get a free quote
             </Link>
             {phone && (
-              <a href={`tel:${phone.replace(/\D/g, '')}`}
-                className="font-semibold rounded-full px-8 py-3 transition hover:bg-white hover:opacity-90"
-                style={{ border: '2px solid white', color: 'white' }}>
-                Call {formatPhone(phone)}
+              <a href={`tel:${phone.replace(/\D/g, '')}`} style={{ display: 'inline-block', border: '2px solid var(--bl-accent)', color: 'var(--bl-text)', fontFamily: "var(--font-inter,'Inter',sans-serif)", fontWeight: 500, fontSize: 16, padding: '0.8rem 1.75rem', borderRadius: 0, textDecoration: 'none' }}>
+                {formatPhone(phone)}
               </a>
             )}
           </div>
+        </div>
+
+        {/* Right — visual anchor (first on mobile via CSS order) */}
+        <div className="bl-right-col" style={{ backgroundColor: 'var(--bl-surface-2)', border: '2px solid var(--bl-accent)', overflow: 'hidden', minHeight: 240 }}>
+          {hasVideo && posterUrl ? (
+            <VideoPosterPlayer posterUrl={posterUrl} youtubeId={youtubeId || undefined} videoUrl={videoUrl || undefined} caption="Watch: meet the crew" playButtonColor="#F5A623" aspectRatio="16 / 9" />
+          ) : heroImageUrl ? (
+            <img src={heroImageUrl} alt={bizName} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', aspectRatio: '16/9' }} />
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 240, color: 'var(--bl-accent)', opacity: 0.5 }}>
+              <PestIcon pest="pest-control" size={80} />
+            </div>
+          )}
         </div>
       </div>
     </section>
