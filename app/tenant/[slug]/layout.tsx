@@ -13,6 +13,7 @@ import { CleanFriendlyNavbar } from './_shells/clean-friendly/CleanFriendlyNavba
 import { CleanFriendlyFooter } from './_shells/clean-friendly/CleanFriendlyFooter';
 import { BoldLocalNavbar } from './_shells/bold-local/BoldLocalNavbar';
 import { BoldLocalFooter } from './_shells/bold-local/BoldLocalFooter';
+import { barlowFont, interFont, BL_TOKENS } from './_shells/bold-local/BoldLocalFonts';
 import { RusticRuggedNavbar } from './_shells/rustic-rugged/RusticRuggedNavbar';
 import { RusticRuggedFooter } from './_shells/rustic-rugged/RusticRuggedFooter';
 import { computeShellCssVars, shellCssVarsString } from '../../../shared/lib/shellCssVars';
@@ -91,11 +92,13 @@ export default async function TenantLayout({
   if (shell === 'bold-local') {
     return (
       <>
-        <style dangerouslySetInnerHTML={{ __html: cssVars }} />
+        <style dangerouslySetInnerHTML={{ __html: cssVars + `:root{${BL_TOKENS}}` }} />
         <TenantProvider tenant={tenant}>
-          <BoldLocalNavbar servicePages={servicePages} />
-          <main id="main-content">{children}</main>
-          <BoldLocalFooter tenant={tenant} social={social} />
+          <div className={`${barlowFont.variable} ${interFont.variable}`} style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", backgroundColor: 'var(--bl-surface)', color: 'var(--bl-text)' }}>
+            <BoldLocalNavbar servicePages={servicePages} />
+            <main id="main-content">{children}</main>
+            <BoldLocalFooter tenant={tenant} social={social} />
+          </div>
         </TenantProvider>
       </>
     );
