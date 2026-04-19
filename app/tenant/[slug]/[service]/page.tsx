@@ -42,9 +42,10 @@ export default async function ServicePage({ params }: Params) {
     ]);
     if (!location) notFound();
 
-    const loc = location as { city?: string; hero_title?: string };
+    const loc = location as { city?: string; hero_title?: string; intro?: string; address?: string; hours?: string };
     const city      = loc.city       || titleCase(params.service);
     const heroTitle = loc.hero_title || `${city} Pest Control`;
+    const locIntro  = loc.intro?.trim() || null;
     const phone     = tenant.phone ?? '';
     const bizName   = tenant.business_name ?? '';
     type LocItem = { slug: string; city: string };
@@ -91,8 +92,13 @@ export default async function ServicePage({ params }: Params) {
             <div>
               <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--color-accent)' }}>Local Service</p>
               <h2 className="text-2xl md:text-3xl font-bold mb-4" style={{ color: 'var(--color-primary)' }}>{bizName || 'Professional Pest Control'} in {city}</h2>
-              <p className="text-gray-600 mb-4 leading-relaxed">Our licensed technicians provide comprehensive pest control services throughout {city}. Whether you&apos;re dealing with ants, roaches, rodents, termites, or mosquitoes, we have the solution.</p>
-              <p className="text-gray-600 mb-6 leading-relaxed">We combine local knowledge with professional-grade treatments to deliver lasting results for {city} homeowners and businesses.</p>
+              {locIntro
+                ? <p className="text-gray-600 mb-4 leading-relaxed">{locIntro}</p>
+                : <>
+                    <p className="text-gray-600 mb-4 leading-relaxed">Our licensed technicians provide comprehensive pest control services throughout {city}. Whether you&apos;re dealing with ants, roaches, rodents, termites, or mosquitoes, we have the solution.</p>
+                    <p className="text-gray-600 mb-6 leading-relaxed">We combine local knowledge with professional-grade treatments to deliver lasting results for {city} homeowners and businesses.</p>
+                  </>
+              }
               <div className="flex flex-col sm:flex-row gap-3">
                 <Link href="/quote" className="font-semibold px-6 py-3 rounded-lg text-white text-center transition hover:opacity-90" style={{ backgroundColor: 'var(--color-primary)' }}>Get Free Quote</Link>
                 <Link href="/service-area" className="font-semibold px-6 py-3 rounded-lg text-center transition hover:bg-gray-50" style={{ border: '2px solid var(--color-primary)', color: 'var(--color-primary)' }}>View Service Area</Link>
