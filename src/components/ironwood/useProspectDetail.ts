@@ -27,14 +27,12 @@ export function useProspectDetail(
   const [seoScore, setSeoScore]       = useState(0)
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const hasAutoImported = useRef(false)
-  const savedCallDate = useRef<string | null>(null)
 
   useEffect(() => {
     if (!prospectId) return
     supabase.from('prospects').select('*').eq('id', prospectId).maybeSingle().then(({ data }) => {
       if (data) {
         setForm(data)
-        savedCallDate.current = data.call_date || null
         if (data.slug) setSlugEdited(true)
         setOpenSection(data.provisioned_at ? 'qa_checklist' : 'build_path')
       }
@@ -120,24 +118,6 @@ export function useProspectDetail(
       }
     } else {
       await supabase.from('prospects').update({ ...toSave, updated_at: new Date().toISOString() }).eq('id', sid)
-
-      // Fire Power Automate webhook when call_date is set or changed (not cleared)
-      const newCallDate = data.call_date || null
-      if (newCallDate && newCallDate !== savedCallDate.current) {
-        savedCallDate.current = newCallDate
-        supabase.functions.invoke('notify-call-date-scheduled', {
-          body: {
-            prospect_id:  sid,
-            company_name: data.company_name || '',
-            contact_name: data.contact_name || '',
-            phone:        data.phone        || '',
-            email:        data.email        || '',
-            call_date:    newCallDate,
-            notes:        data.notes        || '',
-            admin_url:    `https://pestflowpro.com/ironwood?prospect=${sid}`,
-          },
-        }).catch(() => {})
-      }
     }
     setSaved(true); setTimeout(() => setSaved(false), 2000)
   }, [form, id])
