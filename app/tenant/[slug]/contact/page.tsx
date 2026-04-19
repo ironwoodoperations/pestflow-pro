@@ -53,6 +53,7 @@ export default async function ContactPage({ params }: Params) {
           instagram={social.instagram ?? ''}
           google={social.google ?? ''}
           ownerSmsNumber={integrations.owner_sms_number ?? ''}
+          shellTemplate={tenant.template ?? undefined}
         />
       </section>
 

@@ -16,6 +16,7 @@ interface Props {
   instagram: string;
   google: string;
   ownerSmsNumber: string;
+  shellTemplate?: string;
 }
 
 interface FormState {
@@ -24,7 +25,8 @@ interface FormState {
 
 const INITIAL: FormState = { name: '', email: '', phone: '', message: '', smsConsent: false };
 
-export function ContactForm({ tenantId, bizName, phone, email, address, hours, facebook, instagram, google, ownerSmsNumber }: Props) {
+export function ContactForm({ tenantId, bizName, phone, email, address, hours, facebook, instagram, google, ownerSmsNumber, shellTemplate }: Props) {
+  const isCF = shellTemplate === 'clean-friendly';
   const [form, setForm] = useState<FormState>(INITIAL);
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
@@ -91,25 +93,48 @@ export function ContactForm({ tenantId, bizName, phone, email, address, hours, f
           </button>
         </form>
 
-        <div className="rounded-xl p-6" style={{ background: 'var(--color-bg-hero, #0a1628)', color: '#fff' }}>
-          <h3 className="text-xl font-bold mb-4" style={{ color: 'var(--color-accent)' }}>Get in Touch</h3>
-          <ul className="space-y-4 text-white/90">
-            {phone    && <li className="flex items-start gap-3"><Phone  className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: 'var(--color-accent)' }} /><a href={`tel:${phone}`} className="hover:underline">{formatPhone(phone)}</a></li>}
-            {email    && <li className="flex items-start gap-3"><Mail   className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: 'var(--color-accent)' }} /><a href={`mailto:${email}`} className="hover:underline">{email}</a></li>}
-            {address  && <li className="flex items-start gap-3"><MapPin className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: 'var(--color-accent)' }} /><span>{address}</span></li>}
-            {hours    && <li className="flex items-start gap-3"><Clock  className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: 'var(--color-accent)' }} /><span>{hours}</span></li>}
-          </ul>
-          {(facebook || instagram || google) && (
-            <div className="mt-6 pt-4 border-t border-white/20">
-              <h4 className="text-sm font-bold text-white/50 uppercase mb-2">Follow Us</h4>
-              <div className="flex gap-3 text-white/60">
-                {facebook  && <a href={facebook}  target="_blank" rel="noopener noreferrer" className="hover:text-white transition">Facebook</a>}
-                {instagram && <a href={instagram} target="_blank" rel="noopener noreferrer" className="hover:text-white transition">Instagram</a>}
-                {google    && <a href={google}    target="_blank" rel="noopener noreferrer" className="hover:text-white transition">Google</a>}
+        {isCF ? (
+          <div style={{ backgroundColor: 'var(--cf-surface-card)', border: '1px solid var(--cf-divider)', borderRadius: 16, padding: '1.75rem', boxShadow: '0 2px 8px rgba(31,58,77,0.06)' }}>
+            <p style={{ fontFamily: "Georgia,'Source Serif Pro',serif", fontStyle: 'italic', fontSize: 13, color: 'var(--cf-ink-secondary)', marginBottom: '0.5rem' }}>let&apos;s talk</p>
+            <h3 style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", fontWeight: 500, fontSize: 20, color: 'var(--cf-ink)', marginBottom: '1.5rem' }}>Get in touch</h3>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {phone   && <li style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}><Phone  className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--cf-sky)'  }} /><a href={`tel:${phone}`}    style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", fontSize: 14, color: 'var(--cf-ink-secondary)', textDecoration: 'none' }}>{formatPhone(phone)}</a></li>}
+              {email   && <li style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}><Mail   className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--cf-mint)' }} /><a href={`mailto:${email}`} style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", fontSize: 14, color: 'var(--cf-ink-secondary)', textDecoration: 'none' }}>{email}</a></li>}
+              {address && <li style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}><MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--cf-ochre)' }} /><span style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", fontSize: 14, color: 'var(--cf-ink-secondary)' }}>{address}</span></li>}
+              {hours   && <li style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}><Clock  className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--cf-sky)'  }} /><span style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", fontSize: 14, color: 'var(--cf-ink-secondary)' }}>{hours}</span></li>}
+            </ul>
+            {(facebook || instagram || google) && (
+              <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--cf-divider)' }}>
+                <p style={{ fontFamily: "Georgia,'Source Serif Pro',serif", fontStyle: 'italic', fontSize: 12, color: 'var(--cf-ink-muted)', marginBottom: '0.5rem' }}>follow us</p>
+                <div style={{ display: 'flex', gap: 12 }}>
+                  {facebook  && <a href={facebook}  target="_blank" rel="noopener noreferrer" style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", fontSize: 13, color: 'var(--cf-ink-secondary)', textDecoration: 'none' }}>Facebook</a>}
+                  {instagram && <a href={instagram} target="_blank" rel="noopener noreferrer" style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", fontSize: 13, color: 'var(--cf-ink-secondary)', textDecoration: 'none' }}>Instagram</a>}
+                  {google    && <a href={google}    target="_blank" rel="noopener noreferrer" style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", fontSize: 13, color: 'var(--cf-ink-secondary)', textDecoration: 'none' }}>Google</a>}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        ) : (
+          <div className="rounded-xl p-6" style={{ background: 'var(--color-bg-hero, #0a1628)', color: '#fff' }}>
+            <h3 className="text-xl font-bold mb-4" style={{ color: 'var(--color-accent)' }}>Get in Touch</h3>
+            <ul className="space-y-4 text-white/90">
+              {phone    && <li className="flex items-start gap-3"><Phone  className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: 'var(--color-accent)' }} /><a href={`tel:${phone}`} className="hover:underline">{formatPhone(phone)}</a></li>}
+              {email    && <li className="flex items-start gap-3"><Mail   className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: 'var(--color-accent)' }} /><a href={`mailto:${email}`} className="hover:underline">{email}</a></li>}
+              {address  && <li className="flex items-start gap-3"><MapPin className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: 'var(--color-accent)' }} /><span>{address}</span></li>}
+              {hours    && <li className="flex items-start gap-3"><Clock  className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: 'var(--color-accent)' }} /><span>{hours}</span></li>}
+            </ul>
+            {(facebook || instagram || google) && (
+              <div className="mt-6 pt-4 border-t border-white/20">
+                <h4 className="text-sm font-bold text-white/50 uppercase mb-2">Follow Us</h4>
+                <div className="flex gap-3 text-white/60">
+                  {facebook  && <a href={facebook}  target="_blank" rel="noopener noreferrer" className="hover:text-white transition">Facebook</a>}
+                  {instagram && <a href={instagram} target="_blank" rel="noopener noreferrer" className="hover:text-white transition">Instagram</a>}
+                  {google    && <a href={google}    target="_blank" rel="noopener noreferrer" className="hover:text-white transition">Google</a>}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
       </div>
     </div>

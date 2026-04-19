@@ -24,6 +24,7 @@ export default async function QuotePage({ params }: Params) {
         businessName={tenant.business_name ?? tenant.name}
         businessPhone={tenant.phone ?? ''}
         ownerSmsNumber={integrations.owner_sms_number ?? ''}
+        shellTemplate={tenant.template ?? undefined}
       />
     </div>
   );

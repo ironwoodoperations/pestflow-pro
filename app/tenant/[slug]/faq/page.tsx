@@ -8,6 +8,7 @@ export async function generateStaticParams() {
   return [];
 }
 import { getPageContent, getFaqItems, getHeroMedia } from '../_lib/queries';
+import { formatPhone } from '../../../../shared/lib/formatPhone';
 import { resolveHeroImage } from '../_lib/heroImage';
 
 const FAQ_FALLBACK = [
@@ -53,6 +54,7 @@ export default async function FaqPage({ params }: Params) {
   const heroSub   = c?.subtitle || 'Everything you need to know about our pest control services.';
   const heroImageUrl = resolveHeroImage(content, heroMedia);
   const phone = tenant.phone ?? '';
+  const isCF = tenant.template === 'clean-friendly';
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
@@ -96,16 +98,40 @@ export default async function FaqPage({ params }: Params) {
         </div>
       </section>
 
-      <section className="py-16" style={{ backgroundColor: 'var(--color-bg-cta, #0a1628)' }}>
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Still Have Questions?</h2>
-          <p className="mb-8 text-white/75">We&apos;re here to help. Call us or request a quote online.</p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            {phone && <a href={`tel:${phone}`} className="border-2 font-bold rounded-lg px-8 py-4 text-lg transition hover:opacity-90 text-white" style={{ borderColor: 'var(--color-accent)' }}>Call Us Now</a>}
-            <Link href="/quote" className="font-bold rounded-lg px-8 py-4 text-lg transition hover:opacity-90 text-white" style={{ backgroundColor: 'var(--color-accent)' }}>Get a Free Quote</Link>
+      {isCF ? (
+        <section style={{ backgroundColor: 'var(--cf-bg-cream)', borderTop: '1px solid var(--cf-divider)', padding: '4rem 1rem', textAlign: 'center' }}>
+          <div className="max-w-xl mx-auto">
+            <p style={{ fontFamily: "Georgia,'Source Serif Pro',serif", fontStyle: 'italic', fontSize: 14, color: 'var(--cf-ink-secondary)', marginBottom: '0.75rem' }}>still curious?</p>
+            <h2 style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", fontWeight: 500, fontSize: 'clamp(22px,3vw,32px)', color: 'var(--cf-ink)', marginBottom: '0.75rem', lineHeight: 1.2 }}>
+              Still have questions?
+            </h2>
+            <p style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", fontWeight: 400, fontSize: 16, color: 'var(--cf-ink-secondary)', marginBottom: '2rem', lineHeight: 1.65 }}>
+              We&apos;re here to help. Call us or request a quote online.
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'center' }}>
+              <Link href="/quote" style={{ display: 'inline-block', backgroundColor: 'var(--cf-ink)', color: 'var(--cf-surface)', fontFamily: "var(--font-inter,'Inter',sans-serif)", fontWeight: 500, fontSize: 16, padding: '0.85rem 2rem', borderRadius: 28, textDecoration: 'none' }}>
+                Get a free quote
+              </Link>
+              {phone && (
+                <a href={`tel:${phone.replace(/\D/g, '')}`} style={{ display: 'inline-block', border: '1px solid var(--cf-ink)', color: 'var(--cf-ink)', fontFamily: "var(--font-inter,'Inter',sans-serif)", fontWeight: 500, fontSize: 16, padding: '0.85rem 2rem', borderRadius: 28, textDecoration: 'none', backgroundColor: 'transparent' }}>
+                  {formatPhone(phone)}
+                </a>
+              )}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      ) : (
+        <section className="py-16" style={{ backgroundColor: 'var(--color-bg-cta, #0a1628)' }}>
+          <div className="max-w-4xl mx-auto px-4 text-center">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Still Have Questions?</h2>
+            <p className="mb-8 text-white/75">We&apos;re here to help. Call us or request a quote online.</p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              {phone && <a href={`tel:${phone}`} className="border-2 font-bold rounded-lg px-8 py-4 text-lg transition hover:opacity-90 text-white" style={{ borderColor: 'var(--color-accent)' }}>Call Us Now</a>}
+              <Link href="/quote" className="font-bold rounded-lg px-8 py-4 text-lg transition hover:opacity-90 text-white" style={{ backgroundColor: 'var(--color-accent)' }}>Get a Free Quote</Link>
+            </div>
+          </div>
+        </section>
+      )}
 
     </div>
   );

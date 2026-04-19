@@ -12,9 +12,10 @@ const STEPS = [{ num: 1, label: 'Contact Info' }, { num: 2, label: 'Service Info
 interface FormState { firstName: string; lastName: string; email: string; phone: string; service: string; address: string; pestConcern: string }
 const INITIAL: FormState = { firstName: '', lastName: '', email: '', phone: '', service: '', address: '', pestConcern: '' };
 
-interface Props { tenantId: string; businessName: string; businessPhone: string; ownerSmsNumber: string }
+interface Props { tenantId: string; businessName: string; businessPhone: string; ownerSmsNumber: string; shellTemplate?: string }
 
-export function QuoteForm({ tenantId, businessName, businessPhone, ownerSmsNumber }: Props) {
+export function QuoteForm({ tenantId, businessName, businessPhone, ownerSmsNumber, shellTemplate }: Props) {
+  const isCF = shellTemplate === 'clean-friendly';
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormState>(INITIAL);
   const [submitting, setSubmitting] = useState(false);
@@ -159,10 +160,17 @@ export function QuoteForm({ tenantId, businessName, businessPhone, ownerSmsNumbe
       </div>
 
       {businessPhone && (
-        <div className="mt-6 rounded-xl p-5 text-center" style={{ backgroundColor: 'var(--color-bg-hero, #0a1628)' }}>
-          <p className="text-white/70 text-sm mb-1">Prefer to talk to someone?</p>
-          <a href={`tel:${businessPhone.replace(/\D/g, '')}`} className="text-xl font-bold text-white hover:underline">{formatPhone(businessPhone)}</a>
-        </div>
+        isCF ? (
+          <div style={{ marginTop: '1.5rem', backgroundColor: 'var(--cf-bg-sky)', border: '1px solid var(--cf-divider)', borderRadius: 16, padding: '1.25rem', textAlign: 'center' }}>
+            <p style={{ fontFamily: "Georgia,'Source Serif Pro',serif", fontStyle: 'italic', fontSize: 13, color: 'var(--cf-ink-secondary)', marginBottom: 4 }}>prefer to talk to someone?</p>
+            <a href={`tel:${businessPhone.replace(/\D/g, '')}`} style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", fontWeight: 500, fontSize: 18, color: 'var(--cf-ink)', textDecoration: 'none' }}>{formatPhone(businessPhone)}</a>
+          </div>
+        ) : (
+          <div className="mt-6 rounded-xl p-5 text-center" style={{ backgroundColor: 'var(--color-bg-hero, #0a1628)' }}>
+            <p className="text-white/70 text-sm mb-1">Prefer to talk to someone?</p>
+            <a href={`tel:${businessPhone.replace(/\D/g, '')}`} className="text-xl font-bold text-white hover:underline">{formatPhone(businessPhone)}</a>
+          </div>
+        )
       )}
     </div>
   );
