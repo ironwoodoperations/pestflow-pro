@@ -13,15 +13,15 @@ const CORS = {
 
 // Accepts numeric tier (1-4) or string name (starter/growth/grow/pro/elite)
 const PRICE_IDS: Record<string, string> = {
-  '1':       Deno.env.get('STRIPE_PRICE_STARTER') || 'price_1TIZ6DCZBM0TUusSaC2UdcYG',
-  '2':       Deno.env.get('STRIPE_PRICE_GROWTH')  || 'price_1TIrvGCZBM0TUusSNBntvS6l',
-  '3':       Deno.env.get('STRIPE_PRICE_PRO')     || 'price_1TIrvcCZBM0TUusS4BJt8oQi',
-  '4':       Deno.env.get('STRIPE_PRICE_ELITE')   || 'price_1TIrw3CZBM0TUusSomA1hsT4',
-  'starter': Deno.env.get('STRIPE_PRICE_STARTER') || 'price_1TIZ6DCZBM0TUusSaC2UdcYG',
-  'growth':  Deno.env.get('STRIPE_PRICE_GROWTH')  || 'price_1TIrvGCZBM0TUusSNBntvS6l',
-  'grow':    Deno.env.get('STRIPE_PRICE_GROWTH')  || 'price_1TIrvGCZBM0TUusSNBntvS6l',
-  'pro':     Deno.env.get('STRIPE_PRICE_PRO')     || 'price_1TIrvcCZBM0TUusS4BJt8oQi',
-  'elite':   Deno.env.get('STRIPE_PRICE_ELITE')   || 'price_1TIrw3CZBM0TUusSomA1hsT4',
+  '1':       Deno.env.get('STRIPE_PRICE_SUB_STARTER') || '',
+  '2':       Deno.env.get('STRIPE_PRICE_SUB_GROWTH')  || '',
+  '3':       Deno.env.get('STRIPE_PRICE_SUB_PRO')     || '',
+  '4':       Deno.env.get('STRIPE_PRICE_SUB_ELITE')   || '',
+  'starter': Deno.env.get('STRIPE_PRICE_SUB_STARTER') || '',
+  'growth':  Deno.env.get('STRIPE_PRICE_SUB_GROWTH')  || '',
+  'grow':    Deno.env.get('STRIPE_PRICE_SUB_GROWTH')  || '',
+  'pro':     Deno.env.get('STRIPE_PRICE_SUB_PRO')     || '',
+  'elite':   Deno.env.get('STRIPE_PRICE_SUB_ELITE')   || '',
 }
 
 interface RequestBody {

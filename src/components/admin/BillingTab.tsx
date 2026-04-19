@@ -33,20 +33,20 @@ function tierNum(tier: number | string | undefined): number {
 }
 
 const PLAN_PRICE_LABELS: Record<string, string> = {
-  'price_1TIZ6DCZBM0TUusSaC2UdcYG': 'Tier 1 — Starter',
-  'price_1TIrvGCZBM0TUusSNBntvS6l': 'Tier 2 — Grow',
-  'price_1TIrvcCZBM0TUusS4BJt8oQi': 'Tier 3 — Pro',
-  'price_1TIrw3CZBM0TUusSomA1hsT4': 'Tier 4 — Elite',
+  [import.meta.env.VITE_STRIPE_PRICE_SUB_STARTER || '']: 'Tier 1 — Starter',
+  [import.meta.env.VITE_STRIPE_PRICE_SUB_GROWTH  || '']: 'Tier 2 — Grow',
+  [import.meta.env.VITE_STRIPE_PRICE_SUB_PRO     || '']: 'Tier 3 — Pro',
+  [import.meta.env.VITE_STRIPE_PRICE_SUB_ELITE   || '']: 'Tier 4 — Elite',
 }
 
 const TIERS = [
-  { tier: 1, name: 'Starter', price: 149, priceId: 'price_1TIZ6DCZBM0TUusSaC2UdcYG',
+  { tier: 1, name: 'Starter', price: 149, priceId: import.meta.env.VITE_STRIPE_PRICE_SUB_STARTER || '',
     features: ['Website + hosting', 'Lead capture form', 'Content editor', 'SEO tools', 'Blog'] },
-  { tier: 2, name: 'Grow', price: 249, priceId: 'price_1TIrvGCZBM0TUusSNBntvS6l',
+  { tier: 2, name: 'Grow', price: 249, priceId: import.meta.env.VITE_STRIPE_PRICE_SUB_GROWTH || '',
     features: ['Everything in Starter', 'Social media posts', 'Review requests', 'CRM tools', 'Priority support'] },
-  { tier: 3, name: 'Pro', price: 349, priceId: 'price_1TIrvcCZBM0TUusS4BJt8oQi',
+  { tier: 3, name: 'Pro', price: 349, priceId: import.meta.env.VITE_STRIPE_PRICE_SUB_PRO || '',
     features: ['Everything in Grow', 'SMS notifications', 'Advanced analytics', 'Google Business sync', 'Team accounts'] },
-  { tier: 4, name: 'Elite', price: 499, priceId: 'price_1TIrw3CZBM0TUusSomA1hsT4',
+  { tier: 4, name: 'Elite', price: 499, priceId: import.meta.env.VITE_STRIPE_PRICE_SUB_ELITE || '',
     features: ['Everything in Pro', 'White-glove onboarding', 'Custom integrations', 'Dedicated support line', 'Monthly strategy call'] },
 ]
 

@@ -5,15 +5,15 @@ import type { Prospect } from './types'
 
 const SETUP_OPTIONS: { label: string; amount: number; priceId: string | null }[] = [
   { label: 'Waived (No Setup Fee)',  amount: 0,    priceId: null },
-  { label: 'Starter Setup 1',       amount: 500,  priceId: 'price_1TM94WCZBM0TUusS56cSxTQW' },
-  { label: 'Starter Setup 2',       amount: 750,  priceId: 'price_1TM97KCZBM0TUusShePFV2Us' },
-  { label: 'Growth Setup 1',        amount: 1000, priceId: 'price_1TM97zCZBM0TUusS4YNFBefV' },
-  { label: 'Growth Setup 2',        amount: 1250, priceId: 'price_1TM99FCZBM0TUusSj8tvEvHB' },
-  { label: 'Custom Setup 1',        amount: 1500, priceId: 'price_1TM99oCZBM0TUusSafHCaIDB' },
-  { label: 'Custom Setup 2',        amount: 2000, priceId: 'price_1TIZ1rCZBM0TUusSm3PEXfLu' },
-  { label: 'Premium Setup 1',       amount: 2500, priceId: 'price_1TM9B2CZBM0TUusS3Vo9xq2R' },
-  { label: 'Premium Setup 2',       amount: 3500, priceId: 'price_1TIZ3XCZBM0TUusSZmWrD0VW' },
-  { label: 'Elite Setup',           amount: 5000, priceId: 'price_1TM9BrCZBM0TUusSFfytjmgo' },
+  { label: 'Starter Setup 1',       amount: 500,  priceId: import.meta.env.VITE_STRIPE_PRICE_STARTER_SETUP_1 || null },
+  { label: 'Starter Setup 2',       amount: 750,  priceId: import.meta.env.VITE_STRIPE_PRICE_STARTER_SETUP_2 || null },
+  { label: 'Growth Setup 1',        amount: 1000, priceId: import.meta.env.VITE_STRIPE_PRICE_GROWTH_SETUP_1  || null },
+  { label: 'Growth Setup 2',        amount: 1250, priceId: import.meta.env.VITE_STRIPE_PRICE_GROWTH_SETUP_2  || null },
+  { label: 'Custom Setup 1',        amount: 1500, priceId: import.meta.env.VITE_STRIPE_PRICE_CUSTOM_SETUP_1  || null },
+  { label: 'Custom Setup 2',        amount: 2000, priceId: import.meta.env.VITE_STRIPE_PRICE_CUSTOM_SETUP_2  || null },
+  { label: 'Premium Setup 1',       amount: 2500, priceId: import.meta.env.VITE_STRIPE_PRICE_PREMIUM_SETUP_1 || null },
+  { label: 'Premium Setup 2',       amount: 3500, priceId: import.meta.env.VITE_STRIPE_PRICE_PREMIUM_SETUP_2 || null },
+  { label: 'Elite Setup',           amount: 5000, priceId: import.meta.env.VITE_STRIPE_PRICE_ELITE_SETUP_MIGRATION || null },
 ]
 
 function getInitialIdx(prospect: Partial<Prospect>): number {
