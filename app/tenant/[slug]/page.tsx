@@ -23,10 +23,9 @@ import { ModernProWhyChooseUs } from './_shells/modern-pro/ModernProWhyChooseUs'
 import { ModernProTestimonials } from './_shells/modern-pro/ModernProTestimonials';
 import { ModernProCtaBanner } from './_shells/modern-pro/ModernProCtaBanner';
 import { CleanFriendlyHero } from './_shells/clean-friendly/CleanFriendlyHero';
-import { CleanFriendlyTrustBar } from './_shells/clean-friendly/CleanFriendlyTrustBar';
+import { CleanFriendlyHowItWorks } from './_shells/clean-friendly/CleanFriendlyHowItWorks';
 import { CleanFriendlyServicesGrid } from './_shells/clean-friendly/CleanFriendlyServicesGrid';
-import { CleanFriendlyAboutStrip } from './_shells/clean-friendly/CleanFriendlyAboutStrip';
-import { CleanFriendlyWhyChooseUs } from './_shells/clean-friendly/CleanFriendlyWhyChooseUs';
+import { CleanFriendlyCoverageChips } from './_shells/clean-friendly/CleanFriendlyCoverageChips';
 import { CleanFriendlyTestimonials } from './_shells/clean-friendly/CleanFriendlyTestimonials';
 import { CleanFriendlyFaqStrip } from './_shells/clean-friendly/CleanFriendlyFaqStrip';
 import { CleanFriendlyCtaBanner } from './_shells/clean-friendly/CleanFriendlyCtaBanner';
@@ -123,26 +122,19 @@ export default async function TenantHome({ params }: Params) {
   }
 
   if (tenant.template === 'clean-friendly') {
-    const aboutContent = await getPageContent(tenant.id, 'about');
-    const aboutIntro = (aboutContent as { intro?: string } | null)?.intro || '';
-    const aboutImage = (aboutContent as { image_url?: string } | null)?.image_url || '';
+    const locations = await getAllLocations(tenant.id);
+    const serviceAreas = (locations as { city: string }[]).map((l) => l.city);
+    type CFTestimonial = { id: string; author_name: string; review_text: string; rating: number; author_image_url?: string | null; featured?: boolean };
 
     return (
       <>
-        <CleanFriendlyHero tenant={tenant} content={content} heroImageUrl={heroImageUrl} />
-        <CleanFriendlyTrustBar />
+        <CleanFriendlyHero tenant={tenant} content={content} heroMedia={heroMedia as Record<string, unknown> | null} heroImageUrl={heroImageUrl} />
+        <CleanFriendlyHowItWorks />
         <CleanFriendlyServicesGrid />
-        <CleanFriendlyAboutStrip
-          businessName={tenant.business_name || tenant.name}
-          intro={aboutIntro}
-          foundedYear={tenant.founded_year ? String(tenant.founded_year) : undefined}
-          techCount={tenant.num_technicians ? String(tenant.num_technicians) : undefined}
-          imageUrl={aboutImage || undefined}
-        />
-        <CleanFriendlyWhyChooseUs businessName={tenant.business_name || tenant.name} />
-        <CleanFriendlyTestimonials testimonials={testimonials as { id: string; author_name: string; review_text: string; rating: number }[]} />
+        <CleanFriendlyCoverageChips serviceAreas={serviceAreas} />
+        <CleanFriendlyTestimonials testimonials={testimonials as CFTestimonial[]} />
         <CleanFriendlyFaqStrip />
-        <CleanFriendlyCtaBanner phone={tenant.phone || ''} ctaText={tenant.cta_text || 'Get a Free Quote'} />
+        <CleanFriendlyCtaBanner phone={tenant.phone || undefined} ctaText={tenant.cta_text || 'Get a free quote'} />
       </>
     );
   }

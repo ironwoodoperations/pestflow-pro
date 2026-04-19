@@ -1,10 +1,11 @@
 export { CleanFriendlyNavbar } from './CleanFriendlyNavbar';
 export { CleanFriendlyHero } from './CleanFriendlyHero';
 export { CleanFriendlyFooter } from './CleanFriendlyFooter';
-export { CleanFriendlyTrustBar } from './CleanFriendlyTrustBar';
+export { CleanFriendlyHowItWorks } from './CleanFriendlyHowItWorks';
 export { CleanFriendlyServicesGrid } from './CleanFriendlyServicesGrid';
-export { CleanFriendlyAboutStrip } from './CleanFriendlyAboutStrip';
-export { CleanFriendlyWhyChooseUs } from './CleanFriendlyWhyChooseUs';
+export { CleanFriendlyCoverageChips } from './CleanFriendlyCoverageChips';
 export { CleanFriendlyTestimonials } from './CleanFriendlyTestimonials';
 export { CleanFriendlyFaqStrip } from './CleanFriendlyFaqStrip';
 export { CleanFriendlyCtaBanner } from './CleanFriendlyCtaBanner';
+export { CleanFriendlyPestPage } from './CleanFriendlyPestPage';
+export { HeroIllustration } from './HeroIllustration';

@@ -17,6 +17,7 @@ import { Process } from '../_components/sections/Process';
 import { CtaBanner } from '../_components/sections/CtaBanner';
 import { CityFaqAccordion } from '../_components/CityFaqAccordion';
 import { formatPhone } from '../../../../shared/lib/formatPhone';
+import { CleanFriendlyPestPage } from '../_shells/clean-friendly/CleanFriendlyPestPage';
 
 const GUARANTEES = [
   'Satisfaction guaranteed on all service plans',
@@ -129,6 +130,11 @@ export default async function ServicePage({ params }: Params) {
         <CtaBanner phone={phone} businessName={bizName} />
       </div>
     );
+  }
+
+  // Shell-specific pest page branches
+  if (tenant.template === 'clean-friendly') {
+    return <CleanFriendlyPestPage tenant={tenant} pestSlug={params.service} />;
   }
 
   const svc = SERVICE_DATA[params.service];
