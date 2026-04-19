@@ -479,7 +479,7 @@ Deno.serve(async (req: Request) => {
 
         // 9a-br: Overlay branding with intake_data.branding (logo, colors, template)
         const ib_br = (intake?.branding || {}) as Record<string, any>
-        if (ib_br.logo_url || ib_br.primary_color || ib_br.accent_color || ib_br.template) {
+        if (ib_br.logo_url || ib_br.primary_color || ib_br.accent_color || ib_br.template || ib_br.cta_text) {
           const { data: existingBrRow } = await supabase.from('settings').select('value')
             .eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle()
           const currentBr = existingBrRow?.value ?? {}
@@ -490,6 +490,7 @@ Deno.serve(async (req: Request) => {
               ...(ib_br.primary_color ? { primary_color: ib_br.primary_color } : {}),
               ...(ib_br.accent_color  ? { accent_color:  ib_br.accent_color }  : {}),
               ...(ib_br.template      ? { template:      ib_br.template }      : {}),
+              ...(ib_br.cta_text      ? { cta_text:      ib_br.cta_text }      : {}),
             }
           }).eq('tenant_id', tenantId).eq('key', 'branding')
           console.log('[provision-tenant] branding overlaid from intake_data')

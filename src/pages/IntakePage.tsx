@@ -93,6 +93,7 @@ export default function IntakePage() {
           template:      br.template      || existingBr.template      || 'modern-pro',
           primary_color: br.primary_color || existingBr.primary_color || '#E87800',
           accent_color:  br.accent_color  || existingBr.accent_color  || '#1a1a1a',
+          ...(br.cta_text?.trim() ? { cta_text: br.cta_text.trim() } : {}),
         },
         ...(form.domain.domain_name?.trim() ? {
           website_url: form.domain.domain_name.startsWith('http')

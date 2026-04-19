@@ -147,6 +147,7 @@ export default function IntakeLinkSection({ prospectId, adminEmail, companyName,
         primary_color: mergeIfBlank(existingBr.primary_color, brand.primary_color),
         accent_color:  mergeIfBlank(existingBr.accent_color,  brand.accent_color),
         logo_url:      mergeIfBlank(existingBr.logo_url,      brand.logo_url),
+        cta_text:      mergeIfBlank(existingBr.cta_text,      brand.cta_text),
       }
       if (brand.palette_id && !existingBr.palette_id) updates.branding.palette_id = brand.palette_id
 

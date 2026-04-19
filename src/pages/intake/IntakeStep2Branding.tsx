@@ -142,6 +142,34 @@ export default function IntakeStep2Branding({ form, setForm, token, tier, buildP
           </div>
         </div>
       </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          CTA Button Text
+          <span className="text-gray-500 font-normal"> (appears in your nav bar and hero)</span>
+        </label>
+        <input
+          type="text"
+          maxLength={30}
+          value={form.cta_text || ''}
+          onChange={e => set('cta_text', e.target.value)}
+          placeholder="Get A Free Quote"
+          className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-orange-400"
+        />
+        <div className="mt-2 flex flex-wrap gap-2">
+          {['Get A Free Quote', 'Schedule Service', 'Request Inspection', 'Call Now', 'Book Now'].map(preset => (
+            <button
+              key={preset}
+              type="button"
+              onClick={() => set('cta_text', preset)}
+              className="text-xs px-3 py-1 border border-gray-300 rounded-full hover:bg-gray-50 text-gray-600 transition"
+            >
+              {preset}
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-gray-400 mt-2">Max 30 characters. Defaults to "Get A Free Quote" if left blank.</p>
+      </div>
     </div>
   )
 }
