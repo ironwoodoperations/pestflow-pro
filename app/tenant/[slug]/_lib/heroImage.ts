@@ -7,27 +7,35 @@ type Content = {
 type HeroMedia = {
   master_hero_image_url?: string;
   image_url?: string;
+  apply_hero_to_all_pages?: boolean;
 } | null | undefined;
 
 /**
  * Resolves the hero image URL for a tenant page.
- * Chain:
- *   1. page_content.page_hero_image_url  — per-page override
- *   2. hero_media.master_hero_image_url  — site-wide master
- *   3. hero_media.image_url              — legacy transition fallback
- *   4. null                              — caller renders gradient
+ *
+ * Precedence:
+ *   - apply_hero_to_all_pages=true → always master hero (ignores page hero)
+ *   - otherwise: page hero if set, then master hero, then legacy image_url
+ *   - null → caller renders gradient (genuine "no hero configured" case)
  */
 export function resolveHeroImage(
   content: Content,
   heroMedia: HeroMedia
 ): string | null {
+  const master = heroMedia?.master_hero_image_url;
+  const legacyMaster = heroMedia?.image_url;
+
+  if (heroMedia?.apply_hero_to_all_pages) {
+    if (typeof master === 'string' && master.trim() !== '') return master;
+    if (typeof legacyMaster === 'string' && legacyMaster.trim() !== '') return legacyMaster;
+    return null;
+  }
+
   const pageHero = content?.page_hero_image_url;
   if (typeof pageHero === 'string' && pageHero.trim() !== '') return pageHero;
 
-  const master = heroMedia?.master_hero_image_url;
   if (typeof master === 'string' && master.trim() !== '') return master;
 
-  const legacyMaster = heroMedia?.image_url;
   if (typeof legacyMaster === 'string' && legacyMaster.trim() !== '') return legacyMaster;
 
   return null;

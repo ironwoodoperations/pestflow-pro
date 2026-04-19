@@ -188,21 +188,22 @@ export const getHeroMedia = cache(
     unstable_cache(
       async () => {
         const supabase = getServerSupabase();
-        const { data } = await supabase
-          .from('settings')
-          .select('value')
-          .eq('tenant_id', tenantId)
-          .eq('key', 'hero_media')
-          .maybeSingle();
-        return (data?.value ?? null) as {
+        const [heroRes, brandingRes] = await Promise.all([
+          supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'hero_media').maybeSingle(),
+          supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
+        ]);
+        const hero = (heroRes.data?.value ?? null) as {
           master_hero_image_url?: string;
           image_url?: string;
           video_url?: string;
           youtube_id?: string;
           mode?: string;
         } | null;
+        const applyToAll = (brandingRes.data?.value as { apply_hero_to_all_pages?: boolean } | null)?.apply_hero_to_all_pages ?? false;
+        if (!hero && !applyToAll) return null;
+        return { ...(hero ?? {}), apply_hero_to_all_pages: applyToAll } as typeof hero & { apply_hero_to_all_pages: boolean };
       },
-      ['settings_hero_media', tenantId],
+      ['settings_hero_media_v2', tenantId],
       { tags: [cacheTags.settings(tenantId)], revalidate: 3600 }
     )()
 );
