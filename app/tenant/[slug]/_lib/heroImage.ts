@@ -10,24 +10,20 @@ type HeroMedia = {
   apply_hero_to_all_pages?: boolean;
 } | null | undefined;
 
-/**
- * Resolves the hero image URL for a tenant page.
- *
- * Precedence:
- *   - apply_hero_to_all_pages=true → always master hero (ignores page hero)
- *   - otherwise: page hero if set, then master hero, then legacy image_url
- *   - null → caller renders gradient (genuine "no hero configured" case)
- */
+// Resolution order:
+// 1. If heroMedia.apply_hero_to_all_pages === true AND heroMedia.master_hero_image_url truthy: return master
+// 2. If content.page_hero_image_url truthy: return page hero
+// 3. If heroMedia.master_hero_image_url truthy: return master (fallback)
+// 4. If content.image_url truthy (legacy): return legacy page image
+// 5. Return null
 export function resolveHeroImage(
   content: Content,
   heroMedia: HeroMedia
 ): string | null {
   const master = heroMedia?.master_hero_image_url;
-  const legacyMaster = heroMedia?.image_url;
 
   if (heroMedia?.apply_hero_to_all_pages) {
     if (typeof master === 'string' && master.trim() !== '') return master;
-    if (typeof legacyMaster === 'string' && legacyMaster.trim() !== '') return legacyMaster;
     return null;
   }
 
@@ -36,7 +32,8 @@ export function resolveHeroImage(
 
   if (typeof master === 'string' && master.trim() !== '') return master;
 
-  if (typeof legacyMaster === 'string' && legacyMaster.trim() !== '') return legacyMaster;
+  const legacyPage = content?.image_url;
+  if (typeof legacyPage === 'string' && legacyPage.trim() !== '') return legacyPage;
 
   return null;
 }
