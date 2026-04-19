@@ -9,9 +9,8 @@ function getEnv() {
 }
 
 /**
- * For use INSIDE unstable_cache callbacks only.
- * cache: 'no-store' ensures tag invalidation always fetches fresh DB data
- * rather than hitting Next.js Data Cache with stale results.
+ * Forces cache: 'no-store' on every fetch — bypasses Next.js Data Cache entirely.
+ * Reserved for admin write paths or edge cases that must never see cached data.
  */
 export function getServerSupabase() {
   const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } = getEnv();
@@ -25,9 +24,9 @@ export function getServerSupabase() {
 }
 
 /**
- * For use OUTSIDE unstable_cache (e.g. resolveTenantBySlug step 1).
- * No custom fetch — allows Next.js ISR route caching via export const revalidate.
- * Only use for queries whose data is either immutable or wrapped in unstable_cache.
+ * Standard server client — no custom fetch override.
+ * Lets Next.js ISR route caching (export const revalidate) control staleness.
+ * Use for all tenant read-path fetchers.
  */
 export function getServerSupabaseForISR() {
   const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } = getEnv();

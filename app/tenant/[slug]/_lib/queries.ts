@@ -1,7 +1,5 @@
 import { cache } from 'react';
-import { unstable_cache } from 'next/cache';
-import { getServerSupabase, getServerSupabaseForISR } from '../../../../shared/lib/supabase/server';
-import { cacheTags } from '../../../_lib/cacheTags';
+import { getServerSupabaseForISR } from '../../../../shared/lib/supabase/server';
 
 export const getPageContent = cache(
   async (tenantId: string, pageSlug: string) => {
@@ -22,113 +20,104 @@ export const getPageContent = cache(
 );
 
 export const getAllBlogPosts = cache(
-  (tenantId: string) =>
-    unstable_cache(
-      async () => {
-        const supabase = getServerSupabase();
-        const { data } = await supabase
-          .from('blog_posts')
-          .select('*')
-          .eq('tenant_id', tenantId)
-          .not('published_at', 'is', null)
-          .order('published_at', { ascending: false });
-        return data ?? [];
-      },
-      ['all_blog_posts', tenantId],
-      { tags: [cacheTags.blog(tenantId)], revalidate: 3600 }
-    )()
+  async (tenantId: string) => {
+    const supabase = getServerSupabaseForISR();
+    const { data, error } = await supabase
+      .from('blog_posts')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .not('published_at', 'is', null)
+      .order('published_at', { ascending: false });
+    if (error) {
+      console.error('[getAllBlogPosts] error', { tenantId, code: error.code, message: error.message });
+      return [];
+    }
+    return data ?? [];
+  }
 );
 
 export const getBlogPost = cache(
-  (tenantId: string, postSlug: string) =>
-    unstable_cache(
-      async () => {
-        const supabase = getServerSupabase();
-        const { data } = await supabase
-          .from('blog_posts')
-          .select('*')
-          .eq('tenant_id', tenantId)
-          .eq('slug', postSlug)
-          .maybeSingle();
-        return data;
-      },
-      ['blog_post', tenantId, postSlug],
-      { tags: [cacheTags.blog(tenantId)], revalidate: 3600 }
-    )()
+  async (tenantId: string, postSlug: string) => {
+    const supabase = getServerSupabaseForISR();
+    const { data, error } = await supabase
+      .from('blog_posts')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .eq('slug', postSlug)
+      .maybeSingle();
+    if (error) {
+      console.error('[getBlogPost] error', { tenantId, postSlug, code: error.code, message: error.message });
+      return null;
+    }
+    return data;
+  }
 );
 
 export const getAllLocations = cache(
-  (tenantId: string) =>
-    unstable_cache(
-      async () => {
-        const supabase = getServerSupabase();
-        const { data } = await supabase
-          .from('location_data')
-          .select('*')
-          .eq('tenant_id', tenantId)
-          .eq('is_live', true)
-          .order('city');
-        return data ?? [];
-      },
-      ['all_locations', tenantId],
-      { tags: [cacheTags.locations(tenantId)], revalidate: 3600 }
-    )()
+  async (tenantId: string) => {
+    const supabase = getServerSupabaseForISR();
+    const { data, error } = await supabase
+      .from('location_data')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .eq('is_live', true)
+      .order('city');
+    if (error) {
+      console.error('[getAllLocations] error', { tenantId, code: error.code, message: error.message });
+      return [];
+    }
+    return data ?? [];
+  }
 );
 
 export const getLocation = cache(
-  (tenantId: string, locationSlug: string) =>
-    unstable_cache(
-      async () => {
-        const supabase = getServerSupabase();
-        const { data } = await supabase
-          .from('location_data')
-          .select('*')
-          .eq('tenant_id', tenantId)
-          .eq('slug', locationSlug)
-          .maybeSingle();
-        return data;
-      },
-      ['location', tenantId, locationSlug],
-      { tags: [cacheTags.locations(tenantId)], revalidate: 3600 }
-    )()
+  async (tenantId: string, locationSlug: string) => {
+    const supabase = getServerSupabaseForISR();
+    const { data, error } = await supabase
+      .from('location_data')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .eq('slug', locationSlug)
+      .maybeSingle();
+    if (error) {
+      console.error('[getLocation] error', { tenantId, locationSlug, code: error.code, message: error.message });
+      return null;
+    }
+    return data;
+  }
 );
 
 export const getTestimonials = cache(
-  (tenantId: string) =>
-    unstable_cache(
-      async () => {
-        const supabase = getServerSupabase();
-        const { data } = await supabase
-          .from('testimonials')
-          .select('*')
-          .eq('tenant_id', tenantId)
-          .order('created_at', { ascending: false });
-        return data ?? [];
-      },
-      ['testimonials', tenantId],
-      { tags: [cacheTags.testimonials(tenantId)], revalidate: 3600 }
-    )()
+  async (tenantId: string) => {
+    const supabase = getServerSupabaseForISR();
+    const { data, error } = await supabase
+      .from('testimonials')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .order('created_at', { ascending: false });
+    if (error) {
+      console.error('[getTestimonials] error', { tenantId, code: error.code, message: error.message });
+      return [];
+    }
+    return data ?? [];
+  }
 );
 
 export const getAllServicePages = cache(
-  (tenantId: string) =>
-    unstable_cache(
-      async () => {
-        const EXCLUDE = ['home', 'about', 'contact', 'faq', 'quote'];
-        const supabase = getServerSupabase();
-        const { data } = await supabase
-          .from('page_content')
-          .select('page_slug, title, subtitle, image_url')
-          .eq('tenant_id', tenantId)
-          .not('page_slug', 'in', `(${EXCLUDE.map((s) => `"${s}"`).join(',')})`);
-        return data ?? [];
-      },
-      ['all_service_pages', tenantId],
-      {
-        tags: [cacheTags.allPages(tenantId)],
-        revalidate: 3600,
-      }
-    )()
+  async (tenantId: string) => {
+    const EXCLUDE = ['home', 'about', 'contact', 'faq', 'quote'];
+    const supabase = getServerSupabaseForISR();
+    const { data, error } = await supabase
+      .from('page_content')
+      .select('page_slug, title, subtitle, image_url')
+      .eq('tenant_id', tenantId)
+      .not('page_slug', 'in', `(${EXCLUDE.map((s) => `"${s}"`).join(',')})`);
+    if (error) {
+      console.error('[getAllServicePages] error', { tenantId, code: error.code, message: error.message });
+      return [];
+    }
+    return data ?? [];
+  }
 );
 
 export const getSocialLinks = cache(
@@ -149,37 +138,35 @@ export const getSocialLinks = cache(
 );
 
 export const getFaqItems = cache(
-  (tenantId: string) =>
-    unstable_cache(
-      async () => {
-        const supabase = getServerSupabase();
-        const { data } = await supabase
-          .from('faq_items')
-          .select('id, question, answer, sort_order')
-          .eq('tenant_id', tenantId)
-          .order('sort_order');
-        return data ?? [];
-      },
-      ['faq_items', tenantId],
-      { tags: [cacheTags.faq(tenantId)], revalidate: 3600 }
-    )()
+  async (tenantId: string) => {
+    const supabase = getServerSupabaseForISR();
+    const { data, error } = await supabase
+      .from('faq_items')
+      .select('id, question, answer, sort_order')
+      .eq('tenant_id', tenantId)
+      .order('sort_order');
+    if (error) {
+      console.error('[getFaqItems] error', { tenantId, code: error.code, message: error.message });
+      return [];
+    }
+    return data ?? [];
+  }
 );
 
 export const getTeamMembers = cache(
-  (tenantId: string) =>
-    unstable_cache(
-      async () => {
-        const supabase = getServerSupabase();
-        const { data } = await supabase
-          .from('team_members')
-          .select('id, name, title, bio, photo_url')
-          .eq('tenant_id', tenantId)
-          .order('display_order');
-        return data ?? [];
-      },
-      ['team_members', tenantId],
-      { tags: [cacheTags.team(tenantId)], revalidate: 3600 }
-    )()
+  async (tenantId: string) => {
+    const supabase = getServerSupabaseForISR();
+    const { data, error } = await supabase
+      .from('team_members')
+      .select('id, name, title, bio, photo_url')
+      .eq('tenant_id', tenantId)
+      .order('display_order');
+    if (error) {
+      console.error('[getTeamMembers] error', { tenantId, code: error.code, message: error.message });
+      return [];
+    }
+    return data ?? [];
+  }
 );
 
 export const getHeroMedia = cache(
