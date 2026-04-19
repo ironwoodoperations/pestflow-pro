@@ -52,7 +52,12 @@ export default function BrandingSection() {
           apply_hero_to_all_pages: v.apply_hero_to_all_pages ?? false,
         }))
       }
-      if (subRes.data?.value?.tier) setTierNum(Number(subRes.data!.value.tier) || 1)
+      const TIER_RANK: Record<string, number> = { starter: 1, grow: 2, pro: 3, elite: 4 }
+      const rawTier = subRes.data?.value?.tier
+      if (rawTier != null) {
+        const n = typeof rawTier === 'number' ? rawTier : (TIER_RANK[String(rawTier).toLowerCase()] ?? Number(rawTier))
+        setTierNum(n || 1)
+      }
       setLoading(false)
     })
   }, [tenantId])

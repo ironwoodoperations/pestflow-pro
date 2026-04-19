@@ -40,6 +40,7 @@ export function BoldLocalNavbar({ servicePages }: Props) {
   const logoUrl = tenant.logo_url ?? '';
   const phone = tenant.phone ?? '';
   const businessName = tenant.business_name || tenant.name;
+  const ctaText = tenant.cta_text || 'Get a Free Quote';
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -136,7 +137,7 @@ export function BoldLocalNavbar({ servicePages }: Props) {
             )}
             <Link href="/quote" className="font-bold rounded-full px-5 py-2.5 text-sm transition hover:opacity-90"
               style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-text-on-primary)' }}>
-              Get a Quote
+              {ctaText}
             </Link>
           </div>
 
@@ -167,7 +168,7 @@ export function BoldLocalNavbar({ servicePages }: Props) {
             <Link href="/quote" onClick={() => setMobileOpen(false)}
               className="block text-center font-bold rounded-full px-5 py-2.5 transition mt-3"
               style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-text-on-primary)' }}>
-              Get a Quote
+              {ctaText}
             </Link>
           </div>
         </div>

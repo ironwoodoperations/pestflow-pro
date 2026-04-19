@@ -40,6 +40,7 @@ export function RusticRuggedNavbar({ servicePages }: Props) {
   const logoUrl = tenant.logo_url || '';
   const phone = tenant.phone || '';
   const slug = tenant.slug;
+  const ctaText = tenant.cta_text || 'Get a Free Quote';
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dropOpen, setDropOpen] = useState(false);
@@ -115,7 +116,7 @@ export function RusticRuggedNavbar({ servicePages }: Props) {
 
           <div className="hidden lg:flex items-center gap-3 shrink-0">
             {phone && <a href={`tel:${phone.replace(/\D/g, '')}`} className="text-sm font-semibold transition" style={{ color: 'var(--color-primary)' }}>📞 {formatPhone(phone)}</a>}
-            <Link href={`${base}/quote`} className="font-bold rounded px-5 py-2.5 text-sm text-white transition hover:opacity-90" style={{ backgroundColor: 'var(--color-primary)' }}>Free Estimate</Link>
+            <Link href={`${base}/quote`} className="font-bold rounded px-5 py-2.5 text-sm text-white transition hover:opacity-90" style={{ backgroundColor: 'var(--color-primary)' }}>{ctaText}</Link>
           </div>
 
           <button className="lg:hidden p-2" onClick={() => setMobileOpen(!mobileOpen)} aria-label={mobileOpen ? 'Close menu' : 'Open menu'} style={{ color: '#1a1a1a' }}>
@@ -131,7 +132,7 @@ export function RusticRuggedNavbar({ servicePages }: Props) {
             <div className="border-t border-gray-100 my-2" />
             {NAV_LINKS.map(l => <Link key={l.href} href={`${base}${l.href}`} onClick={() => setMobileOpen(false)} className="block px-2 py-2 text-base font-medium" style={{ color: '#1a1a1a' }}>{l.label}</Link>)}
             {phone && <a href={`tel:${phone.replace(/\D/g, '')}`} className="block px-2 py-2 text-base font-semibold" style={{ color: 'var(--color-primary)' }}>📞 {formatPhone(phone)}</a>}
-            <Link href={`${base}/quote`} onClick={() => setMobileOpen(false)} className="block text-center font-bold rounded px-5 py-2.5 text-white transition mt-3" style={{ backgroundColor: 'var(--color-primary)' }}>Free Estimate</Link>
+            <Link href={`${base}/quote`} onClick={() => setMobileOpen(false)} className="block text-center font-bold rounded px-5 py-2.5 text-white transition mt-3" style={{ backgroundColor: 'var(--color-primary)' }}>{ctaText}</Link>
           </div>
         </div>
       )}
