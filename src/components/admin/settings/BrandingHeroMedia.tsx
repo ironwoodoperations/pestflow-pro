@@ -4,6 +4,7 @@ import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../hooks/useTenant'
 import { clearHeroCacheImageUrl } from '../../../lib/heroCache'
 import { clearHeroMemCache } from '../../../hooks/usePageHeroImage'
+import { triggerRevalidate } from '../../../lib/revalidate'
 
 type MediaType = 'image' | 'youtube' | 'upload'
 
@@ -18,19 +19,22 @@ const inp = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-g
 
 export default function BrandingHeroMedia() {
   const { tenantId } = useTenant()
-  const [loading, setLoading]       = useState(true)
-  const [saving, setSaving]         = useState(false)
-  const [uploading, setUploading]   = useState(false)
-  const [confirmRemove, setConfirm] = useState(false)
-  const [mode, setMode]             = useState<'image' | 'video'>('image')
-  const [videoSub, setVideoSub]     = useState<'youtube' | 'upload'>('youtube')
-  const [media, setMedia]           = useState<HeroMedia>({ type: 'image', url: '' })
+  const [loading, setLoading]               = useState(true)
+  const [saving, setSaving]                 = useState(false)
+  const [uploading, setUploading]           = useState(false)
+  const [confirmRemove, setConfirm]         = useState(false)
+  const [mode, setMode]                     = useState<'image' | 'video'>('image')
+  const [videoSub, setVideoSub]             = useState<'youtube' | 'upload'>('youtube')
+  const [media, setMedia]                   = useState<HeroMedia>({ type: 'image', url: '' })
+  const [applyToAll, setApplyToAll]         = useState(false)
 
   useEffect(() => {
     if (!tenantId) return
-    supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'hero_media').maybeSingle()
-      .then(({ data }) => {
-        const v = data?.value
+    Promise.all([
+      supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'hero_media').maybeSingle(),
+      supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
+    ]).then(([heroRes, brandingRes]) => {
+        const v = heroRes.data?.value
         if (v?.mode === 'image') {
           setMedia({ type: 'image', url: v.master_hero_image_url || v.image_url || v.url || v.thumbnail_url || '' })
           setMode('image')
@@ -49,6 +53,8 @@ export default function BrandingHeroMedia() {
           setMedia({ type: 'youtube', url: `https://www.youtube.com/watch?v=${v.youtube_id}` })
           setMode('video'); setVideoSub('youtube')
         }
+        const bv = brandingRes.data?.value as { apply_hero_to_all_pages?: boolean } | null
+        setApplyToAll(bv?.apply_hero_to_all_pages ?? false)
         setLoading(false)
       })
   }, [tenantId])
@@ -77,23 +83,41 @@ export default function BrandingHeroMedia() {
       ? { mode: 'image', master_hero_image_url: cleanUrl, image_url: cleanUrl, url: cleanUrl, thumbnail_url: cleanUrl, video_url: '', youtube_id: '' }
       : { mode: 'video', master_hero_image_url: '', image_url: '', url: cleanUrl, video_url: cleanUrl, youtube_id: youtubeId, thumbnail_url: '' }
     setSaving(true)
-    const { data, error } = await supabase.from('settings')
-      .upsert({ tenant_id: tenantId, key: 'hero_media', value }, { onConflict: 'tenant_id,key' })
-      .select('tenant_id')
+    // Save hero_media and apply_hero_to_all_pages flag (stored in branding) together
+    const [heroRes, brandingRes] = await Promise.all([
+      supabase.from('settings')
+        .upsert({ tenant_id: tenantId, key: 'hero_media', value }, { onConflict: 'tenant_id,key' })
+        .select('tenant_id'),
+      supabase.from('settings')
+        .select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle()
+        .then(async ({ data: existing }) => {
+          const merged = { ...(existing?.value ?? {}), apply_hero_to_all_pages: applyToAll }
+          return supabase.from('settings')
+            .upsert({ tenant_id: tenantId, key: 'branding', value: merged }, { onConflict: 'tenant_id,key' })
+            .select('tenant_id')
+        }),
+    ])
     setSaving(false)
-    if (error) {
-      console.error('Hero media save failed:', error)
-      toast.error('Save failed: ' + error.message)
+    if (heroRes.error) {
+      console.error('Hero media save failed:', heroRes.error)
+      toast.error('Save failed: ' + heroRes.error.message)
       return
     }
-    if (!data || data.length === 0) {
+    if (!heroRes.data || heroRes.data.length === 0) {
       toast.error('Save failed — please log out and log back in.')
+      return
+    }
+    if (brandingRes.error) {
+      toast.error('Hero flag save failed: ' + brandingRes.error.message)
       return
     }
     clearHeroCacheImageUrl()
     if (tenantId) clearHeroMemCache(tenantId)
     try { localStorage.removeItem(`pfp_tenant_boot_v2:${window.location.hostname}`); delete (window as any).__TENANT_BOOT__ } catch {}
     toast.success('Hero media saved!')
+    const { data: sessionData } = await supabase.auth.getSession()
+    const accessToken = sessionData.session?.access_token
+    if (accessToken && tenantId) await triggerRevalidate({ type: 'settings', tenantId }, accessToken)
   }
 
   function handleRemove() { setMedia({ type: mode === 'image' ? 'image' : videoSub, url: '' }); setConfirm(false) }
@@ -201,6 +225,24 @@ export default function BrandingHeroMedia() {
           )}
         </div>
       )}
+
+      <div className="flex items-start gap-3 pt-2 border-t border-gray-100">
+        <input
+          type="checkbox"
+          id="applyHeroToAll"
+          checked={applyToAll}
+          onChange={e => setApplyToAll(e.target.checked)}
+          className="w-4 h-4 mt-0.5 cursor-pointer accent-emerald-500 flex-shrink-0"
+        />
+        <div>
+          <label htmlFor="applyHeroToAll" className="text-sm font-medium text-gray-700 cursor-pointer block">
+            Apply hero image to all pages
+          </label>
+          <p className="text-xs text-gray-400 mt-0.5">
+            When checked, the Master Hero above overrides all pages — even ones with their own hero image uploaded. Leave unchecked to use per-page hero images where set.
+          </p>
+        </div>
+      </div>
 
       <button onClick={handleSave} disabled={saving}
         className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50">

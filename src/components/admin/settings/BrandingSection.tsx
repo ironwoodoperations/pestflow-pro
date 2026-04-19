@@ -162,16 +162,6 @@ export default function BrandingSection() {
           <p className="text-xs text-gray-400 mt-1">The primary call-to-action button on your site</p>
         </div>
 
-        <div className="flex items-center gap-3 py-1">
-          <input type="checkbox" id="applyHeroToAll" checked={form.apply_hero_to_all_pages}
-            onChange={e => setForm(f => ({ ...f, apply_hero_to_all_pages: e.target.checked }))}
-            className="w-4 h-4 cursor-pointer accent-emerald-500" />
-          <label htmlFor="applyHeroToAll" className="text-sm font-medium text-gray-700 cursor-pointer">
-            Apply hero image to all pages
-          </label>
-          <span className="text-xs text-gray-400">When checked, this image overrides all pages — even ones with their own hero image uploaded.</span>
-        </div>
-
         <button onClick={handleSave} disabled={saving}
           className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
           {saving ? 'Saving...' : 'Save Branding'}
