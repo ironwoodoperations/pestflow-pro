@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
+import IntakeSubmissionViewer from './IntakeSubmissionViewer'
 
 const BASE_URL = 'https://pestflowpro.com'
 
@@ -20,7 +21,8 @@ export default function IntakeLinkSection({ prospectId, adminEmail, companyName,
   const [loading, setLoading]         = useState(true)
   const [creating, setCreating]       = useState(false)
   const [copied, setCopied]           = useState(false)
-  const [showData, setShowData]       = useState(false)
+  const [viewerOpen, setViewerOpen]   = useState(false)
+  const [intakeData, setIntakeData]   = useState<any>(null)
   const [confirmRegen, setConfirmRegen] = useState(false)
   const [regenerating, setRegenerating] = useState(false)
   const [importing, setImporting]     = useState(false)
@@ -284,57 +286,63 @@ export default function IntakeLinkSection({ prospectId, adminEmail, companyName,
             <span className="text-sm text-emerald-400 font-medium">Client submitted on {new Date(submitted).toLocaleDateString()}</span>
           </div>
           <div className="flex gap-2 flex-wrap items-center">
-            <button onClick={() => setShowData(d => !d)}
-              className="text-xs text-gray-400 hover:text-white underline transition">
-              {showData ? 'Hide submitted data' : 'View submitted data'}
+            <button
+              onClick={async () => {
+                if (!intakeData) {
+                  const { data: row } = await supabase.from('prospects').select('intake_data, intake_submitted_at').eq('id', prospectId!).maybeSingle()
+                  setIntakeData(row)
+                }
+                setViewerOpen(true)
+              }}
+              className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-lg transition">
+              👁 View Submitted Data
             </button>
             <button onClick={importFromIntake} disabled={importing}
               className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-medium rounded-lg transition disabled:opacity-50">
               {importing ? 'Importing…' : '↓ Import from Intake'}
             </button>
+            {!confirmRegen && (
+              <button onClick={() => setConfirmRegen(true)} className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-amber-400 text-xs rounded-lg transition">
+                Regenerate Link
+              </button>
+            )}
           </div>
           {importMsg && (
             <p className={`text-xs ${importMsg.startsWith('Import failed') ? 'text-red-400' : 'text-emerald-400'}`}>
               {importMsg}
             </p>
           )}
-          {showData && <SubmittedDataViewer prospectId={prospectId} />}
+          {confirmRegen && (
+            <div className="border border-amber-700 rounded-lg p-3 space-y-2">
+              <p className="text-xs text-amber-300">Regenerate link? The old link will stop working.</p>
+              <div className="flex gap-2">
+                <button onClick={regenerateToken} disabled={regenerating}
+                  className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded-lg transition disabled:opacity-50">
+                  {regenerating ? 'Regenerating…' : 'Confirm'}
+                </button>
+                <button onClick={() => setConfirmRegen(false)}
+                  className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-lg transition">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
         </div>
+      )}
+
+      {viewerOpen && intakeData && (
+        <IntakeSubmissionViewer
+          isOpen={viewerOpen}
+          onClose={() => setViewerOpen(false)}
+          prospect={{
+            id:                   prospectId!,
+            company_name:         companyName || '',
+            intake_data:          intakeData.intake_data,
+            intake_submitted_at:  intakeData.intake_submitted_at || submitted,
+          }}
+        />
       )}
     </div>
   )
 }
 
-function SubmittedDataViewer({ prospectId }: { prospectId: string }) {
-  const [data, setData] = useState<any>(null)
-
-  useEffect(() => {
-    supabase.from('prospects').select('intake_data').eq('id', prospectId).maybeSingle()
-      .then(({ data: row }) => setData(row?.intake_data || {}))
-  }, [prospectId])
-
-  if (!data) return <p className="text-xs text-gray-500">Loading…</p>
-
-  const sections: [string, Record<string, any>][] = [
-    ['Business', data.business || {}],
-    ['Branding', data.branding || {}],
-    ['Domain',   data.domain   || {}],
-    ['Social',   data.social   || {}],
-  ]
-
-  return (
-    <div className="space-y-3 mt-2 text-xs">
-      {sections.map(([title, obj]) => (
-        <div key={title}>
-          <p className="text-gray-400 font-semibold uppercase tracking-wide mb-1">{title}</p>
-          {Object.entries(obj).filter(([, v]) => v).map(([k, v]) => (
-            <div key={k} className="flex gap-2">
-              <span className="text-gray-500 w-32 shrink-0">{k.replace(/_/g, ' ')}</span>
-              <span className="text-gray-200 break-all">{String(v)}</span>
-            </div>
-          ))}
-        </div>
-      ))}
-    </div>
-  )
-}
