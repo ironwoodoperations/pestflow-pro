@@ -12,8 +12,8 @@ import { useTemplate } from '../context/TemplateContext'
 
 const MetroProCityPage = lazy(() => import('../shells/metro-pro/MetroProCityPage'))
 
-interface LocationData { city: string; hero_title: string; intro_video_url: string; meta_title?: string; meta_description?: string; focus_keyword?: string }
-interface OtherLocation { slug: string; city: string }
+interface ServiceAreaData { city: string; hero_title: string; intro_video_url: string; meta_title?: string; meta_description?: string; focus_keyword?: string }
+interface OtherServiceArea { slug: string; city: string }
 
 const SERVICES = [
   { icon: '🦟', name: 'Mosquito Control', href: '/mosquito-control' },
@@ -24,10 +24,10 @@ const SERVICES = [
   { icon: '🐀', name: 'Rodent Control', href: '/rodent-control' },
 ]
 
-export default function LocationPage({ slug }: { slug: string }) {
+export default function ServiceAreaPage({ slug }: { slug: string }) {
   const { template } = useTemplate()
-  const [location, setLocation] = useState<LocationData>({ city: '', hero_title: '', intro_video_url: '' })
-  const [otherLocations, setOtherLocations] = useState<OtherLocation[]>([])
+  const [serviceArea, setServiceArea] = useState<ServiceAreaData>({ city: '', hero_title: '', intro_video_url: '' })
+  const [otherServiceAreas, setOtherServiceAreas] = useState<OtherServiceArea[]>([])
   const [phone, setPhone] = useState('')
   const [bizAddress, setBizAddress] = useState('')
   const [bizName, setBizName] = useState('')
@@ -42,8 +42,8 @@ export default function LocationPage({ slug }: { slug: string }) {
         supabase.from('location_data').select('slug, city').eq('tenant_id', tenantId).eq('is_live', true).neq('slug', slug),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
       ])
-      if (locRes.data) setLocation(locRes.data)
-      setOtherLocations(allLocsRes.data ?? [])
+      if (locRes.data) setServiceArea(locRes.data)
+      setOtherServiceAreas(allLocsRes.data ?? [])
       const biz = settingsRes.data?.value || {}
       if (biz.phone) setPhone(biz.phone)
       if (biz.address) setBizAddress(biz.address)
@@ -51,21 +51,21 @@ export default function LocationPage({ slug }: { slug: string }) {
     })
   }, [slug])
 
-  const city = location.city || titleCase(slug)
-  const heroTitle = location.hero_title || `${city} Pest Control`
+  const city = serviceArea.city || titleCase(slug)
+  const heroTitle = serviceArea.hero_title || `${city} Pest Control`
 
   // Apply meta tags
   useEffect(() => {
-    const pageTitle = location.meta_title || `${city} Pest Control | ${bizName || 'Pest Control'}`
+    const pageTitle = serviceArea.meta_title || `${city} Pest Control | ${bizName || 'Pest Control'}`
     document.title = pageTitle
     const setMeta = (name: string, content: string) => {
       let el = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement | null
       if (!el) { el = document.createElement('meta'); el.name = name; document.head.appendChild(el) }
       el.content = content
     }
-    if (location.meta_description) setMeta('description', location.meta_description)
-    if (location.focus_keyword) setMeta('keywords', location.focus_keyword)
-  }, [location, city, bizName])
+    if (serviceArea.meta_description) setMeta('description', serviceArea.meta_description)
+    if (serviceArea.focus_keyword) setMeta('keywords', serviceArea.focus_keyword)
+  }, [serviceArea, city, bizName])
 
   if (template === 'metro-pro') {
     return <Suspense fallback={null}><MetroProCityPage slug={slug} /></Suspense>
@@ -156,13 +156,13 @@ export default function LocationPage({ slug }: { slug: string }) {
       </section>
 
       {/* WE ALSO SERVE */}
-      {otherLocations.length >= 2 && (
+      {otherServiceAreas.length >= 2 && (
         <section className="py-12" style={{ backgroundColor: 'var(--color-bg-section)' }}>
           <div className="max-w-6xl mx-auto px-4 text-center">
             <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--color-heading)' }}>We Also Serve</h2>
             <p className="text-gray-500 text-sm mb-6">Pest control services throughout East Texas</p>
             <div className="flex flex-wrap justify-center gap-3">
-              {otherLocations.slice(0, 6).map((loc) => (
+              {otherServiceAreas.slice(0, 6).map((loc) => (
                 <Link key={loc.slug} to={`/${loc.slug}`} className="px-4 py-2 rounded-full border bg-white text-sm font-medium transition hover:opacity-80" style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}>
                   {loc.city} Pest Control
                 </Link>

@@ -15,7 +15,7 @@ const PLAN_DETAILS: Record<number, { subtitle: string; features: string[] }> = {
     features: [
       'Professional website',
       'Lead capture + CRM',
-      'Location pages (up to 3)',
+      'Service area pages (up to 3)',
       'Basic SEO meta editor',
       'Basic reports',
     ],
@@ -26,7 +26,7 @@ const PLAN_DETAILS: Record<number, { subtitle: string; features: string[] }> = {
       'Everything in Starter',
       'Full SEO suite (Lighthouse, CWV, GSC/GA4)',
       'Blog / content management',
-      'Unlimited location pages',
+      'Unlimited service area pages',
       'Social scheduling (manual)',
     ],
   },

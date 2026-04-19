@@ -79,7 +79,7 @@ export default function Sitemap() {
       }
 
       if (tenantId) {
-        // Dynamic location pages
+        // Dynamic service area pages
         const { data: locations } = await supabase
           .from('location_data').select('slug, updated_at')
           .eq('tenant_id', tenantId).eq('is_live', true)

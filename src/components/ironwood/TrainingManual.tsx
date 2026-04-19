@@ -355,7 +355,7 @@ function PathBSection() {
           <Bullet>Rows auto-populate with all their old URLs</Bullet>
           <Bullet>Click "✨ Auto-Map with AI" — Claude maps old URLs to new URLs in ~3 seconds</Bullet>
           <Bullet>Review each row — fix any mismatches</Bullet>
-          <Bullet>Old city/location pages should map to /city-tx individual pages (not /service-area)</Bullet>
+          <Bullet>Old city/service area pages should map to /city-tx individual pages (not /service-area)</Bullet>
         </ul>
       </StepBlock>
 

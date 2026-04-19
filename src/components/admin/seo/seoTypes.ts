@@ -4,7 +4,7 @@ export interface SeoPageRow {
   slug: string
   label: string
   url: string
-  type: 'pest' | 'location' | 'blog' | 'static'
+  type: 'pest' | 'service_area' | 'blog' | 'static'
   isLive: boolean
   hasMeta: boolean
   metaTitle: string
@@ -56,7 +56,7 @@ export interface CoverageItem {
 
 export interface SeoCoverage {
   pest: CoverageItem
-  location: CoverageItem
+  service_area: CoverageItem
   blog: CoverageItem
   static: CoverageItem
 }

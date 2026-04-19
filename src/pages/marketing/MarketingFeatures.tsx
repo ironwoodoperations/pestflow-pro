@@ -13,7 +13,7 @@ const SOLUTIONS = [
   'Full CRM to track every customer',
 ]
 const FEATURES = [
-  { icon: '🌐', title: 'Professional Website', body: 'Mobile-first, SEO-optimized site with your brand, services, and location pages.' },
+  { icon: '🌐', title: 'Professional Website', body: 'Mobile-first, SEO-optimized site with your brand, services, and service area pages.' },
   { icon: '✍️', title: 'SEO Blog Engine', body: 'AI-powered blog posts targeting local pest control keywords — posted weekly.' },
   { icon: '📲', title: 'Social Media Campaigns', body: 'Pre-planned campaigns and scheduled posts across Facebook and Instagram.' },
   { icon: '🔔', title: 'Lead Notifications', body: 'Instant text and email alerts the moment a customer submits a quote request.' },

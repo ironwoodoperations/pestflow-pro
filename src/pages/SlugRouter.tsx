@@ -1,13 +1,13 @@
 import { useParams, Link } from 'react-router-dom'
 import { Suspense, lazy, useEffect, useState } from 'react'
-import LocationPage from './LocationPage'
+import ServiceAreaPage from './LocationPage'
 import CustomPage from './CustomPage'
 import NotFound from './NotFound'
 import SuspendedSite from '../components/SuspendedSite'
 import { supabase } from '../lib/supabase'
 import { resolveTenantId } from '../lib/tenant'
 
-function LocationNotFound() {
+function ServiceAreaNotFound() {
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--color-bg-section)' }}>
       <section
@@ -20,7 +20,7 @@ function LocationNotFound() {
           </div>
           <div className="text-6xl -mt-8 mb-6">📍</div>
           <h1 className="text-3xl md:text-4xl font-bold -mt-2 mb-3" style={{ color: 'var(--color-nav-text)' }}>
-            Location not found
+            Service area not found
           </h1>
           <p className="mb-8" style={{ color: 'var(--color-nav-text)', opacity: 0.65 }}>
             We don't have a page for that city yet.{' '}
@@ -64,7 +64,7 @@ function isPlatformDomain(hostname: string): boolean {
 
 export default function SlugRouter() {
   const { slug } = useParams<{ slug: string }>()
-  const [type, setType] = useState<'location' | 'custom-page' | 'not-found' | 'loading' | 'suspended'>(() => slug ? 'loading' : 'not-found')
+  const [type, setType] = useState<'service_area' | 'custom-page' | 'not-found' | 'loading' | 'suspended'>(() => slug ? 'loading' : 'not-found')
   const rootDomain = checkRootDomain()
 
   const hostname = window.location.hostname
@@ -108,7 +108,7 @@ export default function SlugRouter() {
         .eq('slug', slug)
         .eq('is_live', true)
         .maybeSingle()
-      if (locData) { setType('location'); return }
+      if (locData) { setType('service_area'); return }
 
       // Check for custom page in page_content
       const { data: pageData } = await supabase
@@ -151,7 +151,7 @@ export default function SlugRouter() {
   )
 
   if (type === 'suspended') return <SuspendedSite />
-  if (type === 'location') return <LocationPage slug={slug!} />
+  if (type === 'service_area') return <ServiceAreaPage slug={slug!} />
   if (type === 'custom-page') return <CustomPage slug={slug!} />
-  return <LocationNotFound />
+  return <ServiceAreaNotFound />
 }

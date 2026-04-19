@@ -11,17 +11,17 @@ const STRIPE_LINKS = {
 const PLANS = [
   {
     name: 'Starter', price: '$99', period: '/month', popular: false, tier: 'starter' as const,
-    features: ['1 location', 'Up to 500 leads/month', 'Public website', 'Quote form', 'Blog (5 posts)', 'Email support'],
+    features: ['1 service area', 'Up to 500 leads/month', 'Public website', 'Quote form', 'Blog (5 posts)', 'Email support'],
     cta: 'Start Free Trial',
   },
   {
     name: 'Professional', price: '$199', period: '/month', popular: true, tier: 'pro' as const,
-    features: ['3 locations', 'Unlimited leads', 'Everything in Starter', 'AI keyword research', 'Google Reviews import', 'Social posting', 'Priority support'],
+    features: ['3 service areas', 'Unlimited leads', 'Everything in Starter', 'AI keyword research', 'Google Reviews import', 'Social posting', 'Priority support'],
     cta: 'Start Free Trial',
   },
   {
     name: 'Agency', price: '$399', period: '/month', popular: false, tier: 'agency' as const,
-    features: ['Unlimited locations', 'White-label (your branding)', 'Everything in Pro', 'Multi-tenant dashboard', 'PDF reports', 'Dedicated onboarding', 'Phone support'],
+    features: ['Unlimited service areas', 'White-label (your branding)', 'Everything in Pro', 'Multi-tenant dashboard', 'PDF reports', 'Dedicated onboarding', 'Phone support'],
     cta: 'Contact Sales',
   },
 ]

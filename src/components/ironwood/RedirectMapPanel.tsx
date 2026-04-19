@@ -191,7 +191,7 @@ ${availableRoutes.join('\n')}
 Mapping rules (apply in order):
 1. If old slug exactly matches a new route → use that route, type "exact"
 2. Service pages (ant, termite, mosquito, rodent, spider, bed-bug, flea, wasp, roach, scorpion) → map to closest matching service route, type "slug_change"
-3. Location/city pages (city names, -tx suffix, service-area) → /locations, type "slug_change"
+3. Service area/city pages (city names, -tx suffix, service-area) → /locations, type "slug_change"
 4. Blog posts (/blog/anything) → /blog, type "slug_change"
 5. Quote/estimate pages → /get-quote, type "slug_change"
 6. Reviews/testimonials → /about, type "slug_change"

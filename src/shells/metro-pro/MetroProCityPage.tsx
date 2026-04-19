@@ -10,7 +10,7 @@ import MetroProProcess from './MetroProProcess'
 import MetroProReviews from './MetroProReviews'
 import MetroProCtaBanner from './MetroProCtaBanner'
 
-interface LocationData { city: string; hero_title: string; meta_title?: string }
+interface ServiceAreaData { city: string; hero_title: string; meta_title?: string }
 interface BizInfo { name: string; phone: string; address: string }
 
 const CITY_FAQS = (city: string) => [
@@ -28,7 +28,7 @@ interface Props { slug: string }
 
 export default function MetroProCityPage({ slug }: Props) {
   const heroImageUrl = usePageHeroImage(slug)
-  const [location, setLocation] = useState<LocationData>({ city: '', hero_title: '' })
+  const [serviceArea, setServiceArea] = useState<ServiceAreaData>({ city: '', hero_title: '' })
   const [biz, setBiz] = useState<BizInfo>({ name: '', phone: '', address: '' })
 
   useEffect(() => {
@@ -38,13 +38,13 @@ export default function MetroProCityPage({ slug }: Props) {
         supabase.from('location_data').select('city,hero_title,meta_title').eq('tenant_id', tenantId).eq('slug', slug).eq('is_live', true).maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
       ])
-      if (locRes.data) setLocation(locRes.data)
+      if (locRes.data) setServiceArea(locRes.data)
       if (bizRes.data?.value) setBiz(bizRes.data.value)
     })
   }, [slug])
 
-  const city = location.city || titleCase(slug)
-  const heroTitle = location.hero_title || `${city} Pest Control`
+  const city = serviceArea.city || titleCase(slug)
+  const heroTitle = serviceArea.hero_title || `${city} Pest Control`
 
   const faqs = CITY_FAQS(city)
 

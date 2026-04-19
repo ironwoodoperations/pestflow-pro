@@ -35,15 +35,15 @@ export default async function ServicePage({ params }: Params) {
   const tenant = await resolveTenantBySlug(params.slug);
   if (!tenant) notFound();
 
-  // City page branch
+  // Service area page branch
   if (!SERVICE_SLUGS.has(params.service)) {
-    const [location, allLocs] = await Promise.all([
+    const [serviceAreaData, allLocs] = await Promise.all([
       getLocation(tenant.id, params.service),
       getAllLocations(tenant.id),
     ]);
-    if (!location) notFound();
+    if (!serviceAreaData) notFound();
 
-    const loc = location as { city?: string; hero_title?: string; intro?: string; address?: string; hours?: string };
+    const loc = serviceAreaData as { city?: string; hero_title?: string; intro?: string; address?: string; hours?: string };
     const city      = loc.city       || titleCase(params.service);
     const heroTitle = loc.hero_title || `${city} Pest Control`;
     const locIntro  = loc.intro?.trim() || null;

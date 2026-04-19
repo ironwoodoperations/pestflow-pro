@@ -29,7 +29,7 @@ export default function StepLocations({ form, addLocation, removeLocation, updat
       ))}
       {form.locations.length < 6 && (
         <button onClick={addLocation} className="flex items-center gap-2 text-sm text-emerald-500 hover:text-emerald-600 transition font-medium">
-          <Plus size={16} /> Add Another Location
+          <Plus size={16} /> Add Another Service Area
         </button>
       )}
       <div className="flex justify-between pt-4">

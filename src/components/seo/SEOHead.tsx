@@ -15,7 +15,7 @@ import {
 
 export type { BusinessInfo, SeoSettings, SchemaConfig, SocialLinks }
 
-export type PageType = 'home' | 'service' | 'about' | 'faq' | 'contact' | 'blog' | 'location' | 'custom'
+export type PageType = 'home' | 'service' | 'about' | 'faq' | 'contact' | 'blog' | 'service_area' | 'custom'
 
 interface SEOHeadProps {
   title: string

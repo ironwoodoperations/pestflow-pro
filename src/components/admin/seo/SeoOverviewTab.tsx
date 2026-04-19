@@ -58,7 +58,7 @@ export default function SeoOverviewTab({
         <h3 className="text-sm font-semibold text-gray-700 mb-3">Content Coverage</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <CoverageCard emoji="🐛" label="Pest Pages" total={coverage.pest.total} live={coverage.pest.live} />
-          <CoverageCard emoji="📍" label="Location Pages" total={coverage.location.total} live={coverage.location.live} />
+          <CoverageCard emoji="📍" label="Service Area Pages" total={coverage.service_area.total} live={coverage.service_area.live} />
           <CoverageCard emoji="✍️" label="Blog Posts" total={coverage.blog.total} live={coverage.blog.live} />
           <CoverageCard emoji="📋" label="Static Pages" total={coverage.static.total} live={coverage.static.live} />
         </div>

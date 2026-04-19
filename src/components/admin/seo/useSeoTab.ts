@@ -78,7 +78,7 @@ export function useSeoTab() {
           built.push(makeRow(slug, label, slug === 'home' ? '/' : `/${slug}`, 'static', true))
         }
       }
-      for (const row of locRes.data || [])  built.push(makeRow(row.slug, row.city, `/${row.slug}`, 'location', row.is_live))
+      for (const row of locRes.data || [])  built.push(makeRow(row.slug, row.city, `/${row.slug}`, 'service_area', row.is_live))
       for (const row of blogRes.data || []) built.push(makeRow(row.slug, row.title, `/blog/${row.slug}`, 'blog', !!row.published_at))
       setPages(built)
 
@@ -104,7 +104,7 @@ export function useSeoTab() {
   }
   const coverage: SeoCoverage = {
     pest:     { total: pages.filter(p => p.type === 'pest').length,     live: pages.filter(p => p.type === 'pest'     && p.isLive).length },
-    location: { total: pages.filter(p => p.type === 'location').length, live: pages.filter(p => p.type === 'location' && p.isLive).length },
+    service_area: { total: pages.filter(p => p.type === 'service_area').length, live: pages.filter(p => p.type === 'service_area' && p.isLive).length },
     blog:     { total: pages.filter(p => p.type === 'blog').length,     live: pages.filter(p => p.type === 'blog'     && p.isLive).length },
     static:   { total: pages.filter(p => p.type === 'static').length,   live: pages.filter(p => p.type === 'static'  && p.isLive).length },
   }

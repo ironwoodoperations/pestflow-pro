@@ -7,7 +7,7 @@ import { triggerRevalidate } from '../../lib/revalidate'
 import PageHelpBanner from './PageHelpBanner'
 import ConfirmDeleteModal from '../shared/ConfirmDeleteModal'
 
-interface Location {
+interface ServiceArea {
   id: string; city: string; slug: string; hero_title: string; intro: string
   is_live: boolean; created_at: string
   meta_title?: string; meta_description?: string; focus_keyword?: string
@@ -26,25 +26,25 @@ const toSlug = (city: string) => {
 
 export default function LocationsTab() {
   const { tenantId } = useTenant()
-  const [locations, setLocations] = useState<Location[]>([])
+  const [serviceAreas, setServiceAreas] = useState<ServiceArea[]>([])
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<LocForm>({ city: '', slug: '', hero_title: '', intro: '', is_live: false, meta_title: '', meta_description: '', focus_keyword: '' })
   const [saving, setSaving] = useState(false)
-  const [deleteTarget, setDeleteTarget] = useState<Location | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<ServiceArea | null>(null)
 
-  async function fetchLocations() {
+  async function fetchServiceAreas() {
     if (!tenantId) return
     const { data } = await supabase.from('location_data').select('*').eq('tenant_id', tenantId).order('city')
-    setLocations(data || [])
+    setServiceAreas(data || [])
     setLoading(false)
   }
 
   useEffect(() => {
     if (!tenantId) return
     supabase.from('location_data').select('*').eq('tenant_id', tenantId).order('city')
-      .then(({ data }) => { setLocations(data || []); setLoading(false) })
+      .then(({ data }) => { setServiceAreas(data || []); setLoading(false) })
   }, [tenantId])
 
   function openNew() {
@@ -52,7 +52,7 @@ export default function LocationsTab() {
     setEditingId(null); setModalOpen(true)
   }
 
-  function openEdit(loc: Location) {
+  function openEdit(loc: ServiceArea) {
     setForm({ city: loc.city, slug: loc.slug, hero_title: loc.hero_title || '', intro: loc.intro || '', is_live: loc.is_live, meta_title: loc.meta_title || '', meta_description: loc.meta_description || '', focus_keyword: loc.focus_keyword || '' })
     setEditingId(loc.id); setModalOpen(true)
   }
@@ -66,51 +66,51 @@ export default function LocationsTab() {
     if (editingId) {
       const { error } = await supabase.from('location_data').update({ city: form.city, slug, hero_title, intro: form.intro, is_live: form.is_live, ...seoFields }).eq('id', editingId)
       if (error) { toast.error(`Failed to update: ${error.message}`) } else {
-        toast.success('Location updated!')
+        toast.success('Service area updated!')
         const { data: s } = await supabase.auth.getSession()
         if (s.session?.access_token && tenantId) await triggerRevalidate({ type: 'locations', tenantId }, s.session.access_token)
       }
     } else {
       const { error } = await supabase.from('location_data').insert({ tenant_id: tenantId, city: form.city, slug, hero_title, intro: form.intro, is_live: form.is_live, ...seoFields })
-      if (error) { toast.error(`Failed to add location: ${error.message}`) } else {
-        toast.success('Location added!')
+      if (error) { toast.error(`Failed to add service area: ${error.message}`) } else {
+        toast.success('Service area added!')
         const { data: s } = await supabase.auth.getSession()
         if (s.session?.access_token && tenantId) await triggerRevalidate({ type: 'locations', tenantId }, s.session.access_token)
       }
     }
-    setSaving(false); setModalOpen(false); fetchLocations()
+    setSaving(false); setModalOpen(false); fetchServiceAreas()
   }
 
   async function handleDelete() {
     if (!deleteTarget) return
     await supabase.from('location_data').delete().eq('id', deleteTarget.id)
-    toast.success('Location deleted.')
+    toast.success('Service area deleted.')
     setDeleteTarget(null)
-    fetchLocations()
+    fetchServiceAreas()
     const { data: s } = await supabase.auth.getSession()
     if (s.session?.access_token && tenantId) await triggerRevalidate({ type: 'locations', tenantId }, s.session.access_token)
   }
 
-  async function toggleLive(loc: Location) {
+  async function toggleLive(loc: ServiceArea) {
     await supabase.from('location_data').update({ is_live: !loc.is_live }).eq('id', loc.id)
     toast.success(loc.is_live ? 'Hidden' : 'Live!')
-    setLocations(prev => prev.map(x => x.id === loc.id ? { ...x, is_live: !x.is_live } : x))
+    setServiceAreas(prev => prev.map(x => x.id === loc.id ? { ...x, is_live: !x.is_live } : x))
     const { data: s } = await supabase.auth.getSession()
     if (s.session?.access_token && tenantId) await triggerRevalidate({ type: 'locations', tenantId }, s.session.access_token)
   }
 
-  const activeCount = locations.filter(l => l.is_live).length
+  const activeCount = serviceAreas.filter(l => l.is_live).length
   const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-400'
 
   return (
     <div>
-      <PageHelpBanner tab="locations" title="📍 Service Locations" body="Each city you add gets its own SEO-optimized page. Add the city name and a URL slug (e.g. tyler-tx), then toggle Live when the page is ready to publish. More location pages = more Google traffic." />
+      <PageHelpBanner tab="locations" title="📍 Service Areas" body="Each city you add gets its own SEO-optimized page. Add the city name and a URL slug (e.g. tyler-tx), then toggle Live when the page is ready to publish. More service area pages = more Google traffic." />
 
       <div className="flex items-center justify-between mb-6">
-        <p className="text-sm text-gray-500">{activeCount} active location{activeCount !== 1 ? 's' : ''} · {locations.length} total</p>
+        <p className="text-sm text-gray-500">{activeCount} active service area{activeCount !== 1 ? 's' : ''} · {serviceAreas.length} total</p>
         <button onClick={openNew} className="flex items-center gap-2 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:opacity-90"
           style={{ backgroundColor: 'var(--admin-accent, #10b981)' }}>
-          <Plus size={16} /> Add Location
+          <Plus size={16} /> Add Service Area
         </button>
       </div>
 
@@ -125,7 +125,7 @@ export default function LocationsTab() {
               </tr>
             </thead>
             <tbody>
-              {locations.map(loc => (
+              {serviceAreas.map(loc => (
                 <tr key={loc.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
@@ -151,7 +151,7 @@ export default function LocationsTab() {
                   </td>
                 </tr>
               ))}
-              {locations.length === 0 && <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-400">No locations yet.</td></tr>}
+              {serviceAreas.length === 0 && <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-400">No service areas yet.</td></tr>}
             </tbody>
           </table>
         </div>
@@ -162,7 +162,7 @@ export default function LocationsTab() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 mx-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">{editingId ? 'Edit' : 'Add'} Location</h3>
+              <h3 className="text-lg font-semibold text-gray-900">{editingId ? 'Edit' : 'Add'} Service Area</h3>
               <button onClick={() => setModalOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
             </div>
             <div className="space-y-4">
@@ -181,7 +181,7 @@ export default function LocationsTab() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Intro Text</label>
-                <textarea value={form.intro} onChange={e => setForm(p => ({ ...p, intro: e.target.value }))} rows={4} placeholder="Brief intro shown on the location page" className={`${inputClass} resize-none`} />
+                <textarea value={form.intro} onChange={e => setForm(p => ({ ...p, intro: e.target.value }))} rows={4} placeholder="Brief intro shown on the service area page" className={`${inputClass} resize-none`} />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Meta Title</label>
@@ -213,7 +213,7 @@ export default function LocationsTab() {
 
       <ConfirmDeleteModal
         isOpen={!!deleteTarget}
-        itemName={deleteTarget?.city || 'this location'}
+        itemName={deleteTarget?.city || 'this service area'}
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
       />

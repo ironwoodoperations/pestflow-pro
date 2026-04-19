@@ -20,7 +20,7 @@ interface Props {
 
 const TYPE_LABELS: Record<string, { label: string; color: string }> = {
   pest:     { label: 'Pest',     color: 'bg-green-100 text-green-700' },
-  location: { label: 'Location', color: 'bg-blue-100 text-blue-700' },
+  service_area: { label: 'Service Area', color: 'bg-blue-100 text-blue-700' },
   blog:     { label: 'Blog',     color: 'bg-purple-100 text-purple-700' },
   static:   { label: 'Static',   color: 'bg-gray-100 text-gray-600' },
 }
@@ -68,7 +68,7 @@ export default function SeoPagesTab({
         <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} className={`${inputCls} bg-white`}>
           <option value="all">All Types</option>
           <option value="pest">Pest Pages</option>
-          <option value="location">Location Pages</option>
+          <option value="service_area">Service Area Pages</option>
           <option value="blog">Blog Posts</option>
           <option value="static">Static Pages</option>
         </select>
