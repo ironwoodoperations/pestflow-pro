@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import type { Tenant } from '../../../../../shared/lib/tenant/types';
 import { formatPhone } from '../../../../../shared/lib/formatPhone';
