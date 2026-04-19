@@ -85,7 +85,7 @@ export default function BundleSocialSetup({ tenantId }: Props) {
                 <p className="text-xs font-medium text-gray-400">Zernio Profile ID</p>
                 {profileId
                   ? <p className="text-xs text-emerald-400 font-mono">{profileId}</p>
-                  : <p className="text-xs text-amber-400">No Zernio profile — re-provision this tenant to generate one.</p>
+                  : <p className="text-xs text-amber-400">No Zernio profile — re-provision this client to generate one.</p>
                 }
               </div>
 

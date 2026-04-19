@@ -172,7 +172,7 @@ export default function RevealQueue() {
   }
 
   function openReport(p: RevealProspect) {
-    if (!p.tenant_id || !p.slug) { toast.error('Missing tenant or slug — cannot generate report'); return }
+    if (!p.tenant_id || !p.slug) { toast.error('Missing client or slug — cannot generate report'); return }
     const s = scores[p.id] || { desktopOld: '', mobileOld: '', desktopNew: '', mobileNew: '' }
     setReportTarget({
       prospectId:   p.id,

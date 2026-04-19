@@ -183,7 +183,7 @@ export default function SEOHealthPanel({ tenantId, onScoreChange }: Props) {
   if (!tenantId) {
     return (
       <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700">
-        <p className="text-xs text-gray-500">Provision tenant first to configure SEO settings.</p>
+        <p className="text-xs text-gray-500">Provision client first to configure SEO settings.</p>
       </div>
     )
   }

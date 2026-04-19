@@ -6,8 +6,8 @@ export default function TenantNotFound() {
       maxWidth: '720px',
       margin: '0 auto',
     }}>
-      <h1>Tenant not found</h1>
-      <p>No tenant exists with this slug.</p>
+      <h1>Site not found</h1>
+      <p>No site found at this address.</p>
     </main>
   );
 }
