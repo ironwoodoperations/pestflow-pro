@@ -15,7 +15,7 @@ interface HeroMedia {
 interface Props {
   tenant: Tenant;
   content: Record<string, unknown> | null;
-  heroMedia?: HeroMedia | null;
+  heroMedia?: Record<string, unknown> | null;
   heroImageUrl?: string | null;
 }
 
@@ -48,9 +48,10 @@ export function BoldLocalHero({ tenant, content, heroMedia, heroImageUrl }: Prop
     || tenant.tagline
     || 'Licensed technicians. Transparent pricing. Real results.';
 
-  const youtubeId = heroMedia?.youtube_id?.trim() || '';
-  const videoUrl = heroMedia?.video_url?.trim() || '';
-  const posterUrl = heroMedia?.thumbnail_url || heroMedia?.image_url || heroImageUrl || '';
+  const hm = heroMedia as HeroMedia | null;
+  const youtubeId = hm?.youtube_id?.trim() || '';
+  const videoUrl = hm?.video_url?.trim() || '';
+  const posterUrl = hm?.thumbnail_url || hm?.image_url || heroImageUrl || '';
   const hasVideo = !!(youtubeId || videoUrl);
 
   return (

@@ -5,7 +5,7 @@ export const revalidate = 300;
 export async function generateStaticParams() {
   return [];
 }
-import { getPageContent, getTestimonials, getAllBlogPosts, getHeroMedia } from './_lib/queries';
+import { getPageContent, getTestimonials, getAllBlogPosts, getHeroMedia, getAllLocations } from './_lib/queries';
 import { resolveHeroImage } from './_lib/heroImage';
 import { MetroHero } from './_components/MetroHero';
 import { ServicesGrid } from './_components/sections/ServicesGrid';
@@ -98,35 +98,26 @@ export default async function TenantHome({ params }: Params) {
   }
 
   if (tenant.template === 'bold-local') {
-    const aboutContent = await getPageContent(tenant.id, 'about');
+    const [aboutContent, locations] = await Promise.all([
+      getPageContent(tenant.id, 'about'),
+      getAllLocations(tenant.id),
+    ]);
     const aboutIntro = (aboutContent as { intro?: string } | null)?.intro || '';
     const photoUrl = (heroMedia as { thumbnail_url?: string } | null)?.thumbnail_url || undefined;
+    const serviceAreas = (locations as { city: string }[]).map((l) => l.city);
+    type BLTestimonial = { id: string; author_name: string; review_text: string; rating: number; author_image_url?: string | null; featured?: boolean };
 
     return (
       <>
-        <BoldLocalHero tenant={tenant} content={content} heroImageUrl={heroImageUrl} />
-        <BoldLocalTrustBar
-          certifications={tenant.certifications || undefined}
-          tagline={tenant.tagline || undefined}
-        />
-        <BoldLocalWhyUs
-          businessName={tenant.business_name || tenant.name}
-          intro={aboutIntro}
-        />
+        <BoldLocalHero tenant={tenant} content={content} heroMedia={heroMedia as Record<string, unknown> | null} heroImageUrl={heroImageUrl} />
+        <BoldLocalTrustBar tenant={tenant} serviceAreaCount={serviceAreas.length} />
         <BoldLocalServicesGrid />
+        <BoldLocalWhyUs businessName={tenant.business_name || tenant.name} intro={aboutIntro} />
         <BoldLocalHowItWorks />
-        <BoldLocalAboutStrip
-          businessName={tenant.business_name || tenant.name}
-          intro={aboutIntro}
-          photoUrl={photoUrl}
-        />
-        <BoldLocalTrustCards
-          foundedYear={tenant.founded_year ? String(tenant.founded_year) : undefined}
-          tagline={tenant.tagline || undefined}
-          certifications={tenant.certifications || undefined}
-        />
-        <BoldLocalTestimonials testimonials={testimonials as { id: string; author_name: string; review_text: string; rating: number }[]} />
-        <BoldLocalCtaBanner phone={tenant.phone || undefined} ctaText={tenant.cta_text || 'Get a Free Quote'} />
+        <BoldLocalAboutStrip businessName={tenant.business_name || tenant.name} intro={aboutIntro} photoUrl={photoUrl} />
+        <BoldLocalTrustCards serviceAreas={serviceAreas} />
+        <BoldLocalTestimonials testimonials={testimonials as BLTestimonial[]} />
+        <BoldLocalCtaBanner phone={tenant.phone || undefined} ctaText={tenant.cta_text || 'Get a free quote'} />
       </>
     );
   }
