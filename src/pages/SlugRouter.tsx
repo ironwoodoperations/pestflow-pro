@@ -102,7 +102,7 @@ export default function SlugRouter() {
       if (tenant?.archived_at) { setType('suspended'); return }
 
       const { data: locData } = await supabase
-        .from('location_data')
+        .from('service_areas')
         .select('id')
         .eq('tenant_id', tenantId)
         .eq('slug', slug)

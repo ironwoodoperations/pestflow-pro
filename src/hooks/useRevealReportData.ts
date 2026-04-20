@@ -26,7 +26,7 @@ export function useRevealReportData({ prospectId, tenantId, siteUrl }: Params) {
             .select('key, value, google_search_console_verification')
             .eq('tenant_id', tenantId!)
             .in('key', ['business_info', 'branding', 'seo', 'schema_config', 'integrations']),
-          supabase.from('location_data')
+          supabase.from('service_areas')
             .select('slug, city')
             .eq('tenant_id', tenantId!)
             .eq('is_live', true),

@@ -70,7 +70,7 @@ export default function Onboarding() {
     }
     const locationRows = form.locations.filter(l => l.city && l.slug).map(l => ({ tenant_id: tenantId, city: l.city, slug: l.slug, is_live: false }))
     if (locationRows.length > 0) {
-      await supabase.from('location_data').upsert(locationRows, { onConflict: 'tenant_id,slug' })
+      await supabase.from('service_areas').upsert(locationRows, { onConflict: 'tenant_id,slug' })
     }
     // Bridge to Ironwood CRM — upsert prospect so it appears in pipeline
     await supabase.from('prospects').upsert({

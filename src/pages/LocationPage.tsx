@@ -38,8 +38,8 @@ export default function ServiceAreaPage({ slug }: { slug: string }) {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
       const [locRes, allLocsRes, settingsRes] = await Promise.all([
-        supabase.from('location_data').select('city, hero_title, intro_video_url, meta_title, meta_description, focus_keyword').eq('tenant_id', tenantId).eq('slug', slug).eq('is_live', true).maybeSingle(),
-        supabase.from('location_data').select('slug, city').eq('tenant_id', tenantId).eq('is_live', true).neq('slug', slug),
+        supabase.from('service_areas').select('city, hero_title, intro_video_url, meta_title, meta_description, focus_keyword').eq('tenant_id', tenantId).eq('slug', slug).eq('is_live', true).maybeSingle(),
+        supabase.from('service_areas').select('slug, city').eq('tenant_id', tenantId).eq('is_live', true).neq('slug', slug),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
       ])
       if (locRes.data) setServiceArea(locRes.data)

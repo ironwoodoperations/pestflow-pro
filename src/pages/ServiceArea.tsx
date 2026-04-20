@@ -32,7 +32,7 @@ export default function ServiceArea() {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
       const [locRes, bizRes, intgRes, contentRes] = await Promise.all([
-        supabase.from('location_data').select('slug, city').eq('tenant_id', tenantId).eq('is_live', true),
+        supabase.from('service_areas').select('slug, city').eq('tenant_id', tenantId).eq('is_live', true),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle(),
         supabase.from('page_content').select('title, subtitle').eq('tenant_id', tenantId).eq('page_slug', 'service-area').maybeSingle(),

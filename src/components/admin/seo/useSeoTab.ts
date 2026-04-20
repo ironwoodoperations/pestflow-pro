@@ -42,7 +42,7 @@ export function useSeoTab() {
       const [metaRes, pageRes, locRes, blogRes, intRes, auditRes] = await Promise.all([
         supabase.from('seo_meta').select('page_slug,meta_title,meta_description,focus_keyword,og_title,og_description,user_edited').eq('tenant_id', tenantId),
         supabase.from('page_content').select('page_slug').eq('tenant_id', tenantId),
-        supabase.from('location_data').select('slug,city,is_live').eq('tenant_id', tenantId),
+        supabase.from('service_areas').select('slug,city,is_live').eq('tenant_id', tenantId),
         supabase.from('blog_posts').select('slug,title,published_at').eq('tenant_id', tenantId),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'last_lighthouse_audit').maybeSingle(),

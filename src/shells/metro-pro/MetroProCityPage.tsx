@@ -35,7 +35,7 @@ export default function MetroProCityPage({ slug }: Props) {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
       const [locRes, bizRes] = await Promise.all([
-        supabase.from('location_data').select('city,hero_title,meta_title').eq('tenant_id', tenantId).eq('slug', slug).eq('is_live', true).maybeSingle(),
+        supabase.from('service_areas').select('city,hero_title,meta_title').eq('tenant_id', tenantId).eq('slug', slug).eq('is_live', true).maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
       ])
       if (locRes.data) setServiceArea(locRes.data)
