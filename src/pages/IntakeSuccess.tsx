@@ -66,7 +66,7 @@ export default function IntakeSuccess() {
         phone:         bi.phone         || '',
         primaryColor:  b.primary_color  || '#1e40af',
         accentColor:   b.accent_color   || '#f59e0b',
-        template:      b.template       || 'modern-pro',
+        template:      (b.theme ?? b.template) || 'modern-pro',
       })
       setLoading(false)
     })()

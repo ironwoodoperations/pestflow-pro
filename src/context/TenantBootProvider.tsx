@@ -16,10 +16,10 @@ const HOST = typeof window !== 'undefined' ? window.location.hostname : ''
 const CACHE_KEY = `pfp_tenant_boot_v2:${HOST}`
 
 // Raw shape from RPC / localStorage
-interface RawBoot { id: string; slug: string; name: string; template: string; primary_color: string; accent_color: string; logo_url: string; cta_text: string }
+interface RawBoot { id: string; slug: string; name: string; template: string; theme?: string; primary_color: string; accent_color: string; logo_url: string; cta_text: string }
 
 function mapRaw(r: RawBoot): TenantBoot {
-  return { id: r.id, slug: r.slug, name: r.name, template: r.template, primaryColor: r.primary_color, accentColor: r.accent_color, logoUrl: r.logo_url || null, ctaText: r.cta_text }
+  return { id: r.id, slug: r.slug, name: r.name, template: r.theme ?? r.template, primaryColor: r.primary_color, accentColor: r.accent_color, logoUrl: r.logo_url || null, ctaText: r.cta_text }
 }
 
 function readCache(): TenantBoot | null {

@@ -88,7 +88,7 @@ export default function Dashboard() {
       if (brandRes.data?.value?.accent_color) setAccentColor(brandRes.data.value.accent_color)
       if (brandRes.data?.value?.primary_color) setPrimaryColor(brandRes.data.value.primary_color)
       if (brandRes.data?.value?.logo_url) setLogoUrl(brandRes.data.value.logo_url)
-      if (brandRes.data?.value?.template) setTemplate(brandRes.data.value.template)
+      if (brandRes.data?.value?.theme ?? brandRes.data?.value?.template) setTemplate(brandRes.data.value.theme ?? brandRes.data.value.template)
     })
   }, [tenantId])
 

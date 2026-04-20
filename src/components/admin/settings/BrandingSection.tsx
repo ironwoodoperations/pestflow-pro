@@ -47,7 +47,7 @@ export default function BrandingSection() {
           favicon_url:   v.favicon_url   ?? prev.favicon_url,
           primary_color: v.primary_color ?? prev.primary_color,
           accent_color:  v.accent_color  ?? prev.accent_color,
-          template:      v.template      ?? prev.template,
+          template:      ((v as any).theme ?? v.template) ?? prev.template,
           cta_text:                v.cta_text                ?? prev.cta_text,
           apply_hero_to_all_pages: v.apply_hero_to_all_pages ?? false,
         }))
@@ -65,7 +65,9 @@ export default function BrandingSection() {
   async function handleSave() {
     if (!tenantId) return
     setSaving(true)
-    const { error } = await supabase.from('settings').upsert({ tenant_id: tenantId, key: 'branding', value: form }, { onConflict: 'tenant_id,key' })
+    // Expand phase: write theme alongside template so T9.2 migration can safely rename template→theme
+    const value = { ...form, theme: form.template }
+    const { error } = await supabase.from('settings').upsert({ tenant_id: tenantId, key: 'branding', value }, { onConflict: 'tenant_id,key' })
     setSaving(false)
     if (error) { toast.error(`Failed to save branding settings: ${error.message}`); return }
     applyTheme(form.template, form.primary_color, form.accent_color)

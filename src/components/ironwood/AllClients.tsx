@@ -47,7 +47,7 @@ export default function AllClients() {
 
     const brandMap: Record<string, string> = {}
     brandRows?.forEach(r => {
-      if (r.value?.template) brandMap[r.tenant_id] = r.value.template
+      if (r.value?.theme ?? r.value?.template) brandMap[r.tenant_id] = r.value.theme ?? r.value.template
     })
 
     const stageMap: Record<string, string> = {}
