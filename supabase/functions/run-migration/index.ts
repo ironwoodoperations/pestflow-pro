@@ -14,9 +14,7 @@ Deno.serve(async (req: Request) => {
     const { default: postgres } = await import('https://deno.land/x/postgresjs@v3.4.4/mod.js')
     const sql = postgres(DB_URL, { ssl: 'require' })
 
-    // Add image_urls column to page_content
-    await sql`ALTER TABLE page_content ADD COLUMN IF NOT EXISTS image_urls JSONB DEFAULT '[]'`
-
+    // S163 T5a: JSONB array column DDL removed — dropped in Part B migration
     await sql.end()
     return json({ success: true })
   } catch (err: any) {

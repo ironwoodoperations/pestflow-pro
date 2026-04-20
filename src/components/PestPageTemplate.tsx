@@ -34,17 +34,17 @@ const WHY = [
 export default function PestPageTemplate(props: PestPageProps) {
   const { template } = useTemplate()
   const heroImageUrl = usePageHeroImage(props.pageSlug)
-  const [content, setContent] = useState({ title: '', subtitle: '', intro: '', image_url: '', image_urls: [] as string[] })
+  const [content, setContent] = useState({ title: '', subtitle: '', intro: '', image_url: '', image_1_url: '', image_2_url: '' })
   const [phone, setPhone] = useState('')
 
   useEffect(() => {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
       const [pageRes, settingsRes] = await Promise.all([
-        supabase.from('page_content').select('title, subtitle, intro, image_url, image_urls').eq('tenant_id', tenantId).eq('page_slug', props.pageSlug).maybeSingle(),
+        supabase.from('page_content').select('title, subtitle, intro, image_url, image_1_url, image_2_url').eq('tenant_id', tenantId).eq('page_slug', props.pageSlug).maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
       ])
-      if (pageRes.data) setContent({ title: pageRes.data.title || '', subtitle: pageRes.data.subtitle || '', intro: pageRes.data.intro || '', image_url: pageRes.data.image_url || '', image_urls: pageRes.data.image_urls || [] })
+      if (pageRes.data) setContent({ title: pageRes.data.title || '', subtitle: pageRes.data.subtitle || '', intro: pageRes.data.intro || '', image_url: pageRes.data.image_url || '', image_1_url: pageRes.data.image_1_url || '', image_2_url: pageRes.data.image_2_url || '' })
       if (settingsRes.data?.value?.phone) setPhone(settingsRes.data.value.phone)
     })
   }, [props.pageSlug])
@@ -54,8 +54,8 @@ export default function PestPageTemplate(props: PestPageProps) {
   }
 
   const heroTitle = content.title || props.heroTitle
-  const pestImg = content.image_urls?.[0] || content.image_url || PEST_PAGE_IMG[props.pageSlug] || props.introImage || FALLBACK_PEST_IMG
-  const pestImg2 = content.image_urls?.[1] || pestImg
+  const pestImg = content.image_1_url || content.image_url || PEST_PAGE_IMG[props.pageSlug] || props.introImage || FALLBACK_PEST_IMG
+  const pestImg2 = content.image_2_url || pestImg
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>

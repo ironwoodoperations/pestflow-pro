@@ -27,12 +27,12 @@ export default function About() {
     resolveTenantId().then(async (tid) => {
       if (!tid) return
       const [pageRes, teamRes] = await Promise.all([
-        supabase.from('page_content').select('title, subtitle, image_urls').eq('tenant_id', tid).eq('page_slug', 'about').maybeSingle(),
+        supabase.from('page_content').select('title, subtitle, image_1_url').eq('tenant_id', tid).eq('page_slug', 'about').maybeSingle(),
         supabase.from('team_members').select('id, name, title, bio, photo_url').eq('tenant_id', tid).order('display_order'),
       ])
       if (pageRes.data?.title) setHeroTitle(pageRes.data.title)
       if (pageRes.data?.subtitle) setHeroSubtitle(pageRes.data.subtitle)
-      if (pageRes.data?.image_urls?.[0]) setAboutImage(pageRes.data.image_urls[0])
+      if (pageRes.data?.image_1_url) setAboutImage(pageRes.data.image_1_url)
       setTeam(teamRes.data || [])
     })
   }, [])

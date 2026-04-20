@@ -40,12 +40,11 @@ function PageImageUpload({ slug, index, onUpdate }: { slug: string; index: numbe
   useEffect(() => {
     if (!tenantId) return
     supabase.from('page_content')
-      .select('image_1_url, image_2_url, image_3_url, image_urls')
+      .select('image_1_url, image_2_url, image_3_url')
       .eq('tenant_id', tenantId).eq('page_slug', slug).maybeSingle()
       .then(({ data }) => {
         const newVal = (data as Record<string, unknown> | null)?.[colName] as string | null
-        const legacyVal = (data as { image_urls?: string[] } | null)?.image_urls?.[index] ?? null
-        setCurrentUrl(newVal || legacyVal || null)
+        setCurrentUrl(newVal || null)
       })
   }, [tenantId, slug, colName, index])
 

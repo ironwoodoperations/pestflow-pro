@@ -167,8 +167,7 @@ export default function ContentTab() {
       image_1_url: form.image1Url || null,
       image_2_url: form.image2Url || null,
       image_3_url: form.image3Url || null,
-      image_url: form.pageHeroImageUrl || form.image_url || '',
-      image_urls: [form.image1Url, form.image2Url, form.image3Url].filter(Boolean),
+      image_url: form.pageHeroImageUrl || form.image_url || '', // S163 T5a: JSONB array writer removed; image_url kept for Dang shell compat (T5b)
     }
     if (selectedSlug === 'home') pageRow.hero_headline = heroHeadline
     console.log('[ContentSave] upserting page_content:', pageRow)

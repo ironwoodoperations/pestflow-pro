@@ -29,14 +29,14 @@ export default function Index() {
     resolveTenantId().then(async (tenantId) => {
       if (!tenantId) return
       const [pageRes, mediaRes] = await Promise.all([
-        supabase.from('page_content').select('title, subtitle, image_urls').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
+        supabase.from('page_content').select('title, subtitle, image_1_url').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'hero_media').maybeSingle(),
       ])
       if (pageRes.data) {
         setContent({
           title: pageRes.data.title || DEFAULT_CONTENT.title,
           subtitle: pageRes.data.subtitle || DEFAULT_CONTENT.subtitle,
-          heroImageUrl: pageRes.data.image_urls?.[0] || undefined,
+          heroImageUrl: pageRes.data.image_1_url || undefined,
         })
       }
       if (mediaRes.data?.value?.youtube_id) setHeroMedia(mediaRes.data.value)
