@@ -561,7 +561,7 @@ Deno.serve(async (req: Request) => {
           for (const c of allCities) {
             const cSlug = c.toLowerCase().replace(/[^a-z0-9]+/g, '-') + (state ? '-' + state.toLowerCase() : '')
             const cMeta = c === city ? metaDesc : `Professional pest control services in ${c}${state ? ', ' + state : ''}. Licensed, insured, and locally trusted.`
-            await supabase.from('location_data').upsert({
+            await supabase.from('service_areas').upsert({
               tenant_id:        tenantId,
               city:             c,
               slug:             cSlug,
