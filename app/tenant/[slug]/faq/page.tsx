@@ -7,7 +7,7 @@ export const revalidate = 300;
 export async function generateStaticParams() {
   return [];
 }
-import { getPageContent, getFaqItems, getHeroMedia } from '../_lib/queries';
+import { getPageContent, getHeroMedia } from '../_lib/queries';
 import { formatPhone } from '../../../../shared/lib/formatPhone';
 import { resolveHeroImage } from '../_lib/heroImage';
 
@@ -43,9 +43,8 @@ export default async function FaqPage({ params }: Params) {
   const tenant = await resolveTenantBySlug(params.slug);
   if (!tenant) notFound();
 
-  const [content, items, heroMedia] = await Promise.all([
+  const [content, heroMedia] = await Promise.all([
     getPageContent(tenant.id, 'faq'),
-    getFaqItems(tenant.id),
     getHeroMedia(tenant.id),
   ]);
 
@@ -71,30 +70,19 @@ export default async function FaqPage({ params }: Params) {
 
       <section className="py-16" style={{ backgroundColor: 'var(--color-bg-section)' }}>
         <div className="max-w-4xl mx-auto px-4">
-          {items.length > 0 ? (
-            <div className="space-y-6">
-              {items.map(item => (
-                <div key={item.id}>
-                  <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--color-heading, #1a1a1a)' }}>{item.question}</h3>
-                  <p className="text-gray-600">{item.answer}</p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            FAQ_FALLBACK.map(cat => (
-              <div key={cat.title} className="mb-12">
-                <h2 className="text-2xl font-bold mb-6" style={{ color: 'var(--color-primary)' }}>{cat.title}</h2>
-                <div className="space-y-6">
-                  {cat.faqs.map((faq, i) => (
-                    <div key={i}>
-                      <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--color-heading, #1a1a1a)' }}>{faq.q}</h3>
-                      <p className="text-gray-600">{faq.a}</p>
-                    </div>
-                  ))}
-                </div>
+          {FAQ_FALLBACK.map(cat => (
+            <div key={cat.title} className="mb-12">
+              <h2 className="text-2xl font-bold mb-6" style={{ color: 'var(--color-primary)' }}>{cat.title}</h2>
+              <div className="space-y-6">
+                {cat.faqs.map((faq, i) => (
+                  <div key={i}>
+                    <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--color-heading, #1a1a1a)' }}>{faq.q}</h3>
+                    <p className="text-gray-600">{faq.a}</p>
+                  </div>
+                ))}
               </div>
-            ))
-          )}
+            </div>
+          ))}
         </div>
       </section>
 

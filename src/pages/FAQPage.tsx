@@ -34,26 +34,21 @@ const FAQ_CATEGORIES = [
   },
 ]
 
-interface FaqItem { id: string; question: string; answer: string; sort_order: number }
-
 export default function FAQPage() {
   const heroImageUrl = usePageHeroImage('faq')
   const [heroTitle, setHeroTitle] = useState('Frequently Asked Questions')
   const [heroSubtitle, setHeroSubtitle] = useState('Everything you need to know about our pest control services.')
-  const [faqItems, setFaqItems] = useState<FaqItem[]>([])
   const [phone, setPhone] = useState('')
 
   useEffect(() => {
     resolveTenantId().then(async (tid) => {
       if (!tid) return
-      const [pageRes, itemsRes, bizRes] = await Promise.all([
+      const [pageRes, bizRes] = await Promise.all([
         supabase.from('page_content').select('title, subtitle').eq('tenant_id', tid).eq('page_slug', 'faq').maybeSingle(),
-        supabase.from('faq_items').select('id, question, answer, sort_order').eq('tenant_id', tid).order('sort_order'),
         supabase.from('settings').select('value').eq('tenant_id', tid).eq('key', 'business_info').maybeSingle(),
       ])
       if (pageRes.data?.title) setHeroTitle(pageRes.data.title)
       if (pageRes.data?.subtitle) setHeroSubtitle(pageRes.data.subtitle)
-      if (itemsRes.data?.length) setFaqItems(itemsRes.data)
       if (bizRes.data?.value?.phone) setPhone(bizRes.data.value.phone)
     })
   }, [])
@@ -72,30 +67,19 @@ export default function FAQPage() {
 
       <section className="py-16" style={{ backgroundColor: 'var(--color-bg-section)' }}>
         <div className="max-w-4xl mx-auto px-4">
-          {faqItems.length > 0 ? (
-            <div className="space-y-6">
-              {faqItems.map(item => (
-                <div key={item.id}>
-                  <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--color-heading)' }}>{item.question}</h3>
-                  <p className="text-gray-600">{item.answer}</p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            FAQ_CATEGORIES.map((cat) => (
-              <div key={cat.title} className="mb-12">
-                <h2 className="text-2xl font-bold mb-6" style={{ color: 'var(--color-primary)' }}>{cat.title}</h2>
-                <div className="space-y-6">
-                  {cat.faqs.map((faq, i) => (
-                    <div key={i}>
-                      <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--color-heading)' }}>{faq.q}</h3>
-                      <p className="text-gray-600">{faq.a}</p>
-                    </div>
-                  ))}
-                </div>
+          {FAQ_CATEGORIES.map((cat) => (
+            <div key={cat.title} className="mb-12">
+              <h2 className="text-2xl font-bold mb-6" style={{ color: 'var(--color-primary)' }}>{cat.title}</h2>
+              <div className="space-y-6">
+                {cat.faqs.map((faq, i) => (
+                  <div key={i}>
+                    <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--color-heading)' }}>{faq.q}</h3>
+                    <p className="text-gray-600">{faq.a}</p>
+                  </div>
+                ))}
               </div>
-            ))
-          )}
+            </div>
+          ))}
         </div>
       </section>
 

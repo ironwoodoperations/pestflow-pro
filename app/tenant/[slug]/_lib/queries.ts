@@ -137,22 +137,6 @@ export const getSocialLinks = cache(
   }
 );
 
-export const getFaqItems = cache(
-  async (tenantId: string) => {
-    const supabase = getServerSupabaseForISR();
-    const { data, error } = await supabase
-      .from('faq_items')
-      .select('id, question, answer, sort_order')
-      .eq('tenant_id', tenantId)
-      .order('sort_order');
-    if (error) {
-      console.error('[getFaqItems] error', { tenantId, code: error.code, message: error.message });
-      return [];
-    }
-    return data ?? [];
-  }
-);
-
 export const getTeamMembers = cache(
   async (tenantId: string) => {
     const supabase = getServerSupabaseForISR();
