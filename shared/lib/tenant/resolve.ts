@@ -26,7 +26,7 @@ async function resolveSettings(tenantBase: { id: string; slug: string; name: str
     slug: tenantBase.slug,
     name: tenantBase.name,
 
-    template: branding.template ?? 'modern-pro',
+    template: branding.theme ?? 'modern-pro',
     primary_color: branding.primary_color ?? '#111111',
     accent_color: branding.accent_color ?? '#f97316',
     logo_url: branding.logo_url ?? null,
