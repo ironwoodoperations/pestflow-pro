@@ -99,7 +99,7 @@ export default function OnboardingLive() {
     const fullAddress = [form.address, form.cityStateZip].filter(Boolean).join(', ')
     await supabase.from('settings').upsert([
       { tenant_id: tenantId, key: 'business_info', value: { name: form.businessName, phone: form.phone, email: form.email, address: fullAddress, hours: form.hours, tagline: form.tagline, license: form.license } },
-      { tenant_id: tenantId, key: 'branding', value: { logo_url: form.logoUrl, primary_color: form.primaryColor, template: form.template } },
+      { tenant_id: tenantId, key: 'branding', value: { logo_url: form.logoUrl, primary_color: form.primaryColor, theme: form.template } },
       { tenant_id: tenantId, key: 'social_links', value: { facebook: form.facebookUrl, instagram: form.instagramUrl, google: form.googleUrl } },
       { tenant_id: tenantId, key: 'notifications', value: { lead_email: form.leadEmail } },
       { tenant_id: tenantId, key: 'integrations', value: { facebook_page_id: form.facebookPageId, facebook_access_token: form.facebookToken, google_place_id: form.googlePlaceId, google_maps_embed_url: form.mapsEmbedUrl } },

@@ -9,13 +9,13 @@ import { triggerRevalidate } from '../../../lib/revalidate'
 
 interface BrandingForm {
   logo_url: string; favicon_url: string; primary_color: string; accent_color: string
-  template: 'modern-pro' | 'bold-local' | 'clean-friendly' | 'rustic-rugged' | 'youpest' | 'dang' | (string & {})
+  theme: 'modern-pro' | 'bold-local' | 'clean-friendly' | 'rustic-rugged' | 'youpest' | 'dang' | (string & {})
   cta_text: string; apply_hero_to_all_pages: boolean
 }
 
 const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-400'
 
-const templates: { value: BrandingForm['template']; label: string; desc: string; bg: string; accent: string; proOnly?: boolean }[] = [
+const templates: { value: BrandingForm['theme']; label: string; desc: string; bg: string; accent: string; proOnly?: boolean }[] = [
   { value: 'modern-pro',     label: 'Modern Pro',              desc: 'Dark navy navbar, emerald CTAs, Oswald headlines.',        bg: '#0a0f1e', accent: '#10b981' },
   { value: 'bold-local',     label: 'Bold & Local',            desc: 'Charcoal background, amber accents. High-energy.',         bg: '#1c1c1c', accent: '#d97706' },
   { value: 'clean-friendly', label: 'Clean & Friendly',        desc: 'White navbar, sky-blue accents. Approachable.',            bg: '#ffffff', accent: '#0284c7' },
@@ -30,7 +30,7 @@ export default function BrandingSection() {
   const [loading, setLoading] = useState(true)
   const [tierNum, setTierNum] = useState(1)
   const [form, setForm] = useState<BrandingForm>({
-    logo_url: '', favicon_url: '', primary_color: '#10b981', accent_color: '#f5c518', template: 'modern-pro', cta_text: '', apply_hero_to_all_pages: false
+    logo_url: '', favicon_url: '', primary_color: '#10b981', accent_color: '#f5c518', theme: 'modern-pro', cta_text: '', apply_hero_to_all_pages: false
   })
 
   useEffect(() => {
@@ -47,7 +47,7 @@ export default function BrandingSection() {
           favicon_url:   v.favicon_url   ?? prev.favicon_url,
           primary_color: v.primary_color ?? prev.primary_color,
           accent_color:  v.accent_color  ?? prev.accent_color,
-          template:      ((v as any).theme ?? v.template) ?? prev.template,
+          theme:         v.theme         ?? prev.theme,
           cta_text:                v.cta_text                ?? prev.cta_text,
           apply_hero_to_all_pages: v.apply_hero_to_all_pages ?? false,
         }))
@@ -65,13 +65,13 @@ export default function BrandingSection() {
   async function handleSave() {
     if (!tenantId) return
     setSaving(true)
-    // Expand phase: write theme alongside template so T9.2 migration can safely rename template→theme
-    const value = { ...form, theme: form.template }
+    // T9 contract: strip any stray legacy 'template' key — CHECK constraint enforces at DB layer too
+    const { template: _t, ...value } = { ...form } as any
     const { error } = await supabase.from('settings').upsert({ tenant_id: tenantId, key: 'branding', value }, { onConflict: 'tenant_id,key' })
     setSaving(false)
     if (error) { toast.error(`Failed to save branding settings: ${error.message}`); return }
-    applyTheme(form.template, form.primary_color, form.accent_color)
-    localStorage.setItem('pfp_template', form.template)
+    applyTheme(form.theme, form.primary_color, form.accent_color)
+    localStorage.setItem('pfp_template', form.theme)
     try { localStorage.removeItem(`pfp_tenant_boot_v2:${window.location.hostname}`); delete (window as any).__TENANT_BOOT__ } catch {}
     toast.success('Branding settings saved!')
     const { data: sessionData } = await supabase.auth.getSession()
@@ -127,11 +127,11 @@ export default function BrandingSection() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">Template</label>
+          <label className="block text-sm font-medium text-gray-700 mb-3">Theme</label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {templates.filter(t => !t.proOnly || tierNum >= 3).map(t => (
-              <button key={t.value} onClick={() => setForm(prev => ({ ...prev, template: t.value }))}
-                className={`text-left p-4 rounded-xl border-2 transition ${form.template === t.value ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 hover:border-gray-300'}`}>
+              <button key={t.value} onClick={() => setForm(prev => ({ ...prev, theme: t.value }))}
+                className={`text-left p-4 rounded-xl border-2 transition ${form.theme === t.value ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 hover:border-gray-300'}`}>
                 <div className="flex items-center gap-3 mb-2">
                   <div className="flex flex-shrink-0">
                     <div className="w-5 h-5 rounded-full border border-gray-200" style={{ background: t.bg }} />
@@ -140,7 +140,7 @@ export default function BrandingSection() {
                   <h4 className="text-gray-900 font-bold">{t.label}</h4>
                   <div className="ml-auto flex items-center gap-1.5">
                     {t.proOnly && <span className="text-xs font-semibold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full">Pro</span>}
-                    {form.template === t.value && <span className="text-xs font-semibold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">Active</span>}
+                    {form.theme === t.value && <span className="text-xs font-semibold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">Active</span>}
                   </div>
                 </div>
                 <p className="text-gray-500 text-sm">{t.desc}</p>
@@ -155,9 +155,9 @@ export default function BrandingSection() {
             primary={form.primary_color}
             accent={form.accent_color}
             onSelect={(p, a) => {
-              // Only change colors — template is a separate user choice and must never be set here
+              // Only change colors — theme is a separate user choice and must never be set here
               setForm(prev => {
-                applyTheme(prev.template, p, a)
+                applyTheme(prev.theme, p, a)
                 return { ...prev, primary_color: p, accent_color: a }
               })
             }}

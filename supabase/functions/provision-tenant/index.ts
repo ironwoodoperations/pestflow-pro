@@ -224,7 +224,7 @@ Deno.serve(async (req: Request) => {
         favicon_url:   wbr.favicon_url   || branding?.favicon_url   || '',
         primary_color: wbr.primary_color || branding?.primary_color || '#E87800',
         accent_color:  wbr.accent_color  || branding?.accent_color  || '#1a1a1a',
-        template:      wbr.template      || branding?.template      || 'modern-pro',
+        theme:         wbr.template      || branding?.template      || 'modern-pro',
         cta_text:      wbr.cta_text      || branding?.cta_text      || 'Get a Free Quote',
       }},
       { tenant_id: tenantId, key: 'customization', value: {
@@ -489,7 +489,7 @@ Deno.serve(async (req: Request) => {
               ...(ib_br.logo_url      ? { logo_url:      ib_br.logo_url }      : {}),
               ...(ib_br.primary_color ? { primary_color: ib_br.primary_color } : {}),
               ...(ib_br.accent_color  ? { accent_color:  ib_br.accent_color }  : {}),
-              ...(ib_br.template      ? { template:      ib_br.template }      : {}),
+              ...(ib_br.template      ? { theme:         ib_br.template }      : {}),
               ...(ib_br.cta_text      ? { cta_text:      ib_br.cta_text }      : {}),
             }
           }).eq('tenant_id', tenantId).eq('key', 'branding')

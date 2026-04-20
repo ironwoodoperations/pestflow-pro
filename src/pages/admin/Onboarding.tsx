@@ -60,7 +60,7 @@ export default function Onboarding() {
     setSaving(true)
     const settingsRows = [
       { tenant_id: tenantId, key: 'business_info', value: { name: form.businessName, phone: form.phone, email: form.email, address: form.address, hours: form.hours, tagline: form.tagline, license: form.license, industry: form.industry } },
-      { tenant_id: tenantId, key: 'branding', value: { logo_url: form.logoUrl, favicon_url: '', primary_color: form.primaryColor, accent_color: form.accentColor, template: form.template } },
+      { tenant_id: tenantId, key: 'branding', value: { logo_url: form.logoUrl, favicon_url: '', primary_color: form.primaryColor, accent_color: form.accentColor, theme: form.template } },
       { tenant_id: tenantId, key: 'social_links', value: { facebook: form.facebook, instagram: form.instagram, google: form.google, youtube: form.youtube } },
       { tenant_id: tenantId, key: 'onboarding_complete', value: { complete: true } },
       { tenant_id: tenantId, key: 'legal_acceptance', value: { accepted: true, timestamp: new Date().toISOString(), plan: 'starter', terms_version: '2026-04' } },
