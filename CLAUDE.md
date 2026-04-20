@@ -136,6 +136,17 @@ Use: INSERT ... ON CONFLICT (tenant_id, key) DO UPDATE SET value = EXCLUDED.valu
 | notifications  | { lead_email, cc_email } |
 | demo_mode      | { active: false } |
 | integrations   | { facebook_access_token: null, facebook_page_id: null, google_business_token: null } |
+| hero_media     | { mode: 'image'\|'video', master_hero_image_url, image_url, url, thumbnail_url, video_url, youtube_id } |
+
+Notes on hero_media keys:
+- `mode`: discriminator — 'image' or 'video'. Controls which fields are active. Required.
+- `master_hero_image_url`: primary image URL used by getShellImage.ts for apply-to-all-pages
+- `image_url`: same value as master_hero_image_url in image mode; first candidate in resolveHeroImage
+- `url`: generic fallback URL — same as image_url in image mode, video_url in video mode
+- `thumbnail_url`: consumed directly by shell heroes for bg-image; present in all tenant rows
+- `video_url`: uploaded video file URL; empty unless mode=video+upload
+- `youtube_id`: extracted YouTube ID; empty unless mode=video+youtube
+All 7 keys are written atomically by BrandingHeroMedia.tsx handleSave() on every save.
 
 Tier mapping: Starter→1, Grow→2, Pro→3, Elite→4
 

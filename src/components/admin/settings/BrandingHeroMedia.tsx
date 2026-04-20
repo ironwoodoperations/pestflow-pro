@@ -42,10 +42,6 @@ export default function BrandingHeroMedia() {
           const isYt = !!v.youtube_id
           setMedia({ type: isYt ? 'youtube' : 'upload', url: isYt ? `https://www.youtube.com/watch?v=${v.youtube_id}` : (v.video_url || v.url || '') })
           setMode('video'); setVideoSub(isYt ? 'youtube' : 'upload')
-        } else if (v?.type) {
-          setMedia({ type: v.type, url: v.url || v.thumbnail_url || '' })
-          if (v.type === 'image') setMode('image')
-          else { setMode('video'); setVideoSub(v.type as 'youtube' | 'upload') }
         } else if (v?.thumbnail_url) {
           setMedia({ type: 'image', url: v.thumbnail_url })
           setMode('image')
