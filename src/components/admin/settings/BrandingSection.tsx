@@ -71,7 +71,6 @@ export default function BrandingSection() {
     setSaving(false)
     if (error) { toast.error(`Failed to save branding settings: ${error.message}`); return }
     applyTheme(form.theme, form.primary_color, form.accent_color)
-    localStorage.setItem('pfp_template', form.theme)
     try { localStorage.removeItem(`pfp_tenant_boot_v2:${window.location.hostname}`); delete (window as any).__TENANT_BOOT__ } catch {}
     toast.success('Branding settings saved!')
     const { data: sessionData } = await supabase.auth.getSession()
