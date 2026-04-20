@@ -501,7 +501,7 @@ Code already uses `service_area` symbols throughout (renamed in s159.2.4). DB st
 
 ---
 
-## Target 9 (aux): `settings.branding->template` key rename to `theme`
+## Target 9 (aux): `settings.branding->template` key rename to `theme` — ✓ CLOSED 2026-04-20 (s160.1/s160.2/s160.3)
 
 ### branding JSONB key inventory
 
