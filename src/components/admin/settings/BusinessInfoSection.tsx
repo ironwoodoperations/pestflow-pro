@@ -28,7 +28,9 @@ export default function BusinessInfoSection() {
           const v = data.value
           setForm(prev => ({ ...prev, name: v.name || '', phone: v.phone || '', email: v.email || '', address: v.address || '', hours: v.hours || '', tagline: v.tagline || '', license: v.license || '', after_hours_phone: v.after_hours_phone || '', founded_year: v.founded_year || '', industry: v.industry || 'Pest Control' }))
           // Store extra fields that are in the DB but not in this form (prevent data loss on save)
-          const { name: _n, phone: _p, email: _e, address: _a, hours: _h, tagline: _t, license: _l, after_hours_phone: _ah, founded_year: _fy, industry: _i, ...extras } = v
+          // year_founded: legacy key dropped in s159.3.3-t7; excluded so it never reappears
+          // in extras. CHECK constraint on settings.business_info enforces this at the DB layer too.
+          const { name: _n, phone: _p, email: _e, address: _a, hours: _h, tagline: _t, license: _l, after_hours_phone: _ah, founded_year: _fy, year_founded: _yf, industry: _i, ...extras } = v
           extraDbFields.current = extras
         }
         setLoading(false)
