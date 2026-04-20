@@ -26,7 +26,10 @@ async function resolveSettings(tenantBase: { id: string; slug: string; name: str
     slug: tenantBase.slug,
     name: tenantBase.name,
 
-    template: branding.theme ?? 'modern-pro',
+    // Dang freeze: Kirk's DNS cutover is pending — dang.pestflowpro.com must render
+    // exactly as it did pre-S160.6 (modern-pro fallback) until cutover. Remove this
+    // carve-out only after Kirk's DNS flips and Dang's shell goes live.
+    template: tenantBase.slug === 'dang' ? 'modern-pro' : (branding.theme ?? 'modern-pro'),
     primary_color: branding.primary_color ?? '#111111',
     accent_color: branding.accent_color ?? '#f97316',
     logo_url: branding.logo_url ?? null,
