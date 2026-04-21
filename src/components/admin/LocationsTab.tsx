@@ -4,6 +4,7 @@ import { Plus, X, Trash2, ExternalLink } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
 import { triggerRevalidate } from '../../lib/revalidate'
+import { syncServiceAreasJsonb } from '../../lib/service-areas/syncJsonbFromTable'
 import PageHelpBanner from './PageHelpBanner'
 import ConfirmDeleteModal from '../shared/ConfirmDeleteModal'
 
@@ -63,20 +64,19 @@ export default function LocationsTab() {
     const hero_title = form.hero_title || `${form.city} Pest Control`
     setSaving(true)
     const seoFields = { meta_title: form.meta_title || null, meta_description: form.meta_description || null, focus_keyword: form.focus_keyword || null }
+    let writeOk = false
     if (editingId) {
       const { error } = await supabase.from('service_areas').update({ city: form.city, slug, hero_title, intro: form.intro, is_live: form.is_live, ...seoFields }).eq('id', editingId)
-      if (error) { toast.error(`Failed to update: ${error.message}`) } else {
-        toast.success('Service area updated!')
-        const { data: s } = await supabase.auth.getSession()
-        if (s.session?.access_token && tenantId) await triggerRevalidate({ type: 'locations', tenantId }, s.session.access_token)
-      }
+      if (error) { toast.error(`Failed to update: ${error.message}`) } else { writeOk = true; toast.success('Service area updated!') }
     } else {
       const { error } = await supabase.from('service_areas').insert({ tenant_id: tenantId, city: form.city, slug, hero_title, intro: form.intro, is_live: form.is_live, ...seoFields })
-      if (error) { toast.error(`Failed to add service area: ${error.message}`) } else {
-        toast.success('Service area added!')
-        const { data: s } = await supabase.auth.getSession()
-        if (s.session?.access_token && tenantId) await triggerRevalidate({ type: 'locations', tenantId }, s.session.access_token)
-      }
+      if (error) { toast.error(`Failed to add service area: ${error.message}`) } else { writeOk = true; toast.success('Service area added!') }
+    }
+    if (writeOk) {
+      const syncErr = await syncServiceAreasJsonb(supabase, tenantId)
+      if (syncErr) toast.error(`JSONB sync failed: ${syncErr}`)
+      const { data: s } = await supabase.auth.getSession()
+      if (s.session?.access_token && tenantId) await triggerRevalidate({ type: 'locations', tenantId }, s.session.access_token)
     }
     setSaving(false); setModalOpen(false); fetchServiceAreas()
   }
@@ -86,6 +86,8 @@ export default function LocationsTab() {
     await supabase.from('service_areas').delete().eq('id', deleteTarget.id)
     toast.success('Service area deleted.')
     setDeleteTarget(null)
+    const syncErr = await syncServiceAreasJsonb(supabase, tenantId!)
+    if (syncErr) toast.error(`JSONB sync failed: ${syncErr}`)
     fetchServiceAreas()
     const { data: s } = await supabase.auth.getSession()
     if (s.session?.access_token && tenantId) await triggerRevalidate({ type: 'locations', tenantId }, s.session.access_token)
@@ -95,6 +97,8 @@ export default function LocationsTab() {
     await supabase.from('service_areas').update({ is_live: !loc.is_live }).eq('id', loc.id)
     toast.success(loc.is_live ? 'Hidden' : 'Live!')
     setServiceAreas(prev => prev.map(x => x.id === loc.id ? { ...x, is_live: !x.is_live } : x))
+    const syncErr = await syncServiceAreasJsonb(supabase, tenantId!)
+    if (syncErr) toast.error(`JSONB sync failed: ${syncErr}`)
     const { data: s } = await supabase.auth.getSession()
     if (s.session?.access_token && tenantId) await triggerRevalidate({ type: 'locations', tenantId }, s.session.access_token)
   }
