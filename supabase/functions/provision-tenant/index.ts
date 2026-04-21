@@ -1,9 +1,11 @@
-// Supabase Edge Function: provision-tenant v13
+// Supabase Edge Function: provision-tenant v14
 // Reads onboarding_sessions for wizard data (name, colors, shell, etc.) when available.
 // Falls back to direct body fields for legacy/manual calls.
 // Creates auth user, seeds tenant_users, and provisions all 11 required settings keys.
+// S164: service_areas seeded via normalizer; settings.seo.service_areas derived from table.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { normalizeAll, buildJsonbProjection } from '../_shared/service-areas.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
@@ -443,7 +445,7 @@ Deno.serve(async (req: Request) => {
       try {
         const { data: prosp } = await supabase
           .from('prospects')
-          .select('intake_data, company_name')
+          .select('intake_data, company_name, service_areas')
           .eq('id', prospect_id)
           .maybeSingle()
 
@@ -496,7 +498,8 @@ Deno.serve(async (req: Request) => {
           console.log('[provision-tenant] branding overlaid from intake_data')
         }
 
-        // 9b: Seed SEO settings key
+        // 9b: Seed SEO settings key — service_areas written as [] placeholder;
+        // will be overwritten by the projection step (9f) after table rows are seeded.
         const serviceArea = [city, state].filter(Boolean).join(', ')
         const metaDesc = ib.tagline
           ? `${bizForSeo} — ${ib.tagline}. Serving ${serviceArea || 'your area'}.`
@@ -504,7 +507,7 @@ Deno.serve(async (req: Request) => {
         await supabase.from('settings').upsert(
           { tenant_id: tenantId, key: 'seo', value: {
             meta_description: metaDesc,
-            service_areas: serviceArea ? [serviceArea] : [],
+            service_areas: [],
             focus_keyword: city ? `pest control ${city.toLowerCase()}` : 'pest control',
           }},
           { onConflict: 'tenant_id,key' }
@@ -529,9 +532,31 @@ Deno.serve(async (req: Request) => {
           console.log('[provision-tenant] per-page SEO meta seeded')
         }
 
-        // 9c: Seed location_data rows — primary city + nearby cities from zip-prefix lookup
+        // 9c: Seed service_areas from normalized prospect.service_areas (is_live=true),
+        // then supplement with zip-prefix nearby cities (is_live=false).
+
+        // 9c-sa: Normalize the CRM service_areas field and upsert accepted rows as live
+        const rawServiceAreas = (prosp as any)?.service_areas as string | null ?? null
+        const { accepted: saAccepted, rejected: saRejected } = normalizeAll(rawServiceAreas)
+        if (saRejected.length > 0) {
+          console.warn('[provision-tenant] rejected service_areas tokens:', JSON.stringify(saRejected))
+        }
+        for (const norm of saAccepted) {
+          const { error: saErr } = await supabase.from('service_areas').upsert({
+            tenant_id:  tenantId,
+            city:       norm.city,
+            slug:       norm.slug,
+            state:      norm.state,
+            hero_title: `${norm.city} Pest Control`,
+            is_live:    true,
+          }, { onConflict: 'tenant_id,slug' })
+          if (saErr) console.error(`[provision-tenant] service_areas upsert failed (${norm.city}):`, saErr.message)
+        }
+        console.log(`[provision-tenant] service_areas seeded: ${saAccepted.length} live cities from CRM field`)
+
+        // 9c-zip: Supplement with zip-prefix nearby cities (is_live=false) so the
+        // client has draft pages ready to activate after reveal call.
         if (city) {
-          // Zip-prefix → nearby cities mapping for common TX/US metros
           const ZIP_CITIES: Record<string, string[]> = {
             '787': ['Austin', 'Round Rock', 'Cedar Park', 'Georgetown', 'Pflugerville', 'Kyle', 'Buda'],
             '786': ['Austin', 'Round Rock', 'Cedar Park', 'Georgetown', 'Pflugerville', 'Kyle', 'Buda'],
@@ -548,18 +573,15 @@ Deno.serve(async (req: Request) => {
             '850': ['Phoenix', 'Scottsdale', 'Tempe', 'Mesa', 'Chandler', 'Gilbert', 'Glendale'],
             '852': ['Phoenix', 'Scottsdale', 'Tempe', 'Mesa', 'Chandler', 'Gilbert', 'Glendale'],
           }
-          // Extract zip from address (ib.zip preferred, else look for 5-digit in full address)
           const zipRaw = (ib.zip || '').toString().trim()
           const zipPrefix = zipRaw.length >= 3 ? zipRaw.slice(0, 3) : ''
           const citiesForArea: string[] = zipPrefix && ZIP_CITIES[zipPrefix]
             ? ZIP_CITIES[zipPrefix]
             : [city]
+          const allZipCities = citiesForArea.includes(city) ? citiesForArea : [city, ...citiesForArea]
 
-          // Always include the primary city if not already in the list
-          const allCities = citiesForArea.includes(city) ? citiesForArea : [city, ...citiesForArea]
-
-          for (const c of allCities) {
-            const cSlug = c.toLowerCase().replace(/[^a-z0-9]+/g, '-') + (state ? '-' + state.toLowerCase() : '')
+          for (const c of allZipCities) {
+            const cSlug = c.toLowerCase().replace(/[^a-z0-9]+/g, '-') + (state ? '-' + state.toLowerCase() : '-tx')
             const cMeta = c === city ? metaDesc : `Professional pest control services in ${c}${state ? ', ' + state : ''}. Licensed, insured, and locally trusted.`
             await supabase.from('service_areas').upsert({
               tenant_id:        tenantId,
@@ -570,10 +592,30 @@ Deno.serve(async (req: Request) => {
               meta_title:       `${c} Pest Control | ${bizForSeo}`,
               meta_description: cMeta,
               focus_keyword:    `${c.toLowerCase()} pest control`,
-            }, { onConflict: 'tenant_id,city' })
+            }, { onConflict: 'tenant_id,slug' })
           }
-          console.log(`[provision-tenant] location_data seeded for ${allCities.length} cities (zip prefix: ${zipPrefix || 'none'})`)
+          console.log(`[provision-tenant] zip-prefix draft cities seeded: ${allZipCities.length} (zip prefix: ${zipPrefix || 'none'})`)
         }
+
+        // 9d–9f: Derive JSONB projection from all live rows and update settings.seo.service_areas
+        const { data: allSaRows } = await supabase
+          .from('service_areas')
+          .select('city, is_live')
+          .eq('tenant_id', tenantId)
+        const saProjection = buildJsonbProjection(allSaRows ?? [])
+        const { data: seoRow } = await supabase.from('settings').select('value')
+          .eq('tenant_id', tenantId).eq('key', 'seo').maybeSingle()
+        const currentSeoValue = (seoRow?.value ?? {}) as Record<string, unknown>
+        const { error: seoUpdateErr } = await supabase.from('settings').update({
+          value: { ...currentSeoValue, service_areas: saProjection },
+        }).eq('tenant_id', tenantId).eq('key', 'seo')
+        if (seoUpdateErr) {
+          console.error('[provision-tenant] CRITICAL: seo.service_areas update failed:', seoUpdateErr.message)
+          return new Response(JSON.stringify({ success: false, error: `seo.service_areas update failed: ${seoUpdateErr.message}` }), {
+            status: 500, headers: { 'Content-Type': 'application/json', ...CORS },
+          })
+        }
+        console.log(`[provision-tenant] seo.service_areas JSONB updated: ${saProjection.length} cities`)
 
         // 9d: Seed 3 starter blog posts
         const postNow = new Date().toISOString()
