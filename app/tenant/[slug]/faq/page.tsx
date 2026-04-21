@@ -8,6 +8,9 @@ export async function generateStaticParams() {
   return [];
 }
 import { getPageContent, getHeroMedia } from '../_lib/queries';
+import { JsonLdScript } from '../_components/JsonLdScripts';
+import { generateFAQSchema } from '../../../../shared/lib/seoSchema';
+import { getServerSupabaseForISR } from '../../../../shared/lib/supabase/server';
 import { formatPhone } from '../../../../shared/lib/formatPhone';
 import { resolveHeroImage } from '../_lib/heroImage';
 
@@ -43,10 +46,13 @@ export default async function FaqPage({ params }: Params) {
   const tenant = await resolveTenantBySlug(params.slug);
   if (!tenant) notFound();
 
-  const [content, heroMedia] = await Promise.all([
+  const supabase = getServerSupabaseForISR();
+  const [content, heroMedia, faqsRes] = await Promise.all([
     getPageContent(tenant.id, 'faq'),
     getHeroMedia(tenant.id),
+    supabase.from('faqs').select('question, answer').eq('tenant_id', tenant.id).order('sort_order', { ascending: true }),
   ]);
+  const faqs = (faqsRes.data ?? []) as { question: string; answer: string }[];
 
   const c = content as { title?: string; subtitle?: string } | null;
   const heroTitle = c?.title    || 'Frequently Asked Questions';
@@ -57,6 +63,9 @@ export default async function FaqPage({ params }: Params) {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
+      {faqs.length > 0 && (
+        <JsonLdScript schema={generateFAQSchema(faqs)} id="ld-faq" />
+      )}
 
       <section className="relative py-20 md:py-28" style={heroImageUrl
         ? { backgroundImage: `url(${heroImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
