@@ -196,3 +196,20 @@ export const getIntegrations = cache(
     return (data?.value ?? {}) as Record<string, string | null>;
   }
 );
+
+export const getSeoSettings = cache(
+  async (tenantId: string): Promise<{ meta_description?: string; service_areas?: string[]; certifications?: string[]; founded_year?: string; owner_name?: string }> => {
+    const supabase = getServerSupabaseForISR();
+    const { data, error } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('tenant_id', tenantId)
+      .eq('key', 'seo')
+      .maybeSingle();
+    if (error) {
+      console.error('[getSeoSettings] error', { tenantId, code: error.code, message: error.message });
+      return {};
+    }
+    return (data?.value ?? {}) as { meta_description?: string; service_areas?: string[]; certifications?: string[]; founded_year?: string; owner_name?: string };
+  }
+);
