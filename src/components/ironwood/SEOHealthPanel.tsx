@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
+import { normalizeAll } from '../../lib/service-areas/normalize'
+import { syncServiceAreasJsonb } from '../../lib/service-areas/syncJsonbFromTable'
 
 interface Props {
   tenantId: string | null
@@ -165,15 +167,32 @@ export default function SEOHealthPanel({ tenantId, onScoreChange }: Props) {
   async function saveSeoSettings() {
     if (!tenantId) return
     setSaving(true)
-    const value = {
+
+    // Write non-service_areas fields, merging with existing seo value
+    const { data: existing } = await supabase.from('settings')
+      .select('value').eq('tenant_id', tenantId).eq('key', 'seo').maybeSingle()
+    const merged = {
+      ...(existing?.value ?? {}),
       meta_description: form.meta_description,
-      service_areas: form.service_areas.split(',').map(s => s.trim()).filter(Boolean),
       owner_name: form.owner_name,
       founded_year: form.founded_year,
       certifications: form.certifications.split(',').map(s => s.trim()).filter(Boolean),
     }
     await supabase.from('settings')
-      .upsert({ tenant_id: tenantId, key: 'seo', value }, { onConflict: 'tenant_id,key' })
+      .upsert({ tenant_id: tenantId, key: 'seo', value: merged }, { onConflict: 'tenant_id,key' })
+
+    // Normalize service_areas input → upsert live rows to table → derive JSONB
+    if (form.service_areas.trim()) {
+      const { accepted } = normalizeAll(form.service_areas)
+      for (const norm of accepted) {
+        await supabase.from('service_areas').upsert({
+          tenant_id: tenantId, city: norm.city, slug: norm.slug, state: norm.state,
+          hero_title: `${norm.city} Pest Control`, is_live: true,
+        }, { onConflict: 'tenant_id,slug' })
+      }
+    }
+    await syncServiceAreasJsonb(supabase, tenantId)
+
     setSaving(false)
     setSavedFlag(true)
     setTimeout(() => setSavedFlag(false), 2000)
