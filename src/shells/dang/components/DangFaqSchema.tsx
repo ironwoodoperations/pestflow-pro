@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../hooks/useTenant'
 import { StructuredData } from '../StructuredData'
-import { generateFAQSchema } from '../../../lib/seoSchema'
+import { generateFAQSchema } from '../../../../shared/lib/seoSchema'
 
 /**
  * Fetches the first 10 FAQs for this tenant and injects a valid FAQPage

@@ -11,7 +11,7 @@ import {
   type SeoSettings,
   type SchemaConfig,
   type SocialLinks,
-} from '../../lib/seoSchema'
+} from '../../../shared/lib/seoSchema'
 
 export type { BusinessInfo, SeoSettings, SchemaConfig, SocialLinks }
 
@@ -146,7 +146,7 @@ export default function SEOHead({
 
     if (pageType === 'service' && serviceName && serviceDescription) {
       injectScript('ld-service', generateServiceSchema(
-        businessInfo, serviceName, serviceDescription, resolvedUrl
+        serviceName, serviceDescription, resolvedUrl, baseUrl
       ))
     }
 
