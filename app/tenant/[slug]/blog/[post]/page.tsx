@@ -8,6 +8,8 @@ export async function generateStaticParams() {
   return [];
 }
 import { getBlogPost } from '../../_lib/queries';
+import { JsonLdScript } from '../../_components/JsonLdScripts';
+import { generateBlogPostingSchema } from '../../../../../shared/lib/seoSchema';
 
 type Params = { params: { slug: string; post: string } };
 
@@ -18,10 +20,16 @@ export default async function BlogPostPage({ params }: Params) {
   const post = await getBlogPost(tenant.id, params.post);
   if (!post) notFound();
 
-  const p = post as { title: string; content: string; published_at?: string | null; intro_image?: string | null };
+  const p = post as { title: string; slug: string; content: string; published_at?: string | null; intro_image?: string | null; excerpt?: string | null; author_name?: string | null };
+  const siteUrl = `https://${params.slug}.pestflowpro.com`;
+  const postSchema = generateBlogPostingSchema(
+    { title: p.title, slug: p.slug ?? params.post, excerpt: p.excerpt, published_at: p.published_at, author_name: p.author_name },
+    siteUrl,
+  );
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
+      <JsonLdScript schema={postSchema} id="ld-blog-post" />
 
       <div className="w-full h-64 md:h-96 overflow-hidden" style={{ backgroundColor: 'var(--color-primary)' }}>
         <img
