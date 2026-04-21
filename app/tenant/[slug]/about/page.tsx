@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { Shield, Eye, Award, Zap, Star, Home, Heart, Bug } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { resolveTenantBySlug } from '../../../../shared/lib/tenant/resolve';
+import { JsonLdScript } from '../_components/JsonLdScripts';
+import { generateAboutSchema, type BusinessInfo, type SeoSettings } from '../../../../shared/lib/seoSchema';
 
 export const revalidate = 300;
 
@@ -38,9 +40,14 @@ export default async function AboutPage({ params }: Params) {
   const aboutImage = c?.image_1_url || c?.image_urls?.[0] || '/images/pests/team.jpg';
   const heroImageUrl = resolveHeroImage(content, heroMedia);
   const isCF = tenant.template === 'clean-friendly';
+  const siteUrl = `https://${params.slug}.pestflowpro.com`;
+  const aboutBizInfo: BusinessInfo = { name: tenant.business_name ?? '', phone: tenant.phone ?? '', email: tenant.email ?? '', address: tenant.address ?? '' };
+  const aboutSeoInfo: SeoSettings = { meta_description: tenant.meta_description ?? '', service_areas: [], certifications: [], founded_year: '', owner_name: tenant.owner_name ?? '' };
+  const aboutSchema = generateAboutSchema(aboutBizInfo, aboutSeoInfo, siteUrl);
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: isCF ? 'var(--cf-surface)' : 'var(--color-bg-section)' }}>
+      <JsonLdScript schema={aboutSchema} id="ld-about" />
 
       <section className="relative py-20 md:py-28" style={heroImageUrl
         ? { backgroundImage: `url(${heroImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
