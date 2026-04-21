@@ -13,15 +13,9 @@ const MetroProLocationPage = lazy(() => import('../shells/metro-pro/MetroProLoca
 
 interface LocationItem { slug: string; city: string }
 
-const FALLBACK_CITIES: LocationItem[] = [
-  { slug: 'tyler-tx', city: 'Tyler' }, { slug: 'longview-tx', city: 'Longview' },
-  { slug: 'jacksonville-tx', city: 'Jacksonville' }, { slug: 'lindale-tx', city: 'Lindale' },
-  { slug: 'bullard-tx', city: 'Bullard' }, { slug: 'whitehouse-tx', city: 'Whitehouse' },
-]
-
 export default function ServiceArea() {
   const { template } = useTemplate()
-  const [locations, setLocations] = useState<LocationItem[]>(FALLBACK_CITIES)
+  const [locations, setLocations] = useState<LocationItem[]>([])
   const [address, setAddress] = useState('')
   const [phone, setPhone] = useState('')
   const [mapsApiKey, setMapsApiKey] = useState('')
@@ -94,15 +88,22 @@ export default function ServiceArea() {
       <section className="py-16" style={{ backgroundColor: 'var(--color-bg-section)' }}>
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="font-oswald tracking-wide text-3xl md:text-4xl text-center mb-10" style={{ color: 'var(--color-heading)' }}>Communities We Serve</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {locations.map((loc) => (
-              <Link key={loc.slug} to={`/${loc.slug}`} className="bg-white border-2 border-gray-200 rounded-xl p-4 text-center transition group shadow-sm hover:border-[color:var(--color-primary)]">
-                <MapPin className="w-6 h-6 mx-auto mb-2" style={{ color: 'var(--color-primary)' }} />
-                <h3 className="font-bold transition group-hover:text-[color:var(--color-primary)]" style={{ color: 'var(--color-heading)' }}>{loc.city}</h3>
-                <p className="text-gray-500 text-sm">Pest Control</p>
-              </Link>
-            ))}
-          </div>
+          {locations.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {locations.map((loc) => (
+                <Link key={loc.slug} to={`/${loc.slug}`} className="bg-white border-2 border-gray-200 rounded-xl p-4 text-center transition group shadow-sm hover:border-[color:var(--color-primary)]">
+                  <MapPin className="w-6 h-6 mx-auto mb-2" style={{ color: 'var(--color-primary)' }} />
+                  <h3 className="font-bold transition group-hover:text-[color:var(--color-primary)]" style={{ color: 'var(--color-heading)' }}>{loc.city}</h3>
+                  <p className="text-gray-500 text-sm">Pest Control</p>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white border border-gray-200 rounded-xl p-8 text-center">
+              <MapPin className="w-8 h-8 mx-auto mb-3" style={{ color: 'var(--color-primary)' }} />
+              <p className="text-gray-600">Serving your area? Call us to confirm.</p>
+            </div>
+          )}
         </div>
       </section>
 
