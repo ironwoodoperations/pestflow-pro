@@ -1,4 +1,6 @@
 import { resolveTenantBySlug } from '../../../shared/lib/tenant/resolve';
+import { JsonLdScript } from './_components/JsonLdScripts';
+import { generateWebsiteSchema } from '../../../shared/lib/seoSchema';
 
 export const revalidate = 300;
 
@@ -70,6 +72,8 @@ export default async function TenantHome({ params }: Params) {
   ]);
 
   const heroImageUrl = resolveHeroImage(content, heroMedia);
+  const siteUrl = `https://${params.slug}.pestflowpro.com`;
+  const websiteSchema = generateWebsiteSchema(tenant.business_name ?? tenant.name, siteUrl);
 
   if (tenant.template === 'modern-pro') {
     const aboutContent = await getPageContent(tenant.id, 'about');
@@ -78,6 +82,7 @@ export default async function TenantHome({ params }: Params) {
 
     return (
       <>
+        <JsonLdScript schema={websiteSchema} id="ld-website" />
         <ModernProHero tenant={tenant} content={content} heroMedia={heroMedia as Record<string, unknown> | null} heroImageUrl={heroImageUrl} />
         <ModernProTrustBar />
         <ModernProServicesGrid services={MODERN_PRO_SERVICES} />
@@ -108,6 +113,7 @@ export default async function TenantHome({ params }: Params) {
 
     return (
       <>
+        <JsonLdScript schema={websiteSchema} id="ld-website" />
         <BoldLocalHero tenant={tenant} content={content} heroMedia={heroMedia as Record<string, unknown> | null} heroImageUrl={heroImageUrl} />
         <BoldLocalTrustBar tenant={tenant} serviceAreaCount={serviceAreas.length} />
         <BoldLocalServicesGrid />
@@ -128,6 +134,7 @@ export default async function TenantHome({ params }: Params) {
 
     return (
       <>
+        <JsonLdScript schema={websiteSchema} id="ld-website" />
         <CleanFriendlyHero tenant={tenant} content={content} heroMedia={heroMedia as Record<string, unknown> | null} heroImageUrl={heroImageUrl} />
         <CleanFriendlyHowItWorks />
         <CleanFriendlyServicesGrid />
@@ -148,6 +155,7 @@ export default async function TenantHome({ params }: Params) {
 
     return (
       <>
+        <JsonLdScript schema={websiteSchema} id="ld-website" />
         <RusticRuggedHero tenant={tenant} content={content} heroMedia={heroMedia as Record<string, unknown> | null} heroImageUrl={heroImageUrl} />
         <RusticRuggedServiceStrips />
         <RusticRuggedAboutTimeline intro={aboutIntro} />
@@ -162,6 +170,7 @@ export default async function TenantHome({ params }: Params) {
 
   return (
     <>
+      <JsonLdScript schema={websiteSchema} id="ld-website" />
       <MetroHero tenant={tenant} content={content} heroMedia={heroMedia as Record<string, unknown> | null} heroImageUrl={heroImageUrl} />
       <ServicesGrid />
       <WhyChooseUs businessName={tenant.business_name || tenant.name} />
