@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChevronRight, Shield, Leaf, MapPin, Star } from 'lucide-react';
 import { resolveTenantBySlug } from '../../../../shared/lib/tenant/resolve';
+import { JsonLdScript } from '../_components/JsonLdScripts';
+import { generateServiceSchema } from '../../../../shared/lib/seoSchema';
 
 export const revalidate = 300;
 
@@ -150,9 +152,17 @@ export default async function ServicePage({ params }: Params) {
   const pestImg = PEST_IMAGES[params.service] || '/images/pests/pest_control.jpg';
   const phone = tenant.phone ?? '';
   const bizName = tenant.business_name ?? '';
+  const siteUrl = `https://${params.slug}.pestflowpro.com`;
+  const serviceSchema = generateServiceSchema(
+    heroTitle,
+    heroSubtitle,
+    `${siteUrl}/${params.service}`,
+    siteUrl,
+  );
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
+      <JsonLdScript schema={serviceSchema} id="ld-service" />
 
       <section className="py-16 md:py-20 relative overflow-hidden"
         style={heroImageUrl
