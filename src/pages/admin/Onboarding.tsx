@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Check } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../hooks/useTenant'
+import { syncServiceAreasJsonb } from '../../lib/service-areas/syncJsonbFromTable'
 import type { FormData } from '../../components/admin/onboarding/types'
 import { INITIAL_FORM } from '../../components/admin/onboarding/types'
 import StepWelcome from '../../components/admin/onboarding/StepWelcome'
@@ -71,6 +72,7 @@ export default function Onboarding() {
     const locationRows = form.locations.filter(l => l.city && l.slug).map(l => ({ tenant_id: tenantId, city: l.city, slug: l.slug, is_live: false }))
     if (locationRows.length > 0) {
       await supabase.from('service_areas').upsert(locationRows, { onConflict: 'tenant_id,slug' })
+      await syncServiceAreasJsonb(supabase, tenantId)
     }
     // Bridge to Ironwood CRM — upsert prospect so it appears in pipeline
     await supabase.from('prospects').upsert({
