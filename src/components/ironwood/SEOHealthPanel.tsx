@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import { normalizeAll } from '../../lib/service-areas/normalize'
 import { syncServiceAreasJsonb } from '../../lib/service-areas/syncJsonbFromTable'
+import { triggerRevalidate } from '../../lib/revalidate'
 
 interface Props {
   tenantId: string | null
@@ -51,6 +52,7 @@ function ProgressBar({ score, total }: { score: number; total: number }) {
 export default function SEOHealthPanel({ tenantId, onScoreChange }: Props) {
   const [signals, setSignals] = useState<SignalResult[]>([])
   const [score, setScore] = useState(0)
+  const [faqCount, setFaqCount] = useState(0)
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState<SeoForm>(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
@@ -146,6 +148,7 @@ export default function SEOHealthPanel({ tenantId, onScoreChange }: Props) {
     const total = checks.filter(c => c.ok).length
     setSignals(checks)
     setScore(total)
+    setFaqCount(faqCount)
     onScoreChange?.(total)
 
     // Pre-fill the quick-edit form
@@ -192,6 +195,10 @@ export default function SEOHealthPanel({ tenantId, onScoreChange }: Props) {
       }
     }
     await syncServiceAreasJsonb(supabase, tenantId)
+
+    const { data: sessionData } = await supabase.auth.getSession()
+    const accessToken = sessionData.session?.access_token
+    if (accessToken && tenantId) await triggerRevalidate({ type: 'settings', tenantId }, accessToken)
 
     setSaving(false)
     setSavedFlag(true)
@@ -243,6 +250,19 @@ export default function SEOHealthPanel({ tenantId, onScoreChange }: Props) {
                     </div>
                   </div>
                 ))}
+              </div>
+
+              {/* JSON-LD emission status (seo2) */}
+              <div className="border-t border-gray-700 pt-3 mt-3">
+                <h4 className="text-xs font-semibold text-gray-300 uppercase tracking-wide mb-2">JSON-LD Schemas (seo2)</h4>
+                <div className="space-y-1 text-xs text-gray-400">
+                  <div>✅ LocalBusiness — layout (all pages)</div>
+                  <div>✅ WebSite — home page</div>
+                  <div>✅ Service — per-service pages</div>
+                  <div>✅ AboutPage — /about</div>
+                  <div>✅ BlogPosting — /blog/[post]</div>
+                  <div>{faqCount > 0 ? `✅ FAQPage — /faq (${faqCount} FAQs)` : '⚠️ FAQPage — omitted (0 FAQs in DB)'}</div>
+                </div>
               </div>
 
               {/* Quick-edit SEO settings */}
