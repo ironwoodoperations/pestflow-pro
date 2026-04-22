@@ -1,0 +1,801 @@
+==============================================================================
+S165.9 — seo2 CLAUDE CODE EXECUTION PROMPT
+==============================================================================
+
+Session:        S165.9
+Task:           seo2 — JSON-LD schema injection for Next.js tenant shells
+Design:         docs/migrations/s165-9-seo2-design-v2-LOCKED.md (reference)
+Model:          claude-sonnet-4-6 (NOT haiku, NOT opus)
+Delivery:       claude --dangerously-skip-permissions < s165-9-seo2-claude-code-prompt.txt
+
+==============================================================================
+STANDING RULES (non-negotiable — applies to every task below)
+==============================================================================
+
+1. COPY-VERBATIM RULE:
+   Every file path, SQL query, schema example, type name, and @id pattern in
+   this prompt is exact. Do NOT rebuild components from scratch, paraphrase
+   schema structures, rename variables, or "clean up" code style choices that
+   this prompt specifies. If you find yourself reaching for "wouldn't it be
+   cleaner to..." — STOP and do it exactly as written.
+
+2. FILES UNDER 200 LINES.
+   If you create a file that exceeds 200 lines, split it. No exceptions.
+
+3. RELATIVE IMPORTS ONLY.
+   No path aliases like @/lib/... — use relative paths.
+
+4. SINGLE useState OBJECTS FOR FORMS.
+   Group related form state into one useState object, not separate calls. Not
+   applicable to this task (server components only) but remember the rule.
+
+5. maybeSingle() NOT single().
+   All Supabase reads use .maybeSingle() to avoid exceptions on zero rows.
+
+6. COMMIT AFTER EVERY TASK.
+   After each T-step below completes + tests pass, commit locally. Do NOT push
+   until the final task. This prevents broken mid-flight Vercel deploys.
+
+7. SINGLE PUSH AT END.
+   After T6 completes successfully, push all commits in one batch.
+
+8. 50% CONTEXT WINDOW RULE.
+   If you hit 50% context window usage, STOP. Output a plain-text session
+   summary (NOT a markdown context file). The user will open a fresh session
+   to continue. Natural checkpoints are marked ⬛ below.
+
+9. DANG FREEZE — ABSOLUTE.
+   Zero edits in src/shells/dang/**. Zero edits that affect Dang's render
+   path. If ANY task below appears to touch Dang, STOP and report before
+   proceeding.
+
+10. DOPPLER FOR DEV SERVER.
+    Test with `doppler run -- npm run dev` — not bare `npm run dev`.
+
+==============================================================================
+T0 — PRE-FLIGHT VERIFICATION (read-only, no code changes)
+==============================================================================
+
+Before any code change, run these probes and document each in T0 report.
+Do NOT proceed to T1 if any probe returns an unexpected result — stop and
+report.
+
+----- T0.1 — schema.org/PestControlService validity ---------------------------
+
+Web-search: "schema.org PestControlService 2026 recognized type"
+
+Output to T0 report:
+  - Verdict: RECOGNIZED | NOT_RECOGNIZED | AMBIGUOUS
+  - Source URL(s)
+  - If RECOGNIZED: keep existing '@type: ["LocalBusiness", "PestControlService"]'
+  - If NOT_RECOGNIZED: substitute '@type: ["LocalBusiness", "HomeAndConstructionBusiness"]'
+  - If AMBIGUOUS: default to HomeAndConstructionBusiness (safer fallback)
+
+----- T0.2 — current AggregateRating source (documentation only) --------------
+
+Grep: `grep -rn "aggregate_rating" src/ app/ shared/ 2>/dev/null | grep -v node_modules`
+
+Document in T0 report: where the current value comes from. Knowledge only —
+not used in v1 implementation per D5-D. Skip emission entirely.
+
+----- T0.3 — services substrate ----------------------------------------------
+
+Grep: `grep -rn "from ['\"]service_pages['\"]" src/ app/ shared/ 2>/dev/null | head -10`
+Also run Supabase probe:
+  SELECT table_name FROM information_schema.tables
+  WHERE table_schema='public' AND table_name ILIKE '%service%';
+
+Document in T0 report: the canonical table name for per-service content
+(name, description, slug) that Service schema will read from.
+
+----- T0.4 — social links source --------------------------------------------
+
+Grep: `grep -rn "social_links\|getSocialLinks" shared/lib app/tenant 2>/dev/null | head -10`
+
+Document in T0 report: where social_links come from today (layout.tsx already
+calls getSocialLinks(tenant.id) — trace that function to find its source).
+
+----- T0.5 — meta_description populated -------------------------------------
+
+Run via Supabase MCP execute_sql:
+  SELECT t.slug, s.value->>'meta_description' AS meta_desc
+  FROM public.tenants t
+  JOIN public.settings s ON s.tenant_id = t.id AND s.key = 'seo'
+  WHERE t.id <> '1611b16f-381b-4d4f-ba3a-fbde56ad425b';
+
+Document: whether both paying-track tenants have non-null meta_description.
+
+----- T0.6 — tsconfig path resolution --------------------------------------
+
+Attempt a probe import in a scratch file (do NOT commit):
+
+  // scratch-probe.ts at repo root
+  import { generateLocalBusinessSchema } from './src/lib/seoSchema';
+
+Run `npx tsc --noEmit scratch-probe.ts` to check. Document:
+  - ACCESSIBLE: App Router can import from src/lib/*  → T1.1 is still a
+    move for single-source-of-truth hygiene, not unblocking
+  - NOT ACCESSIBLE: T1.1 move is required to unblock
+
+Delete scratch-probe.ts before moving on.
+
+----- T0.7 — FAQ and review page visibility ---------------------------------
+
+View `app/tenant/[slug]/faq/page.tsx` and `app/tenant/[slug]/reviews/page.tsx`.
+
+Document for each:
+  - Does the page render the FAQs/reviews as visible content (for FAQPage
+    eligibility per Perplexity)?
+  - If /faq page doesn't render visible FAQs, FAQPage schema emission must
+    be gated by both faqs.length > 0 AND rendered-visibly check.
+  - /reviews page — note any existing structure; we emit NO review schema v1.
+
+----- T0 REPORT DELIVERABLE ------------------------------------------------
+
+Write `docs/migrations/s165-9-seo2-t0-report.md` with all 7 probe results.
+Commit with message: `s165.9.t0: seo2 pre-flight verification report`
+
+⬛ CONTEXT CHECKPOINT — if you've used >40% context window on T0 probes,
+stop here, output plain-text summary, and have the user start T1 fresh.
+
+==============================================================================
+T1 — SHARED LIB RELOCATION + GENERATOR ADDITIONS
+==============================================================================
+
+Goal: Single source of truth for JSON-LD generators at shared/lib/seoSchema.ts.
+Add missing generators and parsers. No Next.js wiring yet.
+
+----- T1.1 — atomic move + importer updates -------------------------------
+
+Execute in ONE commit:
+
+  git mv src/lib/seoSchema.ts shared/lib/seoSchema.ts
+
+Then find and update EVERY importer. Run this grep FIRST:
+
+  grep -rEn "from ['\"](\.\.?/)+(src/)?lib/seoSchema['\"]" src/ app/ 2>/dev/null
+
+For each result, rewrite the import path to point at shared/lib/seoSchema.
+Handle both src/ (Vite) importers and app/ (Next.js) importers correctly.
+
+Known importers to update (verify grep matches this list — may differ):
+  - src/components/seo/SEOHead.tsx
+  - src/shells/dang/components/DangFaqSchema.tsx  ← CHECK FREEZE RULE
+    NOTE: this import update is an import-path-only change, not a logic
+    change, so it is permitted under the freeze rule. If you're unsure,
+    STOP and report.
+
+After updating, run `npx tsc --noEmit` to verify no broken imports.
+Run `doppler run -- npm run build` to verify Vite and Next.js both build.
+
+Commit: `s165.9.t1.1: move seoSchema.ts to shared/lib, update importers`
+
+----- T1.2 — add @id to LocalBusiness ------------------------------------
+
+In shared/lib/seoSchema.ts, modify generateLocalBusinessSchema.
+
+Add this line immediately after the opening '@context' line:
+
+  '@id': `${siteUrl}/#organization`,
+
+Verify the existing function signature still matches all callsites.
+
+----- T1.3 — rewrite Service provider block -----------------------------
+
+In shared/lib/seoSchema.ts, modify generateServiceSchema.
+
+REPLACE the existing `provider` block:
+
+  provider: {
+    '@type': 'LocalBusiness',
+    name: business.name,
+    telephone: business.phone,
+  },
+
+WITH:
+
+  provider: {
+    '@id': `${siteUrl}/#organization`,
+  },
+
+The function signature changes — it no longer needs `business`. Update all
+callers accordingly. If no callers exist yet (v1 is adding the first
+Next.js callers), just change the signature.
+
+----- T1.4 — add generateBlogPostingSchema -----------------------------
+
+Add a new exported function in shared/lib/seoSchema.ts:
+
+  export interface BlogPostInput {
+    title: string
+    excerpt?: string | null
+    slug: string
+    published_at?: string | null
+    author_name?: string | null
+  }
+
+  export function generateBlogPostingSchema(
+    post: BlogPostInput,
+    siteUrl: string
+  ): object {
+    const schema: Record<string, unknown> = {
+      '@context': 'https://schema.org',
+      '@type': 'BlogPosting',
+      headline: post.title,
+      url: `${siteUrl}/blog/${post.slug}`,
+      mainEntityOfPage: {
+        '@type': 'WebPage',
+        '@id': `${siteUrl}/blog/${post.slug}`,
+      },
+      publisher: {
+        '@id': `${siteUrl}/#organization`,
+      },
+    }
+    if (post.excerpt) schema.description = post.excerpt
+    if (post.published_at) schema.datePublished = post.published_at
+    if (post.author_name) {
+      schema.author = { '@type': 'Person', name: post.author_name }
+    }
+    return schema
+  }
+
+----- T1.5 — add parseHours -------------------------------------------
+
+Add a new exported function in shared/lib/seoSchema.ts. Returns undefined
+on parse failure — CRITICAL per v2-LOCKED §2.5.
+
+Input examples to handle:
+  "Mon–Fri 7am–7pm, Sat 8am–4pm"
+  "Mon-Fri 7am-7pm | Sat 8am-2pm"
+  "Monday through Friday 8:00 AM to 5:00 PM"
+
+Output: OpeningHoursSpecification[] where each item is:
+  { '@type': 'OpeningHoursSpecification', dayOfWeek: ['Monday', ...], opens: 'HH:MM', closes: 'HH:MM' }
+
+Implementation: you design the parser. Requirements:
+  - Handle em-dash (–), en-dash, and hyphen as range separators
+  - Handle comma, pipe (|), and semicolon as segment separators
+  - Parse 12-hour (7am, 7:30pm) and 24-hour (19:00) times
+  - Map Mon/Mo/Monday → 'Monday', Tue/Tu/Tuesday → 'Tuesday', etc.
+  - Return undefined if ANY segment fails to parse (don't emit partial)
+  - Log server-side warning on failure:
+    console.warn('[seo2] parseHours returned undefined:', rawInput)
+
+Write unit tests in shared/lib/seoSchema.test.ts covering:
+  - All 3 input examples above
+  - Edge: "by appointment only" → undefined
+  - Edge: empty string → undefined
+  - Edge: single day "Sat 9am-12pm" → single-element array
+
+----- T1.6 — add parseAddress ----------------------------------------
+
+Add a new exported function in shared/lib/seoSchema.ts. Returns undefined
+on parse failure.
+
+Input examples to handle:
+  "8350 N Central Expressway, Suite 1400, Dallas, TX, 75206"
+  "1204 S. Main Street, Tyler, TX 75701"
+  "PO Box 42, Jacksonville, TX 75766"
+
+Output: { streetAddress, addressLocality, addressRegion, postalCode } or undefined
+
+Parser strategy (US addresses only v1):
+  - Split by commas, strip whitespace each part
+  - Last component: ZIP (5 or 9 digit) OR state+ZIP
+  - Second-to-last: state (2-letter or full name — map to 2-letter)
+  - Third-to-last: city (addressLocality)
+  - Everything else joined back: streetAddress
+  - If ZIP isn't detectable → undefined (don't hallucinate)
+
+Log warning on failure same pattern as parseHours.
+
+Write unit tests covering all 3 examples + edge cases.
+
+----- T1.7 — wire parsers into generateLocalBusinessSchema ------------
+
+In the existing generateLocalBusinessSchema, the current code:
+
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: business.address,
+    addressLocality: business.city || '',
+    addressRegion: business.state || '',
+    postalCode: business.zip || '',
+    addressCountry: 'US',
+  },
+
+CHANGE to:
+
+  ...(() => {
+    const parsed = parseAddress(business.address)
+    if (!parsed) return {} // omit address block entirely on parse failure
+    return {
+      address: {
+        '@type': 'PostalAddress',
+        ...parsed,
+        addressCountry: 'US',
+      },
+    }
+  })(),
+
+And the current:
+
+  openingHours: business.hours || 'Mo-Fr 08:00-17:00',
+
+CHANGE to:
+
+  ...(() => {
+    if (!business.hours) return {}
+    const spec = parseHours(business.hours)
+    if (!spec) return {} // omit hours block entirely on parse failure
+    return { openingHoursSpecification: spec }
+  })(),
+
+CRITICAL: REMOVE the hardcoded 'Mo-Fr 08:00-17:00' fallback. Never emit
+malformed schema. Never fabricate data.
+
+ALSO REMOVE the aggregateRating block entirely from generateLocalBusinessSchema
+(D5-D — deferred). The SchemaConfig.aggregate_rating field remains in the
+interface for future use but is no longer emitted.
+
+----- T1.8 — type chain update (conditional on T0.1) -----------------
+
+If T0.1 returned NOT_RECOGNIZED or AMBIGUOUS:
+  In generateLocalBusinessSchema, change:
+    '@type': ['LocalBusiness', 'PestControlService'],
+  TO:
+    '@type': ['LocalBusiness', 'HomeAndConstructionBusiness'],
+
+Otherwise: leave as-is.
+
+----- T1.9 — full test coverage ---------------------------------------
+
+shared/lib/seoSchema.test.ts must now cover:
+  - parseHours: 6+ cases including failures
+  - parseAddress: 6+ cases including failures
+  - generateLocalBusinessSchema: happy path, unparseable hours, unparseable
+    address, missing optional fields
+  - generateServiceSchema: has correct @id provider reference
+  - generateBlogPostingSchema: all field permutations
+
+Run: `npx vitest run shared/lib/seoSchema.test.ts` — all green.
+
+Commit all T1.2-T1.9 changes atomically:
+  `s165.9.t1: extend seoSchema.ts — @id, BlogPosting, parsers, aggregateRating removal`
+
+⬛ CONTEXT CHECKPOINT — if >50% context used, STOP. Output plain-text
+summary of T0+T1 status. Fresh session handles T2+.
+
+==============================================================================
+T2 — NEXT.JS SHELL INJECTION
+==============================================================================
+
+----- T2.1 — JsonLdScripts component --------------------------------
+
+Create `app/tenant/[slug]/_components/JsonLdScripts.tsx`:
+
+  // XSS-safe JSON-LD server component.
+  // Escapes < to \u003c to prevent </script> breakout per S165.9 design v2.
+  export function JsonLdScript({
+    schema,
+    id,
+  }: {
+    schema: object;
+    id: string;
+  }) {
+    const safe = JSON.stringify(schema).replace(/</g, '\\u003c');
+    return (
+      <script
+        type="application/ld+json"
+        id={id}
+        dangerouslySetInnerHTML={{ __html: safe }}
+      />
+    );
+  }
+
+File should be under 30 lines total including imports and top-of-file comment.
+
+Commit: `s165.9.t2.1: XSS-safe JsonLdScript server component`
+
+----- T2.2 — layout.tsx LocalBusiness ------------------------------
+
+Edit `app/tenant/[slug]/layout.tsx`.
+
+Add imports at top:
+  import { JsonLdScript } from './_components/JsonLdScripts';
+  import { generateLocalBusinessSchema } from '../../../shared/lib/seoSchema';
+
+Inside TenantLayout, after the existing const declarations but before the
+theme-specific returns, fetch business_info + seo + schema config:
+
+  const siteUrl = `https://${params.slug}.pestflowpro.com`;
+
+  // Fetch settings via cached query. Wrap in unstable_cache with tag.
+  // Follow pattern from S164 shared/lib helpers.
+  const [businessInfo, seoSettings, socialLinks] = await Promise.all([
+    getBusinessInfo(tenant.id),
+    getSeoSettings(tenant.id),
+    getSocialLinksForSchema(tenant.id),
+  ]);
+
+  const localBusinessSchema = generateLocalBusinessSchema(
+    businessInfo,
+    seoSettings,
+    { aggregate_rating: { value: 0, count: 0 }, service_radius_miles: 0 },
+    socialLinks,
+    siteUrl,
+  );
+
+Render <JsonLdScript schema={localBusinessSchema} id="ld-local-business" />
+INSIDE each theme's return block, at the top of the fragment before the
+existing <style> tag. Yes, this means repeating the JsonLdScript line 5
+times — once per theme branch. Do NOT refactor into a wrapper; the existing
+theme-branch pattern is the standing pattern and changing it is out of
+scope.
+
+The helpers (getBusinessInfo, getSeoSettings, getSocialLinksForSchema) may
+already exist under shared/lib or app/tenant/[slug]/_lib/queries.ts. Check
+first. If they don't exist, add them in shared/lib/seo-data.ts (keep each
+helper <20 lines, each wrapped in unstable_cache with tag
+`settings:${tenantId}`).
+
+CRITICAL: the settings fetchers MUST be cached helpers with revalidation
+tags. Uncached direct getServerSupabase() calls carry cache: 'no-store' and
+will poison the render path per S149 precedent.
+
+Commit: `s165.9.t2.2: inject LocalBusiness in tenant layout`
+
+----- T2.3 — home page.tsx WebSite --------------------------------
+
+Edit `app/tenant/[slug]/page.tsx`.
+
+Import generateWebsiteSchema from shared/lib/seoSchema and JsonLdScript.
+
+Fetch tenant.name (already available via existing patterns — look at how the
+current page loads data), construct siteUrl, call:
+
+  const websiteSchema = generateWebsiteSchema(businessName, siteUrl);
+
+Render <JsonLdScript schema={websiteSchema} id="ld-website" /> at the top of
+the returned JSX.
+
+Commit: `s165.9.t2.3: inject WebSite schema on home page`
+
+----- T2.4 — [service]/page.tsx Service schema -------------------
+
+Edit `app/tenant/[slug]/[service]/page.tsx`.
+
+Fetch the service's name and description from the services substrate
+(T0.3 identified the correct table). Call:
+
+  const serviceSchema = generateServiceSchema(
+    serviceName,
+    serviceDescription,
+    `${siteUrl}/${params.service}`,
+    siteUrl,  // for @id provider reference
+  );
+
+Note: generateServiceSchema signature changed in T1.3 — verify your call
+matches the new signature. If the signature takes (serviceName, desc, url,
+siteUrl), call it that way.
+
+Render <JsonLdScript schema={serviceSchema} id="ld-service" />.
+
+Commit: `s165.9.t2.4: inject Service schema on per-service pages`
+
+----- T2.5 — about/page.tsx AboutPage schema -----------------
+
+Edit `app/tenant/[slug]/about/page.tsx`.
+
+Call generateAboutSchema(businessInfo, seoSettings, siteUrl).
+
+Render <JsonLdScript schema={aboutSchema} id="ld-about" />.
+
+Commit: `s165.9.t2.5: inject AboutPage schema`
+
+----- T2.6 — faq/page.tsx FAQPage schema (conditional) -----------
+
+Edit `app/tenant/[slug]/faq/page.tsx`.
+
+Fetch FAQs for tenant:
+  const { data: faqs } = await supabase
+    .from('faqs')
+    .select('question, answer')
+    .eq('tenant_id', tenant.id)
+    .order('sort_order', { ascending: true });
+
+Emit FAQPage schema ONLY IF:
+  - faqs && faqs.length > 0
+  - AND the page renders these same FAQs as visible content (T0.7 verified)
+
+If no FAQs, do not emit the script tag at all.
+
+  {faqs && faqs.length > 0 && (
+    <JsonLdScript
+      schema={generateFAQSchema(faqs)}
+      id="ld-faq"
+    />
+  )}
+
+Commit: `s165.9.t2.6: inject FAQPage schema conditionally`
+
+----- T2.7 — reviews/page.tsx — NO SCHEMA v1 ------------------
+
+SKIP. Do not edit `app/tenant/[slug]/reviews/page.tsx`. Per D5-D / D7
+deferral in v2-LOCKED.
+
+----- T2.8 — blog/[post]/page.tsx BlogPosting --------------------
+
+Edit `app/tenant/[slug]/blog/[post]/page.tsx`.
+
+Fetch the blog post (existing pattern likely already does this). Call:
+
+  const postSchema = generateBlogPostingSchema(
+    { title, excerpt, slug, published_at, author_name },
+    siteUrl,
+  );
+
+Render <JsonLdScript schema={postSchema} id="ld-blog-post" />.
+
+Commit: `s165.9.t2.8: inject BlogPosting schema on blog post pages`
+
+----- T2.9 — other routes: no page-level additions -------------
+
+`contact`, `quote`, `blog` (index), `service-area` inherit LocalBusiness
+from layout. No page-level schema added this session.
+
+==============================================================================
+T3 — CACHING + ADMIN HOOKS
+==============================================================================
+
+----- T3.1 — ISR tag audit -----------------------------------
+
+Document in docs/migrations/s165-9-seo2-tag-audit.md:
+
+For each data source feeding JSON-LD (list below), document:
+  - Source: table name
+  - Fetched via: function name, wrapped in unstable_cache with tag X
+  - Invalidated on admin save by: revalidateTag(X) in handler Y
+  - Status: WIRED | MISSING
+
+Sources to audit:
+  - settings.business_info → feeds LocalBusiness
+  - settings.seo → feeds LocalBusiness + AboutPage + meta description
+  - settings.social_links (or equivalent) → feeds LocalBusiness sameAs
+  - service_pages (or equivalent) → feeds Service
+  - faqs → feeds FAQPage
+  - blog_posts → feeds BlogPosting
+
+Commit: `s165.9.t3.1: seo2 ISR tag audit report`
+
+----- T3.2 — add missing tag invalidations -----------------
+
+For each MISSING row in T3.1 audit, add revalidateTag(tag) to the admin
+save handler. Use the pattern from S149/S164 — pass tagged tenant-scoped
+revalidation.
+
+If all are WIRED, this task is a no-op. Document in the audit file.
+
+Commit (only if changes): `s165.9.t3.2: wire missing ISR tags for JSON-LD sources`
+
+----- T3.3 — SEOHealthPanel surface ---------------------
+
+Edit src/components/ironwood/SEOHealthPanel.tsx (or equivalent in
+src/components/ironwood/report/ReportSEO.tsx per grep findings).
+
+Add a status block showing per-tenant:
+  ✅ LocalBusiness emitted (layout)
+  ✅ WebSite emitted (home)
+  ✅ Service emitted ({N} service pages)
+  ✅ AboutPage emitted
+  ✅ FAQPage emitted ({N} FAQs) — or ⚠️ 0 FAQs, schema omitted
+  ✅ BlogPosting emitted ({N} posts)
+
+Status determination can be static for v1 (we know what we just wired) or
+can fetch live via curl of the tenant subdomain (prefer static v1 for
+speed).
+
+Keep component under 150 lines. If it bloats, split static config into
+a sibling file.
+
+Commit: `s165.9.t3.3: SEOHealthPanel seo2 status surface`
+
+==============================================================================
+T4 — ROLLBACK SCRIPT
+==============================================================================
+
+Write docs/migrations/s165-9-seo2-rollback.md:
+
+  # S165.9 seo2 rollback
+
+  Rollback is pure code revert — no DB changes in v1.
+
+  ```bash
+  # Identify commit range
+  git log --oneline main | grep "s165.9"
+
+  # Revert range (example — use actual SHAs)
+  git revert --no-edit <oldest-s165.9-sha>^..<newest-s165.9-sha>
+  git push origin main
+  ```
+
+  No CHECK constraints to drop. No migrations to reverse.
+
+  Side effect: the move of seoSchema.ts from src/lib to shared/lib is
+  reverted, so any other session's imports from shared/lib will break.
+  Coordinate with any in-flight work before reverting.
+
+Commit: `s165.9.t4: seo2 rollback doc`
+
+==============================================================================
+T5 — VERIFICATION GATE
+==============================================================================
+
+Run all 8 checks. ALL must pass before T6.
+
+----- T5.1 — home page has LocalBusiness ------
+
+  curl -s https://cityshield.pestflowpro.com/ | grep -c '"@type":\["LocalBusiness"'
+  # Expect: 1
+
+----- T5.2 — about page has 2 schemas ----------
+
+  curl -s https://cityshield.pestflowpro.com/about | grep -c 'application/ld+json'
+  # Expect: 2 (LocalBusiness from layout + AboutPage from page.tsx)
+
+----- T5.3 — AI crawler UAs see JSON-LD -------
+
+  for ua in "GPTBot" "ClaudeBot" "PerplexityBot"; do
+    echo "=== $ua ==="
+    curl -s -A "$ua" https://cityshield.pestflowpro.com/ | grep -c 'application/ld+json'
+  done
+  # Expect: 1 per UA (LocalBusiness only on home-redirect-to-homepage)
+
+  Actually home emits 2 (LocalBusiness + WebSite). Confirm that.
+
+----- T5.4 — Google Rich Results Test ---------
+
+Manual: open https://search.google.com/test/rich-results in browser,
+paste https://cityshield.pestflowpro.com/, confirm:
+  - LocalBusiness detected, 0 errors
+  - (optional) WebSite detected
+
+Test with /about URL separately — expect LocalBusiness + AboutPage detected.
+
+If any errors: STOP, report, do not commit T6.
+
+----- T5.5 — drift gate -----------------------
+
+Via Supabase MCP execute_sql, verify LocalBusiness.areaServed in actual
+rendered HTML matches `settings.seo.service_areas` JSONB exactly.
+
+  # For CityShield
+  curl -s https://cityshield.pestflowpro.com/ \
+    | grep -oE '"areaServed":\[[^]]*\]' | head -1
+
+Compare to:
+  SELECT value->'service_areas' FROM settings
+  WHERE tenant_id = 'c592a9eb-f836-4489-8817-5b1418e69f17' AND key = 'seo';
+
+Must match exactly (same length, same cities, same order).
+
+----- T5.6 — XSS safety check ----------------
+
+Via Supabase MCP execute_sql, temporarily set tagline with script tag:
+
+  UPDATE public.settings
+  SET value = jsonb_set(value, '{tagline}', '"<script>alert(1)</script>"')
+  WHERE tenant_id = '9215b06b-3eb5-49a1-a16e-7ff214bf6783' AND key = 'business_info';
+
+Trigger ISR refresh via empty commit + push. Wait for Vercel READY.
+
+  curl -s https://pestflow-pro.pestflowpro.com/ | grep -E '\\u003cscript\\u003e'
+  # Expect: match found (tagline appears as \u003cscript\u003e in JSON-LD)
+
+  curl -s https://pestflow-pro.pestflowpro.com/ | grep -E '<script>alert\(1\)</script>'
+  # Expect: NO match (raw tag NOT present in JSON-LD context)
+
+REVERT the tagline via another execute_sql UPDATE + ISR purge commit.
+
+----- T5.7 — metro-pro regression -------------
+
+Visit a metro-pro tenant subdomain in a fresh private window. Confirm:
+  - Page renders identically to pre-seo2 state (no visual regression)
+  - JSON-LD present in view-source
+
+----- T5.8 — Dang freeze check ---------------
+
+  git diff main -- src/shells/dang/
+
+Expect: empty output. If anything comes back, STOP, revert those changes,
+report.
+
+Also verify Dang subdomain unaffected:
+  curl -s https://dang.pestflowpro.com/ | head -20
+  # Should render as before; Dang routes via Vite, untouched by our changes.
+
+==============================================================================
+T6 — SHIP
+==============================================================================
+
+----- T6.1 — single push --------------------
+
+Review commits:
+  git log --oneline origin/main..HEAD
+  # Expect: 10-14 commits prefixed s165.9.tX.Y
+
+Push all at once:
+  git push origin main
+
+Wait for Vercel deploy of final commit to reach READY. Verify via:
+  # Scott will use Vercel MCP from claude.ai; you can skip this step in terminal
+
+----- T6.2 — ISR purge empty commit ---------
+
+  git commit --allow-empty -m "isr: purge after s165.9 seo2"
+  git push origin main
+
+----- T6.3 — post-ISR verification ----------
+
+Re-run T5.1 and T5.5 one more time to confirm post-purge state is clean.
+
+----- T6.4 — session summary ----------------
+
+Output a plain-text session summary. Format:
+
+  S165.9 seo2 — SHIPPED
+
+  Commits: <count> (s165.9.t0 through s165.9.t6)
+  Last SHA: <sha>
+  Vercel: READY
+  ISR purge: <purge-sha>
+
+  T5 verification results:
+    T5.1 home LocalBusiness: PASS
+    T5.2 about 2 schemas: PASS
+    ...
+
+  New files:
+    shared/lib/seoSchema.ts (moved from src/lib)
+    shared/lib/seoSchema.test.ts
+    app/tenant/[slug]/_components/JsonLdScripts.tsx
+    docs/migrations/s165-9-seo2-t0-report.md
+    docs/migrations/s165-9-seo2-tag-audit.md
+    docs/migrations/s165-9-seo2-rollback.md
+
+  Deferred to seo2.5:
+    - structured address/hours columns in business_info
+    - GeoCoordinates substrate + schema
+    - AggregateRating + Review schemas (pending verified provenance)
+
+  Deferred / out of scope:
+    - b15 canonical-key drift CHECK constraint
+    - b16 Vite apex StructuredData dedup
+    - seo3 Vite apex marketing site schema upgrade
+
+  Dang freeze: held. Zero edits under src/shells/dang/.
+
+==============================================================================
+FINAL NOTES
+==============================================================================
+
+- If ANY step fails and you can't resolve in-session, STOP. Plain-text
+  summary with what shipped + what blocked + recommended next step. DO NOT
+  push a broken state.
+
+- If you find a scope item that feels load-bearing but isn't in this prompt,
+  DO NOT add it. Log it as a follow-on bug and continue. Scope discipline
+  beats completeness.
+
+- If you find yourself refactoring existing code "while you're there" —
+  DO NOT. Only touch what's prescribed.
+
+- No shortcuts on T5 verification. Every check. Every shell. The whole
+  point of seo2 is crawler visibility; if T5.3 fails, nothing else matters.
+
+- Remember: Anthropic API model for any in-app AI calls is
+  claude-sonnet-4-6. Not applicable here but the rule stands.
+
+==============================================================================
+END OF PROMPT
+==============================================================================

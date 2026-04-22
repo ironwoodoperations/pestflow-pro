@@ -7,7 +7,6 @@ const ALL_THEMES = [
   { id: 'bold-local',    name: 'Bold & Local',       proOnly: false },
   { id: 'clean-friendly', name: 'Clean & Friendly',  proOnly: false },
   { id: 'rustic-rugged', name: 'Rustic & Rugged',    proOnly: false },
-  { id: 'youpest',       name: 'YouPest (Pro/Elite)', proOnly: true },
 ]
 const CU_TOGGLES: [string, string][] = [
   ['show_license','Show License #'],['show_years','Show Years in Business'],

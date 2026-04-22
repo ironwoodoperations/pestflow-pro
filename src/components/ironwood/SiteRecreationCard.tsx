@@ -14,7 +14,6 @@ const THEMES = [
   { id: 'clean-friendly', name: 'Clean & Friendly' },
   { id: 'bold-local',     name: 'Bold & Local' },
   { id: 'rustic-rugged',  name: 'Rustic & Rugged' },
-  { id: 'youpest',        name: 'YouPest' },
 ]
 
 const inp = 'w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-emerald-500'

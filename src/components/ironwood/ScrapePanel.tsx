@@ -3,7 +3,6 @@ import { supabase } from '../../lib/supabase'
 import ScrapeResultsTable from './ScrapeResultsTable'
 import SiteRecreationCard from './SiteRecreationCard'
 import type { SiteRecreation } from './SiteRecreationCard'
-import GenerateProLayout from './GenerateProLayout'
 import type { Prospect } from './types'
 
 export interface ScrapedData {
@@ -174,16 +173,9 @@ export default function ScrapePanel({ sourceUrl, onSourceUrlChange, prospectId, 
       {isProElite && prospectId && (
         <div className="mt-5 border-t border-gray-700 pt-4">
           <p className="text-xs font-semibold text-indigo-300 uppercase tracking-wide mb-3">Pro Build Options</p>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-xs font-medium text-gray-400 mb-1">⚡ AI Quick Build</p>
-              <p className="text-xs text-gray-600 mb-2">Same-day launch via YouPest theme</p>
-              <GenerateProLayout prospectId={prospectId} tier={tier ?? null} form={form ?? {}} />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-400 mb-1">🛠 Full Custom Build</p>
-              <p className="text-xs text-gray-600">Custom theme built from your existing site — set Build Path to Full Custom, then download the Claude Code prompt below in Build Files.</p>
-            </div>
+          <div>
+            <p className="text-xs font-medium text-gray-400 mb-1">🛠 Full Custom Build</p>
+            <p className="text-xs text-gray-600">Custom theme built from your existing site — set Build Path to Full Custom, then download the Claude Code prompt below in Build Files.</p>
           </div>
         </div>
       )}

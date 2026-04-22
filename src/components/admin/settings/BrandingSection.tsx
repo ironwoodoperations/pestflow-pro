@@ -9,7 +9,7 @@ import { triggerRevalidate } from '../../../lib/revalidate'
 
 interface BrandingForm {
   logo_url: string; favicon_url: string; primary_color: string; accent_color: string
-  theme: 'modern-pro' | 'bold-local' | 'clean-friendly' | 'rustic-rugged' | 'youpest' | 'dang' | (string & {})
+  theme: 'modern-pro' | 'bold-local' | 'clean-friendly' | 'rustic-rugged' | 'dang' | (string & {})
   cta_text: string; apply_hero_to_all_pages: boolean
 }
 
@@ -21,7 +21,6 @@ const templates: { value: BrandingForm['theme']; label: string; desc: string; bg
   { value: 'clean-friendly', label: 'Clean & Friendly',        desc: 'White navbar, sky-blue accents. Approachable.',            bg: '#ffffff', accent: '#0284c7' },
   { value: 'rustic-rugged',  label: 'Rustic & Rugged',         desc: 'Warm brown, rust orange. Established & trustworthy.',      bg: '#3b1f0e', accent: '#c2410c' },
   { value: 'metro-pro',      label: 'Metro Pro',               desc: 'Dark enterprise navbar, strong typography, metropolitan. Pro & Elite.', bg: '#0D2137', accent: '#00ACC1', proOnly: true },
-  { value: 'youpest',        label: 'YouPest AI Quick Build',  desc: 'AI-generated layout from your scraped site. Same-day launch.', bg: '#312e81', accent: '#818cf8', proOnly: true },
 ]
 
 export default function BrandingSection() {

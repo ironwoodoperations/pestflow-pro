@@ -15,7 +15,7 @@ homepage content from a pest control company's existing website and return a JSO
 object with exactly these keys:
 
 {
-  "shell": "modern-pro" | "clean-friendly" | "bold-local" | "rustic-rugged" | "youpest",
+  "shell": "modern-pro" | "clean-friendly" | "bold-local" | "rustic-rugged",
   "shellReason": "one sentence explaining why this shell matches their site style",
   "primaryColor": "#hexcode — the dominant brand color from their site (buttons, nav, headings)",
   "accentColor": "#hexcode — the secondary/highlight color from their site (CTAs, accents)",
@@ -28,7 +28,6 @@ Shell selection rules:
 - clean-friendly: light or white backgrounds, soft tones, family-safe language, approachable
 - bold-local: high energy, bold saturated colors, local pride language, impact-focused
 - rustic-rugged: earthy/warm tones (browns, oranges, greens), established trust language, heritage
-- youpest: fun, casual, humor-forward, youth-oriented, conversational tone
 
 For colors: if you cannot determine exact hex values from the content, use the most
 likely color based on the brand name, tone, and any color descriptions in the markdown.

@@ -1,7 +1,7 @@
 interface ThemeSelectorProps {
   value: string
   onChange: (theme: string) => void
-  tier?: number  // 1=Starter 2=Grow 3=Pro 4=Elite — youpest only shown for 3+
+  tier?: number  // 1=Starter 2=Grow 3=Pro 4=Elite
 }
 
 const THEMES = [
@@ -34,13 +34,6 @@ const THEMES = [
     name: 'Metro Pro',
     desc: 'Enterprise dark navbar. Sharp, metropolitan, professional. Pro & Elite only.',
     swatches: ['#1565C0', '#0D2137', '#2D3748'],
-    proOnly: true,
-  },
-  {
-    key: 'youpest',
-    name: 'YouPest AI Quick Build',
-    desc: 'AI-generated layout from scraped site. Same-day launch.',
-    swatches: ['#6366f1', '#818cf8', '#312e81'],
     proOnly: true,
   },
 ]

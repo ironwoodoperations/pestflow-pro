@@ -66,7 +66,6 @@ export interface Prospect {
   salesperson_id: string | null
   onboarding_rep_id: string | null
   tier: string | null
-  youpest_layout: Record<string, any> | null
   redirect_map: RedirectRow[]
   redirect_map_complete: boolean
   source_url: string | null
