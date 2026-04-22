@@ -7,6 +7,20 @@
 | After T1.2 (set-state-in-effect → warn) | 559 | 69 | Rule was already at warn — no change |
 | After T2 (real bug fixes) | 543 | 69 | -16 errors from T2 fixes; youpest shell errors remain until T3 |
 | After T3 (youpest deleted) | 528 | 68 | -15 errors + -1 warning from youpest shell removal |
+| After T4 rule downgrades (src/ only) | 0 | 175 | All errors downgraded to warn; CI command scoped to src/ |
+
+## CI command
+`npx eslint src --ext .ts,.tsx --max-warnings 200`
+
+CI was already scoped to `src/` — the `eslint .` npm script vs `npx eslint src` CI command accounts for the difference between 596 total problems and 175 src/-only warnings.
+
+## Warning breakdown (src/ only, final)
+- @typescript-eslint/no-explicit-any: ~120
+- @typescript-eslint/no-unused-vars: ~30
+- @typescript-eslint/no-restricted-types: ~20 (Function + {} types)
+- react-hooks/* purity/memoization: 2
+- no-explicit-any/empty/escape: ~3
+
 
 ## Notes
 
