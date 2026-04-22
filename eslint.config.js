@@ -7,6 +7,10 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
   globalIgnores(['dist']),
+  // Deno edge functions — use Deno's own lint (deno lint), not browser ESLint.
+  // Added S166 after 70+ false-positive @typescript-eslint/no-explicit-any errors
+  // on legitimate Deno API boundary typing.
+  globalIgnores(['supabase/functions/**']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
