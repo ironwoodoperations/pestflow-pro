@@ -71,6 +71,13 @@ export function BoldLocalFooter({ tenant, social = {} }: Props) {
         <p style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", fontSize: 12, color: 'var(--bl-text-muted)' }}>
           &copy; {year} {name}. All rights reserved.
         </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <Link href="/privacy" style={{ ...FOOT_LINK, fontSize: 12, marginBottom: 0 }}>Privacy Policy</Link>
+          <span style={{ color: 'var(--bl-text-muted)', fontSize: 12 }}>·</span>
+          <Link href="/terms" style={{ ...FOOT_LINK, fontSize: 12, marginBottom: 0 }}>Terms of Service</Link>
+          <span style={{ color: 'var(--bl-text-muted)', fontSize: 12 }}>·</span>
+          <Link href="/sms-terms" style={{ ...FOOT_LINK, fontSize: 12, marginBottom: 0 }}>SMS Terms</Link>
+        </div>
         <a href="https://pestflowpro.com" target="_blank" rel="noopener noreferrer" style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", fontSize: 11, color: 'var(--bl-accent)', textDecoration: 'none', fontWeight: 500 }}>
           Powered by PestFlow Pro
         </a>
