@@ -15,6 +15,7 @@ export interface BusinessInfo {
   city?: string
   state?: string
   zip?: string
+  logo_url?: string
 }
 
 export interface SeoSettings {
@@ -62,6 +63,7 @@ export function generateLocalBusinessSchema(
     telephone: business.phone,
     email: business.email,
     url: siteUrl,
+    ...(business.logo_url ? { image: business.logo_url, logo: business.logo_url } : {}),
     ...(sameAs.length > 0 ? { sameAs } : {}),
     areaServed: (seo.service_areas ?? []).map(area => ({ '@type': 'City', name: area })),
     hasCredential: (seo.certifications ?? []).map(cert => ({

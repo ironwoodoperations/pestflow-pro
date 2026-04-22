@@ -56,6 +56,7 @@ export default async function TenantLayout({
     address: tenant.address ?? '',
     hours: tenant.hours ?? undefined,
     license_number: tenant.license_number ?? undefined,
+    logo_url: tenant.logo_url ?? undefined,
   };
   const seoForSchema: SeoSettings = {
     meta_description: tenant.meta_description ?? '',
