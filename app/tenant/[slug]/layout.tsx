@@ -3,9 +3,10 @@ export const revalidate = 300;
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { resolveTenantBySlug } from '../../../shared/lib/tenant/resolve';
-import { getAllServicePages, getSocialLinks, getSeoSettings } from './_lib/queries';
+import { getAllServicePages, getSocialLinks, getSeoSettings, getBusinessInfo } from './_lib/queries';
 import { JsonLdScript } from './_components/JsonLdScripts';
 import { generateLocalBusinessSchema, type BusinessInfo, type SeoSettings, type SocialLinks } from '../../../shared/lib/seoSchema';
+import { mapBusinessInfoJsonb } from '../../../shared/lib/seoSchema.jsonb';
 import { TenantProvider } from './TenantProvider';
 import { MetroNavbar } from './_components/MetroNavbar';
 import { MetroFooter } from './_components/MetroFooter';
@@ -42,10 +43,11 @@ export default async function TenantLayout({
   const tenant = await resolveTenantBySlug(params.slug);
   if (!tenant) notFound();
 
-  const [servicePages, social, seoRaw] = await Promise.all([
+  const [servicePages, social, seoRaw, businessInfoRaw] = await Promise.all([
     getAllServicePages(tenant.id),
     getSocialLinks(tenant.id),
     getSeoSettings(tenant.id),
+    getBusinessInfo(tenant.id),
   ]);
 
   const siteUrl = `https://${params.slug}.pestflowpro.com`;
@@ -57,6 +59,7 @@ export default async function TenantLayout({
     hours: tenant.hours ?? undefined,
     license_number: tenant.license_number ?? undefined,
     logo_url: tenant.logo_url ?? undefined,
+    ...mapBusinessInfoJsonb(businessInfoRaw),
   };
   const seoForSchema: SeoSettings = {
     meta_description: tenant.meta_description ?? '',

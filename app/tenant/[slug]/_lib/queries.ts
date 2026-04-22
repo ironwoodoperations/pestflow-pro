@@ -213,3 +213,20 @@ export const getSeoSettings = cache(
     return (data?.value ?? {}) as { meta_description?: string; service_areas?: string[]; certifications?: string[]; founded_year?: string; owner_name?: string };
   }
 );
+
+export const getBusinessInfo = cache(
+  async (tenantId: string): Promise<unknown> => {
+    const supabase = getServerSupabaseForISR();
+    const { data, error } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('tenant_id', tenantId)
+      .eq('key', 'business_info')
+      .maybeSingle();
+    if (error) {
+      console.error('[getBusinessInfo] error', { tenantId, code: error.code, message: error.message });
+      return null;
+    }
+    return data?.value ?? null;
+  }
+);
