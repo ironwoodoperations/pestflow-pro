@@ -39,7 +39,6 @@ export function RusticRuggedNavbar({ servicePages }: Props) {
   const businessName = tenant.business_name || tenant.name;
   const logoUrl = tenant.logo_url || '';
   const phone = tenant.phone || '';
-  const slug = tenant.slug;
   const ctaText = tenant.cta_text || 'Get a Free Quote';
 
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -72,14 +71,12 @@ export function RusticRuggedNavbar({ servicePages }: Props) {
       }))
     : DEFAULT_SERVICE_LINKS;
 
-  const base = `/tenant/${slug}`;
-
   return (
     <nav style={{ backgroundColor: '#ffffff', boxShadow: scrolled ? '0 2px 12px rgba(0,0,0,0.10)' : '0 1px 0 rgba(0,0,0,0.08)' }} className="sticky top-0 z-50 transition-shadow">
       <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 px-4 py-2 rounded text-white z-[60]" style={{ backgroundColor: 'var(--color-primary)' }}>Skip to main content</a>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
-          <Link href={base} className="flex items-center gap-2 shrink-0">
+          <Link href="/" className="flex items-center gap-2 shrink-0">
             {logoUrl
               ? <img src={logoUrl} alt={businessName} style={{ height: '40px', objectFit: 'contain' }} onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
               : <span className="font-bold text-xl" style={{ color: '#1a1a1a', fontFamily: 'var(--font-heading)' }}>{businessName}</span>}
@@ -95,7 +92,7 @@ export function RusticRuggedNavbar({ servicePages }: Props) {
               {dropOpen && (
                 <div role="menu" className="absolute top-full left-0 mt-1 w-52 bg-white shadow-xl rounded-lg border border-gray-100 py-2 z-50">
                   {serviceLinks.map(l => (
-                    <Link key={l.href} href={`${base}${l.href}`} onClick={() => setDropOpen(false)}
+                    <Link key={l.href} href={l.href} onClick={() => setDropOpen(false)}
                       className="block px-4 py-2 text-sm transition" style={{ color: '#1a1a1a' }}
                       onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-primary)')}
                       onMouseLeave={e => (e.currentTarget.style.color = '#1a1a1a')}>
@@ -106,7 +103,7 @@ export function RusticRuggedNavbar({ servicePages }: Props) {
               )}
             </div>
             {NAV_LINKS.map(l => (
-              <Link key={l.href} href={`${base}${l.href}`} className="text-sm font-medium transition" style={{ color: '#1a1a1a' }}
+              <Link key={l.href} href={l.href} className="text-sm font-medium transition" style={{ color: '#1a1a1a' }}
                 onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-primary)')}
                 onMouseLeave={e => (e.currentTarget.style.color = '#1a1a1a')}>
                 {l.label}
@@ -116,7 +113,7 @@ export function RusticRuggedNavbar({ servicePages }: Props) {
 
           <div className="hidden lg:flex items-center gap-3 shrink-0">
             {phone && <a href={`tel:${phone.replace(/\D/g, '')}`} className="text-sm font-semibold transition" style={{ color: 'var(--color-primary)' }}>📞 {formatPhone(phone)}</a>}
-            <Link href={`${base}/quote`} className="font-bold rounded px-5 py-2.5 text-sm text-white transition hover:opacity-90" style={{ backgroundColor: 'var(--color-primary)' }}>{ctaText}</Link>
+            <Link href="/quote" className="font-bold rounded px-5 py-2.5 text-sm text-white transition hover:opacity-90" style={{ backgroundColor: 'var(--color-primary)' }}>{ctaText}</Link>
           </div>
 
           <button className="lg:hidden p-2" onClick={() => setMobileOpen(!mobileOpen)} aria-label={mobileOpen ? 'Close menu' : 'Open menu'} style={{ color: '#1a1a1a' }}>
@@ -128,11 +125,11 @@ export function RusticRuggedNavbar({ servicePages }: Props) {
         <div className="lg:hidden bg-white border-t border-gray-100 max-h-[80vh] overflow-y-auto">
           <div className="px-4 py-4 space-y-1">
             <p className="text-xs font-semibold text-gray-400 uppercase px-2 pb-1">Services</p>
-            {serviceLinks.map(l => <Link key={l.href} href={`${base}${l.href}`} onClick={() => setMobileOpen(false)} className="block px-2 py-2 text-sm font-medium" style={{ color: '#1a1a1a' }}>{l.label}</Link>)}
+            {serviceLinks.map(l => <Link key={l.href} href={l.href} onClick={() => setMobileOpen(false)} className="block px-2 py-2 text-sm font-medium" style={{ color: '#1a1a1a' }}>{l.label}</Link>)}
             <div className="border-t border-gray-100 my-2" />
-            {NAV_LINKS.map(l => <Link key={l.href} href={`${base}${l.href}`} onClick={() => setMobileOpen(false)} className="block px-2 py-2 text-base font-medium" style={{ color: '#1a1a1a' }}>{l.label}</Link>)}
+            {NAV_LINKS.map(l => <Link key={l.href} href={l.href} onClick={() => setMobileOpen(false)} className="block px-2 py-2 text-base font-medium" style={{ color: '#1a1a1a' }}>{l.label}</Link>)}
             {phone && <a href={`tel:${phone.replace(/\D/g, '')}`} className="block px-2 py-2 text-base font-semibold" style={{ color: 'var(--color-primary)' }}>📞 {formatPhone(phone)}</a>}
-            <Link href={`${base}/quote`} onClick={() => setMobileOpen(false)} className="block text-center font-bold rounded px-5 py-2.5 text-white transition mt-3" style={{ backgroundColor: 'var(--color-primary)' }}>{ctaText}</Link>
+            <Link href="/quote" onClick={() => setMobileOpen(false)} className="block text-center font-bold rounded px-5 py-2.5 text-white transition mt-3" style={{ backgroundColor: 'var(--color-primary)' }}>{ctaText}</Link>
           </div>
         </div>
       )}

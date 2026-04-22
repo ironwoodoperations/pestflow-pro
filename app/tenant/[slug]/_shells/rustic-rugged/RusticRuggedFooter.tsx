@@ -19,7 +19,6 @@ export function RusticRuggedFooter({ tenant, social }: Props) {
   const address = (tenant as { address?: string }).address || '';
   const tagline = tenant.tagline || '';
   const logoUrl = tenant.logo_url || '';
-  const slug = tenant.slug;
   const year = new Date().getFullYear();
 
   return (
@@ -70,11 +69,11 @@ export function RusticRuggedFooter({ tenant, social }: Props) {
         <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-gray-600">
           <span>&copy; {year} {businessName}. All rights reserved.</span>
           <div className="flex items-center gap-3">
-            <Link href={`/tenant/${slug}/privacy`} className="hover:text-gray-400 transition">Privacy Policy</Link>
+            <Link href="/privacy" className="hover:text-gray-400 transition">Privacy Policy</Link>
             <span>·</span>
-            <Link href={`/tenant/${slug}/terms`} className="hover:text-gray-400 transition">Terms of Service</Link>
+            <Link href="/terms" className="hover:text-gray-400 transition">Terms of Service</Link>
             <span>·</span>
-            <Link href={`/tenant/${slug}/sms-terms`} className="hover:text-gray-400 transition">SMS Terms</Link>
+            <Link href="/sms-terms" className="hover:text-gray-400 transition">SMS Terms</Link>
           </div>
           <a href="https://pestflowpro.com" target="_blank" rel="noopener noreferrer" className="transition hover:opacity-80" style={{ color: 'var(--color-primary)' }}>Powered by PestFlow Pro</a>
         </div>
