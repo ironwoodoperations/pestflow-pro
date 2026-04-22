@@ -5,16 +5,43 @@ export type { OpeningHoursSpecification, PostalAddressComponents } from './seoSc
 export { parseHours, parseAddress }
 
 export interface BusinessInfo {
+  // Identity
   name: string
   phone: string
   email: string
+
+  // Legacy address/hours (preserved through seo2.5; dropped in
+  // post-S168.3 contract commit)
   address: string
   hours?: string
+
+  // Structured address (NEW in seo2.5 — schema.org-canonical names)
+  street_address?: string
+  address_locality?: string
+  address_region?: string
+  postal_code?: string
+  address_country?: string
+
+  // Geolocation (NEW in seo2.5)
+  latitude?: number
+  longitude?: number
+  geocode_source?: 'manual' | 'google_places'
+
+  // Timezone (NEW in seo2.5; app-only, NOT emitted in JSON-LD)
+  timezone?: string
+
+  // Structured hours (NEW in seo2.5)
+  hours_structured?: Array<{
+    dayOfWeek: string
+    opens: string
+    closes: string
+  }>
+
+  // Licensing
   license_number?: string
   license?: string
-  city?: string
-  state?: string
-  zip?: string
+
+  // Branding
   logo_url?: string
 }
 
@@ -75,14 +102,86 @@ export function generateLocalBusinessSchema(
     knowsAbout: ['Pest Control', 'Termite Treatment', 'Mosquito Control', 'Rodent Control', 'Bed Bug Treatment', 'Ant Control'],
   }
 
-  const parsedAddress = parseAddress(business.address)
-  if (parsedAddress) {
-    result.address = { '@type': 'PostalAddress', ...parsedAddress, addressCountry: 'US' }
+  // PostalAddress: structured keys preferred, legacy string as fallback.
+  let postalAddress: Record<string, string> | null = null
+  const hasStructuredAddress =
+    !!business.street_address &&
+    !!business.address_locality &&
+    !!business.address_region &&
+    !!business.postal_code
+
+  if (hasStructuredAddress) {
+    postalAddress = {
+      '@type': 'PostalAddress',
+      streetAddress: business.street_address!,
+      addressLocality: business.address_locality!,
+      addressRegion: business.address_region!,
+      postalCode: business.postal_code!,
+      addressCountry: business.address_country ?? 'US',
+    }
+  } else if (business.address) {
+    const parsed = parseAddress(business.address)
+    if (parsed) {
+      postalAddress = {
+        '@type': 'PostalAddress',
+        streetAddress: parsed.streetAddress,
+        addressLocality: parsed.addressLocality,
+        addressRegion: parsed.addressRegion,
+        postalCode: parsed.postalCode,
+        addressCountry: 'US',
+      }
+    }
+  }
+  if (postalAddress) {
+    result.address = postalAddress
   }
 
-  if (business.hours) {
-    const spec = parseHours(business.hours)
-    if (spec) result.openingHoursSpecification = spec
+  // GeoCoordinates: emit only when both lat AND lng are finite numbers.
+  if (
+    typeof business.latitude === 'number' &&
+    typeof business.longitude === 'number' &&
+    Number.isFinite(business.latitude) &&
+    Number.isFinite(business.longitude)
+  ) {
+    result.geo = {
+      '@type': 'GeoCoordinates',
+      latitude: business.latitude,
+      longitude: business.longitude,
+    }
+  }
+
+  // openingHoursSpecification: structured array preferred, parseHours fallback.
+  // Canonicalize to Google LocalBusiness docs form: dayOfWeek as full
+  // schema.org URI, opens/closes as HH:MM:SS.
+  type RawOhs = { dayOfWeek: string[]; opens: string; closes: string }
+  let rawOhs: RawOhs[] | null = null
+
+  if (Array.isArray(business.hours_structured) && business.hours_structured.length > 0) {
+    rawOhs = business.hours_structured.map(h => ({
+      dayOfWeek: [h.dayOfWeek], // wrap single-string into array to match OHS type
+      opens: h.opens,
+      closes: h.closes,
+    }))
+  } else if (business.hours) {
+    const parsed = parseHours(business.hours)
+    if (parsed && parsed.length > 0) {
+      rawOhs = parsed.map(o => ({
+        dayOfWeek: o.dayOfWeek, // already string[] from parseHours
+        opens: o.opens,
+        closes: o.closes,
+      }))
+    }
+  }
+
+  if (rawOhs && rawOhs.length > 0) {
+    const addUri = (d: string) => (d.startsWith('http') ? d : 'https://schema.org/' + d)
+    const addSeconds = (t: string) => (t.length === 5 ? t + ':00' : t)
+    result.openingHoursSpecification = rawOhs.map(h => ({
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek: h.dayOfWeek.map(addUri),
+      opens: addSeconds(h.opens),
+      closes: addSeconds(h.closes),
+    }))
   }
 
   return result

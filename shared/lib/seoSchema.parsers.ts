@@ -67,7 +67,9 @@ function parseDayRange(d: string): string[] | undefined {
 
 export function parseHours(raw: string): OpeningHoursSpecification[] | undefined {
   if (!raw?.trim()) {
-    console.warn('[seo2] parseHours returned undefined:', raw)
+    if (typeof process !== 'undefined' && process.env.NODE_ENV !== 'production') {
+      console.warn('[seoSchema.parseHours] empty input:', raw)
+    }
     return undefined
   }
   const segments = raw.split(/[,|;]/).map(s => s.trim()).filter(Boolean)
@@ -78,8 +80,10 @@ export function parseHours(raw: string): OpeningHoursSpecification[] | undefined
     // e.g. "Mon-Fri 7am-7pm" or "Monday through Friday 8:00 AM to 5:00 PM"
     const timeRangeMatch = seg.match(/(.+?)\s+([\d:]+\s*(?:am|pm)?)\s*(?:to|-|–|—)\s*([\d:]+\s*(?:am|pm)?)\s*$/i)
     if (!timeRangeMatch) {
-      console.warn('[seo2] parseHours returned undefined:', raw)
-      return undefined
+      if (typeof process !== 'undefined' && process.env.NODE_ENV !== 'production') {
+        console.warn('[seoSchema.parseHours] skipping unparseable segment:', seg)
+      }
+      continue
     }
     const dayPart = timeRangeMatch[1].trim()
     const openRaw = timeRangeMatch[2].trim()
@@ -90,14 +94,18 @@ export function parseHours(raw: string): OpeningHoursSpecification[] | undefined
     const closes = parseTime(closeRaw)
 
     if (!days || !opens || !closes) {
-      console.warn('[seo2] parseHours returned undefined:', raw)
-      return undefined
+      if (typeof process !== 'undefined' && process.env.NODE_ENV !== 'production') {
+        console.warn('[seoSchema.parseHours] skipping unparseable segment:', seg)
+      }
+      continue
     }
     result.push({ '@type': 'OpeningHoursSpecification', dayOfWeek: days, opens, closes })
   }
 
   if (result.length === 0) {
-    console.warn('[seo2] parseHours returned undefined:', raw)
+    if (typeof process !== 'undefined' && process.env.NODE_ENV !== 'production') {
+      console.warn('[seoSchema.parseHours] all segments failed:', raw)
+    }
     return undefined
   }
   return result
