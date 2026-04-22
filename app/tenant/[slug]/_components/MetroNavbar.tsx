@@ -10,6 +10,8 @@ import { formatPhone } from '../../../../shared/lib/formatPhone';
 const NAV_LINKS = [
   { label: 'About', href: '/about' },
   { label: 'Blog', href: '/blog' },
+  { label: 'Reviews', href: '/reviews' },
+  { label: 'FAQ', href: '/faq' },
   { label: 'Contact', href: '/contact' },
 ];
 

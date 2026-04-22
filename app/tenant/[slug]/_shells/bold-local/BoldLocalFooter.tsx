@@ -53,7 +53,7 @@ export function BoldLocalFooter({ tenant, social = {} }: Props) {
 
         <div>
           <span style={COL_HEAD}>Company</span>
-          {[{ label: 'About Us', href: '/about' }, { label: 'Service Area', href: '/service-area' }, { label: 'Blog', href: '/blog' }, { label: 'Reviews', href: '/reviews' }, { label: 'Contact', href: '/contact' }].map((l) => (
+          {[{ label: 'About Us', href: '/about' }, { label: 'Service Area', href: '/service-area' }, { label: 'Blog', href: '/blog' }, { label: 'Reviews', href: '/reviews' }, { label: 'FAQ', href: '/faq' }, { label: 'Contact', href: '/contact' }].map((l) => (
             <Link key={l.href} href={l.href} style={FOOT_LINK}>{l.label}</Link>
           ))}
         </div>

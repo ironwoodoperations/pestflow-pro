@@ -12,6 +12,7 @@ const QUICK_LINKS = [
   { label: 'About', href: '/about' }, { label: 'Blog', href: '/blog' },
   { label: 'Reviews', href: '/reviews' }, { label: 'Contact', href: '/contact' },
   { label: 'Get a Quote', href: '/quote' }, { label: 'Service Area', href: '/service-area' },
+  { label: 'FAQ', href: '/faq' },
 ];
 
 interface Props {

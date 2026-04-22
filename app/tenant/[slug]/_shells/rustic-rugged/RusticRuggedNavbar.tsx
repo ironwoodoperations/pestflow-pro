@@ -25,6 +25,9 @@ const DEFAULT_SERVICE_LINKS = [
 const NAV_LINKS = [
   { label: 'About', href: '/about' },
   { label: 'Service Area', href: '/service-area' },
+  { label: 'Blog', href: '/blog' },
+  { label: 'Reviews', href: '/reviews' },
+  { label: 'FAQ', href: '/faq' },
   { label: 'Contact', href: '/contact' },
 ];
 

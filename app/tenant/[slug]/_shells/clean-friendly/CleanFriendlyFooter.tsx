@@ -18,6 +18,8 @@ const COMPANY_LINKS = [
   { label: 'Our process', href: '/#how-it-works' },
   { label: 'Service area', href: '/service-area' },
   { label: 'Blog', href: '/blog' },
+  { label: 'Reviews', href: '/reviews' },
+  { label: 'FAQ', href: '/faq' },
   { label: 'Contact', href: '/contact' },
 ];
 
