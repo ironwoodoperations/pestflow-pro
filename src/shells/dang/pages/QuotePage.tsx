@@ -61,7 +61,7 @@ const QuotePage = () => {
 
       toast.success("Quote Request Sent!", { description: "We'll get back to you as soon as possible." });
       reset();
-    } catch (err) {
+    } catch (_err) {
       toast.error("Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);

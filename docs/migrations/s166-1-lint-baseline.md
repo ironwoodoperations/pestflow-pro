@@ -5,6 +5,7 @@
 | T0 baseline | 629 | 69 | Pre-session state |
 | After T1.1 (ignore supabase/functions/**) | 559 | 69 | Dropped 70 edge-fn errors |
 | After T1.2 (set-state-in-effect → warn) | 559 | 69 | Rule was already at warn — no change |
+| After T2 (real bug fixes) | 543 | 69 | -16 errors from T2 fixes; youpest shell errors remain until T3 |
 
 ## Notes
 

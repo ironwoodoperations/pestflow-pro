@@ -10,6 +10,26 @@ const ALL = 'all'
 type SortKey = 'company_name' | 'status' | 'plan_name' | 'setup_fee_amount' | 'monthly_price' | 'call_date'
 type ArchiveTab = 'active' | 'archived'
 
+function TH({
+  k,
+  label,
+  sortKey,
+  sortAsc,
+  onToggle,
+}: {
+  k: SortKey
+  label: string
+  sortKey: SortKey
+  sortAsc: boolean
+  onToggle: (k: SortKey) => void
+}) {
+  return (
+    <th className="pb-2 cursor-pointer hover:text-white select-none text-left" onClick={() => onToggle(k)}>
+      {label} {sortKey === k ? (sortAsc ? '↑' : '↓') : ''}
+    </th>
+  )
+}
+
 const STATUS_BADGE: Record<ProspectStatus, string> = {
   prospect: 'bg-gray-700 text-gray-300', quoted: 'bg-blue-800 text-blue-200',
   paid: 'bg-indigo-800 text-indigo-200', onboarding: 'bg-yellow-800 text-yellow-200',
@@ -69,12 +89,6 @@ export default function ProspectList() {
     if (sortKey === k) setSortAsc(a => !a)
     else { setSortKey(k); setSortAsc(true) }
   }
-  const TH = ({ k, label }: { k: SortKey; label: string }) => (
-    <th className="pb-2 cursor-pointer hover:text-white select-none text-left" onClick={() => toggleSort(k)}>
-      {label} {sortKey === k ? (sortAsc ? '↑' : '↓') : ''}
-    </th>
-  )
-
   const handleRestore = async (p: Prospect) => {
     await restoreRecord('prospects', p.id, supabase)
     // Also restore the live tenant site if provisioned
@@ -154,13 +168,13 @@ export default function ProspectList() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-gray-400 border-b border-gray-800">
-              <TH k="company_name" label="Company" />
-              <TH k="status" label="Status" />
+              <TH k="company_name" label="Company" sortKey={sortKey} sortAsc={sortAsc} onToggle={toggleSort} />
+              <TH k="status" label="Status" sortKey={sortKey} sortAsc={sortAsc} onToggle={toggleSort} />
               <th className="pb-2 text-left">Rep</th>
-              <TH k="plan_name" label="Plan" />
-              <TH k="setup_fee_amount" label="Setup" />
-              <TH k="monthly_price" label="Monthly" />
-              <TH k="call_date" label="Call Date" />
+              <TH k="plan_name" label="Plan" sortKey={sortKey} sortAsc={sortAsc} onToggle={toggleSort} />
+              <TH k="setup_fee_amount" label="Setup" sortKey={sortKey} sortAsc={sortAsc} onToggle={toggleSort} />
+              <TH k="monthly_price" label="Monthly" sortKey={sortKey} sortAsc={sortAsc} onToggle={toggleSort} />
+              <TH k="call_date" label="Call Date" sortKey={sortKey} sortAsc={sortAsc} onToggle={toggleSort} />
               <th className="pb-2 text-left">Actions</th>
             </tr>
           </thead>

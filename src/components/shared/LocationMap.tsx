@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 
 interface Props {
   address: string
@@ -44,38 +44,39 @@ export default function LocationMap({ address, city, businessName }: Props) {
   const mapRef = useRef<HTMLDivElement>(null)
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined
 
+  const renderMap = useCallback((G: unknown, container: HTMLDivElement, center: unknown) => {
+    const maps = (G as { maps: { Map: new (...a: unknown[]) => unknown; Marker: new (...a: unknown[]) => unknown } }).maps
+    const map = new maps.Map(container, {
+      center, zoom: 13,
+      styles: MAP_STYLES,
+      mapTypeControl: false, streetViewControl: false, fullscreenControl: false,
+    })
+    new maps.Marker({ map, position: center, title: `${businessName} — ${city}` })
+  }, [businessName, city])
+
   useEffect(() => {
     if (!apiKey || !mapRef.current) return
     const container = mapRef.current
 
     loadMapsApi(apiKey).then(() => {
       if (!container || !window.google) return
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const G = window.google as any
-      const geocoder = new G.maps.Geocoder()
+      const G = window.google as unknown
+      const maps = (G as { maps: { Geocoder: new () => { geocode: (q: unknown, cb: (r: unknown[], s: string) => void) => void } } }).maps
+      const geocoder = new maps.Geocoder()
       const query = address ? `${address}, ${city}` : city
 
       geocoder.geocode({ address: query }, (results: unknown[], status: string) => {
         if (status !== 'OK' || !results?.[0]) {
           geocoder.geocode({ address: city }, (r2: unknown[], s2: string) => {
             if (s2 !== 'OK' || !r2?.[0]) return
-            renderMap(G, container, (r2[0] as any).geometry.location)
+            renderMap(G, container, (r2[0] as { geometry: { location: unknown } }).geometry.location)
           })
           return
         }
-        renderMap(G, container, (results[0] as any).geometry.location)
+        renderMap(G, container, (results[0] as { geometry: { location: unknown } }).geometry.location)
       })
     }).catch(() => { /* silently fallback — fallback UI shown via apiKey check below */ })
-  }, [address, city, businessName, apiKey]) // eslint-disable-line
-
-  function renderMap(G: any, container: HTMLDivElement, center: unknown) { // eslint-disable-line @typescript-eslint/no-explicit-any
-    const map = new G.maps.Map(container, {
-      center, zoom: 13,
-      styles: MAP_STYLES,
-      mapTypeControl: false, streetViewControl: false, fullscreenControl: false,
-    })
-    new G.maps.Marker({ map, position: center, title: `${businessName} — ${city}` })
-  }
+  }, [address, city, apiKey, renderMap])
 
   if (!apiKey) {
     return (

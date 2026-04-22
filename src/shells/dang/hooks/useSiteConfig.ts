@@ -14,6 +14,7 @@ interface SiteConfig {
  * The site_config table does not exist — hero media and SEO are managed
  * through the tenant settings system, not a per-shell config table.
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const useSiteConfig = (_slug: string = "/"): SiteConfig => ({
   seoTitle: "",
   seoDescription: "",

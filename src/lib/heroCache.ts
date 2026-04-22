@@ -52,6 +52,7 @@ export function readHeroCache(): HeroCache {
     let result: HeroCache
     // If cache pre-dates v4, strip the headline fields so shells re-fetch fresh.
     if (cache.v !== 4) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { headline: _h, heroHeadline: _hh, customHeadline: _ch, ...rest } = cache
       result = rest
     } else {

@@ -40,7 +40,7 @@ export default function MetroProQuotePage({ tenantId: propTenantId, businessName
   const [step, setStep] = useState(1)
   const [form, setForm] = useState<FormState>(INITIAL)
   const [tenantId, setTenantId] = useState(propTenantId || '')
-  const [_businessName, setBusinessName] = useState(propBizName || '')
+  const [, setBusinessName] = useState(propBizName || '')
   const [businessPhone, setBusinessPhone] = useState(propBizPhone || '')
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
