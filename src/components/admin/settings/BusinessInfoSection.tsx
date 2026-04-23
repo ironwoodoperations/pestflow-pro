@@ -31,7 +31,7 @@ function HoursGrid({ value, onChange, errors }: { value: HoursEntry[]; onChange:
             <span className="w-20 text-sm font-medium text-gray-700">{day.slice(0, 3)}</span>
             <label className="flex items-center gap-1.5 text-xs text-gray-600"><input type="checkbox" checked={!e} onChange={() => toggle(day)} /> Closed</label>
             <input type="time" value={e?.opens?.slice(0, 5) || ''} onChange={ev => setTime(day, 'opens', ev.target.value)} disabled={!e} data-field={`hours_structured.${i}`} aria-invalid={err ? 'true' : undefined} aria-describedby={err ? `hs${i}e` : undefined} className={IC} />
-            <input type="time" value={e?.closes?.slice(0, 5) || ''} onChange={ev => setTime(day, 'closes', ev.target.value)} disabled={!e} aria-invalid={err ? 'true' : undefined} className={IC} />
+            <input type="time" value={e?.closes?.slice(0, 5) || ''} onChange={ev => setTime(day, 'closes', ev.target.value)} disabled={!e} aria-invalid={err ? 'true' : undefined} aria-describedby={err ? `hs${i}e` : undefined} className={IC} />
             {err && <p id={`hs${i}e`} role="alert" className="text-red-600 text-xs mt-0.5 w-full">{err}</p>}
           </div>
         )
