@@ -98,6 +98,9 @@ export default function OnboardingLive() {
     setSaving(true)
     const fullAddress = [form.address, form.cityStateZip].filter(Boolean).join(', ')
     await supabase.from('settings').upsert([
+      // S168.3.2: 10 structured address/geo/hours keys deliberately omitted.
+      // These are admin-only fields, filled post-provision via BusinessInfoSection.
+      // CHECK constraint atomicity rules accept the zero-present state.
       { tenant_id: tenantId, key: 'business_info', value: { name: form.businessName, phone: form.phone, email: form.email, address: fullAddress, hours: form.hours, tagline: form.tagline, license: form.license } },
       { tenant_id: tenantId, key: 'branding', value: { logo_url: form.logoUrl, primary_color: form.primaryColor, theme: form.template } },
       { tenant_id: tenantId, key: 'social_links', value: { facebook: form.facebookUrl, instagram: form.instagramUrl, google: form.googleUrl } },

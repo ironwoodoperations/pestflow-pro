@@ -60,6 +60,9 @@ export default function Onboarding() {
     if (!tenantId || saving) return
     setSaving(true)
     const settingsRows = [
+      // S168.3.2: 10 structured address/geo/hours keys deliberately omitted.
+      // These are admin-only fields, filled post-provision via BusinessInfoSection.
+      // CHECK constraint atomicity rules accept the zero-present state.
       { tenant_id: tenantId, key: 'business_info', value: { name: form.businessName, phone: form.phone, email: form.email, address: form.address, hours: form.hours, tagline: form.tagline, license: form.license, industry: form.industry } },
       { tenant_id: tenantId, key: 'branding', value: { logo_url: form.logoUrl, favicon_url: '', primary_color: form.primaryColor, accent_color: form.accentColor, theme: form.template } },
       { tenant_id: tenantId, key: 'social_links', value: { facebook: form.facebook, instagram: form.instagram, google: form.google, youtube: form.youtube } },
