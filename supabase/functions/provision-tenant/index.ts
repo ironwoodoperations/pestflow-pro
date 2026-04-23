@@ -205,6 +205,21 @@ Deno.serve(async (req: Request) => {
     const resolvedPlanName  = tierStr.charAt(0).toUpperCase() + tierStr.slice(1)
     const resolvedMonthlyPrice = wsub.monthly_price || subscription?.monthly_price || _tierPrices[tierStr] || 149
 
+    // S168.3.2: atomicity helpers — mirror CHECK constraints in settings.business_info
+    const _addrFilled = [wbi.street_address, wbi.address_locality, wbi.address_region, wbi.postal_code]
+      .filter((v: unknown) => v && String(v).trim()).length
+    const _bizAddrKeys = _addrFilled === 4
+      ? { street_address: wbi.street_address, address_locality: wbi.address_locality, address_region: wbi.address_region, postal_code: wbi.postal_code }
+      : {}
+    const _bizGeoKeys = (typeof wbi.latitude === 'number' && typeof wbi.longitude === 'number')
+      ? { latitude: wbi.latitude, longitude: wbi.longitude }
+      : {}
+    const _bizHoursKeys = (Array.isArray(wbi.hours_structured) && wbi.hours_structured.length > 0 && wbi.timezone)
+      ? { hours_structured: wbi.hours_structured, timezone: wbi.timezone }
+      : wbi.timezone
+        ? { timezone: wbi.timezone }
+        : {}
+
     const settingsRows = [
       { tenant_id: tenantId, key: 'business_info', value: {
         name:            wbi.name            || bi.name    || '',
@@ -220,6 +235,11 @@ Deno.serve(async (req: Request) => {
         num_technicians:   wbi.num_technicians            || '',
         owner_name:        wbi.owner_name || bi?.owner_name || '',
         after_hours_phone: wbi.after_hours_phone          || '',
+        ..._bizAddrKeys,
+        ...(wbi.address_country ? { address_country: wbi.address_country } : {}),
+        ..._bizGeoKeys,
+        ...(wbi.geocode_source ? { geocode_source: wbi.geocode_source } : {}),
+        ..._bizHoursKeys,
       }},
       { tenant_id: tenantId, key: 'branding', value: {
         logo_url:      wbr.logo_url      || branding?.logo_url      || '',
@@ -429,6 +449,8 @@ Deno.serve(async (req: Request) => {
         const bizForSeo = ib.business_name || businessName
 
         // 9a: Overlay business_info with intake data
+        // S168.3.2 note: 10 structured keys flow through via ...currentBi spread.
+        // No explicit mapping needed here — primary seed at ~line 208 handles them.
         if (city || state || ib.zip || ib.address || ib.business_name || ib.phone || ib.email || ib.hours || ib.tagline || ib.owner_name || ib.founded_year || ib.license_number || ib.num_technicians) {
           const { data: existingBiRow } = await supabase.from('settings').select('value')
             .eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle()
