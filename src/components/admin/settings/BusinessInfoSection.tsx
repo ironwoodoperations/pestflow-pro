@@ -79,7 +79,6 @@ export default function BusinessInfoSection() {
             street_address: _sa, address_locality: _al, address_region: _ar, postal_code: _pc, address_country: _ac,
             latitude: _lat, longitude: _lng, geocode_source: _gs, timezone: _tz, hours_structured: _hs,
             ...extras } = v
-          void [_n, _p, _e, _a, _h, _t, _l, _ah, _fy, _yf, _i, _sa, _al, _ar, _pc, _ac, _lat, _lng, _gs, _tz, _hs]
           extraDbFields.current = extras
         }
         setLoading(false)
@@ -115,7 +114,6 @@ export default function BusinessInfoSection() {
     const { data: sd } = await supabase.auth.getSession()
     if (sd.session?.access_token) await triggerRevalidate({ type: 'settings', tenantId }, sd.session.access_token)
   }
-
   if (loading) return <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"><p className="text-gray-400">Loading...</p></div>
 
   const fields: { label: string; key: keyof BusinessInfoForm; type?: string; placeholder?: string }[] = [
@@ -174,9 +172,7 @@ export default function BusinessInfoSection() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Geocode Source</label>
-            <select value={form.geocode_source} onChange={e => setField('geocode_source', e.target.value as GeocodeSource | '')} className={IC} data-field="geocode_source" aria-invalid={errors.geocode_source ? 'true' : undefined} aria-describedby={errors.geocode_source ? 'geocode_source-err' : undefined}>
-              <option value="">— select —</option><option value="manual">Manual</option><option value="google_places">Google Places</option>
-            </select>
+            <select value={form.geocode_source} onChange={e => setField('geocode_source', e.target.value as GeocodeSource | '')} className={IC} data-field="geocode_source" aria-invalid={errors.geocode_source ? 'true' : undefined} aria-describedby={errors.geocode_source ? 'geocode_source-err' : undefined}><option value="">— select —</option><option value="manual">Manual</option><option value="google_places">Google Places</option></select>
             {errors.geocode_source && <p id="geocode_source-err" role="alert" className="text-red-600 text-sm mt-1">{errors.geocode_source}</p>}
           </div>
           <div>
