@@ -20,8 +20,8 @@ const TIMEZONES = ['America/New_York', 'America/Chicago', 'America/Denver', 'Ame
 
 function HoursGrid({ value, onChange, errors }: { value: HoursEntry[]; onChange: (v: HoursEntry[]) => void; errors: Record<string, string> }) {
   const get = (d: string) => value.find(e => e.dayOfWeek === d)
-  const toggle = (d: string) => { if (get(d)) onChange(value.filter(e => e.dayOfWeek !== d)); else onChange([...value, { dayOfWeek: d, opens: '09:00:00', closes: '17:00:00' }]) }
-  const setTime = (d: string, f: 'opens' | 'closes', t: string) => onChange(value.map(e => e.dayOfWeek === d ? { ...e, [f]: t.length === 5 ? t + ':00' : t } : e))
+  const toggle = (d: string) => { if (get(d)) onChange(value.filter(e => e.dayOfWeek !== d)); else onChange([...value, { dayOfWeek: d, opens: '09:00', closes: '17:00' }]) }
+  const setTime = (d: string, f: 'opens' | 'closes', t: string) => onChange(value.map(e => e.dayOfWeek === d ? { ...e, [f]: t } : e))
   return (
     <div className="space-y-2">
       {DAYS.map((day, i) => {

@@ -4,7 +4,9 @@
 export const ADDRESS_REGION_PATTERN = /^[A-Z]{2}$/;
 export const POSTAL_CODE_PATTERN = /^\d{5}(-\d{4})?$/;
 export const COUNTRY_PATTERN = /^[A-Z]{2}$/;
-export const TIME_PATTERN = /^\d{2}:\d{2}:\d{2}$/;
+// Accepts HH:MM (DB storage format) OR HH:MM:SS (JSON-LD emission format).
+// CHECK constraint enforces neither — time-format is the validator's job only.
+export const TIME_PATTERN = /^\d{2}:\d{2}(:\d{2})?$/;
 
 // Matches geocode_source enum in shared/lib/seoSchema.ts BusinessInfo interface
 export const GEOCODE_SOURCES = ['manual', 'google_places'] as const;
