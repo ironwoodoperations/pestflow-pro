@@ -34,6 +34,23 @@ export default function ClientSetupPayment({ form }: Props) {
     patch({ loading: true, error: '', checkoutUrl: '' })
 
     try {
+      // Atomicity: include all 4 address fields or none (CHECK rule 1)
+      const addrFilled = [form.street_address, form.address_locality, form.address_region, form.postal_code]
+        .filter(v => v && String(v).trim()).length
+      const addressKeys = addrFilled === 4
+        ? { street_address: form.street_address, address_locality: form.address_locality, address_region: form.address_region, postal_code: form.postal_code }
+        : {}
+      // Atomicity: lat ↔ lng (CHECK rule 5)
+      const geoKeys = (typeof form.latitude === 'number' && typeof form.longitude === 'number')
+        ? { latitude: form.latitude, longitude: form.longitude }
+        : {}
+      // hours_structured requires timezone (CHECK rule 7)
+      const hoursKeys = (form.hours_structured?.length && form.timezone)
+        ? { hours_structured: form.hours_structured, timezone: form.timezone }
+        : form.timezone
+          ? { timezone: form.timezone }
+          : {}
+
       // Step 1: Save all wizard data to onboarding_sessions bridge table
       const wizardData = {
         business_info: {
@@ -48,6 +65,11 @@ export default function ClientSetupPayment({ form }: Props) {
           certifications:  '',
           founded_year:    '',
           num_technicians: '',
+          ...addressKeys,
+          ...(form.address_country ? { address_country: form.address_country } : {}),
+          ...geoKeys,
+          ...(form.geocode_source ? { geocode_source: form.geocode_source } : {}),
+          ...hoursKeys,
         },
         branding: {
           logo_url:      form.logo_url,
