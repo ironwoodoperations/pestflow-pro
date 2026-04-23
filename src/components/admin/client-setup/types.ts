@@ -1,3 +1,5 @@
+import type { GeocodeSource, HoursEntry } from '../../../../shared/lib/businessInfoValidation'
+
 export interface ClientSetupForm {
   // Step 1 — Business Info
   biz_name: string
@@ -7,6 +9,19 @@ export interface ClientSetupForm {
   address: string
   hours: string
   tagline: string
+  // Step 1 — Structured address (atomicity: all 4 present or all 4 absent)
+  street_address?: string
+  address_locality?: string
+  address_region?: string
+  postal_code?: string
+  address_country?: string
+  // Step 1 — Geolocation (atomicity: lat ↔ lng)
+  latitude?: number | ''
+  longitude?: number | ''
+  geocode_source?: GeocodeSource | ''
+  // Step 1 — Timezone + structured hours (hours_structured requires timezone)
+  timezone?: string
+  hours_structured?: HoursEntry[]
   // Step 2 — Setup + Branding
   package_type: 'template-launch' | 'growth-setup' | 'site-migration' | 'custom-rebuild' | ''
   template: string
@@ -39,6 +54,16 @@ export const INITIAL_FORM: ClientSetupForm = {
   address: '',
   hours: '',
   tagline: '',
+  street_address: '',
+  address_locality: '',
+  address_region: '',
+  postal_code: '',
+  address_country: '',
+  latitude: '',
+  longitude: '',
+  geocode_source: '',
+  timezone: '',
+  hours_structured: [],
   package_type: '',
   template: '',
   palette_id: '',
