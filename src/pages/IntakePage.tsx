@@ -62,7 +62,14 @@ export default function IntakePage() {
   async function handleSubmit() {
     if (!tokenRow) return
     setSubmitting(true)
-    const intakeData = { business: form.business, branding: form.branding, domain: form.domain }
+    const intakeData = {
+      business: form.business,
+      branding: {
+        ...form.branding,
+        ...(form.branding.logo_url ? { logo_url: form.branding.logo_url } : {}),
+      },
+      domain: form.domain,
+    }
     const now = new Date().toISOString()
     const b = form.business
     const br = form.branding
@@ -74,6 +81,8 @@ export default function IntakePage() {
       })).then(() => {}).catch((e: unknown) => console.error('[activity log]', e))
 
       const { error } = await supabase.from('prospects').update({
+        phone: b.phone,
+        email: b.email,
         intake_data: intakeData,
         intake_submitted_at: now,
         business_info: {
@@ -94,6 +103,7 @@ export default function IntakePage() {
           primary_color: br.primary_color || existingBr.primary_color || '#E87800',
           accent_color:  br.accent_color  || existingBr.accent_color  || '#1a1a1a',
           ...(br.cta_text?.trim() ? { cta_text: br.cta_text.trim() } : {}),
+          ...(br.logo_url ? { logo_url: br.logo_url } : {}),
         },
         ...(form.domain.domain_name?.trim() ? {
           website_url: form.domain.domain_name.startsWith('http')
