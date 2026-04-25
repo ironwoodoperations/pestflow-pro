@@ -1,397 +1,198 @@
-import { useState } from 'react'
-import { toast } from 'sonner'
+import { useState, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
 import type { Prospect } from './types'
 
-const SETUP_OPTIONS: { label: string; amount: number; priceId: string | null }[] = [
-  { label: 'Waived (No Setup Fee)',  amount: 0,    priceId: null },
-  { label: 'Starter Setup 1',       amount: 500,  priceId: import.meta.env.VITE_STRIPE_PRICE_STARTER_SETUP_1 || null },
-  { label: 'Starter Setup 2',       amount: 750,  priceId: import.meta.env.VITE_STRIPE_PRICE_STARTER_SETUP_2 || null },
-  { label: 'Growth Setup 1',        amount: 1000, priceId: import.meta.env.VITE_STRIPE_PRICE_GROWTH_SETUP_1  || null },
-  { label: 'Growth Setup 2',        amount: 1250, priceId: import.meta.env.VITE_STRIPE_PRICE_GROWTH_SETUP_2  || null },
-  { label: 'Custom Setup 1',        amount: 1500, priceId: import.meta.env.VITE_STRIPE_PRICE_CUSTOM_SETUP_1  || null },
-  { label: 'Custom Setup 2',        amount: 2000, priceId: import.meta.env.VITE_STRIPE_PRICE_CUSTOM_SETUP_2  || null },
-  { label: 'Premium Setup 1',       amount: 2500, priceId: import.meta.env.VITE_STRIPE_PRICE_PREMIUM_SETUP_1 || null },
-  { label: 'Premium Setup 2',       amount: 3500, priceId: import.meta.env.VITE_STRIPE_PRICE_PREMIUM_SETUP_2 || null },
-  { label: 'Elite Setup',           amount: 5000, priceId: import.meta.env.VITE_STRIPE_PRICE_ELITE_SETUP_MIGRATION || null },
+const SETUP_OPTIONS: { value: string; label: string; amount: number }[] = [
+  { value: '0',    label: 'Waived (No Setup Fee)',  amount: 0 },
+  { value: '500',  label: 'Starter Setup 1',        amount: 500 },
+  { value: '750',  label: 'Starter Setup 2',        amount: 750 },
+  { value: '1000', label: 'Growth Setup 1',         amount: 1000 },
+  { value: '1250', label: 'Growth Setup 2',         amount: 1250 },
+  { value: '1500', label: 'Custom Setup 1',         amount: 1500 },
+  { value: '2000', label: 'Custom Setup 2',         amount: 2000 },
+  { value: '2500', label: 'Premium Setup 1',        amount: 2500 },
+  { value: '3500', label: 'Premium Setup 2',        amount: 3500 },
+  { value: '5000', label: 'Elite Setup',            amount: 5000 },
 ]
 
-function getInitialIdx(prospect: Partial<Prospect>): number {
-  if (!prospect.setup_fee_amount) return 0
-  const idx = SETUP_OPTIONS.findIndex(o => o.amount === prospect.setup_fee_amount)
-  return idx >= 0 ? idx : 0
+function fmtDate(ts: string) {
+  return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 interface Props {
-  prospect: Partial<Prospect>
-  onUpdate: (updates: Partial<Prospect>) => void
+  prospect: Prospect
+  onUpdate: (patch: Partial<Prospect>) => void
 }
 
 export default function PaymentLinkPanel({ prospect, onUpdate }: Props) {
-  const [loadingInvoice, setLoadingInvoice]   = useState(false)
-  const [loadingLink, setLoadingLink]         = useState(false)
-  const [error, setError]                     = useState<string | null>(null)
-  const [confirmWaive, setConfirmWaive]       = useState(false)
-  const [sendingInvoice, setSendingInvoice]   = useState(false)
-  const [markingSent, setMarkingSent]         = useState(false)
-  const [voidingInvoice, setVoidingInvoice]   = useState(false)
-  const [selectedIdx, setSelectedIdx]         = useState<number>(() => getInitialIdx(prospect))
+  const [selectedOptionValue, setSelectedOptionValue] = useState<string>(() => {
+    const found = SETUP_OPTIONS.find(o => o.amount === prospect.setup_fee_amount)
+    return found ? found.value : ''
+  })
+  const [saving, setSaving] = useState<'invoice_sent' | 'setup_paid' | 'sub_active' | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
-  const selectedOption = SETUP_OPTIONS[selectedIdx]
-  const hasSetupFee = selectedOption.amount > 0
-  const resolvedEmail  =
-    prospect.email?.trim() ||
-    (prospect as any).business_info?.email?.trim() ||
-    (prospect as any).intake_data?.business?.email?.trim() ||
-    ''
-
-  // SECTION 1 — Setup Invoice
-  async function generateInvoice() {
-    if (!prospect.company_name || !prospect.id) return
-
-    if (!resolvedEmail) {
-      setError('No email address found. Add an email in the Contact section or import intake data first.')
-      return
-    }
-
-    // Persist the selected fee so it's visible in other views
-    if (prospect.id) {
-      await supabase.from('prospects').update({ setup_fee_amount: selectedOption.amount }).eq('id', prospect.id)
-      onUpdate({ setup_fee_amount: selectedOption.amount })
-    }
-
-    // Waived: show confirmation instead of calling Stripe
-    if (!hasSetupFee) {
-      setConfirmWaive(true)
-      return
-    }
-
-    setLoadingInvoice(true); setError(null)
-    try {
-      const { data: refreshData } = await supabase.auth.refreshSession()
-      const session = refreshData.session
-      if (!session) {
-        setError('Session expired — please sign out and sign back in.')
-        return
-      }
-      const accessToken = session.access_token
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-setup-invoice`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-        },
-        body: JSON.stringify({
-          priceId:     selectedOption.priceId,
-          clientEmail: resolvedEmail,
-          companyName: prospect.company_name,
-          prospectId:  prospect.id,
-        }),
-      })
-      const data = await res.json()
-      if (data.skipped) {
-        onUpdate({ status: 'paid', payment_confirmed_at: new Date().toISOString() })
-        return
-      }
-      if (!data.invoice_url) { setError(data.error || 'Failed to generate invoice — please try again'); return }
-      onUpdate({
-        setup_invoice_url: data.invoice_url,
-        setup_invoice_sent_at: new Date().toISOString(),
-      })
-      // Notify Teams — fire and forget
-      const biz2 = prospect.company_name || ''
-      const amt2 = selectedOption.amount ? `$${selectedOption.amount.toLocaleString()}` : '$0'
-      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-teams`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
-        body: JSON.stringify({ message: `📄 Setup invoice generated: **${biz2}** — ${amt2}\nhttps://pestflowpro.com/ironwood` }),
-      }).catch(() => {})
-    } catch (e: any) { setError(e.message || 'Network error') }
-    finally { setLoadingInvoice(false) }
-  }
-
-  async function waiveSetupFee() {
-    setConfirmWaive(false)
-    const now = new Date().toISOString()
-    if (prospect.id) {
-      await supabase.from('prospects').update({ status: 'paid', payment_confirmed_at: now }).eq('id', prospect.id)
-    }
-    onUpdate({ status: 'paid', payment_confirmed_at: now })
-  }
-
-  async function markSetupPaid() {
-    const now = new Date().toISOString()
-    const updates: Partial<Prospect> = { payment_confirmed_at: now, status: 'paid' }
-    if (prospect.id) await supabase.from('prospects').update(updates).eq('id', prospect.id)
-    onUpdate(updates)
-  }
+  const amountKnown = useMemo(() => prospect.setup_fee_amount != null, [prospect.setup_fee_amount])
 
   async function markInvoiceSent() {
     if (!prospect.id) return
-    setMarkingSent(true)
-    const now = new Date().toISOString()
-    await supabase.from('prospects').update({ setup_invoice_sent_at: now }).eq('id', prospect.id)
-    onUpdate({ setup_invoice_sent_at: now })
-    toast.success('Invoice marked as sent')
+    setSaving('invoice_sent'); setError(null)
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      const actor = user?.email || 'ironwood'
-      await supabase.from('prospect_activity').insert({
-        prospect_id: prospect.id,
-        actor,
-        action: 'invoice_sent',
-        detail: 'Setup invoice marked as sent',
-      })
-    } catch (e) { console.error('[activity log]', e) }
-    // Notify Teams — fire and forget
-    const biz = prospect.company_name || ''
-    const amt = selectedOption.amount ? `$${selectedOption.amount.toLocaleString()}` : '$0'
-    fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-teams`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
-      body: JSON.stringify({ message: `📄 Setup invoice sent: **${biz}** — ${amt}\nhttps://pestflowpro.com/ironwood` }),
-    }).catch(() => {})
-    setMarkingSent(false)
+      const patch = { setup_invoice_sent_at: new Date().toISOString() }
+      const { error: e } = await supabase.from('prospects').update(patch).eq('id', prospect.id)
+      if (e) throw e
+      onUpdate(patch)
+    } catch (e: any) { setError(e.message || 'Save failed') }
+    finally { setSaving(null) }
   }
 
-  async function sendInvoiceEmail() {
-    if (!resolvedEmail || !prospect.setup_invoice_url) return
-    setSendingInvoice(true)
-    try {
-      const { data: r } = await supabase.auth.refreshSession()
-      const session = r.session
-      if (!session) { toast.error('Session expired — please sign out and sign back in.'); return }
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-invoice-email`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-        },
-        body: JSON.stringify({
-          prospectEmail: resolvedEmail,
-          prospectName:  prospect.contact_name || prospect.company_name || '',
-          businessName:  prospect.company_name || '',
-          invoiceUrl:    prospect.setup_invoice_url,
-          amount:        selectedOption.amount,
-        }),
-      })
-      const data = await res.json()
-      if (data.success) toast.success(`Invoice sent to ${resolvedEmail}`)
-      else toast.error(data.error || 'Failed to send invoice email')
-    } catch (e: any) {
-      toast.error(e.message || 'Network error')
-    } finally {
-      setSendingInvoice(false)
-    }
-  }
-
-  async function voidAndReissue() {
+  async function undoInvoiceSent() {
+    if (!confirm('Undo "Invoice sent"? This will clear the sent date.')) return
     if (!prospect.id) return
-    setVoidingInvoice(true); setError(null)
+    setSaving('invoice_sent'); setError(null)
     try {
-      const { data: r } = await supabase.auth.refreshSession()
-      const session = r.session
-      if (!session) { setError('Session expired — please sign out and sign back in.'); return }
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-setup-invoice`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-        },
-        body: JSON.stringify({ action: 'void', prospectId: prospect.id }),
-      })
-      const data = await res.json()
-      if (!data.success) { setError(data.error || 'Failed to void invoice'); return }
-      onUpdate({ setup_invoice_url: null, setup_invoice_sent_at: null })
-      // Now re-generate immediately
-      await generateInvoice()
-    } catch (e: any) { setError(e.message || 'Network error') }
-    finally { setVoidingInvoice(false) }
+      const patch = { setup_invoice_sent_at: null }
+      const { error: e } = await supabase.from('prospects').update(patch).eq('id', prospect.id)
+      if (e) throw e
+      onUpdate(patch)
+    } catch (e: any) { setError(e.message || 'Save failed') }
+    finally { setSaving(null) }
   }
 
-  // SECTION 2 — Subscription Link
-  async function generateSubscriptionLink() {
-    if (!resolvedEmail || !prospect.plan_name) {
-      setError(resolvedEmail ? 'Plan is required.' : 'Email and plan are required.'); return
-    }
-    setLoadingLink(true); setError(null)
+  async function markSetupPaid() {
+    if (!prospect.id) return
+    setSaving('setup_paid'); setError(null)
     try {
-      const { data: refreshData } = await supabase.auth.refreshSession()
-      const session = refreshData.session
-      if (!session) {
-        setError('Session expired — please sign out and sign back in.')
-        return
-      }
-      const accessToken = session.access_token
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-        },
-        body: JSON.stringify({
-          client_email:          resolvedEmail,
-          client_name:           prospect.contact_name || prospect.company_name || '',
-          setup_amount_override: 0, // Setup fee handled separately via invoice
-          plan:                  prospect.plan_name.toLowerCase(),
-          slug:                  prospect.slug || 'placeholder',
-          prospect_id:           prospect.id || '',
-          tenant_id:             prospect.tenant_id || '',
-        }),
-      })
-      const data = await res.json()
-      if (!data.url) { setError(data.error || 'Failed to create checkout session'); return }
-      const now = new Date().toISOString()
-      const updates: Partial<Prospect> = {
-        payment_link_url: data.url,
-        payment_sent_at: now,
-        ...(prospect.status === 'prospect' ? { status: 'quoted' as const } : {}),
-      }
-      if (prospect.id) await supabase.from('prospects').update(updates).eq('id', prospect.id)
-      onUpdate(updates)
-    } catch (e: any) { setError(e.message || 'Network error') }
-    finally { setLoadingLink(false) }
+      const patch = { payment_confirmed_at: new Date().toISOString(), status: 'paid' as const }
+      const { error: e } = await supabase.from('prospects').update(patch).eq('id', prospect.id)
+      if (e) throw e
+      onUpdate(patch)
+    } catch (e: any) { setError(e.message || 'Save failed') }
+    finally { setSaving(null) }
+  }
+
+  async function undoSetupPaid() {
+    if (!confirm('Undo "Setup fee paid"? Status will revert to prospect.')) return
+    if (!prospect.id) return
+    setSaving('setup_paid'); setError(null)
+    try {
+      const patch = { payment_confirmed_at: null, status: 'prospect' as const }
+      const { error: e } = await supabase.from('prospects').update(patch).eq('id', prospect.id)
+      if (e) throw e
+      onUpdate(patch)
+    } catch (e: any) { setError(e.message || 'Save failed') }
+    finally { setSaving(null) }
   }
 
   async function markSubscriptionActive() {
-    const updates: Partial<Prospect> = { status: 'active' }
-    if (prospect.id) await supabase.from('prospects').update(updates).eq('id', prospect.id)
-    onUpdate(updates)
+    if (!prospect.id) return
+    setSaving('sub_active'); setError(null)
+    try {
+      const patch = { status: 'active' as const }
+      const { error: e } = await supabase.from('prospects').update(patch).eq('id', prospect.id)
+      if (e) throw e
+      onUpdate(patch)
+    } catch (e: any) { setError(e.message || 'Save failed') }
+    finally { setSaving(null) }
   }
 
-  const subMailBody = encodeURIComponent(
-    `Hi ${prospect.contact_name || ''},\n\nHere is your subscription payment link for the ${prospect.plan_name || ''} plan:\n\n${prospect.payment_link_url}\n\nLet me know if you have any questions!\n\nScott`
-  )
-  const mailSubjectSub = encodeURIComponent('Your Monthly Subscription Link — PestFlow Pro')
+  async function undoSubscriptionActive() {
+    if (!confirm('Undo "Subscription active"? Status will revert to paid.')) return
+    if (!prospect.id) return
+    setSaving('sub_active'); setError(null)
+    try {
+      const patch = { status: 'paid' as const }
+      const { error: e } = await supabase.from('prospects').update(patch).eq('id', prospect.id)
+      if (e) throw e
+      onUpdate(patch)
+    } catch (e: any) { setError(e.message || 'Save failed') }
+    finally { setSaving(null) }
+  }
+
+  async function handleSetupFeeChange(value: string) {
+    setSelectedOptionValue(value)
+    const opt = SETUP_OPTIONS.find(o => o.value === value)
+    if (!opt || !prospect.id) return
+    const { error: e } = await supabase.from('prospects').update({ setup_fee_amount: opt.amount }).eq('id', prospect.id)
+    if (!e) onUpdate({ setup_fee_amount: opt.amount })
+  }
 
   return (
     <div className="space-y-4 mt-3">
+      <div className="p-2 bg-gray-800/40 border border-gray-700 rounded text-xs text-gray-400">
+        💡 Manual workflow — create the invoice and set up the subscription in Stripe dashboard. Track progress here as you complete each step.
+      </div>
+
       {error && <p className="text-red-400 text-xs">{error}</p>}
 
-      {/* SECTION 1 — Setup Fee */}
-      <div className="p-3 bg-gray-800/60 border border-gray-700 rounded">
-        <div className="flex items-center gap-3 mb-2 flex-wrap">
-          <p className="text-xs font-semibold text-amber-400">Step 1 — Setup Fee</p>
-          {!prospect.setup_invoice_url && !prospect.payment_confirmed_at && (
-            <select
-              className="bg-gray-900 border border-gray-600 rounded px-2 py-0.5 text-xs text-white focus:outline-none focus:border-amber-500"
-              value={selectedIdx}
-              onChange={e => setSelectedIdx(Number(e.target.value))}
-            >
-              {SETUP_OPTIONS.map((opt, i) => (
-                <option key={i} value={i}>
-                  {opt.amount === 0 ? opt.label : `${opt.label} — $${opt.amount.toLocaleString()}`}
-                </option>
-              ))}
-            </select>
-          )}
-          {(prospect.setup_invoice_url || prospect.payment_confirmed_at) && (
-            <span className="text-xs text-gray-400">{selectedOption.amount > 0 ? `$${selectedOption.amount.toLocaleString()}` : '$0 — waived'}</span>
-          )}
-        </div>
+      <div>
+        <label className="text-xs text-gray-400 block mb-1">Setup Fee</label>
+        <select
+          className="bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-amber-500"
+          value={selectedOptionValue}
+          onChange={e => handleSetupFeeChange(e.target.value)}
+        >
+          <option value="">— Pick setup fee —</option>
+          {SETUP_OPTIONS.map(opt => (
+            <option key={opt.value} value={opt.value}>
+              {opt.amount === 0 ? opt.label : `${opt.label} — $${opt.amount.toLocaleString()}`}
+            </option>
+          ))}
+        </select>
+      </div>
 
-        {/* $0 waive confirmation */}
-        {confirmWaive && (
-          <div className="mb-2 p-2 bg-amber-900/40 border border-amber-700 rounded text-xs text-amber-200">
-            Setup fee is $0 — skip invoice and mark as waived?
-            <div className="flex gap-2 mt-2">
-              <button onClick={waiveSetupFee} className="px-2 py-1 bg-green-700 text-white rounded hover:bg-green-600">Yes, waive</button>
-              <button onClick={() => setConfirmWaive(false)} className="px-2 py-1 bg-gray-700 text-white rounded hover:bg-gray-600">Cancel</button>
-            </div>
-          </div>
-        )}
+      {!amountKnown && (
+        <p className="text-xs text-gray-500">Pick a setup fee to begin tracking.</p>
+      )}
 
-        {prospect.payment_confirmed_at && !prospect.setup_invoice_url && (
-          <span className="text-xs text-green-400">✓ Setup fee waived {new Date(prospect.payment_confirmed_at).toLocaleDateString()}</span>
-        )}
-
-        {!prospect.setup_invoice_url && !prospect.payment_confirmed_at ? (
-          <div className="flex flex-wrap gap-2 items-center">
-            <button onClick={generateInvoice} disabled={loadingInvoice}
-              className="px-3 py-1.5 bg-amber-700 text-white text-xs rounded hover:bg-amber-600 disabled:opacity-50">
-              {loadingInvoice ? 'Generating…' : hasSetupFee ? '📄 Generate Setup Invoice' : '📄 Waive Setup Fee'}
-            </button>
+      {amountKnown && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between p-2 bg-gray-800/60 border border-gray-700 rounded">
+            <span className="text-xs text-gray-300">Invoice sent</span>
             {!prospect.setup_invoice_sent_at ? (
-              <button onClick={markInvoiceSent} disabled={markingSent}
-                className="px-3 py-1.5 bg-gray-700 text-white text-xs rounded hover:bg-gray-600 disabled:opacity-50">
-                {markingSent ? 'Saving…' : '✓ Mark Invoice Sent'}
+              <button onClick={markInvoiceSent} disabled={saving === 'invoice_sent'}
+                className="px-3 py-1 bg-amber-700 text-white text-xs rounded hover:bg-amber-600 disabled:opacity-50">
+                {saving === 'invoice_sent' ? 'Saving…' : 'Mark Invoice Sent'}
               </button>
             ) : (
-              <span className="text-xs text-emerald-400">
-                ✓ Invoice sent {new Date(prospect.setup_invoice_sent_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              <span className="text-xs text-emerald-400 flex items-center gap-2">
+                ✓ Invoice sent — {fmtDate(prospect.setup_invoice_sent_at)}
+                <button onClick={undoInvoiceSent} className="text-gray-500 hover:text-gray-300 underline">undo</button>
               </span>
             )}
           </div>
-        ) : prospect.setup_invoice_url ? (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-400 truncate flex-1">{prospect.setup_invoice_url}</span>
-                <button onClick={() => navigator.clipboard.writeText(prospect.setup_invoice_url!)}
-                  className="text-xs text-emerald-400 hover:underline shrink-0">Copy</button>
-              </div>
-              <div className="flex gap-2 flex-wrap">
-                <button onClick={sendInvoiceEmail} disabled={sendingInvoice}
-                  className="px-3 py-1.5 bg-indigo-700 text-white text-xs rounded hover:bg-indigo-600 disabled:opacity-50">
-                  {sendingInvoice ? 'Sending…' : '✉ Send Invoice'}
-                </button>
-                {!prospect.payment_confirmed_at && (
-                  <button onClick={markSetupPaid}
-                    className="px-3 py-1.5 bg-green-700 text-white text-xs rounded hover:bg-green-600">
-                    ✓ Mark Setup Paid
-                  </button>
-                )}
-                {!prospect.payment_confirmed_at && (
-                  <button onClick={voidAndReissue} disabled={voidingInvoice}
-                    className="px-3 py-1.5 bg-red-900 text-white text-xs rounded hover:bg-red-800 disabled:opacity-50">
-                    {voidingInvoice ? 'Voiding…' : '↩ Void & Reissue'}
-                  </button>
-                )}
-                {prospect.payment_confirmed_at && (
-                  <span className="text-xs text-green-400 self-center">✓ Setup paid {new Date(prospect.payment_confirmed_at).toLocaleDateString()}</span>
-                )}
-              </div>
-            </div>
-          ) : null}
-        </div>
 
-      {/* SECTION 2 — Monthly Subscription */}
-      <div className="p-3 bg-gray-800/60 border border-gray-700 rounded">
-        <p className="text-xs font-semibold text-blue-400 mb-2">
-          {hasSetupFee ? 'Step 2 — Monthly Subscription' : 'Monthly Subscription'}
-          {prospect.plan_name && <span className="text-gray-400 font-normal"> · {prospect.plan_name}</span>}
-        </p>
-        {!prospect.payment_link_url ? (
-          <button onClick={generateSubscriptionLink} disabled={loadingLink}
-            className="px-3 py-1.5 bg-blue-700 text-white text-xs rounded hover:bg-blue-600 disabled:opacity-50">
-            {loadingLink ? 'Generating…' : '🔗 Generate Subscription Link'}
-          </button>
-        ) : (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-400 truncate flex-1">{prospect.payment_link_url}</span>
-              <button onClick={() => navigator.clipboard.writeText(prospect.payment_link_url!)}
-                className="text-xs text-emerald-400 hover:underline shrink-0">Copy</button>
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              <a href={`mailto:${resolvedEmail}?subject=${mailSubjectSub}&body=${subMailBody}`}
-                className="px-3 py-1.5 bg-indigo-700 text-white text-xs rounded hover:bg-indigo-600">✉ Send Link</a>
-              {prospect.status !== 'active' && (
-                <button onClick={markSubscriptionActive}
-                  className="px-3 py-1.5 bg-green-700 text-white text-xs rounded hover:bg-green-600">
-                  ✓ Mark Subscription Active
-                </button>
-              )}
-              {prospect.status === 'active' && (
-                <span className="text-xs text-green-400 self-center">✓ Subscription active</span>
-              )}
-            </div>
+          <div className="flex items-center justify-between p-2 bg-gray-800/60 border border-gray-700 rounded">
+            <span className="text-xs text-gray-300">Setup fee paid</span>
+            {!prospect.payment_confirmed_at ? (
+              <button onClick={markSetupPaid} disabled={saving === 'setup_paid'}
+                className="px-3 py-1 bg-green-700 text-white text-xs rounded hover:bg-green-600 disabled:opacity-50">
+                {saving === 'setup_paid' ? 'Saving…' : 'Mark Setup Paid'}
+              </button>
+            ) : (
+              <span className="text-xs text-emerald-400 flex items-center gap-2">
+                ✓ Setup fee paid — {fmtDate(prospect.payment_confirmed_at)}
+                <button onClick={undoSetupPaid} className="text-gray-500 hover:text-gray-300 underline">undo</button>
+              </span>
+            )}
           </div>
-        )}
-      </div>
+
+          <div className="flex items-center justify-between p-2 bg-gray-800/60 border border-gray-700 rounded">
+            <span className="text-xs text-gray-300">Subscription active</span>
+            {prospect.status !== 'active' ? (
+              <button onClick={markSubscriptionActive} disabled={saving === 'sub_active'}
+                className="px-3 py-1 bg-blue-700 text-white text-xs rounded hover:bg-blue-600 disabled:opacity-50">
+                {saving === 'sub_active' ? 'Saving…' : 'Mark Subscription Active'}
+              </button>
+            ) : (
+              <span className="text-xs text-emerald-400 flex items-center gap-2">
+                ✓ Subscription active
+                <button onClick={undoSubscriptionActive} className="text-gray-500 hover:text-gray-300 underline">undo</button>
+              </span>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

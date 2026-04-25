@@ -46,7 +46,7 @@ export default function ReportsTab() {
   const thisMonth  = (p: Prospect) => new Date(p.created_at) >= monthStart
 
   const totalProspects = prospects.filter(thisMonth).length
-  const quoted  = prospects.filter(p => p.status === 'quoted' || thisMonth(p) && p.payment_link_url)
+  const quoted  = prospects.filter(p => p.status === 'quoted')
   const paid    = prospects.filter(p => p.payment_confirmed_at && new Date(p.payment_confirmed_at) >= monthStart)
   const active  = prospects.filter(p => p.status === 'active')
   const churned = prospects.filter(p => p.status === 'churned' && new Date(p.updated_at) >= monthStart)
