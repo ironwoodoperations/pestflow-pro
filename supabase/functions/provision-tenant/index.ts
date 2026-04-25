@@ -582,12 +582,13 @@ Deno.serve(async (req: Request) => {
               tenant_id:        tenantId,
               city:             c,
               slug:             cSlug,
+              state:            (state || 'TX').toUpperCase(),
               hero_title:       `${c} Pest Control`,
               is_live:          false,
               meta_title:       `${c} Pest Control | ${bizForSeo}`,
               meta_description: cMeta,
               focus_keyword:    `${c.toLowerCase()} pest control`,
-            }, { onConflict: 'tenant_id,slug' })
+            }, { onConflict: 'tenant_id,slug', ignoreDuplicates: true })
           }
           console.log(`[provision-tenant] zip-prefix draft cities seeded: ${allZipCities.length} (zip prefix: ${zipPrefix || 'none'})`)
         }
