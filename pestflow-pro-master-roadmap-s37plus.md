@@ -41,7 +41,7 @@ Do these manually — no code involved:
 | Custom Migration (Firecrawl rebuild) | $3,500 | $99–$499/mo |
 | Premium Migration (Firecrawl + new design) | $5,000 | $99–$499/mo |
 
-Monthly tiers: Tier 1 Starter $99 / Tier 2 Grow $149 / Tier 3 Pro $249 / Tier 4 Elite $499
+Monthly tiers: Tier 1 Starter $149 / Tier 2 Growth $249 / Tier 3 Pro $349 / Tier 4 Elite $499 (canonical, locked S100, ratified S174b)
 
 ---
 
@@ -68,7 +68,7 @@ Monthly tiers: Tier 1 Starter $99 / Tier 2 Grow $149 / Tier 3 Pro $249 / Tier 4 
 | Hero Headline | Austin's Most Trusted Pest Control Team |
 | Owner | Danny Reeves |
 | Owner Email | danny@lonestarpestdefense.com |
-| Plan | Tier 2 — Grow — $149/mo |
+| Plan | Tier 2 — Growth — $149/mo |
 | Admin Login | admin@lonestarpestdefense.com / lspd123demo |
 
 ---
@@ -118,10 +118,10 @@ src/components/admin/dashboard/
 - "What's included ▼" toggle — collapsed by default
 - Expanded: bullet list of features per tier
   - Tier 1 Starter: Website, CRM, Basic SEO, up to 3 locations, Team access
-  - Tier 2 Grow: All Starter + Full SEO suite, Blog, Social scheduling
-  - Tier 3 Pro: All Grow + AI tools, Advanced reports, Campaigns
+  - Tier 2 Growth: All Starter + Full SEO suite, Blog, Social scheduling
+  - Tier 3 Pro: All Growth + AI tools, Advanced reports, Campaigns
   - Tier 4 Elite: All Pro + Social analytics, Ayrshare autopilot, Live reviews
-- Badge colors: Starter=gray, Grow=blue, Pro=purple, Elite=amber
+- Badge colors: Starter=gray, Growth=blue, Pro=purple, Elite=amber
 
 **Amber padlocks on locked sidebar items:**
 - Find where admin sidebar renders locked/gated items
