@@ -183,22 +183,15 @@ Flash prevention:
 
 ---
 
-## STRIPE — TWO-INVOICE FLOW
-
-Setup fee and subscription are two separate Stripe items:
-
-**Invoice 1 — Setup Fee (one-time):**
-  Edge function: create-setup-invoice
-  Uses: stripe.invoiceItems.create + stripe.invoices.create + finalizeInvoice
-  Returns: hosted_invoice_url
-  Saved to: prospects.setup_invoice_url
-
-**Invoice 2 — Subscription (recurring):**
+## STRIPE — SUBSCRIPTION CHECKOUT
+Subscription checkout via Stripe Checkout Sessions (recurring only).
+**Subscription:**
   Edge function: create-checkout-session
   mode: 'subscription'
   Single line_item: recurring price ID
   NO setup fee in this session
   Saved to: prospects.payment_link_url
+**Setup fee collection:** Removed from intake form in S171. Planned for rebuild on the admin dashboard side (post-cutover). Source for the original create-setup-invoice + send-invoice-email functions is preserved in git history (deleted in S173).
 
 Price IDs (recurring):
   Starter  = price_1TIZ6DCZBM0TUusSaC2UdcYG  ($149/mo)
@@ -238,7 +231,6 @@ All pipeline data. Key fields:
 | provision-tenant | Creates tenant, auth user, profiles, user_roles, all settings | false |
 | ironwood-provision | JWT-verified wrapper — calls provision-tenant with service role | true |
 | create-checkout-session | Stripe subscription checkout | true |
-| create-setup-invoice | Stripe one-time setup invoice | true |
 | invite-salesperson | Supabase auth invite by email | true |
 | ironwood-stripe-report | Stripe MRR summary for Reports tab | true |
 | stripe-webhook | Handles Stripe events (renewals/cancellations) | false |
