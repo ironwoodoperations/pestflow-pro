@@ -37,3 +37,5 @@ pestflow-pro-context-s*.md
 
 # Vite build output (now inside Next.js public folder)
 public/_admin/
+.vercel
+.env-backups/
