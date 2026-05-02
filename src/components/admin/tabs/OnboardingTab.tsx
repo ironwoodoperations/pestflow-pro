@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../../lib/supabase'
-import { useTenant } from '../../../hooks/useTenant'
+import { useTenant } from '../../../context/TenantBootProvider'
 import PageHelpBanner from '../PageHelpBanner'
 
 const ITEMS = [
@@ -21,7 +21,7 @@ interface Props {
 }
 
 export default function OnboardingTab({ onComplete }: Props) {
-  const { tenantId } = useTenant()
+  const { id: tenantId } = useTenant()
   const [bizName, setBizName] = useState('')
   const [slug, setSlug] = useState('')
   const [checked, setChecked] = useState<boolean[]>(Array(ITEMS.length).fill(false))

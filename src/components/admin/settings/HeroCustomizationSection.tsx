@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
-import { useTenant } from '../../../hooks/useTenant'
+import { useTenant } from '../../../context/TenantBootProvider'
 import { triggerRevalidate } from '../../../lib/revalidate'
 
 interface CustomizationForm {
@@ -23,7 +23,7 @@ const INITIAL: CustomizationForm = {
 }
 
 export default function HeroCustomizationSection() {
-  const { tenantId } = useTenant()
+  const { id: tenantId } = useTenant()
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState<CustomizationForm>(INITIAL)

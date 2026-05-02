@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-import { useTenant } from '../../hooks/useTenant'
+import { useTenant } from '../../context/TenantBootProvider'
 
 interface LiveForm {
   businessName: string; phone: string; email: string; address: string
@@ -69,7 +69,7 @@ export default function OnboardingLive() {
   const [form, setForm] = useState<LiveForm>(INITIAL)
   const [saving, setSaving] = useState(false)
   const [done, setDone] = useState(false)
-  const { tenantId } = useTenant()
+  const { id: tenantId } = useTenant()
   const navigate = useNavigate()
   const inputRef = useRef<HTMLInputElement>(null)
 

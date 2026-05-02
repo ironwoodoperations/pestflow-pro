@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../../lib/supabase'
-import { useTenant } from '../../../hooks/useTenant'
+import { useTenant } from '../../../context/TenantBootProvider'
 import { usePlan } from '../../../context/PlanContext'
 import PageHelpBanner from '../PageHelpBanner'
 import SocialVolumeChart from '../reports/SocialVolumeChart'
@@ -21,7 +21,7 @@ function platformBadgeClass(platform: string) {
 }
 
 export default function SocialAnalyticsTab() {
-  const { tenantId } = useTenant()
+  const { id: tenantId } = useTenant()
   const { tier } = usePlan()
   const [posts, setPosts] = useState<SocialPost[]>([])
   const [loading, setLoading] = useState(true)

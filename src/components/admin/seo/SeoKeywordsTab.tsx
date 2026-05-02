@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
-import { useTenant } from '../../../hooks/useTenant'
+import { useTenant } from '../../../context/TenantBootProvider'
 
 const PAGE_SLUGS = [
   'home', 'spider-control', 'mosquito-control', 'ant-control', 'wasp-hornet-control',
@@ -13,7 +13,7 @@ const PAGE_SLUGS = [
 const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-400'
 
 export default function SeoKeywordsTab() {
-  const { tenantId } = useTenant()
+  const { id: tenantId } = useTenant()
   const [page, setPage] = useState('home')
   const [topic, setTopic] = useState('')
   const [keywords, setKeywords] = useState<{ keyword: string; intent: string; difficulty: string; priority: string }[]>([])

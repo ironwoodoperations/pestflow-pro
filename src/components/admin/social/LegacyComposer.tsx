@@ -1,7 +1,7 @@
 import { useComposer } from './useComposer'
 import { useSocialTier } from '../useSocialTier'
 import { useAiCaptionQuota } from '../useAiCaptionQuota'
-import { useTenant } from '../../../hooks/useTenant'
+import { useTenant } from '../../../context/TenantBootProvider'
 import ComposerPlatformSelector from './ComposerPlatformSelector'
 import ComposerTemplates from './ComposerTemplates'
 import ComposerCaptionEditor from './ComposerCaptionEditor'
@@ -15,7 +15,7 @@ interface Props {
 
 export default function LegacyComposer({ onClose, onPosted }: Props) {
   const { isStarter } = useSocialTier()
-  const { tenantId } = useTenant()
+  const { id: tenantId } = useTenant()
   const quota = useAiCaptionQuota(tenantId ?? '')
   const c = useComposer(onPosted, isStarter ? quota.increment : undefined)
 

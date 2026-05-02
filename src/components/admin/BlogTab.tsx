@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { Plus, Trash2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
-import { useTenant } from '../../hooks/useTenant'
+import { useTenant } from '../../context/TenantBootProvider'
 import PageHelpBanner from './PageHelpBanner'
 import FeatureGate from '../common/FeatureGate'
 import BlogPostEditor from './BlogPostEditor'
@@ -21,7 +21,7 @@ interface Post {
 type BlogTab = 'active' | 'archived'
 
 export default function BlogTab() {
-  const { tenantId } = useTenant()
+  const { id: tenantId } = useTenant()
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState<string | null>(null)

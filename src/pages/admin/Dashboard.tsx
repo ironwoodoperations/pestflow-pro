@@ -1,7 +1,7 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-import { useTenant } from '../../hooks/useTenant'
+import { useTenant } from '../../context/TenantBootProvider'
 import { PreviewModeContext } from '../../hooks/usePreviewMode'
 import { usePlan } from '../../hooks/usePlan'
 import {
@@ -72,7 +72,7 @@ export default function Dashboard() {
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [primaryColor, setPrimaryColor] = useState('#16a34a')
   const [template, setTemplate] = useState('')
-  const { tenantId } = useTenant()
+  const { id: tenantId } = useTenant()
   const { canAccess } = usePlan()
   const navigate = useNavigate()
 

@@ -13,8 +13,7 @@ import LegacyComposer from './social/LegacyComposer'
 import NewCampaignModal from './social/NewCampaignModal'
 import SocialUpgradeNudge from './social/SocialUpgradeNudge'
 import ZernioOnboardingBanner from './social/ZernioOnboardingBanner'
-
-const TENANT_ID = import.meta.env.VITE_TENANT_ID
+import { useTenant } from '../../context/TenantBootProvider'
 
 function useIsDemoTenant() {
   const parts = window.location.hostname.split('.')
@@ -36,6 +35,7 @@ const TABS: { id: TabId; label: string }[] = [
 type PostFlow = 'none' | 'choice' | 'single' | 'campaign'
 
 export default function SocialTab({ onNavigate }: Props) {
+  const { id: tenantId } = useTenant()
   const { posts, campaigns, loading, refresh } = useSocialData()
   const { canAccess, tier } = usePlan()
   const [activeTab, setActiveTab] = useState<TabId>('queue')
@@ -50,9 +50,9 @@ export default function SocialTab({ onNavigate }: Props) {
 
   // Check if client has connected any Zernio social accounts
   useEffect(() => {
-    if (!TENANT_ID || tier < 2) return
+    if (!tenantId || tier < 2) return
     supabase.from('settings').select('value')
-      .eq('tenant_id', TENANT_ID).eq('key', 'integrations').maybeSingle()
+      .eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle()
       .then(({ data }) => {
         const accounts = data?.value?.zernio_accounts ?? {}
         setHasConnectedAccounts(Object.keys(accounts).length > 0)
@@ -62,9 +62,9 @@ export default function SocialTab({ onNavigate }: Props) {
   // Re-check when ConnectionsModal closes (client may have just connected)
   function handleConnectionsClose() {
     setShowConnections(false)
-    if (!TENANT_ID || tier < 2) return
+    if (!tenantId || tier < 2) return
     supabase.from('settings').select('value')
-      .eq('tenant_id', TENANT_ID).eq('key', 'integrations').maybeSingle()
+      .eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle()
       .then(({ data }) => {
         const accounts = data?.value?.zernio_accounts ?? {}
         setHasConnectedAccounts(Object.keys(accounts).length > 0)

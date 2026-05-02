@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { Download, Users, Inbox, FileText, CheckCircle } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
-import { useTenant } from '../../hooks/useTenant'
+import { useTenant } from '../../context/TenantBootProvider'
 import PageHelpBanner from './PageHelpBanner'
 import LeadTable from './crm/LeadTable'
 import LeadDetailModal from './crm/LeadDetailModal'
@@ -13,7 +13,7 @@ import ConfirmDeleteModal from '../shared/ConfirmDeleteModal'
 import { archiveRecord, restoreRecord, hardDeleteRecord } from '../../lib/archiveUtils'
 
 export default function CRMTab() {
-  const { tenantId } = useTenant()
+  const { id: tenantId } = useTenant()
   const [leads, setLeads] = useState<Lead[]>([])
   const [loading, setLoading] = useState(true)
   const [filterStatus, setFilterStatus] = useState('all')

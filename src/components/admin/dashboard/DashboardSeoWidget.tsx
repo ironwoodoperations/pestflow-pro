@@ -1,4 +1,4 @@
-const TENANT_ID = import.meta.env.VITE_TENANT_ID
+import { useTenant } from '../../../context/TenantBootProvider'
 
 interface CachedAudit {
   scores: { performance: number; accessibility: number; best_practices: number; seo: number }
@@ -25,9 +25,10 @@ interface Props {
 }
 
 export default function DashboardSeoWidget({ onNavigate }: Props) {
+  const { id: tenantId } = useTenant()
   let cached: CachedAudit | null = null
   try {
-    const raw = localStorage.getItem(`lighthouse_score_${TENANT_ID}`)
+    const raw = localStorage.getItem(`lighthouse_score_${tenantId}`)
     if (raw) cached = JSON.parse(raw)
   } catch { /* ignore */ }
 

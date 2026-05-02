@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
-import { useTenant } from '../../hooks/useTenant'
+import { useTenant } from '../../context/TenantBootProvider'
 import { triggerRevalidate } from '../../lib/revalidate'
 import PageHelpBanner from './PageHelpBanner'
 import ConfirmDeleteModal from '../shared/ConfirmDeleteModal'
@@ -17,7 +17,7 @@ interface FaqItem {
 }
 
 export default function FaqTab() {
-  const { tenantId } = useTenant()
+  const { id: tenantId } = useTenant()
   const [items, setItems] = useState<FaqItem[]>([])
   const [loading, setLoading] = useState(true)
   const [adding, setAdding] = useState(false)

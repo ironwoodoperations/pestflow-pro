@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { useTenant } from '../hooks/useTenant'
+import { useTenant } from '../context/TenantBootProvider'
 
 interface HeroMedia {
   youtube_id?: string
@@ -8,7 +8,7 @@ interface HeroMedia {
 }
 
 export default function HeroVideoPlayer() {
-  const { tenantId } = useTenant()
+  const { id: tenantId } = useTenant()
   const [media, setMedia] = useState<HeroMedia | null>(null)
   const [error, setError] = useState(false)
 

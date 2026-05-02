@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-
-const TENANT_ID = import.meta.env.VITE_TENANT_ID
+import { useTenant } from '../context/TenantBootProvider'
 
 export interface LeadNotification {
   id: string
@@ -11,6 +10,7 @@ export interface LeadNotification {
 }
 
 export function useLeadNotifications() {
+  const { id: tenantId } = useTenant()
   const [newLeads, setNewLeads] = useState<LeadNotification[]>([])
   const [count, setCount] = useState(0)
 
@@ -18,7 +18,7 @@ export function useLeadNotifications() {
     const { data } = await supabase
       .from('leads')
       .select('id, name, services, created_at')
-      .eq('tenant_id', TENANT_ID)
+      .eq('tenant_id', tenantId)
       .eq('status', 'new')
       .order('created_at', { ascending: false })
       .limit(5)
@@ -31,21 +31,21 @@ export function useLeadNotifications() {
     supabase
       .from('leads')
       .select('id, name, services, created_at')
-      .eq('tenant_id', TENANT_ID)
+      .eq('tenant_id', tenantId)
       .eq('status', 'new')
       .order('created_at', { ascending: false })
       .limit(5)
       .then(({ data }) => { setNewLeads(data || []); setCount(data?.length || 0) })
     const interval = setInterval(fetchNewLeads, 60000)
     return () => clearInterval(interval)
-  }, [])
+  }, [tenantId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const markAsContacted = async (leadId: string) => {
     await supabase
       .from('leads')
       .update({ status: 'contacted' })
       .eq('id', leadId)
-      .eq('tenant_id', TENANT_ID)
+      .eq('tenant_id', tenantId)
     fetchNewLeads()
   }
 

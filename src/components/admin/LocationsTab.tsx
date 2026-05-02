@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { Plus, X, Trash2, ExternalLink } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
-import { useTenant } from '../../hooks/useTenant'
+import { useTenant } from '../../context/TenantBootProvider'
 import { triggerRevalidate } from '../../lib/revalidate'
 import { syncServiceAreasJsonb } from '../../lib/service-areas/syncJsonbFromTable'
 import PageHelpBanner from './PageHelpBanner'
@@ -26,7 +26,7 @@ const toSlug = (city: string) => {
 }
 
 export default function LocationsTab() {
-  const { tenantId } = useTenant()
+  const { id: tenantId } = useTenant()
   const [serviceAreas, setServiceAreas] = useState<ServiceArea[]>([])
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)

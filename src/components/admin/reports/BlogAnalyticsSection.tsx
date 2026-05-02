@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { BookOpen } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
-import { useTenant } from '../../../hooks/useTenant'
+import { useTenant } from '../../../context/TenantBootProvider'
 
 interface BlogPost {
   id: string
@@ -11,7 +11,7 @@ interface BlogPost {
 }
 
 export default function BlogAnalyticsSection() {
-  const { tenantId } = useTenant()
+  const { id: tenantId } = useTenant()
   const [posts, setPosts] = useState<BlogPost[]>([])
   const [loading, setLoading] = useState(true)
 

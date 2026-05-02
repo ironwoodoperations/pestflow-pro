@@ -84,14 +84,18 @@ function RootRoute() {
   return <PublicShell><Index /></PublicShell>
 }
 
-export default function App() {
+function GoogleAnalyticsInit() {
   useGoogleAnalytics()
+  return null
+}
 
+export default function App() {
   return (
     <BrowserRouter>
-      <PlanProvider>
       <TenantBootProvider>
+      <PlanProvider>
       <TemplateProvider>
+      <GoogleAnalyticsInit />
       <ScrollToTop />
       <Toaster richColors position="top-right" />
       <ErrorBoundary>
@@ -170,8 +174,8 @@ export default function App() {
       </Routes>
       </ErrorBoundary>
       </TemplateProvider>
-      </TenantBootProvider>
       </PlanProvider>
+      </TenantBootProvider>
     </BrowserRouter>
   )
 }

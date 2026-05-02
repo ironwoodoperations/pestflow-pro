@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../../lib/supabase'
-
-const TENANT_ID = import.meta.env.VITE_TENANT_ID
+import { useTenant } from '../../../context/TenantBootProvider'
 
 export interface SocialPost {
   id: string
@@ -41,6 +40,7 @@ export interface IntegrationSettings {
 }
 
 export function useSocialData() {
+  const { id: tenantId } = useTenant()
   const [posts, setPosts] = useState<SocialPost[]>([])
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [integrations, setIntegrations] = useState<IntegrationSettings | null>(null)
@@ -52,9 +52,9 @@ export function useSocialData() {
     setError(null)
     try {
       const [postsRes, campaignsRes, intRes] = await Promise.all([
-        supabase.from('social_posts').select('*').eq('tenant_id', TENANT_ID).is('archived_at', null).order('created_at', { ascending: false }),
-        supabase.from('social_campaigns').select('*').eq('tenant_id', TENANT_ID).order('created_at', { ascending: false }),
-        supabase.from('settings').select('value').eq('tenant_id', TENANT_ID).eq('key', 'integrations').maybeSingle(),
+        supabase.from('social_posts').select('*').eq('tenant_id', tenantId).is('archived_at', null).order('created_at', { ascending: false }),
+        supabase.from('social_campaigns').select('*').eq('tenant_id', tenantId).order('created_at', { ascending: false }),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle(),
       ])
 
       setPosts((postsRes.data as SocialPost[]) || [])
@@ -65,7 +65,7 @@ export function useSocialData() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [tenantId])
 
   useEffect(() => { fetchAll() }, [fetchAll])
 

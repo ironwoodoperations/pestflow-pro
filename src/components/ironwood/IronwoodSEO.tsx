@@ -3,7 +3,8 @@ import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
 import IronwoodSEOPageCard from './IronwoodSEOPageCard'
 
-const DEMO_TENANT = '9215b06b-3eb5-49a1-a16e-7ff214bf6783'
+// PFP marketing site tenant — intentionally hardcoded (Ironwood-only, not a client tenant)
+const PFP_MARKETING_TENANT_ID = '9215b06b-3eb5-49a1-a16e-7ff214bf6783'
 
 const MARKETING_PAGES = [
   { slug: 'home',     label: 'Home' },
@@ -43,9 +44,9 @@ export default function IronwoodSEO() {
   useEffect(() => {
     async function load() {
       const [seoRes, metaRes] = await Promise.all([
-        supabase.from('settings').select('value').eq('tenant_id', DEMO_TENANT).eq('key', 'seo').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', PFP_MARKETING_TENANT_ID).eq('key', 'seo').maybeSingle(),
         supabase.from('seo_meta').select('page_slug,meta_title,meta_description')
-          .eq('tenant_id', DEMO_TENANT)
+          .eq('tenant_id', PFP_MARKETING_TENANT_ID)
           .in('page_slug', MARKETING_PAGES.map(p => p.slug)),
       ])
       const v = seoRes.data?.value || {}
@@ -73,9 +74,9 @@ export default function IronwoodSEO() {
   async function saveSitewide() {
     setSaving(true)
     const { data: current } = await supabase.from('settings').select('value')
-      .eq('tenant_id', DEMO_TENANT).eq('key', 'seo').maybeSingle()
+      .eq('tenant_id', PFP_MARKETING_TENANT_ID).eq('key', 'seo').maybeSingle()
     const { error } = await supabase.from('settings').upsert(
-      { tenant_id: DEMO_TENANT, key: 'seo', value: { ...(current?.value || {}), ...form } },
+      { tenant_id: PFP_MARKETING_TENANT_ID, key: 'seo', value: { ...(current?.value || {}), ...form } },
       { onConflict: 'tenant_id,key' }
     )
     setSaving(false)

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Plus } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
-import { useTenant } from '../../../hooks/useTenant'
+import { useTenant } from '../../../context/TenantBootProvider'
 import { triggerRevalidate } from '../../../lib/revalidate'
 import PageHelpBanner from '../PageHelpBanner'
 import TeamMemberCard, { type TeamMember } from './TeamMemberCard'
@@ -22,7 +22,7 @@ function SkeletonCard() {
 }
 
 export default function TeamTab() {
-  const { tenantId } = useTenant()
+  const { id: tenantId } = useTenant()
   const [members, setMembers] = useState<TeamMember[]>([])
   const [loading, setLoading] = useState(true)
   const [editTarget, setEditTarget] = useState<TeamMember | null>(null)

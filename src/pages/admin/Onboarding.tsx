@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Check } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
-import { useTenant } from '../../hooks/useTenant'
+import { useTenant } from '../../context/TenantBootProvider'
 import { syncServiceAreasJsonb } from '../../lib/service-areas/syncJsonbFromTable'
 import type { FormData } from '../../components/admin/onboarding/types'
 import { INITIAL_FORM } from '../../components/admin/onboarding/types'
@@ -27,7 +27,7 @@ export default function Onboarding() {
   const [form, setForm] = useState<FormData>(INITIAL_FORM)
   const [saving, setSaving] = useState(false)
   const [businessName, setBusinessName] = useState('')
-  const { tenantId } = useTenant()
+  const { id: tenantId } = useTenant()
   const navigate = useNavigate()
 
   useEffect(() => {

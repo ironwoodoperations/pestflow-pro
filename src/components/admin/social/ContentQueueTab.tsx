@@ -8,8 +8,7 @@ import EditPostModal from './EditPostModal'
 import UndoToast from '../../shared/UndoToast'
 import ConfirmDeleteModal from '../../shared/ConfirmDeleteModal'
 import { archiveRecord, restoreRecord, hardDeleteRecord } from '../../../lib/archiveUtils'
-
-const TENANT_ID = import.meta.env.VITE_TENANT_ID
+import { useTenant } from '../../../context/TenantBootProvider'
 
 interface Props {
   posts: SocialPost[]
@@ -19,6 +18,7 @@ interface Props {
 }
 
 export default function ContentQueueTab({ posts, campaigns, selectedCampaignId, onRefresh }: Props) {
+  const { id: tenantId } = useTenant()
   const [state, setState] = useState({
     filterPlatform: 'all' as string,
     filterStatus: 'all' as string,
@@ -51,7 +51,7 @@ export default function ContentQueueTab({ posts, campaigns, selectedCampaignId, 
   const selectCls = 'border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white'
 
   async function handleApprove(postId: string) {
-    await supabase.from('social_posts').update({ status: 'approved' }).eq('id', postId).eq('tenant_id', TENANT_ID)
+    await supabase.from('social_posts').update({ status: 'approved' }).eq('id', postId).eq('tenant_id', tenantId)
     onRefresh()
   }
 
@@ -59,7 +59,7 @@ export default function ContentQueueTab({ posts, campaigns, selectedCampaignId, 
     setState(p => ({ ...p, bulkApproving: true }))
     const draftIds = filtered.filter(p => p.status === 'draft').map(p => p.id)
     if (draftIds.length > 0) {
-      await supabase.from('social_posts').update({ status: 'approved' }).in('id', draftIds).eq('tenant_id', TENANT_ID)
+      await supabase.from('social_posts').update({ status: 'approved' }).in('id', draftIds).eq('tenant_id', tenantId)
     }
     setState(p => ({ ...p, bulkApproving: false }))
     toast.success(`${draftIds.length} posts approved!`)
@@ -77,7 +77,7 @@ export default function ContentQueueTab({ posts, campaigns, selectedCampaignId, 
     const { data } = await supabase
       .from('social_posts')
       .select('*')
-      .eq('tenant_id', TENANT_ID)
+      .eq('tenant_id', tenantId)
       .not('archived_at', 'is', null)
       .order('archived_at', { ascending: false })
     setArchivedPosts((data as SocialPost[]) || [])
@@ -102,7 +102,7 @@ export default function ContentQueueTab({ posts, campaigns, selectedCampaignId, 
       caption: updates.caption,
       scheduled_for: updates.scheduled_for,
       status: updates.status,
-    }).eq('id', postId).eq('tenant_id', TENANT_ID)
+    }).eq('id', postId).eq('tenant_id', tenantId)
     if (error) throw error
     setState(p => ({ ...p, editPost: null }))
     toast.success('Post updated!')
@@ -135,7 +135,7 @@ export default function ContentQueueTab({ posts, campaigns, selectedCampaignId, 
         const post = drafts[item.post_index]
         if (post) {
           await supabase.from('social_posts').update({ scheduled_for: item.scheduled_for, status: 'scheduled' })
-            .eq('id', post.id).eq('tenant_id', TENANT_ID)
+            .eq('id', post.id).eq('tenant_id', tenantId)
         }
       }
       toast.success('Smart schedule applied!')

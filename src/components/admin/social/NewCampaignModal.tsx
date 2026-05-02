@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
-import { useTenant } from '../../../hooks/useTenant'
+import { useTenant } from '../../../context/TenantBootProvider'
 import { usePlan } from '../../../context/PlanContext'
 
 interface Props {
@@ -31,7 +31,7 @@ const ELITE_DURATIONS = [
 ]
 
 export default function NewCampaignModal({ onClose, onCreated }: Props) {
-  const { tenantId } = useTenant()
+  const { id: tenantId } = useTenant()
   const { tier } = usePlan()
 
   const durations = tier >= 4 ? ELITE_DURATIONS : PRO_DURATIONS

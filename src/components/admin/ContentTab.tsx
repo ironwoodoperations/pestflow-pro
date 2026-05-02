@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { Plus, X } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
-import { useTenant } from '../../hooks/useTenant'
+import { useTenant } from '../../context/TenantBootProvider'
 import { invalidatePageContent } from '../../hooks/usePageContent'
 import { triggerRevalidate } from '../../lib/revalidate'
 import PageHelpBanner from './PageHelpBanner'
@@ -27,7 +27,7 @@ const EMPTY_FORM: ContentForm = { title: '', subtitle: '', intro: '', video_url:
 const PEST_SLUGS = ['spider-control', 'mosquito-control', 'ant-control', 'wasp-hornet-control', 'roach-control', 'flea-tick-control', 'rodent-control', 'scorpion-control', 'bed-bug-control', 'pest-control', 'termite-control', 'termite-inspections']
 
 export default function ContentTab() {
-  const { tenantId } = useTenant()
+  const { id: tenantId } = useTenant()
   const [selectedSlug, setSelectedSlug] = useState('home')
   const [form, setForm] = useState<ContentForm>(EMPTY_FORM)
   const [loading, setLoading] = useState(true)

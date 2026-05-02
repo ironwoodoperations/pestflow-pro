@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Lock, CheckCircle2, Circle, Loader2 } from 'lucide-react'
 import { usePlan } from '../../../hooks/usePlan'
-import { useTenant } from '../../../hooks/useTenant'
+import { useTenant } from '../../../context/TenantBootProvider'
 import { toast } from 'sonner'
 
 interface Props {
@@ -41,7 +41,7 @@ interface State {
 
 export default function ConnectionsModal({ onClose, onNavigate, isDemoTenant = true }: Props) {
   const { tier } = usePlan()
-  const { tenantId } = useTenant()
+  const { id: tenantId } = useTenant()
 
   const [state, setState] = useState<State>({
     accounts: [],

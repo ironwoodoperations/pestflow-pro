@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../../../lib/supabase'
-import { useTenant } from '../../../hooks/useTenant'
+import { useTenant } from '../../../context/TenantBootProvider'
 import { usePlan } from '../../../context/PlanContext'
 import { usePublishPost } from './usePublishPost'
 import { AI_DAILY_LIMITS, POSTS_PER_GENERATION, SCHEDULING_DAY_CAP } from './socialLimits'
@@ -21,7 +21,7 @@ export interface PexelsPhoto {
 }
 
 export function useComposer(onPosted?: () => void, onCaptionGenerated?: () => void) {
-  const { tenantId } = useTenant()
+  const { id: tenantId } = useTenant()
   const { tier } = usePlan()
   const aiDailyLimit = AI_DAILY_LIMITS[tier] ?? 2
   const postsPerGeneration = POSTS_PER_GENERATION[tier] ?? 1

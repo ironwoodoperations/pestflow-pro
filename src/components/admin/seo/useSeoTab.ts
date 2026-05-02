@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
-import { useTenant } from '../../../hooks/useTenant'
+import { useTenant } from '../../../context/TenantBootProvider'
 import { useSeoAudit, getCachedAudit } from './useSeoAudit'
 import { useSeoAiGenerate } from './useSeoAiGenerate'
 import type {
@@ -17,7 +17,7 @@ const PEST_SLUGS = [
 const STATIC_SLUGS = ['home','about','contact','quote','pricing','faq','reviews','service-area']
 
 export function useSeoTab() {
-  const { tenantId } = useTenant()
+  const { id: tenantId } = useTenant()
   const [activeTab, setActiveTab]       = useState<SeoTabId>('overview')
   const [pages, setPages]               = useState<SeoPageRow[]>([])
   const [loading, setLoading]           = useState(true)

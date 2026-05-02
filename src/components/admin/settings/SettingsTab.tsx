@@ -7,17 +7,15 @@ import NotificationsSection from './NotificationsSection'
 import HeroMediaSection from './HeroMediaSection'
 import HolidayModeSection from './HolidayModeSection'
 import DomainSection from './DomainSection'
-import { useTenant } from '../../../hooks/useTenant'
-
-const IRONWOOD_TENANT_ID = '9215b06b-3eb5-49a1-a16e-7ff214bf6783'
+import { useTenant } from '../../../context/TenantBootProvider'
 
 const CLIENT_TABS = ['Business Info', 'Branding', 'Social Links', 'Notifications', 'Master Hero Image', 'Holiday Mode'] as const
 const IRONWOOD_TABS = ['Business Info', 'Branding', 'Social Links', 'Notifications', 'Master Hero Image', 'Holiday Mode', 'Domain'] as const
 type SubTab = (typeof IRONWOOD_TABS)[number]
 
 export default function SettingsTab() {
-  const { tenantId } = useTenant()
-  const isIronwood = tenantId === IRONWOOD_TENANT_ID
+  const tenant = useTenant()
+  const isIronwood = tenant.slug === 'pestflow-pro'
   const SUB_TABS = isIronwood ? IRONWOOD_TABS : CLIENT_TABS
   const [activeSubTab, setActiveSubTab] = useState<SubTab>('Business Info')
 

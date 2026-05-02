@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Sparkles, RotateCcw } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
-import { useTenant } from '../../hooks/useTenant'
+import { useTenant } from '../../context/TenantBootProvider'
 import { toast } from 'sonner'
 
 interface ContentForm { title: string; subtitle: string; intro: string; video_url: string; image_url: string; pageHeroImageUrl: string; image1Url: string; image2Url: string; image3Url: string }
@@ -30,7 +30,7 @@ interface Props {
 }
 
 function PageImageUpload({ slug, index, onUpdate }: { slug: string; index: number; onUpdate?: (url: string) => void }) {
-  const { tenantId } = useTenant()
+  const { id: tenantId } = useTenant()
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [currentUrl, setCurrentUrl] = useState<string | null>(null)
@@ -102,7 +102,7 @@ function PageImageUpload({ slug, index, onUpdate }: { slug: string; index: numbe
 }
 
 function HeroImageUpload({ slug, onUpdate, masterOverride = false }: { slug: string; onUpdate?: (url: string) => void; masterOverride?: boolean }) {
-  const { tenantId } = useTenant()
+  const { id: tenantId } = useTenant()
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [currentUrl, setCurrentUrl] = useState<string | null>(null)

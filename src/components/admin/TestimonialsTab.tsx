@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { Plus, Download } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
-import { useTenant } from '../../hooks/useTenant'
+import { useTenant } from '../../context/TenantBootProvider'
 import { triggerRevalidate } from '../../lib/revalidate'
 import PageHelpBanner from './PageHelpBanner'
 import TestimonialCard from './TestimonialCard'
@@ -18,7 +18,7 @@ interface FormState {
 const EMPTY_FORM: FormState = { author_name: '', author_email: '', review_text: '', rating: 5, source: 'Google', featured: false }
 
 export default function TestimonialsTab() {
-  const { tenantId } = useTenant()
+  const { id: tenantId } = useTenant()
   const [reviews, setReviews] = useState<Testimonial[]>([])
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)

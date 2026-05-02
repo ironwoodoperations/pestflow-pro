@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { lazy, Suspense } from 'react'
 
 import { supabase } from '../../../lib/supabase'
-import { useTenant } from '../../../hooks/useTenant'
+import { useTenant } from '../../../context/TenantBootProvider'
 import DangFaqAccordion, { type FaqEntry } from './DangFaqAccordion'
 
 const DangFaqAiChat = lazy(() => import('./DangFaqAiChat'))

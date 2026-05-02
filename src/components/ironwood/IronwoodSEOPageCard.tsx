@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
 
-const DEMO_TENANT = '9215b06b-3eb5-49a1-a16e-7ff214bf6783'
+// PFP marketing site tenant — intentionally hardcoded (Ironwood-only, not a client tenant)
+const PFP_MARKETING_TENANT_ID = '9215b06b-3eb5-49a1-a16e-7ff214bf6783'
 
 interface Props {
   slug: string
@@ -18,7 +19,7 @@ export default function IronwoodSEOPageCard({ slug, label, initialTitle, initial
   async function save() {
     setSaving(true)
     const { error } = await supabase.from('seo_meta').upsert(
-      { tenant_id: DEMO_TENANT, page_slug: slug, meta_title: form.meta_title, meta_description: form.meta_description, user_edited: true },
+      { tenant_id: PFP_MARKETING_TENANT_ID, page_slug: slug, meta_title: form.meta_title, meta_description: form.meta_description, user_edited: true },
       { onConflict: 'tenant_id,page_slug' }
     )
     setSaving(false)

@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react'
 import { supabase } from '../lib/supabase'
-import { useTenant } from '../hooks/useTenant'
+import { useTenant } from '../context/TenantBootProvider'
 
 const TIER_MAP: Record<number, { plan_name: string; monthly_price: number }> = {
   1: { plan_name: 'Starter', monthly_price: 149 },
@@ -26,7 +26,7 @@ const PlanContext = createContext<PlanContextValue>({
 })
 
 export function PlanProvider({ children }: { children: ReactNode }) {
-  const { tenantId } = useTenant()
+  const { id: tenantId } = useTenant()
   const [tier, setTierState] = useState(1)
   const [loading, setLoading] = useState(true)
 

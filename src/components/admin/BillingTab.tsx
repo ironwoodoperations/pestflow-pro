@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
-import { useTenant } from '../../hooks/useTenant'
+import { useTenant } from '../../context/TenantBootProvider'
 import PageHelpBanner from './PageHelpBanner'
 import UpgradeCards from './UpgradeCards'
 import { CreditCard, Calendar, CheckCircle, Clock, XCircle } from 'lucide-react'
@@ -74,7 +74,7 @@ function totalAmount(row: PaymentRow): string {
 }
 
 export default function BillingTab() {
-  const { tenantId } = useTenant()
+  const { id: tenantId } = useTenant()
   const [payments, setPayments] = useState<PaymentRow[]>([])
   const [subscription, setSubscription] = useState<SubscriptionSettings | null>(null)
   const [loading, setLoading] = useState(true)

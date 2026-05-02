@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
-import { useTenant } from '../../../hooks/useTenant'
+import { useTenant } from '../../../context/TenantBootProvider'
 import { applyTheme } from '../../../lib/shellThemes'
 import BrandingLogo from './BrandingLogo'
 import PalettePicker from '../../shared/PalettePicker'
@@ -24,7 +24,7 @@ const templates: { value: BrandingForm['theme']; label: string; desc: string; bg
 ]
 
 export default function BrandingSection() {
-  const { tenantId } = useTenant()
+  const { id: tenantId } = useTenant()
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
   const [tierNum, setTierNum] = useState(1)

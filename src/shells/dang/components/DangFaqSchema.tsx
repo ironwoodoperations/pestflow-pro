@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../../lib/supabase'
-import { useTenant } from '../../../hooks/useTenant'
+import { useTenant } from '../../../context/TenantBootProvider'
 import { StructuredData } from '../StructuredData'
 import { generateFAQSchema } from '../../../../shared/lib/seoSchema'
 
@@ -9,7 +9,7 @@ import { generateFAQSchema } from '../../../../shared/lib/seoSchema'
  * JSON-LD schema into the page head.  Renders nothing visible.
  */
 export default function DangFaqSchema() {
-  const { tenantId } = useTenant()
+  const { id: tenantId } = useTenant()
   const [schema, setSchema] = useState<object | null>(null)
 
   useEffect(() => {

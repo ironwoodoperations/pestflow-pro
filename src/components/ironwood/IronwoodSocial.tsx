@@ -1,8 +1,7 @@
 // IronwoodSocial — social media posting for PestFlow Pro's own accounts.
-// Reuses the existing SocialTab component pointed at the demo tenant
-// (9215b06b-3eb5-49a1-a16e-7ff214bf6783 / slug: pestflow-pro).
-// SocialTab reads VITE_TENANT_ID which resolves to the demo tenant on the
-// main pestflowpro.com domain, so no prop drilling is needed.
+// Reuses the existing SocialTab component; when the Ironwood admin is on
+// pestflow-pro.pestflowpro.com, TenantBootProvider resolves to that tenant
+// (9215b06b-3eb5-49a1-a16e-7ff214bf6783 / slug: pestflow-pro) automatically.
 
 import SocialTab from '../admin/SocialTab'
 

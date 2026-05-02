@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../../lib/supabase'
-import { useTenant } from '../../../hooks/useTenant'
+import { useTenant } from '../../../context/TenantBootProvider'
 
 interface Post { id: string; scheduled_for: string | null; status: string; created_at: string }
 
@@ -13,7 +13,7 @@ function fmtDate(iso: string) {
 }
 
 export default function DashboardSocialWidget({ onNavigate }: Props) {
-  const { tenantId } = useTenant()
+  const { id: tenantId } = useTenant()
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
 

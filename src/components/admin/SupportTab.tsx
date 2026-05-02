@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { LifeBuoy, Plus, X } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
-import { useTenant } from '../../hooks/useTenant'
+import { useTenant } from '../../context/TenantBootProvider'
 import PageHelpBanner from './PageHelpBanner'
 
 interface Ticket {
@@ -31,7 +31,7 @@ const STATUS_BADGE: Record<string, string> = {
 const EMPTY: Ticket[] = []
 
 export default function SupportTab() {
-  const { tenantId } = useTenant()
+  const { id: tenantId } = useTenant()
   const [tickets, setTickets] = useState<Ticket[]>(EMPTY)
   const [showModal, setShowModal] = useState(false)
   const [submitting, setSubmitting] = useState(false)

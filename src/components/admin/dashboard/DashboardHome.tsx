@@ -1,14 +1,12 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../../lib/supabase'
-import { useTenant } from '../../../hooks/useTenant'
+import { useTenant } from '../../../context/TenantBootProvider'
 import { usePlan } from '../../../hooks/usePlan'
 import DashboardStats from './DashboardStats'
 import DashboardSeoWidget from './DashboardSeoWidget'
 import DashboardSocialWidget from './DashboardSocialWidget'
 import DashboardPlanSection from './DashboardPlanSection'
 import DemoControls from './DemoControls'
-
-const DEMO_TENANT_ID = '9215b06b-3eb5-49a1-a16e-7ff214bf6783'
 
 interface Props {
   onboardingComplete: boolean
@@ -33,7 +31,7 @@ const statusBadge = (status: string) => {
 }
 
 export default function DashboardHome({ onboardingComplete, demoActive, onDemoSeeded, onNavigate }: Props) {
-  const { tenantId } = useTenant()
+  const { id: tenantId, slug } = useTenant()
   const { tier } = usePlan()
   const [leads, setLeads] = useState<Lead[]>([])
   const [loading, setLoading] = useState(true)
@@ -99,7 +97,7 @@ export default function DashboardHome({ onboardingComplete, demoActive, onDemoSe
         <DashboardSocialWidget onNavigate={onNavigate} />
       </div>
 
-      {tenantId === DEMO_TENANT_ID && !demoActive && tier < 4 && (
+      {slug === 'pestflow-pro' && !demoActive && tier < 4 && (
         <DemoControls tenantId={tenantId} onSeeded={onDemoSeeded} />
       )}
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
-import { useTenant } from '../../hooks/useTenant'
+import { useTenant } from '../../context/TenantBootProvider'
 import { FeatureGate } from '../common/FeatureGate'
 import PageHelpBanner from './PageHelpBanner'
 import LeadFunnel from './reports/LeadFunnel'
@@ -17,7 +17,7 @@ interface LeadRow {
 }
 
 export default function ReportsTab() {
-  const { tenantId } = useTenant()
+  const { id: tenantId } = useTenant()
   const [leads, setLeads] = useState<LeadRow[]>([])
   const [loading, setLoading] = useState(true)
   const [range, setRange] = useState<'7d' | '30d' | '90d' | 'all'>('30d')

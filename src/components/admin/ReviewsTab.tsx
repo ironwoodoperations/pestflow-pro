@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { RefreshCw, Star, Loader2, CheckCircle2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
-import { useTenant } from '../../hooks/useTenant'
+import { useTenant } from '../../context/TenantBootProvider'
 import { usePlan } from '../../hooks/usePlan'
 import PageHelpBanner from './PageHelpBanner'
 
@@ -32,7 +32,7 @@ function StarRow({ rating, size = 'sm' }: { rating: number; size?: 'sm' | 'lg' }
 }
 
 export default function ReviewsTab() {
-  const { tenantId } = useTenant()
+  const { id: tenantId } = useTenant()
   const { canAccess } = usePlan()
   const [data, setData] = useState<PlacesData | null>(null)
   const [loading, setLoading] = useState(true)

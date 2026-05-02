@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
-import { useTenant } from '../../../hooks/useTenant'
+import { useTenant } from '../../../context/TenantBootProvider'
 import { triggerRevalidate } from '../../../lib/revalidate'
 import { validateBusinessInfo, type GeocodeSource, type HoursEntry } from '../../../../shared/lib/businessInfoValidation'
 
@@ -41,7 +41,7 @@ function HoursGrid({ value, onChange, errors }: { value: HoursEntry[]; onChange:
 }
 
 export default function BusinessInfoSection() {
-  const { tenantId } = useTenant()
+  const { id: tenantId } = useTenant()
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
   const [errors, setErrors] = useState<Record<string, string>>({})

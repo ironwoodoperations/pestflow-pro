@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../../lib/supabase'
-import { useTenant } from '../../../hooks/useTenant'
+import { useTenant } from '../../../context/TenantBootProvider'
 import BlogAnalyticsSection from './BlogAnalyticsSection'
 
 interface SocialStats {
@@ -14,7 +14,7 @@ interface SeoStats {
 }
 
 export default function SocialSeoReport() {
-  const { tenantId } = useTenant()
+  const { id: tenantId } = useTenant()
   const [social, setSocial] = useState<SocialStats | null>(null)
   const [seo, setSeo] = useState<SeoStats | null>(null)
   const [loading, setLoading] = useState(true)

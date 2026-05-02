@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
-import { useTenant } from '../../../hooks/useTenant'
+import { useTenant } from '../../../context/TenantBootProvider'
 
 interface TrackedKeyword {
   keyword: string
@@ -14,7 +14,7 @@ interface GroupedPage {
 }
 
 export default function SeoAioTab() {
-  const { tenantId } = useTenant()
+  const { id: tenantId } = useTenant()
   const [state, setState] = useState<{
     groups: GroupedPage[]
     loading: boolean

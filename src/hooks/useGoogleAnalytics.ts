@@ -1,16 +1,16 @@
 import { useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-
-const TENANT_ID = import.meta.env.VITE_TENANT_ID
+import { useTenant } from '../context/TenantBootProvider'
 
 export function useGoogleAnalytics() {
+  const { id: tenantId } = useTenant()
   useEffect(() => {
     const injectGA = async () => {
       // Load GA ID from settings
       const { data } = await supabase
         .from('settings')
         .select('value')
-        .eq('tenant_id', TENANT_ID)
+        .eq('tenant_id', tenantId)
         .eq('key', 'integrations')
         .single()
 
@@ -40,5 +40,5 @@ export function useGoogleAnalytics() {
     }
 
     injectGA()
-  }, [])
+  }, [tenantId])
 }
