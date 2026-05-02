@@ -6,12 +6,12 @@ import { triggerRevalidate } from '../../lib/revalidate'
 
 interface Post {
   id: string; title: string; slug: string; content: string; excerpt: string
-  published: boolean; published_at: string | null; featured_image_url?: string | null
+  published_at: string | null; featured_image_url?: string | null
 }
 
 interface PostForm {
   title: string; slug: string; content: string; excerpt: string
-  published: boolean; published_at: string; featured_image_url: string
+  published_at: string | null; featured_image_url: string
 }
 
 interface Props {
@@ -31,8 +31,7 @@ export default function BlogPostEditor({ editing, initialPost, tenantId, onSave,
     slug: initialPost?.slug ?? '',
     content: initialPost?.content ?? '',
     excerpt: initialPost?.excerpt ?? '',
-    published: initialPost?.published ?? false,
-    published_at: initialPost?.published_at ? initialPost.published_at.split('T')[0] : new Date().toISOString().split('T')[0],
+    published_at: initialPost?.published_at ? initialPost.published_at.split('T')[0] : null,
     featured_image_url: initialPost?.featured_image_url ?? '',
   })
   const [saving, setSaving] = useState(false)
@@ -58,8 +57,7 @@ export default function BlogPostEditor({ editing, initialPost, tenantId, onSave,
     setSaving(true)
     const payload = {
       title: form.title, slug, content: form.content, excerpt: form.excerpt,
-      published: form.published,
-      published_at: form.published ? form.published_at || new Date().toISOString() : null,
+      published_at: form.published_at ? new Date(form.published_at).toISOString() : null,
       featured_image_url: form.featured_image_url || null,
     }
     let error
@@ -124,10 +122,10 @@ export default function BlogPostEditor({ editing, initialPost, tenantId, onSave,
           </div>
           <div className="flex items-center gap-6">
             <label className="flex items-center gap-2 text-sm text-gray-700">
-              <input type="checkbox" checked={form.published} onChange={e => setForm(p => ({ ...p, published: e.target.checked, published_at: e.target.checked && !p.published_at ? new Date().toISOString().split('T')[0] : p.published_at }))} className="rounded border-gray-300 text-emerald-500 focus:ring-emerald-500" />
+              <input type="checkbox" checked={form.published_at !== null} onChange={e => setForm(p => ({ ...p, published_at: e.target.checked ? (p.published_at || new Date().toISOString().split('T')[0]) : null }))} className="rounded border-gray-300 text-emerald-500 focus:ring-emerald-500" />
               Publish this post
             </label>
-            {form.published && (
+            {form.published_at !== null && (
               <div>
                 <label className="text-sm font-medium text-gray-700 mr-2">Date:</label>
                 <input type="date" value={form.published_at} onChange={e => setForm(p => ({ ...p, published_at: e.target.value }))} className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />

@@ -13,7 +13,7 @@ import { triggerRevalidate } from '../../lib/revalidate'
 
 interface Post {
   id: string; title: string; slug: string; content: string; excerpt: string
-  published: boolean; published_at: string | null; featured_image_url?: string | null
+  published_at: string | null; featured_image_url?: string | null
   archived_at?: string | null
 }
 
@@ -62,10 +62,11 @@ export default function BlogTab() {
   }
 
   async function togglePublished(p: Post) {
-    const published = !p.published
-    await supabase.from('blog_posts').update({ published, published_at: published ? new Date().toISOString() : null }).eq('id', p.id)
-    toast.success(published ? 'Published!' : 'Unpublished')
-    setPosts(prev => prev.map(x => x.id === p.id ? { ...x, published, published_at: published ? new Date().toISOString() : null } : x))
+    const nowPublished = !p.published_at
+    const newPublishedAt = nowPublished ? new Date().toISOString() : null
+    await supabase.from('blog_posts').update({ published_at: newPublishedAt }).eq('id', p.id)
+    toast.success(nowPublished ? 'Published!' : 'Unpublished')
+    setPosts(prev => prev.map(x => x.id === p.id ? { ...x, published_at: newPublishedAt } : x))
     const { data: s } = await supabase.auth.getSession()
     if (s.session?.access_token && tenantId) await triggerRevalidate({ type: 'blog', tenantId }, s.session.access_token)
   }
@@ -141,8 +142,8 @@ export default function BlogTab() {
                       {tab === 'archived' ? (
                         <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-600">Archived</span>
                       ) : (
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${p.published ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
-                          {p.published ? 'Published' : 'Draft'}
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${p.published_at ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                          {p.published_at ? 'Published' : 'Draft'}
                         </span>
                       )}
                     </td>
@@ -156,7 +157,7 @@ export default function BlogTab() {
                       ) : (
                         <div className="flex items-center gap-3">
                           <button onClick={() => openEdit(p)} className="text-emerald-600 hover:text-emerald-700 text-sm font-medium">Edit</button>
-                          <button onClick={() => togglePublished(p)} className="text-sm font-medium text-gray-500 hover:text-gray-700">{p.published ? 'Unpublish' : 'Publish'}</button>
+                          <button onClick={() => togglePublished(p)} className="text-sm font-medium text-gray-500 hover:text-gray-700">{p.published_at ? 'Unpublish' : 'Publish'}</button>
                           <button onClick={() => handleArchive(p)} className="text-yellow-600 hover:text-yellow-700"><Trash2 size={14} /></button>
                         </div>
                       )}
