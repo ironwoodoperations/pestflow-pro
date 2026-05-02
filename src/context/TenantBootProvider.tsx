@@ -3,13 +3,19 @@ import { supabase } from '../lib/supabase'
 import { applyTheme } from '../lib/shellThemes'
 import TenantBootSkeleton from './TenantBootSkeleton'
 import { prefetchAllPageContent } from '../hooks/usePageContent'
+import { resolveTenantId } from '../lib/subdomainRouter'
 
 export type TenantBoot = {
   id: string; slug: string; name: string; template: string
   primaryColor: string; accentColor: string; logoUrl: string | null; ctaText: string
 }
 
-interface TenantBootCtx { status: 'loading' | 'ready' | 'idle' | 'error'; tenant: TenantBoot | null; error: string | null; refetch: () => void }
+export type TenantBootStatus =
+  | { status: 'loading' }
+  | { status: 'error'; reason: 'not_found' | 'network' | 'unknown'; message: string }
+  | { status: 'ready'; tenant: TenantBoot }
+
+interface TenantBootCtx { status: 'loading' | 'ready' | 'error'; tenant: TenantBoot | null; error: string | null; refetch: () => void }
 
 const Ctx = createContext<TenantBootCtx | null>(null)
 const HOST = typeof window !== 'undefined' ? window.location.hostname : ''
@@ -40,47 +46,93 @@ function writeCache(raw: RawBoot): void {
   } catch { /* silent */ }
 }
 
-function isAdminPath() { const p = window.location.pathname; return p.startsWith('/admin') || p.startsWith('/ironwood') }
+function TenantNotFound({ message }: { message: string }) {
+  return (
+    <div
+      role="main"
+      style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        justifyContent: 'center', minHeight: '100vh', padding: '2rem',
+        fontFamily: 'system-ui, sans-serif', textAlign: 'center', gap: '1rem',
+      }}
+    >
+      <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>Site Not Found</h1>
+      <p style={{ maxWidth: '40ch', color: '#555', margin: 0 }}>{message}</p>
+      <a href="https://pestflowpro.com" style={{ color: '#f97316', textDecoration: 'underline' }}>
+        ← Go to PestFlow Pro
+      </a>
+    </div>
+  )
+}
 
 export function TenantBootProvider({ children }: { children: ReactNode }) {
-  const [tenant, setTenant] = useState<TenantBoot | null>(() => isAdminPath() ? null : readCache())
-  const [status, setStatus] = useState<'loading' | 'ready' | 'idle' | 'error'>(() => {
-    if (isAdminPath()) return 'idle'
-    return readCache() ? 'ready' : 'loading'
+  const [bootState, setBootState] = useState<TenantBootStatus>(() => {
+    const cached = readCache()
+    return cached ? { status: 'ready', tenant: cached } : { status: 'loading' }
   })
-  const [error, setError] = useState<string | null>(null)
   const [fetchKey, setFetchKey] = useState(0)
 
   useLayoutEffect(() => {
     const cached = readCache()
     if (cached) applyTheme(cached.template, cached.primaryColor || undefined, cached.accentColor || undefined)
-  }, []) // eslint-disable-line
+  }, [])
 
   useEffect(() => {
-    if (isAdminPath()) return
     const cached = readCache()
     if (cached) {
       // Already have data — prefetch content and stop
       prefetchAllPageContent(cached.id).catch(() => {})
       return
     }
-    const slug = HOST.split('.')[0]
-    Promise.resolve(supabase.rpc('get_tenant_boot', { slug_param: slug }))
-      .then(({ data, error: err }) => {
-        if (err || !data) { setStatus('error'); setError('Tenant not found'); return }
+    const hostname = window.location.hostname
+    resolveTenantId().then(async (tenantId) => {
+      if (!tenantId) {
+        setBootState({
+          status: 'error',
+          reason: 'not_found',
+          message: `No PestFlow Pro tenant found for hostname '${hostname}'. If you typed the URL, double-check the subdomain.`,
+        })
+        return
+      }
+      try {
+        // Resolve slug from tenant ID (needed for SECURITY DEFINER RPC)
+        const { data: tenantRow, error: slugErr } = await supabase
+          .from('tenants')
+          .select('slug')
+          .eq('id', tenantId)
+          .maybeSingle()
+        if (slugErr || !tenantRow?.slug) {
+          setBootState({ status: 'error', reason: 'not_found', message: 'Tenant record not found.' })
+          return
+        }
+        const { data, error: rpcErr } = await supabase.rpc('get_tenant_boot', { slug_param: tenantRow.slug })
+        if (rpcErr || !data) {
+          setBootState({ status: 'error', reason: 'not_found', message: 'Tenant configuration not found.' })
+          return
+        }
         const raw = data as RawBoot
         const boot = mapRaw(raw)
         applyTheme(boot.template, boot.primaryColor || undefined, boot.accentColor || undefined)
         writeCache(raw)
-        setTenant(boot)
-        setStatus('ready')
+        setBootState({ status: 'ready', tenant: boot })
         prefetchAllPageContent(boot.id).catch(() => {})
-      })
-      .catch(() => { setStatus('error'); setError('Boot failed') })
-  }, [fetchKey]) // eslint-disable-line
+      } catch {
+        setBootState({ status: 'error', reason: 'network', message: 'Failed to load site configuration. Please try again.' })
+      }
+    })
+  }, [fetchKey])
 
-  if (status === 'loading') return <TenantBootSkeleton />
-  return <Ctx.Provider value={{ status, tenant, error, refetch: () => setFetchKey(k => k + 1) }}>{children}</Ctx.Provider>
+  if (bootState.status === 'loading') return <TenantBootSkeleton />
+  if (bootState.status === 'error') return <TenantNotFound message={bootState.message} />
+
+  const ctxValue: TenantBootCtx = {
+    status: 'ready',
+    tenant: bootState.tenant,
+    error: null,
+    refetch: () => setFetchKey(k => k + 1),
+  }
+
+  return <Ctx.Provider value={ctxValue}>{children}</Ctx.Provider>
 }
 
 export function useTenantBoot(): TenantBootCtx {

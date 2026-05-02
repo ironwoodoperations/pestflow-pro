@@ -18,23 +18,24 @@ function getPestflowSubdomain(): string | null {
 /**
  * Resolves the tenant ID for the current request.
  * Priority order:
- * 1. ?tenant=<slug> query param (dev/preview testing)
+ * 1. ?tenant=<slug> query param (DEV mode only)
  * 2. custom_domain match (e.g. admin.dangpestcontrol.com)
  * 3. *.pestflowpro.com subdomain slug match
- * 4. VITE_TENANT_ID fallback (localhost / root domain)
+ * Returns null if no tenant could be resolved.
  */
-export async function resolveTenantId(): Promise<string> {
-  const fallback = (import.meta.env.VITE_TENANT_ID as string) || ''
+export async function resolveTenantId(): Promise<string | null> {
   const hostname = window.location.hostname
 
-  // 1. ?tenant=<slug> query param
-  const params = new URLSearchParams(window.location.search)
-  const tenantSlug = params.get('tenant')
-  if (tenantSlug) {
-    try {
-      const { data } = await supabase.from('tenants').select('id').eq('slug', tenantSlug).maybeSingle()
-      if (data?.id) return data.id
-    } catch { /* fall through */ }
+  // 1. ?tenant=<slug> query param (DEV mode only — localhost testing)
+  if (import.meta.env.DEV) {
+    const params = new URLSearchParams(window.location.search)
+    const tenantSlug = params.get('tenant')
+    if (tenantSlug) {
+      try {
+        const { data } = await supabase.from('tenants').select('id').eq('slug', tenantSlug).maybeSingle()
+        if (data?.id) return data.id
+      } catch { /* fall through */ }
+    }
   }
 
   // 2. Custom domain lookup via tenant_domains table (verified only)
@@ -54,7 +55,7 @@ export async function resolveTenantId(): Promise<string> {
 
   // 3. *.pestflowpro.com subdomain
   const subdomain = getPestflowSubdomain()
-  if (!subdomain) return fallback
+  if (!subdomain) return null
 
   try {
     const { data, error } = await supabase
@@ -65,11 +66,11 @@ export async function resolveTenantId(): Promise<string> {
 
     if (error || !data?.id) {
       console.error('[subdomainRouter] Tenant not found for slug:', subdomain)
-      return fallback
+      return null
     }
     return data.id
   } catch (err) {
     console.error('[subdomainRouter] Lookup failed:', err)
-    return fallback
+    return null
   }
 }
