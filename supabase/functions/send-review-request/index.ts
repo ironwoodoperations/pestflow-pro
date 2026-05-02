@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'PestFlow Pro <noreply@pestflow.ai>',
+        from: `${businessName} <noreply@pestflow.ai>`,
         to: [recipientEmail],
         subject: `Thanks for choosing ${businessName}! Share your experience`,
         text: `Hi ${recipientName},

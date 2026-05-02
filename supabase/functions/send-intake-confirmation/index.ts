@@ -64,6 +64,7 @@ Deno.serve(async (req: Request) => {
       subject: `Got it! We're building your site now`,
       html: buildHtml(name),
       replyTo: 'pfpsales@pestflowpro.com',
+      fromName: 'PestFlow Pro',
     })
     return json({ success: true })
   } catch (err: any) {

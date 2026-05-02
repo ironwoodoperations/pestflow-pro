@@ -130,6 +130,7 @@ Deno.serve(async (req) => {
           replyTo: businessEmail || notifyEmail || undefined,
           html: autoReplyHtml,
           text: autoReplyText,
+          fromName: businessName,
         })
         results.emailA = 'sent'
         console.log('[notify-new-lead] Email A sent OK')
@@ -150,6 +151,7 @@ Deno.serve(async (req) => {
           to: notifyEmail,
           cc: ccEmail || undefined,
           subject: `New lead from ${lead.name} — ${businessName}`,
+          fromName: businessName,
           html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
   <h2 style="color:${primaryColor}">New Lead — ${businessName}</h2>
   <table style="width:100%;border-collapse:collapse">

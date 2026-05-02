@@ -135,6 +135,7 @@ Deno.serve(async (req: Request) => {
       subject,
       html: buildHtml(firstName, businessName, attempt, nextAttemptDate),
       replyTo: 'billing@ironwoodoperationsgroup.com',
+      fromName: 'PestFlow Pro',
     })
 
     return json({ success: true, attempt })

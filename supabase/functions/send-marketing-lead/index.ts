@@ -170,6 +170,7 @@ Deno.serve(async (req) => {
         subject: `New Lead: ${name} — ${company || 'No Company'}`,
         html: ownerNotificationHtml(name, company, phone, email, message, ts),
         replyTo: email,
+        fromName: 'PestFlow Pro',
       })
       results.ownerEmail = 'sent'
     } catch (err) {
@@ -184,6 +185,7 @@ Deno.serve(async (req) => {
         subject: "You're One Step Closer to More Leads — PestFlow Pro",
         html: prospectConfirmationHtml(name),
         replyTo: 'pfpsales@pestflowpro.com',
+        fromName: 'PestFlow Pro',
       })
       results.prospectEmail = 'sent'
     } catch (err) {

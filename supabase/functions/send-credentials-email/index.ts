@@ -108,6 +108,7 @@ Deno.serve(async (req: Request) => {
     await sendEmail({
       to,
       subject: `You're live! Here are your ${businessName} login credentials`,
+      fromName: 'PestFlow Pro',
       html: buildHtml(
         firstName,
         businessName,

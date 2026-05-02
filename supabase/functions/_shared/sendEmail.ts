@@ -1,6 +1,10 @@
-// sendEmail — shared Resend helper for all PestFlow Pro edge functions
-// From: "PestFlow Pro <noreply@pestflow.ai>" (always)
-// replyTo varies per template
+/**
+ * sendEmail — shared Resend helper for all PestFlow Pro edge functions.
+ *
+ * fromName: REQUIRED. Customer-facing emails should pass the tenant's
+ * business name. Platform/internal emails should pass 'PestFlow Pro'.
+ * Never default — the wrong choice has shipped to prod before.
+ */
 export async function sendEmail({
   to,
   cc,
@@ -8,6 +12,7 @@ export async function sendEmail({
   html,
   text,
   replyTo,
+  fromName,
 }: {
   to: string
   cc?: string
@@ -15,10 +20,11 @@ export async function sendEmail({
   html: string
   text?: string
   replyTo?: string
+  fromName: string
 }): Promise<void> {
   const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') || ''
   const payload: Record<string, unknown> = {
-    from: 'PestFlow Pro <noreply@pestflow.ai>',
+    from: `${fromName} <noreply@pestflow.ai>`,
     to,
     subject,
     html,
