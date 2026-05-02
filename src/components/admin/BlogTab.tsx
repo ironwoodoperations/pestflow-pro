@@ -10,6 +10,7 @@ import UndoToast from '../shared/UndoToast'
 import ConfirmDeleteModal from '../shared/ConfirmDeleteModal'
 import { archiveRecord, restoreRecord, hardDeleteRecord } from '../../lib/archiveUtils'
 import { triggerRevalidate } from '../../lib/revalidate'
+import { autoGenBlogSeo } from '../../lib/ai/generateBlogSeo'
 
 interface Post {
   id: string; title: string; slug: string; content: string; excerpt: string
@@ -67,6 +68,9 @@ export default function BlogTab() {
     await supabase.from('blog_posts').update({ published_at: newPublishedAt }).eq('id', p.id)
     toast.success(nowPublished ? 'Published!' : 'Unpublished')
     setPosts(prev => prev.map(x => x.id === p.id ? { ...x, published_at: newPublishedAt } : x))
+    if (nowPublished && tenantId) {
+      autoGenBlogSeo(p.slug, tenantId).catch(err => console.error('Blog SEO auto-gen failed', err))
+    }
     const { data: s } = await supabase.auth.getSession()
     if (s.session?.access_token && tenantId) await triggerRevalidate({ type: 'blog', tenantId }, s.session.access_token)
   }
@@ -85,7 +89,7 @@ export default function BlogTab() {
 
   return (
     <div>
-      <PageHelpBanner tab="blog" title="✍️ Blog" body="Every post you publish is a new page Google can find. Use clear titles that match what people search for, write at least 300 words, and use the AI button for help. Toggle Published when ready to go live. Aim for 2 posts per month." />
+      <PageHelpBanner tab="blog" title="✍️ Blog" body="Every post you publish is a new page Google can find. Click 'Generate Draft with AI' to start fresh, or write your own. Aim for 300+ words and clear titles that match what people search for. SEO meta tags are auto-generated when you publish. Aim for 2 posts per month." />
       <FeatureGate minTier={2}>
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
