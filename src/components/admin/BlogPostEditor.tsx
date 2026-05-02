@@ -95,10 +95,15 @@ export default function BlogPostEditor({ editing, initialPost, tenantId, onSave,
     if (!form.title.trim()) { toast.error('Title is required.'); return }
     const slug = form.slug || toSlug(form.title)
     setSaving(true)
+    const featuredUrl = form.featured_image_url || null
     const payload = {
       title: form.title, slug, content: form.content, excerpt: form.excerpt,
       published_at: form.published_at ? new Date(form.published_at).toISOString() : null,
-      featured_image_url: form.featured_image_url || null,
+      featured_image_url: featuredUrl,
+      // S187.B47: dual-write to intro_image until Vite + Next.js shells read
+      // featured_image_url first (Tier 3 backlog). Remove this mirror once
+      // both render surfaces are migrated.
+      intro_image: featuredUrl,
     }
     let error
     if (editing === 'new') {
