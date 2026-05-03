@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
-import { resolveTenantId } from '../../lib/tenant'
+import { useTenant } from '../../context/TenantBootProvider'
 import { formatPhone } from '../../lib/formatPhone'
 import { usePageHeroImage } from '../../hooks/usePageHeroImage'
 import MetroProWhyChooseUs from './MetroProWhyChooseUs'
@@ -27,12 +27,13 @@ function titleCase(s: string) {
 interface Props { slug: string }
 
 export default function MetroProCityPage({ slug }: Props) {
+  const { id: tenantId } = useTenant()
   const heroImageUrl = usePageHeroImage(slug)
   const [serviceArea, setServiceArea] = useState<ServiceAreaData>({ city: '', hero_title: '' })
   const [biz, setBiz] = useState<BizInfo>({ name: '', phone: '', address: '' })
 
   useEffect(() => {
-    resolveTenantId().then(async (tenantId) => {
+    ;(async () => {
       if (!tenantId) return
       const [locRes, bizRes] = await Promise.all([
         supabase.from('service_areas').select('city,hero_title,meta_title').eq('tenant_id', tenantId).eq('slug', slug).eq('is_live', true).maybeSingle(),
@@ -40,8 +41,8 @@ export default function MetroProCityPage({ slug }: Props) {
       ])
       if (locRes.data) setServiceArea(locRes.data)
       if (bizRes.data?.value) setBiz(bizRes.data.value)
-    })
-  }, [slug])
+    })()
+  }, [tenantId, slug])
 
   const city = serviceArea.city || titleCase(slug)
   const heroTitle = serviceArea.hero_title || `${city} Pest Control`

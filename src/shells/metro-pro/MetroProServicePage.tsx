@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
-import { resolveTenantId } from '../../lib/tenant'
+import { useTenant } from '../../context/TenantBootProvider'
 import type { PestPageProps } from '../../components/PestPageTemplate'
 import { usePageHeroImage } from '../../hooks/usePageHeroImage'
 import { usePageContent } from '../../hooks/usePageContent'
@@ -54,17 +54,13 @@ function Accordion({ items }: { items: { q: string; a: string }[] }) {
 
 export default function MetroProServicePage(props: PestPageProps) {
   const heroImageUrl = usePageHeroImage(props.pageSlug)
-  const [tenantId, setTenantId] = useState<string | null>(null)
+  const { id: tenantId } = useTenant()
   const [phone, setPhone] = useState('')
   const [bizName, setBizName] = useState('')
   const [activeTab, setActiveTab] = useState(0)
   const [content, setContent] = useState({ title: '', subtitle: '', intro: '' })
 
   const { content: pageContent } = usePageContent(tenantId, props.pageSlug)
-
-  useEffect(() => {
-    resolveTenantId().then(id => setTenantId(id ?? null))
-  }, [])
 
   useEffect(() => {
     if (!tenantId) return

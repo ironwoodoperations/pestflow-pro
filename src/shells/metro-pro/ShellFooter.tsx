@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-import { resolveTenantId } from '../../lib/tenant'
+import { useTenant } from '../../context/TenantBootProvider'
 import { useTemplate } from '../../context/TemplateContext'
 import { formatPhone } from '../../lib/formatPhone'
 
@@ -23,11 +23,12 @@ const NAV_LINKS = [
 
 export default function MetroProFooter() {
   const { businessName: ctxName } = useTemplate()
+  const { id: tenantId } = useTenant()
   const [biz, setBiz] = useState<BusinessInfo>({ name: ctxName, phone: '', email: '', address: '', hours: '', tagline: '', license: '' })
   const [social, setSocial] = useState<SocialLinks>({})
 
   useEffect(() => {
-    resolveTenantId().then(async (tenantId) => {
+    ;(async () => {
       if (!tenantId) return
       const [bizRes, socialRes, brandRes] = await Promise.all([
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
@@ -40,8 +41,8 @@ export default function MetroProFooter() {
         const link = document.querySelector("link[rel='icon']") as HTMLLinkElement | null
         if (link) link.href = brandRes.data.value.favicon_url
       }
-    })
-  }, [])
+    })()
+  }, [tenantId])
 
   return (
     <footer style={{ backgroundColor: 'var(--color-footer-bg)', color: 'var(--color-footer-text)' }}>

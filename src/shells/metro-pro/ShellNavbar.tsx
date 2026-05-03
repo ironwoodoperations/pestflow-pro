@@ -2,9 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Menu, X, Phone, ChevronDown } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
-import { resolveTenantId } from '../../lib/tenant'
 import { useTemplate } from '../../context/TemplateContext'
-import { useTenantBoot } from '../../context/TenantBootProvider'
+import { useTenant } from '../../context/TenantBootProvider'
 import { formatPhone } from '../../lib/formatPhone'
 
 const DEFAULT_SERVICE_LINKS = [
@@ -28,9 +27,7 @@ const NAV_LINKS = [
 
 export default function MetroProNavbar() {
   const { businessName } = useTemplate()
-  const { tenant } = useTenantBoot()
-  const logoUrl = tenant?.logoUrl || ''
-  const ctaText = tenant?.ctaText || 'Get Free Quote'
+  const { id: tenantId, logoUrl, ctaText } = useTenant()
   const [phone, setPhone] = useState('')
   const [serviceLinks, setServiceLinks] = useState(DEFAULT_SERVICE_LINKS)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -48,7 +45,7 @@ export default function MetroProNavbar() {
   }, [location.pathname])
 
   useEffect(() => {
-    resolveTenantId().then(async (tenantId) => {
+    ;(async () => {
       if (!tenantId) return
       const [bizRes, pagesRes] = await Promise.all([
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
@@ -61,8 +58,8 @@ export default function MetroProNavbar() {
           href: `/${p.page_slug}`,
         })))
       }
-    })
-  }, [])
+    })()
+  }, [tenantId])
 
   useEffect(() => {
     function onScroll() { setScrolled(window.scrollY > 80) }

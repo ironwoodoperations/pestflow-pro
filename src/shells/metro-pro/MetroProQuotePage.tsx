@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { CheckCircle } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
-import { resolveTenantId } from '../../lib/tenant'
+import { useTenant } from '../../context/TenantBootProvider'
 import { formatPhone } from '../../lib/formatPhone'
 
 const PEST_OPTIONS = [
@@ -31,15 +31,14 @@ const INITIAL: FormState = {
 }
 
 interface Props {
-  tenantId?: string
   businessName?: string
   businessPhone?: string
 }
 
-export default function MetroProQuotePage({ tenantId: propTenantId, businessName: propBizName, businessPhone: propBizPhone }: Props) {
+export default function MetroProQuotePage({ businessName: propBizName, businessPhone: propBizPhone }: Props) {
+  const { id: tenantId } = useTenant()
   const [step, setStep] = useState(1)
   const [form, setForm] = useState<FormState>(INITIAL)
-  const [tenantId, setTenantId] = useState(propTenantId || '')
   const [, setBusinessName] = useState(propBizName || '')
   const [businessPhone, setBusinessPhone] = useState(propBizPhone || '')
   const [submitting, setSubmitting] = useState(false)
@@ -47,15 +46,13 @@ export default function MetroProQuotePage({ tenantId: propTenantId, businessName
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (propTenantId && propBizName) return
-    resolveTenantId().then(async (tid) => {
-      if (!tid) return
-      setTenantId(tid)
-      const bizRes = await supabase.from('settings').select('value').eq('tenant_id', tid).eq('key', 'business_info').maybeSingle()
+    ;(async () => {
+      if (!tenantId) return
+      const bizRes = await supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle()
       if (bizRes.data?.value?.name) setBusinessName(bizRes.data.value.name)
       if (bizRes.data?.value?.phone) setBusinessPhone(bizRes.data.value.phone)
-    })
-  }, [propTenantId, propBizName])
+    })()
+  }, [tenantId])
 
   function set(k: keyof FormState, v: string) {
     setForm(prev => ({ ...prev, [k]: v }))

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
-import { resolveTenantId } from '../../lib/tenant'
+import { useTenant } from '../../context/TenantBootProvider'
 import { usePageContent } from '../../hooks/usePageContent'
 import MetroProHero from './ShellHero'
 import MetroProServicesGrid from './MetroProServicesGrid'
@@ -17,7 +17,7 @@ interface Testimonial { id: string; name: string; review_text: string; rating?: 
 interface BlogPost { id: string; title: string; slug: string; published_at?: string; excerpt?: string }
 
 export default function MetroProShellHomeSections() {
-  const [tenantId, setTenantId] = useState<string | null>(null)
+  const { id: tenantId } = useTenant()
   const [biz, setBiz] = useState<BizInfo>({})
   const [testimonials, setTestimonials] = useState<Testimonial[]>([])
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([])
@@ -26,19 +26,18 @@ export default function MetroProShellHomeSections() {
   const faqs = (faqContent?.faqs as FaqItem[] | null) || []
 
   useEffect(() => {
-    resolveTenantId().then(async (id) => {
-      if (!id) return
-      setTenantId(id)
+    ;(async () => {
+      if (!tenantId) return
       const [bizRes, testimonialRes, blogRes] = await Promise.all([
-        supabase.from('settings').select('value').eq('tenant_id', id).eq('key', 'business_info').maybeSingle(),
-        supabase.from('testimonials').select('id,name,review_text,rating').eq('tenant_id', id).order('created_at', { ascending: false }).limit(3),
-        supabase.from('blog_posts').select('id,title,slug,published_at,excerpt').eq('tenant_id', id).not('published_at', 'is', null).order('published_at', { ascending: false }).limit(3),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
+        supabase.from('testimonials').select('id,name,review_text,rating').eq('tenant_id', tenantId).order('created_at', { ascending: false }).limit(3),
+        supabase.from('blog_posts').select('id,title,slug,published_at,excerpt').eq('tenant_id', tenantId).not('published_at', 'is', null).order('published_at', { ascending: false }).limit(3),
       ])
       setBiz(bizRes.data?.value || {})
       setTestimonials((testimonialRes.data as Testimonial[] | null) || [])
       setBlogPosts((blogRes.data as BlogPost[] | null) || [])
-    })
-  }, [])
+    })()
+  }, [tenantId])
 
   return (
     <>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../../lib/supabase'
-import { resolveTenantId } from '../../../lib/tenant'
+import { useTenant } from '../../../context/TenantBootProvider'
 
 interface Review { id: string; author_name: string; review_text: string; rating: number; source?: string }
 
@@ -15,10 +15,11 @@ const PLACEHOLDER: Review[] = [
 ]
 
 export default function DangReviews() {
+  const { id: tenantId } = useTenant()
   const [reviews, setReviews] = useState<Review[]>(PLACEHOLDER)
 
   useEffect(() => {
-    resolveTenantId().then(async (tenantId) => {
+    ;(async () => {
       if (!tenantId) return
       const { data } = await supabase
         .from('testimonials')
@@ -27,8 +28,8 @@ export default function DangReviews() {
         .order('created_at', { ascending: false })
         .limit(12)
       if (data && data.length > 0) setReviews(data)
-    })
-  }, [])
+    })()
+  }, [tenantId])
 
   return (
     <div style={{ background: '#faf7f4', minHeight: '100vh' }}>

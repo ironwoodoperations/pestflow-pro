@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
-import { resolveTenantId } from "../../lib/tenant";
-import { useTenantBoot } from "../../context/TenantBootProvider";
+import { useTenant } from "../../context/TenantBootProvider";
 
 const FacebookIcon = () => (
   <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -31,13 +30,13 @@ const YouTubeIcon = () => (
 import dangLogo from "./assets/dang-logo.png";
 
 const Footer = () => {
-  const { tenant } = useTenantBoot();
-  const logoSrc = tenant?.logoUrl || dangLogo;
+  const { id: tenantId, logoUrl } = useTenant()
+  const logoSrc = logoUrl || dangLogo;
   const [linkedinUrl, setLinkedinUrl] = useState<string>('')
   const [youtubeUrl, setYoutubeUrl] = useState<string>('')
 
   useEffect(() => {
-    resolveTenantId().then(async (tenantId) => {
+    ;(async () => {
       if (!tenantId) return
       const { data } = await supabase
         .from('settings')
@@ -47,8 +46,8 @@ const Footer = () => {
         .maybeSingle()
       if (data?.value?.linkedin) setLinkedinUrl(data.value.linkedin)
       if (data?.value?.youtube) setYoutubeUrl(data.value.youtube)
-    })
-  }, [])
+    })()
+  }, [tenantId])
 
   return (
     <footer className="bg-white py-12">

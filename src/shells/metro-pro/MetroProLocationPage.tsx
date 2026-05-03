@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { MapPin } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
-import { resolveTenantId } from '../../lib/tenant'
+import { useTenant } from '../../context/TenantBootProvider'
 import { formatPhone } from '../../lib/formatPhone'
 import { usePageHeroImage } from '../../hooks/usePageHeroImage'
 import { usePageContent } from '../../hooks/usePageContent'
 
 export default function MetroProLocationPage() {
   const heroImageUrl = usePageHeroImage('service-area')
-  const [tenantId, setTenantId] = useState<string | null>(null)
+  const { id: tenantId } = useTenant()
   const [areas, setAreas] = useState<string[]>([])
   const [phone, setPhone] = useState('')
   const [heroTitle, setHeroTitle] = useState('Our Service Area')
@@ -18,17 +18,16 @@ export default function MetroProLocationPage() {
   const { content: locationContent } = usePageContent(tenantId, 'service-area')
 
   useEffect(() => {
-    resolveTenantId().then(async (id) => {
-      if (!id) return
-      setTenantId(id)
+    ;(async () => {
+      if (!tenantId) return
       const [seoRes, bizRes] = await Promise.all([
-        supabase.from('settings').select('value').eq('tenant_id', id).eq('key', 'seo').maybeSingle(),
-        supabase.from('settings').select('value').eq('tenant_id', id).eq('key', 'business_info').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'seo').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
       ])
       setAreas(Array.isArray(seoRes.data?.value?.service_areas) ? seoRes.data.value.service_areas : [])
       if (bizRes.data?.value?.phone) setPhone(bizRes.data.value.phone)
-    })
-  }, [])
+    })()
+  }, [tenantId])
 
   useEffect(() => {
     if (locationContent?.title) setHeroTitle(locationContent.title)
