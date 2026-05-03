@@ -46,7 +46,6 @@ interface IntegrationSettings {
   zernio_accounts?: Record<string, string>   // { [zernio_platform_key]: account_id }
   facebook_access_token?: string
   facebook_page_id?: string
-  ayrshare_api_key?: string
 }
 
 // Frontend platform key → Zernio platform string
@@ -184,39 +183,7 @@ serve(async (req) => {
       continue
     }
 
-    // ── 2. Ayrshare (legacy fallback) ───────────────────────────────────────
-    if (intg.ayrshare_api_key) {
-      try {
-        const platforms = toPlatformArray(post.platform)
-        const ayrBody: Record<string, unknown> = { post: post.caption, platforms }
-        if (post.image_url) ayrBody.mediaUrls = [post.image_url]
-
-        const res = await fetch('https://app.ayrshare.com/api/post', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${intg.ayrshare_api_key}` },
-          body: JSON.stringify(ayrBody),
-        })
-        const data = await res.json()
-
-        if (data.status === 'error' || data.errors) {
-          const errMsg = data.message || JSON.stringify(data.errors)
-          await supabase.from('social_posts').update({ status: 'failed', error_msg: errMsg }).eq('id', post.id)
-          failed++
-        } else {
-          await supabase.from('social_posts').update({
-            status: 'published', published_at: new Date().toISOString(), fb_post_id: data.id ?? 'ayrshare',
-          }).eq('id', post.id)
-          published++
-        }
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : 'Network error'
-        await supabase.from('social_posts').update({ status: 'failed', error_msg: msg }).eq('id', post.id)
-        failed++
-      }
-      continue
-    }
-
-    // ── 3. Facebook Graph API (last resort) ─────────────────────────────────
+    // ── 2. Facebook Graph API (last resort) ─────────────────────────────────
     if (post.platform === 'instagram' || !intg.facebook_access_token || !intg.facebook_page_id) {
       await supabase.from('social_posts').update({
         status: 'published',

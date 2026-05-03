@@ -35,7 +35,7 @@ export interface Campaign {
 export interface IntegrationSettings {
   facebook_access_token?: string
   facebook_page_id?: string
-  active_social_provider?: 'export' | 'diy' | 'buffer' | 'bundle' | 'full_auto'
+  active_social_provider?: 'export' | 'diy' | 'full_auto'
   pexels_api_key?: string
 }
 
