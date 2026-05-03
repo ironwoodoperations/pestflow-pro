@@ -73,6 +73,9 @@ export default function LegacyComposer({ onClose, onPosted }: Props) {
         <ComposerImagePicker
           imageUrl={c.form.imageUrl}
           onImageUrlChange={v => c.setForm(prev => ({ ...prev, imageUrl: v }))}
+          onFileUpload={c.handleFileUpload}
+          uploadState={c.uploadState}
+          previewUrl={c.previewUrl}
         />
 
         <ComposerScheduler
@@ -83,6 +86,7 @@ export default function LegacyComposer({ onClose, onPosted }: Props) {
           smartLoading={c.smartLoading}
           publishing={c.publishing}
           saving={c.saving}
+          uploadBusy={c.uploadState === 'uploading'}
           editingPostId={c.editingPostId}
           schedulingDayCap={c.schedulingDayCap}
           isStarter={isStarter}

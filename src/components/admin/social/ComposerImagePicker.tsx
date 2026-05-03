@@ -1,9 +1,12 @@
 import { useRef } from 'react'
+import type { UploadState } from './useComposer'
 
 interface Props {
   imageUrl: string
   onImageUrlChange: (v: string) => void
   onFileUpload?: (file: File) => void
+  uploadState?: UploadState
+  previewUrl?: string
 }
 
 const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-400'
@@ -28,7 +31,7 @@ function generateTemplateImage(): string {
   return canvas.toDataURL('image/png')
 }
 
-export default function ComposerImagePicker({ imageUrl, onImageUrlChange, onFileUpload }: Props) {
+export default function ComposerImagePicker({ imageUrl, onImageUrlChange, onFileUpload, uploadState, previewUrl }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   function handleDownloadTemplate() {
@@ -45,11 +48,15 @@ export default function ComposerImagePicker({ imageUrl, onImageUrlChange, onFile
     if (onFileUpload) {
       onFileUpload(file)
     } else {
+      // fallback: no upload handler wired — use local preview only (should not happen in production)
       const url = URL.createObjectURL(file)
       onImageUrlChange(url)
     }
     e.target.value = ''
   }
+
+  // Show blob: preview while uploading; storage URL after success; text-input URL for paste path
+  const displayPreview = uploadState === 'uploading' ? previewUrl : (imageUrl || previewUrl)
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -58,9 +65,10 @@ export default function ComposerImagePicker({ imageUrl, onImageUrlChange, onFile
       <div className="flex gap-2 mb-4">
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition"
+          disabled={uploadState === 'uploading'}
+          className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          📁 Upload Photo
+          {uploadState === 'uploading' ? '⏳ Uploading...' : '📁 Upload Photo'}
         </button>
         <button
           onClick={handleDownloadTemplate}
@@ -71,14 +79,26 @@ export default function ComposerImagePicker({ imageUrl, onImageUrlChange, onFile
         <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
       </div>
 
+      {uploadState === 'error' && (
+        <p className="text-xs text-red-600 mb-3">Upload failed — please try again or paste an image URL below.</p>
+      )}
+      {uploadState === 'success' && (
+        <p className="text-xs text-emerald-600 mb-3">Image uploaded successfully.</p>
+      )}
+
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1.5">Or paste image URL</label>
         <input value={imageUrl} onChange={e => onImageUrlChange(e.target.value)}
           placeholder="https://example.com/image.jpg" className={inputClass} />
       </div>
-      {imageUrl && (
-        <div className="mt-3">
-          <img src={imageUrl} alt="Preview" className="w-32 h-24 object-cover rounded-lg border border-gray-200" />
+      {displayPreview && (
+        <div className="mt-3 relative inline-block">
+          <img src={displayPreview} alt="Preview" className="w-32 h-24 object-cover rounded-lg border border-gray-200" />
+          {uploadState === 'uploading' && (
+            <div className="absolute inset-0 flex items-center justify-center bg-white/70 rounded-lg">
+              <span className="text-xs text-gray-500 font-medium">Uploading…</span>
+            </div>
+          )}
         </div>
       )}
     </div>

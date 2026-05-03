@@ -11,6 +11,7 @@ interface Props {
   editingPostId: string | null
   schedulingDayCap?: number   // Pro: 5, Elite: unlimited (undefined)
   isStarter?: boolean         // Starter tier: copy-paste flow only
+  uploadBusy?: boolean        // true while a file upload is in flight
   onScheduleModeChange: (m: 'now' | 'later' | 'smart') => void
   onScheduledForChange: (v: string) => void
   onGetSmartSchedule: () => void
@@ -23,7 +24,7 @@ const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm
 
 export default function ComposerScheduler({
   platform, scheduleMode, scheduledFor, smartSchedule, smartLoading,
-  publishing, saving, editingPostId, schedulingDayCap, isStarter,
+  publishing, saving, editingPostId, schedulingDayCap, isStarter, uploadBusy,
   onScheduleModeChange, onScheduledForChange, onGetSmartSchedule,
   onSaveAsDraft, onPublishNow, onResetForm,
 }: Props) {
@@ -103,13 +104,13 @@ export default function ComposerScheduler({
       )}
 
       <div className="flex gap-3">
-        <button onClick={onSaveAsDraft} disabled={saving}
+        <button onClick={onSaveAsDraft} disabled={saving || uploadBusy}
           className="flex-1 border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
-          {saving ? 'Saving...' : 'Save as Draft'}
+          {saving ? 'Saving...' : uploadBusy ? 'Uploading...' : 'Save as Draft'}
         </button>
-        <button onClick={onPublishNow} disabled={publishing}
+        <button onClick={onPublishNow} disabled={publishing || uploadBusy}
           className="flex-1 flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
-          <Send size={14} /> {publishing ? 'Saving...' : isStarter ? 'Copy & Post Manually' : 'Publish Now'}
+          <Send size={14} /> {publishing ? 'Saving...' : uploadBusy ? 'Uploading...' : isStarter ? 'Copy & Post Manually' : 'Publish Now'}
         </button>
       </div>
 

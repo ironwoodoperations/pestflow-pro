@@ -4,6 +4,9 @@ import { useTenant } from '../../../context/TenantBootProvider'
 import { usePlan } from '../../../context/PlanContext'
 import { usePublishPost } from './usePublishPost'
 import { AI_DAILY_LIMITS, POSTS_PER_GENERATION, SCHEDULING_DAY_CAP } from './socialLimits'
+import { resizeImage } from './lib/resizeImage'
+
+export type UploadState = 'idle' | 'uploading' | 'success' | 'error'
 
 export interface ComposerForm {
   platform: 'facebook' | 'instagram' | 'both'
@@ -43,6 +46,8 @@ export function useComposer(onPosted?: () => void, onCaptionGenerated?: () => vo
   const [pexelsApiKey, setPexelsApiKey] = useState('')
   const [loading, setLoading] = useState(true)
   const [editingPostId, setEditingPostId] = useState<string | null>(null)
+  const [uploadState, setUploadState] = useState<UploadState>('idle')
+  const [previewUrl, setPreviewUrl] = useState('')
   const [smartSchedule, setSmartSchedule] = useState<{ scheduled_for: string; reasoning: string } | null>(null)
   const [smartLoading, setSmartLoading] = useState(false)
   const [aiDailyCount, setAiDailyCount] = useState(0)
@@ -66,6 +71,31 @@ export function useComposer(onPosted?: () => void, onCaptionGenerated?: () => vo
   function resetForm() {
     setForm({ platform: 'facebook', caption: '', imageUrl: '', pexelsQuery: 'pest control technician', scheduleMode: 'now', scheduledFor: '' })
     setEditingPostId(null); setSelectedPexelsUrl(''); setAiCaptions([]); setAiTopic(''); setSmartSchedule(null)
+    setUploadState('idle')
+    setPreviewUrl(prev => { if (prev) URL.revokeObjectURL(prev); return '' })
+  }
+
+  async function handleFileUpload(file: File) {
+    const preview = URL.createObjectURL(file)
+    setPreviewUrl(preview)
+    setUploadState('uploading')
+    try {
+      const resized = await resizeImage(file)
+      const filename = `${crypto.randomUUID()}.jpg`
+      const path = `${tenantId}/social/${filename}`
+      const { error: uploadError } = await supabase.storage
+        .from('social-uploads')
+        .upload(path, resized, { contentType: 'image/jpeg', cacheControl: '3600' })
+      if (uploadError) throw uploadError
+      const { data: { publicUrl } } = supabase.storage
+        .from('social-uploads')
+        .getPublicUrl(path)
+      setForm(p => ({ ...p, imageUrl: publicUrl }))
+      setUploadState('success')
+    } catch (err) {
+      console.error('[useComposer] image upload failed:', err)
+      setUploadState('error')
+    }
   }
 
   const generateCaptions = useCallback(async () => {
@@ -149,7 +179,8 @@ export function useComposer(onPosted?: () => void, onCaptionGenerated?: () => vo
     pexelsResults, pexelsLoading, selectedPexelsUrl, publishing, saving,
     businessName, industry, pexelsApiKey, loading, editingPostId, smartSchedule,
     smartLoading, captionRef, charLimit, tier,
+    uploadState, previewUrl,
     generateCaptions, searchPexels, selectPexelsPhoto, getSmartSchedule,
-    saveAsDraft, publishNow, appendEmoji, resetForm,
+    saveAsDraft, publishNow, appendEmoji, resetForm, handleFileUpload,
   }
 }
