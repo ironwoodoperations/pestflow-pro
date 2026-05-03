@@ -12,15 +12,8 @@ export interface ComposerForm {
   platform: 'facebook' | 'instagram' | 'both'
   caption: string
   imageUrl: string
-  pexelsQuery: string
   scheduleMode: 'now' | 'later' | 'smart'
   scheduledFor: string
-}
-
-export interface PexelsPhoto {
-  id: number
-  src: { medium: string; large: string }
-  alt: string
 }
 
 export function useComposer(onPosted?: () => void, onCaptionGenerated?: () => void) {
@@ -32,18 +25,14 @@ export function useComposer(onPosted?: () => void, onCaptionGenerated?: () => vo
 
   const [form, setForm] = useState<ComposerForm>({
     platform: 'facebook', caption: '', imageUrl: '',
-    pexelsQuery: 'pest control technician', scheduleMode: 'now', scheduledFor: '',
+    scheduleMode: 'now', scheduledFor: '',
   })
   const [aiTopic, setAiTopic] = useState('')
   const [aiCaptions, setAiCaptions] = useState<string[]>([])
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState('')
-  const [pexelsResults, setPexelsResults] = useState<PexelsPhoto[]>([])
-  const [pexelsLoading, setPexelsLoading] = useState(false)
-  const [selectedPexelsUrl, setSelectedPexelsUrl] = useState('')
   const [businessName, setBusinessName] = useState('Your Business')
   const [industry, setIndustry] = useState('Pest Control')
-  const [pexelsApiKey, setPexelsApiKey] = useState('')
   const [loading, setLoading] = useState(true)
   const [editingPostId, setEditingPostId] = useState<string | null>(null)
   const [uploadState, setUploadState] = useState<UploadState>('idle')
@@ -57,20 +46,18 @@ export function useComposer(onPosted?: () => void, onCaptionGenerated?: () => vo
     if (!tenantId) return
     Promise.all([
       supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
-      supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle(),
       supabase.from('social_posts').select('*', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('ai_generated', true).gte('created_at', new Date().toISOString().split('T')[0]),
-    ]).then(([bizRes, intgRes, countRes]) => {
+    ]).then(([bizRes, countRes]) => {
       if (bizRes.data?.value?.name) setBusinessName(bizRes.data.value.name)
       if (bizRes.data?.value?.industry) setIndustry(bizRes.data.value.industry)
-      if (intgRes.data?.value?.pexels_api_key) setPexelsApiKey(intgRes.data.value.pexels_api_key)
       setAiDailyCount(countRes.count || 0)
       setLoading(false)
     })
   }, [tenantId])
 
   function resetForm() {
-    setForm({ platform: 'facebook', caption: '', imageUrl: '', pexelsQuery: 'pest control technician', scheduleMode: 'now', scheduledFor: '' })
-    setEditingPostId(null); setSelectedPexelsUrl(''); setAiCaptions([]); setAiTopic(''); setSmartSchedule(null)
+    setForm({ platform: 'facebook', caption: '', imageUrl: '', scheduleMode: 'now', scheduledFor: '' })
+    setEditingPostId(null); setAiCaptions([]); setAiTopic(''); setSmartSchedule(null)
     setUploadState('idle')
     setPreviewUrl(prev => { if (prev) URL.revokeObjectURL(prev); return '' })
   }
@@ -123,19 +110,6 @@ export function useComposer(onPosted?: () => void, onCaptionGenerated?: () => vo
     setAiLoading(false)
   }, [aiTopic, industry, businessName, aiDailyLimit, aiDailyCount, postsPerGeneration, onCaptionGenerated])
 
-  async function searchPexels() {
-    if (!pexelsApiKey || !form.pexelsQuery.trim()) return
-    setPexelsLoading(true)
-    try {
-      const res = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(form.pexelsQuery)}&per_page=9&orientation=landscape`, { headers: { Authorization: pexelsApiKey } })
-      const data = await res.json()
-      setPexelsResults(data.photos || [])
-    } catch { /* ignore */ }
-    setPexelsLoading(false)
-  }
-
-  function selectPexelsPhoto(url: string) { setSelectedPexelsUrl(url); setForm(p => ({ ...p, imageUrl: url })) }
-
   async function getSmartSchedule() {
     setSmartLoading(true); setSmartSchedule(null)
     const now = new Date()
@@ -176,11 +150,11 @@ export function useComposer(onPosted?: () => void, onCaptionGenerated?: () => vo
   return {
     form, setForm, aiTopic, setAiTopic, aiCaptions, aiLoading, aiError,
     aiDailyCount, aiDailyLimit, postsPerGeneration, schedulingDayCap,
-    pexelsResults, pexelsLoading, selectedPexelsUrl, publishing, saving,
-    businessName, industry, pexelsApiKey, loading, editingPostId, smartSchedule,
+    publishing, saving,
+    businessName, industry, loading, editingPostId, smartSchedule,
     smartLoading, captionRef, charLimit, tier,
     uploadState, previewUrl,
-    generateCaptions, searchPexels, selectPexelsPhoto, getSmartSchedule,
+    generateCaptions, getSmartSchedule,
     saveAsDraft, publishNow, appendEmoji, resetForm, handleFileUpload,
   }
 }
