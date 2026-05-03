@@ -12,6 +12,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Ban VITE_TENANT_ID usage in src/
+        run: |
+          if grep -rn "VITE_TENANT_ID" src/ --include="*.ts" --include="*.tsx"; then
+            echo "::error::Direct VITE_TENANT_ID usage detected. Use useTenant() instead. See S188 audit."
+            exit 1
+          fi
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:

@@ -24,6 +24,14 @@ export default defineConfig([
       globals: globals.browser,
     },
     rules: {
+      // S188: ban direct VITE_TENANT_ID access — use useTenant() instead
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "MemberExpression[property.name='VITE_TENANT_ID']",
+          message: 'Direct use of VITE_TENANT_ID is banned (S188). Use useTenant() from @/context/TenantBootProvider instead.',
+        },
+      ],
       'react-refresh/only-export-components': 'warn',
       'react-hooks/exhaustive-deps': 'warn',
       'react-hooks/set-state-in-effect': 'warn',
