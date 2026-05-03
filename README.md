@@ -10,7 +10,7 @@ Each client gets a branded subdomain site, admin dashboard, CRM, blog, SEO tools
 - Supabase (Postgres + Auth + RLS + Storage)
 - Vercel (deployment)
 - Stripe (payments)
-- Resend (email) · Textbelt (SMS) · Pexels (images)
+- Resend (email) · Textbelt (SMS)
 
 ## Local Setup
 
