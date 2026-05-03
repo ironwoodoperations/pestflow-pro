@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Globe } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
-import { resolveTenantId } from '../../lib/tenant'
+import { useTenant } from '../../context/TenantBootProvider'
 import { useTemplate } from '../../context/TemplateContext'
 import { formatPhone } from '../../lib/formatPhone'
 
@@ -21,14 +21,14 @@ const QUICK_LINKS = [
 ]
 
 export default function ShellFooter() {
+  const { id: tenantId } = useTenant()
   const { businessName: ctxBusinessName } = useTemplate()
   const [info, setInfo] = useState<BusinessInfo>({ name: ctxBusinessName, phone: '', email: '', address: '', hours: '', tagline: '', license: '' })
   const [logoUrl, setLogoUrl] = useState('')
   const [social, setSocial] = useState<SocialLinks>({})
 
   useEffect(() => {
-    resolveTenantId().then(async (tenantId) => {
-      if (!tenantId) return
+    ;(async () => {
       const [bizRes, brandRes, socialRes] = await Promise.all([
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
@@ -44,8 +44,8 @@ export default function ShellFooter() {
         const link = document.querySelector("link[rel='icon']") as HTMLLinkElement | null
         if (link) link.href = brandRes.data.value.favicon_url
       }
-    })
-  }, [])
+    })()
+  }, [tenantId])
 
   return (
     <footer style={{ backgroundColor: 'var(--color-footer-bg)', color: 'var(--color-footer-text)' }}>

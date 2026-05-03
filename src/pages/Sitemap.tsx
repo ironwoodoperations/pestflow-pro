@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { resolveTenantId } from '../lib/tenant'
+import { useTenant } from '../context/TenantBootProvider'
 
 const CORE_ROUTES: Array<{ path: string; priority: string; changefreq: string }> = [
   { path: '/',                  priority: '1.0', changefreq: 'daily' },
@@ -37,12 +37,11 @@ function urlEntry(loc: string, priority: string, changefreq: string, lastmod?: s
 }
 
 export default function Sitemap() {
+  const { id: tenantId } = useTenant()
   const [xml, setXml] = useState('')
 
   useEffect(() => {
     async function generate() {
-      const tenantId = await resolveTenantId()
-
       // Determine canonical origin for this tenant
       let origin = window.location.origin
       if (tenantId) {
@@ -134,7 +133,7 @@ export default function Sitemap() {
       setXml(sitemap)
     }
     generate()
-  }, [])
+  }, [tenantId])
 
   useEffect(() => {
     if (!xml) return

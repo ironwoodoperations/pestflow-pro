@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
-import { resolveTenantId } from '../../lib/tenant'
+import { useTenant } from '../../context/TenantBootProvider'
 import { usePageContent } from '../../hooks/usePageContent'
 import ModernProTrustBar from './ModernProTrustBar'
 import ModernProServicesGrid from './ModernProServicesGrid'
@@ -21,24 +21,22 @@ const DEFAULT_SERVICES = [
 interface BizInfo { name?: string; phone?: string; founded_year?: string | number; num_technicians?: number; license?: string }
 
 export default function ShellHomeSections() {
-  const [tenantId, setTenantId] = useState<string | null>(null)
+  const { id: tenantId } = useTenant()
   const [biz, setBiz] = useState<BizInfo>({})
   const [ctaText, setCtaText] = useState('Get a Free Quote')
 
   const { content: aboutContent } = usePageContent(tenantId, 'about')
 
   useEffect(() => {
-    resolveTenantId().then(async (id) => {
-      if (!id) return
-      setTenantId(id)
+    ;(async () => {
       const [bizRes, brandRes] = await Promise.all([
-        supabase.from('settings').select('value').eq('tenant_id', id).eq('key', 'business_info').maybeSingle(),
-        supabase.from('settings').select('value').eq('tenant_id', id).eq('key', 'branding').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
       ])
       setBiz(bizRes.data?.value ?? {})
       setCtaText(brandRes.data?.value?.cta_text || 'Get a Free Quote')
-    })
-  }, [])
+    })()
+  }, [tenantId])
 
   const aboutIntro = aboutContent?.intro || ''
   const aboutImage = aboutContent?.image_url || ''

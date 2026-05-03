@@ -7,7 +7,7 @@ const FbIcon = () => <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentC
 const IgIcon = () => <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor"/></svg>
 const YtIcon = () => <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.96-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="white"/></svg>
 import { supabase } from '../lib/supabase'
-import { resolveTenantId } from '../lib/tenant'
+import { useTenant } from '../context/TenantBootProvider'
 
 interface BusinessInfo {
   name: string
@@ -38,6 +38,7 @@ const QUICK_LINKS = [
 ]
 
 export default function Footer() {
+  const { id: tenantId } = useTenant()
   const [info, setInfo] = useState<BusinessInfo>({
     name: '', phone: '', email: '', address: '', hours: '', tagline: '', license: '',
   })
@@ -45,8 +46,7 @@ export default function Footer() {
   const [social, setSocial] = useState<SocialLinks>({})
 
   useEffect(() => {
-    resolveTenantId().then(async (tenantId) => {
-      if (!tenantId) return
+    ;(async () => {
       const [bizRes, brandRes, socialRes] = await Promise.all([
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
@@ -65,8 +65,8 @@ export default function Footer() {
         const link = document.querySelector("link[rel='icon']") as HTMLLinkElement | null
         if (link) link.href = brandRes.data.value.favicon_url
       }
-    })
-  }, [])
+    })()
+  }, [tenantId])
 
   return (
     <footer style={{ backgroundColor: 'var(--color-footer-bg)', color: 'var(--color-footer-text)' }}>

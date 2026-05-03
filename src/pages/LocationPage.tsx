@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Shield, Leaf, MapPin, Star } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { resolveTenantId } from '../lib/tenant'
+import { useTenant } from '../context/TenantBootProvider'
 import StructuredData from '../components/StructuredData'
 import VideoImage from '../components/VideoImage'
 import LocationMap from '../components/shared/LocationMap'
@@ -25,6 +25,7 @@ const SERVICES = [
 ]
 
 export default function ServiceAreaPage({ slug }: { slug: string }) {
+  const { id: tenantId } = useTenant()
   const { template } = useTemplate()
   const [serviceArea, setServiceArea] = useState<ServiceAreaData>({ city: '', hero_title: '', intro_video_url: '' })
   const [otherServiceAreas, setOtherServiceAreas] = useState<OtherServiceArea[]>([])
@@ -35,8 +36,7 @@ export default function ServiceAreaPage({ slug }: { slug: string }) {
   function titleCase(s: string) { return s.replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()) }
 
   useEffect(() => {
-    resolveTenantId().then(async (tenantId) => {
-      if (!tenantId) return
+    ;(async () => {
       const [locRes, allLocsRes, settingsRes] = await Promise.all([
         supabase.from('service_areas').select('city, hero_title, intro_video_url, meta_title, meta_description, focus_keyword').eq('tenant_id', tenantId).eq('slug', slug).eq('is_live', true).maybeSingle(),
         supabase.from('service_areas').select('slug, city').eq('tenant_id', tenantId).eq('is_live', true).neq('slug', slug),
@@ -48,8 +48,8 @@ export default function ServiceAreaPage({ slug }: { slug: string }) {
       if (biz.phone) setPhone(biz.phone)
       if (biz.address) setBizAddress(biz.address)
       if (biz.name) setBizName(biz.name)
-    })
-  }, [slug])
+    })()
+  }, [tenantId, slug])
 
   const city = serviceArea.city || titleCase(slug)
   const heroTitle = serviceArea.hero_title || `${city} Pest Control`

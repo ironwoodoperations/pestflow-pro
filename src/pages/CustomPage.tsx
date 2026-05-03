@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { resolveTenantId } from '../lib/tenant'
+import { useTenant } from '../context/TenantBootProvider'
 import HolidayBanner from '../components/HolidayBanner'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
@@ -12,12 +12,12 @@ interface PageData {
 }
 
 export default function CustomPage({ slug }: { slug: string }) {
+  const { id: tenantId } = useTenant()
   const [page, setPage] = useState<PageData | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    resolveTenantId().then(async (tenantId) => {
-      if (!tenantId) { setLoading(false); return }
+    ;(async () => {
       const { data } = await supabase
         .from('page_content')
         .select('title, subtitle, intro')
@@ -26,8 +26,8 @@ export default function CustomPage({ slug }: { slug: string }) {
         .maybeSingle()
       setPage(data ?? null)
       setLoading(false)
-    })
-  }, [slug])
+    })()
+  }, [tenantId, slug])
 
   if (loading) return <div style={{ minHeight: '100vh', background: 'var(--color-bg-hero)' }} />
 

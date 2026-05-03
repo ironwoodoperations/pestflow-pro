@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Shield, Leaf, MapPin, Star } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { resolveTenantId } from '../lib/tenant'
+import { useTenant } from '../context/TenantBootProvider'
 import StructuredData from './StructuredData'
 import { PEST_PAGE_IMG, FALLBACK_PEST_IMG } from '../data/pestImages'
 import { useTemplate } from '../context/TemplateContext'
@@ -32,22 +32,22 @@ const WHY = [
 ]
 
 export default function PestPageTemplate(props: PestPageProps) {
+  const { id: tenantId } = useTenant()
   const { template } = useTemplate()
   const heroImageUrl = usePageHeroImage(props.pageSlug)
   const [content, setContent] = useState({ title: '', subtitle: '', intro: '', image_url: '', image_1_url: '', image_2_url: '' })
   const [phone, setPhone] = useState('')
 
   useEffect(() => {
-    resolveTenantId().then(async (tenantId) => {
-      if (!tenantId) return
+    ;(async () => {
       const [pageRes, settingsRes] = await Promise.all([
         supabase.from('page_content').select('title, subtitle, intro, image_url, image_1_url, image_2_url').eq('tenant_id', tenantId).eq('page_slug', props.pageSlug).maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
       ])
       if (pageRes.data) setContent({ title: pageRes.data.title || '', subtitle: pageRes.data.subtitle || '', intro: pageRes.data.intro || '', image_url: pageRes.data.image_url || '', image_1_url: pageRes.data.image_1_url || '', image_2_url: pageRes.data.image_2_url || '' })
       if (settingsRes.data?.value?.phone) setPhone(settingsRes.data.value.phone)
-    })
-  }, [props.pageSlug])
+    })()
+  }, [tenantId, props.pageSlug])
 
   if (template === 'metro-pro') {
     return <Suspense fallback={null}><MetroProServicePage {...props} /></Suspense>

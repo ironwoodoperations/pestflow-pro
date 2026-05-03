@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { resolveTenantId } from '../lib/tenant'
+import { useTenant } from '../context/TenantBootProvider'
 import StructuredData from '../components/StructuredData'
 import { useTemplate } from '../context/TemplateContext'
 
@@ -14,14 +14,14 @@ const PLACEHOLDER_POSTS: BlogPost[] = [
 ]
 
 export default function BlogPage() {
+  const { id: tenantId } = useTenant()
   const { template } = useTemplate()
   const [posts, setPosts] = useState<BlogPost[]>(PLACEHOLDER_POSTS)
   const [heroTitle, setHeroTitle] = useState('Pest Control Blog')
   const [heroSubtitle, setHeroSubtitle] = useState('Tips, guides, and news from our East Texas pest control experts.')
 
   useEffect(() => {
-    resolveTenantId().then(async (tenantId) => {
-      if (!tenantId) return
+    ;(async () => {
       const [postsRes, contentRes] = await Promise.all([
         supabase.from('blog_posts').select('id, title, slug, excerpt, published_at, intro_image').eq('tenant_id', tenantId).not('published_at', 'is', null).order('published_at', { ascending: false }),
         supabase.from('page_content').select('title, subtitle').eq('tenant_id', tenantId).eq('page_slug', 'blog').maybeSingle(),
@@ -29,8 +29,8 @@ export default function BlogPage() {
       if (postsRes.data && postsRes.data.length > 0) setPosts(postsRes.data)
       if (contentRes.data?.title) setHeroTitle(contentRes.data.title)
       if (contentRes.data?.subtitle) setHeroSubtitle(contentRes.data.subtitle)
-    })
-  }, [])
+    })()
+  }, [tenantId])
 
   const isDang = template === 'dang'
 

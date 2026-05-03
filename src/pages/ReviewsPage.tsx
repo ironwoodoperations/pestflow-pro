@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Star } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { resolveTenantId } from '../lib/tenant'
+import { useTenant } from '../context/TenantBootProvider'
 import StructuredData from '../components/StructuredData'
 
 interface Review { id: string; author_name: string; review_text: string; rating: number; source?: string }
@@ -17,13 +17,13 @@ const PLACEHOLDER_REVIEWS: Review[] = [
 ]
 
 export default function ReviewsPage() {
+  const { id: tenantId } = useTenant()
   const [reviews, setReviews] = useState<Review[]>(PLACEHOLDER_REVIEWS)
   const [heroTitle, setHeroTitle] = useState('What Our Customers Say')
   const [heroSubtitle, setHeroSubtitle] = useState('Real reviews from real East Texas customers.')
 
   useEffect(() => {
-    resolveTenantId().then(async (tenantId) => {
-      if (!tenantId) return
+    ;(async () => {
       const [revRes, contentRes] = await Promise.all([
         supabase.from('testimonials').select('id, author_name, review_text, rating, source').eq('tenant_id', tenantId).order('created_at', { ascending: false }).limit(12),
         supabase.from('page_content').select('title, subtitle').eq('tenant_id', tenantId).eq('page_slug', 'reviews').maybeSingle(),
@@ -31,8 +31,8 @@ export default function ReviewsPage() {
       if (revRes.data && revRes.data.length > 0) setReviews(revRes.data)
       if (contentRes.data?.title) setHeroTitle(contentRes.data.title)
       if (contentRes.data?.subtitle) setHeroSubtitle(contentRes.data.subtitle)
-    })
-  }, [])
+    })()
+  }, [tenantId])
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>

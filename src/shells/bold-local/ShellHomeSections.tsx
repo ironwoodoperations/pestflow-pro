@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
-import { resolveTenantId } from '../../lib/tenant'
+import { useTenant } from '../../context/TenantBootProvider'
 import { usePageContent } from '../../hooks/usePageContent'
 import BoldLocalTrustBar from './BoldLocalTrustBar'
 import BoldLocalWhyUs from './BoldLocalWhyUs'
@@ -16,14 +16,14 @@ interface HeroMedia { thumbnail_url?: string }
 interface Testimonial { id: string; author_name: string; review_text: string; rating: number }
 
 export default function ShellHomeSections() {
+  const { id: tenantId } = useTenant()
   const { content } = usePageContent('home')
   const [biz, setBiz] = useState<Biz>({})
   const [heroMedia, setHeroMedia] = useState<HeroMedia>({})
   const [testimonials, setTestimonials] = useState<Testimonial[]>([])
 
   useEffect(() => {
-    resolveTenantId().then(async (tenantId) => {
-      if (!tenantId) return
+    ;(async () => {
       const [bizRes, mediaRes, testRes] = await Promise.all([
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'hero_media').maybeSingle(),
@@ -33,8 +33,8 @@ export default function ShellHomeSections() {
       if (bizRes.data?.value) setBiz(bizRes.data.value)
       if (mediaRes.data?.value) setHeroMedia(mediaRes.data.value)
       if (testRes.data?.length) setTestimonials(testRes.data)
-    })
-  }, [])
+    })()
+  }, [tenantId])
 
   const name = biz.name || 'Your Pest Pro'
   const photoUrl = heroMedia.thumbnail_url

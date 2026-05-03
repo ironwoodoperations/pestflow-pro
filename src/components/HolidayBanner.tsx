@@ -1,24 +1,24 @@
 import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { resolveTenantId } from '../lib/tenant'
+import { useTenant } from '../context/TenantBootProvider'
 
 export default function HolidayBanner() {
+  const { id: tenantId } = useTenant()
   const [visible, setVisible] = useState(false)
   const [holiday, setHoliday] = useState('')
   const [message, setMessage] = useState('')
 
   useEffect(() => {
-    resolveTenantId().then(async (tenantId) => {
-      if (!tenantId) return
+    ;(async () => {
       const { data } = await supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'holiday_mode').maybeSingle()
       if (data?.value?.enabled && data.value.holiday) {
         setHoliday(data.value.holiday)
         setMessage(data.value.message || 'We may have modified hours. Call to confirm.')
         setVisible(true)
       }
-    })
-  }, [])
+    })()
+  }, [tenantId])
 
   if (!visible) return null
 

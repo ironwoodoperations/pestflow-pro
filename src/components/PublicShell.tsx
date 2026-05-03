@@ -3,7 +3,7 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useTemplate } from '../context/TemplateContext'
 import { supabase } from '../lib/supabase'
-import { resolveTenantId } from '../lib/tenant'
+import { useTenant } from '../context/TenantBootProvider'
 import HolidayBanner from './HolidayBanner'
 import SEOHead, { type BusinessInfo, type SeoSettings, type SchemaConfig, type SocialLinks, type PageType } from './seo/SEOHead'
 import ModernProNavbar from '../shells/modern-pro/ShellNavbar'
@@ -58,18 +58,17 @@ const EMPTY_BIZ: BusinessInfo = { name: '', phone: '', email: '', address: '' }
 function SEOManager() {
   const location = useLocation()
   const { businessName } = useTemplate()
+  const { id: tenantId, slug: tenantSlug } = useTenant()
   const [bizInfo, setBizInfo] = useState<BusinessInfo>(EMPTY_BIZ)
   const [seoSettings, setSeoSettings] = useState<SeoSettings>(EMPTY_SEO)
   const [schemaConfig, setSchemaConfig] = useState<SchemaConfig>(EMPTY_SCHEMA)
   const [socialLinks, setSocialLinks] = useState<SocialLinks>(EMPTY_SOCIAL)
-  const [tenantSlug, setTenantSlug] = useState('')
   const [tagline, setTagline] = useState('')
   const [googleSearchConsoleVerification, setGoogleSearchConsoleVerification] = useState('')
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
-    resolveTenantId().then(async (tenantId) => {
-      if (!tenantId) return
+    ;(async () => {
       const [bizRes, seoRes, schemaRes, socialRes, brandRes, gscRes] = await Promise.all([
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'seo').maybeSingle(),
@@ -92,17 +91,9 @@ function SEOManager() {
       if (socialRes.data?.value) setSocialLinks(socialRes.data.value as SocialLinks)
       if (brandRes.data?.value?.tagline) setTagline(brandRes.data.value.tagline)
       if (gscRes.data?.google_search_console_verification) setGoogleSearchConsoleVerification(gscRes.data.google_search_console_verification)
-      // Derive slug from hostname or localStorage
-      const hostname = window.location.hostname
-      if (hostname.endsWith('.pestflowpro.com')) {
-        setTenantSlug(hostname.split('.')[0])
-      } else {
-        const { data: tenant } = await supabase.from('tenants').select('slug').eq('id', tenantId).maybeSingle()
-        if (tenant?.slug) setTenantSlug(tenant.slug)
-      }
       setLoaded(true)
-    })
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    })()
+  }, [tenantId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!loaded || !bizInfo.name) return null
 
@@ -133,6 +124,7 @@ function SEOManager() {
 // Injects canonical <link> tag and redirects subdomain → custom domain when verified.
 function CanonicalManager() {
   const location = useLocation()
+  const { id: tenantId } = useTenant()
 
   useEffect(() => {
     let cancelled = false
@@ -150,8 +142,7 @@ function CanonicalManager() {
         if (parts.length === 3) subdomainSlug = parts[0]
       }
 
-      const tenantId = await resolveTenantId()
-      if (cancelled || !tenantId) return
+      if (cancelled) return
 
       // Query verified custom domain for this tenant
       let customDomain: string | null = null
@@ -195,7 +186,7 @@ function CanonicalManager() {
 
     run()
     return () => { cancelled = true }
-  }, [location.pathname, location.search]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tenantId, location.pathname, location.search]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return null
 }

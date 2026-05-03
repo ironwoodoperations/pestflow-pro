@@ -2,7 +2,7 @@ import { useEffect, useState, lazy, Suspense } from 'react'
 import { Link } from 'react-router-dom'
 import { MapPin } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { resolveTenantId } from '../lib/tenant'
+import { useTenant } from '../context/TenantBootProvider'
 import StructuredData from '../components/StructuredData'
 import { formatPhone } from '../lib/formatPhone'
 import GoogleMapEmbed from '../components/common/GoogleMapEmbed'
@@ -14,6 +14,7 @@ const MetroProLocationPage = lazy(() => import('../shells/metro-pro/MetroProLoca
 interface LocationItem { slug: string; city: string }
 
 export default function ServiceArea() {
+  const { id: tenantId } = useTenant()
   const { template } = useTemplate()
   const [locations, setLocations] = useState<LocationItem[]>([])
   const [address, setAddress] = useState('')
@@ -23,8 +24,7 @@ export default function ServiceArea() {
   const [heroSubtitle, setHeroSubtitle] = useState('We proudly serve your community and surrounding areas within 50 miles.')
 
   useEffect(() => {
-    resolveTenantId().then(async (tenantId) => {
-      if (!tenantId) return
+    ;(async () => {
       const [locRes, bizRes, intgRes, contentRes] = await Promise.all([
         supabase.from('service_areas').select('slug, city').eq('tenant_id', tenantId).eq('is_live', true),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
@@ -37,8 +37,8 @@ export default function ServiceArea() {
       if (intgRes.data?.value?.google_maps_api_key) setMapsApiKey(intgRes.data.value.google_maps_api_key)
       if (contentRes.data?.title) setHeroTitle(contentRes.data.title)
       if (contentRes.data?.subtitle) setHeroSubtitle(contentRes.data.subtitle)
-    })
-  }, [])
+    })()
+  }, [tenantId])
 
   const isDang = template === 'dang'
 

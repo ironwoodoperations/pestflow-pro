@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { resolveTenantId } from '../lib/tenant'
+import { useTenant } from '../context/TenantBootProvider'
 
 interface Post { title: string; content: string; published_at: string; intro_image?: string }
 
 export default function BlogPostPage() {
+  const { id: tenantId } = useTenant()
   const { slug } = useParams<{ slug: string }>()
   const [post, setPost] = useState<Post | null>(null)
   const [loading, setLoading] = useState(true)
@@ -14,14 +15,12 @@ export default function BlogPostPage() {
     let cancelled = false
     async function run() {
       if (!slug) { if (!cancelled) setLoading(false); return }
-      const tenantId = await resolveTenantId()
-      if (!tenantId) { if (!cancelled) setLoading(false); return }
       const { data } = await supabase.from('blog_posts').select('title, content, published_at, intro_image').eq('tenant_id', tenantId).eq('slug', slug).maybeSingle()
       if (!cancelled) { if (data) setPost(data); setLoading(false) }
     }
     run()
     return () => { cancelled = true }
-  }, [slug])
+  }, [tenantId, slug])
 
   if (loading) {
     return (

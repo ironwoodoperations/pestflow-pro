@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { resolveTenantId } from '../lib/tenant'
+import { useTenant } from '../context/TenantBootProvider'
 import { resolveHeroImage } from '../lib/resolveHeroImage'
 
 // Module-level memory cache — zero async overhead on repeat navigations
@@ -13,12 +13,8 @@ export function clearHeroMemCache(tenantId: string) {
 }
 
 export function usePageHeroImage(pageSlug: string): string | null {
+  const { id: tenantId } = useTenant()
   const [imageUrl, setImageUrl] = useState<string | null>(null)
-  const [tenantId, setTenantId] = useState<string | null>(null)
-
-  useEffect(() => {
-    resolveTenantId().then(id => setTenantId(id ?? null))
-  }, [])
 
   useEffect(() => {
     if (!tenantId) return

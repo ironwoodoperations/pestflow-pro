@@ -4,7 +4,7 @@ import ServiceAreaPage from './LocationPage'
 import CustomPage from './CustomPage'
 import SuspendedSite from '../components/SuspendedSite'
 import { supabase } from '../lib/supabase'
-import { resolveTenantId } from '../lib/tenant'
+import { useTenant } from '../context/TenantBootProvider'
 
 function ServiceAreaNotFound() {
   return (
@@ -62,34 +62,14 @@ function isPlatformDomain(hostname: string): boolean {
 }
 
 export default function SlugRouter() {
+  const { id: tenantId } = useTenant()
   const { slug } = useParams<{ slug: string }>()
   const [type, setType] = useState<'service_area' | 'custom-page' | 'not-found' | 'loading' | 'suspended'>(() => slug ? 'loading' : 'not-found')
   const rootDomain = checkRootDomain()
 
-  const hostname = window.location.hostname
-  const onCustomDomain = !isPlatformDomain(hostname)
-
   useEffect(() => {
     if (rootDomain || !slug) return
-
-    let tenantIdPromise: Promise<string>
-
-    if (onCustomDomain) {
-      // Look up tenant via tenant_domains table (verified domains only)
-      tenantIdPromise = Promise.resolve(
-        supabase
-          .from('tenant_domains')
-          .select('tenant_id')
-          .eq('custom_domain', hostname)
-          .eq('verified', true)
-          .maybeSingle()
-          .then(r => r.data?.tenant_id ?? '')
-      )
-    } else {
-      tenantIdPromise = resolveTenantId()
-    }
-
-    tenantIdPromise.then(async (tenantId) => {
+    ;(async () => {
       if (!tenantId) { setType('not-found'); return }
 
       // Check if tenant is archived (suspended)
@@ -117,8 +97,8 @@ export default function SlugRouter() {
         .eq('page_slug', slug)
         .maybeSingle()
       setType(pageData ? 'custom-page' : 'not-found')
-    })
-  }, [slug, rootDomain, onCustomDomain, hostname])
+    })()
+  }, [tenantId, slug, rootDomain])
 
   // Root domain with unknown slug → show MarketingLanding
   if (rootDomain) {

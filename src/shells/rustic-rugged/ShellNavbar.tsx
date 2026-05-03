@@ -2,9 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Menu, X, ChevronDown } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
-import { resolveTenantId } from '../../lib/tenant'
 import { useTemplate } from '../../context/TemplateContext'
-import { useTenantBoot } from '../../context/TenantBootProvider'
+import { useTenant } from '../../context/TenantBootProvider'
 import { formatPhone } from '../../lib/formatPhone'
 
 const SERVICE_LINKS = [
@@ -29,9 +28,8 @@ const NAV_LINKS = [
 ]
 
 export default function ShellNavbar() {
+  const { id: tenantId, logoUrl } = useTenant()
   const { businessName } = useTemplate()
-  const { tenant } = useTenantBoot()
-  const logoUrl = tenant?.logoUrl || ''
   const [phone, setPhone] = useState('')
   const [mobileOpen, setMobileOpen] = useState(false)
   const [dropOpen, setDropOpen] = useState(false)
@@ -47,12 +45,11 @@ export default function ShellNavbar() {
   }, [location.pathname])
 
   useEffect(() => {
-    resolveTenantId().then(async (tenantId) => {
-      if (!tenantId) return
+    ;(async () => {
       const { data } = await supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle()
       if (data?.value?.phone) setPhone(data.value.phone)
-    })
-  }, [])
+    })()
+  }, [tenantId])
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10)

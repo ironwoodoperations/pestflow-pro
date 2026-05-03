@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
-import { resolveTenantId } from '../../lib/tenant'
+import { useTenant } from '../../context/TenantBootProvider'
 import { formatPhone } from '../../lib/formatPhone'
 import { readHeroCache, writeHeroCache } from '../../lib/heroCache'
 import { resolveHeroImage } from '../../lib/resolveHeroImage'
@@ -13,8 +13,8 @@ interface HeroMedia { mode?: string; thumbnail_url?: string; image_url?: string;
 interface HomeContent { hero_headline?: string; title?: string; subtitle?: string }
 
 export default function ShellHero() {
+  const { id: tenantId } = useTenant()
   const cached = readHeroCache()
-  const [tenantId, setTenantId] = useState<string | null>(null)
   const [biz, setBiz] = useState<BizState>({ name: cached.bizName, phone: cached.phone, tagline: cached.tagline })
   const [heroMedia, setHeroMedia] = useState<HeroMedia>({ thumbnail_url: cached.thumbnailUrl })
   const [homeContent, setHomeContent] = useState<HomeContent>({ hero_headline: cached.heroHeadline, subtitle: cached.subtitle })
@@ -24,14 +24,12 @@ export default function ShellHero() {
   const { content } = usePageContent(tenantId, 'home')
 
   useEffect(() => {
-    resolveTenantId().then(async (id) => {
-      if (!id) return
-      setTenantId(id)
+    ;(async () => {
       const [bizRes, mediaRes, custRes, brandRes] = await Promise.all([
-        supabase.from('settings').select('value').eq('tenant_id', id).eq('key', 'business_info').maybeSingle(),
-        supabase.from('settings').select('value').eq('tenant_id', id).eq('key', 'hero_media').maybeSingle(),
-        supabase.from('settings').select('value').eq('tenant_id', id).eq('key', 'customization').maybeSingle(),
-        supabase.from('settings').select('value').eq('tenant_id', id).eq('key', 'branding').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'hero_media').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'customization').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
       ])
       if (bizRes.data?.value) setBiz(bizRes.data.value)
       if (mediaRes.data?.value) setHeroMedia(mediaRes.data.value)
@@ -47,8 +45,8 @@ export default function ShellHero() {
         youtubeId: mediaRes.data?.value?.youtube_id,
         ctaText: brandRes.data?.value?.cta_text,
       })
-    })
-  }, [])
+    })()
+  }, [tenantId])
 
   useEffect(() => {
     if (!content) return

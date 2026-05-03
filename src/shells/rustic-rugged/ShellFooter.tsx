@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-import { resolveTenantId } from '../../lib/tenant'
+import { useTenant } from '../../context/TenantBootProvider'
 import { useTemplate } from '../../context/TemplateContext'
 import { formatPhone } from '../../lib/formatPhone'
 
@@ -12,14 +12,14 @@ interface Biz { name: string; phone: string; email: string; address: string; tag
 interface Social { facebook?: string; google?: string }
 
 export default function ShellFooter() {
+  const { id: tenantId } = useTenant()
   const { businessName: ctxName } = useTemplate()
   const [biz, setBiz] = useState<Biz>({ name: ctxName, phone: '', email: '', address: '', tagline: '' })
   const [logoUrl, setLogoUrl] = useState('')
   const [social, setSocial] = useState<Social>({})
 
   useEffect(() => {
-    resolveTenantId().then(async (tenantId) => {
-      if (!tenantId) return
+    ;(async () => {
       const [bizRes, brandRes, socialRes] = await Promise.all([
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
@@ -35,8 +35,8 @@ export default function ShellFooter() {
         if (link) link.href = brandRes.data.value.favicon_url
       }
       if (socialRes.data?.value) setSocial(socialRes.data.value)
-    })
-  }, [])
+    })()
+  }, [tenantId])
 
   const year = new Date().getFullYear()
 

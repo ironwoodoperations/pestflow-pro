@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { resolveTenantId } from '../lib/tenant'
+import { useTenant } from '../context/TenantBootProvider'
 
 interface StructuredDataProps {
   type: 'LocalBusiness' | 'WebPage' | 'BlogPosting'
@@ -8,11 +8,11 @@ interface StructuredDataProps {
 }
 
 export default function StructuredData({ type, pageSlug }: StructuredDataProps) {
+  const { id: tenantId } = useTenant()
   const [schema, setSchema] = useState<Record<string, unknown> | null>(null)
 
   useEffect(() => {
-    resolveTenantId().then(async (tenantId) => {
-      if (!tenantId) return
+    ;(async () => {
 
       if (type === 'LocalBusiness') {
         const { data } = await supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle()
@@ -47,8 +47,8 @@ export default function StructuredData({ type, pageSlug }: StructuredDataProps) 
           url: window.location.href,
         })
       }
-    })
-  }, [type, pageSlug])
+    })()
+  }, [tenantId, type, pageSlug])
 
   useEffect(() => {
     if (!schema) return

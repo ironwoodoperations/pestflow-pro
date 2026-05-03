@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Menu, X, ChevronDown } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { resolveTenantId } from '../lib/tenant'
+import { useTenant } from '../context/TenantBootProvider'
 
 const SERVICE_LINKS = [
   { label: 'Mosquito Control', href: '/mosquito-control' },
@@ -28,6 +28,7 @@ const NAV_LINKS = [
 ]
 
 export default function Navbar() {
+  const { id: tenantId } = useTenant()
   const [businessName, setBusinessName] = useState('')
   const [logoUrl, setLogoUrl] = useState('')
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -44,16 +45,15 @@ export default function Navbar() {
   }, [location.pathname])
 
   useEffect(() => {
-    resolveTenantId().then(async (tenantId) => {
-      if (!tenantId) return
+    ;(async () => {
       const [bizRes, brandRes] = await Promise.all([
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
       ])
       if (bizRes.data?.value?.name) setBusinessName(bizRes.data.value.name)
       if (brandRes.data?.value?.logo_url) setLogoUrl(brandRes.data.value.logo_url)
-    })
-  }, [])
+    })()
+  }, [tenantId])
 
   useEffect(() => {
     function handleEscape(e: KeyboardEvent) { if (e.key === 'Escape') { setMobileOpen(false); setDropdownOpen(false) } }

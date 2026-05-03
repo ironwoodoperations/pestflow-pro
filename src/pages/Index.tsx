@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Shield } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { resolveTenantId } from '../lib/tenant'
+import { useTenant } from '../context/TenantBootProvider'
 import StructuredData from '../components/StructuredData'
 import HeroVideoPlayer from '../components/HeroVideoPlayer'
 import { ShellSectionsRenderer } from '../components/PublicShell'
@@ -20,14 +20,14 @@ const DEFAULT_CONTENT: PageContent = {
 }
 
 export default function Index() {
+  const { id: tenantId } = useTenant()
   const { template } = useTemplate()
   const [content, setContent] = useState<PageContent>(DEFAULT_CONTENT)
   const [heroMedia, setHeroMedia] = useState<{ youtube_id?: string; thumbnail_url?: string } | null>(null)
   const [videoPlaying, setVideoPlaying] = useState(false)
 
   useEffect(() => {
-    resolveTenantId().then(async (tenantId) => {
-      if (!tenantId) return
+    ;(async () => {
       const [pageRes, mediaRes] = await Promise.all([
         supabase.from('page_content').select('title, subtitle, image_1_url').eq('tenant_id', tenantId).eq('page_slug', 'home').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'hero_media').maybeSingle(),
@@ -40,8 +40,8 @@ export default function Index() {
         })
       }
       if (mediaRes.data?.value?.youtube_id) setHeroMedia(mediaRes.data.value)
-    })
-  }, [])
+    })()
+  }, [tenantId])
 
   // These shells own their own hero inside ShellSectionsRenderer — skip the standard hero
   if (template === 'dang' || template === 'metro-pro') {

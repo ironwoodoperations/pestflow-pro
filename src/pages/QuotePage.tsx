@@ -2,7 +2,7 @@ import { lazy, Suspense, useState, useEffect } from 'react'
 import { formatPhone } from '../lib/formatPhone'
 import { CheckCircle, Bug, Home, User, ClipboardCheck } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { resolveTenantId } from '../lib/tenant'
+import { useTenant } from '../context/TenantBootProvider'
 import QuoteFormSteps, { type QuoteFormState } from '../components/QuoteFormSteps'
 import { validateContactFields } from '../components/quoteFormUtils'
 import { useTemplate } from '../context/TemplateContext'
@@ -23,10 +23,10 @@ const INITIAL: QuoteFormState = {
 }
 
 export default function QuotePage() {
+  const { id: tenantId } = useTenant()
   const { template } = useTemplate()
   const [step, setStep] = useState(1)
   const [form, setForm] = useState<QuoteFormState>(INITIAL)
-  const [tenantId, setTenantId] = useState('')
   const [businessName, setBusinessName] = useState('PestFlow Pro')
   const [businessPhone, setBusinessPhone] = useState('')
   const [ownerSmsNumber, setOwnerSmsNumber] = useState('')
@@ -37,13 +37,11 @@ export default function QuotePage() {
   const [heroSubtitle, setHeroSubtitle] = useState("Complete these 4 quick steps and we'll get back to you fast.")
 
   useEffect(() => {
-    resolveTenantId().then(async (tid) => {
-      if (!tid) return
-      setTenantId(tid)
+    ;(async () => {
       const [bizRes, contentRes, intRes] = await Promise.all([
-        supabase.from('settings').select('value').eq('tenant_id', tid).eq('key', 'business_info').maybeSingle(),
-        supabase.from('page_content').select('title, subtitle').eq('tenant_id', tid).eq('page_slug', 'quote').maybeSingle(),
-        supabase.from('settings').select('value').eq('tenant_id', tid).eq('key', 'integrations').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
+        supabase.from('page_content').select('title, subtitle').eq('tenant_id', tenantId).eq('page_slug', 'quote').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle(),
       ])
       if (bizRes.data?.value) {
         if (bizRes.data.value.name) setBusinessName(bizRes.data.value.name)
@@ -52,8 +50,8 @@ export default function QuotePage() {
       if (contentRes.data?.title) setHeroTitle(contentRes.data.title)
       if (contentRes.data?.subtitle) setHeroSubtitle(contentRes.data.subtitle)
       if (intRes.data?.value?.owner_sms_number) setOwnerSmsNumber(intRes.data.value.owner_sms_number)
-    })
-  }, [])
+    })()
+  }, [tenantId])
 
   function togglePest(pest: string) {
     setForm(prev => ({ ...prev, pests: prev.pests.includes(pest) ? prev.pests.filter(p => p !== pest) : [...prev.pests, pest] }))
@@ -104,7 +102,7 @@ export default function QuotePage() {
   }
 
   if (template === 'metro-pro') {
-    return <Suspense fallback={null}><MetroProQuotePage tenantId={tenantId} businessName={businessName} businessPhone={businessPhone} /></Suspense>
+    return <Suspense fallback={null}><MetroProQuotePage businessName={businessName} businessPhone={businessPhone} /></Suspense>
   }
 
   if (submitted) {

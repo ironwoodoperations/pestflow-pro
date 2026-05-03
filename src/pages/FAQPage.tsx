@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { resolveTenantId } from '../lib/tenant'
+import { useTenant } from '../context/TenantBootProvider'
 import StructuredData from '../components/StructuredData'
 import { usePageHeroImage } from '../hooks/usePageHeroImage'
 
@@ -35,23 +35,23 @@ const FAQ_CATEGORIES = [
 ]
 
 export default function FAQPage() {
+  const { id: tenantId } = useTenant()
   const heroImageUrl = usePageHeroImage('faq')
   const [heroTitle, setHeroTitle] = useState('Frequently Asked Questions')
   const [heroSubtitle, setHeroSubtitle] = useState('Everything you need to know about our pest control services.')
   const [phone, setPhone] = useState('')
 
   useEffect(() => {
-    resolveTenantId().then(async (tid) => {
-      if (!tid) return
+    ;(async () => {
       const [pageRes, bizRes] = await Promise.all([
-        supabase.from('page_content').select('title, subtitle').eq('tenant_id', tid).eq('page_slug', 'faq').maybeSingle(),
-        supabase.from('settings').select('value').eq('tenant_id', tid).eq('key', 'business_info').maybeSingle(),
+        supabase.from('page_content').select('title, subtitle').eq('tenant_id', tenantId).eq('page_slug', 'faq').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
       ])
       if (pageRes.data?.title) setHeroTitle(pageRes.data.title)
       if (pageRes.data?.subtitle) setHeroSubtitle(pageRes.data.subtitle)
       if (bizRes.data?.value?.phone) setPhone(bizRes.data.value.phone)
-    })
-  }, [])
+    })()
+  }, [tenantId])
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>

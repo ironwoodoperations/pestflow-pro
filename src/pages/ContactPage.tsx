@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Phone, Mail, MapPin, Clock } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '../lib/supabase'
-import { resolveTenantId } from '../lib/tenant'
+import { useTenant } from '../context/TenantBootProvider'
 import { formatPhone } from '../lib/formatPhone'
 import { usePageHeroImage } from '../hooks/usePageHeroImage'
 
@@ -11,8 +11,8 @@ interface SocialLinks { facebook: string; instagram: string; google: string }
 interface FormState { name: string; email: string; phone: string; message: string; smsConsent: boolean }
 
 export default function ContactPage() {
+  const { id: tenantId } = useTenant()
   const heroImageUrl = usePageHeroImage('contact')
-  const [tenantId, setTenantId] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [info, setInfo] = useState<BusinessInfo>({ name: '', phone: '', email: '', address: '', hours: '' })
   const [social, setSocial] = useState<SocialLinks>({ facebook: '', instagram: '', google: '' })
@@ -22,13 +22,11 @@ export default function ContactPage() {
   const [ownerSmsNumber, setOwnerSmsNumber] = useState('')
 
   useEffect(() => {
-    resolveTenantId().then(async (tid) => {
-      if (!tid) return
-      setTenantId(tid)
+    ;(async () => {
       const [settingsRes, contentRes, intRes] = await Promise.all([
-        supabase.from('settings').select('key, value').eq('tenant_id', tid).in('key', ['business_info', 'social_links']),
-        supabase.from('page_content').select('title, subtitle').eq('tenant_id', tid).eq('page_slug', 'contact').maybeSingle(),
-        supabase.from('settings').select('value').eq('tenant_id', tid).eq('key', 'integrations').maybeSingle(),
+        supabase.from('settings').select('key, value').eq('tenant_id', tenantId).in('key', ['business_info', 'social_links']),
+        supabase.from('page_content').select('title, subtitle').eq('tenant_id', tenantId).eq('page_slug', 'contact').maybeSingle(),
+        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle(),
       ])
       if (contentRes.data?.title) setHeroTitle(contentRes.data.title)
       if (contentRes.data?.subtitle) setHeroSubtitle(contentRes.data.subtitle)
@@ -40,8 +38,8 @@ export default function ContactPage() {
           if (row.key === 'social_links' && row.value) setSocial({ facebook: row.value.facebook || '', instagram: row.value.instagram || '', google: row.value.google || '' })
         }
       }
-    })
-  }, [])
+    })()
+  }, [tenantId])
 
   function updateField(field: keyof FormState, value: string | boolean) {
     setForm((prev) => ({ ...prev, [field]: value }))

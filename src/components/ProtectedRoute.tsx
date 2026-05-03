@@ -1,16 +1,16 @@
 import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { resolveTenantId } from '../lib/tenant'
+import { useTenant } from '../context/TenantBootProvider'
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { id: tenantId } = useTenant()
   const [loading, setLoading] = useState(true)
   const [authed, setAuthed] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { setLoading(false); return }
-      const tenantId = await resolveTenantId()
       const { data } = await supabase
         .from('tenant_users')
         .select('id')
@@ -21,7 +21,7 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
       setAuthed(!!data)
       setLoading(false)
     })
-  }, [])
+  }, [tenantId])
 
   if (loading) return (
     <div className="min-h-screen bg-gray-950 flex items-center justify-center">

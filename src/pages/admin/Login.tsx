@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-import { resolveTenantId } from '../../lib/tenant'
+import { useTenant } from '../../context/TenantBootProvider'
 
 interface Branding {
   logo_url?: string
@@ -9,6 +9,7 @@ interface Branding {
 }
 
 export default function Login() {
+  const { id: tenantId } = useTenant()
   const [form, setForm] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -17,16 +18,15 @@ export default function Login() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    resolveTenantId().then(async (tenantId) => {
-      if (!tenantId) return
+    ;(async () => {
       const [bizRes, brandRes] = await Promise.all([
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
       ])
       if (bizRes.data?.value?.name) setBusinessName(bizRes.data.value.name)
       if (brandRes.data?.value) setBranding(brandRes.data.value as Branding)
-    })
-  }, [])
+    })()
+  }, [tenantId])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -35,7 +35,6 @@ export default function Login() {
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword(form)
     if (authError) { setError(authError.message); setLoading(false); return }
 
-    const tenantId = await resolveTenantId()
     const { data: membership } = await supabase
       .from('tenant_users')
       .select('id')

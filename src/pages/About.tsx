@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Shield, Home, Bug, Star, Heart, Eye, Award, Zap } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { resolveTenantId } from '../lib/tenant'
+import { useTenant } from '../context/TenantBootProvider'
 import StructuredData from '../components/StructuredData'
 import { usePageHeroImage } from '../hooks/usePageHeroImage'
 
@@ -17,6 +17,7 @@ const VALUES = [
 ]
 
 export default function About() {
+  const { id: tenantId } = useTenant()
   const heroImageUrl = usePageHeroImage('about')
   const [heroTitle, setHeroTitle] = useState('About Us')
   const [heroSubtitle, setHeroSubtitle] = useState('Family-owned. Science-backed. Trusted since 2009.')
@@ -24,18 +25,17 @@ export default function About() {
   const [team, setTeam] = useState<TeamMember[] | null>(null)
 
   useEffect(() => {
-    resolveTenantId().then(async (tid) => {
-      if (!tid) return
+    ;(async () => {
       const [pageRes, teamRes] = await Promise.all([
-        supabase.from('page_content').select('title, subtitle, image_1_url').eq('tenant_id', tid).eq('page_slug', 'about').maybeSingle(),
-        supabase.from('team_members').select('id, name, title, bio, photo_url').eq('tenant_id', tid).order('display_order'),
+        supabase.from('page_content').select('title, subtitle, image_1_url').eq('tenant_id', tenantId).eq('page_slug', 'about').maybeSingle(),
+        supabase.from('team_members').select('id, name, title, bio, photo_url').eq('tenant_id', tenantId).order('display_order'),
       ])
       if (pageRes.data?.title) setHeroTitle(pageRes.data.title)
       if (pageRes.data?.subtitle) setHeroSubtitle(pageRes.data.subtitle)
       if (pageRes.data?.image_1_url) setAboutImage(pageRes.data.image_1_url)
       setTeam(teamRes.data || [])
-    })
-  }, [])
+    })()
+  }, [tenantId])
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>

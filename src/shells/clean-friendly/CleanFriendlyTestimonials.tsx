@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
-import { resolveTenantId } from '../../lib/tenant'
+import { useTenant } from '../../context/TenantBootProvider'
 
 interface Testimonial {
   id: string
@@ -16,11 +16,11 @@ const FALLBACK: Testimonial[] = [
 ]
 
 export default function CleanFriendlyTestimonials() {
+  const { id: tenantId } = useTenant()
   const [reviews, setReviews] = useState<Testimonial[]>(FALLBACK)
 
   useEffect(() => {
-    resolveTenantId().then(async (tenantId) => {
-      if (!tenantId) return
+    ;(async () => {
       const { data } = await supabase
         .from('testimonials')
         .select('id,author_name,review_text,rating')
@@ -29,8 +29,8 @@ export default function CleanFriendlyTestimonials() {
         .order('created_at', { ascending: false })
         .limit(3)
       if (data && data.length > 0) setReviews(data as Testimonial[])
-    })
-  }, [])
+    })()
+  }, [tenantId])
 
   return (
     <section className="py-16 px-6 bg-white">
