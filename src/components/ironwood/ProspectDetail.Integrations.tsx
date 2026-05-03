@@ -79,7 +79,7 @@ export default function IntegrationsSection({ prospectId, form }: Props) {
 
       {open && (
         <div className="bg-gray-900 rounded-lg p-4 space-y-3">
-          <p className="text-xs text-gray-500">Per-client keys collected during or after the reveal call. Platform keys (Pexels, Textbelt) are Doppler-only and not shown here.</p>
+          <p className="text-xs text-gray-500">Per-client keys collected during or after the reveal call. Platform keys (Textbelt) are Doppler-only and not shown here.</p>
           <div className="text-xs bg-indigo-950 border border-indigo-700 rounded px-3 py-2 text-indigo-300">
             <span className="font-semibold">Facebook:</span> Handled via Zernio OAuth in the Social section — no Facebook credentials needed here.
           </div>
