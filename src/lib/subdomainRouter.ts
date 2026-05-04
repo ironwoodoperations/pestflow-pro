@@ -1,5 +1,12 @@
 import { supabase } from './supabase'
 
+// Apex hostnames are explicitly registered to the master/demo tenant.
+// NOT the old VITE_TENANT_ID fallback (which resolved ANY unmatched
+// hostname to master). Only these specific hostnames resolve to master
+// by this rule. Typo'd subdomains still return null and 404.
+const APEX_HOSTS = new Set(['pestflowpro.com', 'www.pestflowpro.com'])
+const MASTER_TENANT_SLUG = 'pestflow-pro'
+
 /**
  * Extracts the slug subdomain from a *.pestflowpro.com hostname.
  * lonestarpest.pestflowpro.com → "lonestarpest"
@@ -25,6 +32,20 @@ function getPestflowSubdomain(): string | null {
  */
 export async function resolveTenantId(): Promise<string | null> {
   const hostname = window.location.hostname
+
+  // 0. Apex hostname → master tenant (explicit registration).
+  //    Must run before DEV ?tenant= override so production apex always
+  //    resolves correctly.
+  if (APEX_HOSTS.has(hostname)) {
+    try {
+      const { data } = await supabase
+        .from('tenants')
+        .select('id')
+        .eq('slug', MASTER_TENANT_SLUG)
+        .maybeSingle()
+      if (data?.id) return data.id
+    } catch { /* fall through to other resolution paths */ }
+  }
 
   // 1. ?tenant=<slug> query param (DEV mode only — localhost testing)
   if (import.meta.env.DEV) {
@@ -54,21 +75,30 @@ export async function resolveTenantId(): Promise<string | null> {
   }
 
   // 3. *.pestflowpro.com subdomain
+  //    Priority: tenants.subdomain column (explicit registration like 'demo'),
+  //    then tenants.slug (backward compat for slug-as-subdomain like 'dang').
   const subdomain = getPestflowSubdomain()
   if (!subdomain) return null
-
   try {
-    const { data, error } = await supabase
+    // 3a. Match against tenants.subdomain column
+    const { data: subRow } = await supabase
+      .from('tenants')
+      .select('id')
+      .eq('subdomain', subdomain)
+      .maybeSingle()
+    if (subRow?.id) return subRow.id
+
+    // 3b. Fallback to tenants.slug match
+    const { data: slugRow, error: slugErr } = await supabase
       .from('tenants')
       .select('id')
       .eq('slug', subdomain)
       .maybeSingle()
-
-    if (error || !data?.id) {
-      console.error('[subdomainRouter] Tenant not found for slug:', subdomain)
+    if (slugErr || !slugRow?.id) {
+      console.error('[subdomainRouter] Tenant not found for subdomain or slug:', subdomain)
       return null
     }
-    return data.id
+    return slugRow.id
   } catch (err) {
     console.error('[subdomainRouter] Lookup failed:', err)
     return null
