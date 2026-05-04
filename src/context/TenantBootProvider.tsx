@@ -14,12 +14,15 @@ export type TenantBootStatus =
   | { status: 'loading' }
   | { status: 'error'; reason: 'not_found' | 'network' | 'unknown'; message: string }
   | { status: 'ready'; tenant: TenantBoot }
+  | { status: 'marketing' }
 
 interface TenantBootCtx { status: 'loading' | 'ready' | 'error'; tenant: TenantBoot | null; error: string | null; refetch: () => void }
 
 const Ctx = createContext<TenantBootCtx | null>(null)
 const HOST = typeof window !== 'undefined' ? window.location.hostname : ''
 const CACHE_KEY = `pfp_tenant_boot_v2:${HOST}`
+const MARKETING_HOSTS = new Set(['pestflowpro.com', 'www.pestflowpro.com'])
+const IS_MARKETING_HOST = MARKETING_HOSTS.has(HOST)
 
 // Raw shape from RPC / localStorage
 interface RawBoot { id: string; slug: string; name: string; theme: string; primary_color: string; accent_color: string; logo_url: string; cta_text: string }
@@ -67,17 +70,20 @@ function TenantNotFound({ message }: { message: string }) {
 
 export function TenantBootProvider({ children }: { children: ReactNode }) {
   const [bootState, setBootState] = useState<TenantBootStatus>(() => {
+    if (IS_MARKETING_HOST) return { status: 'marketing' }
     const cached = readCache()
     return cached ? { status: 'ready', tenant: cached } : { status: 'loading' }
   })
   const [fetchKey, setFetchKey] = useState(0)
 
   useLayoutEffect(() => {
+    if (IS_MARKETING_HOST) return
     const cached = readCache()
     if (cached) applyTheme(cached.template, cached.primaryColor || undefined, cached.accentColor || undefined)
   }, [])
 
   useEffect(() => {
+    if (IS_MARKETING_HOST) return
     const cached = readCache()
     if (cached) {
       // Already have data — prefetch content and stop
@@ -124,6 +130,20 @@ export function TenantBootProvider({ children }: { children: ReactNode }) {
 
   if (bootState.status === 'loading') return <TenantBootSkeleton />
   if (bootState.status === 'error') return <TenantNotFound message={bootState.message} />
+
+  if (bootState.status === 'marketing') {
+    // S189: Marketing apex hosts (pestflowpro.com, www.pestflowpro.com) bypass
+    // tenant resolution. App.tsx's RootRoute renders MarketingLanding for these
+    // hosts. We provide a permissive null-tenant context so downstream providers
+    // (PlanProvider, TemplateProvider) and analytics hooks mount cleanly.
+    // This is NOT the old VITE_TENANT_ID leak — only specific apex hostnames
+    // bypass, and they bypass to static content (no tenant data).
+    return (
+      <Ctx.Provider value={{ status: 'ready', tenant: null, error: null, refetch: () => {} }}>
+        {children}
+      </Ctx.Provider>
+    )
+  }
 
   const ctxValue: TenantBootCtx = {
     status: 'ready',
