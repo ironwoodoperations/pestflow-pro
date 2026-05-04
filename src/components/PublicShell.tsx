@@ -23,10 +23,6 @@ const RusticRuggedSections = lazy(() => import('../shells/rustic-rugged/ShellHom
 const MetroProNavbar       = lazy(() => import('../shells/metro-pro/ShellNavbar'))
 const MetroProFooter       = lazy(() => import('../shells/metro-pro/ShellFooter'))
 const MetroProSections     = lazy(() => import('../shells/metro-pro/ShellHomeSections'))
-const DangNavbar           = lazy(() => import('../shells/dang/ShellNavbar'))
-const DangFooter           = lazy(() => import('../shells/dang/ShellFooter'))
-const DangSections         = lazy(() => import('../shells/dang/ShellHomeSections'))
-
 // Maps route pathnames to SEO page type + title
 function resolvePageMeta(pathname: string): { pageType: PageType; title: string } {
   if (pathname === '/') return { pageType: 'home', title: 'Home' }
@@ -198,7 +194,6 @@ export function ShellSectionsRenderer() {
     case 'clean-friendly': return <Suspense fallback={null}><CleanFriendlySections /></Suspense>
     case 'rustic-rugged': return <Suspense fallback={null}><RusticRuggedSections /></Suspense>
     case 'metro-pro':     return <Suspense fallback={null}><MetroProSections /></Suspense>
-    case 'dang':          return <Suspense fallback={null}><DangSections /></Suspense>
     default:              return <ModernProSections />
   }
 }
@@ -214,7 +209,6 @@ function ShellNav() {
     case 'clean-friendly': return <Suspense fallback={null}><CleanFriendlyNavbar /></Suspense>
     case 'rustic-rugged': return <Suspense fallback={null}><RusticRuggedNavbar /></Suspense>
     case 'metro-pro':     return <Suspense fallback={null}><MetroProNavbar /></Suspense>
-    case 'dang':          return <Suspense fallback={null}><DangNavbar /></Suspense>
     default:              return <ModernProNavbar />
   }
 }
@@ -226,7 +220,6 @@ function ShellFooterComp() {
     case 'clean-friendly': return <Suspense fallback={null}><CleanFriendlyFooter /></Suspense>
     case 'rustic-rugged': return <Suspense fallback={null}><RusticRuggedFooter /></Suspense>
     case 'metro-pro':     return <Suspense fallback={null}><MetroProFooter /></Suspense>
-    case 'dang':          return <Suspense fallback={null}><DangFooter /></Suspense>
     default:              return <ModernProFooter />
   }
 }

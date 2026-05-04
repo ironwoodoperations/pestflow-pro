@@ -3,7 +3,6 @@ import { Suspense, lazy } from 'react'
 
 // Marketing homepage — lazy (keeps bundle under 450 kB)
 const MarketingLanding = lazy(() => import('./pages/marketing/MarketingHome'))
-import DangPageRouter from './shells/dang/DangPageRouter'
 import { Toaster } from 'sonner'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import ScrollToTop from './components/ScrollToTop'
@@ -102,33 +101,33 @@ export default function App() {
       <Routes>
         {/* ─── Root: MarketingLanding on pestflowpro.com, pest theme on subdomains ─── */}
         <Route path="/" element={<RootRoute />} />
-        <Route path="/contact" element={<DangPageRouter slug="contact" fallback={<PublicShell><ContactPage /></PublicShell>} />} />
-        <Route path="/quote" element={<DangPageRouter slug="quote" fallback={<PublicShell><QuotePage /></PublicShell>} />} />
-        <Route path="/about" element={<Suspense fallback={BLANK}><DangPageRouter slug="about" fallback={<PublicShell><About /></PublicShell>} /></Suspense>} />
-        <Route path="/faq" element={<Suspense fallback={BLANK}><DangPageRouter slug="faq" fallback={<PublicShell><FAQPage /></PublicShell>} /></Suspense>} />
-        <Route path="/reviews" element={<Suspense fallback={BLANK}><DangPageRouter slug="reviews" fallback={<PublicShell><ReviewsPage /></PublicShell>} /></Suspense>} />
+        <Route path="/contact" element={<PublicShell><ContactPage /></PublicShell>} />
+        <Route path="/quote" element={<PublicShell><QuotePage /></PublicShell>} />
+        <Route path="/about" element={<Suspense fallback={BLANK}><PublicShell><About /></PublicShell></Suspense>} />
+        <Route path="/faq" element={<Suspense fallback={BLANK}><PublicShell><FAQPage /></PublicShell></Suspense>} />
+        <Route path="/reviews" element={<Suspense fallback={BLANK}><PublicShell><ReviewsPage /></PublicShell></Suspense>} />
         <Route path="/service-area" element={<Suspense fallback={BLANK}><PublicShell><ServiceArea /></PublicShell></Suspense>} />
         <Route path="/blog" element={<Suspense fallback={BLANK}><PublicShell><BlogPage /></PublicShell></Suspense>} />
         <Route path="/blog/:slug" element={<Suspense fallback={BLANK}><PublicShell><BlogPostPage /></PublicShell></Suspense>} />
         <Route path="/pricing" element={<Suspense fallback={BLANK}><PublicShell><Pricing /></PublicShell></Suspense>} />
-        <Route path="/terms" element={<Suspense fallback={BLANK}><DangPageRouter slug="terms" fallback={<PublicShell><ClientTermsPage /></PublicShell>} /></Suspense>} />
-        <Route path="/privacy" element={<Suspense fallback={BLANK}><DangPageRouter slug="privacy" fallback={<PublicShell><ClientPrivacyPage /></PublicShell>} /></Suspense>} />
-        <Route path="/sms-terms" element={<Suspense fallback={BLANK}><DangPageRouter slug="sms-terms" fallback={<PublicShell><ClientSmsTermsPage /></PublicShell>} /></Suspense>} />
+        <Route path="/terms" element={<Suspense fallback={BLANK}><PublicShell><ClientTermsPage /></PublicShell></Suspense>} />
+        <Route path="/privacy" element={<Suspense fallback={BLANK}><PublicShell><ClientPrivacyPage /></PublicShell></Suspense>} />
+        <Route path="/sms-terms" element={<Suspense fallback={BLANK}><PublicShell><ClientSmsTermsPage /></PublicShell></Suspense>} />
         <Route path="/sitemap.xml" element={<Sitemap />} />
 
         {/* ─── Pest service pages ─── */}
-        <Route path="/spider-control" element={<Suspense fallback={BLANK}><DangPageRouter slug="spider-control" fallback={<PublicShell><SpiderControl /></PublicShell>} /></Suspense>} />
-        <Route path="/mosquito-control" element={<Suspense fallback={BLANK}><DangPageRouter slug="mosquito-control" fallback={<PublicShell><MosquitoControl /></PublicShell>} /></Suspense>} />
-        <Route path="/ant-control" element={<Suspense fallback={BLANK}><DangPageRouter slug="ant-control" fallback={<PublicShell><AntControl /></PublicShell>} /></Suspense>} />
-        <Route path="/wasp-hornet-control" element={<Suspense fallback={BLANK}><DangPageRouter slug="wasp-hornet-control" fallback={<PublicShell><WaspHornetControl /></PublicShell>} /></Suspense>} />
-        <Route path="/roach-control" element={<Suspense fallback={BLANK}><DangPageRouter slug="roach-control" fallback={<PublicShell><RoachControl /></PublicShell>} /></Suspense>} />
-        <Route path="/flea-tick-control" element={<Suspense fallback={BLANK}><DangPageRouter slug="flea-tick-control" fallback={<PublicShell><FleaTickControl /></PublicShell>} /></Suspense>} />
-        <Route path="/rodent-control" element={<Suspense fallback={BLANK}><DangPageRouter slug="rodent-control" fallback={<PublicShell><RodentControl /></PublicShell>} /></Suspense>} />
-        <Route path="/scorpion-control" element={<Suspense fallback={BLANK}><DangPageRouter slug="scorpion-control" fallback={<PublicShell><ScorpionControl /></PublicShell>} /></Suspense>} />
-        <Route path="/bed-bug-control" element={<Suspense fallback={BLANK}><DangPageRouter slug="bed-bug-control" fallback={<PublicShell><BedBugControl /></PublicShell>} /></Suspense>} />
-        <Route path="/pest-control" element={<Suspense fallback={BLANK}><DangPageRouter slug="pest-control" fallback={<PublicShell><PestControlPage /></PublicShell>} /></Suspense>} />
-        <Route path="/termite-control" element={<Suspense fallback={BLANK}><DangPageRouter slug="termite-control" fallback={<PublicShell><TermiteControl /></PublicShell>} /></Suspense>} />
-        <Route path="/termite-inspections" element={<Suspense fallback={BLANK}><DangPageRouter slug="termite-inspections" fallback={<PublicShell><TermiteInspections /></PublicShell>} /></Suspense>} />
+        <Route path="/spider-control" element={<Suspense fallback={BLANK}><PublicShell><SpiderControl /></PublicShell></Suspense>} />
+        <Route path="/mosquito-control" element={<Suspense fallback={BLANK}><PublicShell><MosquitoControl /></PublicShell></Suspense>} />
+        <Route path="/ant-control" element={<Suspense fallback={BLANK}><PublicShell><AntControl /></PublicShell></Suspense>} />
+        <Route path="/wasp-hornet-control" element={<Suspense fallback={BLANK}><PublicShell><WaspHornetControl /></PublicShell></Suspense>} />
+        <Route path="/roach-control" element={<Suspense fallback={BLANK}><PublicShell><RoachControl /></PublicShell></Suspense>} />
+        <Route path="/flea-tick-control" element={<Suspense fallback={BLANK}><PublicShell><FleaTickControl /></PublicShell></Suspense>} />
+        <Route path="/rodent-control" element={<Suspense fallback={BLANK}><PublicShell><RodentControl /></PublicShell></Suspense>} />
+        <Route path="/scorpion-control" element={<Suspense fallback={BLANK}><PublicShell><ScorpionControl /></PublicShell></Suspense>} />
+        <Route path="/bed-bug-control" element={<Suspense fallback={BLANK}><PublicShell><BedBugControl /></PublicShell></Suspense>} />
+        <Route path="/pest-control" element={<Suspense fallback={BLANK}><PublicShell><PestControlPage /></PublicShell></Suspense>} />
+        <Route path="/termite-control" element={<Suspense fallback={BLANK}><PublicShell><TermiteControl /></PublicShell></Suspense>} />
+        <Route path="/termite-inspections" element={<Suspense fallback={BLANK}><PublicShell><TermiteInspections /></PublicShell></Suspense>} />
 
         {/* ─── Admin routes ─── */}
         <Route path="/admin/login" element={<Login />} />
@@ -158,15 +157,6 @@ export default function App() {
 
         {/* ─── Post-intake branded preview — must be before /:slug ─── */}
         <Route path="/intake-success" element={<Suspense fallback={LOADING}><IntakeSuccess /></Suspense>} />
-
-        {/* ─── Dang city SEO pages — before /:slug ─── */}
-        <Route path="/lindale-tx"     element={<DangPageRouter slug="lindale-tx"     fallback={<PublicShell><SlugRouter /></PublicShell>} />} />
-        <Route path="/bullard-tx"     element={<DangPageRouter slug="bullard-tx"     fallback={<PublicShell><SlugRouter /></PublicShell>} />} />
-        <Route path="/whitehouse-tx"  element={<DangPageRouter slug="whitehouse-tx"  fallback={<PublicShell><SlugRouter /></PublicShell>} />} />
-        <Route path="/jacksonville-tx" element={<DangPageRouter slug="jacksonville-tx" fallback={<PublicShell><SlugRouter /></PublicShell>} />} />
-        <Route path="/longview-tx"    element={<DangPageRouter slug="longview-tx"    fallback={<PublicShell><SlugRouter /></PublicShell>} />} />
-        <Route path="/kilgore-tx"     element={<DangPageRouter slug="kilgore-tx"     fallback={<PublicShell><SlugRouter /></PublicShell>} />} />
-        <Route path="/henderson-tx"   element={<DangPageRouter slug="henderson-tx"   fallback={<PublicShell><SlugRouter /></PublicShell>} />} />
 
         {/* ─── Dynamic slug — MUST BE LAST ─── */}
         <Route path="/:slug" element={<PublicShell><SlugRouter /></PublicShell>} />
