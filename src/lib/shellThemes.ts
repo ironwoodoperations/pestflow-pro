@@ -38,14 +38,6 @@ function darkenHex(hex: string, factor: number): string {
   return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('')
 }
 
-function lightenHex(hex: string, white: number): string {
-  const h = hex.startsWith('#') ? hex.slice(1) : hex
-  const r = Math.max(0, Math.min(255, Math.round(parseInt(h.slice(0, 2), 16) * (1 - white) + 255 * white)))
-  const g = Math.max(0, Math.min(255, Math.round(parseInt(h.slice(2, 4), 16) * (1 - white) + 255 * white)))
-  const b = Math.max(0, Math.min(255, Math.round(parseInt(h.slice(4, 6), 16) * (1 - white) + 255 * white)))
-  return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('')
-}
-
 // Per-palette explicit hero gradient start/end, CTA background, nav, and footer. Keyed by primary hex (lowercase).
 const PALETTE_HERO: Record<string, { hero: string; end: string; cta: string; nav: string; navText: string; footer: string }> = {
   '#1e3a5f': { hero: '#0d1f35', end: '#162208', cta: '#0d1f35', nav: '#1e3a5f',  navText: '#ffffff', footer: '#0d1f35' }, // Navy & Gold
@@ -197,9 +189,7 @@ export function applyTheme(
   primaryOverride?: string,
   accentOverride?: string
 ) {
-  // 'metro-pro' template maps to 'metro-pro-shell' config entry (avoid name conflict with existing 'modern-pro')
-  const themeKey = template === 'metro-pro' ? 'metro-pro-shell' : template
-  const theme = THEME_CONFIGS[themeKey] || THEME_CONFIGS['modern-pro']
+  const theme = THEME_CONFIGS[template] || THEME_CONFIGS['modern-pro']
   const root = document.documentElement
   Object.entries(theme).forEach(([key, value]) => {
     root.style.setProperty(key, value)
@@ -217,9 +207,6 @@ export function applyTheme(
       root.style.setProperty('--color-nav-text',    paletteHero.navText)
       root.style.setProperty('--color-footer-bg',   paletteHero.footer)
       root.style.setProperty('--color-footer-text', '#ffffff')
-    } else if (template === 'clean-friendly') {
-      root.style.setProperty('--color-bg-hero', lightenHex(primaryOverride, 0.85))
-      root.style.setProperty('--color-bg-hero-end', lightenHex(primaryOverride, 0.93))
     } else {
       root.style.setProperty('--color-bg-hero', darkenHex(primaryOverride, 0.35))
       root.style.setProperty('--color-bg-hero-end', darkenHex(primaryOverride, 0.2))
