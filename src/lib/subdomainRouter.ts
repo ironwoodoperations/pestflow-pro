@@ -1,7 +1,7 @@
 import { supabase } from './supabase'
 
 // Apex hostnames are explicitly registered to the master/demo tenant.
-// NOT the old VITE_TENANT_ID fallback (which resolved ANY unmatched
+// NOT the legacy build-time tenant env-var fallback (which resolved ANY unmatched
 // hostname to master). Only these specific hostnames resolve to master
 // by this rule. Typo'd subdomains still return null and 404.
 const APEX_HOSTS = new Set(['pestflowpro.com', 'www.pestflowpro.com'])
