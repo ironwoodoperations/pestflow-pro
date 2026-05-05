@@ -1,13 +1,10 @@
-import { lazy, Suspense, useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { formatPhone } from '../lib/formatPhone'
 import { CheckCircle, Bug, Home, User, ClipboardCheck } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useTenant } from '../context/TenantBootProvider'
 import QuoteFormSteps, { type QuoteFormState } from '../components/QuoteFormSteps'
 import { validateContactFields } from '../components/quoteFormUtils'
-import { useTemplate } from '../context/TemplateContext'
-
-const MetroProQuotePage = lazy(() => import('../shells/metro-pro/MetroProQuotePage'))
 
 const STEPS = [
   { num: 1, label: 'Pest Type', icon: Bug },
@@ -24,7 +21,6 @@ const INITIAL: QuoteFormState = {
 
 export default function QuotePage() {
   const { id: tenantId } = useTenant()
-  const { template } = useTemplate()
   const [step, setStep] = useState(1)
   const [form, setForm] = useState<QuoteFormState>(INITIAL)
   const [businessName, setBusinessName] = useState('PestFlow Pro')
@@ -99,10 +95,6 @@ export default function QuotePage() {
     }
 
     setSubmitted(true)
-  }
-
-  if (template === 'metro-pro') {
-    return <Suspense fallback={null}><MetroProQuotePage businessName={businessName} businessPhone={businessPhone} /></Suspense>
   }
 
   if (submitted) {

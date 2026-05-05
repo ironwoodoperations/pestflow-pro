@@ -6,7 +6,6 @@ import { useTenant } from '../context/TenantBootProvider'
 import StructuredData from '../components/StructuredData'
 import HeroVideoPlayer from '../components/HeroVideoPlayer'
 import { ShellSectionsRenderer } from '../components/PublicShell'
-import { useTemplate } from '../context/TemplateContext'
 
 interface PageContent {
   title: string
@@ -21,7 +20,6 @@ const DEFAULT_CONTENT: PageContent = {
 
 export default function Index() {
   const { id: tenantId } = useTenant()
-  const { template } = useTemplate()
   const [content, setContent] = useState<PageContent>(DEFAULT_CONTENT)
   const [heroMedia, setHeroMedia] = useState<{ youtube_id?: string; thumbnail_url?: string } | null>(null)
   const [videoPlaying, setVideoPlaying] = useState(false)
@@ -42,16 +40,6 @@ export default function Index() {
       if (mediaRes.data?.value?.youtube_id) setHeroMedia(mediaRes.data.value)
     })()
   }, [tenantId])
-
-  // These shells own their own hero inside ShellSectionsRenderer — skip the standard hero
-  if (template === 'dang' || template === 'metro-pro') {
-    return (
-      <div style={{ backgroundColor: 'var(--color-bg-section)' }}>
-        <StructuredData type="LocalBusiness" />
-        <ShellSectionsRenderer />
-      </div>
-    )
-  }
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>

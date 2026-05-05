@@ -14,15 +14,6 @@ import ModernProSections from '../shells/modern-pro/ShellHomeSections'
 const BoldLocalNavbar      = lazy(() => import('../shells/bold-local/ShellNavbar'))
 const BoldLocalFooter      = lazy(() => import('../shells/bold-local/ShellFooter'))
 const BoldLocalSections    = lazy(() => import('../shells/bold-local/ShellHomeSections'))
-const CleanFriendlyNavbar  = lazy(() => import('../shells/clean-friendly/ShellNavbar'))
-const CleanFriendlyFooter  = lazy(() => import('../shells/clean-friendly/ShellFooter'))
-const CleanFriendlySections = lazy(() => import('../shells/clean-friendly/ShellHomeSections'))
-const RusticRuggedNavbar   = lazy(() => import('../shells/rustic-rugged/ShellNavbar'))
-const RusticRuggedFooter   = lazy(() => import('../shells/rustic-rugged/ShellFooter'))
-const RusticRuggedSections = lazy(() => import('../shells/rustic-rugged/ShellHomeSections'))
-const MetroProNavbar       = lazy(() => import('../shells/metro-pro/ShellNavbar'))
-const MetroProFooter       = lazy(() => import('../shells/metro-pro/ShellFooter'))
-const MetroProSections     = lazy(() => import('../shells/metro-pro/ShellHomeSections'))
 // Maps route pathnames to SEO page type + title
 function resolvePageMeta(pathname: string): { pageType: PageType; title: string } {
   if (pathname === '/') return { pageType: 'home', title: 'Home' }
@@ -191,9 +182,6 @@ export function ShellSectionsRenderer() {
   const { template } = useTemplate()
   switch (template) {
     case 'bold-local':    return <Suspense fallback={null}><BoldLocalSections /></Suspense>
-    case 'clean-friendly': return <Suspense fallback={null}><CleanFriendlySections /></Suspense>
-    case 'rustic-rugged': return <Suspense fallback={null}><RusticRuggedSections /></Suspense>
-    case 'metro-pro':     return <Suspense fallback={null}><MetroProSections /></Suspense>
     default:              return <ModernProSections />
   }
 }
@@ -206,9 +194,6 @@ function ShellNav() {
   const { template } = useTemplate()
   switch (template) {
     case 'bold-local':    return <Suspense fallback={null}><BoldLocalNavbar /></Suspense>
-    case 'clean-friendly': return <Suspense fallback={null}><CleanFriendlyNavbar /></Suspense>
-    case 'rustic-rugged': return <Suspense fallback={null}><RusticRuggedNavbar /></Suspense>
-    case 'metro-pro':     return <Suspense fallback={null}><MetroProNavbar /></Suspense>
     default:              return <ModernProNavbar />
   }
 }
@@ -217,9 +202,6 @@ function ShellFooterComp() {
   const { template } = useTemplate()
   switch (template) {
     case 'bold-local':    return <Suspense fallback={null}><BoldLocalFooter /></Suspense>
-    case 'clean-friendly': return <Suspense fallback={null}><CleanFriendlyFooter /></Suspense>
-    case 'rustic-rugged': return <Suspense fallback={null}><RusticRuggedFooter /></Suspense>
-    case 'metro-pro':     return <Suspense fallback={null}><MetroProFooter /></Suspense>
     default:              return <ModernProFooter />
   }
 }
