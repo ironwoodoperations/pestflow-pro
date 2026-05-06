@@ -108,8 +108,8 @@ export default function Dashboard() {
     <div className="flex flex-col min-h-screen" style={{ '--admin-accent': accentColor } as React.CSSProperties}>
       {demoActive && <DemoBanner onGoLive={handleGoLive} />}
       <div className="flex flex-1">
-      <aside className="w-64 flex-shrink-0 flex flex-col" style={{ background: template === 'dang' ? '#0a0a0a' : '#1a1f2e', '--brand-primary': primaryColor, '--brand-accent': accentColor } as React.CSSProperties}>
-        <div className="px-6 py-5" style={{ background: template === 'dang' ? '#0a0a0a' : '#141922', borderBottom: template === 'dang' ? '1px solid #1a1a1a' : undefined }}>
+      <aside className="w-64 flex-shrink-0 flex flex-col" style={{ background: '#1a1f2e', '--brand-primary': primaryColor, '--brand-accent': accentColor } as React.CSSProperties}>
+        <div className="px-6 py-5" style={{ background: '#141922' }}>
           <h1 className="font-oswald text-xl text-white tracking-wide">PestFlow Pro</h1>
           <p className="text-xs uppercase tracking-widest mt-0.5" style={{ color: '#94a3b8' }}>Operations Platform</p>
           {logoUrl && (
@@ -120,8 +120,6 @@ export default function Dashboard() {
           {TABS.map(({ key, label, icon: Icon }) => {
             const gatedTabs: Record<string, number> = { blog: 2, seo: 2, social: 2, reports: 2 }
             const locked = gatedTabs[key] ? !canAccess(gatedTabs[key]) : false
-            const isDangActive = template === 'dang' && activeTab === key
-            const isDangInactive = template === 'dang' && activeTab !== key
             return (
               <button key={key} onClick={() => setActiveTab(key)} aria-current={activeTab === key ? 'page' : undefined}
                 className={`w-full flex items-center gap-3 px-4 py-3 mx-0 rounded-lg text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
@@ -129,23 +127,19 @@ export default function Dashboard() {
                     ? 'text-white border-l-4'
                     : 'border-l-4 border-transparent'
                 } ${locked ? 'opacity-50' : ''}`}
-                style={isDangActive
-                  ? { borderLeftColor: '#F97316', backgroundColor: '#F97316', color: '#ffffff' }
-                  : isDangInactive
-                    ? { color: '#d1d5db' }
-                    : activeTab === key
-                      ? { borderLeftColor: primaryColor, backgroundColor: primaryColor + '26', color: '#ffffff' }
-                      : { color: '#d1d5db' }
+                style={activeTab === key
+                  ? { borderLeftColor: primaryColor, backgroundColor: primaryColor + '26', color: '#ffffff' }
+                  : { color: '#d1d5db' }
                 }>
                 <Icon size={20} aria-hidden="true" />
                 <span className="flex-1 text-left">{label}</span>
-                {locked && <span title="Upgrade to Grow to unlock"><Lock className="w-3.5 h-3.5 shrink-0" style={{ color: template === 'dang' ? '#fbbf24' : undefined }} /></span>}
+                {locked && <span title="Upgrade to Grow to unlock"><Lock className="w-3.5 h-3.5 shrink-0" /></span>}
               </button>
             )
           })}
         </nav>
         <TierToggle />
-        <div className="px-2 py-4" style={{ borderTop: template === 'dang' ? '1px solid #1a1a1a' : '1px solid rgba(255,255,255,0.1)' }}>
+        <div className="px-2 py-4" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
           <p className="px-4 py-1 text-xs truncate mb-1" style={{ color: '#94a3b8' }}>{businessName}</p>
           <button onClick={handleSignOut} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-400 hover:text-red-400 hover:bg-red-400/10 transition-all">
             <LogOut size={20} /> Sign Out

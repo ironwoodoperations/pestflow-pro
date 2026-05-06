@@ -12,15 +12,9 @@ import ProtectedRoute from './components/ProtectedRoute'
 import { PlanProvider } from './context/PlanContext'
 import { TemplateProvider } from './context/TemplateContext'
 import { TenantBootProvider } from './context/TenantBootProvider'
-import PublicShell from './components/PublicShell'
 
 // Critical path — eager
-import Index from './pages/Index'
-import QuotePage from './pages/QuotePage'
-import ContactPage from './pages/ContactPage'
 import NotFound from './pages/NotFound'
-import Sitemap from './pages/Sitemap'
-import SlugRouter from './pages/SlugRouter'
 
 // Payment success — public, no theme needed
 const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'))
@@ -30,32 +24,6 @@ const IntakePage = lazy(() => import('./pages/IntakePage'))
 
 // Post-intake branded preview — public, no theme needed
 const IntakeSuccess = lazy(() => import('./pages/IntakeSuccess'))
-
-// Secondary marketing pages — lazy
-const About           = lazy(() => import('./pages/About'))
-const FAQPage         = lazy(() => import('./pages/FAQPage'))
-const ReviewsPage     = lazy(() => import('./pages/ReviewsPage'))
-const ServiceArea     = lazy(() => import('./pages/ServiceArea'))
-const BlogPage        = lazy(() => import('./pages/BlogPage'))
-const BlogPostPage    = lazy(() => import('./pages/BlogPostPage'))
-const Pricing         = lazy(() => import('./pages/Pricing'))
-const ClientTermsPage    = lazy(() => import('./components/shared/ClientTermsPage'))
-const ClientPrivacyPage  = lazy(() => import('./components/shared/ClientPrivacyPage'))
-const ClientSmsTermsPage = lazy(() => import('./components/shared/ClientSmsTermsPage'))
-
-// Pest service pages — lazy (share PestPageTemplate chunk)
-const SpiderControl       = lazy(() => import('./pages/SpiderControl'))
-const MosquitoControl     = lazy(() => import('./pages/MosquitoControl'))
-const AntControl          = lazy(() => import('./pages/AntControl'))
-const WaspHornetControl   = lazy(() => import('./pages/WaspHornetControl'))
-const RoachControl        = lazy(() => import('./pages/RoachControl'))
-const FleaTickControl     = lazy(() => import('./pages/FleaTickControl'))
-const RodentControl       = lazy(() => import('./pages/RodentControl'))
-const ScorpionControl     = lazy(() => import('./pages/ScorpionControl'))
-const BedBugControl       = lazy(() => import('./pages/BedBugControl'))
-const PestControlPage     = lazy(() => import('./pages/PestControlPage'))
-const TermiteControl      = lazy(() => import('./pages/TermiteControl'))
-const TermiteInspections  = lazy(() => import('./pages/TermiteInspections'))
 
 // Admin — lazy
 const Dashboard      = lazy(() => import('./pages/admin/Dashboard'))
@@ -67,20 +35,16 @@ const IronwoodOps    = lazy(() => import('./pages/IronwoodOps'))
 const IronwoodLogin  = lazy(() => import('./pages/admin/IronwoodLogin'))
 
 const LOADING = <div className="flex items-center justify-center h-screen"><div className="text-gray-400 text-sm">Loading...</div></div>
-const BLANK = <div />
 const DARK_BLANK = <div style={{ background: '#0a0f1e', minHeight: '100vh' }} />
 
 function RootRoute() {
-  const h = window.location.hostname
-  const isRoot = h === 'pestflowpro.com' || h === 'www.pestflowpro.com'
-  if (isRoot) {
-    return (
-      <Suspense fallback={DARK_BLANK}>
-        <MarketingLanding />
-      </Suspense>
-    )
-  }
-  return <PublicShell><Index /></PublicShell>
+  // Apex marketing only — tenant subdomains route to Next.js or 404 via
+  // middleware, they never reach this Vite SPA at "/".
+  return (
+    <Suspense fallback={DARK_BLANK}>
+      <MarketingLanding />
+    </Suspense>
+  )
 }
 
 function GoogleAnalyticsInit() {
@@ -99,35 +63,8 @@ export default function App() {
       <Toaster richColors position="top-right" />
       <ErrorBoundary>
       <Routes>
-        {/* ─── Root: MarketingLanding on pestflowpro.com, pest theme on subdomains ─── */}
+        {/* ─── Apex marketing ─── */}
         <Route path="/" element={<RootRoute />} />
-        <Route path="/contact" element={<PublicShell><ContactPage /></PublicShell>} />
-        <Route path="/quote" element={<PublicShell><QuotePage /></PublicShell>} />
-        <Route path="/about" element={<Suspense fallback={BLANK}><PublicShell><About /></PublicShell></Suspense>} />
-        <Route path="/faq" element={<Suspense fallback={BLANK}><PublicShell><FAQPage /></PublicShell></Suspense>} />
-        <Route path="/reviews" element={<Suspense fallback={BLANK}><PublicShell><ReviewsPage /></PublicShell></Suspense>} />
-        <Route path="/service-area" element={<Suspense fallback={BLANK}><PublicShell><ServiceArea /></PublicShell></Suspense>} />
-        <Route path="/blog" element={<Suspense fallback={BLANK}><PublicShell><BlogPage /></PublicShell></Suspense>} />
-        <Route path="/blog/:slug" element={<Suspense fallback={BLANK}><PublicShell><BlogPostPage /></PublicShell></Suspense>} />
-        <Route path="/pricing" element={<Suspense fallback={BLANK}><PublicShell><Pricing /></PublicShell></Suspense>} />
-        <Route path="/terms" element={<Suspense fallback={BLANK}><PublicShell><ClientTermsPage /></PublicShell></Suspense>} />
-        <Route path="/privacy" element={<Suspense fallback={BLANK}><PublicShell><ClientPrivacyPage /></PublicShell></Suspense>} />
-        <Route path="/sms-terms" element={<Suspense fallback={BLANK}><PublicShell><ClientSmsTermsPage /></PublicShell></Suspense>} />
-        <Route path="/sitemap.xml" element={<Sitemap />} />
-
-        {/* ─── Pest service pages ─── */}
-        <Route path="/spider-control" element={<Suspense fallback={BLANK}><PublicShell><SpiderControl /></PublicShell></Suspense>} />
-        <Route path="/mosquito-control" element={<Suspense fallback={BLANK}><PublicShell><MosquitoControl /></PublicShell></Suspense>} />
-        <Route path="/ant-control" element={<Suspense fallback={BLANK}><PublicShell><AntControl /></PublicShell></Suspense>} />
-        <Route path="/wasp-hornet-control" element={<Suspense fallback={BLANK}><PublicShell><WaspHornetControl /></PublicShell></Suspense>} />
-        <Route path="/roach-control" element={<Suspense fallback={BLANK}><PublicShell><RoachControl /></PublicShell></Suspense>} />
-        <Route path="/flea-tick-control" element={<Suspense fallback={BLANK}><PublicShell><FleaTickControl /></PublicShell></Suspense>} />
-        <Route path="/rodent-control" element={<Suspense fallback={BLANK}><PublicShell><RodentControl /></PublicShell></Suspense>} />
-        <Route path="/scorpion-control" element={<Suspense fallback={BLANK}><PublicShell><ScorpionControl /></PublicShell></Suspense>} />
-        <Route path="/bed-bug-control" element={<Suspense fallback={BLANK}><PublicShell><BedBugControl /></PublicShell></Suspense>} />
-        <Route path="/pest-control" element={<Suspense fallback={BLANK}><PublicShell><PestControlPage /></PublicShell></Suspense>} />
-        <Route path="/termite-control" element={<Suspense fallback={BLANK}><PublicShell><TermiteControl /></PublicShell></Suspense>} />
-        <Route path="/termite-inspections" element={<Suspense fallback={BLANK}><PublicShell><TermiteInspections /></PublicShell></Suspense>} />
 
         {/* ─── Admin routes ─── */}
         <Route path="/admin/login" element={<Login />} />
@@ -141,7 +78,7 @@ export default function App() {
           <Suspense fallback={LOADING}><ProtectedRoute><Dashboard /></ProtectedRoute></Suspense>
         } />
 
-        {/* ─── Ironwood Ops — must be before /:slug ─── */}
+        {/* ─── Ironwood Ops ─── */}
         <Route path="/ironwood/login" element={
           <Suspense fallback={LOADING}><IronwoodLogin /></Suspense>
         } />
@@ -149,18 +86,17 @@ export default function App() {
           <Suspense fallback={LOADING}><IronwoodOps /></Suspense>
         } />
 
-        {/* ─── Post-payment landing — must be before /:slug ─── */}
+        {/* ─── Post-payment landing ─── */}
         <Route path="/payment-success" element={<Suspense fallback={LOADING}><PaymentSuccess /></Suspense>} />
 
-        {/* ─── Public intake form — must be before /:slug ─── */}
+        {/* ─── Public intake form ─── */}
         <Route path="/intake/:token" element={<Suspense fallback={LOADING}><IntakePage /></Suspense>} />
 
-        {/* ─── Post-intake branded preview — must be before /:slug ─── */}
+        {/* ─── Post-intake branded preview ─── */}
         <Route path="/intake-success" element={<Suspense fallback={LOADING}><IntakeSuccess /></Suspense>} />
 
-        {/* ─── Dynamic slug — MUST BE LAST ─── */}
-        <Route path="/:slug" element={<PublicShell><SlugRouter /></PublicShell>} />
-        <Route path="*" element={<PublicShell><NotFound /></PublicShell>} />
+        {/* ─── Catch-all ─── */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
       </ErrorBoundary>
       </TemplateProvider>
