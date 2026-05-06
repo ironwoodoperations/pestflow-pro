@@ -3,6 +3,7 @@ export const revalidate = 300;
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { resolveTenantBySlug } from '../../../shared/lib/tenant/resolve';
+import { tenantSeoMetadata } from '../../../shared/lib/tenantSeoMetadata';
 import { getAllServicePages, getSocialLinks, getSeoSettings, getBusinessInfo } from './_lib/queries';
 import { JsonLdScript } from './_components/JsonLdScripts';
 import { generateLocalBusinessSchema, type BusinessInfo, type SeoSettings, type SocialLinks } from '../../../shared/lib/seoSchema';
@@ -27,12 +28,17 @@ type Params = { params: { slug: string } };
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const tenant = await resolveTenantBySlug(params.slug);
   if (!tenant) return {};
+  const businessName = tenant.business_name || tenant.name;
+  const title = tenant.meta_title || businessName;
+  const description =
+    tenant.meta_description || `${businessName} — professional pest control services`;
   return {
-    title: tenant.meta_title || tenant.business_name || tenant.name,
-    description: tenant.meta_description || undefined,
+    title,
+    description,
     icons: tenant.favicon_url
       ? { icon: [{ url: tenant.favicon_url }] }
       : undefined,
+    ...tenantSeoMetadata(tenant, { title, description }),
   };
 }
 

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { resolveTenantBySlug } from '../../../../shared/lib/tenant/resolve';
+import { tenantSeoMetadata } from '../../../../shared/lib/tenantSeoMetadata';
 import { formatPhone } from '../../../../shared/lib/formatPhone';
 import LegalPageLayout from '../_components/LegalPageLayout';
 
@@ -12,9 +13,12 @@ type Params = { params: { slug: string } };
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const tenant = await resolveTenantBySlug(params.slug);
   const name = tenant?.business_name || tenant?.name || '';
+  const title = `Terms of Service | ${name}`;
+  const description = `Terms of Service for ${name}.`;
   return {
-    title: `Terms of Service | ${name}`,
-    description: `Terms of Service for ${name}.`,
+    title,
+    description,
+    ...(tenant ? tenantSeoMetadata(tenant, { title, description, pathname: '/terms' }) : {}),
   };
 }
 
