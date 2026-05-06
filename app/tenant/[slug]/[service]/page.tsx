@@ -152,7 +152,7 @@ export default async function ServicePage({ params }: Params) {
   const pestImg = PEST_IMAGES[params.service] || '/images/pests/pest_control.jpg';
   const phone = tenant.phone ?? '';
   const bizName = tenant.business_name ?? '';
-  const siteUrl = `https://${params.slug}.pestflowpro.com`;
+  const siteUrl = `https://${tenant.subdomain ?? tenant.slug}.pestflowpro.com`;
   const serviceSchema = generateServiceSchema(
     heroTitle,
     heroSubtitle,

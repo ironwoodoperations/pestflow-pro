@@ -26,6 +26,7 @@ export type Tenant = {
   // tenant identity
   id: string;
   slug: string;
+  subdomain: string | null;
   name: string;
 
   // branding (from settings.branding JSONB)

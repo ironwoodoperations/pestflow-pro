@@ -72,7 +72,7 @@ export default async function TenantHome({ params }: Params) {
   ]);
 
   const heroImageUrl = resolveHeroImage(content, heroMedia);
-  const siteUrl = `https://${params.slug}.pestflowpro.com`;
+  const siteUrl = `https://${tenant.subdomain ?? tenant.slug}.pestflowpro.com`;
   const websiteSchema = generateWebsiteSchema(tenant.business_name ?? tenant.name, siteUrl);
 
   if (tenant.template === 'modern-pro') {

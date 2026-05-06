@@ -37,9 +37,35 @@ export function middleware(req: NextRequest) {
 
   const slug = extractSubdomain(host);
 
-  // Apex (prod) → Vite SPA handles marketing + /ironwood
+  // Apex (prod) — only marketing landing, /admin, and /ironwood stay on Vite.
+  // Everything else on apex returns 404 (master tenant content lives on demo.*).
   if (!slug) {
-    return NextResponse.rewrite(new URL('/_admin/index.html', req.url));
+    // Static assets bypass apex gating regardless of path shape.
+    // Defense-in-depth even if config.matcher excludes these — protects
+    // Vite SPA hashed assets (/assets/*), framework paths (/_next/*),
+    // and any dotted public file (favicon.ico, robots.txt, etc.) from
+    // being 404'd by the catch-all below.
+    const isStaticAsset =
+      pathname.startsWith('/_next') ||
+      pathname.startsWith('/assets/') ||
+      pathname.includes('.');
+
+    if (isStaticAsset) {
+      return NextResponse.rewrite(new URL('/_admin/index.html', req.url));
+    }
+
+    // Apex whitelist: exact-match OR slash-prefix to prevent overmatch
+    // (pathname.startsWith('/admin') would incorrectly match /administration,
+    // /admin-panel, /administrator).
+    const isMarketingApex = pathname === '/';
+    const isAdminApex = pathname === '/admin' || pathname.startsWith('/admin/');
+    const isIronwoodApex = pathname === '/ironwood' || pathname.startsWith('/ironwood/');
+
+    if (isMarketingApex || isAdminApex || isIronwoodApex) {
+      return NextResponse.rewrite(new URL('/_admin/index.html', req.url));
+    }
+
+    return new NextResponse(null, { status: 404 });
   }
 
   // Client admin on any subdomain → Vite SPA

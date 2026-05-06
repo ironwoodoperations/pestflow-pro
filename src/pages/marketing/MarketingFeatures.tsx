@@ -36,7 +36,7 @@ export default function MarketingFeatures() {
           <div style={{ padding: '10px 16px', background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', gap: 8, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
             {['#ef4444','#f59e0b','#22c55e'].map((c, i) => <div key={i} style={{ width: 10, height: 10, borderRadius: '50%', background: c }} />)}
             <div style={{ marginLeft: 8, background: 'rgba(255,255,255,0.06)', borderRadius: 6, padding: '3px 14px', fontSize: 11, color: C.muted, fontFamily: 'monospace' }}>
-              pestflow-pro.pestflowpro.com/admin
+              demo.pestflowpro.com/admin
             </div>
           </div>
           {/* Content area */}

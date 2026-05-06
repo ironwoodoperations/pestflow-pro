@@ -3,4 +3,3 @@ Allow: /
 Disallow: /admin
 Disallow: /admin/
 Disallow: /intake/
-Sitemap: https://pestflowpro.com/sitemap.xml

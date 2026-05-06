@@ -50,7 +50,7 @@ export default async function TenantLayout({
     getBusinessInfo(tenant.id),
   ]);
 
-  const siteUrl = `https://${params.slug}.pestflowpro.com`;
+  const siteUrl = `https://${tenant.subdomain ?? tenant.slug}.pestflowpro.com`;
   const businessInfo: BusinessInfo = {
     name: tenant.business_name ?? '',
     phone: tenant.phone ?? '',

@@ -5,7 +5,7 @@ const F = { b: "'Plus Jakarta Sans', sans-serif" }
 const TABS = [
   { label: 'Lone Star', url: 'lone-star-pest-solutions.pestflowpro.com', badge: 'LIVE', img: '/images/sites/lone-star-site.jpg' },
   { label: 'Dang Pest',  url: 'dang.pestflowpro.com',                    badge: 'LIVE', img: '/images/sites/dang-site.jpg'      },
-  { label: 'Demo Site',  url: 'pestflow-pro.pestflowpro.com',             badge: 'DEMO', img: '/images/sites/demo-site.jpg'      },
+  { label: 'Demo Site',  url: 'demo.pestflowpro.com',                     badge: 'DEMO', img: '/images/sites/demo-site.jpg'      },
 ]
 
 export default function ClientMockupCarousel() {
