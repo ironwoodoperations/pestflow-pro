@@ -3,16 +3,13 @@ export type ThemePalette = {
   name: string
   primary: string
   accent: string
-  themeKey: 'modern-pro' | 'bold-local' | 'clean-friendly' | 'rustic-rugged' | 'metro-pro'
+  themeKey: 'modern-pro' | 'clean-friendly' | 'rustic-rugged' | 'metro-pro'
 }
 
 export const PALETTES: ThemePalette[] = [
   { id: 'mp-1', name: 'Navy & Gold',    primary: '#1e3a5f', accent: '#f59e0b', themeKey: 'modern-pro' },
   { id: 'mp-2', name: 'Forest & Cream', primary: '#2d6a4f', accent: '#fef3c7', themeKey: 'modern-pro' },
   { id: 'mp-3', name: 'Slate & Orange', primary: '#334155', accent: '#E87800', themeKey: 'modern-pro' },
-  { id: 'bl-1', name: 'Orange & Black', primary: '#E87800', accent: '#1a1a1a', themeKey: 'bold-local' },
-  { id: 'bl-2', name: 'Red & Dark',     primary: '#b91c1c', accent: '#1a1a1a', themeKey: 'bold-local' },
-  { id: 'bl-3', name: 'Green & Black',  primary: '#15803d', accent: '#1a1a1a', themeKey: 'bold-local' },
   { id: 'cf-1', name: 'Sky & White',    primary: '#0ea5e9', accent: '#ffffff', themeKey: 'clean-friendly' },
   { id: 'cf-2', name: 'Teal & Light',   primary: '#0d9488', accent: '#f0fdfa', themeKey: 'clean-friendly' },
   { id: 'cf-3', name: 'Purple & Soft',  primary: '#7c3aed', accent: '#faf5ff', themeKey: 'clean-friendly' },
@@ -43,9 +40,6 @@ const PALETTE_HERO: Record<string, { hero: string; end: string; cta: string; nav
   '#1e3a5f': { hero: '#0d1f35', end: '#162208', cta: '#0d1f35', nav: '#1e3a5f',  navText: '#ffffff', footer: '#0d1f35' }, // Navy & Gold
   '#2d6a4f': { hero: '#1a3d2a', end: '#0d2b1a', cta: '#1a3d2a', nav: '#2d6a4f',  navText: '#ffffff', footer: '#1a3d2a' }, // Forest & Cream
   '#334155': { hero: '#1e293b', end: '#2d1a0a', cta: '#1e293b', nav: '#334155',  navText: '#ffffff', footer: '#1e293b' }, // Slate & Orange
-  '#e87800': { hero: '#2d1a00', end: '#1a0f00', cta: '#2d1a00', nav: '#1a1a1a',  navText: '#ffffff', footer: '#111111' }, // Orange & Black
-  '#b91c1c': { hero: '#3b0a0a', end: '#1a0505', cta: '#3b0a0a', nav: '#1a1a1a',  navText: '#ffffff', footer: '#111111' }, // Red & Dark
-  '#15803d': { hero: '#0a2d1a', end: '#071a0f', cta: '#0a2d1a', nav: '#1a1a1a',  navText: '#ffffff', footer: '#111111' }, // Green & Black
   '#0ea5e9': { hero: '#e0f5ff', end: '#bae8ff', cta: '#e0f2fe', nav: '#ffffff',  navText: '#1e293b', footer: '#0c4a6e' }, // Sky & White
   '#0d9488': { hero: '#e0faf7', end: '#b2f5ec', cta: '#e0faf7', nav: '#ffffff',  navText: '#1e293b', footer: '#134e4a' }, // Teal & Light
   '#7c3aed': { hero: '#f5f0ff', end: '#e9d5ff', cta: '#f5f3ff', nav: '#ffffff',  navText: '#1e293b', footer: '#4c1d95' }, // Purple & Soft
@@ -77,26 +71,6 @@ export const THEME_CONFIGS: Record<string, Record<string, string>> = {
     '--color-btn-bg':          '#10b981',
     '--color-btn-text':        '#ffffff',
     '--color-heading':         '#0f172a',
-    '--font-heading':          'Oswald, sans-serif',
-    '--font-body':             'Inter, sans-serif',
-  },
-  'bold-local': {
-    '--color-primary':         '#f59e0b',
-    '--color-primary-dark':    '#d97706',
-    '--color-primary-light':   '#fef3c7',
-    '--color-accent':          '#f59e0b',
-    '--color-text-on-primary': '#1c1c1e',
-    '--color-bg-hero':         '#2d1a00',
-    '--color-bg-hero-end':     '#1a0f00',
-    '--color-bg-section':      '#f5f5f5',
-    '--color-bg-cta':          '#1c1c1e',
-    '--color-nav-bg':          '#1c1c1e',
-    '--color-nav-text':        '#ffffff',
-    '--color-footer-bg':       '#1c1c1e',
-    '--color-footer-text':     '#ffffff',
-    '--color-btn-bg':          '#f59e0b',
-    '--color-btn-text':        '#1c1c1e',
-    '--color-heading':         '#1c1c1e',
     '--font-heading':          'Oswald, sans-serif',
     '--font-body':             'Inter, sans-serif',
   },
