@@ -153,6 +153,44 @@ export default function PaymentSuccess() {
   const confirmed = status === 'ready' || status === 'slow'
   const roaches = useRoaches(5, confirmed)
 
+  async function poll(isCancelled: () => boolean) {
+    setStatus('checking')
+    const s = slug.current
+    if (!s) { setStatus('ready'); return }
+
+    for (let i = 0; i < 4; i++) {
+      if (isCancelled()) return
+      try {
+        const { data } = await supabase.from('tenants').select('id').eq('slug', s).maybeSingle()
+        if (data) { setStatus('ready'); return }
+      } catch { /* retry */ }
+      await new Promise(r => setTimeout(r, 5000))
+    }
+    setStatus('slow')
+  }
+
+  useEffect(() => {
+    if (canceled) return  // skip polling on Stripe-cancel landing
+    let cancelled = false
+
+    const tick = setInterval(() => {
+      setElapsed(e => {
+        const next = e + 1
+        if (next >= 30 && !cancelled) {
+          clearInterval(tick)
+          setStatus(s => s === 'checking' ? 'slow' : s)
+        }
+        return next
+      })
+    }, 1000)
+
+    const kickoff = setTimeout(() => {
+      if (!cancelled) poll(() => cancelled)
+    }, 10000)
+
+    return () => { cancelled = true; clearInterval(tick); clearTimeout(kickoff) }
+  }, [canceled])
+
   if (canceled) {
     // Stripe cancel_url lands here with ?canceled=1 (replaces the dead
     // /payment-cancel apex path which 404s post-PR-40 lockdown).
@@ -183,43 +221,6 @@ export default function PaymentSuccess() {
       </div>
     )
   }
-
-  async function poll(isCancelled: () => boolean) {
-    setStatus('checking')
-    const s = slug.current
-    if (!s) { setStatus('ready'); return }
-
-    for (let i = 0; i < 4; i++) {
-      if (isCancelled()) return
-      try {
-        const { data } = await supabase.from('tenants').select('id').eq('slug', s).maybeSingle()
-        if (data) { setStatus('ready'); return }
-      } catch { /* retry */ }
-      await new Promise(r => setTimeout(r, 5000))
-    }
-    setStatus('slow')
-  }
-
-  useEffect(() => {
-    let cancelled = false
-
-    const tick = setInterval(() => {
-      setElapsed(e => {
-        const next = e + 1
-        if (next >= 30 && !cancelled) {
-          clearInterval(tick)
-          setStatus(s => s === 'checking' ? 'slow' : s)
-        }
-        return next
-      })
-    }, 1000)
-
-    const kickoff = setTimeout(() => {
-      if (!cancelled) poll(() => cancelled)
-    }, 10000)
-
-    return () => { cancelled = true; clearInterval(tick); clearTimeout(kickoff) }
-  }, [])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-white flex flex-col items-center justify-center px-4 overflow-hidden relative">
