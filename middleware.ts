@@ -73,6 +73,14 @@ export function middleware(req: NextRequest) {
     return NextResponse.rewrite(new URL('/_admin/index.html', req.url));
   }
 
+  // Dang is the only customer on the standalone-repo model — public lives at
+  // dangpestcontrol.com (separate Vercel project). dang.pestflowpro.com is
+  // admin-only: the /admin check above still fires for Kirk's admin URL,
+  // every other path returns 404 to prevent the duplicate public render.
+  if (slug === 'dang') {
+    return new NextResponse(null, { status: 404 });
+  }
+
   // Subdomain public shell → Next.js App Router
   const url = req.nextUrl.clone();
   const suffix = pathname === '/' ? '' : pathname;
