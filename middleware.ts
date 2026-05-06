@@ -57,11 +57,30 @@ export function middleware(req: NextRequest) {
     // Apex whitelist: exact-match OR slash-prefix to prevent overmatch
     // (pathname.startsWith('/admin') would incorrectly match /administration,
     // /admin-panel, /administrator).
+    //
+    // History:
+    //   PR #40 (S193) — original apex lockdown to /, /admin/*, /ironwood/*
+    //   PR #44 (S194) — KEPT IntakePage, IntakeSuccess, PaymentSuccess as
+    //                   apex utility routes for future paying-client flows
+    //   PR #X  (S195) — this whitelist expansion to honor the KEPT decision
+    //                   (Stripe success_url + intake link distribution are
+    //                   both apex-bound — see create-checkout-session/index.ts
+    //                   and ProspectDetail.IntakeLink.tsx).
     const isMarketingApex = pathname === '/';
     const isAdminApex = pathname === '/admin' || pathname.startsWith('/admin/');
     const isIronwoodApex = pathname === '/ironwood' || pathname.startsWith('/ironwood/');
+    const isPaymentSuccess = pathname === '/payment-success';
+    const isIntake = pathname.startsWith('/intake/');
+    const isIntakeSuccess = pathname === '/intake-success';
 
-    if (isMarketingApex || isAdminApex || isIronwoodApex) {
+    if (
+      isMarketingApex ||
+      isAdminApex ||
+      isIronwoodApex ||
+      isPaymentSuccess ||
+      isIntake ||
+      isIntakeSuccess
+    ) {
       return NextResponse.rewrite(new URL('/_admin/index.html', req.url));
     }
 
