@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useTemplate } from '../context/TemplateContext'
 import { supabase } from '../lib/supabase'
@@ -10,10 +10,6 @@ import ModernProNavbar from '../shells/modern-pro/ShellNavbar'
 import ModernProFooter from '../shells/modern-pro/ShellFooter'
 import ModernProSections from '../shells/modern-pro/ShellHomeSections'
 
-// Non-default shells — lazy to reduce main bundle
-const BoldLocalNavbar      = lazy(() => import('../shells/bold-local/ShellNavbar'))
-const BoldLocalFooter      = lazy(() => import('../shells/bold-local/ShellFooter'))
-const BoldLocalSections    = lazy(() => import('../shells/bold-local/ShellHomeSections'))
 // Maps route pathnames to SEO page type + title
 function resolvePageMeta(pathname: string): { pageType: PageType; title: string } {
   if (pathname === '/') return { pageType: 'home', title: 'Home' }
@@ -179,11 +175,7 @@ function CanonicalManager() {
 }
 
 export function ShellSectionsRenderer() {
-  const { template } = useTemplate()
-  switch (template) {
-    case 'bold-local':    return <Suspense fallback={null}><BoldLocalSections /></Suspense>
-    default:              return <ModernProSections />
-  }
+  return <ModernProSections />
 }
 
 interface Props {
@@ -191,19 +183,11 @@ interface Props {
 }
 
 function ShellNav() {
-  const { template } = useTemplate()
-  switch (template) {
-    case 'bold-local':    return <Suspense fallback={null}><BoldLocalNavbar /></Suspense>
-    default:              return <ModernProNavbar />
-  }
+  return <ModernProNavbar />
 }
 
 function ShellFooterComp() {
-  const { template } = useTemplate()
-  switch (template) {
-    case 'bold-local':    return <Suspense fallback={null}><BoldLocalFooter /></Suspense>
-    default:              return <ModernProFooter />
-  }
+  return <ModernProFooter />
 }
 
 export default function PublicShell({ children }: Props) {

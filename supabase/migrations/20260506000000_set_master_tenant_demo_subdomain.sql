@@ -35,9 +35,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS tenants_subdomain_unique
   WHERE subdomain IS NOT NULL;
 
 -- 3. Set master tenant subdomain. 'demo' satisfies the CHECK above.
+--    Note: tenants table has no updated_at column. The originally-drafted
+--    migration referenced one and was corrected before MCP application
+--    (2026-05-06). This file restored to match what was actually applied.
 UPDATE public.tenants
-SET subdomain = 'demo',
-    updated_at = NOW()
+SET subdomain = 'demo'
 WHERE id = '9215b06b-3eb5-49a1-a16e-7ff214bf6783'
   AND (subdomain IS NULL OR subdomain != 'demo');
 

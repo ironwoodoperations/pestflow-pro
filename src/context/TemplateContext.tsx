@@ -1,7 +1,7 @@
 import { createContext, useContext, type ReactNode } from 'react'
 import { useTenantBoot } from './TenantBootProvider'
 
-export type TemplateName = 'modern-pro' | 'bold-local'
+export type TemplateName = 'modern-pro'
 
 interface TemplateContextValue {
   template: TemplateName
