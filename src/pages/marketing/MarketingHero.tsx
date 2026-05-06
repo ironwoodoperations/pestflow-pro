@@ -1,5 +1,5 @@
-const DEMO = 'https://pestflow-pro.pestflowpro.com'
-const ADMIN = 'https://pestflow-pro.pestflowpro.com/admin'
+const DEMO = 'https://demo.pestflowpro.com'
+const ADMIN = 'https://demo.pestflowpro.com/admin'
 
 const C = {
   green: '#22c55e', amber: '#fbbf24',

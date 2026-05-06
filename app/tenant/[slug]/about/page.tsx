@@ -40,7 +40,7 @@ export default async function AboutPage({ params }: Params) {
   const aboutImage = c?.image_1_url || c?.image_urls?.[0] || '/images/pests/team.jpg';
   const heroImageUrl = resolveHeroImage(content, heroMedia);
   const isCF = tenant.template === 'clean-friendly';
-  const siteUrl = `https://${params.slug}.pestflowpro.com`;
+  const siteUrl = `https://${tenant.subdomain ?? tenant.slug}.pestflowpro.com`;
   const aboutBizInfo: BusinessInfo = { name: tenant.business_name ?? '', phone: tenant.phone ?? '', email: tenant.email ?? '', address: tenant.address ?? '' };
   const aboutSeoInfo: SeoSettings = { meta_description: tenant.meta_description ?? '', service_areas: [], certifications: [], founded_year: '', owner_name: tenant.owner_name ?? '' };
   const aboutSchema = generateAboutSchema(aboutBizInfo, aboutSeoInfo, siteUrl);

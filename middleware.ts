@@ -37,9 +37,17 @@ export function middleware(req: NextRequest) {
 
   const slug = extractSubdomain(host);
 
-  // Apex (prod) → Vite SPA handles marketing + /ironwood
+  // Apex (prod) — only marketing landing, /admin*, and /ironwood* stay on Vite.
+  // Everything else on apex returns 404 (master tenant content lives on demo.*).
   if (!slug) {
-    return NextResponse.rewrite(new URL('/_admin/index.html', req.url));
+    if (
+      pathname === '/' ||
+      pathname.startsWith('/admin') ||
+      pathname.startsWith('/ironwood')
+    ) {
+      return NextResponse.rewrite(new URL('/_admin/index.html', req.url));
+    }
+    return new NextResponse(null, { status: 404 });
   }
 
   // Client admin on any subdomain → Vite SPA

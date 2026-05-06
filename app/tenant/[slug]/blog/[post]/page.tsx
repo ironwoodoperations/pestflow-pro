@@ -21,7 +21,7 @@ export default async function BlogPostPage({ params }: Params) {
   if (!post) notFound();
 
   const p = post as { title: string; slug: string; content: string; published_at?: string | null; intro_image?: string | null; excerpt?: string | null; author_name?: string | null };
-  const siteUrl = `https://${params.slug}.pestflowpro.com`;
+  const siteUrl = `https://${tenant.subdomain ?? tenant.slug}.pestflowpro.com`;
   const postSchema = generateBlogPostingSchema(
     { title: p.title, slug: p.slug ?? params.post, excerpt: p.excerpt, published_at: p.published_at, author_name: p.author_name },
     siteUrl,

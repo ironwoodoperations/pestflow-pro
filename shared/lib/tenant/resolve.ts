@@ -2,7 +2,7 @@ import { cache } from 'react';
 import { getServerSupabaseForISR } from '../supabase/server';
 import type { Tenant } from './types';
 
-async function resolveSettings(tenantBase: { id: string; slug: string; name: string }): Promise<Tenant> {
+async function resolveSettings(tenantBase: { id: string; slug: string; subdomain: string | null; name: string }): Promise<Tenant> {
   const supabase = getServerSupabaseForISR();
   const { data: settings, error } = await supabase
     .from('settings')
@@ -24,6 +24,7 @@ async function resolveSettings(tenantBase: { id: string; slug: string; name: str
   return {
     id: tenantBase.id,
     slug: tenantBase.slug,
+    subdomain: tenantBase.subdomain ?? null,
     name: tenantBase.name,
 
     template: branding.theme ?? 'modern-pro',
@@ -51,12 +52,15 @@ async function resolveSettings(tenantBase: { id: string; slug: string; name: str
 }
 
 export const resolveTenantBySlug = cache(async (slug: string): Promise<Tenant | null> => {
-  // Step 1: slug → id/name (immutable — slugs and IDs never change).
+  // Step 1: resolve by slug OR subdomain → id/slug/subdomain/name.
+  // slug values come from URL path (Next.js sanitizes control chars) and only
+  // contain URL-safe chars (a-z, 0-9, hyphen), so the .or() string template is
+  // safe against injection.
   const supabase = getServerSupabaseForISR();
   const { data: tenantBase, error } = await supabase
     .from('tenants')
-    .select('id, slug, name')
-    .eq('slug', slug)
+    .select('id, slug, subdomain, name')
+    .or(`slug.eq.${slug},subdomain.eq.${slug}`)
     .maybeSingle();
 
   if (error || !tenantBase) return null;
