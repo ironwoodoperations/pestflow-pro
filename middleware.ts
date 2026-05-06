@@ -73,11 +73,6 @@ export function middleware(req: NextRequest) {
     return NextResponse.rewrite(new URL('/_admin/index.html', req.url));
   }
 
-  // Dang is NOT migrated — stays on Vite
-  if (slug === 'dang') {
-    return NextResponse.rewrite(new URL('/_admin/index.html', req.url));
-  }
-
   // Subdomain public shell → Next.js App Router
   const url = req.nextUrl.clone();
   const suffix = pathname === '/' ? '' : pathname;
