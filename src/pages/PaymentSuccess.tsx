@@ -15,6 +15,11 @@ function getSlug(): string {
   return ''
 }
 
+function getCanceled(): boolean {
+  try { return new URLSearchParams(window.location.search).get('canceled') === '1' }
+  catch { return false }
+}
+
 // ── American Cockroach SVG ──────────────────────────────────────────────────
 function CockroachSvg({ angle }: { angle: number }) {
   return (
@@ -143,9 +148,41 @@ export default function PaymentSuccess() {
   const [status, setStatus] = useState<Status>('waiting')
   const slug = useRef(getSlug())
   const [email] = useState(getEmail)
+  const [canceled] = useState(getCanceled)
 
   const confirmed = status === 'ready' || status === 'slow'
   const roaches = useRoaches(5, confirmed)
+
+  if (canceled) {
+    // Stripe cancel_url lands here with ?canceled=1 (replaces the dead
+    // /payment-cancel apex path which 404s post-PR-40 lockdown).
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white flex flex-col items-center justify-center px-4">
+        <div className="w-full max-w-md text-center">
+          <div className="mb-8">
+            <span className="text-2xl font-bold text-emerald-700 tracking-tight">
+              Pest<span className="text-gray-900">Flow</span> Pro
+            </span>
+          </div>
+          <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-8 mb-6">
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Payment canceled</h1>
+            <p className="text-gray-500 text-sm mb-6">
+              No charge was made. Try again or contact us if you need help.
+            </p>
+            <a
+              href="mailto:admin@pestflowpro.com"
+              className="inline-block py-3 px-6 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition text-sm"
+            >
+              Contact us
+            </a>
+          </div>
+          <p className="text-xs text-gray-400">
+            Powered by <span className="font-semibold text-emerald-600">PestFlow Pro</span>
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   async function poll(isCancelled: () => boolean) {
     setStatus('checking')

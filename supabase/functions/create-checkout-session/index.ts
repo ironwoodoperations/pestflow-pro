@@ -90,7 +90,7 @@ Deno.serve(async (req: Request) => {
         onboarding_session_id: onboarding_session_id || '',
       },
       success_url: 'https://pestflowpro.com/payment-success?session_id={CHECKOUT_SESSION_ID}',
-      cancel_url:  'https://pestflowpro.com/payment-cancel',
+      cancel_url:  'https://pestflowpro.com/payment-success?canceled=1',
     })
 
     console.log(`Checkout session created: ${session.id}`)
