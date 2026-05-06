@@ -52,10 +52,16 @@ async function resolveSettings(tenantBase: { id: string; slug: string; subdomain
 }
 
 export const resolveTenantBySlug = cache(async (slug: string): Promise<Tenant | null> => {
+  // Validator gate: PostgREST .or() filter parses commas as condition
+  // separators. slug comes from a Next.js dynamic route segment, which
+  // Next.js URL-decodes before populating params, so a request like
+  // /tenant/foo,subdomain.eq.bar/ would let URL-derived characters break
+  // the .or() filter grammar. Whitelist before query.
+  if (!/^[a-z0-9-]+$/.test(slug)) {
+    return null;
+  }
+
   // Step 1: resolve by slug OR subdomain → id/slug/subdomain/name.
-  // slug values come from URL path (Next.js sanitizes control chars) and only
-  // contain URL-safe chars (a-z, 0-9, hyphen), so the .or() string template is
-  // safe against injection.
   const supabase = getServerSupabaseForISR();
   const { data: tenantBase, error } = await supabase
     .from('tenants')
