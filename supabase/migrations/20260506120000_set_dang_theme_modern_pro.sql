@@ -24,7 +24,3 @@ SET value = jsonb_set(value, '{theme}', '"modern-pro"')
 WHERE tenant_id = '1611b16f-381b-4d4f-ba3a-fbde56ad425b'
   AND key = 'branding'
   AND value->>'theme' = 'dang';
-
--- Reload PostgREST schema cache (defensive; schema unchanged but matches
--- standing pattern from S189 onward).
-NOTIFY pgrst, 'reload schema';
