@@ -163,9 +163,19 @@ export default async function TenantLayout({
     );
   }
 
+  // Default fallback: modern-pro shell. Renders for explicitly chosen
+  // 'modern-pro' theme AND any unrecognized theme value (defense in depth
+  // against partial-state cutovers like S194 dang theme migration where
+  // theme value and dispatcher state may briefly disagree).
   return (
-    <main style={{ padding: '4rem 2rem' }}>
-      <h1>Theme not yet ported: {tenant.template}</h1>
-    </main>
+    <>
+      <JsonLdScript schema={localBusinessSchema} id="ld-local-business" />
+      <style dangerouslySetInnerHTML={{ __html: cssVars }} />
+      <TenantProvider tenant={tenant}>
+        <ModernProNavbar servicePages={servicePages} />
+        <main id="main-content">{children}</main>
+        <ModernProFooter tenant={tenant} social={social} />
+      </TenantProvider>
+    </>
   );
 }
