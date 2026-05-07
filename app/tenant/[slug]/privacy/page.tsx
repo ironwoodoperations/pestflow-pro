@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { resolveTenantBySlug } from '../../../../shared/lib/tenant/resolve';
 import { tenantSeoMetadata } from '../../../../shared/lib/tenantSeoMetadata';
 import { formatPhone } from '../../../../shared/lib/formatPhone';
+import { getPageContent } from '../_lib/queries';
 import LegalPageLayout from '../_components/LegalPageLayout';
 
 export const revalidate = 300;
@@ -40,6 +41,19 @@ export default async function PrivacyPage({ params }: Params) {
   const tenant = await resolveTenantBySlug(params.slug);
   if (!tenant) notFound();
 
+  const updated = new Date().toISOString().split('T')[0];
+
+  // Prefer DB-stored content; fall back to hardcoded boilerplate. See terms/page.tsx.
+  const pageContent = await getPageContent(tenant.id, 'privacy') as
+    | { title?: string; intro?: string } | null;
+  if (pageContent?.intro) {
+    return (
+      <LegalPageLayout title={pageContent.title || 'Privacy Policy'} lastUpdated={updated}>
+        <div className="whitespace-pre-wrap">{pageContent.intro}</div>
+      </LegalPageLayout>
+    );
+  }
+
   const name = tenant.business_name || tenant.name;
   const phone = tenant.phone ?? '';
   const email = tenant.email ?? '';
@@ -47,13 +61,11 @@ export default async function PrivacyPage({ params }: Params) {
 
   if (!name || !phone || !email || !address) {
     return (
-      <LegalPageLayout title="Page Under Construction" lastUpdated={new Date().toISOString().split('T')[0]}>
+      <LegalPageLayout title="Page Under Construction" lastUpdated={updated}>
         <P>This page is currently being configured. For assistance, please contact the site administrator.</P>
       </LegalPageLayout>
     );
   }
-
-  const updated = new Date().toISOString().split('T')[0];
 
   return (
     <LegalPageLayout title="Privacy Policy" lastUpdated={updated}>
