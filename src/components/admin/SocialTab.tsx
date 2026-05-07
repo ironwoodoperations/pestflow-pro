@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { FileText, LayoutGrid, Lock } from 'lucide-react'
 import { usePlan } from '../../hooks/usePlan'
 import { FeatureGate } from '../common/FeatureGate'
-import { supabase } from '../../lib/supabase'
 import PageHelpBanner from './PageHelpBanner'
 import { useSocialData } from './social/useSocialData'
 import CampaignsTab from './social/CampaignsTab'
@@ -13,7 +12,6 @@ import LegacyComposer from './social/LegacyComposer'
 import NewCampaignModal from './social/NewCampaignModal'
 import SocialUpgradeNudge from './social/SocialUpgradeNudge'
 import ZernioOnboardingBanner from './social/ZernioOnboardingBanner'
-import { useTenant } from '../../context/TenantBootProvider'
 
 function useIsDemoTenant() {
   const parts = window.location.hostname.split('.')
@@ -35,40 +33,25 @@ const TABS: { id: TabId; label: string }[] = [
 type PostFlow = 'none' | 'choice' | 'single' | 'campaign'
 
 export default function SocialTab({ onNavigate }: Props) {
-  const { id: tenantId } = useTenant()
-  const { posts, campaigns, loading, refresh } = useSocialData()
+  const { posts, campaigns, integrations, loading, refresh } = useSocialData()
   const { canAccess, tier } = usePlan()
   const [activeTab, setActiveTab] = useState<TabId>('queue')
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null)
   const [showConnections, setShowConnections] = useState(false)
   const [postFlow, setPostFlow] = useState<PostFlow>('none')
-  const [hasConnectedAccounts, setHasConnectedAccounts] = useState<boolean | null>(null)
 
   const failedCount = posts.filter(p => p.status === 'failed').length
   const isStarter = tier === 1
   const isDemoTenant = useIsDemoTenant()
 
-  // Check if client has connected any Zernio social accounts
-  useEffect(() => {
-    if (!tenantId || tier < 2) return
-    supabase.from('settings').select('value')
-      .eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle()
-      .then(({ data }) => {
-        const accounts = data?.value?.zernio_accounts ?? {}
-        setHasConnectedAccounts(Object.keys(accounts).length > 0)
-      })
-  }, [tier])
+  // Derived from useSocialData's integrations payload (S196 b66 dedup).
+  const hasConnectedAccounts = tier < 2
+    ? null
+    : Object.keys(integrations?.zernio_accounts ?? {}).length > 0
 
-  // Re-check when ConnectionsModal closes (client may have just connected)
   function handleConnectionsClose() {
     setShowConnections(false)
-    if (!tenantId || tier < 2) return
-    supabase.from('settings').select('value')
-      .eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle()
-      .then(({ data }) => {
-        const accounts = data?.value?.zernio_accounts ?? {}
-        setHasConnectedAccounts(Object.keys(accounts).length > 0)
-      })
+    refresh()  // re-fetch so newly-connected accounts surface in the banner
   }
 
   if (loading) return <div className="p-8 text-center text-gray-400">Loading social data…</div>
