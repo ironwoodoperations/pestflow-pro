@@ -14,7 +14,10 @@ jobs:
 
       - name: Ban VITE_TENANT_ID usage in src/
         run: |
-          if grep -rn "VITE_TENANT_ID" src/ --include="*.ts" --include="*.tsx"; then
+          # Filter out comment lines (//, /*, *) so historical references in
+          # docs/comments don't trip the gate; only real code usage fails CI.
+          if grep -rn "VITE_TENANT_ID" src/ --include="*.ts" --include="*.tsx" \
+               | grep -vE ':[[:space:]]*(//|\*|/\*)'; then
             echo "::error::Direct VITE_TENANT_ID usage detected. Use useTenant() instead. See S188 audit."
             exit 1
           fi

@@ -80,20 +80,25 @@ serve(async (req) => {
     // no body — process all due posts
   }
 
-  // Query posts to publish
-  let query = supabase
+  // Atomically claim posts by flipping status='scheduled' → 'publishing' in a
+  // single UPDATE. Prevents the SELECT-then-UPDATE race where two overlapping
+  // cron invocations both pick up the same scheduled rows and double-publish
+  // them. Postgres row-level locks make the WHERE status='scheduled' clause
+  // mutually exclusive — the second invocation sees 'publishing' and skips.
+  let claimQuery = supabase
     .from('social_posts')
-    .select('id, tenant_id, platform, caption, image_url, status, scheduled_for')
+    .update({ status: 'publishing' })
     .eq('status', 'scheduled')
     .is('archived_at', null)
 
   if (specificPostId) {
-    query = query.eq('id', specificPostId)
+    claimQuery = claimQuery.eq('id', specificPostId)
   } else {
-    query = query.lte('scheduled_for', new Date().toISOString())
+    claimQuery = claimQuery.lte('scheduled_for', new Date().toISOString())
   }
 
-  const { data: posts, error: postsError } = await query
+  const { data: posts, error: postsError } = await claimQuery
+    .select('id, tenant_id, platform, caption, image_url, status, scheduled_for')
 
   if (postsError) {
     console.error('[publish-scheduled-posts] query error:', postsError.message)
