@@ -494,8 +494,11 @@ Deno.serve(async (req: Request) => {
         // 9b: Seed SEO settings key — service_areas written as [] placeholder;
         // will be overwritten by the projection step (9f) after table rows are seeded.
         const serviceArea = [city, state].filter(Boolean).join(', ')
+        // Strip trailing period(s) — taglines often end with '.', and the literal
+        // '.' that follows in the template would produce '..' (S196 CityShield bug).
+        const taglineTrimmed = (ib.tagline ?? '').replace(/\.+$/, '')
         const metaDesc = ib.tagline
-          ? `${bizForSeo} — ${ib.tagline}. Serving ${serviceArea || 'your area'}.`
+          ? `${bizForSeo} — ${taglineTrimmed}. Serving ${serviceArea || 'your area'}.`
           : `Professional pest control services by ${bizForSeo}. Serving ${serviceArea || 'your area'} and surrounding areas.`
         await supabase.from('settings').upsert(
           { tenant_id: tenantId, key: 'seo', value: {
