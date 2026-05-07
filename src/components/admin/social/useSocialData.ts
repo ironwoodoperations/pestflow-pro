@@ -36,6 +36,20 @@ export interface IntegrationSettings {
   facebook_access_token?: string
   facebook_page_id?: string
   active_social_provider?: 'export' | 'diy' | 'full_auto'
+  zernio_accounts?: Record<string, string>
+}
+
+// Race a Supabase query against an 8s timeout so a stalled connection-pool
+// slot or transient backend hiccup never hangs the Social tab indefinitely.
+// Per S196 b66 probe: hang surfaced from one of the 3 mount queries with no
+// fail-fast; this gate flips loading=false and surfaces a non-fatal error.
+function withTimeout<T>(p: PromiseLike<T>, label: string, ms = 8000): Promise<T> {
+  return Promise.race([
+    Promise.resolve(p),
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms),
+    ),
+  ])
 }
 
 export function useSocialData() {
@@ -50,16 +64,28 @@ export function useSocialData() {
     setLoading(true)
     setError(null)
     try {
+      // social_campaigns has NO archived_at column — DO NOT add .is('archived_at', null) here.
+      // .limit(200) bounds payload regardless of historical row count.
       const [postsRes, campaignsRes, intRes] = await Promise.all([
-        supabase.from('social_posts').select('*').eq('tenant_id', tenantId).is('archived_at', null).order('created_at', { ascending: false }),
-        supabase.from('social_campaigns').select('*').eq('tenant_id', tenantId).order('created_at', { ascending: false }),
-        supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle(),
+        withTimeout(
+          supabase.from('social_posts').select('*').eq('tenant_id', tenantId).is('archived_at', null).order('created_at', { ascending: false }).limit(200),
+          'social_posts',
+        ),
+        withTimeout(
+          supabase.from('social_campaigns').select('*').eq('tenant_id', tenantId).order('created_at', { ascending: false }).limit(200),
+          'social_campaigns',
+        ),
+        withTimeout(
+          supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle(),
+          'integrations',
+        ),
       ])
 
       setPosts((postsRes.data as SocialPost[]) || [])
       setCampaigns((campaignsRes.data as Campaign[]) || [])
       setIntegrations((intRes.data?.value as IntegrationSettings) || null)
     } catch (err) {
+      // Non-fatal: surface error, leave any partial state, ALWAYS unblock loading.
       setError(err instanceof Error ? err.message : 'Failed to load social data')
     } finally {
       setLoading(false)
