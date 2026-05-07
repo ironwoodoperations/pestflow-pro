@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { resolveTenantBySlug } from '../../../../shared/lib/tenant/resolve';
 import { tenantSeoMetadata } from '../../../../shared/lib/tenantSeoMetadata';
 import { formatPhone } from '../../../../shared/lib/formatPhone';
+import { getPageContent } from '../_lib/queries';
 import LegalPageLayout from '../_components/LegalPageLayout';
 
 export const revalidate = 300;
@@ -39,6 +40,21 @@ export default async function TermsPage({ params }: Params) {
   const tenant = await resolveTenantBySlug(params.slug);
   if (!tenant) notFound();
 
+  const updated = new Date().toISOString().split('T')[0];
+
+  // Prefer DB-stored content (provision-tenant Step 9g seeds these from the
+  // master template, substituting per-tenant business_info). Fall back to the
+  // hardcoded boilerplate below if the row is missing — never blank-page.
+  const pageContent = await getPageContent(tenant.id, 'terms') as
+    | { title?: string; intro?: string } | null;
+  if (pageContent?.intro) {
+    return (
+      <LegalPageLayout title={pageContent.title || 'Terms of Service'} lastUpdated={updated}>
+        <div className="whitespace-pre-wrap">{pageContent.intro}</div>
+      </LegalPageLayout>
+    );
+  }
+
   const name = tenant.business_name || tenant.name;
   const phone = tenant.phone ?? '';
   const email = tenant.email ?? '';
@@ -46,13 +62,11 @@ export default async function TermsPage({ params }: Params) {
 
   if (!name || !phone || !email || !address) {
     return (
-      <LegalPageLayout title="Page Under Construction" lastUpdated={new Date().toISOString().split('T')[0]}>
+      <LegalPageLayout title="Page Under Construction" lastUpdated={updated}>
         <P>This page is currently being configured. For assistance, please contact the site administrator.</P>
       </LegalPageLayout>
     );
   }
-
-  const updated = new Date().toISOString().split('T')[0];
 
   return (
     <LegalPageLayout title="Terms of Service" lastUpdated={updated}>

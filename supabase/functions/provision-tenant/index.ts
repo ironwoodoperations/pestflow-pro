@@ -642,6 +642,68 @@ Deno.serve(async (req: Request) => {
         await supabase.from('prospects').update({ pipeline_stage: 'it_in_progress' }).eq('id', prospect_id)
         console.log('[provision-tenant] prospect stage → it_in_progress')
 
+        // Step 9g — Seed legal page_content from master template (non-blocking)
+        // Reads master tenant's 4 legal docs (terms, privacy, sms-terms,
+        // accessibility) and inserts customized copies for the new tenant.
+        // Substitutions: PestFlow Pro → ib.business_name, pestflowpro.com →
+        // <slug>.pestflowpro.com, sales@pestflowpro.com → ib.email,
+        // (430) 367-5601 → ib.phone.
+        // Smith County, Texas jurisdiction left as-is — TX-only assumption for
+        // first paying client. Multi-state expansion is a future enhancement.
+        // If anything fails: log warning, continue. Tenant provisioning must
+        // succeed even with broken legal seed (operator can populate via admin).
+        try {
+          const MASTER_TENANT_ID = '9215b06b-3eb5-49a1-a16e-7ff214bf6783'
+          const LEGAL_SLUGS = ['terms', 'privacy', 'sms-terms', 'accessibility']
+          const { data: templates, error: templateErr } = await supabase
+            .from('page_content')
+            .select('page_slug, title, intro')
+            .eq('tenant_id', MASTER_TENANT_ID)
+            .in('page_slug', LEGAL_SLUGS)
+
+          if (templateErr || !templates || templates.length === 0) {
+            console.warn('[provision-tenant] Step 9g: master legal templates missing, skipping legal seed')
+          } else {
+            const newDomain = `${resolvedSlug}.pestflowpro.com`
+            const newName = ib.business_name || 'Your Business'
+            const newNameUpper = newName.toUpperCase()
+            const newEmail = ib.email || `info@${newDomain}`
+            // Format raw 10-digit phone → (NNN) NNN-NNNN; tolerate already-formatted input.
+            const phoneDigits = (ib.phone || '').replace(/\D/g, '')
+            const newPhone = phoneDigits.length === 10
+              ? `(${phoneDigits.slice(0, 3)}) ${phoneDigits.slice(3, 6)}-${phoneDigits.slice(6)}`
+              : (ib.phone || '')
+
+            const seedRows = templates.map((t: { page_slug: string; title: string; intro: string }) => ({
+              tenant_id: tenantId,
+              page_slug: t.page_slug,
+              title: t.title,
+              intro: t.intro
+                .replaceAll('PestFlow Pro, LLC', `${newName}, LLC`)
+                .replaceAll('PESTFLOW PRO, LLC', `${newNameUpper}, LLC`)
+                .replaceAll('PestFlow Pro', newName)
+                .replaceAll('PESTFLOW PRO', newNameUpper)
+                .replaceAll('sales@pestflowpro.com', newEmail)
+                .replaceAll('https://pestflowpro.com/', `https://${newDomain}/`)
+                .replaceAll('https://pestflowpro.com', `https://${newDomain}`)
+                .replaceAll('pestflowpro.com', newDomain)
+                .replaceAll('(430) 367-5601', newPhone),
+            }))
+
+            const { error: insertErr } = await supabase
+              .from('page_content')
+              .upsert(seedRows, { onConflict: 'tenant_id,page_slug' })
+
+            if (insertErr) {
+              console.warn('[provision-tenant] Step 9g: legal seed insert failed:', insertErr.message)
+            } else {
+              console.log(`[provision-tenant] Step 9g: ${seedRows.length} legal page_content rows seeded`)
+            }
+          }
+        } catch (err: any) {
+          console.warn('[provision-tenant] Step 9g: unexpected error during legal seed:', err?.message)
+        }
+
       } catch (intakeErr: any) {
         console.error('[provision-tenant] intake seeding failed (non-fatal):', intakeErr?.message)
       }
