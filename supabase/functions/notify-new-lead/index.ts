@@ -3,9 +3,13 @@
 // Sends two emails: customer acknowledgment (Email A) + owner notification (Email B).
 // Non-fatal: if either email fails, the other still sends.
 //
+// Auth: verify_jwt:false at platform; in-source validation of `apikey` header
+//       against NOTIFY_NEW_LEAD_INTERNAL_SECRET env var. Sole legitimate caller:
+//       public.trigger_notify_new_lead DB trigger.
 // Deploy: supabase functions deploy notify-new-lead --project-ref biezzykcgzkrwdgqpsar --no-verify-jwt
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { timingSafeEqual } from 'node:crypto'
 import { sendEmail } from '../_shared/sendEmail.ts'
 
 function formatPhone(raw: string): string {
@@ -33,7 +37,35 @@ interface LeadPayload {
   }
 }
 
-Deno.serve(async (req) => {
+export async function handler(req: Request): Promise<Response> {
+  // ── AUTH (must run before anything else) ────────────────────────────
+  const expectedSecret = Deno.env.get('NOTIFY_NEW_LEAD_INTERNAL_SECRET') || ''
+  const presentedSecret = req.headers.get('apikey') || ''
+
+  if (!expectedSecret) {
+    console.error('[notify-new-lead] NOTIFY_NEW_LEAD_INTERNAL_SECRET env var not set; rejecting all requests')
+    return new Response(JSON.stringify({ error: 'Server misconfigured' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  // node:crypto.timingSafeEqual — constant-time compare. Throws on length mismatch,
+  // so length-equality pre-check is required. (crypto.subtle has no timingSafeEqual
+  // in Deno/Web Crypto; node:crypto is the supported primitive in Supabase Edge Runtime.)
+  const enc = new TextEncoder()
+  const a = enc.encode(expectedSecret)
+  const b = enc.encode(presentedSecret)
+  const authOk = a.length === b.length && timingSafeEqual(a, b)
+
+  if (!authOk) {
+    console.warn('[notify-new-lead] auth failed — apikey_present:', !!presentedSecret, 'apikey_length_match:', a.length === b.length)
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
   try {
     const payload: LeadPayload = await req.json()
     const lead = payload.record
@@ -218,4 +250,8 @@ Deno.serve(async (req) => {
       headers: { 'Content-Type': 'application/json' },
     })
   }
-})
+}
+
+if (import.meta.main) {
+  Deno.serve(handler)
+}
