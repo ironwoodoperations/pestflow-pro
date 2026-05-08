@@ -222,12 +222,16 @@ export async function handler(req: Request): Promise<Response> {
     // ── SMS (owner) ───────────────────────────────────────────────────────
     if (ownerSms) {
       const smsMsg = `New lead — ${lead.name} | ${formatPhone(lead.phone || '')} | ${services}. Submitted ${timestamp}`
-      console.log('[notify-new-lead] calling send-sms, to:', ownerSms, 'key_len:', textbeltKey.length)
+      const SEND_SMS_INTERNAL_SECRET = Deno.env.get('SEND_SMS_INTERNAL_SECRET') ?? ''
+      console.log('[notify-new-lead] calling send-sms, to:', ownerSms)
       try {
         const smsRes = await fetch(`${SUPABASE_URL}/functions/v1/send-sms`, {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ to: ownerSms, message: smsMsg, type: 'lead-notification', key: textbeltKey }),
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SEND_SMS_INTERNAL_SECRET,
+          },
+          body: JSON.stringify({ to: ownerSms, message: smsMsg, type: 'lead-notification' }),
         })
         console.log('[notify-new-lead] send-sms response status:', smsRes.status)
         results.sms = smsRes.ok ? 'sent' : `failed:${smsRes.status}`
