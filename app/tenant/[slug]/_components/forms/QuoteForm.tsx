@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { CheckCircle } from 'lucide-react';
-import { createBrowserSupabase } from '../../../../../shared/lib/supabase/browser';
 import { formatPhone } from '../../../../../shared/lib/formatPhone';
 
 const PEST_OPTIONS = ['Ants', 'Bed Bugs', 'Cockroaches', 'Fleas & Ticks', 'Mosquitoes', 'Rodents', 'Spiders', 'Termites', 'Wasps & Hornets', 'Other'];
@@ -47,25 +46,28 @@ export function QuoteForm({ tenantId, businessName, businessPhone, ownerSmsNumbe
 
   async function handleSubmit() {
     setSubmitting(true); setError('');
-    const supabase = createBrowserSupabase();
-    const { error: insertErr } = await supabase.from('leads').insert({
-      tenant_id: tenantId,
-      name: `${form.firstName} ${form.lastName}`.trim(),
-      email: form.email, phone: form.phone,
-      services: [form.service].filter(Boolean), status: 'new',
-      message: [form.address && `Address: ${form.address}`, form.pestConcern && `Pest: ${form.pestConcern}`].filter(Boolean).join('\n'),
-    });
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
+    const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/api-quote`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': anonKey,
+        'Authorization': `Bearer ${anonKey}`,
+      },
+      body: JSON.stringify({
+        tenant_id: tenantId,
+        name: `${form.firstName} ${form.lastName}`.trim(),
+        email: form.email,
+        phone: form.phone,
+        services: [form.service].filter(Boolean),
+        message: [form.address && `Address: ${form.address}`, form.pestConcern && `Pest: ${form.pestConcern}`].filter(Boolean).join('\n'),
+        // QuoteForm has no smsConsent checkbox — fail closed on consent (TCPA).
+        // Customer-ack SMS will not fire from this form until the checkbox is added.
+        customer_sms_consent: false,
+      }),
+    }).catch(() => null);
     setSubmitting(false);
-    if (insertErr) { setError('Something went wrong. Please call us directly.'); return; }
-
-    const fnUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/send-sms`;
-    const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}` };
-    if (businessPhone) {
-      fetch(fnUrl, { method: 'POST', headers, body: JSON.stringify({ tenant_id: tenantId, to: form.phone, message: `Hi ${form.firstName}, thanks for reaching out to ${businessName}! We received your quote request and will be in touch shortly.`, type: 'customer' }) }).catch(() => {});
-    }
-    if (ownerSmsNumber) {
-      fetch(fnUrl, { method: 'POST', headers, body: JSON.stringify({ tenant_id: tenantId, to: ownerSmsNumber, message: `📋 New quote from ${form.firstName} ${form.lastName} — ${form.phone} — ${form.service}. Check your PestFlow Pro admin panel.`, type: 'owner' }) }).catch(() => {});
-    }
+    if (!res || !res.ok) { setError('Something went wrong. Please call us directly.'); return; }
     setSubmitted(true);
   }
 

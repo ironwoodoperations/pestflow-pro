@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Phone, Mail, MapPin, Clock } from 'lucide-react';
-import { createBrowserSupabase } from '../../../../../shared/lib/supabase/browser';
 import { formatPhone } from '../../../../../shared/lib/formatPhone';
 
 interface Props {
@@ -41,21 +40,27 @@ export function ContactForm({ tenantId, bizName, phone, email, address, hours, f
     if (!form.name.trim() || !form.email.trim()) { setError('Please fill in your name and email.'); return; }
     setSubmitting(true);
     setError('');
-    const supabase = createBrowserSupabase();
-    const { error: insertErr } = await supabase.from('leads').insert({
-      tenant_id: tenantId, name: form.name, email: form.email, phone: form.phone, message: form.message,
-    });
-    setSubmitting(false);
-    if (insertErr) { setError('Something went wrong. Please try again or call us directly.'); return; }
 
-    const fnUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/send-sms`;
-    const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}` };
-    if (form.smsConsent && form.phone) {
-      fetch(fnUrl, { method: 'POST', headers, body: JSON.stringify({ tenant_id: tenantId, to: form.phone, message: `Hi ${form.name}, thanks for contacting ${bizName}! We received your message and will be in touch shortly.`, type: 'customer' }) }).catch(() => {});
-    }
-    if (ownerSmsNumber) {
-      fetch(fnUrl, { method: 'POST', headers, body: JSON.stringify({ tenant_id: tenantId, to: ownerSmsNumber, message: `📬 New contact from ${form.name} — ${form.phone} — "${form.message?.slice(0, 80)}". Check your PestFlow Pro admin panel.`, type: 'owner' }) }).catch(() => {});
-    }
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
+    const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/api-quote`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': anonKey,
+        'Authorization': `Bearer ${anonKey}`,
+      },
+      body: JSON.stringify({
+        tenant_id: tenantId,
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        message: form.message,
+        customer_sms_consent: form.smsConsent === true,
+      }),
+    }).catch(() => null);
+    setSubmitting(false);
+    if (!res || !res.ok) { setError('Something went wrong. Please try again or call us directly.'); return; }
+
     setSent(true);
     setForm(INITIAL);
   }
