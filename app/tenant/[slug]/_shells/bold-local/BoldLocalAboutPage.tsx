@@ -11,6 +11,7 @@ interface Props {
   foundedYear?: string;
   businessName: string;
   licenseNumber?: string;
+  introParagraphs?: string[];
 }
 
 const EYEBROW: React.CSSProperties = {
@@ -37,8 +38,14 @@ const BELIEFS = [
   { num: '03', title: 'Show up fast', desc: 'Same-day strikes. We dispatch within an hour of your call.' },
 ];
 
-export function BoldLocalAboutPage({ heroTitle, heroSub, heroImageUrl, aboutImage, team, foundedYear, businessName, licenseNumber }: Props) {
+export function BoldLocalAboutPage({ heroTitle, heroSub, heroImageUrl, aboutImage, team, foundedYear, businessName, licenseNumber, introParagraphs }: Props) {
   const since = foundedYear ? `Since ${foundedYear}` : 'Established';
+  const paragraphs = introParagraphs && introParagraphs.length > 0
+    ? introParagraphs
+    : [
+        "Big-box exterminators care about contracts and call-center scripts. We don't. We hit the problem hard, stand behind the work, and answer our own phones.",
+        "Every technician on our crew is licensed, insured, and trained the same way: identify the source, neutralize it, and don't leave until it's done.",
+      ];
 
   return (
     <div style={{ backgroundColor: 'var(--bl-surface)' }}>
@@ -88,14 +95,11 @@ export function BoldLocalAboutPage({ heroTitle, heroSub, heroImageUrl, aboutImag
               <h2 style={{ ...HEAD, fontSize: 'clamp(28px,4vw,44px)', marginBottom: 'var(--bl-space-md)' }}>
                 We built {businessName} because pest control got soft.
               </h2>
-              <p style={{ fontFamily: 'var(--bl-font-body)', fontSize: 16, color: 'var(--bl-text-secondary)', lineHeight: 'var(--bl-line-height-loose)', marginBottom: 'var(--bl-space-md)' }}>
-                Big-box exterminators care about contracts and call-center scripts. We don&apos;t. We hit the problem hard,
-                stand behind the work, and answer our own phones.
-              </p>
-              <p style={{ fontFamily: 'var(--bl-font-body)', fontSize: 16, color: 'var(--bl-text-secondary)', lineHeight: 'var(--bl-line-height-loose)' }}>
-                Every technician on our crew is licensed, insured, and trained the same way: identify the source, neutralize it,
-                and don&apos;t leave until it&apos;s done.
-              </p>
+              {paragraphs.map((p, i) => (
+                <p key={i} style={{ fontFamily: 'var(--bl-font-body)', fontSize: 16, color: 'var(--bl-text-secondary)', lineHeight: 'var(--bl-line-height-loose)', marginBottom: i < paragraphs.length - 1 ? 'var(--bl-space-md)' : 0 }}>
+                  {p}
+                </p>
+              ))}
             </div>
           </div>
         </div>
