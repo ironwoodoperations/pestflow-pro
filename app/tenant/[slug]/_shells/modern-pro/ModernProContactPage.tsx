@@ -68,6 +68,7 @@ export function ModernProContactPage({ heroTitle, heroSub, tenantId, bizName, ph
             google={google ?? ''}
             ownerSmsNumber={ownerSmsNumber ?? ''}
             shellTemplate={shellTemplate}
+            hideContactSidebar
           />
         </div>
       </section>
