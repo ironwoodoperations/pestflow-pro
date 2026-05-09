@@ -11,6 +11,7 @@ interface Props {
   team: TeamMember[];
   foundedYear?: string;
   businessName: string;
+  introParagraphs?: string[];
 }
 
 const SERIF: React.CSSProperties = { fontFamily: 'var(--cf-font-display)', fontStyle: 'italic' };
@@ -22,8 +23,11 @@ const VALUES = [
   { title: 'Honest pricing', desc: 'You get the quote before we treat. No hidden fees, ever.' },
 ];
 
-export function CleanFriendlyAboutPage({ heroTitle, heroSub, heroImageUrl, aboutImage, team, foundedYear, businessName }: Props) {
+export function CleanFriendlyAboutPage({ heroTitle, heroSub, heroImageUrl, aboutImage, team, foundedYear, businessName, introParagraphs }: Props) {
   const sinceLine = foundedYear ? `since ${foundedYear}` : 'family-owned';
+  const paragraphs = introParagraphs && introParagraphs.length > 0
+    ? introParagraphs
+    : [`${businessName} started with one belief: that families deserve pest control that's safe, honest, and effective. We're local, we're licensed, and we treat every home with the same care we'd give our own.`];
 
   return (
     <div style={{ backgroundColor: 'var(--cf-surface)' }}>
@@ -56,10 +60,11 @@ export function CleanFriendlyAboutPage({ heroTitle, heroSub, heroImageUrl, about
               <h2 style={{ ...BODY, fontSize: 'clamp(24px,3.2vw,36px)', fontWeight: 500, color: 'var(--cf-ink)', marginBottom: 'var(--cf-space-md)', lineHeight: 'var(--cf-line-height-tight)' }}>
                 A neighborhood pest control company you can trust
               </h2>
-              <p style={{ ...BODY, fontSize: 16, color: 'var(--cf-ink-secondary)', lineHeight: 'var(--cf-line-height-loose)', marginBottom: 'var(--cf-space-md)' }}>
-                {businessName} started with one belief: that families deserve pest control that&apos;s safe, honest, and effective.
-                We&apos;re local, we&apos;re licensed, and we treat every home with the same care we&apos;d give our own.
-              </p>
+              {paragraphs.map((p, i) => (
+                <p key={i} style={{ ...BODY, fontSize: 16, color: 'var(--cf-ink-secondary)', lineHeight: 'var(--cf-line-height-loose)', marginBottom: 'var(--cf-space-md)' }}>
+                  {p}
+                </p>
+              ))}
               <blockquote style={{ ...SERIF, fontSize: 20, color: 'var(--cf-ink)', borderLeft: '3px solid var(--cf-mint)', paddingLeft: 'var(--cf-space-md)', lineHeight: 1.5 }}>
                 &ldquo;Do the job right the first time, treat people like neighbors.&rdquo;
               </blockquote>

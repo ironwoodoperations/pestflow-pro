@@ -15,7 +15,7 @@ const STANDARD_SLUGS = [
   'spider-control', 'roach-control', 'ant-control', 'mosquito-control',
   'scorpion-control', 'bed-bug-control', 'flea-tick-control', 'rodent-control',
   'wasp-hornet-control',
-  'faq',
+  'faq', 'contact',
 ]
 
 const toSlug = (title: string) =>

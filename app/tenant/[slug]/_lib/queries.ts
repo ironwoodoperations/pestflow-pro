@@ -1,5 +1,6 @@
 import { cache } from 'react';
 import { getServerSupabaseForISR } from '../../../../shared/lib/supabase/server';
+import { CUSTOM_PAGE_SLUGS, NON_SERVICE_SLUGS } from './navConfig';
 
 export const getPageContent = cache(
   async (tenantId: string, pageSlug: string) => {
@@ -105,7 +106,7 @@ export const getTestimonials = cache(
 
 export const getAllServicePages = cache(
   async (tenantId: string) => {
-    const EXCLUDE = ['home', 'about', 'contact', 'faq', 'quote'];
+    const EXCLUDE = [...NON_SERVICE_SLUGS, ...CUSTOM_PAGE_SLUGS];
     const supabase = getServerSupabaseForISR();
     const { data, error } = await supabase
       .from('page_content')
