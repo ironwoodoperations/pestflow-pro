@@ -39,8 +39,8 @@ export function BoldLocalPestPage({ tenant, pestSlug, content = null }: Props) {
   const founded = tenant.founded_year ? `Since ${tenant.founded_year}` : 'Established';
 
   const heroTitle = pickString(content?.hero_headline, content?.title, pest?.displayName) || 'Pest Control';
-  const eyebrow = `${pest?.displayName || 'Pest'} / Strike-Ready`;
-  const blurb = pickString(content?.subtitle, content?.intro, pest?.blurb)
+  const eyebrow = pickString(content?.subtitle) || `${pest?.displayName || 'Pest'} / Strike-Ready`;
+  const blurb = pickString(content?.intro, pest?.blurb)
     || `Industrial-strength ${pest?.displayName?.toLowerCase() || 'pest'} control — fast response, hard hits, no nonsense.`;
   const ctaHeadline = pickString(pest?.cta) || 'Ready to strike back?';
 
