@@ -28,7 +28,8 @@ export function CleanFriendlyPestPage({ tenant, pestSlug, content = null }: Prop
   const bizName = tenant.business_name || tenant.name;
 
   const heroTitle = pickString(content?.hero_headline, content?.title, pest?.displayName) || 'Pest Control';
-  const blurb = pickString(content?.subtitle, content?.intro, pest?.blurb)
+  const eyebrow = pickString(content?.subtitle) || 'safe solutions for your family';
+  const blurb = pickString(content?.intro, pest?.blurb)
     || `Professional ${pest?.displayName?.toLowerCase() || 'pest'} control, safe for your whole family.`;
   const ctaHeadline = pickString(pest?.cta) || 'Ready for a pest-free home?';
 
@@ -42,7 +43,7 @@ export function CleanFriendlyPestPage({ tenant, pestSlug, content = null }: Prop
           <div className="cf-pest-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem', alignItems: 'center' }}>
             <div>
               <p style={{ fontFamily: "Georgia,'Source Serif Pro',serif", fontStyle: 'italic', fontSize: 14, color: 'var(--cf-ink-secondary)', marginBottom: '0.75rem' }}>
-                safe solutions for your family
+                {eyebrow}
               </p>
               <h1 style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", fontWeight: 500, fontSize: 'clamp(28px,4.5vw,48px)', lineHeight: 1.2, color: 'var(--cf-ink)', marginBottom: '1.25rem' }}>
                 {heroTitle}
