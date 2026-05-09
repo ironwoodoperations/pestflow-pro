@@ -4,7 +4,15 @@ import { PEST_CONTENT_MAP } from '../../../../../src/shells/_shared/pestContent'
 import { PestIcon } from '../../../../../src/shells/_shared/PestIcon';
 import { formatPhone } from '../../../../../shared/lib/formatPhone';
 
-interface Props { tenant: Tenant; pestSlug: string }
+type PageContent = { title?: string; subtitle?: string; intro?: string; hero_headline?: string } | null;
+interface Props { tenant: Tenant; pestSlug: string; content?: PageContent }
+
+const pickString = (...vals: Array<string | undefined | null>): string | undefined => {
+  for (const v of vals) {
+    if (typeof v === 'string' && v.trim().length > 0) return v.trim();
+  }
+  return undefined;
+};
 
 const EYEBROW_STYLE: React.CSSProperties = {
   fontFamily: 'var(--bl-font-body)',
@@ -23,12 +31,18 @@ const HEAD_STYLE: React.CSSProperties = {
   lineHeight: 'var(--bl-line-height-tight)',
 };
 
-export function BoldLocalPestPage({ tenant, pestSlug }: Props) {
+export function BoldLocalPestPage({ tenant, pestSlug, content = null }: Props) {
   const pest = PEST_CONTENT_MAP[pestSlug];
   const phone = tenant.phone ?? '';
   const bizName = tenant.business_name || tenant.name;
   const license = tenant.license_number?.trim() || 'Licensed';
   const founded = tenant.founded_year ? `Since ${tenant.founded_year}` : 'Established';
+
+  const heroTitle = pickString(content?.hero_headline, content?.title, pest?.displayName) || 'Pest Control';
+  const eyebrow = `${pest?.displayName || 'Pest'} / Strike-Ready`;
+  const blurb = pickString(content?.subtitle, content?.intro, pest?.blurb)
+    || `Industrial-strength ${pest?.displayName?.toLowerCase() || 'pest'} control — fast response, hard hits, no nonsense.`;
+  const ctaHeadline = pickString(pest?.cta) || 'Ready to strike back?';
 
   return (
     <div style={{ backgroundColor: 'var(--bl-surface)' }}>
@@ -40,13 +54,13 @@ export function BoldLocalPestPage({ tenant, pestSlug }: Props) {
           <div className="bl-pest-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 'var(--bl-space-lg)', alignItems: 'center' }}>
             <div>
               <p style={{ ...EYEBROW_STYLE, marginBottom: 'var(--bl-space-md)' }}>
-                {pest?.displayName || 'Pest'} / Strike-Ready
+                {eyebrow}
               </p>
               <h1 style={{ ...HEAD_STYLE, fontSize: 'clamp(34px,5.2vw,60px)', marginBottom: 'var(--bl-space-md)', textTransform: 'uppercase' }}>
-                {pest?.displayName || 'Pest Control'}
+                {heroTitle}
               </h1>
               <p style={{ fontFamily: 'var(--bl-font-body)', fontSize: 16, color: 'var(--bl-text-secondary)', lineHeight: 'var(--bl-line-height-loose)', marginBottom: 'var(--bl-space-lg)', maxWidth: '54ch' }}>
-                {pest?.blurb || `Industrial-strength ${pest?.displayName?.toLowerCase() || 'pest'} control — fast response, hard hits, no nonsense.`}
+                {blurb}
               </p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--bl-space-sm)' }}>
                 <Link href="/quote" style={{ display: 'inline-block', backgroundColor: 'var(--bl-accent)', color: 'var(--bl-surface)', fontFamily: 'var(--bl-font-display)', fontWeight: 700, fontSize: 17, letterSpacing: 'var(--bl-letter-spacing-wide)', padding: '0.85rem 1.75rem', borderRadius: 'var(--bl-radius-md)', textDecoration: 'none', textTransform: 'uppercase' }}>
@@ -146,7 +160,7 @@ export function BoldLocalPestPage({ tenant, pestSlug }: Props) {
       <section style={{ backgroundColor: 'var(--bl-accent)', padding: 'var(--bl-space-xl) 1rem', textAlign: 'center' }}>
         <div className="max-w-3xl mx-auto">
           <h2 style={{ fontFamily: 'var(--bl-font-display)', fontWeight: 700, fontSize: 'clamp(28px,4.5vw,42px)', color: 'var(--bl-surface)', textTransform: 'uppercase', letterSpacing: 'var(--bl-letter-spacing-tight)', marginBottom: 'var(--bl-space-md)', lineHeight: 'var(--bl-line-height-tight)' }}>
-            {pest?.cta || 'Ready to strike back?'}
+            {ctaHeadline}
           </h2>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--bl-space-sm)', justifyContent: 'center' }}>
             <Link href="/quote" style={{ display: 'inline-block', backgroundColor: 'var(--bl-surface)', color: 'var(--bl-accent)', fontFamily: 'var(--bl-font-display)', fontWeight: 700, fontSize: 17, letterSpacing: 'var(--bl-letter-spacing-wide)', padding: '0.9rem 2rem', borderRadius: 'var(--bl-radius-md)', textDecoration: 'none', textTransform: 'uppercase' }}>

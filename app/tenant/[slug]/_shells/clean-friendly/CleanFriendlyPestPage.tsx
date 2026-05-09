@@ -5,7 +5,8 @@ import { PestIcon } from '../../../../../src/shells/_shared/PestIcon';
 import { formatPhone } from '../../../../../shared/lib/formatPhone';
 import { CleanFriendlyHowItWorks } from './CleanFriendlyHowItWorks';
 
-interface Props { tenant: Tenant; pestSlug: string }
+type PageContent = { title?: string; subtitle?: string; intro?: string; hero_headline?: string } | null;
+interface Props { tenant: Tenant; pestSlug: string; content?: PageContent }
 
 const MintCheck = () => (
   <svg width={16} height={16} viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ flexShrink: 0, marginTop: 3 }}>
@@ -14,10 +15,22 @@ const MintCheck = () => (
   </svg>
 );
 
-export function CleanFriendlyPestPage({ tenant, pestSlug }: Props) {
+const pickString = (...vals: Array<string | undefined | null>): string | undefined => {
+  for (const v of vals) {
+    if (typeof v === 'string' && v.trim().length > 0) return v.trim();
+  }
+  return undefined;
+};
+
+export function CleanFriendlyPestPage({ tenant, pestSlug, content = null }: Props) {
   const pest = PEST_CONTENT_MAP[pestSlug];
   const phone = tenant.phone ?? '';
   const bizName = tenant.business_name || tenant.name;
+
+  const heroTitle = pickString(content?.hero_headline, content?.title, pest?.displayName) || 'Pest Control';
+  const blurb = pickString(content?.subtitle, content?.intro, pest?.blurb)
+    || `Professional ${pest?.displayName?.toLowerCase() || 'pest'} control, safe for your whole family.`;
+  const ctaHeadline = pickString(pest?.cta) || 'Ready for a pest-free home?';
 
   return (
     <div style={{ backgroundColor: 'var(--cf-surface)' }}>
@@ -32,10 +45,10 @@ export function CleanFriendlyPestPage({ tenant, pestSlug }: Props) {
                 safe solutions for your family
               </p>
               <h1 style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", fontWeight: 500, fontSize: 'clamp(28px,4.5vw,48px)', lineHeight: 1.2, color: 'var(--cf-ink)', marginBottom: '1.25rem' }}>
-                {pest?.displayName || 'Pest Control'}
+                {heroTitle}
               </h1>
               <p style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", fontWeight: 400, fontSize: 17, lineHeight: 1.65, color: 'var(--cf-ink-secondary)', marginBottom: '2rem', maxWidth: '44ch' }}>
-                {pest?.blurb || `Professional ${pest?.displayName.toLowerCase()} control, safe for your whole family.`}
+                {blurb}
               </p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
                 <Link href="/quote" style={{ display: 'inline-block', backgroundColor: 'var(--cf-ink)', color: 'var(--cf-surface)', fontFamily: "var(--font-inter,'Inter',sans-serif)", fontWeight: 500, fontSize: 15, padding: '0.75rem 1.75rem', borderRadius: 28, textDecoration: 'none' }}>
@@ -103,7 +116,7 @@ export function CleanFriendlyPestPage({ tenant, pestSlug }: Props) {
       <section style={{ backgroundColor: 'var(--cf-surface)', borderTop: '1px solid var(--cf-divider)', padding: '3.5rem 1rem', textAlign: 'center' }}>
         <div className="max-w-xl mx-auto">
           <h2 style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", fontWeight: 500, fontSize: 'clamp(22px,3vw,32px)', color: 'var(--cf-ink)', marginBottom: '0.75rem', lineHeight: 1.2 }}>
-            {pest?.cta || 'Ready for a pest-free home?'}
+            {ctaHeadline}
           </h2>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'center', marginTop: '1.5rem' }}>
             <Link href="/quote" style={{ display: 'inline-block', backgroundColor: 'var(--cf-ink)', color: 'var(--cf-surface)', fontFamily: "var(--font-inter,'Inter',sans-serif)", fontWeight: 500, fontSize: 16, padding: '0.85rem 2rem', borderRadius: 28, textDecoration: 'none' }}>
