@@ -72,6 +72,10 @@ export function middleware(req: NextRequest) {
     const isPaymentSuccess = pathname === '/payment-success';
     const isIntake = pathname.startsWith('/intake/');
     const isIntakeSuccess = pathname === '/intake-success';
+    // S208 — apex demo galleries (sales surface). /demos and /demos/admin
+    // are React Router routes inside the Vite SPA; everything under /demos
+    // is allowlisted for forward-compat.
+    const isDemos = pathname === '/demos' || pathname.startsWith('/demos/');
 
     if (
       isMarketingApex ||
@@ -79,7 +83,8 @@ export function middleware(req: NextRequest) {
       isIronwoodApex ||
       isPaymentSuccess ||
       isIntake ||
-      isIntakeSuccess
+      isIntakeSuccess ||
+      isDemos
     ) {
       return NextResponse.rewrite(new URL('/_admin/index.html', req.url));
     }
