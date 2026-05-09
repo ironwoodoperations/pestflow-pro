@@ -25,6 +25,10 @@ const IntakePage = lazy(() => import('./pages/IntakePage'))
 // Post-intake branded preview — public, no theme needed
 const IntakeSuccess = lazy(() => import('./pages/IntakeSuccess'))
 
+// Apex demo gallery pages — sales surface
+const DemosPage      = lazy(() => import('./pages/demos/DemosPage'))
+const DemosAdminPage = lazy(() => import('./pages/demos/DemosAdminPage'))
+
 // Admin — lazy
 const Dashboard      = lazy(() => import('./pages/admin/Dashboard'))
 const Onboarding     = lazy(() => import('./pages/admin/Onboarding'))
@@ -94,6 +98,10 @@ export default function App() {
 
         {/* ─── Post-intake branded preview ─── */}
         <Route path="/intake-success" element={<Suspense fallback={LOADING}><IntakeSuccess /></Suspense>} />
+
+        {/* ─── Apex demo galleries ─── */}
+        <Route path="/demos"       element={<Suspense fallback={LOADING}><DemosPage /></Suspense>} />
+        <Route path="/demos/admin" element={<Suspense fallback={LOADING}><DemosAdminPage /></Suspense>} />
 
         {/* ─── Catch-all ─── */}
         <Route path="*" element={<NotFound />} />

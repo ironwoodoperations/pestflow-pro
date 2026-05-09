@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import ClientMockupCarousel from '../ClientMockupCarousel'
 
 const C = { bg: '#1e2d4a', green: '#22c55e', white: '#ffffff', muted: 'rgba(255,255,255,0.65)' }
@@ -45,12 +46,12 @@ export default function MarketingHero() {
             Trusted by pest control companies across Texas
           </p>
           <div style={{ display: 'flex', gap: '24px', marginTop: '12px', flexWrap: 'wrap' }}>
-            <a href="https://demo.pestflowpro.com" target="_blank" rel="noopener noreferrer" style={{ color: '#22c55e', fontSize: '14px', textDecoration: 'underline' }}>
+            <Link to="/demos" style={{ color: '#22c55e', fontSize: '14px', textDecoration: 'underline' }}>
               View live demo site →
-            </a>
-            <a href="https://demo.pestflowpro.com/admin" target="_blank" rel="noopener noreferrer" style={{ color: '#22c55e', fontSize: '14px', textDecoration: 'underline' }}>
+            </Link>
+            <Link to="/demos/admin" style={{ color: '#22c55e', fontSize: '14px', textDecoration: 'underline' }}>
               Explore the dashboard →
-            </a>
+            </Link>
           </div>
         </div>
 

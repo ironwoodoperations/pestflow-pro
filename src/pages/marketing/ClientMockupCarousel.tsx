@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
+import { DEMO_TENANTS, publicDemoUrl } from '../../lib/demoTenants'
 
 const F = { b: "'Plus Jakarta Sans', sans-serif" }
 
-const TABS = [
-  { label: 'Lone Star', url: 'lone-star-pest-solutions.pestflowpro.com', badge: 'LIVE', img: '/images/sites/lone-star-site.jpg' },
-  { label: 'Dang Pest',  url: 'dang.pestflowpro.com',                    badge: 'LIVE', img: '/images/sites/dang-site.jpg'      },
-  { label: 'Demo Site',  url: 'demo.pestflowpro.com',                     badge: 'DEMO', img: '/images/sites/demo-site.jpg'      },
-]
+const TABS = DEMO_TENANTS.map((t) => ({
+  label: t.shortLabel,
+  url: `${t.slug}.pestflowpro.com`,
+  href: publicDemoUrl(t.slug),
+  img: `/images/sites/${t.slug}-site.jpg`,
+}))
 
 export default function ClientMockupCarousel() {
   const [activeTab, setActiveTab] = useState(0)
@@ -15,22 +17,24 @@ export default function ClientMockupCarousel() {
 
   useEffect(() => {
     if (paused) return
-    const t = setInterval(() => setActiveTab(p => (p + 1) % 3), 3500)
+    const t = setInterval(() => setActiveTab(p => (p + 1) % TABS.length), 3500)
     return () => clearInterval(t)
   }, [paused])
 
   const handleTabClick = (i: number) => { setActiveTab(i); setPaused(true) }
 
   const tab = TABS[activeTab]
-  const isDemo = tab.badge === 'DEMO'
-  const badgeRgb = isDemo ? '59,130,246' : '34,197,94'
-  const badgeColor = isDemo ? '#3b82f6' : '#22c55e'
 
   return (
     <div style={{ maxWidth: 480, width: '100%' }}>
       <style>{`@keyframes pfpFadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}.pfp-slide{animation:pfpFadeUp 0.3s ease}`}</style>
 
-      <div style={{ background: '#0d1526', borderRadius: 14, border: '1px solid rgba(34,197,94,0.25)', boxShadow: '0 32px 80px rgba(0,0,0,0.5), 0 0 40px rgba(34,197,94,0.08)', overflow: 'hidden' }}>
+      <a
+        href={tab.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ display: 'block', background: '#0d1526', borderRadius: 14, border: '1px solid rgba(34,197,94,0.25)', boxShadow: '0 32px 80px rgba(0,0,0,0.5), 0 0 40px rgba(34,197,94,0.08)', overflow: 'hidden', textDecoration: 'none' }}
+      >
 
         {/* Chrome bar */}
         <div style={{ padding: '10px 14px', background: 'rgba(0,0,0,0.4)', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -40,8 +44,8 @@ export default function ClientMockupCarousel() {
           <div style={{ flex: 1, background: 'rgba(255,255,255,0.06)', borderRadius: 6, padding: '3px 12px', fontSize: 11, color: 'rgba(255,255,255,0.5)', fontFamily: 'monospace', marginLeft: 6 }}>
             {tab.url}
           </div>
-          <div style={{ background: `rgba(${badgeRgb},0.15)`, border: `1px solid rgba(${badgeRgb},0.35)`, borderRadius: 4, padding: '2px 8px', fontSize: 9, color: badgeColor, fontFamily: F.b, fontWeight: 600, flexShrink: 0 }}>
-            {tab.badge}
+          <div style={{ background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.35)', borderRadius: 4, padding: '2px 8px', fontSize: 9, color: '#22c55e', fontFamily: F.b, fontWeight: 600, flexShrink: 0 }}>
+            DEMO
           </div>
         </div>
 
@@ -60,16 +64,16 @@ export default function ClientMockupCarousel() {
             />
           )}
         </div>
-      </div>
+      </a>
 
       {/* Tab pills */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 16, flexWrap: 'wrap' }}>
         {TABS.map((t, i) => (
           <button
             key={t.label}
             onClick={() => handleTabClick(i)}
             style={{
-              width: 80, height: 28, borderRadius: 14, border: 'none', cursor: 'pointer',
+              minWidth: 76, height: 28, padding: '0 12px', borderRadius: 14, border: 'none', cursor: 'pointer',
               background: activeTab === i ? '#ffffff' : 'transparent',
               color: activeTab === i ? '#1e2d4a' : 'rgba(255,255,255,0.6)',
               fontSize: 11, fontWeight: activeTab === i ? 700 : 500, fontFamily: F.b,
