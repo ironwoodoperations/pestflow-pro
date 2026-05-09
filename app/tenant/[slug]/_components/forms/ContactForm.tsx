@@ -17,6 +17,7 @@ interface Props {
   google: string;
   ownerSmsNumber: string;
   shellTemplate?: string;
+  hideContactSidebar?: boolean;
 }
 
 interface FormState {
@@ -25,7 +26,7 @@ interface FormState {
 
 const INITIAL: FormState = { name: '', email: '', phone: '', message: '', smsConsent: false };
 
-export function ContactForm({ tenantId, bizName, phone, email, address, hours, facebook, instagram, google, ownerSmsNumber, shellTemplate }: Props) {
+export function ContactForm({ tenantId, bizName, phone, email, address, hours, facebook, instagram, google, ownerSmsNumber, shellTemplate, hideContactSidebar = false }: Props) {
   const isCF = shellTemplate === 'clean-friendly';
   const isBL = shellTemplate === 'bold-local';
   const [form, setForm] = useState<FormState>(INITIAL);
@@ -91,10 +92,10 @@ export function ContactForm({ tenantId, bizName, phone, email, address, hours, f
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div className={hideContactSidebar ? 'max-w-3xl mx-auto px-4' : 'max-w-6xl mx-auto px-4'}>
+      <div className={hideContactSidebar ? '' : 'grid grid-cols-1 lg:grid-cols-3 gap-8'}>
 
-        <form onSubmit={handleSubmit} className="lg:col-span-2 bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+        <form onSubmit={handleSubmit} className={`${hideContactSidebar ? '' : 'lg:col-span-2 '}bg-white rounded-xl p-6 shadow-sm border border-gray-200`}>
           <h2 className="text-2xl font-bold mb-6" style={{ color: 'var(--color-heading, #1a1a1a)' }}>Send Us a Message</h2>
           {sent && <div className="bg-green-50 border border-green-200 text-green-800 rounded-lg p-3 mb-4 text-sm">Message sent! We&apos;ll get back to you soon.</div>}
           {error && <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 mb-4 text-sm">{error}</div>}
@@ -121,7 +122,7 @@ export function ContactForm({ tenantId, bizName, phone, email, address, hours, f
           </button>
         </form>
 
-        {isCF ? (
+        {!hideContactSidebar && (isCF ? (
           <div style={{ backgroundColor: 'var(--cf-surface-card)', border: '1px solid var(--cf-divider)', borderRadius: 16, padding: '1.75rem', boxShadow: '0 2px 8px rgba(31,58,77,0.06)' }}>
             <p style={{ fontFamily: "Georgia,'Source Serif Pro',serif", fontStyle: 'italic', fontSize: 13, color: 'var(--cf-ink-secondary)', marginBottom: '0.5rem' }}>let&apos;s talk</p>
             <h3 style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", fontWeight: 500, fontSize: 20, color: 'var(--cf-ink)', marginBottom: '1.5rem' }}>Get in touch</h3>
@@ -162,7 +163,7 @@ export function ContactForm({ tenantId, bizName, phone, email, address, hours, f
               </div>
             )}
           </div>
-        )}
+        ))}
 
       </div>
     </div>

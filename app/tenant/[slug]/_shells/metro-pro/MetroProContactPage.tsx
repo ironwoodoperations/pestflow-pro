@@ -83,6 +83,7 @@ export function MetroProContactPage({ heroTitle, heroSub, tenantId, bizName, pho
                 google={google ?? ''}
                 ownerSmsNumber={ownerSmsNumber ?? ''}
                 shellTemplate={shellTemplate}
+                hideContactSidebar
               />
             </div>
           </div>

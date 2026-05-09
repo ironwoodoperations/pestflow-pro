@@ -77,6 +77,7 @@ export function RusticRuggedContactPage({ heroTitle, heroSub, tenantId, bizName,
                 google={google ?? ''}
                 ownerSmsNumber={ownerSmsNumber ?? ''}
                 shellTemplate={shellTemplate}
+                hideContactSidebar
               />
             </div>
           </div>
