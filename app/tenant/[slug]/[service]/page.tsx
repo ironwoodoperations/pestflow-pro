@@ -135,19 +135,19 @@ export default async function ServicePage({ params }: Params) {
     );
   }
 
-  // Theme-specific pest page branches
-  if (tenant.template === 'clean-friendly') {
-    return <CleanFriendlyPestPage tenant={tenant} pestSlug={params.service} />;
-  }
-  if (tenant.template === 'bold-local') {
-    return <BoldLocalPestPage tenant={tenant} pestSlug={params.service} />;
-  }
-
   const svc = SERVICE_DATA[params.service];
   const [content, heroMedia] = await Promise.all([
     getPageContent(tenant.id, params.service),
     getHeroMedia(tenant.id),
   ]);
+
+  // Theme-specific pest page branches
+  if (tenant.template === 'clean-friendly') {
+    return <CleanFriendlyPestPage tenant={tenant} pestSlug={params.service} content={content} />;
+  }
+  if (tenant.template === 'bold-local') {
+    return <BoldLocalPestPage tenant={tenant} pestSlug={params.service} content={content} />;
+  }
 
   const heroImageUrl = resolveHeroImage(content, heroMedia);
   const heroTitle = (content as { title?: string } | null)?.title || svc.heroTitle;
