@@ -78,7 +78,7 @@ export function ServiceAreaPage({ heroTitle, heroSub, locations, phone, business
                     aria-label={`Pest control in ${label}`}
                     className="group flex items-center gap-3 rounded-xl p-4 border transition hover:shadow-md"
                     style={{
-                      backgroundColor: 'var(--color-text-on-primary, #ffffff)',
+                      backgroundColor: 'var(--color-bg-section)',
                       borderColor: 'color-mix(in srgb, var(--color-heading) 10%, transparent)',
                     }}
                   >
@@ -97,7 +97,7 @@ export function ServiceAreaPage({ heroTitle, heroSub, locations, phone, business
             <div
               className="rounded-xl p-8 text-center border"
               style={{
-                backgroundColor: 'var(--color-text-on-primary, #ffffff)',
+                backgroundColor: 'var(--color-bg-section)',
                 borderColor: 'color-mix(in srgb, var(--color-heading) 10%, transparent)',
                 color: 'var(--color-heading)',
                 fontFamily: 'var(--font-body)',
