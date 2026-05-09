@@ -39,3 +39,4 @@ pestflow-pro-context-s*.md
 public/_admin/
 .vercel
 .env-backups/
+tsconfig.next.tsbuildinfo

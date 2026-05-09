@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Phone, Mail, MapPin, Clock } from 'lucide-react';
 import { formatPhone } from '../../../../../shared/lib/formatPhone';
+import { ContactFormBoldLocal } from './ContactFormBoldLocal';
 
 interface Props {
   tenantId: string;
@@ -26,6 +27,7 @@ const INITIAL: FormState = { name: '', email: '', phone: '', message: '', smsCon
 
 export function ContactForm({ tenantId, bizName, phone, email, address, hours, facebook, instagram, google, ownerSmsNumber, shellTemplate }: Props) {
   const isCF = shellTemplate === 'clean-friendly';
+  const isBL = shellTemplate === 'bold-local';
   const [form, setForm] = useState<FormState>(INITIAL);
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
@@ -66,6 +68,27 @@ export function ContactForm({ tenantId, bizName, phone, email, address, hours, f
   }
 
   const inp = 'w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 focus:ring-2 outline-none';
+
+  if (isBL) {
+    return (
+      <ContactFormBoldLocal
+        bizName={bizName}
+        phone={phone}
+        email={email}
+        address={address}
+        hours={hours}
+        facebook={facebook}
+        instagram={instagram}
+        google={google}
+        form={form}
+        set={set}
+        submitting={submitting}
+        sent={sent}
+        error={error}
+        onSubmit={handleSubmit}
+      />
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto px-4">
