@@ -6,7 +6,7 @@ interface TeamMember { id: string; name: string; title?: string; bio?: string; p
 interface Props {
   heroTitle: string;
   heroSub: string;
-  heroImageUrl: string;
+  heroImageUrl: string | null;
   aboutImage: string;
   team: TeamMember[];
   foundedYear?: string;
@@ -48,7 +48,7 @@ export function CleanFriendlyAboutPage({ heroTitle, heroSub, heroImageUrl, about
           <div className="cf-about-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 'var(--cf-space-xl)', alignItems: 'center' }}>
             {(aboutImage || heroImageUrl) && (
               <div style={{ borderRadius: 'var(--cf-radius-lg)', overflow: 'hidden', border: '1px solid var(--cf-divider)', boxShadow: 'var(--cf-shadow-md)', aspectRatio: '4/5', maxHeight: 480 }}>
-                <img src={aboutImage || heroImageUrl} alt="Our team" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                <img src={aboutImage || heroImageUrl || ''} alt="Our team" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
               </div>
             )}
             <div>

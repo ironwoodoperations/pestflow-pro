@@ -5,7 +5,7 @@ interface TeamMember { id: string; name: string; title?: string; bio?: string; p
 interface Props {
   heroTitle: string;
   heroSub: string;
-  heroImageUrl: string;
+  heroImageUrl: string | null;
   aboutImage: string;
   team: TeamMember[];
   foundedYear?: string;
@@ -80,7 +80,7 @@ export function BoldLocalAboutPage({ heroTitle, heroSub, heroImageUrl, aboutImag
           <div className="bl-about-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 'var(--bl-space-xl)', alignItems: 'start' }}>
             {(aboutImage || heroImageUrl) && (
               <div style={{ overflow: 'hidden', border: '2px solid var(--bl-accent)', aspectRatio: '4/5', maxHeight: 540 }}>
-                <img src={aboutImage || heroImageUrl} alt="Our crew" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', filter: 'contrast(1.05) saturate(0.95)' }} />
+                <img src={aboutImage || heroImageUrl || ''} alt="Our crew" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', filter: 'contrast(1.05) saturate(0.95)' }} />
               </div>
             )}
             <div>
