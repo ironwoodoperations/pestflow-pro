@@ -9,6 +9,9 @@ export async function generateStaticParams() {
 import { getPageContent, getSocialLinks, getIntegrations, getHeroMedia } from '../_lib/queries';
 import { resolveHeroImage } from '../_lib/heroImage';
 import { ContactForm } from '../_components/forms/ContactForm';
+import { ModernProContactPage } from '../_shells/modern-pro/ModernProContactPage';
+import { RusticRuggedContactPage } from '../_shells/rustic-rugged/RusticRuggedContactPage';
+import { MetroProContactPage } from '../_shells/metro-pro/MetroProContactPage';
 
 type Params = { params: { slug: string } };
 
@@ -27,6 +30,26 @@ export default async function ContactPage({ params }: Params) {
   const heroTitle = c?.title || 'Contact Us';
   const heroSub   = c?.subtitle || (tenant.phone ? `Have a question or need service? Call us at ${tenant.phone}` : 'We\'d love to hear from you.');
   const heroImageUrl = resolveHeroImage(content, heroMedia);
+
+  const sharedFormProps = {
+    heroTitle,
+    heroSub,
+    tenantId: tenant.id,
+    bizName: tenant.business_name ?? tenant.name,
+    phone: tenant.phone ?? '',
+    email: tenant.email ?? '',
+    address: tenant.address ?? '',
+    hours: tenant.hours ?? '',
+    facebook: social.facebook ?? '',
+    instagram: social.instagram ?? '',
+    google: social.google ?? '',
+    ownerSmsNumber: integrations.owner_sms_number ?? '',
+    shellTemplate: tenant.template ?? undefined,
+  };
+
+  if (tenant.template === 'modern-pro') return <ModernProContactPage {...sharedFormProps} />;
+  if (tenant.template === 'rustic-rugged') return <RusticRuggedContactPage {...sharedFormProps} />;
+  if (tenant.template === 'metro-pro') return <MetroProContactPage {...sharedFormProps} />;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>

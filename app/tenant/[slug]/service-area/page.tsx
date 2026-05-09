@@ -13,6 +13,9 @@ import { resolveHeroImage } from '../_lib/heroImage';
 import { formatPhone } from '../../../../shared/lib/formatPhone';
 import { CleanFriendlyServiceAreaPage } from '../_shells/clean-friendly/CleanFriendlyServiceAreaPage';
 import { BoldLocalServiceAreaPage } from '../_shells/bold-local/BoldLocalServiceAreaPage';
+import { ModernProServiceAreaPage } from '../_shells/modern-pro/ModernProServiceAreaPage';
+import { RusticRuggedServiceAreaPage } from '../_shells/rustic-rugged/RusticRuggedServiceAreaPage';
+import { MetroProServiceAreaPage } from '../_shells/metro-pro/MetroProServiceAreaPage';
 
 type Params = { params: { slug: string } };
 
@@ -51,6 +54,42 @@ export default async function ServiceAreaPage({ params }: Params) {
   if (tenant.template === 'bold-local') {
     return (
       <BoldLocalServiceAreaPage
+        heroTitle={heroTitle}
+        heroSub={heroSub}
+        locations={locations}
+        phone={phone}
+        businessName={businessName}
+      />
+    );
+  }
+
+  if (tenant.template === 'modern-pro') {
+    return (
+      <ModernProServiceAreaPage
+        heroTitle={heroTitle}
+        heroSub={heroSub}
+        locations={locations}
+        phone={phone}
+        businessName={businessName}
+      />
+    );
+  }
+
+  if (tenant.template === 'rustic-rugged') {
+    return (
+      <RusticRuggedServiceAreaPage
+        heroTitle={heroTitle}
+        heroSub={heroSub}
+        locations={locations}
+        phone={phone}
+        businessName={businessName}
+      />
+    );
+  }
+
+  if (tenant.template === 'metro-pro') {
+    return (
+      <MetroProServiceAreaPage
         heroTitle={heroTitle}
         heroSub={heroSub}
         locations={locations}

@@ -12,6 +12,9 @@ import { getPageContent, getTeamMembers, getHeroMedia } from '../_lib/queries';
 import { resolveHeroImage } from '../_lib/heroImage';
 import { CleanFriendlyAboutPage } from '../_shells/clean-friendly/CleanFriendlyAboutPage';
 import { BoldLocalAboutPage } from '../_shells/bold-local/BoldLocalAboutPage';
+import { ModernProAboutPage } from '../_shells/modern-pro/ModernProAboutPage';
+import { RusticRuggedAboutPage } from '../_shells/rustic-rugged/RusticRuggedAboutPage';
+import { MetroProAboutPage } from '../_shells/metro-pro/MetroProAboutPage';
 import { DefaultAboutPage } from '../_components/DefaultAboutPage';
 
 const FALLBACK_INTRO_PARAGRAPHS = [
@@ -83,6 +86,64 @@ export default async function AboutPage({ params }: Params) {
           businessName={businessName}
           licenseNumber={tenant.license_number || undefined}
           introParagraphs={introParagraphs}
+        />
+      </>
+    );
+  }
+
+  if (tenant.template === 'modern-pro') {
+    return (
+      <>
+        <JsonLdScript schema={aboutSchema} id="ld-about" />
+        <ModernProAboutPage
+          heroTitle={heroTitle}
+          heroSub={heroSub}
+          heroImageUrl={heroImageUrl}
+          aboutImage={aboutImage}
+          team={teamTyped}
+          foundedYear={foundedYear}
+          businessName={businessName}
+          introParagraphs={introParagraphs}
+          phone={tenant.phone ?? ''}
+        />
+      </>
+    );
+  }
+
+  if (tenant.template === 'rustic-rugged') {
+    return (
+      <>
+        <JsonLdScript schema={aboutSchema} id="ld-about" />
+        <RusticRuggedAboutPage
+          heroTitle={heroTitle}
+          heroSub={heroSub}
+          heroImageUrl={heroImageUrl}
+          aboutImage={aboutImage}
+          team={teamTyped}
+          foundedYear={foundedYear}
+          businessName={businessName}
+          introParagraphs={introParagraphs}
+          phone={tenant.phone ?? ''}
+        />
+      </>
+    );
+  }
+
+  if (tenant.template === 'metro-pro') {
+    return (
+      <>
+        <JsonLdScript schema={aboutSchema} id="ld-about" />
+        <MetroProAboutPage
+          heroTitle={heroTitle}
+          heroSub={heroSub}
+          heroImageUrl={heroImageUrl}
+          aboutImage={aboutImage}
+          team={teamTyped}
+          foundedYear={foundedYear}
+          businessName={businessName}
+          introParagraphs={introParagraphs}
+          phone={tenant.phone ?? ''}
+          licenseNumber={tenant.license_number || undefined}
         />
       </>
     );
