@@ -1,10 +1,21 @@
-// Supabase Edge Function: provision-tenant v14
+// Supabase Edge Function: provision-tenant v15
 // Reads onboarding_sessions for wizard data (name, colors, shell, etc.) when available.
 // Falls back to direct body fields for legacy/manual calls.
 // Creates auth user, seeds tenant_users, and provisions all 11 required settings keys.
 // S164: service_areas seeded via normalizer; settings.seo.service_areas derived from table.
+//
+// Auth (S211a): verify_jwt:false at platform; in-source validation of
+//   `x-pfp-internal-key` header against PROVISION_TENANT_INTERNAL_SECRET env var.
+//   Header name deliberately differs from the platform `apikey` because the
+//   ironwood-provision caller already sends `apikey: SUPABASE_SERVICE_ROLE_KEY`
+//   (legacy belt-and-suspenders). Reusing `apikey` for our gate would either
+//   silently lose the gate value to JS object-literal last-wins on the source
+//   side, or cause WHATWG header-merge ", " join on the wire — fail-closing
+//   every legitimate call. Distinct header name eliminates the trap.
+// Deploy: supabase functions deploy provision-tenant --project-ref biezzykcgzkrwdgqpsar --no-verify-jwt
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { timingSafeEqual } from 'node:crypto'
 import { normalizeAll, buildJsonbProjection } from '../_shared/service-areas.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
@@ -37,8 +48,36 @@ interface RequestBody {
   subscription: { tier: number; plan_name: string; monthly_price: number }
 }
 
-Deno.serve(async (req: Request) => {
+export async function handler(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS })
+
+  // ── AUTH (must run before anything else) ────────────────────────────
+  const expectedSecret = Deno.env.get('PROVISION_TENANT_INTERNAL_SECRET') || ''
+  const presentedSecret = req.headers.get('x-pfp-internal-key') || ''
+
+  if (!expectedSecret) {
+    console.error('[provision-tenant] PROVISION_TENANT_INTERNAL_SECRET env var not set; rejecting all requests')
+    return new Response(JSON.stringify({ error: 'Server misconfigured' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', ...CORS },
+    })
+  }
+
+  // node:crypto.timingSafeEqual — constant-time compare. Throws on length mismatch,
+  // so length-equality pre-check is required. (crypto.subtle has no timingSafeEqual
+  // in Deno/Web Crypto; node:crypto is the supported primitive in Supabase Edge Runtime.)
+  const enc = new TextEncoder()
+  const a = enc.encode(expectedSecret)
+  const b = enc.encode(presentedSecret)
+  const authOk = a.length === b.length && timingSafeEqual(a, b)
+
+  if (!authOk) {
+    console.warn('[provision-tenant] auth failed — x_pfp_internal_key_present:', !!presentedSecret, 'x_pfp_internal_key_length_match:', a.length === b.length)
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json', ...CORS },
+    })
+  }
 
   try {
     const body: RequestBody = await req.json()
@@ -702,4 +741,8 @@ Deno.serve(async (req: Request) => {
       status: 500, headers: { 'Content-Type': 'application/json', ...CORS },
     })
   }
-})
+}
+
+if (import.meta.main) {
+  Deno.serve(handler)
+}

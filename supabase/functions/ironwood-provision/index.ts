@@ -57,13 +57,19 @@ Deno.serve(async (req: Request) => {
       subscription: subscription || { tier: 1, plan_name: 'Starter', monthly_price: 149 },
     }
 
-    // Call provision-tenant (no JWT required — service role header bypasses RLS)
+    // Call provision-tenant. The S211a in-source gate validates
+    // `x-pfp-internal-key` (not `apikey`) — distinct header name avoids
+    // collision with the legacy belt-and-suspenders `apikey: SERVICE_ROLE_KEY`
+    // header below. Backlog: that legacy `apikey` line is dead code (stripe-
+    // webhook → provision-tenant works without it); cleanup belongs in a
+    // hygiene PR, not S211a.
     const provRes = await fetch(`${SUPABASE_URL}/functions/v1/provision-tenant`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
         'apikey': SUPABASE_SERVICE_ROLE_KEY,
+        'x-pfp-internal-key': Deno.env.get('PROVISION_TENANT_INTERNAL_SECRET') ?? '',
       },
       body: JSON.stringify(payload),
     })
