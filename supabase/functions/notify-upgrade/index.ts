@@ -34,23 +34,6 @@ Deno.serve(async (req: Request) => {
     const newName = plan_name || TIER_NAMES[new_tier] || `Tier ${new_tier}`
     const price   = monthly_price ? `$${monthly_price}/mo` : ''
 
-    // Teams notification
-    const teamsMsg = `⬆️ Plan Upgrade Started: **${tenantName}** initiated upgrade from ${oldName} → **${newName}** (${price}). Call them to confirm.\n\nTenant: ${tenantSlug}`
-    const webhookUrl = Deno.env.get('TEAMS_WEBHOOK_URL')
-    if (webhookUrl && webhookUrl !== 'PLACEHOLDER') {
-      await fetch(webhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'message',
-          attachments: [{ contentType: 'application/vnd.microsoft.card.adaptive', content: {
-            type: 'AdaptiveCard', version: '1.4',
-            body: [{ type: 'TextBlock', text: teamsMsg, wrap: true, size: 'Medium' }],
-          }}],
-        }),
-      }).catch(e => console.error('[notify-upgrade] Teams failed:', e.message))
-    }
-
     // Email to sales inbox via Resend
     const resendKey = Deno.env.get('RESEND_API_KEY')
     if (resendKey) {

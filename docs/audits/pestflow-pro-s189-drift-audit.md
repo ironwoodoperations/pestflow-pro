@@ -1,5 +1,7 @@
 # S189 Documentation Drift Audit
 
+> **S210 Phase 1 update:** `notify-teams` and `_shared/teamsNotify.ts` referenced below have been retired. The Microsoft Teams adaptive-card payload examples are historical context only.
+
 **Session:** S191
 **Date:** 2026-05-05
 **Branch:** `audit/s189-drift`

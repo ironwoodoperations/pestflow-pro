@@ -107,14 +107,6 @@ export function useProspectDetail(
       const { data: row, error } = await supabase.from('prospects').insert({ ...toSave, status: toSave.status || 'prospect' }).select('id').single()
       if (!error && row) {
         sid = row.id; setId(row.id)
-        // Notify Teams — fire and forget
-        const biz = data.company_name || ''
-        const rep = (data as any).salesperson_name || ''
-        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-teams`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
-          body: JSON.stringify({ message: `🆕 New prospect created: **${biz}**${rep ? ` — Rep: ${rep}` : ''}\nhttps://pestflowpro.com/ironwood` }),
-        }).catch(() => {})
       }
     } else {
       await supabase.from('prospects').update({ ...toSave, updated_at: new Date().toISOString() }).eq('id', sid)
@@ -140,7 +132,7 @@ export function useProspectDetail(
     if (k === 'company_name') handleCompanyName(v)
     else if (k === 'slug') { setSlugEdited(true); setField('slug', v) }
     else setField(k, v)
-  }, [handleCompanyName, setField]) // eslint-disable-line
+  }, [handleCompanyName, setField])
 
   const onUpdate = useCallback((updates: Partial<Prospect>) => {
     setForm(f => ({ ...f, ...updates }))

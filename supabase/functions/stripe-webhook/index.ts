@@ -121,12 +121,6 @@ Deno.serve(async (req: Request) => {
           if (prospect) {
             await supabase.from('prospects').update({ pipeline_stage: 'paid', payment_confirmed_at: new Date().toISOString() }).eq('id', prospect.id)
           }
-          const siteUrl = prospect?.slug ? `https://${prospect.slug}.pestflowpro.com` : slug ? `https://${slug}.pestflowpro.com` : ''
-          await fetch(`${supabaseUrl}/functions/v1/notify-teams`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceRoleKey}` },
-            body: JSON.stringify({ message: `💰 Payment Confirmed: **${prospect?.company_name || companyName}** paid. Pipeline → Paid.${siteUrl ? ' Site: ' + siteUrl : ''}` }),
-          })
           if (prospectEmail) await fetch(`${supabaseUrl}/functions/v1/send-welcome-email`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceRoleKey}` },

@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
-import { notifyTeamsFromClient } from '../../lib/teamsNotify'
 import RevealReport from './RevealReport'
 
 interface RevealProspect {
@@ -127,7 +126,6 @@ export default function RevealQueue() {
       prospect_id: p.id, actor, action: 'stage_changed',
       detail: 'Reveal approved — moved to Live',
     })
-    notifyTeamsFromClient(`🚀 Launch approved: ${p.company_name} is now LIVE`)
     toast.success(`${p.company_name} is now Live!`)
     setProspects(prev => prev.filter(x => x.id !== p.id))
     setSaving(null)
@@ -147,7 +145,6 @@ export default function RevealQueue() {
     await supabase.from('qa_checklists')
       .update({ qa_passed_at: null, updated_at: new Date().toISOString() })
       .eq('prospect_id', revModal.prospectId)
-    notifyTeamsFromClient(`🔁 Revisions requested: ${revModal.companyName} — ${revNotes.trim()}`)
     toast.success(`${revModal.companyName} sent back for revisions`)
     setProspects(prev => prev.filter(x => x.id !== revModal.prospectId))
     setRevModal(null); setRevNotes(''); setSaving(null)

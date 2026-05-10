@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
-import { notifyTeamsFromClient } from '../../lib/teamsNotify'
 
 const QA_ITEMS: { field: string; label: string; autoCheck?: boolean }[] = [
   { field: 'site_reachable',            label: 'Site is reachable on live or preview URL' },
@@ -131,7 +130,6 @@ export default function QAGate({ prospectId, pipelineStage, companyName, tenantI
         detail: 'QA checklist complete — moved to Reveal Ready',
       })
     } catch (e) { console.error('[activity log]', e) }
-    notifyTeamsFromClient(`✅ QA passed: ${companyName} is ready for reveal call`)
     toast.success(`${companyName} moved to Reveal Ready`)
     onRevealReady(qa.qa_passed_at)
     setMoving(false)
