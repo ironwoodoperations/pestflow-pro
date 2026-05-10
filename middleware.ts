@@ -76,6 +76,9 @@ export function middleware(req: NextRequest) {
     // are React Router routes inside the Vite SPA; everything under /demos
     // is allowlisted for forward-compat.
     const isDemos = pathname === '/demos' || pathname.startsWith('/demos/');
+    // S209 — apex platform legal pages (TOS + Privacy). Linked from
+    // StepReview.tsx onboarding agreement and from MarketingFooter.
+    const isLegal = pathname === '/terms' || pathname === '/privacy';
 
     if (
       isMarketingApex ||
@@ -84,7 +87,8 @@ export function middleware(req: NextRequest) {
       isPaymentSuccess ||
       isIntake ||
       isIntakeSuccess ||
-      isDemos
+      isDemos ||
+      isLegal
     ) {
       return NextResponse.rewrite(new URL('/_admin/index.html', req.url));
     }
