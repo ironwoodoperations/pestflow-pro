@@ -89,7 +89,11 @@ Deno.serve(async (req: Request) => {
 
       const provisionResp = await fetch(`${supabaseUrl}/functions/v1/provision-tenant`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceRoleKey}` },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${serviceRoleKey}`,
+          'x-pfp-internal-key': Deno.env.get('PROVISION_TENANT_INTERNAL_SECRET') ?? '',
+        },
         body: JSON.stringify(provisionBody),
       })
       const provisionData = await provisionResp.json()
