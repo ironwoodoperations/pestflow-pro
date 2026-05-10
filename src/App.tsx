@@ -29,6 +29,10 @@ const IntakeSuccess = lazy(() => import('./pages/IntakeSuccess'))
 const DemosPage      = lazy(() => import('./pages/demos/DemosPage'))
 const DemosAdminPage = lazy(() => import('./pages/demos/DemosAdminPage'))
 
+// Apex legal pages — platform Terms / Privacy
+const TermsPage   = lazy(() => import('./pages/legal/TermsPage'))
+const PrivacyPage = lazy(() => import('./pages/legal/PrivacyPage'))
+
 // Admin — lazy
 const Dashboard      = lazy(() => import('./pages/admin/Dashboard'))
 const Onboarding     = lazy(() => import('./pages/admin/Onboarding'))
@@ -102,6 +106,10 @@ export default function App() {
         {/* ─── Apex demo galleries ─── */}
         <Route path="/demos"       element={<Suspense fallback={LOADING}><DemosPage /></Suspense>} />
         <Route path="/demos/admin" element={<Suspense fallback={LOADING}><DemosAdminPage /></Suspense>} />
+
+        {/* ─── Apex legal pages ─── */}
+        <Route path="/terms"   element={<Suspense fallback={LOADING}><TermsPage /></Suspense>} />
+        <Route path="/privacy" element={<Suspense fallback={LOADING}><PrivacyPage /></Suspense>} />
 
         {/* ─── Catch-all ─── */}
         <Route path="*" element={<NotFound />} />

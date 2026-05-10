@@ -84,7 +84,7 @@ export default function StepReview({ form, saving, onLaunch, onBack, goToStep, u
           />
           <label htmlFor="acceptedTerms" className="text-sm text-slate-700">
             I have read and agree to the PestFlow Pro{' '}
-            <a href="https://pestflowpro.com/terms-of-service" target="_blank" rel="noreferrer" className="text-emerald-700 underline font-medium">
+            <a href="https://pestflowpro.com/terms" target="_blank" rel="noopener noreferrer" className="text-emerald-700 underline font-medium">
               Terms of Service &amp; License Agreement
             </a>
           </label>
@@ -99,7 +99,7 @@ export default function StepReview({ form, saving, onLaunch, onBack, goToStep, u
           />
           <label htmlFor="acceptedPrivacy" className="text-sm text-slate-700">
             I have read and understand the{' '}
-            <a href="https://pestflowpro.com/privacy-policy" target="_blank" rel="noreferrer" className="text-emerald-700 underline font-medium">
+            <a href="https://pestflowpro.com/privacy" target="_blank" rel="noopener noreferrer" className="text-emerald-700 underline font-medium">
               Privacy Policy
             </a>
           </label>
