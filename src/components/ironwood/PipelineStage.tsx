@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
-import { notifyTeamsFromClient } from '../../lib/teamsNotify'
 
 export const PIPELINE_STAGES = [
   { id: 'lead_closed',     label: 'Lead Closed' },
@@ -18,12 +17,10 @@ interface Props {
   prospectId: string
   stage: string
   qaPassedAt?: string | null
-  companyName?: string
-  buildPath?: string | null
   onChanged: (stage: string) => void
 }
 
-export default function PipelineStage({ prospectId, stage, qaPassedAt, companyName, buildPath, onChanged }: Props) {
+export default function PipelineStage({ prospectId, stage, qaPassedAt, onChanged }: Props) {
   const [pending, setPending] = useState<string | null>(null)
   const [saving, setSaving]   = useState(false)
   const [gateMsg, setGateMsg] = useState(false)
@@ -36,10 +33,6 @@ export default function PipelineStage({ prospectId, stage, qaPassedAt, companyNa
     await supabase.from('prospects').update({ pipeline_stage: pending }).eq('id', prospectId)
     onChanged(pending)
     toast.success(`Moved to ${PIPELINE_STAGES.find(s => s.id === pending)?.label}`)
-    if (pending === 'it_in_progress' && companyName) {
-      const path = buildPath ? ` (${buildPath.replace(/_/g, ' ')})` : ''
-      notifyTeamsFromClient(`🔨 Build started: ${companyName}${path} — assigned to IT`)
-    }
     setPending(null)
     setSaving(false)
   }

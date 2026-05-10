@@ -1,5 +1,7 @@
 # S176.1 — Edge Function Inventory
 
+> **S210 Phase 1 update:** `notify-teams` and `zernio-webhook` were retired in PR following the S210 security audit. Their entries below describe historical state; both are no longer deployed and have no callers.
+
 ## Summary
 - Total deployed functions: **27** (Supabase MCP `list_edge_functions`)
 - Total source dirs in `supabase/functions/`: **28** (excluding `_shared/`)

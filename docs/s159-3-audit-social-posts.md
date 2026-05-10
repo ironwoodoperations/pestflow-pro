@@ -1,5 +1,7 @@
 # S159.3 — social_posts Audit
 
+> **S210 Phase 1 update:** the `zernio-webhook` edge function was retired in PR following the S210 security audit. It was empirically dead (no Zernio webhook ever configured to call it). `social_posts.status` updates are now driven exclusively by the synchronous `post-to-social` and `zernio-connect` paths described in this audit. References to `zernio-webhook` below describe a never-load-bearing receiver.
+
 _Generated: 2026-04-19. Read-only investigation._
 
 ---

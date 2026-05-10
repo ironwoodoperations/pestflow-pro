@@ -78,7 +78,6 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
           {id && (
             <PipelineStage
               prospectId={id} stage={form.pipeline_stage ?? 'lead_closed'} qaPassedAt={qaPassedAt}
-              companyName={form.company_name ?? undefined} buildPath={form.build_path ?? null}
               onChanged={stage => onUpdate({ pipeline_stage: stage })}
             />
           )}

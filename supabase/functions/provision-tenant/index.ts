@@ -406,23 +406,6 @@ Deno.serve(async (req: Request) => {
             .eq('tenant_id', tenantId)
             .eq('key', 'integrations')
           if (zernioSaveErr) console.error('[provision-tenant] Failed to save zernio_profile_id:', zernioSaveErr.message)
-
-          // Register webhook so Zernio sends account.connected + post status events
-          try {
-            const webhookUrl = `${SUPABASE_URL}/functions/v1/zernio-webhook`
-            await fetch('https://zernio.com/api/v1/webhooks', {
-              method: 'POST',
-              headers: { 'Authorization': `Bearer ${ZERNIO_API_KEY}`, 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                url: webhookUrl,
-                events: ['account.connected', 'post.published', 'post.failed', 'post.partial'],
-                profileId: zernioProfileId,
-              }),
-            })
-            console.log(`[provision-tenant] Zernio webhook registered: ${webhookUrl}`)
-          } catch (webhookErr: any) {
-            console.error('Zernio webhook registration failed (non-fatal):', webhookErr?.message)
-          }
         } else {
           console.warn('[provision-tenant] Zernio profile creation returned no ID:', JSON.stringify(zernioData))
         }
@@ -708,28 +691,6 @@ Deno.serve(async (req: Request) => {
         console.error('[provision-tenant] intake seeding failed (non-fatal):', intakeErr?.message)
       }
     }
-
-    // Teams notification (non-fatal)
-    try {
-      const TEAMS_WEBHOOK_URL = Deno.env.get('TEAMS_WEBHOOK_URL')
-      if (TEAMS_WEBHOOK_URL && TEAMS_WEBHOOK_URL !== 'PLACEHOLDER') {
-        await fetch(TEAMS_WEBHOOK_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'message',
-            attachments: [{
-              contentType: 'application/vnd.microsoft.card.adaptive',
-              content: {
-                type: 'AdaptiveCard', version: '1.4',
-                body: [{ type: 'TextBlock', wrap: true, size: 'Medium',
-                  text: `🎉 Site provisioned: **${businessName}** — https://${resolvedSlug}.pestflowpro.com` }],
-              },
-            }],
-          }),
-        })
-      }
-    } catch { /* non-fatal */ }
 
     const liveUrl = `https://${resolvedSlug}.pestflowpro.com`
     return new Response(JSON.stringify({ success: true, tenant_id: tenantId, slug: resolvedSlug, url: liveUrl }), {
