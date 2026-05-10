@@ -1,11 +1,15 @@
 // Edge Function: send-credentials-email
 // Triggered manually from Ironwood after reveal call is complete.
 // Sends admin login credentials to the client.
-// No JWT required — called from authenticated Ironwood frontend.
+// Admin-only — verifies caller's user.email === admin@pestflowpro.com via Authorization Bearer.
 //
 // Deploy: supabase functions deploy send-credentials-email --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
 
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { sendEmail } from '../_shared/sendEmail.ts'
+
+const SUPABASE_URL              = Deno.env.get('SUPABASE_URL') || ''
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -91,10 +95,22 @@ function buildHtml(
 </html>`
 }
 
-Deno.serve(async (req: Request) => {
+export async function handler(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS })
 
   try {
+    // Verify JWT — service role client validates any valid Supabase JWT
+    const authHeader = req.headers.get('Authorization') || req.headers.get('authorization') || ''
+    const token = authHeader.replace(/^[Bb]earer\s+/, '').trim()
+    if (!token) return json({ error: 'Unauthorized' }, 401)
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+    console.log('send-credentials-email | user:', user?.email, '| error:', authError?.message)
+    if (authError || !user || user.email !== 'admin@pestflowpro.com') {
+      return json({ error: 'Forbidden' }, 403)
+    }
+
     const { to, firstName, businessName, siteUrl, adminUrl, adminEmail, adminPassword } = await req.json()
 
     // Support legacy callers that pass slug instead of siteUrl/adminUrl
@@ -125,4 +141,8 @@ Deno.serve(async (req: Request) => {
     console.error('[send-credentials-email]', err?.message)
     return json({ error: err?.message || 'Internal server error' }, 500)
   }
-})
+}
+
+if (import.meta.main) {
+  Deno.serve(handler)
+}

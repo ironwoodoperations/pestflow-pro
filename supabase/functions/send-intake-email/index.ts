@@ -1,13 +1,18 @@
 // Edge Function: send-intake-email
 // Sends intake invitation email to a prospect via Resend.
-// JWT-protected — caller must be an authenticated Ironwood user.
+// Admin-only — verifies caller's user.email === admin@pestflowpro.com via Authorization Bearer.
 //
-// Deploy: supabase functions deploy send-intake-email --project-ref biezzykcgzkrwdgqpsar
+// Deploy: supabase functions deploy send-intake-email --project-ref biezzykcgzkrwdgqpsar --no-verify-jwt
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const SUPABASE_URL             = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
 async function sendEmail({ to, subject, html, replyTo }: { to: string; subject: string; html: string; replyTo?: string }) {
   const key = Deno.env.get('RESEND_API_KEY') || ''
@@ -21,20 +26,36 @@ async function sendEmail({ to, subject, html, replyTo }: { to: string; subject: 
   if (!res.ok) throw new Error(`Resend failed: ${await res.text()}`)
 }
 
-Deno.serve(async (req) => {
+export async function handler(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' } })
+    return new Response('ok', { headers: CORS })
   }
 
   try {
-    // Verify JWT — use service role client (reliable for any valid JWT)
+    // Verify JWT — service role client validates any valid Supabase JWT,
+    // then enforce admin-only allowlist.
     const authHeader = req.headers.get('Authorization') || req.headers.get('authorization') || ''
-    const token = authHeader.replace(/^[Bb]earer\s+/, '')
+    const token = authHeader.replace(/^[Bb]earer\s+/, '').trim()
+    if (!token) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      })
+    }
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
     const { data: { user }, error: authErr } = await supabase.auth.getUser(token)
+    console.log('[send-intake-email] user:', user?.email, '| error:', authErr?.message)
     if (authErr || !user) {
-      console.log('[send-intake-email] Unauthorized — user:', user?.email, 'error:', authErr?.message)
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      })
+    }
+    if (user.email !== 'admin@pestflowpro.com') {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      })
     }
 
     const { prospectEmail, prospectName, intakeUrl, businessName } = await req.json()
@@ -77,4 +98,8 @@ Deno.serve(async (req) => {
     console.error('[send-intake-email]', String(err))
     return new Response(JSON.stringify({ error: String(err) }), { status: 500 })
   }
-})
+}
+
+if (import.meta.main) {
+  Deno.serve(handler)
+}
