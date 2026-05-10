@@ -1,8 +1,12 @@
 // Supabase Edge Function: publish-scheduled-posts
 // Fires every 5 minutes via pg_cron. Publishes all social_posts where
 // status = 'scheduled' AND scheduled_for <= now() AND archived_at IS NULL.
-// If post_id is passed in the request body, only that specific post is processed
-// (used by the "Publish Now" button in the admin social tab).
+//
+// Auth: verify_jwt:false at platform; in-source validation of `apikey` header
+//       against PUBLISH_SCHEDULED_POSTS_INTERNAL_SECRET env var. Sole legitimate
+//       caller: pg_cron 'publish-scheduled-posts' job. The Admin SPA "Publish
+//       Now" button hits post-to-social, NOT this function — the post_id body
+//       parse path that previously lived here was dead code (S211a cleanup).
 //
 // Posting provider: Zernio (zernio.com)
 //   zernio_accounts stored in settings.integrations as { [zernio_platform_key]: account_id }
@@ -11,21 +15,13 @@
 // DEPLOY:
 //   supabase functions deploy publish-scheduled-posts --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
 //
-// pg_cron setup (run once in Supabase SQL editor):
-//   SELECT cron.schedule(
-//     'publish-scheduled-posts',
-//     '*/5 * * * *',
-//     $$
-//     SELECT net.http_post(
-//       url := 'https://biezzykcgzkrwdgqpsar.supabase.co/functions/v1/publish-scheduled-posts',
-//       headers := '{"Content-Type": "application/json"}'::jsonb,
-//       body := '{}'::jsonb
-//     );
-//     $$
-//   );
+// pg_cron setup (run via Supabase MCP after deploy — see
+//   docs/migrations/s211a-publish-scheduled-posts-cron-rewrite.sql):
+//   the cron body now includes the apikey header sourced from
+//   vault.decrypted_secrets.publish_scheduled_posts_internal_secret.
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { timingSafeEqual } from 'node:crypto'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -62,9 +58,37 @@ function toPlatformArray(platform: string): string[] {
   return platform === 'both' ? ['facebook', 'instagram'] : [platform]
 }
 
-serve(async (req) => {
+export async function handler(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
+  }
+
+  // ── AUTH (must run before anything else) ────────────────────────────
+  const expectedSecret = Deno.env.get('PUBLISH_SCHEDULED_POSTS_INTERNAL_SECRET') || ''
+  const presentedSecret = req.headers.get('apikey') || ''
+
+  if (!expectedSecret) {
+    console.error('[publish-scheduled-posts] PUBLISH_SCHEDULED_POSTS_INTERNAL_SECRET env var not set; rejecting all requests')
+    return new Response(JSON.stringify({ error: 'Server misconfigured' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  // node:crypto.timingSafeEqual — constant-time compare. Throws on length mismatch,
+  // so length-equality pre-check is required. (crypto.subtle has no timingSafeEqual
+  // in Deno/Web Crypto; node:crypto is the supported primitive in Supabase Edge Runtime.)
+  const enc = new TextEncoder()
+  const a = enc.encode(expectedSecret)
+  const b = enc.encode(presentedSecret)
+  const authOk = a.length === b.length && timingSafeEqual(a, b)
+
+  if (!authOk) {
+    console.warn('[publish-scheduled-posts] auth failed — apikey_present:', !!presentedSecret, 'apikey_length_match:', a.length === b.length)
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    })
   }
 
   const supabaseUrl    = Deno.env.get('SUPABASE_URL') ?? ''
@@ -72,32 +96,21 @@ serve(async (req) => {
   const zernioApiKey   = Deno.env.get('ZERNIO_API_KEY') ?? ''
   const supabase       = createClient(supabaseUrl, serviceRoleKey)
 
-  let specificPostId: string | null = null
-  try {
-    const body = await req.json()
-    specificPostId = body?.post_id ?? null
-  } catch {
-    // no body — process all due posts
-  }
-
   // Atomically claim posts by flipping status='scheduled' → 'publishing' in a
   // single UPDATE. Prevents the SELECT-then-UPDATE race where two overlapping
   // cron invocations both pick up the same scheduled rows and double-publish
   // them. Postgres row-level locks make the WHERE status='scheduled' clause
   // mutually exclusive — the second invocation sees 'publishing' and skips.
-  let claimQuery = supabase
+  //
+  // S211a cleanup: the previous specificPostId branch was dead code (Admin SPA
+  // "Publish Now" calls post-to-social, not this fn). Now an unconditional
+  // .lte('scheduled_for', now()) claim — cron is the sole caller.
+  const { data: posts, error: postsError } = await supabase
     .from('social_posts')
     .update({ status: 'publishing' })
     .eq('status', 'scheduled')
     .is('archived_at', null)
-
-  if (specificPostId) {
-    claimQuery = claimQuery.eq('id', specificPostId)
-  } else {
-    claimQuery = claimQuery.lte('scheduled_for', new Date().toISOString())
-  }
-
-  const { data: posts, error: postsError } = await claimQuery
+    .lte('scheduled_for', new Date().toISOString())
     .select('id, tenant_id, platform, caption, image_url, status, scheduled_for')
 
   if (postsError) {
@@ -235,4 +248,8 @@ serve(async (req) => {
     JSON.stringify({ fired, published, failed }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   )
-})
+}
+
+if (import.meta.main) {
+  Deno.serve(handler)
+}
