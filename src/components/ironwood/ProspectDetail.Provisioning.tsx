@@ -55,9 +55,21 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
       const firstName   = (form.contact_name || form.company_name || '').split(' ')[0] || 'there'
       const siteUrl     = `https://${form.slug}.pestflowpro.com`
       const adminUrl    = `https://${form.slug}.pestflowpro.com/admin`
+      // Get a fresh session token at click time — never use a cached token.
+      // Mirrors the pattern used by the provision flow elsewhere in this file.
+      const { data: { session: freshSession }, error: sessionError } = await supabase.auth.refreshSession()
+      if (!freshSession || sessionError) {
+        toast.error('Your session has expired. Please sign out and sign back in.')
+        return
+      }
+
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-credentials-email`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${freshSession.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
         body: JSON.stringify({
           to:            adminEmail,
           firstName,
