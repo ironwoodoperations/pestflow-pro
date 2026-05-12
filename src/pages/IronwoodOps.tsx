@@ -89,6 +89,14 @@ export default function IronwoodOps() {
           >
             <span>🎯</span>Sales Deck
           </a>
+          <a
+            href="/walkthrough/index.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2 text-gray-400 hover:bg-gray-800 hover:text-white"
+          >
+            <span>🎬</span>Animated Walkthrough
+          </a>
         </div>
         <div className="px-4 py-3 border-t border-gray-800">
           <div className="text-xs text-gray-600">admin@pestflowpro.com</div>
