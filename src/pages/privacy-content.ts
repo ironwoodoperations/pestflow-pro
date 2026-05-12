@@ -77,7 +77,7 @@ export const privacySections: Section[] = [
   },
   {
     heading: "7. YOUR RIGHTS",
-    body: "You have the right to: (a) access all data we hold about your account; (b) correct inaccurate data; (c) export your Client Content; (d) request deletion of your account and data (subject to legal retention requirements). Contact us at scott@ironwoodoperationsgroup.com to exercise these rights.",
+    body: "You have the right to: (a) access all data we hold about your account; (b) correct inaccurate data; (c) export your Client Content; (d) request deletion of your account and data (subject to legal retention requirements). Contact us at scott@homeflowpro.ai to exercise these rights.",
   },
   {
     heading: "8. COOKIES & ANALYTICS",
@@ -93,6 +93,6 @@ export const privacySections: Section[] = [
   },
   {
     heading: "11. CONTACT",
-    body: "Questions about this Privacy Policy: scott@ironwoodoperationsgroup.com\nIronwood Operations Group LLC — Cherokee County, Texas",
+    body: "Questions about this Privacy Policy: scott@homeflowpro.ai\nIronwood Operations Group LLC — Cherokee County, Texas",
   },
 ];

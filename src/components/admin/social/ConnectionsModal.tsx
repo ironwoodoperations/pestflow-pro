@@ -130,7 +130,7 @@ export default function ConnectionsModal({ onClose, onNavigate, isDemoTenant = t
           ) : (
             <>
               <p className="text-sm text-gray-500 mb-4">Social connections are available on the Growth plan. Contact us to enable this feature.</p>
-              <a href="mailto:scott@ironwoodoperationsgroup.com?subject=Social Connections" className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 inline-block">Contact us →</a>
+              <a href="mailto:scott@homeflowpro.ai?subject=Social Connections" className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 inline-block">Contact us →</a>
             </>
           )}
           <button onClick={onClose} className="block mt-3 mx-auto text-xs text-gray-400 hover:text-gray-600">Close</button>

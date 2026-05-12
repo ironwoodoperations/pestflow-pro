@@ -2,7 +2,8 @@ import { useState } from 'react'
 
 const C = { bg: '#0f1a2e', bgAlt: '#1e2d4a', green: '#22c55e', white: '#ffffff', muted: 'rgba(255,255,255,0.6)' }
 const F = { h: "'Bricolage Grotesque', sans-serif", b: "'Plus Jakarta Sans', sans-serif" }
-const EDGE_URL = 'https://biezzykcgzkrwdgqpsar.supabase.co/functions/v1/send-marketing-lead'
+const EDGE_URL = 'https://biezzykcgzkrwdgqpsar.supabase.co/functions/v1/api-quote'
+const MASTER_TENANT_ID = '9215b06b-3eb5-49a1-a16e-7ff214bf6783'
 
 const inputStyle = {
   width: '100%', padding: '11px 14px',
@@ -27,10 +28,17 @@ export default function MarketingCTA() {
     setLoading(true)
     setError('')
     try {
+      const messageParts = [form.company && `Company: ${form.company}`, form.message].filter(Boolean)
       const res = await fetch(EDGE_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          tenant_id: MASTER_TENANT_ID,
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          message: messageParts.length ? messageParts.join('\n') : undefined,
+        }),
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       setSubmitted(true)
@@ -70,7 +78,7 @@ export default function MarketingCTA() {
               <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(6,182,212,0.1)', border: '1px solid rgba(6,182,212,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>✉️</div>
               <div>
                 <div style={{ fontFamily: F.b, fontSize: 12, color: C.muted, marginBottom: 2 }}>Email</div>
-                <a href="mailto:pfpsales@pestflowpro.com" style={{ fontFamily: F.h, fontWeight: 700, fontSize: 16, color: C.white, textDecoration: 'none' }}>pfpsales@pestflowpro.com</a>
+                <a href="mailto:sales@homeflowpro.ai" style={{ fontFamily: F.h, fontWeight: 700, fontSize: 16, color: C.white, textDecoration: 'none' }}>sales@homeflowpro.ai</a>
               </div>
             </div>
 
@@ -89,8 +97,8 @@ export default function MarketingCTA() {
                 Thanks {form.name.split(' ')[0]}!
               </h3>
               <p style={{ fontFamily: F.b, fontSize: 15, color: C.muted, lineHeight: 1.65, margin: 0 }}>
-                We'll be in touch within 1 business hour.<br />
-                Check your email for a preview of what we can build for you.
+                We'll be in touch within 1 business day.<br />
+                Check your email for a confirmation.
               </p>
             </div>
           ) : (

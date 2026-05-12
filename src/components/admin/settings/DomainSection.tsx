@@ -63,7 +63,7 @@ export default function DomainSection() {
 
       <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
         <p className="text-sm text-blue-800 font-semibold mb-2">Need Help?</p>
-        <p className="text-sm text-blue-700">✉ Email: <a href="mailto:scott@ironwoodoperationsgroup.com" className="underline">scott@ironwoodoperationsgroup.com</a></p>
+        <p className="text-sm text-blue-700">✉ Email: <a href="mailto:scott@homeflowpro.ai" className="underline">scott@homeflowpro.ai</a></p>
       </div>
     </div>
   )

@@ -274,13 +274,6 @@ export default function RevealQueue() {
                       >
                         📄 Reveal Report
                       </button>
-                      <a
-                        href="https://outlook.office.com/book/PestFlowProOnboarding@ironwoodoperationsgroup.com/?ismsaljsauthenabled"
-                        target="_blank" rel="noopener noreferrer"
-                        className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-lg transition"
-                      >
-                        📅 Book Reveal Call
-                      </a>
                     </div>
                     <div className="flex items-center gap-2">
                       <button

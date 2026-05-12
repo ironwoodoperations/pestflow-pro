@@ -89,22 +89,6 @@ export default function IronwoodOps() {
           >
             <span>🎯</span>Sales Deck
           </a>
-          <a
-            href="https://outlook.office.com/book/PestFlowProOnboarding@ironwoodoperationsgroup.com/?ismsaljsauthenabled"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2 text-gray-400 hover:bg-gray-800 hover:text-white"
-          >
-            <span>📅</span>Book Onboarding Call
-          </a>
-          <a
-            href="https://teams.microsoft.com/l/meeting/new"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2 text-gray-400 hover:bg-gray-800 hover:text-white"
-          >
-            <span>🎥</span>Start Teams Call
-          </a>
         </div>
         <div className="px-4 py-3 border-t border-gray-800">
           <div className="text-xs text-gray-600">admin@pestflowpro.com</div>

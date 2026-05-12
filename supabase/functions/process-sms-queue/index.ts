@@ -11,6 +11,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { timingSafeEqual } from 'node:crypto'
 import { classifyNumber } from '../_shared/area-code-states.ts'
 import { isInQuietWindow } from '../_shared/quiet-hours.ts'
 
@@ -42,6 +43,32 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
+
+  // ── C3 AUTH — apikey header, timing-safe compare ─────────────────────
+  const expectedSecret = Deno.env.get('PROCESS_SMS_QUEUE_INTERNAL_SECRET') || ''
+  const presentedSecret = req.headers.get('apikey') || ''
+
+  if (!expectedSecret) {
+    console.error('[process-sms-queue] PROCESS_SMS_QUEUE_INTERNAL_SECRET env var not set; rejecting all requests')
+    return new Response(JSON.stringify({ error: 'Server misconfigured' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  const enc = new TextEncoder()
+  const a = enc.encode(expectedSecret)
+  const b = enc.encode(presentedSecret)
+  const authOk = a.length === b.length && timingSafeEqual(a, b)
+
+  if (!authOk) {
+    console.warn('[process-sms-queue] auth failed — apikey_present:', !!presentedSecret, 'apikey_length_match:', a.length === b.length)
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+  // ────────────────────────────────────────────────────────────────────
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''

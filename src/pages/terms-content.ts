@@ -119,6 +119,6 @@ export const termsSections: Section[] = [
   },
   {
     heading: "20. CONTACT",
-    body: "Ironwood Operations Group LLC\nEmail: scott@ironwoodoperationsgroup.com\nGoverning Jurisdiction: Cherokee County, Texas",
+    body: "Ironwood Operations Group LLC\nEmail: scott@homeflowpro.ai\nGoverning Jurisdiction: Cherokee County, Texas",
   },
 ];

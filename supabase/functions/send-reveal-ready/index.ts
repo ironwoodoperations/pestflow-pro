@@ -13,8 +13,6 @@ const CORS = {
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', ...CORS } })
 
-const BOOKINGS_URL = 'https://outlook.office.com/book/PestFlowProOnboarding@ironwoodoperationsgroup.com/?ismsaljsauthenabled'
-
 function buildHtml(companyName: string, siteUrl: string): string {
   return `<!DOCTYPE html>
 <html>
@@ -30,12 +28,7 @@ function buildHtml(companyName: string, siteUrl: string): string {
         <p style="margin:0 0 20px;font-size:15px;color:#374151;line-height:1.6">
           Your new PestFlow Pro site is live and ready for your review.
         </p>
-        <p style="margin:0 0 12px;font-size:15px;color:#374151;font-weight:600">Book your reveal call here — it takes about 45 minutes:</p>
-        <!-- PRIMARY CTA — Bookings link -->
-        <a href="${BOOKINGS_URL}"
-           style="display:block;background:#16a34a;color:#ffffff;font-size:17px;font-weight:700;padding:18px 32px;border-radius:8px;text-decoration:none;text-align:center;margin-bottom:28px">
-          Book Your Reveal Call →
-        </a>
+        <p style="margin:0 0 20px;font-size:14px;color:#6b7280;line-height:1.6"><em>Want to talk it through? Reply to this email or call (430) 367-5601.</em></p>
         <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:20px 24px;margin:0 0 24px">
           <p style="margin:0 0 8px;font-size:14px;font-weight:600;color:#166534">On the call we'll:</p>
           <p style="margin:4px 0;font-size:14px;color:#374151">✓ Walk through your live site together</p>
@@ -71,7 +64,7 @@ Deno.serve(async (req: Request) => {
       to,
       subject: `Your site is ready — let's walk through it together`,
       html: buildHtml(recipientName, siteLink),
-      replyTo: 'pfpsales@pestflowpro.com',
+      replyTo: 'sales@homeflowpro.ai',
       fromName: 'PestFlow Pro',
     })
     return json({ success: true })

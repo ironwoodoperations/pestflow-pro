@@ -84,11 +84,6 @@ export default function ProspectDetail({ prospectId, salespeople, onClose, onArc
 
           {/* Row 4: action buttons */}
           <div className="flex items-center gap-2 flex-wrap">
-            <a href="https://outlook.office.com/book/PestFlowProOnboarding@ironwoodoperationsgroup.com/?ismsaljsauthenabled"
-              target="_blank" rel="noopener noreferrer"
-              className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-lg transition">📅 Book Call</a>
-            <a href="https://teams.microsoft.com/l/meeting/new" target="_blank" rel="noopener noreferrer"
-              className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-lg transition">🎥 Teams Call</a>
             <RepGuideButton section="sales-call" onOpen={setGuideSection} />
           </div>
         </div>

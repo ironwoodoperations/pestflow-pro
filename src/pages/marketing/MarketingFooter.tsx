@@ -51,8 +51,8 @@ export default function MarketingFooter() {
             <a href="tel:4303675601" style={{ display: 'block', fontFamily: F.b, fontSize: 14, color: C.white, textDecoration: 'none', marginBottom: 6, fontWeight: 600 }}>
               (430) 367-5601
             </a>
-            <a href="mailto:pfpsales@pestflowpro.com" style={{ fontFamily: F.b, fontSize: 13, color: C.muted, textDecoration: 'none' }}>
-              pfpsales@pestflowpro.com
+            <a href="mailto:sales@homeflowpro.ai" style={{ fontFamily: F.b, fontSize: 13, color: C.muted, textDecoration: 'none' }}>
+              sales@homeflowpro.ai
             </a>
           </div>
         </div>
