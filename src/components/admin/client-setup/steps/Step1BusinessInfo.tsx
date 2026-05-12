@@ -63,7 +63,7 @@ export default function Step1BusinessInfo({ form, setForm }: Props) {
           <input value={form.slug} onChange={handleSlug} required className={IC} placeholder="ironclad-pest" maxLength={40} />
           <p className="text-xs mt-1">
             {form.slug
-              ? <span className="text-emerald-600">Your site will be at: <strong>{form.slug}.pestflowpro.com</strong></span>
+              ? <span className="text-emerald-600">Your site will be at: <strong>{form.slug}.pestflowpro.ai</strong></span>
               : <span className="text-gray-400">Enter your company name above</span>
             }
           </p>

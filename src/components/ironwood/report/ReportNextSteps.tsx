@@ -94,7 +94,7 @@ export default function ReportNextSteps({ data }: { data: RevealReportData }) {
           Your PestFlow Pro team monitors your site performance and is available for strategy calls, content requests, and technical changes — all included in your plan.
         </p>
         <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginTop: '16px' }}>
-          Powered by PestFlow Pro · pestflowpro.com
+          Powered by PestFlow Pro · pestflowpro.ai
         </p>
       </div>
     </section>

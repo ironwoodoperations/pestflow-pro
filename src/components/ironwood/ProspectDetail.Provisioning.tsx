@@ -53,8 +53,8 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
     setSendingCreds(true)
     try {
       const firstName   = (form.contact_name || form.company_name || '').split(' ')[0] || 'there'
-      const siteUrl     = `https://${form.slug}.pestflowpro.com`
-      const adminUrl    = `https://${form.slug}.pestflowpro.com/admin`
+      const siteUrl     = `https://${form.slug}.pestflowpro.ai`
+      const adminUrl    = `https://${form.slug}.pestflowpro.ai/admin`
       // Get a fresh session token at click time — never use a cached token.
       // Mirrors the pattern used by the provision flow elsewhere in this file.
       const { data: { session: freshSession }, error: sessionError } = await supabase.auth.refreshSession()
@@ -96,8 +96,8 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
     setSendingReveal(true)
     try {
       const firstName  = (form.contact_name || form.company_name || '').split(' ')[0] || 'there'
-      const siteUrl    = `https://${form.slug}.pestflowpro.com`
-      const adminUrl   = `https://${form.slug}.pestflowpro.com/admin`
+      const siteUrl    = `https://${form.slug}.pestflowpro.ai`
+      const adminUrl   = `https://${form.slug}.pestflowpro.ai/admin`
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-reveal-ready`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
@@ -233,11 +233,11 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
           ✓ Provisioned {new Date(form.provisioned_at).toLocaleDateString()}
         </span>
         <div className="space-y-1">
-          <a href={`https://${form.slug}.pestflowpro.com`} target="_blank" rel="noreferrer" className="block text-emerald-400 hover:underline text-sm">
-            🌐 {form.slug}.pestflowpro.com
+          <a href={`https://${form.slug}.pestflowpro.ai`} target="_blank" rel="noreferrer" className="block text-emerald-400 hover:underline text-sm">
+            🌐 {form.slug}.pestflowpro.ai
           </a>
-          <a href={`https://${form.slug}.pestflowpro.com/admin`} target="_blank" rel="noreferrer" className="block text-emerald-400 hover:underline text-sm">
-            🔑 {form.slug}.pestflowpro.com/admin
+          <a href={`https://${form.slug}.pestflowpro.ai/admin`} target="_blank" rel="noreferrer" className="block text-emerald-400 hover:underline text-sm">
+            🔑 {form.slug}.pestflowpro.ai/admin
           </a>
         </div>
         <button onClick={sendCredentialsEmail} disabled={sendingCreds}
@@ -334,7 +334,7 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
             <h4 className="font-bold text-white">Confirm Site Creation</h4>
             <p className="text-sm text-gray-300">
               Create <strong>{form.company_name || 'this client'}</strong>'s site at{' '}
-              <strong className="text-emerald-400">{form.slug}.pestflowpro.com</strong>?
+              <strong className="text-emerald-400">{form.slug}.pestflowpro.ai</strong>?
             </p>
             <p className="text-xs text-gray-500">The client will not be notified automatically.</p>
             <div className="flex gap-3">

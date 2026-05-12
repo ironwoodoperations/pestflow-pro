@@ -195,7 +195,7 @@ export default function ProspectList() {
                     <div className="flex gap-2">
                       <button onClick={() => setSelectedId(p.id)} className="text-xs text-emerald-400 hover:underline">Open</button>
                       {p.provisioned_at && p.slug && (
-                        <button onClick={() => navigator.clipboard.writeText(`https://${p.slug}.pestflowpro.com`)}
+                        <button onClick={() => navigator.clipboard.writeText(`https://${p.slug}.pestflowpro.ai`)}
                           className="text-xs text-gray-400 hover:underline">Copy URL</button>
                       )}
                     </div>

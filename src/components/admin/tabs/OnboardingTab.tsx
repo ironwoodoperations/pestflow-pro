@@ -77,7 +77,7 @@ export default function OnboardingTab({ onComplete }: Props) {
       />
 
       <div className="mb-6">
-        {slug && <p className="text-sm text-emerald-600 font-medium mb-0.5">Site: {slug}.pestflowpro.com</p>}
+        {slug && <p className="text-sm text-emerald-600 font-medium mb-0.5">Site: {slug}.pestflowpro.ai</p>}
         {bizName && <h2 className="text-xl font-bold text-gray-900">{bizName}</h2>}
       </div>
 

@@ -228,7 +228,7 @@ const PATH_A_STEPS = [
   {
     title: 'Content entry',
     bullets: [
-      'Go to [slug].pestflowpro.com/admin',
+      'Go to [slug].pestflowpro.ai/admin',
       'Log in with the admin credentials',
       'Go to Content → fill in all service descriptions',
       'Go to Settings → Business Info → fill in address, hours, tagline, license #',
@@ -414,7 +414,7 @@ function PathCSection() {
 
       <StepBlock num="9" title="STEP 9 — Review and refine">
         <ul className="space-y-1 mt-1">
-          <Bullet>Visit [slug].pestflowpro.com</Bullet>
+          <Bullet>Visit [slug].pestflowpro.ai</Bullet>
           <Bullet>Check every page — hero, services, about, contact, city pages</Bullet>
           <Bullet>If anything needs adjusting, describe it to Claude Code in the chat</Bullet>
           <Bullet>Commit and push each fix</Bullet>
@@ -478,8 +478,8 @@ function QuickRefSection() {
         {/* Credentials */}
         <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
           <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-3">Credentials</h4>
-          <RefRow label="Ironwood login" value="pestflowpro.com/ironwood" />
-          <RefRow label="Demo site" value="pestflow-pro.pestflowpro.com" />
+          <RefRow label="Ironwood login" value="pestflowpro.ai/ironwood" />
+          <RefRow label="Demo site" value="pestflow-pro.pestflowpro.ai" />
           <RefRow label="Demo admin email" value="admin@pestflowpro.com" />
           <RefRow label="Demo admin password" value="pf123demo" />
           <RefRow label="Supabase project ID" value="biezzykcgzkrwdgqpsar" />

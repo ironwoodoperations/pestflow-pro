@@ -275,7 +275,7 @@ export default function PaymentSuccess() {
 
           {(status === 'ready' || status === 'slow') && (
             <a
-              href="https://pestflowpro.com"
+              href="https://pestflowpro.ai"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 w-full justify-center py-3 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition text-sm"

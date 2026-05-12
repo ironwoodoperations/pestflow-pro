@@ -4,18 +4,18 @@ import { supabase } from './supabase'
 // NOT the legacy build-time tenant env-var fallback (which resolved ANY unmatched
 // hostname to master). Only these specific hostnames resolve to master
 // by this rule. Typo'd subdomains still return null and 404.
-const APEX_HOSTS = new Set(['pestflowpro.com', 'www.pestflowpro.com'])
+const APEX_HOSTS = new Set(['pestflowpro.ai', 'www.pestflowpro.ai'])
 const MASTER_TENANT_SLUG = 'pestflow-pro'
 
 /**
- * Extracts the slug subdomain from a *.pestflowpro.com hostname.
- * lonestarpest.pestflowpro.com → "lonestarpest"
- * pestflowpro.com / localhost  → null
+ * Extracts the slug subdomain from a *.pestflowpro.ai hostname.
+ * lonestarpest.pestflowpro.ai → "lonestarpest"
+ * pestflowpro.ai / localhost  → null
  */
 function getPestflowSubdomain(): string | null {
   const hostname = window.location.hostname
-  if (hostname === 'pestflowpro.com') return null
-  if (hostname.endsWith('.pestflowpro.com')) {
+  if (hostname === 'pestflowpro.ai') return null
+  if (hostname.endsWith('.pestflowpro.ai')) {
     const parts = hostname.split('.')
     if (parts.length === 3) return parts[0]
   }
@@ -27,7 +27,7 @@ function getPestflowSubdomain(): string | null {
  * Priority order:
  * 1. ?tenant=<slug> query param (DEV mode only)
  * 2. custom_domain match (e.g. admin.dangpestcontrol.com)
- * 3. *.pestflowpro.com subdomain slug match
+ * 3. *.pestflowpro.ai subdomain slug match
  * Returns null if no tenant could be resolved.
  */
 export async function resolveTenantId(): Promise<string | null> {
@@ -60,7 +60,7 @@ export async function resolveTenantId(): Promise<string | null> {
   }
 
   // 2. Custom domain lookup via tenant_domains table (verified only)
-  const isPestflowDomain = hostname === 'pestflowpro.com' || hostname.endsWith('.pestflowpro.com')
+  const isPestflowDomain = hostname === 'pestflowpro.ai' || hostname.endsWith('.pestflowpro.ai')
   const isLocalhost = hostname === 'localhost' || hostname.endsWith('.localhost') || hostname.endsWith('.vercel.app')
   if (!isPestflowDomain && !isLocalhost) {
     try {
@@ -74,7 +74,7 @@ export async function resolveTenantId(): Promise<string | null> {
     } catch { /* fall through */ }
   }
 
-  // 3. *.pestflowpro.com subdomain
+  // 3. *.pestflowpro.ai subdomain
   //    Priority: tenants.subdomain column (explicit registration like 'demo'),
   //    then tenants.slug (backward compat for slug-as-subdomain like 'dang').
   const subdomain = getPestflowSubdomain()

@@ -1,7 +1,7 @@
 interface Props { slug: string | null }
 
 export default function FullCustomBuildGuide({ slug }: Props) {
-  const siteUrl = `${slug || '[slug]'}.pestflowpro.com`
+  const siteUrl = `${slug || '[slug]'}.pestflowpro.ai`
 
   return (
     <div className="border border-violet-800/40 rounded-xl overflow-hidden">

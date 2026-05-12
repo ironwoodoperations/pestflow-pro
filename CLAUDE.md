@@ -79,9 +79,9 @@ Stop only when you genuinely cannot proceed without information not in this file
 ## CRITICAL CONSTANTS
 
 ```
-Live URL:         https://pestflowpro.com
-Ironwood Ops:     https://pestflowpro.com/ironwood  (admin@pestflowpro.com only)
-Client Admin:     https://[slug].pestflowpro.com/admin
+Live URL:         https://pestflowpro.ai
+Ironwood Ops:     https://pestflowpro.ai/ironwood  (admin@pestflowpro.com only)
+Client Admin:     https://[slug].pestflowpro.ai/admin
 GitHub:           https://github.com/ironwoodoperations/pestflow-pro
 Supabase URL:     https://biezzykcgzkrwdgqpsar.supabase.co
 Supabase ID:      biezzykcgzkrwdgqpsar

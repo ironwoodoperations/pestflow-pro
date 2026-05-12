@@ -128,8 +128,8 @@ export default function IntakePage() {
       }
 
       setStatus('done')
-      // Redirect to pestflowpro.com after 4s so client sees thank-you + bookings link
-      setTimeout(() => { window.location.href = 'https://pestflowpro.com' }, 4000)
+      // Redirect to pestflowpro.ai after 4s so client sees thank-you + bookings link
+      setTimeout(() => { window.location.href = 'https://pestflowpro.ai' }, 4000)
     } catch (err) {
       console.error('[handleSubmit]', err)
       setStatus('done') // still show done — data was saved or partially saved

@@ -137,9 +137,9 @@ export default function AllClients() {
               <tr key={c.id} className="border-b border-gray-800/50 hover:bg-gray-900/30">
                 <td className="py-2.5 pr-4 text-white font-medium">{c.name}</td>
                 <td className="py-2.5 pr-4">
-                  <a href={`https://${c.slug}.pestflowpro.com`} target="_blank" rel="noopener noreferrer"
+                  <a href={`https://${c.slug}.pestflowpro.ai`} target="_blank" rel="noopener noreferrer"
                     className="text-emerald-400 hover:text-emerald-300 font-mono text-xs hover:underline">
-                    {c.slug}.pestflowpro.com ↗
+                    {c.slug}.pestflowpro.ai ↗
                   </a>
                 </td>
                 <td className="py-2.5 pr-4 text-gray-400 text-xs capitalize">{c.template ?? '—'}</td>
@@ -151,7 +151,7 @@ export default function AllClients() {
                   ) : <span className="text-gray-600 text-xs">—</span>}
                 </td>
                 <td className="py-2.5 pr-4">
-                  <a href={`https://${c.slug}.pestflowpro.com/admin`} target="_blank" rel="noopener noreferrer"
+                  <a href={`https://${c.slug}.pestflowpro.ai/admin`} target="_blank" rel="noopener noreferrer"
                     className="text-xs text-gray-400 hover:text-white hover:underline">
                     Admin ↗
                   </a>

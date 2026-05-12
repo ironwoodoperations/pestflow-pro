@@ -49,7 +49,7 @@ function LeadFeedMockup() {
         ))}
       </div>
       <div style={{ padding: '12px 18px', background: 'rgba(0,0,0,0.2)', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
-        <a href="https://demo.pestflowpro.com/admin" target="_blank" rel="noopener noreferrer" style={{ fontFamily: F.b, fontSize: 12, fontWeight: 600, color: '#22c55e', textDecoration: 'none' }}>
+        <a href="https://demo.pestflowpro.ai/admin" target="_blank" rel="noopener noreferrer" style={{ fontFamily: F.b, fontSize: 12, fontWeight: 600, color: '#22c55e', textDecoration: 'none' }}>
           See the dashboard →
         </a>
       </div>
@@ -86,7 +86,7 @@ export default function MarketingCRM() {
         </div>
 
         <div style={{ textAlign: 'center', marginTop: '12px', display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <a href="https://demo.pestflowpro.com/admin" target="_blank" rel="noopener noreferrer" style={{ color: '#22c55e', fontSize: '14px', fontWeight: 500, textDecoration: 'underline' }}>
+          <a href="https://demo.pestflowpro.ai/admin" target="_blank" rel="noopener noreferrer" style={{ color: '#22c55e', fontSize: '14px', fontWeight: 500, textDecoration: 'underline' }}>
             Try the live dashboard →
           </a>
           <span style={{ fontSize: '13px', color: '#6b7280' }}>

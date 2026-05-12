@@ -78,7 +78,7 @@ export default function SEOHead({
   tagline,
   googleSearchConsoleVerification,
 }: SEOHeadProps) {
-  const baseUrl = `https://${tenantSlug}.pestflowpro.com`
+  const baseUrl = `https://${tenantSlug}.pestflowpro.ai`
   const resolvedUrl = canonicalUrl || baseUrl
 
   // Build page title

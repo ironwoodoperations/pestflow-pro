@@ -64,7 +64,7 @@ export default function MarketingFooter() {
           </span>
           <span style={{ fontFamily: F.b, fontSize: 12, color: C.muted }}>
             Powered by{' '}
-            <a href="https://pestflowpro.com" style={{ color: C.green, textDecoration: 'none', fontWeight: 600 }}>
+            <a href="https://pestflowpro.ai" style={{ color: C.green, textDecoration: 'none', fontWeight: 600 }}>
               PestFlow Pro
             </a>
           </span>

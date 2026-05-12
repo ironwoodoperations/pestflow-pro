@@ -22,7 +22,7 @@ export default function PageSpeedSection({ prospectId, slug, form, onUpdate }: P
   const [saving, setSaving] = useState(false)
 
   const psUrl = slug
-    ? `https://pagespeed.web.dev/report?url=https://${slug}.pestflowpro.com`
+    ? `https://pagespeed.web.dev/report?url=https://${slug}.pestflowpro.ai`
     : null
 
   async function saveScores() {

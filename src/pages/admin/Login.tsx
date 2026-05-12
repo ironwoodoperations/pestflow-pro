@@ -108,7 +108,7 @@ export default function Login() {
       </div>
       <p className="mt-6 text-xs text-gray-500">
         Powered by{' '}
-        <a href="https://pestflowpro.com" target="_blank" rel="noopener noreferrer" className="text-orange-400 hover:text-orange-300">
+        <a href="https://pestflowpro.ai" target="_blank" rel="noopener noreferrer" className="text-orange-400 hover:text-orange-300">
           PestFlow Pro
         </a>
       </p>

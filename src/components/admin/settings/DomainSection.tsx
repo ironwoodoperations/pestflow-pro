@@ -45,7 +45,7 @@ export default function DomainSection() {
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Subdomain</label>
             <div className="flex items-center gap-1">
               <input type="text" value={form.subdomain} onChange={e => setForm(prev => ({ ...prev, subdomain: e.target.value }))} placeholder="acme" className={inputClass} />
-              <span className="text-sm text-gray-400 whitespace-nowrap">.pestflowpro.com</span>
+              <span className="text-sm text-gray-400 whitespace-nowrap">.pestflowpro.ai</span>
             </div>
             <p className="text-xs text-gray-400 mt-1">Free subdomain (used until custom domain is active)</p>
           </div>

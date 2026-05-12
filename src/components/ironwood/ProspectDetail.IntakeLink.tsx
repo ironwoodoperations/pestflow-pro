@@ -3,7 +3,7 @@ import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import IntakeSubmissionViewer from './IntakeSubmissionViewer'
 
-const BASE_URL = 'https://pestflowpro.com'
+const BASE_URL = 'https://pestflowpro.ai'
 
 interface Props {
   prospectId: string | null
