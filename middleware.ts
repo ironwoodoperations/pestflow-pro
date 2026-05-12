@@ -3,17 +3,23 @@ import { NextRequest, NextResponse } from 'next/server';
 const APEX_HOSTS = new Set([
   'pestflowpro.com',
   'www.pestflowpro.com',
+  'pestflowpro.ai',
+  'www.pestflowpro.ai',
 ]);
+
+const PFP_SUFFIXES = ['.pestflowpro.com', '.pestflowpro.ai'] as const;
 
 function extractSubdomain(host: string): string | null {
   const hostname = host.split(':')[0].toLowerCase();
 
   if (APEX_HOSTS.has(hostname)) return null;
 
-  if (hostname.endsWith('.pestflowpro.com')) {
-    const sub = hostname.slice(0, -'.pestflowpro.com'.length);
-    if (!sub || sub === 'www') return null;
-    return sub;
+  for (const suffix of PFP_SUFFIXES) {
+    if (hostname.endsWith(suffix)) {
+      const sub = hostname.slice(0, -suffix.length);
+      if (!sub || sub === 'www') return null;
+      return sub;
+    }
   }
 
   // Local dev: e.g. pestflow-pro.localhost:3000
