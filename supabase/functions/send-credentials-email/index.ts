@@ -75,7 +75,7 @@ function buildHtml(
         </a>
 
         <p style="margin:16px 0 0;font-size:13px;color:#9ca3af;line-height:1.5;border-top:1px solid #e5e7eb;padding-top:20px">
-          Questions? Email <a href="mailto:itsupport@pestflowpro.com" style="color:#16a34a;text-decoration:none">itsupport@pestflowpro.com</a>
+          Questions? Email <a href="mailto:support@homeflowpro.ai" style="color:#16a34a;text-decoration:none">support@homeflowpro.ai</a>
           or submit a ticket from your dashboard.
         </p>
       </div>
@@ -133,7 +133,7 @@ export async function handler(req: Request): Promise<Response> {
         adminEmail,
         adminPassword || '(set during onboarding)',
       ),
-      replyTo: 'itsupport@pestflowpro.com',
+      replyTo: 'support@homeflowpro.ai',
     })
 
     return json({ success: true })

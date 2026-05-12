@@ -8,7 +8,6 @@ import CollapsibleSection  from './CollapsibleSection'
 import BuildPathSelector   from './BuildPathSelector'
 import BuildStatusWidget   from './BuildStatusWidget'
 import ScrapePanel         from './ScrapePanel'
-import ClaudeContextDownload from './ClaudeContextDownload'
 import FullCustomBuildGuide  from './FullCustomBuildGuide'
 import RedirectMapPanel    from './RedirectMapPanel'
 import OnboardingSection   from './ProspectDetail.Onboarding'
@@ -92,7 +91,6 @@ export default function ProspectSections({ id, form, openSection, setOpenSection
             )}
             {form.build_path === 'full_custom' && (
               <div className="space-y-2">
-                <ClaudeContextDownload prospectId={id} slug={form.slug ?? null} websiteUrl={form.website_url ?? null} />
                 <FullCustomBuildGuide slug={form.slug ?? null} />
               </div>
             )}

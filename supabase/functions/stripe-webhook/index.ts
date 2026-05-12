@@ -125,11 +125,6 @@ Deno.serve(async (req: Request) => {
           if (prospect) {
             await supabase.from('prospects').update({ pipeline_stage: 'paid', payment_confirmed_at: new Date().toISOString() }).eq('id', prospect.id)
           }
-          if (prospectEmail) await fetch(`${supabaseUrl}/functions/v1/send-welcome-email`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceRoleKey}` },
-            body: JSON.stringify({ to: prospectEmail, company_name: prospect?.company_name || companyName, bookings_link: 'https://outlook.office.com/book/PestFlowProOnboarding@ironwoodoperationsgroup.com/?ismsaljsauthenabled' }),
-          })
         } catch (e: any) { console.error('[stripe-webhook] post-provision actions failed:', e.message) }
 
       } else {

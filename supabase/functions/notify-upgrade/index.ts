@@ -42,10 +42,10 @@ Deno.serve(async (req: Request) => {
         headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           from: 'PestFlow Pro <onboarding@pestflow.ai>',
-          to: 'pfpsales@pestflowpro.com',
+          to: 'sales@homeflowpro.ai',
           subject: `⬆️ Plan Upgrade: ${tenantName} → ${newName}`,
           html: `<p><strong>${tenantName}</strong> started a plan upgrade to <strong>${newName}</strong> (${price}).</p><p>They moved from ${oldName}. Call to confirm and check in.</p><p>Slug: ${tenantSlug}</p>`,
-          reply_to: 'pfpsales@pestflowpro.com',
+          reply_to: 'sales@homeflowpro.ai',
         }),
       }).catch(e => console.error('[notify-upgrade] Resend failed:', e.message))
     }

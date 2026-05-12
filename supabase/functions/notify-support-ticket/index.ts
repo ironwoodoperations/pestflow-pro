@@ -52,7 +52,7 @@ Deno.serve(async (req: Request) => {
 
     const emailPayload: Record<string, unknown> = {
       from: 'PestFlow Pro <noreply@pestflow.ai>',
-      to: ['itsupport@pestflowpro.com'],
+      to: ['support@homeflowpro.ai'],
       subject,
       text: body,
     }

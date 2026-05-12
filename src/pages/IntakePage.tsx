@@ -167,14 +167,6 @@ export default function IntakePage() {
           </div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">Thanks!</h2>
           <p className="text-gray-600 mb-4">We received your information. We'll have your site ready in 48–72 hours.</p>
-          <a
-            href="https://outlook.office.com/book/PestFlowProOnboarding@ironwoodoperationsgroup.com/?ismsaljsauthenabled"
-            target="_blank" rel="noreferrer"
-            className="inline-block text-sm font-semibold text-white rounded-lg px-5 py-2.5 transition"
-            style={{ backgroundColor: '#E87800' }}
-          >
-            Book Your Reveal Call →
-          </a>
           <p className="text-xs text-gray-400 mt-4">Redirecting you shortly…</p>
         </div>
       </Screen>

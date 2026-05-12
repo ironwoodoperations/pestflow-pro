@@ -488,7 +488,7 @@ function QuickRefSection() {
         {/* Key URLs */}
         <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
           <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-3">Key URLs</h4>
-          <RefRow label="Book onboarding call" value="outlook.office.com/book/PestFlowProOnboarding@…" />
+          <RefRow label="Book onboarding call" value="Reply to email or call (430) 367-5601" />
           <RefRow label="Stripe dashboard" value="dashboard.stripe.com" />
           <RefRow label="Vercel project" value="vercel.com/csdevore2s-projects/pestflow-pro" />
           <RefRow label="Supabase dashboard" value="supabase.com/dashboard/project/biezzykcgzkrwdgqpsar" />
@@ -514,7 +514,7 @@ function QuickRefSection() {
         {/* Support */}
         <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
           <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-3">Support</h4>
-          <RefRow label="IT issues" value="itsupport@pestflowpro.com" />
+          <RefRow label="IT issues" value="support@homeflowpro.ai" />
           <RefRow label="In-app support" value="Use the Support tab in Ironwood" />
           <div className="mt-4 p-3 bg-gray-800 rounded text-xs text-gray-400">
             <p className="font-semibold text-gray-300 mb-1">Dev server (always use Doppler):</p>

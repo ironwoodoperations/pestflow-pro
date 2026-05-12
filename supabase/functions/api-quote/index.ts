@@ -40,6 +40,43 @@ export async function handler(req: Request): Promise<Response> {
     })
   }
 
+  // ── C1 GATE — anonymous-public, rate-limit + origin ─────────────────
+  const origin = req.headers.get('origin') ?? req.headers.get('referer') ?? ''
+  const allowedOriginPattern = /^https?:\/\/([a-z0-9-]+\.)?pestflowpro\.com(\/|$)|^https?:\/\/([a-z0-9-]+\.)?homeflowpro\.ai(\/|$)|^https?:\/\/([a-z0-9-]+\.)?dangpestcontrol\.com(\/|$)/i
+
+  if (origin && !allowedOriginPattern.test(origin)) {
+    console.warn('[api-quote] origin rejected:', origin)
+    return new Response(JSON.stringify({ error: 'Forbidden' }), {
+      status: 403,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    })
+  }
+
+  const clientIp = (req.headers.get('x-forwarded-for')?.split(',')[0]?.trim())
+    || req.headers.get('cf-connecting-ip')
+    || 'unknown'
+
+  const supabaseForRL = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+  const { count: rlCount } = await supabaseForRL
+    .from('rate_limit_events')
+    .select('id', { count: 'exact', head: true })
+    .eq('key', `api-quote:${clientIp}`)
+    .gte('created_at', new Date(Date.now() - 10 * 60 * 1000).toISOString())
+
+  if ((rlCount ?? 0) >= 5) {
+    console.warn('[api-quote] rate limit hit for IP:', clientIp)
+    return new Response(JSON.stringify({ error: 'Too many submissions. Please try again in a few minutes.' }), {
+      status: 429,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    })
+  }
+
+  await supabaseForRL.from('rate_limit_events').insert({
+    key: `api-quote:${clientIp}`,
+    created_at: new Date().toISOString(),
+  })
+  // ────────────────────────────────────────────────────────────────────
+
   try {
     const body = await req.json()
     const { tenant_id, name, email, phone, services, message, customer_sms_consent } = body

@@ -81,7 +81,7 @@ We retain your data for as long as your subscription is active. Upon termination
 
 ## 7. Your Rights
 
-You have the right to: (a) access all data we hold about your account; (b) correct inaccurate data; (c) export your Client Content; (d) request deletion of your account and data (subject to legal retention requirements). Contact us at scott@ironwoodoperationsgroup.com to exercise these rights.
+You have the right to: (a) access all data we hold about your account; (b) correct inaccurate data; (c) export your Client Content; (d) request deletion of your account and data (subject to legal retention requirements). Contact us at scott@homeflowpro.ai to exercise these rights.
 
 ## 8. Cookies & Analytics
 
@@ -97,7 +97,7 @@ We may update this Privacy Policy with reasonable notice. The "Last Updated" dat
 
 ## 11. Contact
 
-Questions about this Privacy Policy: scott@ironwoodoperationsgroup.com
+Questions about this Privacy Policy: scott@homeflowpro.ai
 
 Ironwood Operations Group LLC — Cherokee County, Texas
 `;
