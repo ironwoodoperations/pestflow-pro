@@ -90,6 +90,14 @@ export default function IronwoodOps() {
             <span>🎯</span>Sales Deck
           </a>
           <a
+            href="/walkthrough.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2 text-gray-400 hover:bg-gray-800 hover:text-white"
+          >
+            <span>🎬</span>Animated Walkthrough
+          </a>
+          <a
             href="https://outlook.office.com/book/PestFlowProOnboarding@ironwoodoperationsgroup.com/?ismsaljsauthenabled"
             target="_blank"
             rel="noopener noreferrer"

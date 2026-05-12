@@ -38,6 +38,7 @@ export default function MarketingNav() {
         <button onClick={() => scrollTo('how-it-works')} style={linkStyle}>How It Works</button>
         <button onClick={() => scrollTo('pricing')} style={linkStyle}>Pricing</button>
         <button onClick={() => scrollTo('contact')} style={linkStyle}>Contact</button>
+        <a href="/walkthrough.html" target="_blank" rel="noopener noreferrer" style={linkStyle}>Watch Walkthrough</a>
       </div>
 
       {/* Right CTA */}
