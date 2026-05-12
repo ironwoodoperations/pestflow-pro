@@ -23,7 +23,7 @@ function FloatingBrowser() {
           <div key={i} style={{ width: 9, height: 9, borderRadius: '50%', background: c }} />
         ))}
         <div style={{ flex: 1, background: 'rgba(255,255,255,0.05)', borderRadius: 5, padding: '3px 10px', fontSize: 10, color: 'rgba(255,255,255,0.5)', fontFamily: 'monospace', marginLeft: 6 }}>
-          lone-star-pest-solutions.pestflowpro.com
+          lone-star-pest-solutions.pestflowpro.ai
         </div>
         <div style={{ background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 4, padding: '2px 8px', fontSize: 9, color: '#22c55e', fontFamily: F.b, fontWeight: 600 }}>LIVE</div>
       </div>
@@ -59,7 +59,7 @@ export default function MarketingWebsiteShowcase() {
             ))}
           </div>
           <a
-            href="https://lone-star-pest-solutions.pestflowpro.com"
+            href="https://lone-star-pest-solutions.pestflowpro.ai"
             target="_blank" rel="noopener noreferrer"
             style={{ fontFamily: F.b, fontSize: 14, fontWeight: 600, color: C.green, textDecoration: 'none' }}
           >

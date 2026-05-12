@@ -98,7 +98,7 @@ export default function IronwoodSEO() {
     <div className="p-6 space-y-8 max-w-3xl">
       <div>
         <h2 className="text-lg font-semibold text-white mb-1">🔍 SEO — PestFlow Pro</h2>
-        <p className="text-sm text-gray-400">Manage meta tags and schema data for pestflowpro.com</p>
+        <p className="text-sm text-gray-400">Manage meta tags and schema data for pestflowpro.ai</p>
       </div>
 
       {/* Section 1 — Site-Wide SEO */}

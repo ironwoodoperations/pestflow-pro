@@ -15,7 +15,7 @@ import ZernioOnboardingBanner from './social/ZernioOnboardingBanner'
 
 function useIsDemoTenant() {
   const parts = window.location.hostname.split('.')
-  const slug = parts.length >= 3 && window.location.hostname.endsWith('.pestflowpro.com') ? parts[0] : ''
+  const slug = parts.length >= 3 && window.location.hostname.endsWith('.pestflowpro.ai') ? parts[0] : ''
   return slug === 'pestflow-pro' || slug === ''
 }
 

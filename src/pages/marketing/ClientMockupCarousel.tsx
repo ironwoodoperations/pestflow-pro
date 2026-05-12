@@ -5,7 +5,7 @@ const F = { b: "'Plus Jakarta Sans', sans-serif" }
 
 const TABS = DEMO_TENANTS.map((t) => ({
   label: t.shortLabel,
-  url: `${t.slug}.pestflowpro.com`,
+  url: `${t.slug}.pestflowpro.ai`,
   href: publicDemoUrl(t.slug),
   img: `/images/sites/${t.slug}-site.jpg`,
 }))

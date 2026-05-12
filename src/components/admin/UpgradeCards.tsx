@@ -43,7 +43,7 @@ export default function UpgradeCards({ currentTier, businessName }: Props) {
               ))}
             </ul>
             <a
-              href={`mailto:support@pestflowpro.com?subject=Upgrade to ${plan.name} - ${encodeURIComponent(businessName)}`}
+              href={`mailto:support@pestflowpro.ai?subject=Upgrade to ${plan.name} - ${encodeURIComponent(businessName)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-auto w-full py-2.5 rounded-lg text-sm font-semibold text-center transition bg-emerald-600 hover:bg-emerald-700 text-white"

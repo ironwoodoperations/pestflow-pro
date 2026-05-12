@@ -58,7 +58,7 @@ function TenantNotFound({ message }: { message: string }) {
     >
       <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>Site Not Found</h1>
       <p style={{ maxWidth: '40ch', color: '#555', margin: 0 }}>{message}</p>
-      <a href="https://pestflowpro.com" style={{ color: '#f97316', textDecoration: 'underline' }}>
+      <a href="https://pestflowpro.ai" style={{ color: '#f97316', textDecoration: 'underline' }}>
         ← Go to PestFlow Pro
       </a>
     </div>

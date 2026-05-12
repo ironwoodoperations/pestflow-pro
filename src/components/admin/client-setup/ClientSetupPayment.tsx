@@ -170,7 +170,7 @@ export default function ClientSetupPayment({ form }: Props) {
           {[
             ['Client Email', form.email || '—'],
             ['Business',     form.biz_name || '—'],
-            ['Site',         `${form.slug || '—'}.pestflowpro.com`],
+            ['Site',         `${form.slug || '—'}.pestflowpro.ai`],
           ].map(([label, value]) => (
             <div key={label} className="flex justify-between text-sm">
               <span className="text-gray-500">{label}</span>

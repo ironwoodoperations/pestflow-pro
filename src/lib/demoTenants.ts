@@ -31,9 +31,9 @@ export const SHELL_ACCENT_COLORS: Record<DemoTenant['shell'], string> = {
 };
 
 export function publicDemoUrl(slug: string): string {
-  return `https://${slug}.pestflowpro.com`;
+  return `https://${slug}.pestflowpro.ai`;
 }
 
 export function adminDemoUrl(slug: string): string {
-  return `https://${slug}.pestflowpro.com/admin`;
+  return `https://${slug}.pestflowpro.ai/admin`;
 }

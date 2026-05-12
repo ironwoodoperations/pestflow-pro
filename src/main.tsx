@@ -16,7 +16,7 @@ import { applyTheme } from './lib/shellThemes.ts'
     if (!boot.template) return
     // Verify the cached slug matches the current subdomain
     const h = window.location.hostname
-    if (h.endsWith('.pestflowpro.com')) {
+    if (h.endsWith('.pestflowpro.ai')) {
       const parts = h.split('.')
       const sub = parts.length === 3 ? parts[0] : null
       if (sub && boot.slug !== sub) return

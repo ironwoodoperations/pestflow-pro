@@ -174,7 +174,7 @@ export default function RevealQueue() {
     setReportTarget({
       prospectId:   p.id,
       tenantId:     p.tenant_id,
-      siteUrl:      `https://${p.slug}.pestflowpro.com`,
+      siteUrl:      `https://${p.slug}.pestflowpro.ai`,
       psDesktopOld: s.desktopOld ? parseInt(s.desktopOld) : null,
       psMobileOld:  s.mobileOld  ? parseInt(s.mobileOld)  : null,
       psDesktopNew: s.desktopNew ? parseInt(s.desktopNew) : null,

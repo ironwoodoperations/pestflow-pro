@@ -139,7 +139,7 @@ export default function CustomDomainSetup({ tenantId, slug }: Props) {
               </button>
             </div>
             <p className="text-xs text-gray-500">
-              Subdomain: <span className="text-gray-300">{slug}.pestflowpro.com</span> will redirect here once verified.
+              Subdomain: <span className="text-gray-300">{slug}.pestflowpro.ai</span> will redirect here once verified.
             </p>
           </div>
 

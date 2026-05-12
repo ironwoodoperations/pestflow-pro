@@ -40,7 +40,7 @@ export default function Step6Review({ form, onNext, onBack }: Props) {
 
       <div className="rounded-lg border border-gray-100 overflow-hidden mb-6">
         <Row label="Business" value={form.biz_name || '— not set'} />
-        <Row label="Site URL" value={form.slug ? <span className="text-emerald-600 font-medium">{form.slug}.pestflowpro.com</span> : '— not set'} />
+        <Row label="Site URL" value={form.slug ? <span className="text-emerald-600 font-medium">{form.slug}.pestflowpro.ai</span> : '— not set'} />
         <Row label="Contact" value={`${form.phone || '—'} · ${form.email || '—'}`} />
         <Row label="Address" value={form.address || '—'} />
         <Row label="Setup Type" value={pkg

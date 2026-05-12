@@ -84,10 +84,10 @@ export default function BillingTab() {
   const [isDemoTenant, setIsDemoTenant] = useState(false)
   const [businessName, setBusinessName] = useState('')
 
-  // Slug from hostname: cypress-creek-pest-control.pestflowpro.com → "cypress-creek-pest-control"
+  // Slug from hostname: cypress-creek-pest-control.pestflowpro.ai → "cypress-creek-pest-control"
   const clientSlug = (() => {
     const parts = window.location.hostname.split('.')
-    if (parts.length >= 3 && window.location.hostname.endsWith('.pestflowpro.com')) return parts[0]
+    if (parts.length >= 3 && window.location.hostname.endsWith('.pestflowpro.ai')) return parts[0]
     return ''
   })()
 
@@ -214,7 +214,7 @@ export default function BillingTab() {
                     </button>
                   ) : isDowngrade ? (
                     <a
-                      href="mailto:support@pestflowpro.com?subject=Downgrade Request"
+                      href="mailto:support@pestflowpro.ai?subject=Downgrade Request"
                       className="w-full py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition text-center block"
                     >
                       Contact us to downgrade

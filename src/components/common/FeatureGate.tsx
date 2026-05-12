@@ -23,7 +23,7 @@ export function FeatureGate({ minTier, featureName, children, fallback }: Props)
         }
         <p className="text-sm text-gray-500 mb-4">Available on Growth and above. Contact us to unlock.</p>
         <a
-          href="mailto:support@pestflowpro.com?subject=Upgrade Request - PestFlow Pro"
+          href="mailto:support@pestflowpro.ai?subject=Upgrade Request - PestFlow Pro"
           className="inline-block px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors"
         >
           Upgrade to Growth →

@@ -10,7 +10,7 @@ const TIERS = [
 // Detect demo tenant by hostname slug
 function useIsDemoTenant() {
   const parts = window.location.hostname.split('.')
-  const slug = parts.length >= 3 && window.location.hostname.endsWith('.pestflowpro.com') ? parts[0] : ''
+  const slug = parts.length >= 3 && window.location.hostname.endsWith('.pestflowpro.ai') ? parts[0] : ''
   return slug === 'pestflow-pro' || slug === ''  // also show on localhost/dev
 }
 
