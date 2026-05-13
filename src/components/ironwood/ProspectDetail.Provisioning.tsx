@@ -98,9 +98,18 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
       const firstName  = (form.contact_name || form.company_name || '').split(' ')[0] || 'there'
       const siteUrl    = `https://${form.slug}.pestflowpro.ai`
       const adminUrl   = `https://${form.slug}.pestflowpro.ai/admin`
+      const { data: { session: freshSession }, error: sessionError } = await supabase.auth.refreshSession()
+      if (!freshSession || sessionError) {
+        toast.error('Your session has expired. Please sign out and sign back in.')
+        return
+      }
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-reveal-ready`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${freshSession.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
         body: JSON.stringify({ to, firstName, businessName: form.company_name || '', siteUrl, adminUrl }),
       })
       const data = await res.json()

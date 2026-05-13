@@ -1,10 +1,14 @@
 // Edge Function: send-reveal-ready
 // Triggered manually from Ironwood when Scott marks a site as reveal-ready.
-// No JWT required — called from authenticated Ironwood frontend.
+// Admin-only — verifies caller's user.email === admin@pestflowpro.com via Authorization Bearer.
 //
 // Deploy: supabase functions deploy send-reveal-ready --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
 
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { sendEmail } from '../_shared/sendEmail.ts'
+
+const SUPABASE_URL              = Deno.env.get('SUPABASE_URL') || ''
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -53,6 +57,18 @@ function buildHtml(companyName: string, siteUrl: string): string {
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS })
+
+  const authHeader = req.headers.get('Authorization') || req.headers.get('authorization') || ''
+  const token = authHeader.replace(/^[Bb]earer\s+/, '').trim()
+  if (!token) return json({ error: 'Unauthorized' }, 401)
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+  console.log('send-reveal-ready | user:', user?.email, '| error:', authError?.message)
+  if (authError || !user || user.email !== 'admin@pestflowpro.com') {
+    return json({ error: 'Forbidden' }, 403)
+  }
+
   try {
     const { to, company_name, siteUrl, slug, firstName, businessName } = await req.json()
     const recipientName = company_name || businessName || firstName || ''
