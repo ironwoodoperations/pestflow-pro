@@ -162,7 +162,6 @@ export default function BillingTab() {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${accessToken}`,
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
           },
           body: JSON.stringify({ tenant_id: tenantId, old_tier: tierNum(subscription!.tier), new_tier: tier.tier, plan_name: tier.name, monthly_price: tier.price }),
         }).catch(() => {})
