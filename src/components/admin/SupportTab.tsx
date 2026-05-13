@@ -63,11 +63,16 @@ export default function SupportTab() {
       setToast('Ticket submitted — we\'ll be in touch shortly')
       setTimeout(() => setToast(''), 4000)
       // Notify support team
-      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-support-ticket`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ticketId: (data as Ticket).id }),
-      }).catch(() => {})
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-support-ticket`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token ?? ''}`,
+          },
+          body: JSON.stringify({ ticketId: (data as Ticket).id }),
+        }).catch(() => {})
+      })
     }
     setSubmitting(false)
   }

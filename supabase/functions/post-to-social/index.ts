@@ -1,11 +1,12 @@
-// Edge function: post-to-social
+// Edge function: post-to-social v35
 // Posts content to social media via Zernio (zernio.com) API.
-// JWT: OFF — called from client admin dashboard
+// Gate: requireTenantAdmin — caller must be admin of the requesting tenant.
 // DEPLOY:
 //   supabase functions deploy post-to-social --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { requireTenantAdmin, AuthError } from '../_shared/auth/requireTenantUser.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -62,6 +63,14 @@ serve(async (req) => {
     return new Response(JSON.stringify({ error: 'content, platforms, and tenantId are required' }), {
       status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
+  }
+
+  // Gate: caller must be admin of this tenant
+  try {
+    await requireTenantAdmin(req, tenantId)
+  } catch (e) {
+    if (e instanceof AuthError) return e.toResponse()
+    throw e
   }
 
   const supabase = createClient(supabaseUrl, serviceRoleKey)

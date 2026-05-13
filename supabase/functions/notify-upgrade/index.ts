@@ -1,10 +1,11 @@
-// Edge Function: notify-upgrade
+// Edge Function: notify-upgrade v12
 // Called from BillingTab when a client initiates a plan upgrade checkout.
-// JWT: OFF — called from browser with anon key.
+// Gate: requireTenantAdmin — caller must be admin of the requesting tenant.
 //
 // Deploy: supabase functions deploy notify-upgrade --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { requireTenantAdmin, AuthError } from '../_shared/auth/requireTenantUser.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -20,6 +21,14 @@ Deno.serve(async (req: Request) => {
   try {
     const { tenant_id, old_tier, new_tier, plan_name, monthly_price } = await req.json()
     if (!tenant_id || !new_tier) return json({ error: 'tenant_id and new_tier required' }, 400)
+
+    // Gate: caller must be admin of this tenant
+    try {
+      await requireTenantAdmin(req, tenant_id)
+    } catch (e) {
+      if (e instanceof AuthError) return e.toResponse()
+      throw e
+    }
 
     const supabaseUrl    = Deno.env.get('SUPABASE_URL') || ''
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
