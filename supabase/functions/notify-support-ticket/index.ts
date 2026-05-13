@@ -1,10 +1,12 @@
-// Edge Function: notify-support-ticket
+// Edge Function: notify-support-ticket v16
 // Called from SupportTab after a new ticket insert.
 // Sends email notification to itsupport@pestflowpro.com via Resend.
+// Gate: requireTenantAdmin — caller must be admin of the ticket's tenant.
 //
 // Deploy: supabase functions deploy notify-support-ticket --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { requireTenantAdmin, AuthError } from '../_shared/auth/requireTenantUser.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
@@ -27,7 +29,7 @@ Deno.serve(async (req: Request) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
-    // Fetch ticket + tenant info
+    // Fetch ticket first — we need tenant_id for the auth gate
     const { data: ticket, error: ticketErr } = await supabase
       .from('support_tickets')
       .select('*, tenants(name)')
@@ -35,6 +37,14 @@ Deno.serve(async (req: Request) => {
       .maybeSingle()
 
     if (ticketErr || !ticket) return json({ error: 'Ticket not found' }, 404)
+
+    // Gate: caller must be admin of this ticket's tenant
+    try {
+      await requireTenantAdmin(req, ticket.tenant_id)
+    } catch (e) {
+      if (e instanceof AuthError) return e.toResponse()
+      throw e
+    }
 
     // Get tenant notification email for reply-to
     const { data: notifSettings } = await supabase

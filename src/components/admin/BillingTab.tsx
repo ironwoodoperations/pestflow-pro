@@ -159,7 +159,10 @@ export default function BillingTab() {
         // Notify sales + Teams (non-blocking) — fires before redirect
         fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-upgrade`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          },
           body: JSON.stringify({ tenant_id: tenantId, old_tier: tierNum(subscription!.tier), new_tier: tier.tier, plan_name: tier.name, monthly_price: tier.price }),
         }).catch(() => {})
         window.location.href = data.url

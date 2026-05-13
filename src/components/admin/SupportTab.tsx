@@ -62,12 +62,22 @@ export default function SupportTab() {
       setForm({ subject: '', body: '', priority: 'normal' })
       setToast('Ticket submitted — we\'ll be in touch shortly')
       setTimeout(() => setToast(''), 4000)
-      // Notify support team
-      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-support-ticket`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ticketId: (data as Ticket).id }),
-      }).catch(() => {})
+      // Notify support team (fire-and-forget — ticket is already inserted)
+      let { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        const { data: refreshData } = await supabase.auth.refreshSession()
+        session = refreshData.session
+      }
+      if (session) {
+        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-support-ticket`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ ticketId: (data as Ticket).id }),
+        }).catch(() => {})
+      }
     }
     setSubmitting(false)
   }
