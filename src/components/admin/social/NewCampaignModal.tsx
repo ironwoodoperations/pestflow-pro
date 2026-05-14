@@ -4,9 +4,19 @@ import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../context/TenantBootProvider'
 import { usePlan } from '../../../context/PlanContext'
 
+const ALL_PLATFORMS = [
+  { key: 'facebook',        label: 'Facebook',        icon: '📘' },
+  { key: 'instagram',       label: 'Instagram',       icon: '📷' },
+  { key: 'linkedin',        label: 'LinkedIn',        icon: '💼' },
+  { key: 'google_business', label: 'Google Business', icon: '🔍' },
+  { key: 'youtube',         label: 'YouTube',         icon: '▶️' },
+  { key: 'tiktok',          label: 'TikTok',          icon: '🎵' },
+]
+
 interface Props {
   onClose: () => void
   onCreated: () => void
+  connectedKeys?: string[]
 }
 
 type WizardStep = 'setup' | 'generating' | 'review' | 'saving'
@@ -30,7 +40,7 @@ const ELITE_DURATIONS = [
   { label: '30 Days (30 posts)', days: 30, posts: 30 },
 ]
 
-export default function NewCampaignModal({ onClose, onCreated }: Props) {
+export default function NewCampaignModal({ onClose, onCreated, connectedKeys }: Props) {
   const { id: tenantId } = useTenant()
   const { tier } = usePlan()
 
@@ -157,7 +167,7 @@ Make captions specific to the services described. Avoid repetition. Include emoj
         tenant_id: tenantId,
         campaign_id: campaign.id,
         campaign_title: form.title,
-        platform: (form.platforms.includes(p.platform) ? p.platform : form.platforms[0]) as 'facebook' | 'instagram' | 'both',
+        platform: form.platforms.includes(p.platform) ? p.platform : form.platforms[0],
         caption: editedCaptions[i] || `${p.caption}\n\n${p.hashtags}`,
         status: 'draft' as const,
         ai_generated: true,
@@ -224,14 +234,26 @@ Make captions specific to the services described. Avoid repetition. Include emoj
             </div>
             <div>
               <label className="text-xs font-medium text-gray-700 block mb-1.5">Platforms *</label>
-              <div className="flex gap-4">
-                {['facebook', 'instagram'].map(p => (
-                  <label key={p} className="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer capitalize">
-                    <input type="checkbox" checked={form.platforms.includes(p)}
-                      onChange={() => togglePlatform(p)} className="accent-emerald-600" />
-                    {p}
-                  </label>
-                ))}
+              <div className="flex flex-wrap gap-x-4 gap-y-2">
+                {ALL_PLATFORMS.map(({ key, label, icon }) => {
+                  const enabled = !connectedKeys || connectedKeys.length === 0 || connectedKeys.includes(key)
+                  return (
+                    <label
+                      key={key}
+                      title={enabled ? label : `Connect ${label} in the Connections tab`}
+                      className={`flex items-center gap-1.5 text-sm cursor-pointer ${enabled ? 'text-gray-700' : 'text-gray-300 cursor-not-allowed'}`}
+                    >
+                      <input type="checkbox"
+                        checked={form.platforms.includes(key)}
+                        disabled={!enabled}
+                        onChange={() => enabled && togglePlatform(key)}
+                        className="accent-emerald-600 disabled:opacity-40"
+                      />
+                      <span>{icon}</span>
+                      <span>{label}</span>
+                    </label>
+                  )
+                })}
               </div>
             </div>
             <div>

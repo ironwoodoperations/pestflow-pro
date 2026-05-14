@@ -49,6 +49,18 @@ export default function SocialTab({ onNavigate }: Props) {
     ? null
     : Object.keys(integrations?.zernio_accounts ?? {}).length > 0
 
+  // Zernio key → frontend key mapping (google_business is the exception)
+  const ZERNIO_TO_FRONTEND: Record<string, string> = {
+    facebook: 'facebook', instagram: 'instagram', youtube: 'youtube',
+    googlebusiness: 'google_business', linkedin: 'linkedin', tiktok: 'tiktok',
+  }
+  // For Starter (copy-paste), all platforms are selectable. For Grow+, restrict to connected.
+  const connectedKeys: string[] = tier < 2
+    ? ['facebook', 'instagram', 'linkedin', 'google_business', 'youtube', 'tiktok']
+    : Object.entries(integrations?.zernio_accounts ?? {})
+        .filter(([, id]) => !!id)
+        .map(([k]) => ZERNIO_TO_FRONTEND[k] ?? k)
+
   function handleConnectionsClose() {
     setShowConnections(false)
     refresh()  // re-fetch so newly-connected accounts surface in the banner
@@ -182,13 +194,13 @@ export default function SocialTab({ onNavigate }: Props) {
       {postFlow === 'single' && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto" onClick={() => setPostFlow('none')}>
           <div className="max-w-4xl w-full bg-white rounded-xl shadow-xl p-6 my-8 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <LegacyComposer onClose={() => setPostFlow('none')} onPosted={() => { refresh(); setPostFlow('none') }} />
+            <LegacyComposer onClose={() => setPostFlow('none')} onPosted={() => { refresh(); setPostFlow('none') }} connectedKeys={connectedKeys} />
           </div>
         </div>
       )}
 
       {postFlow === 'campaign' && (
-        <NewCampaignModal onClose={() => setPostFlow('none')} onCreated={() => { refresh(); setPostFlow('none'); setActiveTab('campaigns') }} />
+        <NewCampaignModal onClose={() => setPostFlow('none')} onCreated={() => { refresh(); setPostFlow('none'); setActiveTab('campaigns') }} connectedKeys={connectedKeys} />
       )}
 
       {showConnections && (

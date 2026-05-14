@@ -6,7 +6,7 @@ export interface SocialPost {
   id: string
   tenant_id: string
   campaign_id: string | null
-  platform: 'facebook' | 'instagram' | 'both'
+  platform: string
   caption: string
   image_url: string | null
   status: 'draft' | 'scheduled' | 'published' | 'failed' | 'approved'

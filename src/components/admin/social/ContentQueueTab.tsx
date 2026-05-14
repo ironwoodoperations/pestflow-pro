@@ -153,7 +153,11 @@ export default function ContentQueueTab({ posts, campaigns, selectedCampaignId, 
           <option value="all">All Platforms</option>
           <option value="facebook">Facebook</option>
           <option value="instagram">Instagram</option>
-          <option value="both">FB + IG</option>
+          <option value="linkedin">LinkedIn</option>
+          <option value="google_business">Google Business</option>
+          <option value="youtube">YouTube</option>
+          <option value="tiktok">TikTok</option>
+          <option value="both">FB + IG (legacy)</option>
         </select>
         <select value={state.filterStatus} onChange={e => setState(p => ({ ...p, filterStatus: e.target.value }))} className={selectCls}>
           <option value="all">All Status</option>
