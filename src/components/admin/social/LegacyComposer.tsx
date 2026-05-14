@@ -11,9 +11,10 @@ import ComposerScheduler from './ComposerScheduler'
 interface Props {
   onClose?: () => void
   onPosted?: () => void
+  connectedKeys?: string[]
 }
 
-export default function LegacyComposer({ onClose, onPosted }: Props) {
+export default function LegacyComposer({ onClose, onPosted, connectedKeys }: Props) {
   const { isStarter } = useSocialTier()
   const { id: tenantId } = useTenant()
   const quota = useAiCaptionQuota(tenantId ?? '')
@@ -37,6 +38,7 @@ export default function LegacyComposer({ onClose, onPosted }: Props) {
       <div className="space-y-6">
         <ComposerPlatformSelector
           platform={c.form.platform}
+          connectedKeys={connectedKeys ?? []}
           industry={c.industry}
           onSelect={p => c.setForm(prev => ({ ...prev, platform: p }))}
         />
@@ -79,7 +81,6 @@ export default function LegacyComposer({ onClose, onPosted }: Props) {
         />
 
         <ComposerScheduler
-          platform={c.form.platform}
           scheduleMode={c.form.scheduleMode}
           scheduledFor={c.form.scheduledFor}
           smartSchedule={c.smartSchedule}

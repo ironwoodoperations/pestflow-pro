@@ -30,6 +30,7 @@ const PLATFORMS = [
   { key: 'youtube',         zernioKey: 'youtube',        label: 'YouTube',         icon: '▶️' },
   { key: 'google_business', zernioKey: 'googlebusiness', label: 'Google Business', icon: '🔍' },
   { key: 'linkedin',        zernioKey: 'linkedin',       label: 'LinkedIn',        icon: '💼' },
+  { key: 'tiktok',          zernioKey: 'tiktok',         label: 'TikTok',          icon: '🎵' },
 ]
 
 interface State {

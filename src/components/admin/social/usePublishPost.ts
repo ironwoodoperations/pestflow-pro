@@ -67,7 +67,7 @@ export function usePublishPost({ tenantId, tier, form, aiCaptions, editingPostId
     }
     if (!postId) { setPublishing(false); return }
 
-    const platforms = form.platform === 'both' ? ['facebook', 'instagram'] : [form.platform]
+    const platforms = [form.platform]
 
     const { data: sessionData } = await supabase.auth.getSession()
     const token = sessionData?.session?.access_token

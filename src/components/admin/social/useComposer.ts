@@ -9,7 +9,7 @@ import { resizeImage } from './lib/resizeImage'
 export type UploadState = 'idle' | 'uploading' | 'success' | 'error'
 
 export interface ComposerForm {
-  platform: 'facebook' | 'instagram' | 'both'
+  platform: string
   caption: string
   imageUrl: string
   scheduleMode: 'now' | 'later' | 'smart'
@@ -141,7 +141,7 @@ export function useComposer(onPosted?: () => void, onCaptionGenerated?: () => vo
     } else { setForm(p => ({ ...p, caption: p.caption + emoji })) }
   }
 
-  const charLimit = form.platform === 'instagram' || form.platform === 'both' ? 2200 : 63206
+  const charLimit = form.platform === 'instagram' ? 2200 : 63206
 
   const { publishNow, saveAsDraft, publishing, saving } = usePublishPost({
     tenantId, tier, form, aiCaptions, editingPostId, onPosted, resetForm,

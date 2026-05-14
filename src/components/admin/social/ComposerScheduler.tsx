@@ -1,7 +1,6 @@
 import { Send, Loader2, Lock } from 'lucide-react'
 
 interface Props {
-  platform: 'facebook' | 'instagram' | 'both'
   scheduleMode: 'now' | 'later' | 'smart'
   scheduledFor: string
   smartSchedule: { scheduled_for: string; reasoning: string } | null
@@ -23,7 +22,7 @@ interface Props {
 const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-400'
 
 export default function ComposerScheduler({
-  platform, scheduleMode, scheduledFor, smartSchedule, smartLoading,
+  scheduleMode, scheduledFor, smartSchedule, smartLoading,
   publishing, saving, editingPostId, schedulingDayCap, isStarter, uploadBusy,
   onScheduleModeChange, onScheduledForChange, onGetSmartSchedule,
   onSaveAsDraft, onPublishNow, onResetForm,
@@ -95,11 +94,6 @@ export default function ComposerScheduler({
             </div>
           )}
 
-          {(platform === 'instagram' || platform === 'both') && (
-            <div className="bg-pink-50 border border-pink-200 rounded-lg p-3 mb-4">
-              <p className="text-xs text-pink-700">Instagram posts are saved as drafts. Connect a Meta Business Account to enable direct publishing.</p>
-            </div>
-          )}
         </>
       )}
 
