@@ -28,31 +28,15 @@ export function parseRawInput(input: string | string[] | null | undefined): stri
 }
 
 export function normalizeCity(raw: string): NormalizedCity | { rejected: string } {
-  // Step 1: trim + collapse whitespace
   let s = raw.trim().replace(/\s+/g, ' ')
-
-  // Step 8 early-exit: empty
   if (!s) return { rejected: 'empty' }
-  // Step 8 early-exit: too long
   if (s.length > 100) return { rejected: 'too_long' }
-
-  // Step 2: strip trailing zip
   s = s.replace(/\s+\d{5}(-\d{4})?$/, '').trim()
-
-  // Step 3: strip trailing state code
   s = s.replace(/\s*,?\s*(TX|Texas)\s*$/i, '').trim()
-
-  // Step 8: empty after stripping
   if (!s) return { rejected: 'empty' }
-  // Step 8: purely numeric
   if (/^\d+$/.test(s)) return { rejected: 'numeric' }
-
-  // Step 4: county detection
   const isCounty = /\bcounty\b/i.test(s)
-
-  // Step 5: abbreviation expansion
   s = s.replace(/^Ft\.?\s+/i, 'Fort ')
-  // St. — only expand if result matches whitelist
   const stMatch = s.match(/^St\.?\s+(.+)$/i)
   if (stMatch) {
     const candidate = 'Saint ' + stMatch[1]
@@ -64,14 +48,10 @@ export function normalizeCity(raw: string): NormalizedCity | { rejected: string 
   s = s.replace(/^S\.\s+/i, 'South ')
   s = s.replace(/^E\.\s+/i, 'East ')
   s = s.replace(/^W\.\s+/i, 'West ')
-
-  // Step 6: title-case (capitalize first char of each word, lowercase rest)
   const city = s
     .split(' ')
     .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
     .join(' ')
-
-  // Step 7: slug generation
   const slugBase = city
     .toLowerCase()
     .replace(/\s+/g, '-')
@@ -79,7 +59,6 @@ export function normalizeCity(raw: string): NormalizedCity | { rejected: string 
     .replace(/-+/g, '-')
     .replace(/^-+|-+$/g, '')
   const slug = `${slugBase}-tx`
-
   return { city, slug, state: 'TX', isCounty, raw }
 }
 
