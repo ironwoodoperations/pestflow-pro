@@ -13,6 +13,7 @@ export async function sendEmail({
   text,
   replyTo,
   fromName,
+  idempotencyKey,
 }: {
   to: string
   cc?: string
@@ -21,6 +22,7 @@ export async function sendEmail({
   text?: string
   replyTo?: string
   fromName: string
+  idempotencyKey?: string
 }): Promise<void> {
   const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') || ''
   const payload: Record<string, unknown> = {
@@ -33,12 +35,15 @@ export async function sendEmail({
   if (text)    payload.text     = text
   if (replyTo) payload.reply_to = replyTo
 
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${RESEND_API_KEY}`,
+  }
+  if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey
+
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${RESEND_API_KEY}`,
-    },
+    headers,
     body: JSON.stringify(payload),
   })
 
