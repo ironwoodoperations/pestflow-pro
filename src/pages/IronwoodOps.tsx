@@ -13,8 +13,9 @@ const AllClients      = lazy(() => import('../components/ironwood/AllClients'))
 const TrainingManual  = lazy(() => import('../components/ironwood/TrainingManual'))
 const IronwoodSEO     = lazy(() => import('../components/ironwood/IronwoodSEO'))
 const IronwoodSocial  = lazy(() => import('../components/ironwood/IronwoodSocial'))
+const PaymentLinks    = lazy(() => import('../components/ironwood/PaymentLinks'))
 
-type Tab = 'pipeline' | 'prospects' | 'reveal_queue' | 'all_clients' | 'reports' | 'integrations' | 'team' | 'support' | 'training' | 'seo' | 'social'
+type Tab = 'pipeline' | 'prospects' | 'reveal_queue' | 'all_clients' | 'reports' | 'payment_links' | 'integrations' | 'team' | 'support' | 'training' | 'seo' | 'social'
 
 const NAV: { id: Tab; label: string; icon: string }[] = [
   { id: 'pipeline',     label: 'Pipeline',         icon: '📋' },
@@ -22,6 +23,7 @@ const NAV: { id: Tab; label: string; icon: string }[] = [
   { id: 'reveal_queue', label: 'Reveal Queue',     icon: '✅' },
   { id: 'all_clients',  label: 'All Clients',      icon: '🌐' },
   { id: 'reports',      label: 'Reports',          icon: '📊' },
+  { id: 'payment_links',label: 'Payment Links',    icon: '💳' },
   { id: 'integrations', label: 'Integrations',     icon: '🔑' },
   { id: 'team',         label: 'Team',             icon: '👥' },
   { id: 'support',      label: 'Support',          icon: '🎟️' },
@@ -111,6 +113,7 @@ export default function IronwoodOps() {
           {tab === 'reveal_queue' && <RevealQueue />}
           {tab === 'all_clients'  && <AllClients />}
           {tab === 'reports'      && <ReportsTab />}
+          {tab === 'payment_links' && <PaymentLinks />}
           {tab === 'integrations' && <IntegrationsTab />}
           {tab === 'team'         && <TeamTab />}
           {tab === 'support'      && <SupportPanel />}
