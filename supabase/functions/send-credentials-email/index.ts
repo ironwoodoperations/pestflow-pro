@@ -95,51 +95,144 @@ function buildHtml(
 </html>`
 }
 
+const THROTTLE_SECONDS = 60
+
 export async function handler(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS })
+
+  // S221: correlation ID is optional here — generate one if the caller
+  // (e.g. a legacy first-send) didn't supply it. Echoed in response headers.
+  const correlationId =
+    req.headers.get('X-Correlation-ID') ||
+    req.headers.get('x-correlation-id') ||
+    crypto.randomUUID()
+
+  const reply = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { 'Content-Type': 'application/json', 'X-Correlation-ID': correlationId, ...CORS },
+    })
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+
+  // S221: best-effort status write — must never break the email send.
+  const writeStatus = async (
+    fields: Record<string, unknown>,
+    matchCorrelation = true,
+  ) => {
+    try {
+      if (matchCorrelation) {
+        await supabase.from('provisioning_status')
+          .update(fields)
+          .eq('correlation_id', correlationId)
+      }
+    } catch (e) {
+      console.error('[send-credentials-email] status write failed:', (e as Error)?.message)
+    }
+  }
 
   try {
     // Verify JWT — service role client validates any valid Supabase JWT
     const authHeader = req.headers.get('Authorization') || req.headers.get('authorization') || ''
     const token = authHeader.replace(/^[Bb]earer\s+/, '').trim()
-    if (!token) return json({ error: 'Unauthorized' }, 401)
+    if (!token) return reply({ error: 'Unauthorized' }, 401)
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
     const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-    console.log('send-credentials-email | user:', user?.email, '| error:', authError?.message)
+    console.log('send-credentials-email | user:', user?.email, '| cid:', correlationId, '| error:', authError?.message)
     if (authError || !user || user.email !== 'admin@pestflowpro.com') {
-      return json({ error: 'Forbidden' }, 403)
+      return reply({ error: 'Forbidden' }, 403)
     }
 
-    const { to, firstName, businessName, siteUrl, adminUrl, adminEmail, adminPassword } = await req.json()
+    const { to, firstName, businessName, siteUrl, adminUrl, adminEmail, adminPassword, tenant_id } = await req.json()
 
     // Support legacy callers that pass slug instead of siteUrl/adminUrl
     const resolvedSiteUrl  = siteUrl  || (req.body ? '' : '')
     const resolvedAdminUrl = adminUrl || (resolvedSiteUrl ? `${resolvedSiteUrl}/admin` : '')
 
     if (!to || !firstName || !businessName || !adminEmail) {
-      return json({ error: 'to, firstName, businessName, adminEmail required' }, 400)
+      return reply({ error: 'to, firstName, businessName, adminEmail required' }, 400)
     }
 
-    await sendEmail({
-      to,
-      subject: `You're live! Here are your ${businessName} login credentials`,
-      fromName: 'PestFlow Pro',
-      html: buildHtml(
-        firstName,
-        businessName,
-        resolvedSiteUrl || `https://pestflowpro.com`,
-        resolvedAdminUrl || `https://pestflowpro.com/admin`,
-        adminEmail,
-        adminPassword || '(set during onboarding)',
-      ),
-      replyTo: 'support@homeflowpro.ai',
+    // S221: throttle keyed on tenant_id when present (skip if not supplied).
+    let isResend = false
+    if (tenant_id) {
+      const { data: existing } = await supabase
+        .from('provisioning_status')
+        .select('last_sent_at')
+        .eq('tenant_id', tenant_id)
+        .not('last_sent_at', 'is', null)
+        .order('last_sent_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (existing?.last_sent_at) {
+        isResend = true
+        const lastSent = new Date(existing.last_sent_at).getTime()
+        const elapsedSec = Math.floor((Date.now() - lastSent) / 1000)
+        if (elapsedSec < THROTTLE_SECONDS) {
+          return reply(
+            { error: 'throttled', retry_after_seconds: THROTTLE_SECONDS - elapsedSec },
+            429,
+          )
+        }
+      }
+    }
+
+    // S221: write credentials_send_requested. Update the row this correlation_id
+    // already owns (initial provision flow); otherwise insert a fresh row.
+    try {
+      const { data: existingRow } = await supabase
+        .from('provisioning_status')
+        .select('id')
+        .eq('correlation_id', correlationId)
+        .limit(1)
+        .maybeSingle()
+      if (existingRow) {
+        await supabase.from('provisioning_status')
+          .update({ status: 'credentials_send_requested' })
+          .eq('correlation_id', correlationId)
+      } else {
+        await supabase.from('provisioning_status').insert({
+          correlation_id: correlationId,
+          tenant_id: tenant_id || null,
+          admin_email: adminEmail,
+          status: 'credentials_send_requested',
+        })
+      }
+    } catch (e) {
+      console.error('[send-credentials-email] status request write failed:', (e as Error)?.message)
+    }
+
+    try {
+      await sendEmail({
+        to,
+        subject: `You're live! Here are your ${businessName} login credentials`,
+        fromName: 'PestFlow Pro',
+        html: buildHtml(
+          firstName,
+          businessName,
+          resolvedSiteUrl || `https://pestflowpro.com`,
+          resolvedAdminUrl || `https://pestflowpro.com/admin`,
+          adminEmail,
+          adminPassword || '(set during onboarding)',
+        ),
+        replyTo: 'support@homeflowpro.ai',
+        idempotencyKey: tenant_id ? `tenant:${tenant_id}:credentials:v1` : undefined,
+      })
+    } catch (sendErr: any) {
+      await writeStatus({ status: 'credentials_send_failed', error_message: sendErr?.message ?? String(sendErr) })
+      throw sendErr
+    }
+
+    await writeStatus({
+      status: isResend ? 'credentials_resent' : 'credentials_send_succeeded',
+      last_sent_at: new Date().toISOString(),
     })
 
-    return json({ success: true })
+    return reply({ success: true })
   } catch (err: any) {
     console.error('[send-credentials-email]', err?.message)
-    return json({ error: err?.message || 'Internal server error' }, 500)
+    return reply({ error: err?.message || 'Internal server error' }, 500)
   }
 }
 

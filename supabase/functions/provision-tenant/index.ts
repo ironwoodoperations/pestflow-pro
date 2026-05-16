@@ -1,4 +1,4 @@
-// Supabase Edge Function: provision-tenant v15
+// Supabase Edge Function: provision-tenant
 // Reads onboarding_sessions for wizard data (name, colors, shell, etc.) when available.
 // Falls back to direct body fields for legacy/manual calls.
 // Creates auth user, seeds tenant_users, and provisions all 11 required settings keys.
@@ -7,11 +7,18 @@
 // Auth (S211a): verify_jwt:false at platform; in-source validation of
 //   `x-pfp-internal-key` header against PROVISION_TENANT_INTERNAL_SECRET env var.
 //   Header name deliberately differs from the platform `apikey` because the
-//   ironwood-provision caller already sends `apikey: SUPABASE_SERVICE_ROLE_KEY`
-//   (legacy belt-and-suspenders). Reusing `apikey` for our gate would either
-//   silently lose the gate value to JS object-literal last-wins on the source
-//   side, or cause WHATWG header-merge ", " join on the wire — fail-closing
-//   every legitimate call. Distinct header name eliminates the trap.
+//   ironwood-provision caller previously sent `apikey: SUPABASE_SERVICE_ROLE_KEY`
+//   (legacy belt-and-suspenders, stripped in S220 D). Reusing `apikey` for our
+//   gate would either silently lose the gate value to JS object-literal last-wins
+//   on the source side, or cause WHATWG header-merge ", " join on the wire —
+//   fail-closing every legitimate call. Distinct header name eliminates the trap.
+//
+// S220 changes:
+//   B1 — state→IANA timezone helper + always-seed timezone in business_info JSONB
+//   B2a — tenant-collision guard before mutating an existing user
+//   B2b — password sync via updateUserById in the existing-user branch
+//   B2c — lookup-fail hardening (was silently provisioning admin-less tenant)
+//
 // Deploy: supabase functions deploy provision-tenant --project-ref biezzykcgzkrwdgqpsar --no-verify-jwt
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -24,6 +31,92 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// S220 B1: State → IANA timezone resolution
+//
+// Seeds business_info.timezone defensively. The business_info_structured_shape
+// CHECK requires timezone present whenever hours_structured is present, AND
+// requires timezone to be a non-empty string whenever it's present at all.
+// Without a seeded default, the customer's first admin save of the Business
+// Info form (which submits the default 7-day hours_structured array) violates
+// the constraint.
+//
+// Map covers all 50 US states + DC. Multi-TZ states assigned by
+// business-center majority. Customer can override in dashboard.
+//
+// NOT in scope: international timezones, intra-state TZ boundaries
+// (KY/TN/FL/MI/IN/ND/SD etc. all have minority TZ regions).
+// Customer overrides via dashboard if the majority guess is wrong for them.
+// ─────────────────────────────────────────────────────────────────────
+
+const STATE_TZ_MAP: Record<string, string> = {
+  // Central
+  TX: 'America/Chicago', OK: 'America/Chicago', KS: 'America/Chicago',
+  NE: 'America/Chicago', MN: 'America/Chicago', IA: 'America/Chicago',
+  MO: 'America/Chicago', AR: 'America/Chicago', LA: 'America/Chicago',
+  MS: 'America/Chicago', AL: 'America/Chicago', WI: 'America/Chicago',
+  IL: 'America/Chicago', TN: 'America/Chicago', ND: 'America/Chicago',
+  SD: 'America/Chicago',
+  // Eastern
+  FL: 'America/New_York', GA: 'America/New_York', SC: 'America/New_York',
+  NC: 'America/New_York', VA: 'America/New_York', WV: 'America/New_York',
+  OH: 'America/New_York', MI: 'America/New_York', IN: 'America/New_York',
+  PA: 'America/New_York', NJ: 'America/New_York', NY: 'America/New_York',
+  CT: 'America/New_York', RI: 'America/New_York', MA: 'America/New_York',
+  NH: 'America/New_York', VT: 'America/New_York', ME: 'America/New_York',
+  DE: 'America/New_York', MD: 'America/New_York', DC: 'America/New_York',
+  KY: 'America/New_York',
+  // Mountain
+  CO: 'America/Denver', WY: 'America/Denver', MT: 'America/Denver',
+  NM: 'America/Denver', UT: 'America/Denver', ID: 'America/Denver',
+  // Pacific
+  CA: 'America/Los_Angeles', WA: 'America/Los_Angeles',
+  OR: 'America/Los_Angeles', NV: 'America/Los_Angeles',
+  // Arizona (no DST)
+  AZ: 'America/Phoenix',
+  // Alaska & Hawaii
+  AK: 'America/Anchorage', HI: 'Pacific/Honolulu',
+}
+
+const STATE_NAME_TO_CODE: Record<string, string> = {
+  ALABAMA: 'AL', ALASKA: 'AK', ARIZONA: 'AZ', ARKANSAS: 'AR',
+  CALIFORNIA: 'CA', COLORADO: 'CO', CONNECTICUT: 'CT', DELAWARE: 'DE',
+  FLORIDA: 'FL', GEORGIA: 'GA', HAWAII: 'HI', IDAHO: 'ID',
+  ILLINOIS: 'IL', INDIANA: 'IN', IOWA: 'IA', KANSAS: 'KS',
+  KENTUCKY: 'KY', LOUISIANA: 'LA', MAINE: 'ME', MARYLAND: 'MD',
+  MASSACHUSETTS: 'MA', MICHIGAN: 'MI', MINNESOTA: 'MN', MISSISSIPPI: 'MS',
+  MISSOURI: 'MO', MONTANA: 'MT', NEBRASKA: 'NE', NEVADA: 'NV',
+  'NEW HAMPSHIRE': 'NH', 'NEW JERSEY': 'NJ', 'NEW MEXICO': 'NM',
+  'NEW YORK': 'NY', 'NORTH CAROLINA': 'NC', 'NORTH DAKOTA': 'ND',
+  OHIO: 'OH', OKLAHOMA: 'OK', OREGON: 'OR', PENNSYLVANIA: 'PA',
+  'RHODE ISLAND': 'RI', 'SOUTH CAROLINA': 'SC', 'SOUTH DAKOTA': 'SD',
+  TENNESSEE: 'TN', TEXAS: 'TX', UTAH: 'UT', VERMONT: 'VT',
+  VIRGINIA: 'VA', WASHINGTON: 'WA', 'WEST VIRGINIA': 'WV',
+  WISCONSIN: 'WI', WYOMING: 'WY',
+  'DISTRICT OF COLUMBIA': 'DC', 'WASHINGTON DC': 'DC', 'WASHINGTON D.C.': 'DC',
+}
+
+/**
+ * Resolve a US state input (2-letter code, full name, or mixed-case)
+ * to a canonical IANA timezone string. Always returns a non-empty
+ * IANA string — never null/undefined/empty. Falls back to
+ * America/Chicago for missing/unrecognized input.
+ *
+ * Accepts: 'TX', 'Texas', 'texas', '  TX  ', '', null, undefined, garbage.
+ */
+function resolveTimezoneFromState(state: string | null | undefined): string {
+  if (!state || typeof state !== 'string') return 'America/Chicago'
+  const normalized = state.trim().toUpperCase()
+  if (!normalized) return 'America/Chicago'
+  // Direct 2-letter code match
+  if (STATE_TZ_MAP[normalized]) return STATE_TZ_MAP[normalized]
+  // Full-name → code → IANA lookup
+  const code = STATE_NAME_TO_CODE[normalized]
+  if (code && STATE_TZ_MAP[code]) return STATE_TZ_MAP[code]
+  // Unrecognized — fallback to Central (operator-overridable)
+  return 'America/Chicago'
 }
 
 interface RequestBody {
@@ -181,16 +274,93 @@ export async function handler(req: Request): Promise<Response> {
       let resolvedUserId: string | null = authData?.user?.id || null
       if (createUserError) {
         if (createUserError.message?.includes('already been registered') || createUserError.message?.includes('already exists')) {
-          console.warn('Auth user already exists for email:', resolvedAdminEmail, '— looking up existing user ID')
+          console.warn('[provision-tenant] Auth user already exists for email:', resolvedAdminEmail, '— looking up existing user ID')
+          // TODO(S220-backlog): Replace listUsers() with a SECURITY DEFINER RPC
+          // (find_auth_user_id_by_email) when user count exceeds ~100. Current
+          // implementation is O(n). At current scale (<50 users) acceptable.
           const { data: { users } } = await supabase.auth.admin.listUsers()
           const existing = users.find((u: any) => u.email === resolvedAdminEmail)
           resolvedUserId = existing?.id || null
-          if (!resolvedUserId) console.error('Could not find existing user ID for:', resolvedAdminEmail)
+
+          // S220 B2c: lookup-failed hardening. Previously this only console.error'd
+          // and fell through to provision a tenant with no admin user — silently broken.
+          if (!resolvedUserId) {
+            console.error('[provision-tenant] BLOCKED — gotrue reported user exists but lookup returned no record. Inconsistent auth state.')
+            return new Response(JSON.stringify({
+              success: false,
+              error: `Email ${resolvedAdminEmail} reported as already registered, but lookup returned no user record. Inconsistent auth state — investigate manually before retrying.`,
+            }), { status: 500, headers: { 'Content-Type': 'application/json', ...CORS } })
+          }
+
+          // S220 B2a: Tenant-collision guard. Before mutating an existing user, confirm
+          // they aren't currently admin on a DIFFERENT tenant. If they are, refuse.
+          // Re-provisioning would yank them from their current tenant, invalidate their
+          // active sessions, and change their password without consent — a hijacking
+          // failure mode the validator gate flagged as the highest risk on this fix.
+          const { data: existingProfile, error: profileLookupErr } = await supabase
+            .from('profiles')
+            .select('tenant_id')
+            .eq('id', resolvedUserId)
+            .maybeSingle()
+
+          if (profileLookupErr) {
+            console.error('[provision-tenant] Profile lookup failed during collision check:', profileLookupErr.message)
+            return new Response(JSON.stringify({
+              success: false,
+              error: `Profile lookup failed during collision check: ${profileLookupErr.message}`,
+            }), { status: 500, headers: { 'Content-Type': 'application/json', ...CORS } })
+          }
+
+          if (existingProfile?.tenant_id && existingProfile.tenant_id !== tenantId) {
+            console.error(
+              '[provision-tenant] BLOCKED — tenant collision on existing user:',
+              resolvedAdminEmail,
+              'current_tenant:', existingProfile.tenant_id,
+              'requested_tenant:', tenantId,
+            )
+            return new Response(JSON.stringify({
+              success: false,
+              error: `Email ${resolvedAdminEmail} is already admin on a different tenant (${existingProfile.tenant_id}). Cannot re-provision to ${tenantId}. Use a different admin email, or detach the user from their current tenant first.`,
+              existing_tenant_id: existingProfile.tenant_id,
+              requested_tenant_id: tenantId,
+            }), { status: 409, headers: { 'Content-Type': 'application/json', ...CORS } })
+          }
+
+          // S220 B2b: Password sync. updateUserById writes the credentials-email
+          // password into auth.users. Without this, the customer receives credentials
+          // they can't use. gotrue v2.149+ kills active sessions on password change —
+          // desired behavior here (customer just got new credentials, fresh login is
+          // the goal). Admin route bypasses gotrue confirmation emails.
+          const { error: pwSyncErr } = await supabase.auth.admin.updateUserById(
+            resolvedUserId,
+            { password: resolvedAdminPassword }
+          )
+          if (pwSyncErr) {
+            // Differentiate transient (gotrue 5xx) from logic (4xx) errors so
+            // operator knows whether retry is safe. Avoids the retry-loop trap.
+            const status = (pwSyncErr as any).status || 500
+            const isTransient = status >= 500
+            console.error(
+              '[provision-tenant] Password sync failed for existing user:',
+              resolvedAdminEmail,
+              '| status:', status,
+              '| msg:', pwSyncErr.message,
+              '| transient:', isTransient,
+            )
+            return new Response(JSON.stringify({
+              success: false,
+              error: `Password sync failed for existing user: ${pwSyncErr.message}`,
+              transient: isTransient,
+              retry_safe: isTransient,
+            }), { status: 500, headers: { 'Content-Type': 'application/json', ...CORS } })
+          }
+          console.log('[provision-tenant] Password synced for existing user:', resolvedAdminEmail)
         } else {
-          console.error('createUser failed:', createUserError.message)
-          return new Response(JSON.stringify({ success: false, error: `Failed to create admin user: ${createUserError.message}` }), {
-            status: 500, headers: { 'Content-Type': 'application/json', ...CORS },
-          })
+          console.error('[provision-tenant] createUser failed:', createUserError.message)
+          return new Response(JSON.stringify({
+            success: false,
+            error: `Failed to create admin user: ${createUserError.message}`,
+          }), { status: 500, headers: { 'Content-Type': 'application/json', ...CORS } })
         }
       }
 
@@ -253,11 +423,20 @@ export async function handler(req: Request): Promise<Response> {
     const _bizGeoKeys = (typeof wbi.latitude === 'number' && typeof wbi.longitude === 'number')
       ? { latitude: wbi.latitude, longitude: wbi.longitude }
       : {}
-    const _bizHoursKeys = (Array.isArray(wbi.hours_structured) && wbi.hours_structured.length > 0 && wbi.timezone)
-      ? { hours_structured: wbi.hours_structured, timezone: wbi.timezone }
-      : wbi.timezone
-        ? { timezone: wbi.timezone }
-        : {}
+
+    // S220 B1: Always seed a non-empty timezone. CHECK constraint requires it
+    // whenever hours_structured is later added by customer's admin save.
+    // Resolution priority: explicit wizard tz → wizard/body state → Chicago fallback.
+    const _explicitTz = wbi.timezone
+    const resolvedTimezone: string =
+      (typeof _explicitTz === 'string' && _explicitTz.trim().length > 0)
+        ? _explicitTz.trim()
+        : resolveTimezoneFromState(wbi.address_region || (bi as any).address_region)
+
+    const _bizHoursKeys: Record<string, unknown> =
+      (Array.isArray(wbi.hours_structured) && wbi.hours_structured.length > 0)
+        ? { hours_structured: wbi.hours_structured, timezone: resolvedTimezone }
+        : { timezone: resolvedTimezone }
 
     const settingsRows = [
       { tenant_id: tenantId, key: 'business_info', value: {
@@ -665,15 +844,6 @@ export async function handler(req: Request): Promise<Response> {
         console.log('[provision-tenant] prospect stage → it_in_progress')
 
         // Step 9g — Seed legal page_content from master template (non-blocking)
-        // Reads master tenant's 4 legal docs (terms, privacy, sms-terms,
-        // accessibility) and inserts customized copies for the new tenant.
-        // Substitutions: PestFlow Pro → ib.business_name, pestflowpro.com →
-        // <slug>.pestflowpro.com, sales@pestflowpro.com → ib.email,
-        // (430) 367-5601 → ib.phone.
-        // Smith County, Texas jurisdiction left as-is — TX-only assumption for
-        // first paying client. Multi-state expansion is a future enhancement.
-        // If anything fails: log warning, continue. Tenant provisioning must
-        // succeed even with broken legal seed (operator can populate via admin).
         try {
           const MASTER_TENANT_ID = '9215b06b-3eb5-49a1-a16e-7ff214bf6783'
           const LEGAL_SLUGS = ['terms', 'privacy', 'sms-terms', 'accessibility']
@@ -690,7 +860,6 @@ export async function handler(req: Request): Promise<Response> {
             const newName = ib.business_name || 'Your Business'
             const newNameUpper = newName.toUpperCase()
             const newEmail = ib.email || `info@${newDomain}`
-            // Format raw 10-digit phone → (NNN) NNN-NNNN; tolerate already-formatted input.
             const phoneDigits = (ib.phone || '').replace(/\D/g, '')
             const newPhone = phoneDigits.length === 10
               ? `(${phoneDigits.slice(0, 3)}) ${phoneDigits.slice(3, 6)}-${phoneDigits.slice(6)}`

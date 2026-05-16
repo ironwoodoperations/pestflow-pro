@@ -28,6 +28,12 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
   const [sendingReveal, setSendingReveal]   = useState(false)
   const [zernioAccounts, setZernioAccounts] = useState<Record<string, any> | null>(null)
 
+  // S221: correlation ID + Ghost Success recovery state.
+  const [, setCorrelationId]                       = useState<string | null>(null)
+  const [, setProvisioningStatus]                  = useState<string | null>(null)
+  const [lastSentAt, setLastSentAt]                = useState<Date | null>(null)
+  const [resendCountdown, setResendCountdown]      = useState(0)
+
   useEffect(() => {
     if (!form.tenant_id) return
     supabase.from('settings').select('value')
@@ -36,6 +42,38 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
         if (data?.value?.zernio_accounts) setZernioAccounts(data.value.zernio_accounts)
       })
   }, [form.tenant_id])
+
+  // S221: hydrate provisioning status on mount — enables Ghost Success
+  // recovery (correct Resend cooldown after a dashboard reload).
+  useEffect(() => {
+    if (!prospectId) return
+    supabase
+      .from('provisioning_status')
+      .select('status, last_sent_at')
+      .eq('prospect_id', prospectId)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setProvisioningStatus(data.status)
+          if (data.last_sent_at) setLastSentAt(new Date(data.last_sent_at))
+        }
+      })
+  }, [prospectId])
+
+  // S221: Resend cooldown ticker.
+  useEffect(() => {
+    if (!lastSentAt) return
+    const THROTTLE_SECONDS = 60
+    const tick = () => {
+      const elapsed = Math.floor((Date.now() - lastSentAt.getTime()) / 1000)
+      setResendCountdown(Math.max(0, THROTTLE_SECONDS - elapsed))
+    }
+    tick()
+    const interval = setInterval(tick, 1000)
+    return () => clearInterval(interval)
+  }, [lastSentAt])
 
   const resolvedAdminEmail =
     form.admin_email?.trim() ||
@@ -55,6 +93,9 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
       const firstName   = (form.contact_name || form.company_name || '').split(' ')[0] || 'there'
       const siteUrl     = `https://${form.slug}.pestflowpro.ai`
       const adminUrl    = `https://${form.slug}.pestflowpro.ai/admin`
+      // S221: correlation ID threads this send into the provisioning_status row.
+      const cid = crypto.randomUUID()
+      setCorrelationId(cid)
       // Get a fresh session token at click time — never use a cached token.
       // Mirrors the pattern used by the provision flow elsewhere in this file.
       const { data: { session: freshSession }, error: sessionError } = await supabase.auth.refreshSession()
@@ -69,6 +110,7 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${freshSession.access_token}`,
           'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          'X-Correlation-ID': cid,
         },
         body: JSON.stringify({
           to:            adminEmail,
@@ -78,11 +120,22 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
           adminUrl,
           adminEmail,
           adminPassword: form.admin_password || '',
+          tenant_id:     form.tenant_id || null,
         }),
       })
+      if (res.status === 429) {
+        const { retry_after_seconds } = await res.json()
+        toast.warning(`Throttled — try again in ${retry_after_seconds}s`)
+        setResendCountdown(retry_after_seconds)
+        return
+      }
       const data = await res.json()
-      if (data.success) toast.success(`Credentials sent to ${adminEmail}`)
-      else toast.error(data.error || 'Failed to send credentials email')
+      if (data.success) {
+        toast.success(`Credentials sent to ${adminEmail}`)
+        setLastSentAt(new Date())
+      } else {
+        toast.error(data.error || 'Failed to send credentials email')
+      }
     } catch (e: any) {
       toast.error(e.message || 'Network error')
     } finally {
@@ -159,6 +212,10 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
       }
       const accessToken = freshSession.access_token
 
+      // S221: correlation ID for durable provisioning_status tracking.
+      const cid = crypto.randomUUID()
+      setCorrelationId(cid)
+
       const bi = (form.business_info || {}) as Record<string, any>
       const br = (form.branding || {}) as Record<string, any>
       const cu = (form.customization || {}) as Record<string, any>
@@ -169,6 +226,7 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${accessToken}`,
           'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          'X-Correlation-ID': cid,
         },
         body: JSON.stringify({
           prospect_id:  prospectId,
@@ -249,9 +307,13 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
             🔑 {form.slug}.pestflowpro.ai/admin
           </a>
         </div>
-        <button onClick={sendCredentialsEmail} disabled={sendingCreds}
+        <button onClick={sendCredentialsEmail} disabled={sendingCreds || resendCountdown > 0}
           className="px-3 py-1.5 bg-indigo-700 hover:bg-indigo-600 text-white text-xs font-medium rounded-lg transition disabled:opacity-50">
-          {sendingCreds ? 'Sending…' : '📧 Send Login Credentials'}
+          {sendingCreds
+            ? 'Sending…'
+            : resendCountdown > 0
+              ? `📧 Send Login Credentials (${resendCountdown}s)`
+              : '📧 Send Login Credentials'}
         </button>
 
         {/* Reveal Call Checklist */}
