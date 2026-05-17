@@ -188,3 +188,23 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - src/hooks/useZernioRuns.ts
   - supabase/functions/zernio-analytics/index.ts
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-17 21:42 UTC
+- Branch: `s225-zernio-analytics`
+- Commit: `44006d0` — chore: S225 session log + build info
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.md
+  - tsconfig.tsbuildinfo
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-17 21:59 UTC
+- Branch: `s225-zernio-analytics`
+- Commit: `c92a507` — task: S225 — consumer #2, Social page analytics widget
+- Author: Claude
+- Files changed:
+  - src/components/admin/SocialTab.tsx
+  - src/components/admin/social/useSocialData.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
