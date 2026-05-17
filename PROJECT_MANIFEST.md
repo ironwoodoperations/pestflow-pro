@@ -148,3 +148,13 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - supabase/functions/_shared/cors.ts
   - supabase/functions/pagespeed-proxy/index.ts
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-17 17:07 UTC
+- Branch: `claude/pagespeed-tile-wiring-PXGkH`
+- Commit: `45a6c8c` — s224: session manifest log + build info
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.md
+  - tsconfig.tsbuildinfo
+- Next recommended action: [Fill in next session: read this line, write what comes next]
