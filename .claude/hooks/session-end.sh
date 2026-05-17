@@ -22,6 +22,16 @@ if grep -q "Commit: \`$SHORT_SHA\`" PROJECT_MANIFEST.md 2>/dev/null; then
   exit 0
 fi
 
+# Loop-breaker: if HEAD is itself a manifest-log commit, do NOT append again.
+# Without this, every manifest commit produces a new SHA, which this hook
+# appends a fresh block for, dirtying the tree, which the stop-hook flags,
+# which forces another commit — an infinite churn loop. The SHA-based dedup
+# above only catches re-runs against the *same* commit, not this cycle.
+HEAD_SUBJECT=$(git log -1 --format="%s" 2>/dev/null)
+case "$HEAD_SUBJECT" in
+  *"manifest session log"*) exit 0 ;;
+esac
+
 # Gather metadata
 DATE=$(date +"%Y-%m-%d %H:%M %Z")
 BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
