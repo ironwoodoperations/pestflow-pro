@@ -12,6 +12,7 @@ import LegacyComposer from './social/LegacyComposer'
 import NewCampaignModal from './social/NewCampaignModal'
 import SocialUpgradeNudge from './social/SocialUpgradeNudge'
 import ZernioOnboardingBanner from './social/ZernioOnboardingBanner'
+import SocialAnalyticsTile from './reports/SocialAnalyticsTile'
 
 function useIsDemoTenant() {
   const parts = window.location.hostname.split('.')
@@ -94,6 +95,15 @@ export default function SocialTab({ onNavigate }: Props) {
       {/* Zernio onboarding banner — Growth+ with no accounts connected yet */}
       {!isStarter && hasConnectedAccounts === false && (
         <ZernioOnboardingBanner onOpenConnections={() => setShowConnections(true)} />
+      )}
+
+      {/* Social analytics — contextual to the Zernio integration, not tier-gated.
+          Hidden unless a Zernio profile is provisioned (the onboarding banner
+          above already handles the not-connected CTA). */}
+      {integrations?.zernio_profile_id && (
+        <div className="mb-6">
+          <SocialAnalyticsTile />
+        </div>
       )}
 
       {/* Header */}
