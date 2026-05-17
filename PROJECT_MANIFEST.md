@@ -158,3 +158,12 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - PROJECT_MANIFEST.md
   - tsconfig.tsbuildinfo
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-17 17:18 UTC
+- Branch: `claude/pagespeed-tile-wiring-PXGkH`
+- Commit: `01e4bdd` — s224: manifest session log
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
