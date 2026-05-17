@@ -37,6 +37,7 @@ export interface IntegrationSettings {
   facebook_page_id?: string
   active_social_provider?: 'export' | 'diy' | 'full_auto'
   zernio_accounts?: Record<string, string>
+  zernio_profile_id?: string
 }
 
 // Race a Supabase query against an 8s timeout so a stalled connection-pool
