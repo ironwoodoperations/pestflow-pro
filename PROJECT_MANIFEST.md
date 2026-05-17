@@ -167,3 +167,12 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
 - Files changed:
   - PROJECT_MANIFEST.md
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-17 17:19 UTC
+- Branch: `claude/pagespeed-tile-wiring-PXGkH`
+- Commit: `cb7c778` — s224: manifest session log
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
