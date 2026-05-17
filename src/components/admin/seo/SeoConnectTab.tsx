@@ -1,5 +1,5 @@
 import type { ConnectForm, IntegrationValues } from './seoTypes'
-import { SearchConsoleMockPreview, GA4MockPreview, PageSpeedMockPreview } from './SeoConnectPreviews'
+import { SearchConsoleMockPreview, GA4MockPreview, PageSpeedPanel } from './SeoConnectPreviews'
 
 interface Props {
   integrations: IntegrationValues
@@ -69,7 +69,7 @@ function FieldRow({ value, placeholder, helper, saving, onSave, onChange }: {
 }
 
 export default function SeoConnectTab({
-  integrations, connectForm, connectSaving, onChange, onSave, onRunCheckNow
+  integrations, connectForm, connectSaving, onChange, onSave
 }: Props) {
   const { google_analytics_id, google_search_console_url } = integrations
 
@@ -110,11 +110,7 @@ export default function SeoConnectTab({
         <DataSourceCard icon="⚡" title="Google PageSpeed Insights"
           description="Performance scores, Core Web Vitals, Lighthouse audit, accessibility and SEO scores. Powers the Overview tab."
           status="active" statusLabel="Active — No Setup Required">
-          <PageSpeedMockPreview />
-          <button onClick={onRunCheckNow}
-            className="text-xs px-3 py-1.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium flex items-center gap-1">
-            🔄 Run Check Now
-          </button>
+          <PageSpeedPanel />
         </DataSourceCard>
 
         <DataSourceCard icon="▲" title="Vercel Analytics"

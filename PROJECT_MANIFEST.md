@@ -130,3 +130,40 @@ supabase/functions/stripe-webhook/     ← (PROTECTED)
 supabase/functions/create-checkout-session/ ← (PROTECTED)
 supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 pattern)
 ```
+
+---
+## Session — 2026-05-17 17:07 UTC
+- Branch: `claude/pagespeed-tile-wiring-PXGkH`
+- Commit: `f750fe0` — s224: PageSpeed tile wiring (both surfaces)
+- Author: Claude
+- Files changed:
+  - docs/migrations/s224-pagespeed-runs-rollback.sql
+  - docs/migrations/s224-pagespeed-runs.sql
+  - src/components/admin/ReportsTab.tsx
+  - src/components/admin/reports/SitePerformanceTile.tsx
+  - src/components/admin/seo/SeoConnectPreviews.tsx
+  - src/components/admin/seo/SeoConnectTab.tsx
+  - src/components/admin/seo/pageSpeedShared.ts
+  - src/hooks/usePageSpeedRuns.ts
+  - supabase/functions/_shared/cors.ts
+  - supabase/functions/pagespeed-proxy/index.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-17 17:07 UTC
+- Branch: `claude/pagespeed-tile-wiring-PXGkH`
+- Commit: `45a6c8c` — s224: session manifest log + build info
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.md
+  - tsconfig.tsbuildinfo
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-17 17:18 UTC
+- Branch: `claude/pagespeed-tile-wiring-PXGkH`
+- Commit: `01e4bdd` — s224: manifest session log
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]

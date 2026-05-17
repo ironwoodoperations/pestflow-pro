@@ -8,6 +8,7 @@ import SocialSeoReport from './reports/SocialSeoReport'
 import ReportsStatCards from './reports/ReportsStatCards'
 import LeadSourceChart from './reports/LeadSourceChart'
 import SocialVolumeChart from './reports/SocialVolumeChart'
+import SitePerformanceTile from './reports/SitePerformanceTile'
 
 interface LeadRow {
   id: string
@@ -151,6 +152,12 @@ export default function ReportsTab() {
         <div className="mt-6">
           <LeadFunnel leads={filtered} />
         </div>
+
+        <FeatureGate minTier={2} featureName="Site Performance">
+          <div className="mt-6">
+            <SitePerformanceTile />
+          </div>
+        </FeatureGate>
 
         <FeatureGate minTier={3} featureName="Advanced Reports & Trends">
           <SocialSeoReport />
