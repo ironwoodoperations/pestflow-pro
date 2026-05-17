@@ -1,5 +1,13 @@
 # PROJECT_MANIFEST — PestFlow Pro
-Last Updated: 2026-04-11 by Claude Code (S117)
+
+**Framework Version: Ironwood v3.1** — installed 2026-05-16
+**Workflow:** branch + PR + manual merge (see GIT_RULES.md)
+**Last Updated:** 2026-05-16 by framework upgrade session
+
+> ⚠️ This file is preserved from the S117 (April 2026) snapshot with the v3.1
+> upgrade banner appended above. Session log entries S118–S222 are not
+> reflected here yet; the working state of record between this manifest
+> being updated is the SuperClawed session handoff thread.
 
 ---
 
@@ -8,11 +16,11 @@ Last Updated: 2026-04-11 by Claude Code (S117)
 | Field | Value |
 |-------|-------|
 | Current Phase | **Operate** — active feature additions on live multi-tenant platform |
-| Sprint Goal | S117 complete. Awaiting next priority from Scott. |
+| Sprint Goal | Framework v3.1 upgrade (this session). Next sprint: Reports tab GA4/GSC/PageSpeed wiring (per S222 plan). |
 | Sprint Status | On Track |
 | Blocking Risks | Stripe live mode not yet cut over — no real billing active |
-| Next Decision Needed | Which open item to tackle next — Scott decides |
-| Recommended Next Owner | Claude Code (once Scott confirms priority) |
+| Next Decision Needed | Reports tab build — GCP project org parent (Cloud Identity vs user-owned), in flight at start of S222 |
+| Recommended Next Owner | Claude Code Web (per kickoff from Scott) |
 
 ---
 
@@ -25,8 +33,6 @@ Scott (Ironwood Operations Group) sells it 1-on-1. Clients never self-serve.
 - `/ironwood` — Scott's CRM (pipeline, prospects, reports, integrations, team, support inbox)
 - `/admin` — Client dashboard (content, SEO, blog, social, testimonials, locations, reports, CRM, team, billing, support tickets, settings)
 
-**Public site per tenant:** 12 pest pages, location pages, blog, quote wizard, reviews, FAQ, contact — served at `[slug].pestflowpro.com` or verified custom domain.
-
 ---
 
 ## Active Tenants
@@ -35,7 +41,7 @@ Scott (Ironwood Operations Group) sells it 1-on-1. Clients never self-serve.
 |------|------|----------|--------|
 | PestFlow Pro (demo) | pestflow-pro | modern-pro | Live — Demo |
 | Cypress Creek Pest Control | cypress-creek-pest-control | modern-pro | Live — Active |
-| Dang Pest Control | dang | dang (custom) | Live — Active |
+| Dang Pest Control | dang | dang (custom) | Live — Active (paying customer) |
 
 ---
 
@@ -50,32 +56,7 @@ Supabase ID:      biezzykcgzkrwdgqpsar
 GitHub:           https://github.com/ironwoodoperations/pestflow-pro
 Dev server:       doppler run -- npm run dev → localhost:8080
 Model:            claude-sonnet-4-6 (ALWAYS — never any other string)
-Bundle size:      ~354 kB (limit: 450 kB ✅)
 ```
-
----
-
-## Completed This Session (S117)
-
-| Task | Commit | Session | Description |
-|------|--------|---------|-------------|
-| task[1] | 8291b7d | S112b | Dang page content restore + tenant overwrite safeguard |
-| task[4-prev] | bce7310 | S115 | Wire mailboxes into platform — Resend reply-to headers per mailbox type |
-| task[3] | 3bb10b0 | S115 | Dang hero outline confirmed; support ticket files committed |
-| task[4] | 3bb10b0 | S115 | Support ticket system — SupportTab (/admin), SupportPanel (/ironwood), notify-support-ticket edge fn, DB migration |
-| task[5] | e9fbbef | S115 | Add New Page — ContentTab modal, CustomPage renderer, SlugRouter custom page routing |
-| task[1] | (S116) | S116 | send-intake-confirmation edge fn — branded HTML, Resend, reply-to onboarding@ |
-| task[2] | (S116) | S116 | send-welcome-email edge fn — payment confirmed email |
-| task[3] | (S116) | S116 | send-reveal-ready edge fn — reveal call invite with M365 Bookings link |
-| task[4] | (S116) | S116 | send-credentials-email edge fn — rewritten, credentials box, no-verify-jwt |
-| task[5] | (S116) | S116 | send-dunning-email edge fn — 3 escalating variants, billing reply-to |
-| task[6] | (S116) | S116 | Send Reveal Ready Email button wired into ProspectDetail.Provisioning |
-| task[7] | (S116) | S116 | Updated send credentials call — new field shape, no JWT requirement |
-| task[1] | (S117) | S117 | Read social_posts schema — confirmed caption/platform/archived_at columns |
-| task[2] | (S117) | S117 | pg_cron confirmed active (v1.6.4) + pg_net (v0.20.0) — cron job scheduled at */5 * * * * |
-| task[3] | ed9ac82 | S117 | publish-scheduled-posts updated — bundle.social primary, Ayrshare legacy, FB Graph fallback, archived_at filter |
-| task[4] | (verify) | S117 | Cron test confirmed — post published at 03:35:03 UTC by pg_cron run #2 |
-| task[5] | bc45773 | S117 | ZAPIER_WEBHOOK_SETUP.md — 6 webhooks, filter notes, cron reference, edge fn table |
 
 ---
 
@@ -83,24 +64,11 @@ Bundle size:      ~354 kB (limit: 450 kB ✅)
 
 | # | Item | Severity | Owner | Notes |
 |---|------|----------|-------|-------|
-| 1 | **Stripe live mode cutover** | 🔴 BLOCKING | Scott (manual) | Swap keys in Doppler + Vercel, register webhook. No real billing until done. |
-| 2 | **Kirk DNS → Dang custom domain** | 🟡 High | Kirk + Scott | `verified = false` in tenant_domains. Flip to true once Kirk confirms DNS points to Vercel. |
-| 1 | **Stripe live mode cutover** | 🔴 BLOCKING | Scott (manual) | Swap keys in Doppler + Vercel, register webhook. No real billing until done. |
-| 2 | **Kirk DNS → Dang custom domain** | 🟡 High | Kirk + Scott | `verified = false` in tenant_domains. Flip to true once Kirk confirms DNS points to Vercel. |
-| 3 | **Scheduled post execution** | 🟢 Done | Claude Code | pg_cron fires `publish-scheduled-posts` every 5 min. bundle.social → Ayrshare → FB Graph priority. Confirmed live 2026-04-11. ✅ |
-| 4 | **Cypress Creek bundle.social setup** | 🟡 High | Scott (manual) | Create team in bundle.social → store team ID in settings.integrations.bundle_social_team_id. |
-| 5 | **PROJECT_MANIFEST.md** | 🟢 Done | Claude Code | Created S115 ✅ |
-| 6 | **Scheduled post cron job** | 🟢 Done | Claude Code | Done — see #3 ✅ |
-| 7 | **Resend email templates** | 🟢 Done | Claude Code | All 5 templates built and deployed (S116): intake-confirmation, welcome, reveal-ready, credentials, dunning ✅ |
-| 8 | **Supabase webhooks** | 🟠 Medium | Scott (manual) | Instructions in ZAPIER_WEBHOOK_SETUP.md. Scott creates 6 webhooks in Supabase Dashboard manually. |
-| 9 | **Zapier Session A** | 🟠 Medium | Scott | ZAP 1–5 onboarding pipeline — requires Supabase webhooks (#8) first. Webhook config in ZAPIER_WEBHOOK_SETUP.md. |
-| 10 | **Zapier Session B** | 🟠 Medium | Scott | ZAP 6–7 ongoing ops (new lead, blog published) — after Session A. |
-| 11 | **Add New Page — public routing for Dang** | 🟢 Low | Claude Code | CustomPage uses PublicShell. Dang shell uses DangPageRouter. Custom pages on Dang tenant won't use Dang styling. Acceptable for now. |
-| 12 | **Static site export** | 🟢 Low | Claude Code | HTML snapshot for backup/offboarding. Paid handoff feature ($500–$1,000). |
-| 13 | **Firecrawl upgrade** | 🟢 Low | Scott (manual) | Upgrade to Hobby plan ($16/mo) at firecrawl.dev for YouPest scraping. Free tier works for demo. |
-| 14 | **S143 post-hotfix: Dang read path migration** | 🟡 High | Claude Code | After Kirk DNS flip + Dang confirmed stable on new domain: change src/shells/dang/ to read page_hero_image_url / image_1_url / image_2_url / image_3_url. Data already in new columns from S142.7 migration. |
-| 15 | **S144 cleanup: drop old image columns** | 🟢 Low | Claude Code | After S143: DROP page_content.image_url and image_urls. Remove legacy image_url key from settings.hero_media JSONB. Run ONLY after Dang read path is fully migrated and verified. |
-| 16 | **Backlog: per-shell image slot config (Option C)** | 🟢 Low | Claude Code | After all shells ported to Next.js (post-S147): build SHELL_IMAGE_SLOTS config mapping each shell to its slot count. Gate ContentTab Additional Image boxes by tenant template. Requires knowing each shell's actual image usage post-port. |
+| 1 | **Stripe live mode cutover** | 🔴 BLOCKING | Scott (manual) | Swap keys in Doppler + Vercel, register webhook. |
+| 2 | **Kirk DNS → Dang custom domain** | 🟡 High | Kirk + Scott | `verified = false` in tenant_domains. |
+| 3 | **Reports tab build — Google APIs wiring** | 🟡 High | CC Web | GA4, GSC, PageSpeed via service account. 10-step plan, ~40-50h CC Web work. |
+| 4 | **GCP migration to Ironwood Workspace** | 🟡 High | Scott | In-flight at start of S222. |
+| 5 | **Framework v3.1 upgrade** | 🟢 In Progress | This session | Branch+PR+hooks workflow upgrade into pestflow-pro |
 
 ---
 
@@ -108,62 +76,12 @@ Bundle size:      ~354 kB (limit: 450 kB ✅)
 
 | Date | Decision | Made By | Rationale |
 |------|----------|---------|-----------|
-| 2026-04-11 | PROJECT_MANIFEST.md replaces pestflow-pro-context-session13-ready.md as session context anchor | Scott | Process standard alignment with IRONWOOD_OPS_PROCESS_STARTER_v2 |
-| 2026-04-11 | Support tickets use profiles.tenant_id for RLS (not user_roles — that table has no tenant_id) | Claude Code | Discovered user_roles has no tenant_id column during migration |
-| 2026-04-11 | publish-scheduled-posts is the cron entry point (not post-to-social) — post-to-social blocked by JWT + bundle_social_account_id check | Claude Code | post-to-social checks account_id (not used by bundle.social API), would 400 all cron calls |
-| 2026-04-11 | blog_posts has no status column — webhook filter must use published_at IS NOT NULL | Claude Code | Corrected in ZAPIER_WEBHOOK_SETUP.md |
-| 2026-04-11 | Supabase webhooks fire on every UPDATE — Zapier filter step needed to detect null→non-null transition via old_record | Claude Code | Documented in ZAPIER_WEBHOOK_SETUP.md important filter note |
-| 2026-04-10 | Mailboxes: Resend sends from noreply@pestflow.ai; reply-to varies by type | Scott | M365 shared mailboxes confirmed live |
-| 2026-04-10 | Dang custom domain verified=false until Kirk confirms DNS | Scott | Do not flip until confirmed |
-| 2026-03-xx | Archive before delete — soft-archive pattern for tenants/prospects/leads/social/blog | Scott | Safety — no hard deletes without archive step |
-| 2026-03-xx | bundle.social replaces Buffer for social posting | Scott | Bundle.social Pro plan unlimited accounts |
-| 2026-03-xx | Resend sending domain: pestflow.ai (verified) | Scott | pestflowpro.com not added to Resend — not needed |
-
----
-
-## Key File Paths (S115 state)
-
-```
-src/pages/admin/Dashboard.tsx          ← Client admin shell — all tabs
-src/pages/IronwoodOps.tsx              ← Ironwood CRM shell — all tabs
-src/components/admin/SupportTab.tsx    ← Support tickets (client side) [NEW S115]
-src/components/ironwood/SupportPanel.tsx ← Support inbox (Scott side) [NEW S115]
-src/pages/CustomPage.tsx               ← Public custom page renderer [NEW S115]
-src/pages/SlugRouter.tsx               ← Routes /:slug → location | custom-page | 404
-src/components/admin/ContentTab.tsx    ← Content editor + New Page modal [UPDATED S115]
-src/shells/dang/                       ← Full custom Dang shell
-src/lib/shellThemes.ts                 ← CSS custom property shell definitions
-supabase/functions/notify-support-ticket/ ← Resend email on ticket create [NEW S115]
-supabase/functions/notify-new-lead/    ← Resend email on lead submit
-supabase/functions/post-to-social/     ← bundle.social posting (frontend-triggered)
-supabase/functions/publish-scheduled-posts/ ← Cron entry point — bundle.social→Ayrshare→FB Graph [UPDATED S117]
-supabase/functions/send-intake-confirmation/ ← Intake form submitted email [NEW S116]
-supabase/functions/send-welcome-email/ ← Payment confirmed email [NEW S116]
-supabase/functions/send-reveal-ready/  ← Reveal call invite email [NEW S116]
-supabase/functions/send-credentials-email/ ← Admin login credentials email [UPDATED S116]
-supabase/functions/send-dunning-email/ ← 3-variant dunning email [NEW S116]
-supabase/functions/provision-tenant/   ← Full tenant provisioning
-supabase/functions/ironwood-provision/ ← JWT wrapper for provision-tenant
-ZAPIER_WEBHOOK_SETUP.md               ← 6 webhook configs for Scott (Supabase + Zapier) [NEW S117]
-```
-
----
-
-## Session Boot Command (use this every session)
-
-```bash
-doppler run -- claude --dangerously-skip-permissions \
-  "Read CLAUDE.md and SKILL.md first. \
-   Then read PROJECT_MANIFEST.md. \
-   Then run: git status && git log --oneline -10. \
-   When done reading, state: \
-   1. Current phase and sprint goal \
-   2. What the app currently does (one paragraph) \
-   3. What is broken or incomplete right now \
-   4. Your proposed next action \
-   5. Any files you need to read before starting \
-   Do not touch any file until I confirm your plan."
-```
+| 2026-05-16 | Upgrade pestflow-pro to Ironwood Framework v3.1 with manual-merge default | Scott | Paying customer in production — keep manual review gate |
+| 2026-05-16 | Service account (not OAuth) for Reports tab Google API auth | Scott + validator gate | Avoids 4-6 week sensitive-scope verification |
+| 2026-04-11 | PROJECT_MANIFEST.md replaces session-context .md files | Scott | Process standard |
+| 2026-04-10 | Mailboxes: Resend sends from noreply@pestflow.ai; reply-to varies by type | Scott | (since deprecated — Google Workspace) |
+| 2026-04-10 | Dang custom domain verified=false until Kirk confirms DNS | Scott | No premature DNS flip |
+| 2026-03-xx | Archive before delete — soft-archive pattern | Scott | No hard deletes without archive step |
 
 ---
 
@@ -172,14 +90,43 @@ doppler run -- claude --dangerously-skip-permissions \
 | Session | Date | Key Completions |
 |---------|------|-----------------|
 | S1–S107 | Mar 2026 | Full platform build, all 4 shells, Dang shell, multi-tenancy |
-| S108 | Mar 2026 | MarketingLanding, bundle.social, 447 kB |
-| S109 | Mar 2026 | Marketing fonts, bundle.social gating |
-| S110 | Mar 2026 | SMS hotfixes, Textbelt fallback |
-| S112 | Mar 2026 | Bundle 447→353 kB, bundle.social stack rewired, clean-friendly |
-| S112b | Apr 2026 | Dang content restore, tenant overwrite safeguard |
-| S113 | Apr 2026 | Custom domain routing, canonical tags, redirect, archive DB migration |
-| S115 | Apr 2026 | Mailbox wiring, support ticket system, Add New Page, PROJECT_MANIFEST created |
-| S116 | Apr 2026 | 5 HTML email templates (intake, welcome, reveal, credentials, dunning), Reveal Ready button in Ironwood Provisioning |
-| S117 | Apr 2026 | pg_cron + publish-scheduled-posts → bundle.social cron live, ZAPIER_WEBHOOK_SETUP.md created |
-| S142–S142.6 | Apr 2026 | Next.js metro-pro shell port: layout, nav, footer, home, services, blog, about, contact, faq, quote, reviews, service-area, CSS vars, Google fonts |
-| S142.7 | 2026-04-17 | Image schema rename hotfix: new columns page_hero_image_url + image_N_url on page_content; master_hero_image_url in settings.hero_media; Next.js + admin write to new columns only; Dang frozen on old columns (pending S143) |
+| S108–S117 | Mar–Apr 2026 | Marketing landing, bundle.social, SMS hotfixes, Dang content restore, custom domain routing, mailbox wiring, support ticket system, 5 HTML email templates, pg_cron scheduled posts |
+| S118–S221 | Apr–May 2026 | (Manifest backfill pending — see SuperClawed session handoff thread. Major work includes Next.js shell ports, S142.7 image schema rename, S171 Stripe automation removal, S203 demo tenant seeds, S209 legal apex routes, S212 security sprint, S213c-B 27-fn edge audit, S217 webhook auto-provision LOCKED, S218 Zernio image attach fix, S219 LinkedIn+TikTok composer, S220 provision-tenant v72, S221 provisioning observability suite PR #80) |
+| S222 (in progress) | 2026-05-16 | Reports tab Google APIs planning + GCP migration to Ironwood Workspace (paused mid-session for framework upgrade) |
+| Framework v3.1 upgrade | 2026-05-16 | This session. Branch: `chore/upgrade-framework-v3-1`. Adds `.claude/hooks` (require-pr, protect-files, session-end), `.claude/commands` (office-hours, investigate, qa, review, ship), `.github/workflows/ci.yml` (Validate gate), `GIT_RULES.md`, PR template. Merges settings.json: preserves curated permissions, removes `Bash(git push origin main)`, adds hooks block. Customizes protect-files.sh for env/doppler/migrations/auth-shared/provisioning/stripe/RLS paths. Auto-merge available at repo level but disabled per-PR by default. |
+
+---
+
+## Session Boot Command (v3.1)
+
+```bash
+doppler run -- claude --dangerously-skip-permissions \
+  "Pre-flight: read CLAUDE.md, GIT_RULES.md, SKILL.md, PROJECT_MANIFEST.md.
+   Read the last 3 Session Log entries in PROJECT_MANIFEST.md.
+   Verify .claude/settings.json exists and require-pr hook is active.
+   State: Current Phase, Task ID, current Branch (or to-be-created),
+   proposed plan in 3–5 bullets.
+   If scope is unclear: invoke /office-hours.
+   Do not touch any file until I confirm the plan."
+```
+
+---
+
+## Key File Paths (S117 state — confirmed still valid for non-Next.js admin paths)
+
+```
+src/pages/admin/Dashboard.tsx          ← Client admin shell
+src/pages/IronwoodOps.tsx              ← Ironwood CRM shell
+src/components/admin/SupportTab.tsx    ← Support tickets (client side)
+src/components/ironwood/SupportPanel.tsx ← Support inbox (Scott side)
+src/pages/CustomPage.tsx               ← Public custom page renderer
+src/pages/SlugRouter.tsx               ← Routes /:slug
+src/components/admin/ContentTab.tsx    ← Content editor + New Page modal
+src/shells/dang/                       ← Full custom Dang shell
+src/lib/shellThemes.ts                 ← CSS custom property shell definitions
+supabase/functions/provision-tenant/   ← Full tenant provisioning (PROTECTED)
+supabase/functions/ironwood-provision/ ← JWT wrapper (PROTECTED)
+supabase/functions/stripe-webhook/     ← (PROTECTED)
+supabase/functions/create-checkout-session/ ← (PROTECTED)
+supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 pattern)
+```
