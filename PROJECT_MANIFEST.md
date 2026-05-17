@@ -167,3 +167,24 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
 - Files changed:
   - PROJECT_MANIFEST.md
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-17 20:32 UTC
+- Branch: `s225-zernio-analytics`
+- Commit: `0e79a4d` — fix: break session-end manifest churn loop (#83)
+- Author: csdevore2
+- Files changed:
+  - .claude/hooks/session-end.sh
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-17 21:42 UTC
+- Branch: `s225-zernio-analytics`
+- Commit: `f72f8b6` — task: S225 — Zernio social-analytics surface (skeleton)
+- Author: Claude
+- Files changed:
+  - src/components/admin/ReportsTab.tsx
+  - src/components/admin/reports/SocialAnalyticsTile.tsx
+  - src/hooks/useZernioRuns.ts
+  - supabase/functions/zernio-analytics/index.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
