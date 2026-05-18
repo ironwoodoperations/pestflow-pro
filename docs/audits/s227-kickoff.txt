@@ -1,0 +1,83 @@
+# S227 KICKOFF — Wire GSC (Google Search Console) Tile
+
+**Session type:** CC Web implementation. PR-based (feature branch → Scott merges).
+**Pattern to clone:** S226 Zernio analytics wire (PR #87). Edge fn + table + hook + tile pattern proven end-to-end.
+**Validator gate:** REQUIRED before implementation IF tooling is available in sandbox.
+
+---
+
+## Goal
+
+Wire the Google Search Console API to populate the existing GSC tile
+in the Reports tab. Replace any TODO placeholder or empty-state component
+with real impressions/clicks/position data from the GSC API.
+
+If no GSC tile skeleton exists yet, build it from scratch using the
+S225/S226 Zernio pattern: edge fn → table → hook → tile.
+
+---
+
+## Step -1 — Sandbox capability pre-flight
+
+Confirm:
+- Network egress to `*.googleapis.com` / `searchconsole.googleapis.com`
+- Supabase edge fn 401 gate still intact
+- Perplexity + Gemini tools available (validator gate)
+
+---
+
+## Pre-flight death-audit (BEFORE any code)
+
+1. **Existing GSC surface inventory** — search for any GSC-related files:
+   - `supabase/functions/gsc-*` (edge fn)
+   - `src/components/admin/reports/GscTile*` or similar
+   - `src/hooks/useGsc*`
+   - Any `gsc_runs` or `search_console_runs` table (check via Supabase MCP)
+
+2. **Auth model for GSC** — check how the platform accesses Google APIs:
+   - Is there a service account? (S222 decision: service account for Reports tab Google APIs)
+   - Is the service account key in Doppler? What env var name?
+   - Does the service account have GSC property access for Dang's site?
+
+3. **Tenant GSC property state** — confirm Dang has a verified GSC property:
+   ```sql
+   SELECT value->>'gsc_site_url' FROM settings WHERE key='integrations' AND tenant_id='1611b16f-381b-4d4f-ba3a-fbde56ad425b';
+   ```
+   If no `gsc_site_url`, Kirk needs to add Dang's GSC property URL before
+   this session can ship real data.
+
+---
+
+## Validator gate questions
+
+1. **Endpoint shape:** What GSC API endpoint returns impressions/clicks/
+   avg position for a site? Is it Search Analytics query API?
+   What are the required parameters (siteUrl, dateRange, dimensions)?
+
+2. **Data normalization:** What shape should `gsc_runs.data` take?
+   Suggested: `{ impressions: N, clicks: N, avg_position: N, period_days: 30 }`.
+   Is there a per-page breakdown needed or just site-level totals?
+
+3. **Error handling:** Same as Zernio pattern — `status='error'` row with
+   `api_error_code` + `api_error_msg`, HTTP 200 to caller.
+
+---
+
+## Implementation order (if no skeleton exists)
+
+1. Migration: `gsc_runs` table (mirror `zernio_runs` schema)
+2. Edge fn: `gsc-analytics` (clone `zernio-analytics`, swap API call)
+3. Hook: `useGscRuns` (clone `useZernioRuns`)
+4. Tile: `GscTile` in Reports tab (clone `SocialAnalyticsTile` structure)
+5. Mount in `ReportsTab.tsx`
+
+If skeleton exists from prior session, skip to step 2+.
+
+---
+
+## Deferred / out of scope for S227
+
+- GA4 tile wiring (needs tracking script install first)
+- PageSpeed improvements (S224 shipped)
+- Zernio improvements (S226 shipped)
+- Places API refactor

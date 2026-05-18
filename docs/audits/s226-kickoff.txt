@@ -1,0 +1,164 @@
+# S226 KICKOFF — Wire Zernio Analytics API
+
+**Session type:** CC Web implementation. PR-based (feature branch → Scott merges).
+**Pattern to clone:** S225 `zernio-analytics` skeleton (PR #84, branch `s225-zernio-analytics`). Edge fn, table, hook, and both tile mount points exist — this session replaces the `TODO(S225-followup)` placeholder with the real Zernio API call.
+**Validator gate:** REQUIRED before implementation IF tooling is available in your sandbox. See Step -1.
+
+---
+
+## Step -1 — Sandbox capability pre-flight (NEW, ~2 min)
+
+Before touching any code, verify your sandbox has the tooling this session needs. If anything is missing, surface it BEFORE proceeding — don't burn time on workarounds without flagging first.
+
+Confirm presence of:
+- **Perplexity + Gemini tools** for the validator gate. If unavailable, flag and ask Scott whether to invoke the manual-waiver pattern from S225 (Claude.ai + Scott lock decisions, document in PR body).
+- **Network egress to `*.zernio.com` / `*.zernio.io`** for hitting Zernio's API + reading their docs.
+- **Network egress to `*.supabase.co`** for testing the deployed edge fn (still blocked as of S225 — confirm if changed).
+
+State the result of these checks as the first line of your reply, then proceed.
+
+---
+
+## Step 0 — Verify PROJECT_MANIFEST.md hook loop is dead (~1 min)
+
+PR #83 in S225 added a 10-line guard in `.claude/hooks/session-end.sh`. Spot-check: after any commit in this session, NO `manifest session log` follow-up commit should appear in `git log`. If you see one, the S225 fix didn't take — STOP and flag.
+
+---
+
+## Goal
+
+Replace the placeholder in `zernio-analytics` edge fn with a real call to Zernio's analytics API. Populate the existing `zernio_runs.data` JSONB column with per-platform metrics (engagement, reach, follower counts for FB / IG / YouTube / GBP). Both tile consumers (Reports tab + Social Media admin page) already render whatever's in `data` via the `useZernioRuns` hook + `SocialAnalyticsTile`. No frontend changes expected unless the data shape demands them.
+
+---
+
+## Pre-flight death-audit (BEFORE any code changes)
+
+Document findings in the PR description:
+
+1. **Existing Zernio integration surface inventory** — pull the deployed source via `git show HEAD:supabase/functions/<fn>/index.ts` (or read the repo) for:
+   - `supabase/functions/zernio-connect/index.ts` — OAuth handler. Note the base URL, how it stores tokens (`settings.integrations.zernio_*`), and the access-token retrieval pattern.
+   - `supabase/functions/post-to-social/index.ts` — Zernio posting. Note the outbound auth header shape and any rate-limit handling.
+   - `supabase/functions/publish-scheduled-posts/index.ts` — same. Useful for confirming the auth pattern.
+   - `supabase/functions/zernio-analytics/index.ts` — S225 skeleton with the `TODO(S225-followup)`. This is where the new code lands.
+
+2. **Tenant connection state probe** (Supabase MCP) — confirm Dang still has populated values:
+   ```sql
+   SELECT tenant_id, value->'zernio_profile_id', value->'zernio_accounts'
+   FROM settings
+   WHERE key='integrations' AND tenant_id = '1611b16f-381b-4d4f-ba3a-fbde56ad425b';
+   ```
+
+3. **`zernio_runs` state probe** — confirm 0 rows or near-0 (only test runs from S225 should exist, if any):
+   ```sql
+   SELECT count(*), max(ran_at), bool_or(status='error') FROM zernio_runs;
+   ```
+
+---
+
+## Zernio API discovery (the actual unknown)
+
+Three sources, in order:
+
+1. **Zernio's public docs.** Check `https://zernio.com/docs`, `https://docs.zernio.io`, or whatever the docs URL is. Look for an analytics or insights endpoint that takes a `zernio_profile_id` (or equivalent) and returns per-platform engagement/reach/follower data.
+
+2. **Existing edge fn auth pattern.** `zernio-connect` already negotiates OAuth and stores tokens. `post-to-social` uses those tokens to call Zernio. The analytics endpoint almost certainly uses the same auth model — reuse, don't reinvent.
+
+3. **Devtools trace of Zernio's own dashboard** (if Scott provides access). If docs are sparse, this is the authoritative source for the actual endpoint shape.
+
+If discovery returns nothing usable (no public analytics endpoint, no docs):
+- Stop. Surface the finding to Scott. Don't fabricate an endpoint or ship dead code.
+- Options Scott will choose between: (a) defer S226 entirely, (b) reach out to Zernio support, (c) pivot to GSC tile wiring (P7 in v93).
+
+---
+
+## Validator gate questions (Perplexity + Gemini IF available; else manual lock with Scott)
+
+1. **Endpoint shape:** Given the Zernio analytics endpoint discovered above, what's the canonical request/response shape? Are metrics per-platform in a single response, or do you call per-platform? Rate limits?
+
+2. **Data normalization:** Map the response into the existing `zernio_runs.data` JSONB shape (`{fb: {...}, ig: {...}, yt: {...}, gbp: {...}}`). Are there metrics that don't fit cleanly per-platform (e.g. cross-platform aggregates)? If yes, where do they go — `data.aggregate`? Top-level columns?
+
+3. **Error handling:** What's the right behavior when Zernio returns a 4xx (rate limit, expired token, missing scope)? Insert an error row to `zernio_runs` with `status='error'` and the API code/message, or 5xx back to the caller?
+
+---
+
+## Implementation (in order)
+
+### 1. Edge function — replace TODO with real API call
+
+In `supabase/functions/zernio-analytics/index.ts`, replace the `TODO(S225-followup)` block with:
+- Token retrieval from `settings.integrations.zernio_*` (mirror `post-to-social` pattern)
+- Outbound call(s) to Zernio analytics endpoint(s)
+- Response normalization into the `data` JSONB shape
+- Same success/error INSERT semantics as PageSpeed: blocking INSERT to `zernio_runs` on success, blocking INSERT with `status='error'` + `api_error_code` + `api_error_msg` on Zernio API failure
+
+Keep `verify_jwt: true` and the `requireTenantUser` gate — no auth surface changes.
+
+### 2. Frontend (if needed)
+
+The existing `SocialAnalyticsTile` renders `zernio_runs.data` per-platform. If the data shape from Zernio matches what S225 anticipated, no frontend changes. If the shape diverges (e.g. nested differently, or includes metrics not anticipated), update the tile to handle the actual shape.
+
+### 3. Empty-state visibility decision (Scott action, pre-merge)
+
+S225 left a "Coming soon" tile visible to Dang on both Reports + Social Media admin. Scott's call in v93 (item `empty-state-visibility-decision`, P8):
+- (a) Accept the empty state — tile shows "Coming soon" until first successful run, then real data
+- (b) Add `zernio_runs.length > 0` gate on both mount points to hide until data exists
+
+S226 closes this either way: once the API ships and Dang has a successful run, the tile populates and any "Coming soon" state self-resolves. Decision matters only for the visibility window before Dang's first Run Check Now click.
+
+### 4. Verification matrix
+
+Mirror S225 + S213c-B style:
+
+| # | Test | Expected |
+|---|---|---|
+| 1 | OPTIONS preflight | 200 + CORS headers |
+| 2 | No auth | 401 |
+| 3 | Malformed Bearer | 401 |
+| 4 | Valid JWT, no apikey | 401 (gateway) |
+| 5 | Valid JWT + apikey, cross-tenant body | 403 (requireTenantUser) |
+| 6 | Valid JWT + apikey + correct tenant_id (Dang) | 200, row in `zernio_runs` with non-empty `data` |
+| 7 | Same as #6 but tenant without Zernio connection | 200 with error row (no `zernio_profile_id` → graceful fail) |
+| 8 | Reports tab tile renders real numbers for Dang post-run | Tile shows actual engagement/reach/follower counts |
+| 9 | Social Media admin widget renders real numbers for Dang post-run | Widget shows same |
+| 10 | Reports tab tile renders empty/coming-soon for non-Zernio tenant | Graceful empty state, no crash |
+
+10 cells → under 12-cell PR-split threshold. Single PR.
+
+---
+
+## Rules to honor (from memory + S225 retro)
+
+- **Sandbox capability surfaces FIRST.** Step -1 above. Don't burn time on workarounds without flagging.
+- **Scope completeness check at PR open.** Two consumers are already mounted (Reports + Social Media). Confirm both continue to work with the new real-data path. Don't silently regress consumer #2.
+- **Caller-header-shape verification (S212.1):** No new callers expected — `useZernioRuns` already exists. If you find yourself adding new fetch sites, verify `Authorization: Bearer` header presence.
+- **Validator gate non-negotiable when tools available.** Skip with documented waiver only if Step -1 confirms tools are missing.
+- **Code-first vs migration-first:** No new DDL expected this session. If you find yourself adding columns to `zernio_runs`, sequence migration-first (additive, nothing else reads them).
+- **No `revalidatePath` cascade needed** — admin-only UI, no ISR purge.
+- **PROJECT_MANIFEST.md hook loop:** S225 PR #83 killed it. Spot-check after first commit (Step 0).
+
+---
+
+## Deferred / out of scope for S226
+
+- GSC tile wiring (P7 in v93) — separate session
+- GA4 tile wiring (P6) — needs tracking script install first
+- Places API server-side refactor (P9) — different workflow, queued
+- S224 cells #9/#10 smoke — perma-deferred until Codespace use (item `cells-9-10-smoke` in v93)
+- Zernio DM reply feature — separate workstream
+- Schema cleanup of dead `settings.integrations` fields — deferred until connector buildout settles
+
+---
+
+## Output for Scott at session end
+
+Standard three deliverables:
+
+1. `pestflow-pro-handoff-S226-shipped.md` — what shipped, verification state, narrative
+2. `pestflow-pro-todo-v94.html` — S226 → shipped section, S227 candidate promoted (recommend GSC tile next, applying same pattern), close `verify-pending` items if behavioral confirmation lands this session
+3. `s227-kickoff.txt` — next external connector
+
+If Zernio API discovery surfaces issues that block S226 (no public analytics endpoint, OAuth scope missing, etc.), the deliverables become:
+
+1. `pestflow-pro-handoff-S226-blocked.md` — what was discovered, why it's blocked, options
+2. `pestflow-pro-todo-v94.html` — S226 → deferred, S227 promoted to next-available connector
+3. `s227-kickoff.txt` — pivot target (likely GSC tile wiring)

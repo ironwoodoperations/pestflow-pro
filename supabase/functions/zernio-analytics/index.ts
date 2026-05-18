@@ -1,4 +1,4 @@
-// Edge Function: zernio-analytics — S225
+// Edge Function: zernio-analytics — S226
 // On-demand social analytics snapshot. Mirrors the pagespeed-proxy (S224 C2)
 // auth + write pattern: requireTenantUser gate, getCorsHeaders, every call
 // writes a row to zernio_runs (service role).
@@ -6,25 +6,6 @@
 // Deploy with verify_jwt: true (C2 pattern). tenant_id comes from the request
 // body and is validated against the caller's JWT-derived profile.tenant_id.
 //   supabase functions deploy zernio-analytics --project-ref biezzykcgzkrwdgqpsar
-//
-// STATUS — Zernio analytics API contract is UNKNOWN as of S225.
-//   No analytics/insights call exists anywhere in the codebase, the Zernio
-//   docs were unreachable from the build sandbox, and the S225 validator gate
-//   was waived (harness lacked Perplexity/Gemini + network egress). Until the
-//   real endpoint + response shape is confirmed, this function records a
-//   status='unconfigured' row so the Reports surface works end-to-end and
-//   shows an "analytics integration coming soon" empty state.
-//
-//   >>> TODO(S225-followup): wire the real Zernio analytics endpoint. <<<
-//   Replace the marked block below with the live fetch. Auth/base-URL pattern
-//   to copy: zernio-connect/index.ts + post-to-social/index.ts —
-//     base   https://zernio.com/api/v1/
-//     auth   Authorization: Bearer ${ZERNIO_API_KEY}   (platform env var)
-//     scope  profileId = settings.integrations.zernio_profile_id
-//     accts  settings.integrations.zernio_accounts  { zernioPlatform: accountId }
-//   Expected normalized shape to persist in zernio_runs.data:
-//     { fb:{followers,engagement,reach}, ig:{...}, yt:{...}, gbp:{...} }
-//   and the untouched provider payload in zernio_runs.data_raw.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -92,10 +73,8 @@ serve(async (req) => {
 
     const integrations = (setting?.value ?? {}) as {
       zernio_profile_id?: string
-      zernio_accounts?: Record<string, string>
     }
     const profileId = integrations.zernio_profile_id
-    const zernioAccounts = integrations.zernio_accounts ?? {}
 
     const writeRun = async (row: Record<string, unknown>) => {
       const { data, error } = await supabaseAdmin
@@ -122,25 +101,87 @@ serve(async (req) => {
       )
     }
 
-    // ───────────────────────────────────────────────────────────────────────
-    // >>> TODO(S225-followup): replace this block with the real Zernio
-    //     analytics fetch once the endpoint + response shape is confirmed.
-    //     Build `data` as { [storageKey]: { followers, engagement, reach } }
-    //     using FROM_ZERNIO to map Zernio platform strings → storage keys,
-    //     and persist the raw provider payload in `data_raw`.
-    // ───────────────────────────────────────────────────────────────────────
-    void FROM_ZERNIO
-    const connectedCount = Object.values(zernioAccounts).filter(Boolean).length
-    const run = await writeRun({
-      status: 'unconfigured',
-      data: null,
-      data_raw: { profile_id: profileId, connected_accounts: connectedCount },
-      api_error_code: 'analytics_not_wired',
-      api_error_msg: 'Zernio analytics integration is not yet wired (S225 skeleton).',
+    // Build fromDate = 30 days ago (YYYY-MM-DD)
+    const fromDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+      .toISOString().split('T')[0]
+
+    // Single call — post-level analytics for all posts in window (up to 100).
+    // Note: runs with >100 posts in 30 days will aggregate only the first 100.
+    const analyticsUrl =
+      `https://zernio.com/api/v1/analytics?profileId=${encodeURIComponent(profileId)}&fromDate=${fromDate}&limit=100`
+    const analyticsRes = await fetch(analyticsUrl, {
+      headers: { 'Authorization': `Bearer ${zernioApiKey}` },
     })
+    const analyticsBody = await analyticsRes.json().catch(() => null)
+
+    if (!analyticsRes.ok) {
+      const run = await writeRun({
+        status: 'error',
+        data: null,
+        data_raw: analyticsBody,
+        api_error_code: String(analyticsRes.status),
+        api_error_msg:
+          analyticsBody?.error || analyticsBody?.message || `Zernio API error: ${analyticsRes.status}`,
+      })
+      return new Response(
+        JSON.stringify({ status: 'error', message: 'Zernio analytics fetch failed.', run }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
+
+    // Accumulate raw metric buckets per storage key across all posts
+    const acc: Record<string, {
+      likes: number; comments: number; shares: number
+      saves: number; clicks: number; views: number
+      reach: number; impressions: number
+    }> = {}
+
+    for (const post of (analyticsBody?.posts ?? []) as Array<{
+      platforms?: Array<{ platform: string; analytics?: Record<string, number> }>
+    }>) {
+      for (const p of post.platforms ?? []) {
+        const key = FROM_ZERNIO[p.platform] ?? p.platform
+        if (!acc[key]) {
+          acc[key] = {
+            likes: 0, comments: 0, shares: 0, saves: 0,
+            clicks: 0, views: 0, reach: 0, impressions: 0,
+          }
+        }
+        const a = p.analytics ?? {}
+        acc[key].likes       += a.likes       ?? 0
+        acc[key].comments    += a.comments    ?? 0
+        acc[key].shares      += a.shares      ?? 0
+        acc[key].saves       += a.saves       ?? 0
+        acc[key].clicks      += a.clicks      ?? 0
+        acc[key].views       += a.views       ?? 0
+        acc[key].reach       += a.reach       ?? 0
+        acc[key].impressions += a.impressions ?? 0
+      }
+    }
+
+    // Normalize into {followers, engagement, reach} per platform.
+    // youtube: views are reach, not engagement (views already counted in reach).
+    // google_business: GBP deprecated per-post analytics; impressions → reach.
+    const data: Record<string, { followers: null; engagement: number; reach: number }> = {}
+
+    for (const [key, m] of Object.entries(acc)) {
+      if (key === 'youtube') {
+        data[key] = { followers: null, engagement: m.likes + m.comments + m.shares, reach: m.views }
+      } else if (key === 'google_business') {
+        data[key] = { followers: null, engagement: m.clicks + m.likes, reach: m.impressions }
+      } else {
+        data[key] = {
+          followers: null,
+          engagement: m.likes + m.comments + m.shares + m.saves + m.clicks,
+          reach: m.reach,
+        }
+      }
+    }
+
+    const run = await writeRun({ status: 'success', data, data_raw: analyticsBody })
 
     return new Response(
-      JSON.stringify({ status: 'unconfigured', run }),
+      JSON.stringify({ status: 'success', run }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
   } catch (err) {

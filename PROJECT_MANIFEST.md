@@ -224,3 +224,26 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - supabase/functions/zernio-analytics/index.ts
   - tsconfig.tsbuildinfo
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-18 02:43 UTC
+- Branch: `main`
+- Commit: `e2ae04a` — chore: align framework to current revision (subagents + cleanup) (#86)
+- Author: csdevore2
+- Files changed:
+  - .claude/agents/planner.md
+  - .claude/agents/security-reviewer.md
+  - .gitignore
+  - IRONWOOD_MASTER_CONTEXT_v7_LEGACY.md
+  - IRONWOOD_OPS_PROCESS_STARTER_v2.md
+  - PROJECT_MANIFEST.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-18 03:03 UTC
+- Branch: `s226-zernio-api-wiring`
+- Commit: `7220c94` — docs(s226): add S226 kickoff brief — wire Zernio Analytics API
+- Author: csdevore2
+- Files changed:
+  - docs/audits/s226-kickoff.txt
+- Next recommended action: [Fill in next session: read this line, write what comes next]
