@@ -130,3 +130,25 @@ supabase/functions/stripe-webhook/     ← (PROTECTED)
 supabase/functions/create-checkout-session/ ← (PROTECTED)
 supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 pattern)
 ```
+
+---
+## Session — 2026-05-17 01:23 UTC
+- Branch: `main`
+- Commit: `15693a8` — chore: upgrade Ironwood framework to v3.1 (#81)
+- Author: csdevore2
+- Files changed:
+  - .claude/commands/investigate.md
+  - .claude/commands/office-hours.md
+  - .claude/commands/qa.md
+  - .claude/commands/review.md
+  - .claude/commands/ship.md
+  - .claude/hooks/protect-files.sh
+  - .claude/hooks/require-pr.sh
+  - .claude/hooks/session-end.sh
+  - .claude/settings.json
+  - .github/PULL_REQUEST_TEMPLATE.md
+  - .github/workflows/ci.yml
+  - CLAUDE.md
+  - GIT_RULES.md
+  - PROJECT_MANIFEST.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
