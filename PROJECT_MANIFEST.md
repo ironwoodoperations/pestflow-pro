@@ -267,3 +267,23 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - docs/migrations/s227-seo-runs-rollback.sql
   - docs/migrations/s227-seo-runs.sql
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-18 15:27 UTC
+- Branch: `claude/dataforseo-seo-analytics-Jja9a`
+- Commit: `5d14423` — chore: session manifest log entries for S227 Step 1 + Phase 1
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-18 15:54 UTC
+- Branch: `claude/dataforseo-seo-analytics-Jja9a`
+- Commit: `5066060` — S227 Phase 3: weekly Run Now rate-limit RPCs + 429 gate in seo-analytics (deployed v6)
+- Author: Claude
+- Files changed:
+  - docs/migrations/s227-seo-run-now-rpc-rollback.sql
+  - docs/migrations/s227-seo-run-now-rpc.sql
+  - supabase/functions/seo-analytics/index.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
