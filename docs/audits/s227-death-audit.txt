@@ -1,0 +1,165 @@
+S227 — DataForSEO SEO Analytics MVP — DEATH AUDIT
+Session: claude/dataforseo-seo-analytics-Jja9a @ 2a3cac5
+Date: 2026-05-18
+Tooling: Supabase MCP (project biezzykcgzkrwdgqpsar) — sandbox egress to *.supabase.co
+and api.dataforseo.com is 403-blocked (known CC Web limitation; MCP path used instead).
+
+================================================================================
+PART A — DB STATE (via Supabase MCP execute_sql)
+================================================================================
+
+A1. seo_runs table existence
+    -> DOES NOT EXIST. (expected: 0 rows — OK, clean slate)
+
+A2. tenants columns
+    ACTUAL: id, name, subdomain, custom_domain, created_at, slug, archived_at,
+            is_protected, deletion_confirmed, deletion_final_confirmed
+    The task assumed tenants has: settings, industry, city, state, domain, tier,
+    last_seo_run_at  -> NONE OF THESE EXIST. (see Contradiction C2)
+
+A3. settings table columns (the real settings store — key/value, per CLAUDE.md)
+    id, tenant_id, key, value, updated_at, google_search_console_verification
+
+A4. settings.seo subtree
+    EXPECTED by task: NULL/absent on all tenants.
+    ACTUAL: key='seo' EXISTS and is POPULATED on ALL 8 tenants with shape:
+      { owner_name, founded_year, service_areas[], certifications[], meta_description }
+    Example (dang): meta_description + 9 service_areas + 2 certifications.
+    (see Contradiction C3 — direct collision with Phase 8 write target)
+
+A5. Subscription tier values (settings key='subscription' -> value->>'tier')
+    apex-protect=4(Elite) coastal-pest=4(Elite) dang=4(Elite) heartland-pest=4(Elite)
+    metro-pest-concierge=4(Elite) pestflow-pro=4(Elite) urban-strike=4(Elite)
+    cityshield-pest-defense="pro"(Pro)  <-- tier is a STRING, and inconsistent
+    (see Contradiction C4)
+
+A6. pg_cron jobs (existing — pattern reference for Phase 4)
+    process-sms-queue        */5 * * * *   net.http_post -> functions/v1/process-sms-queue
+    publish-scheduled-posts  */5 * * * *   net.http_post -> functions/v1/publish-scheduled-posts
+    rate-limit-cleanup       0 * * * *     DELETE FROM rate_limit_events
+    PATTERN: net.http_post(url, headers={Content-Type, apikey:
+      (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name='<fn>_internal_secret')},
+      body='{}'::jsonb). This is the proven cron->edge-fn invocation to mirror.
+
+A7. vault.secrets ILIKE '%dataforseo%'  -> 0 rows. (expected — OK)
+    DFS creds expected to live in Edge Function Secrets, not Vault. NOT verifiable
+    from this sandbox; deferred to Scott (harness limitation #2).
+
+A8. Tenant domains (no tenants.domain column exists)
+    dang: custom_domain=admin.dangpestcontrol.com (ADMIN host, not public site)
+    others: subdomain only (apex-protect, coastal-pest, heartland-pest,
+            metro-pest-concierge, urban-strike); cityshield/dang none;
+            pestflow-pro subdomain=demo
+    (see Contradiction C5 — no clean public marketing domain to feed DataForSEO)
+
+A9. zernio_runs schema (S225/S226 template for seo_runs)
+    8 COLUMNS (NOT 17 as the task / validator Q1 states):
+      id          uuid    NOT NULL  default gen_random_uuid()
+      tenant_id   uuid    NOT NULL
+      status      text    NOT NULL
+      data        jsonb   NULL
+      data_raw    jsonb   NULL
+      api_error_code text NULL
+      api_error_msg  text NULL
+      ran_at      timestamptz NOT NULL default now()
+    NO created_at / updated_at. NO kind discriminator.
+    RLS: single policy zernio_runs_tenant_read — SELECT TO authenticated
+         USING (tenant_id = current_tenant_id()). No anon policy (RLS on => anon blocked).
+    (see Contradiction C1)
+
+================================================================================
+PART B — CODE STATE (via bash)
+================================================================================
+
+B1. grep seo_runs   -> 0 matches anywhere (clean)
+B2. grep dataforseo -> 0 matches anywhere (clean — greenfield integration)
+B3. seo_runs / zernio migration files in supabase/migrations/ -> NONE.
+    zernio_runs was created via MCP apply_migration (no repo migration file).
+    => Decision needed: follow same MCP-only path, or land a repo migration file
+       for S227 (task Phase 1 wants a file). Surface to Scott.
+
+B4. Zernio reference files (pattern mirror sources):
+    supabase/functions/zernio-analytics/index.ts   (198 lines — edge fn, C2 gate)
+    supabase/functions/zernio-connect/index.ts
+    src/hooks/useZernioRuns.ts                      (84 lines — hook)
+    src/components/admin/reports/SocialAnalyticsTile.tsx (96 lines — tile)
+    src/components/admin/social/ZernioOnboardingBanner.tsx
+
+B5. Mount targets:
+    Reports tab:  src/components/admin/ReportsTab.tsx
+      - SocialAnalyticsTile mounted at L163-167 inside <FeatureGate minTier={3}>.
+        => Gating is a <FeatureGate minTier={3} featureName="..."> WRAPPER component,
+           NOT a minTier prop on the tile. Mirror exactly.
+    SEO Connect tab: src/components/admin/seo/SeoConnectTab.tsx
+      - Presentational; receives props (integrations, connectForm, connectSaving,
+        onChange, onSave, onRunCheckNow) from parent (SEOTab.tsx). DataSourceCard
+        grid. New DFS card slots into the md:grid-cols-2 grid.
+
+================================================================================
+PART C — PATTERN READ (<=5 lines each)
+================================================================================
+
+C-EdgeFn (zernio-analytics/index.ts):
+  serve() + getCorsHeaders + OPTIONS bypass. Body {tenant_id} required.
+  requireTenantUser(req, tenant_id) from ../_shared/auth/requireTenantUser.ts;
+  AuthError -> JSON e.body @ e.status. Service-role client (SUPABASE_URL +
+  SUPABASE_SERVICE_ROLE_KEY). writeRun() inserts to zernio_runs ({tenant_id,...}).
+  Non-ok upstream -> insert status='error' row, still HTTP 200. Deploy verify_jwt:true.
+
+C-Hook (useZernioRuns.ts):
+  useZernioRuns(tenantId) -> {latestRun, loading, running, error, runCheck, refetch}.
+  fetchLatest: supabase.from('zernio_runs').select('*').eq('tenant_id').order(ran_at
+  desc).limit(1).maybeSingle(). runCheck: refreshSession() then fetch
+  functions/v1/zernio-analytics with Bearer+apikey, POST {tenant_id}, then refetch.
+
+C-Schema (zernio_runs, no migration file — DB-derived):
+  8 cols (see A9). Template for seo_runs = these 8 + `kind` text NOT NULL +
+  CHECK kind IN ('rankings','competitors','opportunities'[,'suggestions'?]) +
+  index (tenant_id, kind, ran_at DESC) + RLS mirror of zernio_runs_tenant_read.
+
+================================================================================
+PART D — CONTRADICTIONS TO TASK-LOCKED ASSUMPTIONS (NEW BLOCKERS)
+================================================================================
+Per Scott's directive, NEW blockers (outside the 5 acknowledged harness items)
+are surfaced and work STOPS for acknowledgment before Step 2.
+
+C1  zernio_runs is 8 cols, not 17. Validator Q1 premise ("17 cols + standard
+    timestamps") is factually wrong. seo_runs mirrors 8 + kind. Q1 text must be
+    corrected before the validator gate runs (else validators reason on bad data).
+
+C2  tenants has NO settings/tier/industry/city/state/domain/last_seo_run_at.
+    Settings are a separate key/value table. Breaks Phase 1 (ALTER tenants ADD
+    last_seo_run_at), Phase 4 cron (t.tier>=3 AND t.last_seo_run_at), Phase 8
+    (tenants.settings.seo, industry/city from tenants cols). Cron/freshness/
+    onboarding must be re-expressed against settings table + a freshness store
+    (new settings key, or MAX(ran_at) from seo_runs, or new tenants column).
+
+C3  settings.seo ALREADY EXISTS and is populated on all 8 tenants with
+    {owner_name, founded_year, service_areas[], certifications[],
+    meta_description}. Task expected absent. Phase 8 writing
+    {seed_keywords,competitors,updated_at} to key='seo' would DESTROY existing
+    SEO metadata that public shells very likely read (meta_description,
+    service_areas). Need decision: nest under settings.seo.analytics, OR new key
+    'seo_analytics'. (Also gates the Phase 8 cache-purge grep question.)
+
+C4  Tier is a dirty STRING in settings.subscription.value->>'tier'
+    ("4" for most, "pro" for cityshield). Numeric cron filter tier>=3 and any
+    minTier gate need normalization per CLAUDE.md map (Starter1/Grow2/Pro3/Elite4).
+    Note: FeatureGate already exists and is a wrapper w/ minTier prop — confirm it
+    already normalizes string tiers or extend it.
+
+C5  No public marketing domain per tenant. dang.custom_domain=
+    admin.dangpestcontrol.com (admin host). DataForSEO ranked_keywords needs the
+    public domain (dangpestcontrol.com). Most tenants only have a subdomain
+    (-> <sub>.pestflowpro.ai). Need decision on the domain string fed to DFS
+    (strip 'admin.' from custom_domain? new onboarding field? settings lookup?).
+
+C6  No repo migration file precedent for zernio_runs (MCP-only). Phase 1 wants a
+    committed migration file + rollback. Confirm path: MCP apply_migration only,
+    or also commit supabase/migrations/<ts>_s227_seo_runs.sql.
+
+================================================================================
+END — STOP POINT: awaiting Scott acknowledgment before Step 2 (validator gate).
+Validator Q1 MUST be corrected (8 not 17 cols; settings-table tier/freshness;
+settings.seo collision) before sending to Perplexity/Gemini.
+================================================================================

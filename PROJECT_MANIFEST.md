@@ -247,3 +247,182 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
 - Files changed:
   - docs/audits/s226-kickoff.txt
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-18 15:04 UTC
+- Branch: `claude/dataforseo-seo-analytics-Jja9a`
+- Commit: `0483f6a` — S227 Step 1: death audit — schema divergence + collisions surfaced
+- Author: Claude
+- Files changed:
+  - docs/audits/s227-death-audit.txt
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-18 15:27 UTC
+- Branch: `claude/dataforseo-seo-analytics-Jja9a`
+- Commit: `cf44690` — S227 Step2+Phase1: validator decisions + seo_runs migration (applied via MCP)
+- Author: Claude
+- Files changed:
+  - docs/audits/s227-validator-decisions.md
+  - docs/migrations/s227-seo-runs-rollback.sql
+  - docs/migrations/s227-seo-runs.sql
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-18 15:27 UTC
+- Branch: `claude/dataforseo-seo-analytics-Jja9a`
+- Commit: `5d14423` — chore: session manifest log entries for S227 Step 1 + Phase 1
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-18 15:54 UTC
+- Branch: `claude/dataforseo-seo-analytics-Jja9a`
+- Commit: `5066060` — S227 Phase 3: weekly Run Now rate-limit RPCs + 429 gate in seo-analytics (deployed v6)
+- Author: Claude
+- Files changed:
+  - docs/migrations/s227-seo-run-now-rpc-rollback.sql
+  - docs/migrations/s227-seo-run-now-rpc.sql
+  - supabase/functions/seo-analytics/index.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-18 15:55 UTC
+- Branch: `claude/dataforseo-seo-analytics-Jja9a`
+- Commit: `076eabc` — chore: session manifest log entries for S227 Phase 2 + Phase 3
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-18 15:56 UTC
+- Branch: `claude/dataforseo-seo-analytics-Jja9a`
+- Commit: `12faef2` — chore: session manifest log entry for S227 smoke re-test
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-18 16:10 UTC
+- Branch: `claude/dataforseo-seo-analytics-Jja9a`
+- Commit: `4a1e289` — chore: session manifest log entry for S227 green smoke
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-18 16:28 UTC
+- Branch: `claude/dataforseo-seo-analytics-Jja9a`
+- Commit: `032be2f` — S227 Phase 4: queue-pull cron dispatcher + normalize_tier (applied via MCP)
+- Author: Claude
+- Files changed:
+  - docs/migrations/s227-seo-cron-rollback.sql
+  - docs/migrations/s227-seo-cron.sql
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-18 16:29 UTC
+- Branch: `claude/dataforseo-seo-analytics-Jja9a`
+- Commit: `e171ba7` — chore: session manifest log entry for S227 Phase 4
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-18 16:34 UTC
+- Branch: `claude/dataforseo-seo-analytics-Jja9a`
+- Commit: `36c17be` — S227 Phase 5: useSeoRuns hook (per-kind subtree, runNow with 429 handling)
+- Author: Claude
+- Files changed:
+  - src/hooks/useSeoRuns.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-18 16:34 UTC
+- Branch: `claude/dataforseo-seo-analytics-Jja9a`
+- Commit: `1ffb085` — chore: session manifest log entry for S227 Phase 5
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-18 17:06 UTC
+- Branch: `claude/dataforseo-seo-analytics-Jja9a`
+- Commit: `0817edf` — S227 Phase 6: SeoAnalyticsTile component (3 sections, per-kind states, rate-limit-aware Run Now)
+- Author: Claude
+- Files changed:
+  - src/components/admin/reports/SeoAnalyticsTile.tsx
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-18 17:06 UTC
+- Branch: `claude/dataforseo-seo-analytics-Jja9a`
+- Commit: `bc5eed0` — chore: session manifest log entry for S227 Phase 6
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-18 17:35 UTC
+- Branch: `claude/dataforseo-seo-analytics-Jja9a`
+- Commit: `aa357a8` — S227 Phase 6.5: fix domain_intersection semantics (competitor-gap), v94 backlog
+- Author: Claude
+- Files changed:
+  - docs/audits/s227-validator-decisions.md
+  - docs/migrations/s227-seo-runs.sql
+  - supabase/functions/seo-analytics/index.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-18 17:35 UTC
+- Branch: `claude/dataforseo-seo-analytics-Jja9a`
+- Commit: `47b8158` — chore: session manifest log entry for S227 Phase 6.5
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-18 18:15 UTC
+- Branch: `claude/dataforseo-seo-analytics-Jja9a`
+- Commit: `4ab4e88` — S227 Phase 7: mount SeoAnalyticsTile on Reports tab + SEO Connect tab (both minTier=3)
+- Author: Claude
+- Files changed:
+  - src/components/admin/ReportsTab.tsx
+  - src/components/admin/seo/SeoConnectTab.tsx
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-18 18:15 UTC
+- Branch: `claude/dataforseo-seo-analytics-Jja9a`
+- Commit: `eebf5f4` — chore: session manifest log entry for S227 Phase 7
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-18 18:26 UTC
+- Branch: `claude/dataforseo-seo-analytics-Jja9a`
+- Commit: `8752fdd` — chore: session manifest log entry
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-18 18:38 UTC
+- Branch: `claude/dataforseo-seo-analytics-Jja9a`
+- Commit: `c47673b` — chore: session manifest log entry
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]

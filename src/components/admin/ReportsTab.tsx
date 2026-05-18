@@ -10,6 +10,7 @@ import LeadSourceChart from './reports/LeadSourceChart'
 import SocialVolumeChart from './reports/SocialVolumeChart'
 import SitePerformanceTile from './reports/SitePerformanceTile'
 import SocialAnalyticsTile from './reports/SocialAnalyticsTile'
+import SeoAnalyticsTile from './reports/SeoAnalyticsTile'
 
 interface LeadRow {
   id: string
@@ -163,6 +164,12 @@ export default function ReportsTab() {
         <FeatureGate minTier={3} featureName="Social Analytics">
           <div className="mt-6">
             <SocialAnalyticsTile />
+          </div>
+        </FeatureGate>
+
+        <FeatureGate minTier={3} featureName="SEO Analytics">
+          <div className="mt-6">
+            <SeoAnalyticsTile />
           </div>
         </FeatureGate>
 
