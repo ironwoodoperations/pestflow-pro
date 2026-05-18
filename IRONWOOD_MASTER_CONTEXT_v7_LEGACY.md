@@ -1,3 +1,7 @@
+> **ARCHIVED — superseded by SuperClawed project knowledge. Kept for historical reference only. Do not use as active context.**
+
+---
+
 # IRONWOOD OPERATIONS GROUP — MASTER BUILD CONTEXT v7
 ## Session Handoff Document | Last Updated: March 2026
 
