@@ -305,3 +305,22 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
 - Files changed:
   - PROJECT_MANIFEST.md
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-18 16:10 UTC
+- Branch: `claude/dataforseo-seo-analytics-Jja9a`
+- Commit: `4a1e289` — chore: session manifest log entry for S227 green smoke
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-18 16:28 UTC
+- Branch: `claude/dataforseo-seo-analytics-Jja9a`
+- Commit: `032be2f` — S227 Phase 4: queue-pull cron dispatcher + normalize_tier (applied via MCP)
+- Author: Claude
+- Files changed:
+  - docs/migrations/s227-seo-cron-rollback.sql
+  - docs/migrations/s227-seo-cron.sql
+- Next recommended action: [Fill in next session: read this line, write what comes next]
