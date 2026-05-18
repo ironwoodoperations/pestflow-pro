@@ -117,6 +117,21 @@ serve(async (req) => {
       )
     }
 
+    // Weekly "Run Now" rate limit (validator Q2). User-triggered only — cron
+    // (internal) has its own 7-day freshness filter in the dispatch query.
+    if (!isInternal) {
+      const { data: allowed } = await supabaseAdmin
+        .rpc('seo_run_now_allowed', { p_tenant_id: tenantId, p_kind: kind ?? null })
+      if (allowed === false) {
+        const { data: retryAfter } = await supabaseAdmin
+          .rpc('seo_run_next_allowed_at', { p_tenant_id: tenantId, p_kind: kind ?? null })
+        return new Response(
+          JSON.stringify({ error: 'Rate limited — SEO analytics runs weekly.', rate_limited: true, retry_after: retryAfter }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        )
+      }
+    }
+
     const writeRun = async (row: Record<string, unknown>) => {
       const { data, error } = await supabaseAdmin
         .from('seo_runs').insert({ tenant_id: tenantId, ...row }).select().single()
