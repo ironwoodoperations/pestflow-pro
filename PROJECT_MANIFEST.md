@@ -324,3 +324,21 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - docs/migrations/s227-seo-cron-rollback.sql
   - docs/migrations/s227-seo-cron.sql
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-18 16:29 UTC
+- Branch: `claude/dataforseo-seo-analytics-Jja9a`
+- Commit: `e171ba7` — chore: session manifest log entry for S227 Phase 4
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-18 16:34 UTC
+- Branch: `claude/dataforseo-seo-analytics-Jja9a`
+- Commit: `36c17be` — S227 Phase 5: useSeoRuns hook (per-kind subtree, runNow with 429 handling)
+- Author: Claude
+- Files changed:
+  - src/hooks/useSeoRuns.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
