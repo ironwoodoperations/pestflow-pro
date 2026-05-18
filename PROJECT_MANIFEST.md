@@ -247,3 +247,23 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
 - Files changed:
   - docs/audits/s226-kickoff.txt
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-18 15:04 UTC
+- Branch: `claude/dataforseo-seo-analytics-Jja9a`
+- Commit: `0483f6a` — S227 Step 1: death audit — schema divergence + collisions surfaced
+- Author: Claude
+- Files changed:
+  - docs/audits/s227-death-audit.txt
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-18 15:27 UTC
+- Branch: `claude/dataforseo-seo-analytics-Jja9a`
+- Commit: `cf44690` — S227 Step2+Phase1: validator decisions + seo_runs migration (applied via MCP)
+- Author: Claude
+- Files changed:
+  - docs/audits/s227-validator-decisions.md
+  - docs/migrations/s227-seo-runs-rollback.sql
+  - docs/migrations/s227-seo-runs.sql
+- Next recommended action: [Fill in next session: read this line, write what comes next]
