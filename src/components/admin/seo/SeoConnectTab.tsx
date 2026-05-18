@@ -1,5 +1,7 @@
 import type { ConnectForm, IntegrationValues } from './seoTypes'
 import { SearchConsoleMockPreview, GA4MockPreview, PageSpeedPanel } from './SeoConnectPreviews'
+import { FeatureGate } from '../../common/FeatureGate'
+import SeoAnalyticsTile from '../reports/SeoAnalyticsTile'
 
 interface Props {
   integrations: IntegrationValues
@@ -130,6 +132,12 @@ export default function SeoConnectTab({
           <p className="text-xs text-gray-400">Free — gives backlink data Google won't show.</p>
         </DataSourceCard>
       </div>
+
+      <FeatureGate minTier={3} featureName="SEO Analytics">
+        <div className="mt-6">
+          <SeoAnalyticsTile />
+        </div>
+      </FeatureGate>
     </div>
   )
 }
