@@ -25,6 +25,10 @@
 --     target: text, competitor: text,
 --     items: [ { keyword, competitor_position, target_position, search_volume } ]
 --   }                                                          -- top ~10
+--     Semantics: keywords the COMPETITOR ranks for that the tenant does NOT
+--     (domain_intersection target1=competitor, target2=tenant,
+--     intersections:false). competitor_position is populated; target_position
+--     is null (tenant does not rank for that keyword).
 --
 -- status='error' rows: data MAY be null; api_error_code/api_error_msg populated
 -- from the DataForSEO response (status_code != 20000 or transport failure).

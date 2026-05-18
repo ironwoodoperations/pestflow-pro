@@ -192,7 +192,11 @@ serve(async (req) => {
           runs.push(await writeRun({ kind: k, status: 'error', api_error_code: 'no_competitors', api_error_msg: 'No competitor domains configured or discoverable.' }))
         } else {
           for (const competitor of competitors) {
-            const { data, error } = await dfs.domainIntersection({ target1: target, target2: competitor, limit: 10 })
+            // target1=competitor, target2=tenant + intersections:false =>
+            // keywords the COMPETITOR ranks for that the tenant does NOT.
+            // first_domain_serp_element = competitor (populated),
+            // second_domain_serp_element = tenant (null when it doesn't rank).
+            const { data, error } = await dfs.domainIntersection({ target1: competitor, target2: target, limit: 10 })
             if (error) {
               runs.push(await writeRun({ kind: k, status: 'error', api_error_code: error.code, api_error_msg: `${competitor}: ${error.message}` }))
             } else {
@@ -202,8 +206,8 @@ serve(async (req) => {
                 const kd = it.keyword_data as { keyword?: string; keyword_info?: { search_volume?: number } } | undefined
                 return {
                   keyword: kd?.keyword ?? null,
-                  competitor_position: sd?.rank_absolute ?? null,
-                  target_position: fd?.rank_absolute ?? null,
+                  competitor_position: fd?.rank_absolute ?? null,
+                  target_position: sd?.rank_absolute ?? null,
                   search_volume: kd?.keyword_info?.search_volume ?? null,
                 }
               })

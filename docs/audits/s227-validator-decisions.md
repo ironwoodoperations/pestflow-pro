@@ -99,4 +99,19 @@ a hotspot."
   `admin.` stripped; fallback `<subdomain>.pestflowpro.ai`. (Onboarding may
   later override via an explicit field — out of MVP scope.)
 - **C6** Commit the migration file to `supabase/migrations/` AND apply via MCP;
-  rollback file in the same commit.
+  rollback file in the same commit. (Refined: `supabase/migrations/` is
+  protected by protect-files.sh — DDL recorded in `docs/migrations/` per the
+  S224 precedent, applied via MCP. Migration history is canonical.)
+
+---
+
+## v94 backlog (carry into Phase 9 todo bump)
+
+1. **`seo_last_runs` helper** — migrate freshness off derived `MAX(ran_at)` if
+   `EXPLAIN ANALYZE` shows a hotspot at scale (Q1).
+2. **Cron overlap guard** — potential overlap if an edge fn run exceeds the
+   30-min cron interval; MVP trusts the cadence (Phase 4 concurrency note).
+3. **Per-(tenant, kind) freshness gate** — the Phase 4 dispatcher's
+   `MAX(ran_at)` freshness is per-tenant, not per-kind. Per-kind would handle
+   partial failures, partial re-runs, and future per-kind cadence differences
+   cleanly (surfaced in Phase 6.5; not shipped this session).
