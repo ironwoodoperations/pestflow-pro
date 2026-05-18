@@ -41,3 +41,6 @@ public/_admin/
 .env-backups/
 tsconfig.next.tsbuildinfo
 supabase/.temp/
+
+# Claude Code local settings (per-developer, do not commit)
+.claude/settings.local.json
