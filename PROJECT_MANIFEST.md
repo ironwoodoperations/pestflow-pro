@@ -360,3 +360,23 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
 - Files changed:
   - src/components/admin/reports/SeoAnalyticsTile.tsx
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-18 17:06 UTC
+- Branch: `claude/dataforseo-seo-analytics-Jja9a`
+- Commit: `bc5eed0` — chore: session manifest log entry for S227 Phase 6
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-18 17:35 UTC
+- Branch: `claude/dataforseo-seo-analytics-Jja9a`
+- Commit: `aa357a8` — S227 Phase 6.5: fix domain_intersection semantics (competitor-gap), v94 backlog
+- Author: Claude
+- Files changed:
+  - docs/audits/s227-validator-decisions.md
+  - docs/migrations/s227-seo-runs.sql
+  - supabase/functions/seo-analytics/index.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
