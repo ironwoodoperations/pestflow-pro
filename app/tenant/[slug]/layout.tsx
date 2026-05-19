@@ -2,9 +2,10 @@ export const revalidate = 300;
 
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import Script from 'next/script';
 import { resolveTenantBySlug } from '../../../shared/lib/tenant/resolve';
 import { tenantSeoMetadata } from '../../../shared/lib/tenantSeoMetadata';
-import { getAllServicePages, getSocialLinks, getSeoSettings, getBusinessInfo } from './_lib/queries';
+import { getAllServicePages, getSocialLinks, getSeoSettings, getBusinessInfo, getIntegrations } from './_lib/queries';
 import { JsonLdScript } from './_components/JsonLdScripts';
 import { generateLocalBusinessSchema, type BusinessInfo, type SeoSettings, type SocialLinks } from '../../../shared/lib/seoSchema';
 import { mapBusinessInfoJsonb } from '../../../shared/lib/seoSchema.jsonb';
@@ -49,11 +50,12 @@ export default async function TenantLayout({
   const tenant = await resolveTenantBySlug(params.slug);
   if (!tenant) notFound();
 
-  const [servicePages, social, seoRaw, businessInfoRaw] = await Promise.all([
+  const [servicePages, social, seoRaw, businessInfoRaw, integrations] = await Promise.all([
     getAllServicePages(tenant.id),
     getSocialLinks(tenant.id),
     getSeoSettings(tenant.id),
     getBusinessInfo(tenant.id),
+    getIntegrations(tenant.id),
   ]);
 
   const siteUrl = `https://${tenant.subdomain ?? tenant.slug}.pestflowpro.com`;
@@ -95,11 +97,30 @@ export default async function TenantLayout({
 
   const theme = tenant.template;
 
+  const ga4IdRaw = integrations.ga4_measurement_id;
+  const ga4Id = ga4IdRaw && /^G-[A-Z0-9]+$/i.test(ga4IdRaw) ? ga4IdRaw : null;
+  const ga4Scripts = ga4Id ? (
+    <>
+      <Script
+        src={`https://www.googletagmanager.com/gtag/js?id=${ga4Id}`}
+        strategy="afterInteractive"
+      />
+      <Script
+        id="ga4-init"
+        strategy="afterInteractive"
+        dangerouslySetInnerHTML={{
+          __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${ga4Id}');`,
+        }}
+      />
+    </>
+  ) : null;
+
   if (theme === 'metro-pro') {
     return (
       <>
         <JsonLdScript schema={localBusinessSchema} id="ld-local-business" />
         <style dangerouslySetInnerHTML={{ __html: cssVars }} />
+        {ga4Scripts}
         <TenantProvider tenant={tenant}>
           <MetroNavbar servicePages={servicePages} />
           <main id="main-content">{children}</main>
@@ -114,6 +135,7 @@ export default async function TenantLayout({
       <>
         <JsonLdScript schema={localBusinessSchema} id="ld-local-business" />
         <style dangerouslySetInnerHTML={{ __html: cssVars }} />
+        {ga4Scripts}
         <TenantProvider tenant={tenant}>
           <ModernProNavbar servicePages={servicePages} />
           <main id="main-content">{children}</main>
@@ -128,6 +150,7 @@ export default async function TenantLayout({
       <>
         <JsonLdScript schema={localBusinessSchema} id="ld-local-business" />
         <style dangerouslySetInnerHTML={{ __html: cssVars + `:root{${CF_TOKENS}}` }} />
+        {ga4Scripts}
         <TenantProvider tenant={tenant}>
           <div className={cfInterFont.variable} style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", backgroundColor: 'var(--cf-surface)', color: 'var(--cf-ink)' }}>
             <CleanFriendlyNavbar servicePages={servicePages} />
@@ -144,6 +167,7 @@ export default async function TenantLayout({
       <>
         <JsonLdScript schema={localBusinessSchema} id="ld-local-business" />
         <style dangerouslySetInnerHTML={{ __html: cssVars + `:root{${BL_TOKENS}}` }} />
+        {ga4Scripts}
         <TenantProvider tenant={tenant}>
           <div className={`${barlowFont.variable} ${blInterFont.variable}`} style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", backgroundColor: 'var(--bl-surface)', color: 'var(--bl-text)' }}>
             <BoldLocalNavbar servicePages={servicePages} />
@@ -160,6 +184,7 @@ export default async function TenantLayout({
       <>
         <JsonLdScript schema={localBusinessSchema} id="ld-local-business" />
         <style dangerouslySetInnerHTML={{ __html: cssVars }} />
+        {ga4Scripts}
         <TenantProvider tenant={tenant}>
           <RusticRuggedNavbar servicePages={servicePages} />
           <main id="main-content">{children}</main>
@@ -177,6 +202,7 @@ export default async function TenantLayout({
     <>
       <JsonLdScript schema={localBusinessSchema} id="ld-local-business" />
       <style dangerouslySetInnerHTML={{ __html: cssVars }} />
+      {ga4Scripts}
       <TenantProvider tenant={tenant}>
         <ModernProNavbar servicePages={servicePages} />
         <main id="main-content">{children}</main>
