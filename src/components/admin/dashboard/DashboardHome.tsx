@@ -17,19 +17,6 @@ interface Props {
 
 interface Lead { id: string; name: string; status: string; created_at: string; services: string[] | null }
 
-const statusBadge = (status: string) => {
-  const styles: Record<string, string> = {
-    new: 'bg-blue-100 text-blue-700', contacted: 'bg-amber-100 text-amber-700',
-    converted: 'bg-emerald-100 text-emerald-700', won: 'bg-emerald-100 text-emerald-700',
-    lost: 'bg-red-100 text-red-700',
-  }
-  return (
-    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${styles[status] || 'bg-gray-100 text-gray-600'}`}>
-      {status || 'new'}
-    </span>
-  )
-}
-
 export default function DashboardHome({ onboardingComplete, demoActive, onDemoSeeded, onNavigate }: Props) {
   const { id: tenantId, slug } = useTenant()
   const { tier } = usePlan()
@@ -60,7 +47,6 @@ export default function DashboardHome({ onboardingComplete, demoActive, onDemoSe
     monthlyLeads.push({ label: d.toLocaleDateString('en-US', { month: 'short' }), count })
   }
   const maxMonthly = Math.max(...monthlyLeads.map(m => m.count), 1)
-  const recentLeads = leads.slice(0, 5)
 
   if (loading) return <p className="text-gray-400 p-4">Loading dashboard...</p>
 
@@ -108,34 +94,16 @@ export default function DashboardHome({ onboardingComplete, demoActive, onDemoSe
           <p className="text-gray-500 text-sm">Your quote form is live and ready! Leads will appear here as they come in.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Leads Per Month</h3>
-            <div className="h-48 flex items-end gap-3 px-2">
-              {monthlyLeads.map((m, i) => (
-                <div key={i} className="flex-1 flex flex-col items-center justify-end h-full">
-                  <span className="text-xs text-gray-500 font-medium mb-1">{m.count}</span>
-                  <div className="w-full rounded-t-md bg-emerald-500" style={{ height: `${(m.count / maxMonthly) * 100}%`, minHeight: m.count > 0 ? '8px' : '2px' }} />
-                  <span className="text-xs text-gray-400 mt-2">{m.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Leads</h3>
-            <div className="space-y-0">
-              {recentLeads.map((lead, i) => (
-                <div key={lead.id} className={`flex items-center justify-between py-3 ${i < recentLeads.length - 1 ? 'border-b border-gray-50' : ''}`}>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900">{lead.name}</p>
-                    <p className="text-xs text-gray-400">
-                      {(lead.services || []).join(', ') || 'General inquiry'} · {new Date(lead.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                    </p>
-                  </div>
-                  {statusBadge(lead.status)}
-                </div>
-              ))}
-            </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Leads Per Month</h3>
+          <div className="h-48 flex items-end gap-3 px-2">
+            {monthlyLeads.map((m, i) => (
+              <div key={i} className="flex-1 flex flex-col items-center justify-end h-full">
+                <span className="text-xs text-gray-500 font-medium mb-1">{m.count}</span>
+                <div className="w-full rounded-t-md bg-emerald-500" style={{ height: `${(m.count / maxMonthly) * 100}%`, minHeight: m.count > 0 ? '8px' : '2px' }} />
+                <span className="text-xs text-gray-400 mt-2">{m.label}</span>
+              </div>
+            ))}
           </div>
         </div>
       )}
