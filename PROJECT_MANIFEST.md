@@ -426,3 +426,28 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
 - Files changed:
   - PROJECT_MANIFEST.md
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-19 17:23 UTC
+- Branch: `main`
+- Commit: `fcceded` — S231 Phase 0.5 — Admin UI cleanup round 2 (#96)
+- Author: csdevore2
+- Files changed:
+  - src/components/admin/SEOTab.tsx
+  - src/components/admin/SocialTab.tsx
+  - src/components/admin/reports/SocialAnalyticsTile.tsx
+  - src/components/admin/seo/SeoInsightsTab.tsx
+  - src/components/admin/seo/SeoOverviewTab.tsx
+- Next recommended action: Merge PR #97 (Phase 0.75 Reports restructure) + browser-pass, then proceed to S231 GA4 integration (PR 2)
+
+---
+## Session — 2026-05-19 (S231 Phase 0.75 + GA4 start) UTC
+- Branch: `feat/reports-restructure-phase-0-75`
+- PR: #97
+- Author: Claude
+- Files changed:
+  - src/components/admin/ReportsTab.tsx (remove LeadFunnel, 2-col SEO/Social grid, Blog tile)
+  - src/components/admin/reports/BlogAnalyticsTile.tsx (new — published count, last-30d count, most recent post; view tracking backlog)
+  - src/components/admin/reports/SeoCoverageTile.tsx (extracted from SocialSeoReport)
+  - src/components/admin/reports/SocialPostsTile.tsx (extracted from SocialSeoReport)
+- Next recommended action: Scott merges PR #97 + browser-pass on dang.pestflowpro.ai/admin, then PR 2 (S231 GA4 OAuth integration) proceeds
