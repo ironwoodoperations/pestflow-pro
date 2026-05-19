@@ -9,6 +9,7 @@ import ReportsStatCards from './reports/ReportsStatCards'
 import SitePerformanceTile from './reports/SitePerformanceTile'
 import SocialAnalyticsTile from './reports/SocialAnalyticsTile'
 import SeoAnalyticsTile from './reports/SeoAnalyticsTile'
+import GscAnalyticsTile from './seo/GscAnalyticsTile'
 
 interface LeadRow {
   id: string
@@ -168,6 +169,12 @@ export default function ReportsTab() {
         <FeatureGate minTier={3} featureName="SEO Analytics">
           <div className="mt-6">
             <SeoAnalyticsTile />
+          </div>
+        </FeatureGate>
+
+        <FeatureGate minTier={3} featureName="Google Search Console">
+          <div className="mt-6">
+            <GscAnalyticsTile />
           </div>
         </FeatureGate>
 

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PestFlow Pro — Todo v98 (post-S230)</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; color: #1a1a1a; }
+  h1 { font-size: 1.5rem; border-bottom: 2px solid #059669; padding-bottom: 8px; }
+  h2 { font-size: 1.1rem; margin-top: 32px; color: #374151; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.875rem; margin-top: 12px; }
+  th { background: #f3f4f6; text-align: left; padding: 8px 12px; }
+  td { padding: 8px 12px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+  .shipped { color: #059669; font-weight: 600; }
+  .next    { color: #2563eb; font-weight: 600; }
+  .blocked { color: #dc2626; font-weight: 600; }
+  .high    { color: #d97706; font-weight: 600; }
+  .skip    { color: #6b7280; }
+  .badge   { display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+  .badge-green  { background: #d1fae5; color: #065f46; }
+  .badge-blue   { background: #dbeafe; color: #1e40af; }
+  .badge-yellow { background: #fef3c7; color: #92400e; }
+  .badge-red    { background: #fee2e2; color: #991b1b; }
+  .badge-gray   { background: #f3f4f6; color: #374151; }
+  .note { font-size: 0.8rem; color: #6b7280; margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<h1>PestFlow Pro — Todo v98 <span style="font-weight:400; font-size:1rem; color:#6b7280">(post-S230, 2026-05-19)</span></h1>
+
+<h2>Recently Shipped</h2>
+<table>
+  <tr><th>Session</th><th>What</th><th>Status</th></tr>
+  <tr>
+    <td>S224</td>
+    <td>PageSpeed tile wiring (both surfaces)</td>
+    <td><span class="badge badge-green">Shipped</span></td>
+  </tr>
+  <tr>
+    <td>S225</td>
+    <td>Zernio social-analytics surface (skeleton) — edge fn + table + hook + tile</td>
+    <td><span class="badge badge-green">Shipped</span></td>
+  </tr>
+  <tr>
+    <td>S226</td>
+    <td>Zernio Analytics API wired (replaces S225 TODO). Real data confirmed for Dang.</td>
+    <td><span class="badge badge-green">Shipped</span></td>
+  </tr>
+  <tr>
+    <td>S228</td>
+    <td>Admin surface cleanup — dashboard SEO/Social real-data mini-tiles, Reports Advanced Analytics prune, Blog Analytics relocated, SEO Connect pruned to 3 cards.</td>
+    <td><span class="badge badge-green">Shipped</span></td>
+  </tr>
+  <tr>
+    <td>S229</td>
+    <td>Zernio edge fn fix — accounts[] iteration restores followers + surfaces non-posting platforms (GBP).</td>
+    <td><span class="badge badge-green">Shipped (PR #93)</span></td>
+  </tr>
+  <tr>
+    <td>S230</td>
+    <td>
+      OAuth-based GSC data pipeline (testing mode). <code>gsc_runs</code> table + RLS, <code>gsc-analytics</code> edge fn (refresh token → access token → GSC Search Analytics API → store), weekly cron (Sun 03:00 UTC), <code>useGscRuns</code> hook, <code>GscAnalyticsTile</code> tile mounted on Reports (minTier=3) and SEO Connect (all tiers). Validator gate satisfied (manual-lock waiver). Migration + cron applied to Supabase, edge fn deployed.
+      <div class="note">Pipeline built. Token not yet inserted for Dang — awaiting Scott's GCP OAuth app setup (see Scott actions below).</div>
+    </td>
+    <td><span class="badge badge-yellow">PR open — awaiting Scott review + merge</span></td>
+  </tr>
+</table>
+
+<h2>Verify Pending (requires browser + Dang login after PRs merge + Doppler keys set)</h2>
+<table>
+  <tr><th>Item</th><th>How to verify</th><th>Status</th></tr>
+  <tr>
+    <td>S230 — GSC tile unconfigured state (before token insert)</td>
+    <td>Dang admin → SEO Connect tab → tile shows "Google Search Console not connected"</td>
+    <td><span class="badge badge-yellow">Pending (PR S230)</span></td>
+  </tr>
+  <tr>
+    <td>S230 — GSC tile Run Now with real token</td>
+    <td>After inserting Dang refresh token via Supabase → click Run Now → gsc_runs row written with status=success</td>
+    <td><span class="badge badge-yellow">Pending (Scott token insert)</span></td>
+  </tr>
+  <tr>
+    <td>S230 — GSC tile 4 stat pills + top queries table</td>
+    <td>Dang admin → Reports → GSC tile shows total_clicks / total_impressions / avg_ctr / avg_position + top 10 queries table</td>
+    <td><span class="badge badge-yellow">Pending (Scott token insert)</span></td>
+  </tr>
+  <tr>
+    <td>S226 cell 8 — Reports tab tile shows real numbers for Dang</td>
+    <td>Sign in at dang.pestflowpro.ai/admin → Reports → click "Run Now" on Social Analytics tile</td>
+    <td><span class="badge badge-yellow">Pending</span></td>
+  </tr>
+  <tr>
+    <td>S229 — instagram.followers = 57 renders as number (primary bug regression test)</td>
+    <td>Dang admin → Social tab → Instagram row should show "57" in Followers pill</td>
+    <td><span class="badge badge-yellow">Pending (PR #93)</span></td>
+  </tr>
+</table>
+
+<h2>Next Up — S231 (Recommended)</h2>
+<table>
+  <tr><th>Item</th><th>Notes</th><th>Priority</th></tr>
+  <tr>
+    <td><strong>OAuth-based GA4 integration (testing mode)</strong></td>
+    <td>
+      Full kickoff authored: docs/audits/pestflow-pro-kickoff-S231.md.
+      Reuses S230 OAuth client — add <code>analytics.readonly</code> scope to existing client.
+      Hard dependency: GA4 tracking script must be installed on all 5 Next.js shells first (no GA4 data until tracking is live).
+      New <code>ga4_runs</code> table, <code>ga4-analytics</code> edge fn, <code>Ga4AnalyticsTile</code>.
+      Metrics: users, sessions, engagement rate, top pages, traffic source breakdown.
+      <div class="note">1-2 CC Web sessions split: (a) tracking script install, (b) GA4 ingest + tile. Full kickoff: docs/audits/pestflow-pro-kickoff-S231.md</div>
+    </td>
+    <td><span class="badge badge-blue">P1 Next</span></td>
+  </tr>
+</table>
+
+<h2>Ongoing / Scott Actions Required</h2>
+<table>
+  <tr><th>Item</th><th>Owner</th><th>Status</th></tr>
+  <tr>
+    <td>Merge S230 PR (GSC OAuth pipeline)</td>
+    <td>Scott</td>
+    <td><span class="badge badge-yellow">Ready for review</span></td>
+  </tr>
+  <tr>
+    <td>
+      <strong>S230 GCP OAuth app setup</strong><br>
+      Create OAuth 2.0 Client ID in pestflow-pro-prod GCP (Web application type, webmasters.readonly scope, Testing mode).
+      Add Kirk's Google account as test user. Download credentials → add <code>GSC_OAUTH_CLIENT_ID</code> + <code>GSC_OAUTH_CLIENT_SECRET</code> to Doppler prd config.
+    </td>
+    <td>Scott</td>
+    <td><span class="badge badge-red">Blocking — no GSC data until done</span></td>
+  </tr>
+  <tr>
+    <td>
+      <strong>S230 Dang token insert</strong><br>
+      After GCP setup: use Google OAuth Playground (or similar) to authorize Kirk's account with webmasters.readonly scope and capture the refresh token. Insert into <code>settings.integrations.gsc_oauth_refresh_token</code> for Dang via Supabase SQL editor. See handoff for exact UPDATE statement.
+    </td>
+    <td>Scott</td>
+    <td><span class="badge badge-red">Blocking — no GSC data for Dang until done</span></td>
+  </tr>
+  <tr>
+    <td>
+      <strong>S230 verify Dang GSC property format</strong><br>
+      Edge fn normalises <code>google_search_console_url: "dangpestcontrol.com"</code> → <code>https://dangpestcontrol.com/</code>.
+      If Kirk registered as domain property (<code>sc-domain:dangpestcontrol.com</code>), add <code>gsc_site_url: "sc-domain:dangpestcontrol.com"</code> to Dang integrations to override.
+    </td>
+    <td>Scott + Kirk</td>
+    <td><span class="badge badge-yellow">Verify with Kirk</span></td>
+  </tr>
+  <tr>
+    <td>Stripe live mode cutover</td>
+    <td>Scott (manual) — swap keys in Doppler + Vercel, register webhook</td>
+    <td><span class="badge badge-red">Blocking — no real billing</span></td>
+  </tr>
+  <tr>
+    <td>Kirk DNS → Dang custom domain</td>
+    <td>Kirk + Scott — verified=false in tenant_domains</td>
+    <td><span class="badge badge-yellow">High</span></td>
+  </tr>
+  <tr>
+    <td>GCP migration to Ironwood Workspace</td>
+    <td>Scott — in-flight since S222</td>
+    <td><span class="badge badge-yellow">High</span></td>
+  </tr>
+  <tr>
+    <td>
+      <strong>S231 prereq: GA4 tracking script</strong><br>
+      Install GA4 tracking script on all 5 Next.js shells. No GA4 data to ingest until this is live. S231 Phase 1 handles this.
+    </td>
+    <td>CC Web (S231 Phase 1)</td>
+    <td><span class="badge badge-yellow">S231 dependency</span></td>
+  </tr>
+</table>
+
+<h2>External Connector Buildout — OAuth Pivot (S230+ status)</h2>
+<p class="note"><strong>Service-account add-user is blocked by Google bug</strong> (acknowledged May 1, 2026 by Google, no fix or ETA). All Google API integrations now pivot to OAuth in testing mode — max 100 test users, no verification required at current scale, customers added by hand during concierge onboarding.</p>
+<table>
+  <tr><th>Item</th><th>Notes</th><th>Priority</th></tr>
+  <tr>
+    <td><strong>S229 — Zernio follower + GBP fix</strong></td>
+    <td>Shipped. Two bugs fixed via accounts[] iteration. PR #93 merged.</td>
+    <td><span class="badge badge-green">Shipped</span></td>
+  </tr>
+  <tr>
+    <td><strong>S230 — OAuth-based GSC integration (testing mode)</strong></td>
+    <td>
+      Pipeline shipped: <code>gsc_runs</code> table, <code>gsc-analytics</code> edge fn, weekly cron, <code>GscAnalyticsTile</code> on Reports (minTier=3) and SEO Connect (all tiers).
+      Validator gate satisfied. Awaiting: (1) Scott's GCP OAuth app setup + Doppler keys, (2) manual Dang refresh token insert, (3) browser verification.
+      Full "Connect GSC" OAuth consent UI is a future session (S230 locked scoping decision).
+      <div class="note">Shipped 2026-05-19. Handoff: docs/handoffs/pestflow-pro-handoff-S230-shipped.md</div>
+    </td>
+    <td><span class="badge badge-green">Shipped (pipeline) / <span class="badge badge-yellow">Pending Scott setup</span></td>
+  </tr>
+  <tr>
+    <td><strong>S231 — OAuth-based GA4 integration (testing mode)</strong></td>
+    <td>
+      Reuses S230 OAuth client. Hard dependency: GA4 tracking script on shells (Phase 1 of S231).
+      New <code>ga4_runs</code> table + edge fn + tile. Metrics: users, sessions, engagement rate, top pages, traffic source breakdown.
+      Kickoff authored: docs/audits/pestflow-pro-kickoff-S231.md.
+      <div class="note">1-2 sessions split: (a) tracking script install, (b) GA4 ingest + tile.</div>
+    </td>
+    <td><span class="badge badge-blue">P1 Next</span></td>
+  </tr>
+  <tr>
+    <td><strong>"Connect GSC" OAuth consent UI (future session)</strong></td>
+    <td>
+      Full <code>gsc-oauth-callback</code> edge fn + OAuth redirect/consent screen UI. Currently refresh tokens are inserted manually. Build the self-service connection once S230 pipeline is verified with real data.
+      <div class="note">~1 session. Unlock condition: S230 browser verification passes with real Dang data.</div>
+    </td>
+    <td><span class="badge badge-gray">P3 Queued</span></td>
+  </tr>
+  <tr>
+    <td><strong>S227 Phase 8 — Admin onboarding UI for SEO Analytics seeds</strong></td>
+    <td>Admin UI for seed keywords + competitor domains + "suggest more" button + target_domain override. ~1 CC Web session.</td>
+    <td><span class="badge badge-gray">P6 Medium</span></td>
+  </tr>
+  <tr>
+    <td><strong>GBP follower counts — Google Business Profile API direct integration</strong></td>
+    <td>Zernio returns null for followersCount on googlebusiness. Separate GBP API family, different scopes, ~1 session. Contingent on Dang using GBP meaningfully.</td>
+    <td><span class="badge badge-gray">P4 Queued</span></td>
+  </tr>
+  <tr>
+    <td><strong>Vercel Analytics drain-receiver pipeline</strong></td>
+    <td>Standalone — not OAuth pivot. Drain receiver edge fn + vercel_analytics table + rollup cron + tile. Architecture session.</td>
+    <td><span class="badge badge-gray">P5</span></td>
+  </tr>
+</table>
+
+</body>
+</html>
