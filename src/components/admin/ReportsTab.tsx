@@ -154,34 +154,30 @@ export default function ReportsTab() {
           </div>
         </div>
 
-        {/* Site Performance — full width */}
-        <FeatureGate minTier={2} featureName="Site Performance">
-          <div className="mt-6">
-            <SitePerformanceTile />
-          </div>
-        </FeatureGate>
-
-        {/* Blog Analytics — full width, above SEO/Social split */}
-        <div className="mt-6">
-          <BlogAnalyticsTile />
-        </div>
-
-        {/* SEO (left) + Social (right) two-column grid */}
-        <FeatureGate minTier={3} featureName="Analytics">
-          <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* LEFT — SEO stack */}
-            <div className="space-y-4">
+        {/* Analytics grid — 4 left / 3 right */}
+        <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* LEFT — tier-3 SEO tiles + tier-2 Site Performance */}
+          <div className="space-y-4">
+            <FeatureGate minTier={3} featureName="Analytics">
               <SeoAnalyticsTile />
               <GscAnalyticsTile />
+            </FeatureGate>
+            <FeatureGate minTier={2} featureName="Site Performance">
+              <SitePerformanceTile />
+            </FeatureGate>
+            <FeatureGate minTier={3} featureName="SEO Coverage">
               <SeoCoverageTile />
-            </div>
-            {/* RIGHT — Social stack */}
-            <div className="space-y-4">
-              <SocialAnalyticsTile />
-              <SocialPostsTile />
-            </div>
+            </FeatureGate>
           </div>
-        </FeatureGate>
+          {/* RIGHT — tier-3 Social + Blog */}
+          <FeatureGate minTier={3} featureName="Analytics">
+            <div className="space-y-4">
+              <SocialPostsTile />
+              <SocialAnalyticsTile />
+              <BlogAnalyticsTile />
+            </div>
+          </FeatureGate>
+        </div>
 
         <p className="text-xs text-gray-400 mt-6 text-center">Privacy-first analytics — all data stays in your database. No third-party tracking.</p>
       </FeatureGate>
