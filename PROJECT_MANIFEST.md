@@ -451,3 +451,28 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - src/components/admin/reports/SeoCoverageTile.tsx (extracted from SocialSeoReport)
   - src/components/admin/reports/SocialPostsTile.tsx (extracted from SocialSeoReport)
 - Next recommended action: Scott merges PR #97 + browser-pass on dang.pestflowpro.ai/admin, then PR 2 (S231 GA4 OAuth integration) proceeds
+
+---
+## Session — 2026-05-19 18:25 UTC
+- Branch: `feat/s231-ga4-integration`
+- Commit: `2585c65` — chore: tsbuildinfo after S231 Phase 1 type-check
+- Author: csdevore2
+- PR: #99 (OPEN) — https://github.com/ironwoodoperations/pestflow-pro/pull/99
+- Files changed:
+  - tsconfig.tsbuildinfo
+- Next recommended action: Phase 1 (feat/s231-ga4-integration PR #99) needs browser-pass. Phase 2-5 done on feat/s231-phase2-ga4-pipeline PR #100. Next: wait 24-48h for GA4 data, then manual token insert for Dang and full browser-pass (Phase 6-9).
+
+---
+## Session — 2026-05-19 (S231 Phase 2-5) UTC
+- Branch: `feat/s231-phase2-ga4-pipeline`
+- PR: #100 (OPEN) — https://github.com/ironwoodoperations/pestflow-pro/pull/100
+- Author: Claude
+- Files changed:
+  - supabase/functions/ga4-analytics/index.ts (new — GA4 Data API, two calls, same auth pattern as S230)
+  - docs/migrations/s231-ga4-runs.sql + rollback (applied via MCP as s231_ga4_runs)
+  - docs/migrations/s231-ga4-cron.sql + rollback (applied via MCP as s231_ga4_cron)
+  - src/hooks/useGa4Runs.ts (new — mirrors useGscRuns)
+  - src/components/admin/seo/Ga4AnalyticsTile.tsx (new — 4 stat pills + channels + top pages)
+  - src/components/admin/ReportsTab.tsx (Ga4AnalyticsTile mounted after Gsc, minTier=3)
+  - src/components/admin/seo/SeoInsightsTab.tsx (Ga4AnalyticsTile mounted after Gsc, all tiers)
+- Next recommended action: Scott merges PR #100. Full browser-pass blocked until GA4 tracking live 24-48h + manual token insert for Dang. Phase 1 PR #99 also awaiting merge + browser-pass.

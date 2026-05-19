@@ -2,6 +2,7 @@ import { PageSpeedPanel } from './SeoConnectPreviews'
 import { FeatureGate } from '../../common/FeatureGate'
 import SeoAnalyticsTile from '../reports/SeoAnalyticsTile'
 import GscAnalyticsTile from './GscAnalyticsTile'
+import Ga4AnalyticsTile from './Ga4AnalyticsTile'
 
 function DataSourceCard({ icon, title, description, status, statusLabel, children, actionLabel, actionUrl }: {
   icon: string; title: string; description: string
@@ -68,6 +69,10 @@ export default function SeoInsightsTab() {
 
       <div className="mt-6">
         <GscAnalyticsTile />
+      </div>
+
+      <div className="mt-6">
+        <Ga4AnalyticsTile />
       </div>
     </div>
   )

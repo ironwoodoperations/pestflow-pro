@@ -8,6 +8,7 @@ import SitePerformanceTile from './reports/SitePerformanceTile'
 import SocialAnalyticsTile from './reports/SocialAnalyticsTile'
 import SeoAnalyticsTile from './reports/SeoAnalyticsTile'
 import GscAnalyticsTile from './seo/GscAnalyticsTile'
+import Ga4AnalyticsTile from './seo/Ga4AnalyticsTile'
 import BlogAnalyticsTile from './reports/BlogAnalyticsTile'
 import SeoCoverageTile from './reports/SeoCoverageTile'
 import SocialPostsTile from './reports/SocialPostsTile'
@@ -161,6 +162,7 @@ export default function ReportsTab() {
             <FeatureGate minTier={3} featureName="Analytics">
               <SeoAnalyticsTile />
               <GscAnalyticsTile />
+              <Ga4AnalyticsTile />
             </FeatureGate>
             <FeatureGate minTier={2} featureName="Site Performance">
               <SitePerformanceTile />
