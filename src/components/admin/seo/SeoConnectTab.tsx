@@ -1,16 +1,6 @@
-import type { ConnectForm, IntegrationValues } from './seoTypes'
-import { SearchConsoleMockPreview, GA4MockPreview, PageSpeedPanel } from './SeoConnectPreviews'
+import { PageSpeedPanel } from './SeoConnectPreviews'
 import { FeatureGate } from '../../common/FeatureGate'
 import SeoAnalyticsTile from '../reports/SeoAnalyticsTile'
-
-interface Props {
-  integrations: IntegrationValues
-  connectForm: ConnectForm
-  connectSaving: string | null
-  onChange: (field: keyof ConnectForm, value: string) => void
-  onSave: (field: keyof ConnectForm) => void
-  onRunCheckNow: () => void
-}
 
 function DataSourceCard({ icon, title, description, status, statusLabel, children, actionLabel, actionUrl }: {
   icon: string; title: string; description: string
@@ -51,30 +41,12 @@ function DataSourceCard({ icon, title, description, status, statusLabel, childre
   )
 }
 
-function FieldRow({ value, placeholder, helper, saving, onSave, onChange }: {
-  value: string; placeholder: string; helper: string
-  saving: boolean; onSave: () => void; onChange: (v: string) => void
-}) {
-  return (
-    <div className="space-y-1">
-      <div className="flex gap-2">
-        <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-          className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm" />
-        <button onClick={onSave} disabled={saving}
-          className="px-3 py-1.5 bg-gray-800 text-white rounded-lg text-xs font-medium hover:bg-gray-700 disabled:opacity-50 whitespace-nowrap">
-          {saving ? 'Saving…' : 'Save'}
-        </button>
-      </div>
-      <p className="text-xs text-gray-400">{helper}</p>
-    </div>
-  )
-}
-
-export default function SeoConnectTab({
-  integrations, connectForm, connectSaving, onChange, onSave
-}: Props) {
-  const { google_analytics_id, google_search_console_url } = integrations
-
+// S228 Phase 4b: pruned to the data sources that actually deliver value here —
+// PageSpeed (live), S227 SEO Analytics (live), and Vercel Analytics (dashboard
+// link-out). GSC / GA4 removed (Google add-user bug parked; OAuth pivot is
+// S230/S231). Ahrefs / Bing removed (won't subscribe). Vercel Analytics has no
+// public pull API (Log Drains only) — full ingestion deferred to S229+.
+export default function SeoConnectTab() {
   return (
     <div>
       <div className="mb-5">
@@ -83,32 +55,6 @@ export default function SeoConnectTab({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <DataSourceCard icon="🔍" title="Google Search Console"
-          description="Clicks, impressions, CTR, avg position, and index coverage — directly from Google."
-          status={google_search_console_url ? 'connected' : 'not-connected'}
-          actionLabel={google_search_console_url ? 'Open Search Console' : undefined}
-          actionUrl="https://search.google.com/search-console">
-          {!google_search_console_url && <SearchConsoleMockPreview />}
-          <FieldRow value={connectForm.google_search_console_url} placeholder="https://yoursite.com"
-            helper="Go to search.google.com/search-console → Add Property"
-            saving={connectSaving === 'google_search_console_url'}
-            onChange={v => onChange('google_search_console_url', v)}
-            onSave={() => onSave('google_search_console_url')} />
-        </DataSourceCard>
-
-        <DataSourceCard icon="📊" title="Google Analytics 4"
-          description="Users, sessions, engagement rate, top pages, traffic sources, and scroll depth."
-          status={google_analytics_id ? 'connected' : 'not-connected'}
-          actionLabel={google_analytics_id ? 'Open GA4' : undefined}
-          actionUrl="https://analytics.google.com">
-          {!google_analytics_id && <GA4MockPreview />}
-          <FieldRow value={connectForm.google_analytics_id} placeholder="G-XXXXXXXXXX"
-            helper="GA4 Admin → Data Streams → your stream → Measurement ID"
-            saving={connectSaving === 'google_analytics_id'}
-            onChange={v => onChange('google_analytics_id', v)}
-            onSave={() => onSave('google_analytics_id')} />
-        </DataSourceCard>
-
         <DataSourceCard icon="⚡" title="Google PageSpeed Insights"
           description="Performance scores, Core Web Vitals, Lighthouse audit, accessibility and SEO scores. Powers the Overview tab."
           status="active" statusLabel="Active — No Setup Required">
@@ -116,21 +62,9 @@ export default function SeoConnectTab({
         </DataSourceCard>
 
         <DataSourceCard icon="▲" title="Vercel Analytics"
-          description="Page views, unique visitors, top pages, geography, and device types. Built into your Vercel hosting."
-          status="active" statusLabel="Active — Auto-Connected"
-          actionLabel="View Vercel Analytics" actionUrl="https://vercel.com/analytics" />
-
-        <DataSourceCard icon="🔗" title="Ahrefs Webmaster Tools"
-          description="Backlink profile, referring domains, broken backlinks, organic keywords, and technical site audits."
-          status="not-connected" actionLabel="Sign Up Free" actionUrl="https://ahrefs.com/webmaster-tools">
-          <p className="text-xs text-gray-400">Free — just verify site ownership. No integration required.</p>
-        </DataSourceCard>
-
-        <DataSourceCard icon="🔎" title="Bing Webmaster Tools"
-          description="Bing search performance, backlink data, SEO analyzer, keyword research. Shares data Google won't show you."
-          status="not-connected" actionLabel="Sign Up Free" actionUrl="https://bing.com/webmasters">
-          <p className="text-xs text-gray-400">Free — gives backlink data Google won't show.</p>
-        </DataSourceCard>
+          description="Page views, unique visitors, top pages, geography, and device types — collected automatically by your Vercel hosting. Detailed metrics live in the Vercel dashboard."
+          status="active" statusLabel="Active on Vercel"
+          actionLabel="View detailed metrics" actionUrl="https://vercel.com/dashboard" />
       </div>
 
       <FeatureGate minTier={3} featureName="SEO Analytics">

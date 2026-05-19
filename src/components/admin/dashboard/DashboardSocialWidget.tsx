@@ -1,94 +1,75 @@
-import { useEffect, useState } from 'react'
-import { supabase } from '../../../lib/supabase'
+import { BarChart3 } from 'lucide-react'
 import { useTenant } from '../../../context/TenantBootProvider'
-
-interface Post { id: string; scheduled_for: string | null; status: string; created_at: string }
+import { useZernioRuns, type ZernioPlatformStats } from '../../../hooks/useZernioRuns'
+import { relativeTime } from '../seo/pageSpeedShared'
 
 interface Props {
   onNavigate: (tab: string) => void
 }
 
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+// Module-scoped so it isn't recreated each render (react/no-unstable-nested-components).
+function SocialCard({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style={{ background: '#a855f718' }}>
+        <BarChart3 className="w-5 h-5" style={{ color: '#a855f7' }} />
+      </div>
+      <p className="text-sm font-semibold text-gray-700 mb-3">Social Engagement</p>
+      {children}
+    </div>
+  )
 }
 
+// S228: real-data mini-tile sourced from zernio_runs, replacing the old
+// social_posts-count click-out. Mirrors the DashboardStats top-stat-card
+// visual language. F3: followers are NULL until S229 fixes the zernio-analytics
+// edge fn, so the followers slot is intentionally omitted (engagement + reach
+// both populate today); S229 backfills with no S228 rework needed.
 export default function DashboardSocialWidget({ onNavigate }: Props) {
   const { id: tenantId } = useTenant()
-  const [posts, setPosts] = useState<Post[]>([])
-  const [loading, setLoading] = useState(true)
+  const { latestRun, loading } = useZernioRuns(tenantId)
 
-  useEffect(() => {
-    if (!tenantId) return
-    supabase
-      .from('social_posts')
-      .select('id, scheduled_for, status, created_at')
-      .eq('tenant_id', tenantId)
-      .order('created_at', { ascending: false })
-      .then(({ data }) => { setPosts(data || []); setLoading(false) })
-  }, [tenantId])
+  const platforms = latestRun?.status === 'success' && latestRun.data
+    ? Object.values(latestRun.data as Record<string, ZernioPlatformStats>)
+    : []
+  const totalEngagement = platforms.reduce((s, p) => s + (p.engagement ?? 0), 0)
+  const totalReach = platforms.reduce((s, p) => s + (p.reach ?? 0), 0)
 
   if (loading) {
-    return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <p className="text-xs text-gray-400">Loading social data…</p>
-      </div>
-    )
+    return <SocialCard><p className="text-xs text-gray-400">Loading…</p></SocialCard>
   }
 
-  const now = new Date()
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
-  const thisMonthPosts = posts.filter(p => {
-    const d = new Date(p.scheduled_for || p.created_at)
-    return d >= monthStart && (p.status === 'scheduled' || p.status === 'published')
-  })
-  const lastPost = posts.find(p => p.status === 'published')
-
-  if (thisMonthPosts.length === 0) {
+  if (platforms.length === 0) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h3 className="text-sm font-semibold text-gray-700 mb-1">Social Media</h3>
-        <p className="text-xs text-gray-400 mb-4">No posts scheduled yet</p>
+      <SocialCard>
+        <p className="text-xs text-gray-400 mb-3">No social analytics yet — refreshes weekly.</p>
         <button onClick={() => onNavigate('social')}
           className="text-xs font-medium text-emerald-600 hover:text-emerald-700 transition">
           Go to Social →
         </button>
-      </div>
+      </SocialCard>
     )
   }
 
-  const publishedCount = thisMonthPosts.filter(p => p.status === 'published').length
-  const scheduledCount = thisMonthPosts.filter(p => p.status === 'scheduled').length
-
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-      <div className="flex items-start justify-between mb-4">
+    <SocialCard>
+      <div className="flex items-end gap-6 mb-4">
         <div>
-          <h3 className="text-sm font-semibold text-gray-700">Social Media</h3>
-          <p className="text-xs text-gray-400 mt-0.5">This month</p>
+          <p className="text-3xl font-bold text-gray-900">{totalEngagement.toLocaleString()}</p>
+          <p className="text-sm text-gray-500 mt-1">Engagement</p>
         </div>
-        <div className="w-16 h-16 rounded-full bg-emerald-50 border-2 border-emerald-300 flex items-center justify-center">
-          <span className="font-bold text-xl text-emerald-700">{thisMonthPosts.length}</span>
-        </div>
-      </div>
-      <div className="space-y-1 mb-4">
-        <div className="flex justify-between text-xs text-gray-500">
-          <span>Published</span>
-          <span className="font-medium text-gray-700">{publishedCount}</span>
-        </div>
-        <div className="flex justify-between text-xs text-gray-500">
-          <span>Scheduled</span>
-          <span className="font-medium text-gray-700">{scheduledCount}</span>
+        <div>
+          <p className="text-3xl font-bold text-gray-900">{totalReach.toLocaleString()}</p>
+          <p className="text-sm text-gray-500 mt-1">Reach</p>
         </div>
       </div>
-      {lastPost && (
-        <p className="text-xs text-gray-400 mb-3">
-          Last published: {fmtDate(lastPost.scheduled_for || lastPost.created_at)}
-        </p>
-      )}
+      <p className="text-xs text-gray-400 mb-3">
+        {latestRun ? `Last refreshed: ${relativeTime(latestRun.ran_at)}` : ''} · across {platforms.length} platform{platforms.length === 1 ? '' : 's'}
+      </p>
       <button onClick={() => onNavigate('social')}
         className="text-xs font-medium text-emerald-600 hover:text-emerald-700 transition">
-        Manage Social →
+        View Social Analytics →
       </button>
-    </div>
+    </SocialCard>
   )
 }
