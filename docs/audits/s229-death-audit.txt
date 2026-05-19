@@ -1,0 +1,107 @@
+S229 — ZERNIO FOLLOWER + GBP FIX — DEATH AUDIT (Phase 1)
+Branch: s229-zernio-follower-gbp-fix (off origin/main, post-S228 #91)
+Date: 2026-05-19
+Kickoff: docs/audits/pestflow-pro-kickoff-S229.md (canonical, on main)
+Pattern: S226 zernio-analytics — PATCH, not rewrite. Validator gate NOT required.
+STOP-AND-REPORT after this file — no patch before Scott acknowledges.
+
+================================================================================
+PART A — zernio_runs PROBE (Supabase MCP, Dang 1611b16f…)
+================================================================================
+- 6 runs, 6 success. Across ALL successful runs:
+  * all_followers_null = TRUE (facebook/instagram/youtube `followers` always null)
+  * any_gbp_key = FALSE (no `google_business` or `gbp` key ever in `data`)
+- Latest successful run `data` keys = ["youtube"] ONLY — i.e. `data` contains
+  just the platforms that had POSTS in the 30-day window, nothing else.
+- `data_raw` top-level keys: posts, accounts, overview, pagination,
+  hasAnalyticsAccess.
+
+================================================================================
+PART B — EDGE FN SOURCE (supabase/functions/zernio-analytics/index.ts, S226)
+================================================================================
+- Calls GET https://zernio.com/api/v1/analytics?profileId=…&fromDate=…&limit=100
+- Builds `data` SOLELY from `analyticsBody.posts[].platforms[].analytics`
+  (lines 139-179). Aggregates likes/reach/views/etc per platform key.
+- `followers` is HARDCODED `null` on every branch (lines 169, 171, 174). The
+  code never reads any follower field from Zernio at all.
+- `analyticsBody.accounts[]` is COMPLETELY IGNORED — never referenced.
+- A platform with NO posts in-window gets NO `data[key]` (acc only built from
+  posts) — which is why the latest run shows only "youtube".
+- FROM_ZERNIO map: `googlebusiness → google_business` (so the emitted key is
+  `google_business`, NOT `gbp`).
+- `data_raw = analyticsBody` is stored verbatim (line 181) → authoritative.
+
+================================================================================
+PART C — WHAT ZERNIO ACTUALLY RETURNS (data_raw, latest Dang success)
+================================================================================
+`data_raw.accounts[]` (IGNORED by the edge fn) contains per-platform follower
+counts:
+  facebook       followersCount = 350
+  instagram      followersCount = 57
+  youtube        followersCount = 4
+  googlebusiness followersCount = null   (null at SOURCE — Zernio has no GBP
+                                          follower data; not our bug)
+`data_raw.hasAnalyticsAccess = true` → analytics tier is NOT plan-gated for
+what's returned (Risk #2 retired for this scope).
+`data_raw.posts[]` are post-level (platform/analytics). In the sampled window
+only youtube posts exist → no GBP post-level metrics.
+
+settings.integrations.zernio_accounts (NOT a table — a JSON sub-object):
+  { youtube, facebook, instagram, googlebusiness } — ALL four account IDs
+  present, incl. googlebusiness = 69f5e693157a6202f6b05110.
+zernio_profile_id = 69dd26eaa42cd3ddf3fa8802 (present).
+
+================================================================================
+PART D — DIAGNOSIS / GAP
+================================================================================
+This is kickoff **outcome (a)**: Zernio ALREADY returns followers (in
+`data_raw.accounts[].followersCount`); the edge fn simply never maps them and
+hardcodes null. Risk #1 (followers not exposed / need Graph API) is
+**DISPROVEN** — no new external API, no scope change, no validator gate.
+
+GBP: the googlebusiness ACCOUNT is present in `accounts[]` (and in
+settings.zernio_accounts), so a `google_business` block CAN be surfaced.
+However: (1) Zernio's GBP `followersCount` is null at source; (2) GBP
+engagement/reach is post-level only and there are no GBP posts in-window, so
+GBP engagement/reach stay 0 until GBP posts exist. Account-level GBP
+impressions/views are NOT in this Zernio response. So "GBP block appears" is
+achievable (presence + null followers + 0/0 until posts) but GBP rich metrics
+remain post-driven — documented, not a code bug.
+
+Field naming: actual emitted shape is {facebook, instagram, youtube,
+google_business} (via FROM_ZERNIO). The kickoff's "{fb,ig,yt,gbp}" is an
+inaccurate recollection of the S225 contract. Consumers (SocialAnalyticsTile,
+S228 Dashboard Social mini-tile) read the ACTUAL {facebook,…,google_business}
+shape. PER LOCKED DECISION / Risk #3: do NOT rename. No consumer migration.
+
+CURRENTLY vs REQUIRED (the precise mapping change for Phase 2):
+  CURRENTLY: data built only from posts[]; followers := null always;
+             platforms with no posts omitted entirely.
+  REQUIRED:  also iterate data_raw.accounts[]; for each account map
+             FROM_ZERNIO[account.platform] → ensure data[key] exists and set
+             data[key].followers = account.followersCount ?? null. Platforms
+             with an account but no posts get a data entry with followers set
+             and engagement/reach = 0. GBP (google_business) thereby appears
+             with followers:null, engagement/reach 0 until GBP posts exist.
+  Minimal diff to the normalization block (lines ~162-181). No endpoint change,
+  no second call (outcome (a), NOT (b)/(c)). verify_jwt stays true; no _shared
+  changes.
+
+================================================================================
+PART E — RISK STATUS
+================================================================================
+R1 followers-not-exposed → RETIRED. Present in accounts[].followersCount.
+R2 GBP paid tier → RETIRED for scope. hasAnalyticsAccess=true; GBP followers
+   null at SOURCE, not plan-gated; no upgrade needed for this fix.
+R3 field-naming drift → HOLDS as a guardrail. Keep {facebook,instagram,
+   youtube,google_business}; NO rename; no consumer migration. (Kickoff's
+   {fb,ig,yt,gbp} was a mis-recollection.)
+NEW NOTE: GBP rich metrics (engagement/reach) remain post-level; will read 0
+   until Dang posts to GBP via the composer. GBP followers are null at the
+   Zernio source. Both are documented expected behavior, not S229 bugs.
+
+================================================================================
+END PHASE 1 — outcome (a) confirmed. Awaiting Scott acknowledgment before
+Phase 2 (patch the normalization block to merge accounts[] followers + ensure
+every configured account yields a data entry incl. google_business).
+================================================================================
