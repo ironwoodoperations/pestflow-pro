@@ -154,31 +154,21 @@ export default function ReportsTab() {
           </div>
         </div>
 
-        {/* Site Performance — full width */}
-        <FeatureGate minTier={2} featureName="Site Performance">
-          <div className="mt-6">
-            <SitePerformanceTile />
-          </div>
-        </FeatureGate>
-
-        {/* Blog Analytics — full width, above SEO/Social split */}
-        <div className="mt-6">
-          <BlogAnalyticsTile />
-        </div>
-
-        {/* SEO (left) + Social (right) two-column grid */}
+        {/* Analytics grid — 4 left / 3 right, all half-width */}
         <FeatureGate minTier={3} featureName="Analytics">
           <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* LEFT — SEO stack */}
+            {/* LEFT — SEO + Site Performance */}
             <div className="space-y-4">
               <SeoAnalyticsTile />
               <GscAnalyticsTile />
+              <SitePerformanceTile />
               <SeoCoverageTile />
             </div>
-            {/* RIGHT — Social stack */}
+            {/* RIGHT — Social + Blog */}
             <div className="space-y-4">
-              <SocialAnalyticsTile />
               <SocialPostsTile />
+              <SocialAnalyticsTile />
+              <BlogAnalyticsTile />
             </div>
           </div>
         </FeatureGate>
