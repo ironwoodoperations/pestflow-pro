@@ -43,10 +43,8 @@ function DataSourceCard({ icon, title, description, status, statusLabel, childre
 }
 
 // S228 Phase 4b: pruned to the data sources that actually deliver value here —
-// PageSpeed (live), S227 SEO Analytics (live), and Vercel Analytics (dashboard
-// link-out). GSC / GA4 removed (Google add-user bug parked; OAuth pivot is
-// S230/S231). Ahrefs / Bing removed (won't subscribe). Vercel Analytics has no
-// public pull API (Log Drains only) — full ingestion deferred to S229+.
+// PageSpeed (live), S227 SEO Analytics (live). Vercel Analytics link-out removed
+// S231 Phase 0 (orphan, no usage path). GSC/GA4 OAuth tiles added S230/S231.
 export default function SeoConnectTab() {
   return (
     <div>
@@ -55,18 +53,11 @@ export default function SeoConnectTab() {
         <p className="text-sm text-gray-500 mt-0.5">Each connection unlocks more insight into how your site is performing.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <DataSourceCard icon="⚡" title="Google PageSpeed Insights"
-          description="Performance scores, Core Web Vitals, Lighthouse audit, accessibility and SEO scores. Powers the Overview tab."
-          status="active" statusLabel="Active — No Setup Required">
-          <PageSpeedPanel />
-        </DataSourceCard>
-
-        <DataSourceCard icon="▲" title="Vercel Analytics"
-          description="Page views, unique visitors, top pages, geography, and device types — collected automatically by your Vercel hosting. Detailed metrics live in the Vercel dashboard."
-          status="active" statusLabel="Active on Vercel"
-          actionLabel="View detailed metrics" actionUrl="https://vercel.com/dashboard" />
-      </div>
+      <DataSourceCard icon="⚡" title="Google PageSpeed Insights"
+        description="Performance scores, Lighthouse audit, accessibility and SEO scores. Powers the Overview tab."
+        status="active" statusLabel="Active — No Setup Required">
+        <PageSpeedPanel />
+      </DataSourceCard>
 
       <FeatureGate minTier={3} featureName="SEO Analytics">
         <div className="mt-6">
