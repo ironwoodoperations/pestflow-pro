@@ -162,7 +162,7 @@ serve(async (req) => {
     // Normalize into {followers, engagement, reach} per platform.
     // youtube: views are reach, not engagement (views already counted in reach).
     // google_business: GBP deprecated per-post analytics; impressions → reach.
-    const data: Record<string, { followers: null; engagement: number; reach: number }> = {}
+    const data: Record<string, { followers: number | null; engagement: number; reach: number }> = {}
 
     for (const [key, m] of Object.entries(acc)) {
       if (key === 'youtube') {
@@ -176,6 +176,23 @@ serve(async (req) => {
           reach: m.reach,
         }
       }
+    }
+
+    // S229: merge account-level follower counts from accounts[] (ignored pre-S229
+    // — followers was hardcoded null). Additive only: engagement/reach computed
+    // above from posts[] are left untouched. This ALSO surfaces platforms that
+    // have a connected account but no posts in-window (previously omitted
+    // entirely because `data` was built solely from posts[]). Same FROM_ZERNIO
+    // normalization as the posts[] path (googlebusiness → google_business).
+    for (const acct of (analyticsBody?.accounts ?? []) as Array<{
+      platform?: string; followersCount?: number | null
+    }>) {
+      if (!acct.platform) continue
+      const key = FROM_ZERNIO[acct.platform] ?? acct.platform
+      if (!data[key]) {
+        data[key] = { followers: null, engagement: 0, reach: 0 }
+      }
+      data[key].followers = acct.followersCount ?? null
     }
 
     const run = await writeRun({ status: 'success', data, data_raw: analyticsBody })
