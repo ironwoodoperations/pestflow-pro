@@ -3,13 +3,14 @@ import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../context/TenantBootProvider'
 import { FeatureGate } from '../common/FeatureGate'
 import PageHelpBanner from './PageHelpBanner'
-import LeadFunnel from './reports/LeadFunnel'
-import SocialSeoReport from './reports/SocialSeoReport'
 import ReportsStatCards from './reports/ReportsStatCards'
 import SitePerformanceTile from './reports/SitePerformanceTile'
 import SocialAnalyticsTile from './reports/SocialAnalyticsTile'
 import SeoAnalyticsTile from './reports/SeoAnalyticsTile'
 import GscAnalyticsTile from './seo/GscAnalyticsTile'
+import BlogAnalyticsTile from './reports/BlogAnalyticsTile'
+import SeoCoverageTile from './reports/SeoCoverageTile'
+import SocialPostsTile from './reports/SocialPostsTile'
 
 interface LeadRow {
   id: string
@@ -81,6 +82,7 @@ export default function ReportsTab() {
         body="A snapshot of your social media activity and SEO health. Use this to spot gaps and track progress over time." />
 
       <FeatureGate minTier={2} featureName="Reports">
+        {/* Range toggle */}
         <div className="flex items-center gap-2 mb-6">
           {(['7d', '30d', '90d', 'all'] as const).map(r => (
             <button key={r} onClick={() => setRange(r)} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${range === r ? 'bg-emerald-500 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
@@ -89,9 +91,11 @@ export default function ReportsTab() {
           ))}
         </div>
 
+        {/* Lead stat cards */}
         <ReportsStatCards totalLeads={totalLeads} newLeads={newLeads} converted={converted}
           conversionRate={conversionRate} leadsTrend={leadsTrend} convTrend={convTrend} range={range} />
 
+        {/* Leads Over Time + Lead Status */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h3 className="text-base font-semibold text-gray-900 mb-4">Leads Over Time</h3>
@@ -150,36 +154,33 @@ export default function ReportsTab() {
           </div>
         </div>
 
-        <div className="mt-6">
-          <LeadFunnel leads={filtered} />
-        </div>
-
+        {/* Site Performance — full width */}
         <FeatureGate minTier={2} featureName="Site Performance">
           <div className="mt-6">
             <SitePerformanceTile />
           </div>
         </FeatureGate>
 
-        <FeatureGate minTier={3} featureName="Social Analytics">
-          <div className="mt-6">
-            <SocialAnalyticsTile />
-          </div>
-        </FeatureGate>
+        {/* Blog Analytics — full width, above SEO/Social split */}
+        <div className="mt-6">
+          <BlogAnalyticsTile />
+        </div>
 
-        <FeatureGate minTier={3} featureName="SEO Analytics">
-          <div className="mt-6">
-            <SeoAnalyticsTile />
+        {/* SEO (left) + Social (right) two-column grid */}
+        <FeatureGate minTier={3} featureName="Analytics">
+          <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* LEFT — SEO stack */}
+            <div className="space-y-4">
+              <SeoAnalyticsTile />
+              <GscAnalyticsTile />
+              <SeoCoverageTile />
+            </div>
+            {/* RIGHT — Social stack */}
+            <div className="space-y-4">
+              <SocialAnalyticsTile />
+              <SocialPostsTile />
+            </div>
           </div>
-        </FeatureGate>
-
-        <FeatureGate minTier={3} featureName="Google Search Console">
-          <div className="mt-6">
-            <GscAnalyticsTile />
-          </div>
-        </FeatureGate>
-
-        <FeatureGate minTier={3} featureName="Advanced Reports & Trends">
-          <SocialSeoReport />
         </FeatureGate>
 
         <p className="text-xs text-gray-400 mt-6 text-center">Privacy-first analytics — all data stays in your database. No third-party tracking.</p>
