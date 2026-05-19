@@ -19,11 +19,11 @@ const TABS: { id: SeoTabId; label: string }[] = [
 export default function SEOTab() {
   const {
     activeTab, setActiveTab, loading, integrations, stats, coverage,
-    openEditorSlug, editorForm, editorSaving, connectForm, connectSaving,
+    openEditorSlug, editorForm, editorSaving,
     aiGenerating, aiGeneratedSlug,
     lastAudit, auditLoading, auditMode, pages,
     handleOpenEditor, handleCloseEditor, handleEditorChange, handleSaveMeta,
-    handleAiGenerate, handleConnectChange, handleConnectSave, handleRunCheckNow,
+    handleAiGenerate,
     setAuditMode, runLighthouseAudit, handleRefreshScore,
   } = useSeoTab()
 
@@ -80,9 +80,7 @@ export default function SEOTab() {
           </FeatureGate>
         )}
         {activeTab === 'connect' && (
-          <SeoConnectTab integrations={integrations} connectForm={connectForm}
-            connectSaving={connectSaving} onChange={handleConnectChange}
-            onSave={handleConnectSave} onRunCheckNow={handleRunCheckNow} />
+          <SeoConnectTab />
         )}
       </FeatureGate>
     </div>
