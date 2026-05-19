@@ -6,8 +6,6 @@ import PageHelpBanner from './PageHelpBanner'
 import LeadFunnel from './reports/LeadFunnel'
 import SocialSeoReport from './reports/SocialSeoReport'
 import ReportsStatCards from './reports/ReportsStatCards'
-import LeadSourceChart from './reports/LeadSourceChart'
-import SocialVolumeChart from './reports/SocialVolumeChart'
 import SitePerformanceTile from './reports/SitePerformanceTile'
 import SocialAnalyticsTile from './reports/SocialAnalyticsTile'
 import SeoAnalyticsTile from './reports/SeoAnalyticsTile'
@@ -175,14 +173,6 @@ export default function ReportsTab() {
 
         <FeatureGate minTier={3} featureName="Advanced Reports & Trends">
           <SocialSeoReport />
-        </FeatureGate>
-
-        <FeatureGate minTier={3} featureName="Advanced Analytics">
-          <div className="mt-8 space-y-6">
-            <h2 className="text-lg font-semibold text-slate-800">Advanced Analytics</h2>
-            {tenantId && <LeadSourceChart tenantId={tenantId} />}
-            {tenantId && <SocialVolumeChart tenantId={tenantId} />}
-          </div>
         </FeatureGate>
 
         <p className="text-xs text-gray-400 mt-6 text-center">Privacy-first analytics — all data stays in your database. No third-party tracking.</p>

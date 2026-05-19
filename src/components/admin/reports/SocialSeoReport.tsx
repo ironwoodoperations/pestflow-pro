@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../context/TenantBootProvider'
-import BlogAnalyticsSection from './BlogAnalyticsSection'
 
 interface SocialStats {
   total: number; published: number; scheduled: number; drafts: number
@@ -133,9 +132,6 @@ export default function SocialSeoReport() {
           <p className="text-sm text-gray-400 text-center py-4">No SEO metadata yet.</p>
         )}
       </div>
-
-      {/* Blog Analytics */}
-      <BlogAnalyticsSection />
     </div>
   )
 }

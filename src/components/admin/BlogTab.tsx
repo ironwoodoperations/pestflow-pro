@@ -11,6 +11,7 @@ import ConfirmDeleteModal from '../shared/ConfirmDeleteModal'
 import { archiveRecord, restoreRecord, hardDeleteRecord } from '../../lib/archiveUtils'
 import { triggerRevalidate } from '../../lib/revalidate'
 import { autoGenBlogSeo } from '../../lib/ai/generateBlogSeo'
+import BlogAnalyticsSection from './reports/BlogAnalyticsSection'
 
 interface Post {
   id: string; title: string; slug: string; content: string; excerpt: string
@@ -91,6 +92,7 @@ export default function BlogTab() {
     <div>
       <PageHelpBanner tab="blog" title="✍️ Blog" body="Every post you publish is a new page Google can find. Click 'Generate Draft with AI' to start fresh, or write your own. Aim for 300+ words and clear titles that match what people search for. SEO meta tags are auto-generated when you publish. Aim for 2 posts per month." />
       <FeatureGate minTier={2}>
+        <BlogAnalyticsSection />
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
             <p className="text-sm text-gray-500">{posts.length} post{posts.length !== 1 ? 's' : ''}</p>
