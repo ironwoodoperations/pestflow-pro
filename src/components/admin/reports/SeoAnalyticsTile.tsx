@@ -1,13 +1,15 @@
 import { useState } from 'react'
-import { Search } from 'lucide-react'
+import { Search, ChevronDown, ChevronUp } from 'lucide-react'
 import { useTenant } from '../../../context/TenantBootProvider'
 import { useSeoRuns, type SeoKindState, type SeoRun } from '../../../hooks/useSeoRuns'
 import { relativeTime } from '../seo/pageSpeedShared'
 
 // Admin-dashboard tile: hardcoded Tailwind per CLAUDE.md ("Admin dashboard
 // components keep their own hardcoded colors"). Mirrors SocialAnalyticsTile.
-// Introduces zero shell var(--color-*) tokens, so the BL foreground-token
-// inversion is structurally not applicable here.
+// S231 Phase 0: collapsible — default collapsed, showing summary counts.
+// Expand/collapse state persisted in localStorage.
+
+const SEO_EXPANDED_KEY = 'pfp_seo_tile_expanded'
 
 function fmtNextAllowed(iso: string | null): string {
   if (!iso) return 'soon'
@@ -110,6 +112,9 @@ export default function SeoAnalyticsTile({ tenantId: tenantIdProp }: { tenantId?
   const { rankings, competitors, opportunities, runNow, running } = useSeoRuns(tenantId)
   const [rateLimitedUntil, setRateLimitedUntil] = useState<string | null>(null)
   const [runError, setRunError] = useState<string | null>(null)
+  const [expanded, setExpanded] = useState<boolean>(() => {
+    try { return localStorage.getItem(SEO_EXPANDED_KEY) === 'true' } catch { return false }
+  })
 
   const onRun = async () => {
     setRunError(null)
@@ -123,6 +128,12 @@ export default function SeoAnalyticsTile({ tenantId: tenantIdProp }: { tenantId?
     }
   }
 
+  const toggleExpanded = () => {
+    const next = !expanded
+    setExpanded(next)
+    try { localStorage.setItem(SEO_EXPANDED_KEY, String(next)) } catch { /* ignore */ }
+  }
+
   const target =
     (rankings.data[0]?.data as { target?: string } | undefined)?.target ??
     (competitors.data[0]?.data as { target?: string } | undefined)?.target ??
@@ -130,6 +141,16 @@ export default function SeoAnalyticsTile({ tenantId: tenantIdProp }: { tenantId?
 
   const headerTime =
     rankings.lastRunAt || competitors.lastRunAt || opportunities.lastRunAt
+
+  const anyLoading = rankings.loading || competitors.loading || opportunities.loading
+  const hasAnyData = rankings.data.length > 0 || competitors.data.length > 0 || opportunities.data.length > 0
+
+  // Summary counts for collapsed view
+  const keywordCount = ((rankings.data[0]?.data as { items?: RankItem[] } | null)?.items ?? []).length
+  const competitorCount = ((competitors.data[0]?.data as { items?: CompItem[] } | null)?.items ?? []).length
+  const oppCount = opportunities.data.reduce((sum, row) => {
+    return sum + ((row.data as { items?: OppItem[] } | null)?.items ?? []).length
+  }, 0)
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -143,100 +164,130 @@ export default function SeoAnalyticsTile({ tenantId: tenantIdProp }: { tenantId?
             <span className="text-xs text-gray-400">Last updated: {relativeTime(headerTime)}</span>
           )}
           <RunButton running={running} rateLimitedUntil={rateLimitedUntil} onRun={onRun} />
+          {hasAnyData && (
+            <button
+              onClick={toggleExpanded}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+              title={expanded ? 'Collapse' : 'Expand'}
+            >
+              {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+          )}
         </div>
       </div>
 
       {runError && <p className="text-xs text-red-600 mb-3">{runError}</p>}
 
-      <div className="space-y-6">
-        {/* Rankings */}
-        <SectionShell
-          title="Keyword Rankings"
-          subtitle={target ? `Top keywords for ${target}` : undefined}
-        >
-          <KindBody
-            state={rankings}
-            render={(rows) => {
-              const items = (((rows[0]?.data as { items?: RankItem[] } | null)?.items) ?? [])
-                .slice()
-                .sort((a, b) => (a.position ?? 9999) - (b.position ?? 9999))
-                .slice(0, 20)
-              return (
-                <table className="w-full text-xs">
-                  <thead><tr><Th>Keyword</Th><Th>Position</Th><Th>Volume</Th><Th>URL</Th></tr></thead>
-                  <tbody>
-                    {items.map((it, i) => (
-                      <tr key={i} className="border-t border-gray-50">
-                        <Td>{it.keyword ?? '–'}</Td>
-                        <Td>{it.position ?? '–'}</Td>
-                        <Td>{it.search_volume ?? '–'}</Td>
-                        <Td><span className="text-gray-400 truncate block max-w-[220px]">{it.url ?? '–'}</span></Td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )
-            }}
-          />
-        </SectionShell>
+      {anyLoading && !hasAnyData ? (
+        <p className="text-sm text-gray-400">Loading…</p>
+      ) : !hasAnyData ? (
+        <p className="text-sm text-gray-400">No data yet — runs weekly.</p>
+      ) : !expanded ? (
+        <div className="flex gap-3">
+          <div className="flex-1 bg-gray-50 rounded-lg px-3 py-3 text-center">
+            <div className="text-2xl font-bold text-gray-900">{keywordCount}</div>
+            <div className="text-xs text-gray-500 mt-1">Keywords</div>
+          </div>
+          <div className="flex-1 bg-gray-50 rounded-lg px-3 py-3 text-center">
+            <div className="text-2xl font-bold text-gray-900">{competitorCount}</div>
+            <div className="text-xs text-gray-500 mt-1">Competitors</div>
+          </div>
+          <div className="flex-1 bg-gray-50 rounded-lg px-3 py-3 text-center">
+            <div className="text-2xl font-bold text-gray-900">{oppCount}</div>
+            <div className="text-xs text-gray-500 mt-1">Opportunities</div>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {/* Rankings */}
+          <SectionShell
+            title="Keyword Rankings"
+            subtitle={target ? `Top keywords for ${target}` : undefined}
+          >
+            <KindBody
+              state={rankings}
+              render={(rows) => {
+                const items = (((rows[0]?.data as { items?: RankItem[] } | null)?.items) ?? [])
+                  .slice()
+                  .sort((a, b) => (a.position ?? 9999) - (b.position ?? 9999))
+                  .slice(0, 20)
+                return (
+                  <table className="w-full text-xs">
+                    <thead><tr><Th>Keyword</Th><Th>Position</Th><Th>Volume</Th><Th>URL</Th></tr></thead>
+                    <tbody>
+                      {items.map((it, i) => (
+                        <tr key={i} className="border-t border-gray-50">
+                          <Td>{it.keyword ?? '–'}</Td>
+                          <Td>{it.position ?? '–'}</Td>
+                          <Td>{it.search_volume ?? '–'}</Td>
+                          <Td><span className="text-gray-400 truncate block max-w-[220px]">{it.url ?? '–'}</span></Td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )
+              }}
+            />
+          </SectionShell>
 
-        {/* Competitors */}
-        <SectionShell title="Competitor Visibility">
-          <KindBody
-            state={competitors}
-            render={(rows) => {
-              const items = (((rows[0]?.data as { items?: CompItem[] } | null)?.items) ?? [])
-              return (
-                <table className="w-full text-xs">
-                  <thead><tr><Th>Domain</Th><Th>Avg Position</Th><Th>Shared Keywords</Th><Th>Visibility</Th></tr></thead>
-                  <tbody>
-                    {items.map((it, i) => (
-                      <tr key={i} className="border-t border-gray-50">
-                        <Td>{it.domain ?? '–'}</Td>
-                        <Td>{it.avg_position != null ? Math.round(it.avg_position) : '–'}</Td>
-                        <Td>{it.intersections ?? '–'}</Td>
-                        <Td>{it.visibility != null ? it.visibility.toFixed(1) : '–'}</Td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )
-            }}
-          />
-        </SectionShell>
+          {/* Competitors */}
+          <SectionShell title="Competitor Visibility">
+            <KindBody
+              state={competitors}
+              render={(rows) => {
+                const items = (((rows[0]?.data as { items?: CompItem[] } | null)?.items) ?? [])
+                return (
+                  <table className="w-full text-xs">
+                    <thead><tr><Th>Domain</Th><Th>Avg Position</Th><Th>Shared Keywords</Th><Th>Visibility</Th></tr></thead>
+                    <tbody>
+                      {items.map((it, i) => (
+                        <tr key={i} className="border-t border-gray-50">
+                          <Td>{it.domain ?? '–'}</Td>
+                          <Td>{it.avg_position != null ? Math.round(it.avg_position) : '–'}</Td>
+                          <Td>{it.intersections ?? '–'}</Td>
+                          <Td>{it.visibility != null ? it.visibility.toFixed(1) : '–'}</Td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )
+              }}
+            />
+          </SectionShell>
 
-        {/* Opportunities — grouped by competitor (one hook row per competitor) */}
-        <SectionShell title="Keyword Opportunities" subtitle="Keywords competitors rank for that you don't">
-          <KindBody
-            state={opportunities}
-            render={(rows) => (
-              <div className="space-y-4">
-                {rows.map((row) => {
-                  const d = row.data as { competitor?: string; items?: OppItem[] } | null
-                  const items = (d?.items ?? []).slice(0, 10)
-                  return (
-                    <div key={row.id}>
-                      <p className="text-xs font-semibold text-gray-600 mb-1">vs {d?.competitor ?? 'competitor'}</p>
-                      <table className="w-full text-xs">
-                        <thead><tr><Th>Keyword</Th><Th>Their Position</Th><Th>Volume</Th></tr></thead>
-                        <tbody>
-                          {items.map((it, i) => (
-                            <tr key={i} className="border-t border-gray-50">
-                              <Td>{it.keyword ?? '–'}</Td>
-                              <Td>{it.competitor_position ?? '–'}</Td>
-                              <Td>{it.search_volume ?? '–'}</Td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          />
-        </SectionShell>
-      </div>
+          {/* Opportunities — grouped by competitor (one hook row per competitor) */}
+          <SectionShell title="Keyword Opportunities" subtitle="Keywords competitors rank for that you don't">
+            <KindBody
+              state={opportunities}
+              render={(rows) => (
+                <div className="space-y-4">
+                  {rows.map((row) => {
+                    const d = row.data as { competitor?: string; items?: OppItem[] } | null
+                    const items = (d?.items ?? []).slice(0, 10)
+                    return (
+                      <div key={row.id}>
+                        <p className="text-xs font-semibold text-gray-600 mb-1">vs {d?.competitor ?? 'competitor'}</p>
+                        <table className="w-full text-xs">
+                          <thead><tr><Th>Keyword</Th><Th>Their Position</Th><Th>Volume</Th></tr></thead>
+                          <tbody>
+                            {items.map((it, i) => (
+                              <tr key={i} className="border-t border-gray-50">
+                                <Td>{it.keyword ?? '–'}</Td>
+                                <Td>{it.competitor_position ?? '–'}</Td>
+                                <Td>{it.search_volume ?? '–'}</Td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            />
+          </SectionShell>
+        </div>
+      )}
     </div>
   )
 }

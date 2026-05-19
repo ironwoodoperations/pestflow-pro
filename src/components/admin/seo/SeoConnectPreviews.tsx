@@ -1,28 +1,26 @@
 // Preview widgets for SEO Connect data sources.
 // (S228 Phase 4b: SearchConsoleMockPreview + GA4MockPreview removed along with
 // the GSC/GA4 cards — Google add-user bug parked, OAuth pivot is S230/S231.)
+// S231 Phase 0: PageSpeedPanel expanded to full-width layout with 4 score pills.
+// Core Web Vitals (LCP, CLS, INP) backlog — not captured in pagespeed_runs schema.
 import { useTenant } from '../../../context/TenantBootProvider'
 import { usePageSpeedRuns } from '../../../hooks/usePageSpeedRuns'
 import { relativeTime, pageSpeedTargetUrl } from './pageSpeedShared'
 
-function ScoreGauge({ score, label }: { score: number | null; label: string }) {
-  const color =
-    score === null ? '#9ca3af'
-    : score >= 90 ? '#10b981'
-    : score >= 50 ? '#f59e0b'
-    : '#ef4444'
-  const r = 20, circ = 2 * Math.PI * r
-  const dash = score === null ? 0 : (score / 100) * circ
+function scoreColor(score: number | null): string {
+  if (score === null) return '#9ca3af'
+  if (score >= 90) return '#10b981'
+  if (score >= 50) return '#f59e0b'
+  return '#ef4444'
+}
+
+function ScorePill({ score, label }: { score: number | null; label: string }) {
   return (
-    <div className="flex flex-col items-center gap-1">
-      <svg width="52" height="52" viewBox="0 0 52 52">
-        <circle cx="26" cy="26" r={r} fill="none" stroke="#e5e7eb" strokeWidth="4" />
-        <circle cx="26" cy="26" r={r} fill="none" stroke={color} strokeWidth="4"
-          strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
-          transform="rotate(-90 26 26)" />
-        <text x="26" y="30" textAnchor="middle" fontSize="11" fontWeight="700" fill="#111827">{score ?? '–'}</text>
-      </svg>
-      <span className="text-xs text-gray-500 text-center leading-tight">{label}</span>
+    <div className="flex-1 bg-gray-50 rounded-lg px-3 py-3 text-center min-w-0">
+      <div className="text-2xl font-bold" style={{ color: scoreColor(score) }}>
+        {score ?? '–'}
+      </div>
+      <div className="text-xs text-gray-500 mt-1 leading-tight">{label}</div>
     </div>
   )
 }
@@ -36,9 +34,8 @@ function PageSpeedRunButton({ label, running, onRun }: { label: string; running:
   )
 }
 
-// Real PageSpeed panel for the SEO → Connect tab. Reads the latest cached run
-// from pagespeed_runs via the shared hook; "Run Check Now" invokes the
-// pagespeed-proxy edge function (C2-authenticated, writes back to the table).
+// Real PageSpeed panel for the SEO → Connect tab. Full-width layout (Vercel
+// tile removed S231 Phase 0) with 4 desktop score pills + mobile performance.
 export function PageSpeedPanel() {
   const { id: tenantId } = useTenant()
   const { latestRun, loading, running, error, runCheck } = usePageSpeedRuns(tenantId)
@@ -72,22 +69,26 @@ export function PageSpeedPanel() {
   }
 
   return (
-    <div className="space-y-2 mb-3">
+    <div className="space-y-3 mb-3">
+      <div className="flex gap-3">
+        <ScorePill score={latestRun.desktop_performance}    label="Performance" />
+        <ScorePill score={latestRun.desktop_accessibility}  label="Accessibility" />
+        <ScorePill score={latestRun.desktop_best_practices} label="Best Practices" />
+        <ScorePill score={latestRun.desktop_seo}            label="SEO" />
+      </div>
+      <div className="text-xs text-gray-500">
+        Mobile performance:{' '}
+        <span className="font-semibold" style={{ color: scoreColor(latestRun.mobile_performance) }}>
+          {latestRun.mobile_performance ?? '–'}
+        </span>
+        {latestRun.mobile_seo != null && (
+          <span className="ml-3">Mobile SEO: <span className="font-semibold" style={{ color: scoreColor(latestRun.mobile_seo) }}>{latestRun.mobile_seo}</span></span>
+        )}
+      </div>
       <div className="flex items-center justify-between">
-        <span className="text-xs text-gray-500">
-          Last checked: {relativeTime(latestRun.ran_at)}
-        </span>
-        <span className="text-xs text-gray-400">
-          Perf — Desktop {latestRun.desktop_performance ?? '–'} / Mobile {latestRun.mobile_performance ?? '–'}
-        </span>
+        <span className="text-xs text-gray-400">Last checked: {relativeTime(latestRun.ran_at)}</span>
+        <PageSpeedRunButton label="Run Check Now" running={running} onRun={onRun} />
       </div>
-      <div className="flex justify-around py-1">
-        <ScoreGauge score={latestRun.desktop_performance} label="Performance" />
-        <ScoreGauge score={latestRun.desktop_accessibility} label="Accessibility" />
-        <ScoreGauge score={latestRun.desktop_best_practices} label="Best Practices" />
-        <ScoreGauge score={latestRun.desktop_seo} label="SEO" />
-      </div>
-      <PageSpeedRunButton label="Run Check Now" running={running} onRun={onRun} />
       {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
   )

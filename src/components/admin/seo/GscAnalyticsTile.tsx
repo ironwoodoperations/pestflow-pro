@@ -1,8 +1,12 @@
+import { useState } from 'react'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 import { useTenant } from '../../../context/TenantBootProvider'
 import { useGscRuns, type GscRun } from '../../../hooks/useGscRuns'
 import { relativeTime } from './pageSpeedShared'
 
 // Admin-dashboard tile: hardcoded Tailwind per CLAUDE.md.
+// S231 Phase 0: collapsible — default collapsed, showing 4 stat pills.
+// Expand/collapse state persisted in localStorage.
 // States: loading / unconfigured / error / success.
 
 function StatPill({ label, value }: { label: string; value: string }) {
@@ -35,19 +39,29 @@ function fmtNum(n: number | null): string {
   return String(n)
 }
 
-function SuccessBody({ run }: { run: GscRun }) {
+const GSC_EXPANDED_KEY = 'pfp_gsc_tile_expanded'
+
+function SummaryPills({ run }: { run: GscRun }) {
+  const d = run.data
+  if (!d) return null
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <StatPill label="Total Clicks"  value={fmtNum(d.total_clicks)} />
+      <StatPill label="Impressions"   value={fmtNum(d.total_impressions)} />
+      <StatPill label="Avg CTR"       value={fmtCtr(d.avg_ctr)} />
+      <StatPill label="Avg Position"  value={fmtPosition(d.avg_position)} />
+    </div>
+  )
+}
+
+function SuccessBody({ run, expanded }: { run: GscRun; expanded: boolean }) {
   const d = run.data
   if (!d) return <p className="text-sm text-gray-400">No data in this run.</p>
   const queries = d.top_queries ?? []
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatPill label="Total Clicks"      value={fmtNum(d.total_clicks)} />
-        <StatPill label="Impressions"       value={fmtNum(d.total_impressions)} />
-        <StatPill label="Avg CTR"           value={fmtCtr(d.avg_ctr)} />
-        <StatPill label="Avg Position"      value={fmtPosition(d.avg_position)} />
-      </div>
-      {queries.length > 0 && (
+      <SummaryPills run={run} />
+      {expanded && queries.length > 0 && (
         <div>
           <p className="text-xs font-semibold text-gray-600 mb-2">Top Search Queries</p>
           <div className="overflow-x-auto">
@@ -84,6 +98,16 @@ export default function GscAnalyticsTile({ tenantId: tenantIdProp }: { tenantId?
 
   const { latestRun, loading, running, error, runCheck } = useGscRuns(tenantId)
 
+  const [expanded, setExpanded] = useState<boolean>(() => {
+    try { return localStorage.getItem(GSC_EXPANDED_KEY) === 'true' } catch { return false }
+  })
+  const toggleExpanded = () => {
+    const next = !expanded
+    setExpanded(next)
+    try { localStorage.setItem(GSC_EXPANDED_KEY, String(next)) } catch { /* ignore */ }
+  }
+
+  const isSuccess = !loading && latestRun?.status === 'success'
   const headerTime = latestRun?.ran_at ?? null
 
   return (
@@ -104,6 +128,15 @@ export default function GscAnalyticsTile({ tenantId: tenantIdProp }: { tenantId?
           >
             {running ? 'Running…' : 'Run Now'}
           </button>
+          {isSuccess && (
+            <button
+              onClick={toggleExpanded}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+              title={expanded ? 'Collapse' : 'Expand'}
+            >
+              {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+          )}
         </div>
       </div>
 
@@ -130,7 +163,7 @@ export default function GscAnalyticsTile({ tenantId: tenantIdProp }: { tenantId?
           )}
         </div>
       ) : (
-        <SuccessBody run={latestRun} />
+        <SuccessBody run={latestRun} expanded={expanded} />
       )}
     </div>
   )
