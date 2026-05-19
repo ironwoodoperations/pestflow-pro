@@ -5,7 +5,7 @@ import SeoOverviewTab from './seo/SeoOverviewTab'
 import SeoPagesTab from './seo/SeoPagesTab'
 import SeoKeywordsTab from './seo/SeoKeywordsTab'
 import SeoAioTab from './seo/SeoAioTab'
-import SeoConnectTab from './seo/SeoConnectTab'
+import SeoInsightsTab from './seo/SeoInsightsTab'
 import type { SeoTabId } from './seo/seoTypes'
 
 const TABS: { id: SeoTabId; label: string }[] = [
@@ -13,7 +13,7 @@ const TABS: { id: SeoTabId; label: string }[] = [
   { id: 'pages',     label: '📄 Pages'      },
   { id: 'keywords',  label: '🔍 Keywords'   },
   { id: 'aio',       label: '✨ AI Optimize' },
-  { id: 'connect',   label: '🔗 Connect'    },
+  { id: 'connect',   label: '🔗 Insights'   },
 ]
 
 export default function SEOTab() {
@@ -32,7 +32,7 @@ export default function SEOTab() {
   return (
     <div>
       <PageHelpBanner tab="seo" title="🔍 SEO Dashboard"
-        body="Optimize your search engine rankings. Use the Overview tab to see your site health, Pages to edit meta tags, Keywords for research, and Connect to link data sources." />
+        body="Optimize your search engine rankings. Use the Overview tab to see your site health, Pages to edit meta tags, Keywords for research, and Insights to connect data sources." />
 
       <FeatureGate minTier={2}>
         <div className="flex border-b border-gray-200 mb-6 gap-0">
@@ -56,10 +56,7 @@ export default function SEOTab() {
         </div>
 
         {activeTab === 'overview' && (
-          <SeoOverviewTab stats={stats} coverage={coverage} integrations={integrations}
-            lastAudit={lastAudit} auditLoading={auditLoading} auditMode={auditMode}
-            onSetAuditMode={setAuditMode} onRunAudit={runLighthouseAudit} onRefreshScore={handleRefreshScore}
-            onGoToConnect={() => setActiveTab('connect')} />
+          <SeoOverviewTab stats={stats} coverage={coverage} lastAudit={lastAudit} />
         )}
         {activeTab === 'pages' && (
           <SeoPagesTab stats={stats} pages={pages} openEditorSlug={openEditorSlug}
@@ -80,7 +77,7 @@ export default function SEOTab() {
           </FeatureGate>
         )}
         {activeTab === 'connect' && (
-          <SeoConnectTab />
+          <SeoInsightsTab />
         )}
       </FeatureGate>
     </div>
