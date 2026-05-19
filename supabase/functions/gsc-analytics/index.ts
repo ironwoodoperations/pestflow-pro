@@ -191,7 +191,7 @@ serve(async (req) => {
     const startDate = new Date(today.getTime() - 31 * 86400000).toISOString().split('T')[0]
 
     // Call GSC Search Analytics API.
-    const gscUrl = `https://searchconsoleapi.googleapis.com/webmasters/v3/sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`
+    const gscUrl = `https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`
     const gscRes = await fetch(gscUrl, {
       method: 'POST',
       headers: {
