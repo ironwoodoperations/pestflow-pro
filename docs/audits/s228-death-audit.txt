@@ -1,0 +1,135 @@
+S228 — ADMIN SURFACE CLEANUP — DEATH AUDIT (Phase 1)
+Branch: s228-admin-surface-cleanup (off origin/main, post-S227 #88 + S228-kickoff #89 + todo-v95 #90)
+Date: 2026-05-19
+Kickoff: docs/audits/pestflow-pro-kickoff-S228.md (canonical, on main)
+STOP-AND-REPORT after this file — no patches before Scott acknowledges.
+
+================================================================================
+PART A — FILE-LEVEL INVENTORY
+================================================================================
+
+DASHBOARD (src/pages/admin/Dashboard.tsx -> dashboard/DashboardHome.tsx composition)
+  Composition owner: src/components/admin/dashboard/DashboardHome.tsx (154 ln)
+  - Top stat row (4 cards): DashboardStats.tsx (30 ln) — Total Leads, New This
+    Month, New This Week, Conversion Rate. ALL FOUR are lead metrics.
+  - "SEO Performance" card: DashboardSeoWidget.tsx (74 ln) — Row 3 left. Reads
+    localStorage `lighthouse_score_<tenantId>` (PageSpeed/Lighthouse cache),
+    click-out to seo tab. NOT currently seo_runs-sourced.
+  - "Social Media" card: DashboardSocialWidget.tsx (94 ln) — Row 3 right. Reads
+    `social_posts` (post counts), click-out to social tab.
+  - "Leads Per Month" chart: INLINE in DashboardHome.tsx L112-123 (KEEP).
+  - "Recent Leads" list: INLINE in DashboardHome.tsx L124-139 (REMOVE target).
+  - "Quick Links" footer: INLINE DashboardHome.tsx L143-151 (KEEP).
+  - Other (untouched): DashboardPlanSection, DemoControls.
+
+REPORTS TAB (src/components/admin/ReportsTab.tsx, post-S227 — has SeoAnalyticsTile)
+  Removal / relocation targets:
+  - "Advanced Analytics" section: ReportsTab L180-185 — FeatureGate minTier=3
+    "Advanced Analytics" wrapping <h2>Advanced Analytics</h2> +
+    <LeadSourceChart/> + <SocialVolumeChart/>. REMOVE whole section.
+  - Lead Source Breakdown chart: reports/LeadSourceChart.tsx — used ONLY by
+    ReportsTab. Safe to drop usage; component file orphaned (delete file too).
+  - Social Posts Scheduled chart: reports/SocialVolumeChart.tsx — **ALSO
+    imported by src/components/admin/social/SocialAnalyticsTab.tsx**. Remove
+    ReportsTab usage ONLY; DO NOT delete the component file.
+  - Blog Analytics: reports/BlogAnalyticsSection.tsx — imported ONLY by
+    reports/SocialSeoReport.tsx (nested inside it, rendered under the
+    "Advanced Reports & Trends" FeatureGate). RELOCATE to Content.
+  - SEO Coverage tile: lives INSIDE reports/SocialSeoReport.tsx L108-116.
+    Reads `seo_meta` (meta_title/meta_description/focus_keyword) — REAL DATA
+    confirmed. KEEP (Risk #4 resolved). NOTE: SocialSeoReport currently bundles
+    SEO Coverage + BlogAnalyticsSection; relocating Blog requires splitting it.
+
+  Conversion tiles — AUDIT-ONLY PAPER TRAIL, DO NOT PREPARE FOR REMOVAL:
+  - Top stat cards (4): reports/ReportsStatCards.tsx (ReportsTab L93).
+  - Lead Status panel: INLINE ReportsTab L113-128.
+  - Lead Funnel section: reports/LeadFunnel.tsx (ReportsTab L155).
+  (Kickoff revision / Risk #6: keep-decision is locked. Phase 3 must not touch.)
+
+SEO CONNECT TAB (src/components/admin/seo/SeoConnectTab.tsx, post-S227)
+  Inline DataSourceCard components (no separate files — all in SeoConnectTab):
+  - "Google Search Console" card L86  -> REMOVE
+  - "Google Analytics 4" card L99     -> REMOVE
+  - "Google PageSpeed Insights" L112  -> KEEP
+  - "Vercel Analytics" L118           -> KEEP + INVESTIGATE (Phase 4a)
+  - "Ahrefs Webmaster Tools" L123     -> REMOVE
+  - "Bing Webmaster Tools" L129       -> REMOVE
+  - S227 SeoAnalyticsTile L136-140 (FeatureGate minTier=3) -> KEEP unchanged
+  Helper previews: SeoConnectPreviews.tsx exports SearchConsoleMockPreview,
+  GA4MockPreview, PageSpeedPanel. GSC/GA4 mock previews become orphaned once
+  those two cards go — prune those exports too (verify no other consumers).
+
+================================================================================
+PART B — DEPENDENCY MAP / RISKS
+================================================================================
+D1. SocialVolumeChart.tsx is SHARED: ReportsTab (remove) + social/
+    SocialAnalyticsTab.tsx (keep). => remove usage from ReportsTab only;
+    file stays. Lint/type safe (no orphan).
+D2. LeadSourceChart.tsx — single consumer (ReportsTab). Removing the section
+    orphans the file; delete the file in the same commit to avoid dead code.
+D3. BlogAnalyticsSection.tsx — single consumer SocialSeoReport.tsx. Relocation
+    means: extract <BlogAnalyticsSection/> out of SocialSeoReport, mount under
+    Content tab. SocialSeoReport keeps SEO Coverage. Verify SocialSeoReport has
+    no other coupling to Blog (props/shared state) before splitting.
+D4. SeoConnectPreviews.tsx: SearchConsoleMockPreview + GA4MockPreview become
+    unused after GSC/GA4 card removal. Prune exports (confirm no other import).
+D5. settings keys going dark (document in handoff, no DB delete):
+    settings.integrations.google_search_console_url, google_analytics_id
+    (still read by SeoConnectTab GSC/GA4 cards today). Orphaned post-removal.
+D6. No cron / edge fn coupled to any removed tile (verified — removals are
+    pure frontend reads of leads/social_posts/seo_meta).
+
+================================================================================
+PART C — REAL-DATA AUDIT (replacement mini-tiles, via Supabase MCP)
+================================================================================
+- seo_runs (Dang 1611b16f…): 6 rows, 6 success, kinds = rankings/competitors/
+  opportunities, latest success 2026-05-18T17:32Z. RLS: seo_runs_tenant_read
+  SELECT authenticated (current_tenant_id scoped, S227). ✓ usable for the
+  Dashboard SEO mini-tile via the existing useSeoRuns hook pattern.
+- zernio_runs (Dang): 4 rows, 4 success, latest data:
+    youtube  {reach:61,  followers:NULL, engagement:0}
+    facebook {reach:0,   followers:NULL, engagement:488}
+    instagram{reach:165, followers:NULL, engagement:27}
+  RLS: zernio_runs_tenant_read SELECT authenticated. ✓ readable, BUT
+  **followers = NULL on all 3 platforms** and no gbp block — this is exactly
+  the S229 bug (todo v95). See FLAG F3.
+- seo_meta: tenant-isolated + anon read. SEO Coverage real data confirmed.
+- social_posts: tenant-isolated. (DashboardSocialWidget current source.)
+
+================================================================================
+PART D — FLAGS / CONTRADICTIONS (decide before Phase 2)
+================================================================================
+F1. DASHBOARD STAT-ROW vs WIDGETS — STRUCTURAL MISMATCH.
+    Kickoff "Target state → Top stat row (4 cards): KEEP New This Month, KEEP
+    This Week Conversion Rate, REPLACE SEO Performance, REPLACE Social Media."
+    Reality: the stat row (DashboardStats.tsx) is FOUR LEAD cards (Total Leads,
+    New This Month, New This Week, Conversion Rate). "SEO Performance" and
+    "Social Media" are SEPARATE widget cards in Row 3 (DashboardSeoWidget /
+    DashboardSocialWidget), not in the stat row. Two readings:
+      (A) Literal: collapse to a 4-card stat row [New This Month, Conv Rate,
+          SEO mini, Social mini] — i.e. DROP Total Leads + New This Week, and
+          promote the two widgets into the stat row.
+      (B) Pragmatic (matches TL;DR "visualize the click-outs"): leave
+          DashboardStats' 4 lead cards as-is; convert the two Row-3 click-out
+          widgets in place into real-data mini-tiles.
+    These ship materially different dashboards. NEED SCOTT'S CALL. (Recommend
+    (B): the TL;DR frames S228 as "visualize the click-outs", and dropping
+    Total Leads/New This Week is a conversion-tile-adjacent removal that the
+    Risk #6 keep-philosophy would caution against doing unprompted.)
+F2. SEO mini-tile DATA-SOURCE PIVOT. DashboardSeoWidget today shows Lighthouse
+    (localStorage). Kickoff wants it sourced from seo_runs (DataForSEO rankings
+    — keyword count / top position / last refresh). That's a content change,
+    not a wiring tweak — the Lighthouse summary goes away. Confirm intent.
+F3. SOCIAL mini-tile BLOCKED BY S229. Kickoff wants the Social mini-tile to
+    show "combined followers/engagement/reach". zernio_runs.followers is NULL
+    on all platforms (S229 bug, todo v95). Engagement/reach populate. Options:
+    render mini-tile with engagement+reach now and omit/—-followers until S229,
+    OR sequence S229 before S228 Phase 2. NEED DIRECTION (lean: ship with
+    engagement+reach, show followers as "—" with a note; S229 backfills).
+F4. Kickoff says "no new edge functions / tables / cron" but also S227 Phase 8
+    onboarding is NOT in scope here (it's its own backlog item) — confirmed no
+    overlap; noting so Phase 2 doesn't pull it in.
+
+================================================================================
+END PHASE 1 — awaiting Scott on F1 (blocking), F2, F3 before Phase 2.
+================================================================================
