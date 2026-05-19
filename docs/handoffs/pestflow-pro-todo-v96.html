@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PestFlow Pro — Todo v96 (post-S228)</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; color: #1a1a1a; }
+  h1 { font-size: 1.5rem; border-bottom: 2px solid #059669; padding-bottom: 8px; }
+  h2 { font-size: 1.1rem; margin-top: 32px; color: #374151; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.875rem; margin-top: 12px; }
+  th { background: #f3f4f6; text-align: left; padding: 8px 12px; }
+  td { padding: 8px 12px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+  .shipped { color: #059669; font-weight: 600; }
+  .next    { color: #2563eb; font-weight: 600; }
+  .blocked { color: #dc2626; font-weight: 600; }
+  .high    { color: #d97706; font-weight: 600; }
+  .skip    { color: #6b7280; }
+  .badge   { display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+  .badge-green  { background: #d1fae5; color: #065f46; }
+  .badge-blue   { background: #dbeafe; color: #1e40af; }
+  .badge-yellow { background: #fef3c7; color: #92400e; }
+  .badge-red    { background: #fee2e2; color: #991b1b; }
+  .badge-gray   { background: #f3f4f6; color: #374151; }
+  .note { font-size: 0.8rem; color: #6b7280; margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<h1>PestFlow Pro — Todo v96 <span style="font-weight:400; font-size:1rem; color:#6b7280">(post-S228, 2026-05-19)</span></h1>
+
+<h2>Recently Shipped</h2>
+<table>
+  <tr><th>Session</th><th>What</th><th>Status</th></tr>
+  <tr>
+    <td>S224</td>
+    <td>PageSpeed tile wiring (both surfaces)</td>
+    <td><span class="badge badge-green">Shipped</span></td>
+  </tr>
+  <tr>
+    <td>S225</td>
+    <td>Zernio social-analytics surface (skeleton) — edge fn + table + hook + tile</td>
+    <td><span class="badge badge-green">Shipped</span></td>
+  </tr>
+  <tr>
+    <td>S226</td>
+    <td>Zernio Analytics API wired (replaces S225 TODO). PR #87 open, CI green. Real data confirmed for Dang.</td>
+    <td><span class="badge badge-yellow">PR #87 — Awaiting Scott review + merge</span></td>
+  </tr>
+  <tr>
+    <td>S228</td>
+    <td>Admin surface cleanup — dashboard SEO/Social real-data mini-tiles, Reports Advanced Analytics prune, Blog Analytics relocated to Blog tab, SEO Connect pruned to 3 cards. Pure frontend, no backend changes.</td>
+    <td><span class="badge badge-green">Shipped</span></td>
+  </tr>
+</table>
+
+<h2>Verify Pending (requires browser + Dang login after PR #87 merges)</h2>
+<table>
+  <tr><th>Item</th><th>How to verify</th><th>Status</th></tr>
+  <tr>
+    <td>S226 cell 8 — Reports tab tile shows real numbers for Dang</td>
+    <td>Sign in at dang.pestflowpro.ai/admin → Reports → click "Run Now" on Social Analytics tile</td>
+    <td><span class="badge badge-yellow">Pending</span></td>
+  </tr>
+  <tr>
+    <td>S226 cell 9 — Social admin widget shows same numbers</td>
+    <td>Same session → Social tab → Social Analytics widget</td>
+    <td><span class="badge badge-yellow">Pending</span></td>
+  </tr>
+  <tr>
+    <td>S226 cell 10 — Non-Zernio tenant shows graceful empty state</td>
+    <td>Sign in as demo admin → Reports → tile should show "Coming soon" state</td>
+    <td><span class="badge badge-yellow">Pending</span></td>
+  </tr>
+  <tr>
+    <td>cells-9-10-smoke (S224) — PageSpeed tile browser smoke</td>
+    <td>Perma-deferred per backlog item; Codespace only</td>
+    <td><span class="badge badge-gray">Deferred</span></td>
+  </tr>
+</table>
+
+<h2>Next Up — S227 (Recommended)</h2>
+<table>
+  <tr><th>Item</th><th>Notes</th><th>Priority</th></tr>
+  <tr>
+    <td><strong>GSC tile wiring</strong> (Google Search Console)</td>
+    <td>
+      P7 in prior backlog. Clone S226 pattern: edge fn + table + hook + tile.
+      Prereq: confirm service account has GSC property access for Dang
+      (S222 decision: service account auth for Reports tab).
+      Kickoff brief: docs/audits/s227-kickoff.txt.
+      <div class="note">Death-audit before code: check if skeleton exists, confirm Dang gsc_site_url in settings.integrations, confirm service account key in Doppler.</div>
+    </td>
+    <td><span class="badge badge-blue">P1 Next</span></td>
+  </tr>
+  <tr>
+    <td>GA4 tile wiring</td>
+    <td>Needs tracking script installed on Dang's public site first. Blocked until that step completes.</td>
+    <td><span class="badge badge-yellow">P3 — Blocked</span></td>
+  </tr>
+  <tr>
+    <td>Places API server-side refactor</td>
+    <td>Different workflow from analytics tiles. Queued separately.</td>
+    <td><span class="badge badge-gray">P4 Queued</span></td>
+  </tr>
+</table>
+
+<h2>Ongoing / Scott Actions Required</h2>
+<table>
+  <tr><th>Item</th><th>Owner</th><th>Status</th></tr>
+  <tr>
+    <td>Merge PR #87 (S226 Zernio analytics wire)</td>
+    <td>Scott</td>
+    <td><span class="badge badge-yellow">Ready for review</span></td>
+  </tr>
+  <tr>
+    <td>Stripe live mode cutover</td>
+    <td>Scott (manual) — swap keys in Doppler + Vercel, register webhook</td>
+    <td><span class="badge badge-red">Blocking — no real billing</span></td>
+  </tr>
+  <tr>
+    <td>Kirk DNS → Dang custom domain</td>
+    <td>Kirk + Scott — verified=false in tenant_domains</td>
+    <td><span class="badge badge-yellow">High</span></td>
+  </tr>
+  <tr>
+    <td>GCP migration to Ironwood Workspace</td>
+    <td>Scott — in-flight since S222</td>
+    <td><span class="badge badge-yellow">High</span></td>
+  </tr>
+  <tr>
+    <td>Confirm GSC service account has Dang property access (prereq for S227)</td>
+    <td>Scott — verify in Google Search Console</td>
+    <td><span class="badge badge-blue">S227 prereq</span></td>
+  </tr>
+</table>
+
+<h2>Zernio Integration — Known Gaps / Follow-up</h2>
+<table>
+  <tr><th>Gap</th><th>Notes</th></tr>
+  <tr>
+    <td>Follower counts not available</td>
+    <td>Zernio's <code>GET /v1/analytics</code> is post-level only. Account-level follower counts require platform-specific endpoints not wired in S226. Follow-up if Kirk specifically asks for follower numbers.</td>
+  </tr>
+  <tr>
+    <td>Facebook reach = 0</td>
+    <td>Facebook Graph API commonly withholds reach for pages below threshold. Not a code bug. Will self-resolve as Dang's page grows.</td>
+  </tr>
+  <tr>
+    <td>Google Business Platform not appearing</td>
+    <td>No GBP posts in 30-day window → key absent from data object. Will appear once Dang posts to GBP via PestFlow Pro social composer.</td>
+  </tr>
+  <tr>
+    <td>&gt;100 posts/30 days not paginated</td>
+    <td>Edge fn fetches <code>limit=100</code>. Unlikely to hit for any current tenant, but noted as future work if needed.</td>
+  </tr>
+</table>
+
+<h2>External Connector Buildout — OAuth Pivot (S229+)</h2>
+<p class="note"><strong>Service-account add-user is blocked by Google bug</strong> (acknowledged May 1, 2026 by Google, no fix or ETA). All Google API integrations now pivot to OAuth in testing mode — max 100 test users, no verification required at current scale, customers added by hand during concierge onboarding.</p>
+<p class="note">This supersedes the service-account-auth references in the "Next Up — S227" GSC row and the "Confirm GSC service account has Dang property access" item in "Ongoing / Scott Actions Required" above (both rows preserved for history; the service-account path they describe is dead — see S230 below for the OAuth replacement).</p>
+<table>
+  <tr><th>Item</th><th>Notes</th><th>Priority</th></tr>
+  <tr>
+    <td><strong>S229 — Zernio follower + GBP fix in zernio-analytics edge fn</strong>
+      <div class="note">Tags: <span class="badge badge-gray">bug</span> <span class="badge badge-gray">S225-followup</span> <span class="badge badge-gray">S226-followup</span></div>
+    </td>
+    <td>
+      MCP probe of zernio_runs for Dang (5/18) shows followers=null across
+      facebook/instagram/youtube on every successful run, and the gbp block is
+      missing entirely from data JSONB (S225 contract was {fb, ig, yt, gbp};
+      actual is {facebook, instagram, youtube}). Edge fn IS calling Zernio
+      successfully — reach + engagement populate. Specifically not returning
+      followers or GBP. Investigate: (1) does Zernio's analytics endpoint expose
+      followers, or does it require a second per-account profile call? (2) why
+      is gbp account in zernio_accounts not flowing through? Patch
+      supabase/functions/zernio-analytics/index.ts, redeploy, re-run, verify.
+      <div class="note">1-2 hour CC Web session.</div>
+    </td>
+    <td><span class="badge badge-yellow">P8 High</span></td>
+  </tr>
+  <tr>
+    <td><strong>S230 — OAuth-based GSC integration (testing mode, replaces dead service-account path)</strong>
+      <div class="note">Tags: <span class="badge badge-gray">connector</span> <span class="badge badge-gray">new-build</span> <span class="badge badge-gray">OAuth-pivot</span></div>
+    </td>
+    <td>
+      Service account path is dead (Google bug, see preamble note). Pivot to OAuth
+      testing mode. New OAuth 2.0 client in pestflow-pro-prod GCP project, scopes
+      webmasters.readonly. Customers added as test users by hand (max 100, plenty
+      for current scale). Per-tenant OAuth flow: customer clicks "Connect Google
+      Search Console" on SEO Connect tab, sees Google consent screen with
+      "unverified app" warning (clicks through), authorizes, we receive refresh
+      token, store encrypted in settings.integrations.gsc_oauth_refresh_token.
+      Edge fn mints short-lived access token per request, calls GSC Search
+      Analytics API, stores result in new gsc_runs table (mirror S227 pattern,
+      JSONB data column). Cron-driven weekly + on-demand refresh button. Tile on
+      both Reports tab AND SEO Connect tab showing clicks, impressions, CTR,
+      average position. Validator gate triggers (new edge fn + new external API +
+      new auth pattern).
+      <div class="note">1 full CC Web session.</div>
+    </td>
+    <td><span class="badge badge-yellow">P8 High</span></td>
+  </tr>
+  <tr>
+    <td><strong>S231 — OAuth-based GA4 integration (testing mode, depends on shell tracking script)</strong>
+      <div class="note">Tags: <span class="badge badge-gray">connector</span> <span class="badge badge-gray">new-build</span> <span class="badge badge-gray">OAuth-pivot</span></div>
+    </td>
+    <td>
+      Same OAuth testing-mode pattern as S230. REUSES the same OAuth 2.0 client
+      from S230 — single app, multiple scopes (add analytics.readonly to the
+      existing client). Hard dependency: GA4 tracking script must be installed
+      on all 5 Next.js shells FIRST (per S222 audit — not yet present, no GA4 data
+      to fetch until this is done). New ga4_runs table, edge fn, tile rendering
+      users, sessions, engagement rate, top pages, traffic source breakdown.
+      Vercel Analytics partially overlaps (pageviews, top pages, geo, devices) but
+      does NOT replace GA4 — no UTM-level traffic source attribution, no
+      engagement metrics. Validator gate triggers.
+      <div class="note">1-2 CC Web sessions split: (a) tracking script install on shells, (b) GA4 ingest + tile.</div>
+    </td>
+    <td><span class="badge badge-yellow">P7 High</span></td>
+  </tr>
+  <tr>
+    <td><strong>S227 Phase 8 — Admin onboarding UI for SEO Analytics seeds</strong>
+      <div class="note">Tags: <span class="badge badge-gray">feature</span> <span class="badge badge-gray">S227-deferred</span></div>
+    </td>
+    <td>
+      Originally Phase 8 of S227 plan, deferred after Phase 7 mount-point ship.
+      Admin UI for seed keywords + competitor domains + "suggest more" button +
+      target_domain override in dataforseo-seo-analytics edge fn. Currently
+      keywords/competitors live as seeded defaults; this lets tenants self-service
+      their tracking targets.
+      <div class="note">1 CC Web session.</div>
+    </td>
+    <td><span class="badge badge-gray">P6 Medium</span></td>
+  </tr>
+  <tr>
+    <td><strong>Vercel Analytics drain-receiver pipeline</strong>
+      <div class="note">Tags: <span class="badge badge-gray">analytics</span> <span class="badge badge-gray">new-build</span> <span class="badge badge-gray">standalone</span></div>
+    </td>
+    <td>
+      Standalone backlog — NOT OAuth pivot. Vercel Web Analytics has no public
+      pull/query REST API (S228 Phase 4a finding); only Log Drains (raw
+      vercel.analytics.v2 NDJSON firehose). Lift: drain receiver edge fn + new
+      vercel_analytics table + rollup cron + tile. Architecture session, not a
+      connector clone. SEO Connect Vercel card is a working dashboard link-out
+      until then.
+      <div class="note">Architecture session.</div>
+    </td>
+    <td><span class="badge badge-gray">P5</span></td>
+  </tr>
+</table>
+
+</body>
+</html>
