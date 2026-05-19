@@ -1,19 +1,13 @@
-import type { SeoStats, SeoCoverage, AuditResult, IntegrationValues } from './seoTypes'
+import { useTenant } from '../../../context/TenantBootProvider'
+import { useGscRuns } from '../../../hooks/useGscRuns'
+import { useSeoRuns } from '../../../hooks/useSeoRuns'
+import type { SeoStats, SeoCoverage, AuditResult } from './seoTypes'
 import SeoStatCards from './SeoStatCards'
-import ScoreRing from './ScoreRing'
-import GSCStatusPanel from './GSCStatusPanel'
 
 interface Props {
   stats: SeoStats
   coverage: SeoCoverage
-  integrations: IntegrationValues
   lastAudit: AuditResult | null
-  auditLoading: boolean
-  auditMode: 'mobile' | 'desktop'
-  onSetAuditMode: (m: 'mobile' | 'desktop') => void
-  onRunAudit: () => void
-  onRefreshScore: () => void
-  onGoToConnect: () => void
 }
 
 function CoverageCard({ emoji, label, total, live }: {
@@ -37,17 +31,94 @@ function CoverageCard({ emoji, label, total, live }: {
   )
 }
 
-export default function SeoOverviewTab({
-  stats, coverage, integrations, lastAudit,
-  auditLoading, auditMode, onSetAuditMode, onRunAudit, onRefreshScore, onGoToConnect
-}: Props) {
-  const { google_api_key } = integrations
+function fmtNum(n: number | null): string {
+  if (n == null) return '–'
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`
+  return String(n)
+}
 
-  const fmtTime = (iso: string) =>
-    new Date(iso).toLocaleDateString('en-US', {
-      month: 'short', day: 'numeric',
-      hour: 'numeric', minute: '2-digit',
-    })
+function PageSpeedMini({ lastAudit }: { lastAudit: AuditResult | null }) {
+  const score = lastAudit?.scores.performance ?? null
+  const scoreColor = score === null
+    ? 'text-gray-400'
+    : score >= 90 ? 'text-emerald-600' : score >= 50 ? 'text-amber-500' : 'text-red-500'
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+      <p className="text-xs font-semibold text-gray-500 mb-2">⚡ PageSpeed</p>
+      {score === null ? (
+        <p className="text-xs text-gray-400">Run an audit on the Insights tab</p>
+      ) : (
+        <>
+          <div className="flex items-baseline gap-1">
+            <span className={`text-2xl font-bold ${scoreColor}`}>{score}</span>
+            <span className="text-xs text-gray-400">/ 100</span>
+          </div>
+          <p className="text-xs text-gray-400 mt-1">Performance</p>
+        </>
+      )}
+    </div>
+  )
+}
+
+function GscMini({ tenantId }: { tenantId: string }) {
+  const { latestRun, loading } = useGscRuns(tenantId)
+  const data = latestRun?.status === 'success' ? latestRun.data : null
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+      <p className="text-xs font-semibold text-gray-500 mb-2">🔍 Search Console</p>
+      {loading ? (
+        <p className="text-xs text-gray-400">Loading…</p>
+      ) : !data ? (
+        <p className="text-xs text-gray-400">Not connected — see Insights tab</p>
+      ) : (
+        <div className="flex gap-5">
+          <div>
+            <p className="text-2xl font-bold text-gray-900">{fmtNum(data.total_clicks)}</p>
+            <p className="text-xs text-gray-400 mt-1">Clicks</p>
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-gray-900">{fmtNum(data.total_impressions)}</p>
+            <p className="text-xs text-gray-400 mt-1">Impressions</p>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function SeoAnalyticsMini({ tenantId }: { tenantId: string }) {
+  const { rankings, opportunities } = useSeoRuns(tenantId)
+  const keywordCount = ((rankings.data[0]?.data as { items?: unknown[] } | null)?.items ?? []).length
+  const oppCount = opportunities.data.reduce((sum, row) => {
+    return sum + ((row.data as { items?: unknown[] } | null)?.items ?? []).length
+  }, 0)
+  const loading = rankings.loading || opportunities.loading
+  const hasData = rankings.data.length > 0 || opportunities.data.length > 0
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+      <p className="text-xs font-semibold text-gray-500 mb-2">📈 SEO Analytics</p>
+      {loading ? (
+        <p className="text-xs text-gray-400">Loading…</p>
+      ) : !hasData ? (
+        <p className="text-xs text-gray-400">No data yet — see Insights tab</p>
+      ) : (
+        <div className="flex gap-5">
+          <div>
+            <p className="text-2xl font-bold text-gray-900">{keywordCount}</p>
+            <p className="text-xs text-gray-400 mt-1">Keywords</p>
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-gray-900">{oppCount}</p>
+            <p className="text-xs text-gray-400 mt-1">Opportunities</p>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default function SeoOverviewTab({ stats, coverage, lastAudit }: Props) {
+  const { id: tenantId } = useTenant()
 
   return (
     <div className="space-y-6">
@@ -64,102 +135,15 @@ export default function SeoOverviewTab({
         </div>
       </div>
 
-      {/* Lighthouse */}
+      {/* Data source snapshot — status-glance mini-tiles */}
       <div>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-gray-700">Lighthouse Scores</h3>
-          <div className="flex items-center gap-2">
-            <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
-              {(['mobile', 'desktop'] as const).map(m => (
-                <button key={m} onClick={() => onSetAuditMode(m)}
-                  className={`px-3 py-1.5 capitalize font-medium transition-colors ${
-                    auditMode === m
-                      ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
-                  }`}>
-                  {m === 'mobile' ? '📱' : '🖥️'} {m}
-                </button>
-              ))}
-            </div>
-            {lastAudit && (
-              <button onClick={onRefreshScore} disabled={auditLoading}
-                className="px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-50 disabled:opacity-50">
-                🔄 Refresh Score
-              </button>
-            )}
-            <button onClick={onRunAudit} disabled={auditLoading || !google_api_key}
-              className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-medium hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-1">
-              {auditLoading ? '⏳ Running...' : '🔍 Run Audit'}
-            </button>
-          </div>
+        <h3 className="text-sm font-semibold text-gray-700 mb-3">Data Overview</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <PageSpeedMini lastAudit={lastAudit} />
+          <GscMini tenantId={tenantId} />
+          <SeoAnalyticsMini tenantId={tenantId} />
         </div>
-
-        {!google_api_key ? (
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 text-center">
-            <p className="text-sm text-gray-500 mb-2">Add a Google API key to enable Lighthouse scores.</p>
-            <button onClick={onGoToConnect} className="text-sm text-emerald-600 hover:underline font-medium">
-              Go to Connect tab →
-            </button>
-          </div>
-        ) : (
-          <>
-            {auditLoading && (
-              <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 text-center">
-                <p className="text-sm text-gray-500">Running audit… this takes 10–15 seconds</p>
-              </div>
-            )}
-            {!auditLoading && lastAudit && (
-              <div className="bg-white border border-gray-200 rounded-xl p-5">
-                <div className="flex justify-center gap-8 mb-4">
-                  <ScoreRing score={lastAudit.scores.performance} label="Performance" />
-                  <ScoreRing score={lastAudit.scores.accessibility} label="Accessibility" />
-                  <ScoreRing score={lastAudit.scores.best_practices} label="Best Practices" />
-                  <ScoreRing score={lastAudit.scores.seo} label="SEO" />
-                </div>
-                {lastAudit.webVitals && (lastAudit.webVitals.lcp || lastAudit.webVitals.tbt || lastAudit.webVitals.cls) && (
-                  <div className="flex gap-6 justify-center border-t pt-3 text-xs text-gray-500">
-                    {lastAudit.webVitals.lcp && <span>LCP: <b>{lastAudit.webVitals.lcp}</b></span>}
-                    {lastAudit.webVitals.tbt && <span>TBT: <b>{lastAudit.webVitals.tbt}</b></span>}
-                    {lastAudit.webVitals.cls && <span>CLS: <b>{lastAudit.webVitals.cls}</b></span>}
-                  </div>
-                )}
-                {lastAudit.opportunities.length > 0 && (
-                  <div className="mt-4 border-t pt-3">
-                    <p className="text-xs font-semibold text-gray-600 mb-2">Top Opportunities</p>
-                    {lastAudit.opportunities.map((o, i) => (
-                      <div key={i} className="flex justify-between text-xs text-gray-500 py-1">
-                        <span>{o.title}</span>
-                        <span className="text-amber-600 font-medium">{o.savings}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <p className="text-xs text-gray-400 text-center mt-3 border-t pt-3">
-                  Last checked: {fmtTime(lastAudit.run_at)}
-                </p>
-              </div>
-            )}
-            {!auditLoading && !lastAudit && (
-              <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 text-center">
-                <p className="text-sm text-gray-500">Click Run Audit to fetch Lighthouse scores.</p>
-              </div>
-            )}
-          </>
-        )}
       </div>
-
-      {/* Core Web Vitals placeholder */}
-      {(!lastAudit || !lastAudit.webVitals || (!lastAudit.webVitals.lcp && !lastAudit.webVitals.tbt && !lastAudit.webVitals.cls)) && (
-        <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
-          <h4 className="font-semibold text-gray-700 text-sm mb-1">Core Web Vitals</h4>
-          <p className="text-xs text-gray-500">
-            Run a Lighthouse audit to see LCP, FID, and CLS scores for your site.
-            These are Google's primary ranking signals for page experience.
-          </p>
-        </div>
-      )}
-
-      {/* Google Search Console Status */}
-      <GSCStatusPanel gscUrl={integrations.google_search_console_url || null} />
     </div>
   )
 }

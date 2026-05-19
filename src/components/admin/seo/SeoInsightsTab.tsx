@@ -45,7 +45,8 @@ function DataSourceCard({ icon, title, description, status, statusLabel, childre
 // S228 Phase 4b: pruned to the data sources that actually deliver value here —
 // PageSpeed (live), S227 SEO Analytics (live). Vercel Analytics link-out removed
 // S231 Phase 0 (orphan, no usage path). GSC/GA4 OAuth tiles added S230/S231.
-export default function SeoConnectTab() {
+// S231 Phase 0.5: renamed from SeoConnectTab → SeoInsightsTab.
+export default function SeoInsightsTab() {
   return (
     <div>
       <div className="mb-5">

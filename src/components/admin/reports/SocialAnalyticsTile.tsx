@@ -1,7 +1,14 @@
-import { BarChart3 } from 'lucide-react'
+import { useState } from 'react'
+import { BarChart3, ChevronDown, ChevronUp } from 'lucide-react'
 import { useTenant } from '../../../context/TenantBootProvider'
 import { useZernioRuns, type ZernioPlatformStats } from '../../../hooks/useZernioRuns'
 import { relativeTime } from '../seo/pageSpeedShared'
+
+// S231 Phase 0.5: collapsible — default collapsed, summary pills visible.
+// Expand/collapse state persisted in localStorage.
+// States: loading / unconfigured / error / success.
+
+const SOCIAL_EXPANDED_KEY = 'pfp_social_analytics_tile_expanded'
 
 const PLATFORM_LABELS: Record<string, string> = {
   facebook: 'Facebook',
@@ -36,9 +43,24 @@ export default function SocialAnalyticsTile() {
   const { id: tenantId } = useTenant()
   const { latestRun, loading, running, error, runCheck } = useZernioRuns(tenantId)
 
-  const platforms = latestRun?.status === 'success' && latestRun.data
-    ? Object.entries(latestRun.data as Record<string, ZernioPlatformStats>)
-    : []
+  const [expanded, setExpanded] = useState<boolean>(() => {
+    try { return localStorage.getItem(SOCIAL_EXPANDED_KEY) === 'true' } catch { return false }
+  })
+  const toggleExpanded = () => {
+    const next = !expanded
+    setExpanded(next)
+    try { localStorage.setItem(SOCIAL_EXPANDED_KEY, String(next)) } catch { /* ignore */ }
+  }
+
+  const platforms: [string, ZernioPlatformStats][] =
+    latestRun?.status === 'success' && latestRun.data
+      ? Object.entries(latestRun.data as Record<string, ZernioPlatformStats>)
+      : []
+
+  const isSuccess = !loading && latestRun?.status === 'success' && platforms.length > 0
+
+  const totalFollowers = platforms.reduce((sum, [, s]) => sum + (s.followers ?? 0), 0)
+  const platformCount = platforms.length
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -47,9 +69,20 @@ export default function SocialAnalyticsTile() {
           <BarChart3 className="w-5 h-5 text-emerald-600" />
           Social Analytics
         </h3>
-        {latestRun?.status === 'success' && (
-          <span className="text-xs text-gray-400">Last checked: {relativeTime(latestRun.ran_at)}</span>
-        )}
+        <div className="flex items-center gap-3">
+          {latestRun?.status === 'success' && (
+            <span className="text-xs text-gray-400">Last checked: {relativeTime(latestRun.ran_at)}</span>
+          )}
+          {isSuccess && (
+            <button
+              onClick={toggleExpanded}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+              title={expanded ? 'Collapse' : 'Expand'}
+            >
+              {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+          )}
+        </div>
       </div>
 
       {loading ? (
@@ -71,7 +104,14 @@ export default function SocialAnalyticsTile() {
           <RunButton label="Retry" running={running} onRun={runCheck} />
           {error && <p className="text-xs text-red-600">{error}</p>}
         </div>
+      ) : !expanded ? (
+        // Collapsed: summary pills
+        <div className="flex gap-3">
+          <StatPill value={platformCount} label="Platforms" />
+          <StatPill value={totalFollowers} label="Total Followers" />
+        </div>
       ) : (
+        // Expanded: full per-platform breakdown
         <div className="space-y-5">
           {platforms.map(([key, stats]) => (
             <div key={key}>

@@ -97,15 +97,6 @@ export default function SocialTab({ onNavigate }: Props) {
         <ZernioOnboardingBanner onOpenConnections={() => setShowConnections(true)} />
       )}
 
-      {/* Social analytics — contextual to the Zernio integration, not tier-gated.
-          Hidden unless a Zernio profile is provisioned (the onboarding banner
-          above already handles the not-connected CTA). */}
-      {integrations?.zernio_profile_id && (
-        <div className="mb-6">
-          <SocialAnalyticsTile />
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-semibold text-gray-900">Social Media</h2>
@@ -156,7 +147,14 @@ export default function SocialTab({ onNavigate }: Props) {
 
       {activeTab === 'analytics' && (
         canAccess(4) ? (
-          <SocialAnalyticsTab />
+          <>
+            {integrations?.zernio_profile_id && (
+              <div className="mb-6">
+                <SocialAnalyticsTile />
+              </div>
+            )}
+            <SocialAnalyticsTab />
+          </>
         ) : isDemoTenant ? (
           <SocialUpgradeNudge planName="Elite" price="$499" onNavigate={onNavigate} />
         ) : (
