@@ -5,13 +5,6 @@ import { FeatureGate } from '../common/FeatureGate'
 import PageHelpBanner from './PageHelpBanner'
 import AnalyticsHub from './analytics/AnalyticsHub'
 import ReportsStatCards from './reports/ReportsStatCards'
-import SitePerformanceTile from './reports/SitePerformanceTile'
-import SocialAnalyticsTile from './reports/SocialAnalyticsTile'
-import SeoAnalyticsTile from './reports/SeoAnalyticsTile'
-import GscAnalyticsTile from './seo/GscAnalyticsTile'
-import BlogAnalyticsTile from './reports/BlogAnalyticsTile'
-import SeoCoverageTile from './reports/SeoCoverageTile'
-import SocialPostsTile from './reports/SocialPostsTile'
 
 interface LeadRow {
   id: string
@@ -160,31 +153,6 @@ export default function ReportsTab() {
             </div>
           </div>
         )}
-
-        {/* Analytics grid — 4 left / 3 right */}
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* LEFT — tier-3 SEO tiles + tier-2 Site Performance */}
-          <div className="space-y-4">
-            <FeatureGate minTier={3} featureName="Analytics">
-              <SeoAnalyticsTile />
-              <GscAnalyticsTile />
-            </FeatureGate>
-            <FeatureGate minTier={2} featureName="Site Performance">
-              <SitePerformanceTile />
-            </FeatureGate>
-            <FeatureGate minTier={3} featureName="SEO Coverage">
-              <SeoCoverageTile />
-            </FeatureGate>
-          </div>
-          {/* RIGHT — tier-3 Social + Blog */}
-          <FeatureGate minTier={3} featureName="Analytics">
-            <div className="space-y-4">
-              <SocialPostsTile />
-              <SocialAnalyticsTile />
-              <BlogAnalyticsTile />
-            </div>
-          </FeatureGate>
-        </div>
 
         <p className="text-xs text-gray-400 mt-6 text-center">Privacy-first analytics — all data stays in your database. No third-party tracking.</p>
       </FeatureGate>
