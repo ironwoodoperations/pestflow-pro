@@ -519,3 +519,21 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
 - Files changed:
   - src/components/admin/ReportsTab.tsx
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-20 14:03 UTC
+- Branch: `feat/s232-analytics-hub-scaffold`
+- Commit: `15f7d8b` — chore: S232 Phase 2 hotfix manifest log
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-20 14:08 UTC
+- Branch: `feat/s232-analytics-hub-scaffold`
+- Commit: `7a538b6` — S232 Phase 2 hotfix: drop LeadFunnel mount (match main)
+- Author: Claude
+- Files changed:
+  - src/components/admin/ReportsTab.tsx
+- Next recommended action: [Fill in next session: read this line, write what comes next]
