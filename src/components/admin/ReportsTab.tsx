@@ -70,10 +70,10 @@ export default function ReportsTab() {
 
   return (
     <div>
-      <PageHelpBanner tab="reports" title="📊 Reports & Insights"
+      <PageHelpBanner tab="analytics" title="📊 Reports & Insights"
         body="A snapshot of your social media activity and SEO health. Use this to spot gaps and track progress over time." />
 
-      <FeatureGate minTier={1} featureName="Reports">
+      <FeatureGate minTier={1} featureName="Analytics">
         <AnalyticsHub />
 
         <FeatureGate minTier={2} featureName="Lead Reports">

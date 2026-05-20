@@ -36,7 +36,7 @@ const TABS = [
   { key: 'social', label: 'Social', icon: Share2 },
   { key: 'testimonials', label: 'Testimonials', icon: Star },
   { key: 'locations', label: 'Locations', icon: MapPin },
-  { key: 'reports', label: 'Reports', icon: TrendingUp },
+  { key: 'analytics', label: 'Analytics', icon: TrendingUp },
   { key: 'crm', label: 'CRM', icon: Users },
   { key: 'team', label: 'Team', icon: Users },
   { key: 'billing', label: 'Billing', icon: CreditCard },
@@ -54,7 +54,7 @@ const TAB_SUBTITLES: Record<string, string> = {
   social: 'Schedule and manage social media',
   testimonials: 'Manage customer reviews and testimonials',
   locations: 'Manage service area locations',
-  reports: 'Business analytics and reports',
+  analytics: 'Business analytics and reports',
   crm: 'Track leads and customer relationships',
   team: 'Manage your team members shown on your website',
   billing: 'Your current plan and payment history',
@@ -118,7 +118,7 @@ export default function Dashboard() {
         </div>
         <nav className="flex-1 py-4 px-2 space-y-0.5">
           {TABS.map(({ key, label, icon: Icon }) => {
-            const gatedTabs: Record<string, number> = { blog: 2, seo: 2, social: 2, reports: 2 }
+            const gatedTabs: Record<string, number> = { blog: 2, seo: 2, social: 2, analytics: 2 }
             const locked = gatedTabs[key] ? !canAccess(gatedTabs[key]) : false
             return (
               <button key={key} onClick={() => setActiveTab(key)} aria-current={activeTab === key ? 'page' : undefined}
@@ -225,7 +225,7 @@ export default function Dashboard() {
                 </Suspense>
               </AdminTabErrorBoundary>
             )}
-            {activeTab === 'reports' && (
+            {activeTab === 'analytics' && (
               <AdminTabErrorBoundary tabName="Reports">
                 <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-gray-400 text-sm">Loading...</div></div>}>
                   <ReportsTab />
