@@ -1,5 +1,6 @@
 import { FeatureGate } from '../../../common/FeatureGate'
 import LockedSectionCard from '../../../common/LockedSectionCard'
+import SitePerformanceTile from '../../reports/SitePerformanceTile'
 import SeoAnalyticsTile from '../../reports/SeoAnalyticsTile'
 import GscAnalyticsTile from '../../seo/GscAnalyticsTile'
 import Ga4AnalyticsTile from '../../seo/Ga4AnalyticsTile'
@@ -8,6 +9,19 @@ import SeoCoverageTile from '../../reports/SeoCoverageTile'
 export default function SEOSection() {
   return (
     <div className="space-y-4">
+      <FeatureGate
+        minTier={2}
+        featureName="Site Performance"
+        fallback={
+          <LockedSectionCard
+            title="Site Performance"
+            bodyText="Site performance scores are available on the Grow plan and above."
+            mailtoSubject="Upgrade Request - Site Performance"
+          />
+        }
+      >
+        <SitePerformanceTile />
+      </FeatureGate>
       <FeatureGate
         minTier={3}
         featureName="SEO Analytics"

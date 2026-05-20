@@ -3,7 +3,6 @@ import { Accordion } from '../../ui/accordion'
 import AnalyticsSection, { type AnalyticsSectionId } from './AnalyticsSection'
 import SEOSection from './sections/SEOSection'
 import SocialSection from './sections/SocialSection'
-import PerformanceSection from './sections/PerformanceSection'
 import BlogSection from './sections/BlogSection'
 
 const STORAGE_KEY = 'analytics-hub-expanded-sections'
@@ -16,7 +15,7 @@ function readStoredExpanded(): AnalyticsSectionId[] {
     if (!raw) return DEFAULT_EXPANDED
     const parsed = JSON.parse(raw)
     if (!Array.isArray(parsed)) return DEFAULT_EXPANDED
-    const valid: AnalyticsSectionId[] = ['seo', 'social', 'performance', 'blog']
+    const valid: AnalyticsSectionId[] = ['seo', 'social', 'blog']
     return parsed.filter((id): id is AnalyticsSectionId => valid.includes(id as AnalyticsSectionId))
   } catch {
     return DEFAULT_EXPANDED
@@ -62,14 +61,6 @@ export default function AnalyticsHub() {
         summaryStat="—"
       >
         <SocialSection />
-      </AnalyticsSection>
-
-      <AnalyticsSection
-        id="performance"
-        title="Performance & Reports"
-        summaryStat="—"
-      >
-        <PerformanceSection />
       </AnalyticsSection>
 
       <AnalyticsSection
