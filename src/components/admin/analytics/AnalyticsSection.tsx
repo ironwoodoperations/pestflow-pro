@@ -1,6 +1,6 @@
 import { AccordionContent, AccordionItem, AccordionTrigger } from '../../ui/accordion'
 
-export type AnalyticsSectionId = 'seo' | 'social' | 'performance' | 'blog'
+export type AnalyticsSectionId = 'seo' | 'social' | 'blog'
 
 interface AnalyticsSectionProps {
   id: AnalyticsSectionId
