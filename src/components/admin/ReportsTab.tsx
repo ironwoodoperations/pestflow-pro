@@ -5,6 +5,13 @@ import { FeatureGate } from '../common/FeatureGate'
 import PageHelpBanner from './PageHelpBanner'
 import AnalyticsHub from './analytics/AnalyticsHub'
 import ReportsStatCards from './reports/ReportsStatCards'
+import SitePerformanceTile from './reports/SitePerformanceTile'
+import SocialAnalyticsTile from './reports/SocialAnalyticsTile'
+import SeoAnalyticsTile from './reports/SeoAnalyticsTile'
+import GscAnalyticsTile from './seo/GscAnalyticsTile'
+import BlogAnalyticsTile from './reports/BlogAnalyticsTile'
+import SeoCoverageTile from './reports/SeoCoverageTile'
+import SocialPostsTile from './reports/SocialPostsTile'
 
 interface LeadRow {
   id: string
@@ -70,13 +77,10 @@ export default function ReportsTab() {
 
   return (
     <div>
-      <PageHelpBanner
-        tab="reports"
-        title="📊 Analytics"
-        body="One place for SEO, social, performance, and blog analytics. Sections expand or collapse, and your layout is remembered."
-      />
+      <PageHelpBanner tab="reports" title="📊 Reports & Insights"
+        body="A snapshot of your social media activity and SEO health. Use this to spot gaps and track progress over time." />
 
-      <FeatureGate minTier={2} featureName="Analytics">
+      <FeatureGate minTier={2} featureName="Reports">
         <AnalyticsHub />
 
         {loading ? (
@@ -84,7 +88,7 @@ export default function ReportsTab() {
         ) : (
           <div className="mt-8 space-y-6">
             {/* Range toggle */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mb-6">
               {(['7d', '30d', '90d', 'all'] as const).map(r => (
                 <button key={r} onClick={() => setRange(r)} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${range === r ? 'bg-emerald-500 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
                   {r === '7d' ? '7 Days' : r === '30d' ? '30 Days' : r === '90d' ? '90 Days' : 'All Time'}
@@ -96,7 +100,7 @@ export default function ReportsTab() {
             <ReportsStatCards totalLeads={totalLeads} newLeads={newLeads} converted={converted}
               conversionRate={conversionRate} leadsTrend={leadsTrend} convTrend={convTrend} range={range} />
 
-            {/* Leads Over Time + Lead Status + Top Services */}
+            {/* Leads Over Time + Lead Status */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <h3 className="text-base font-semibold text-gray-900 mb-4">Leads Over Time</h3>
@@ -154,10 +158,35 @@ export default function ReportsTab() {
                 )}
               </div>
             </div>
-
-            <p className="text-xs text-gray-400 mt-6 text-center">Privacy-first analytics — all data stays in your database. No third-party tracking.</p>
           </div>
         )}
+
+        {/* Analytics grid — 4 left / 3 right */}
+        <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* LEFT — tier-3 SEO tiles + tier-2 Site Performance */}
+          <div className="space-y-4">
+            <FeatureGate minTier={3} featureName="Analytics">
+              <SeoAnalyticsTile />
+              <GscAnalyticsTile />
+            </FeatureGate>
+            <FeatureGate minTier={2} featureName="Site Performance">
+              <SitePerformanceTile />
+            </FeatureGate>
+            <FeatureGate minTier={3} featureName="SEO Coverage">
+              <SeoCoverageTile />
+            </FeatureGate>
+          </div>
+          {/* RIGHT — tier-3 Social + Blog */}
+          <FeatureGate minTier={3} featureName="Analytics">
+            <div className="space-y-4">
+              <SocialPostsTile />
+              <SocialAnalyticsTile />
+              <BlogAnalyticsTile />
+            </div>
+          </FeatureGate>
+        </div>
+
+        <p className="text-xs text-gray-400 mt-6 text-center">Privacy-first analytics — all data stays in your database. No third-party tracking.</p>
       </FeatureGate>
     </div>
   )
