@@ -500,3 +500,22 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - src/components/admin/analytics/sections/SEOSection.tsx
   - src/components/admin/analytics/sections/SocialSection.tsx
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-20 13:52 UTC
+- Branch: `feat/s232-analytics-hub-scaffold`
+- Commit: `6142037` — chore: S232 session manifest + build info
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.md
+  - tsconfig.tsbuildinfo
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-20 14:03 UTC
+- Branch: `feat/s232-analytics-hub-scaffold`
+- Commit: `0ef45d5` — S232 Phase 2 hotfix: restore lead UI below Analytics Hub
+- Author: Claude
+- Files changed:
+  - src/components/admin/ReportsTab.tsx
+- Next recommended action: [Fill in next session: read this line, write what comes next]
