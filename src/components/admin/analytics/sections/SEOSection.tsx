@@ -1,10 +1,29 @@
+import { FeatureGate } from '../../../common/FeatureGate'
+import LockedSectionCard from '../../../common/LockedSectionCard'
+import SeoAnalyticsTile from '../../reports/SeoAnalyticsTile'
+import GscAnalyticsTile from '../../seo/GscAnalyticsTile'
+import Ga4AnalyticsTile from '../../seo/Ga4AnalyticsTile'
+import SeoCoverageTile from '../../reports/SeoCoverageTile'
+
 export default function SEOSection() {
   return (
-    <div className="rounded-lg border border-dashed border-gray-300 bg-white p-6 text-center">
-      <p className="text-sm font-medium text-gray-700">SEO analytics content</p>
-      <p className="text-xs text-gray-500 mt-1">
-        Wiring in S233 — PageSpeed score, GSC top-line, full drill-down, and 30-day trend per tier.
-      </p>
+    <div className="space-y-4">
+      <FeatureGate
+        minTier={3}
+        featureName="SEO Analytics"
+        fallback={
+          <LockedSectionCard
+            title="SEO Analytics"
+            bodyText="SEO keyword rankings, Google Search Console data, and GA4 traffic are available on the Pro plan and above."
+            mailtoSubject="Upgrade Request - SEO Analytics"
+          />
+        }
+      >
+        <SeoAnalyticsTile />
+        <GscAnalyticsTile />
+        <Ga4AnalyticsTile />
+        <SeoCoverageTile />
+      </FeatureGate>
     </div>
   )
 }
