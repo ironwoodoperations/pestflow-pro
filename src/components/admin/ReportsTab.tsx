@@ -5,7 +5,6 @@ import { FeatureGate } from '../common/FeatureGate'
 import PageHelpBanner from './PageHelpBanner'
 import AnalyticsHub from './analytics/AnalyticsHub'
 import ReportsStatCards from './reports/ReportsStatCards'
-import LeadFunnel from './reports/LeadFunnel'
 
 interface LeadRow {
   id: string
@@ -155,9 +154,6 @@ export default function ReportsTab() {
                 )}
               </div>
             </div>
-
-            {/* Lead Funnel */}
-            <LeadFunnel leads={filtered} />
 
             <p className="text-xs text-gray-400 mt-6 text-center">Privacy-first analytics — all data stays in your database. No third-party tracking.</p>
           </div>
