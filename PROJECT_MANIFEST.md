@@ -490,3 +490,12 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - src/hooks/useGa4Runs.ts
   - supabase/functions/ga4-analytics/index.ts
 - Next recommended action: Task requested was "print F2 section of docs/audits/s232-analytics-inventory.txt" — file does not exist on disk or in git history on any branch. S232 Phase 1 inventory has not been authored. Either re-run the S232 Phase 1 death audit to generate the file, or paste/restore the inventory body before any "print F2 section" follow-up.
+
+---
+## Session — 2026-05-20 13:34 UTC
+- Branch: `claude/print-f2-analytics-section-iMcFT`
+- Commit: `5604efe` — chore: log S232 inventory file missing on disk
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
