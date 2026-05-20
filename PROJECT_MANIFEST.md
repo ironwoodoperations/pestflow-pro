@@ -476,3 +476,64 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - src/components/admin/ReportsTab.tsx (Ga4AnalyticsTile mounted after Gsc, minTier=3)
   - src/components/admin/seo/SeoInsightsTab.tsx (Ga4AnalyticsTile mounted after Gsc, all tiers)
 - Next recommended action: Scott merges PR #100. Full browser-pass blocked until GA4 tracking live 24-48h + manual token insert for Dang. Phase 1 PR #99 also awaiting merge + browser-pass.
+
+---
+## Session — 2026-05-19 21:44 UTC
+- Branch: `feat/s232-analytics-hub-scaffold`
+- Commit: `a376488` — task[s232-phase1]: analytics hub Phase 1 death audit / inventory
+- Author: Claude
+- Files changed:
+  - docs/audits/s232-analytics-inventory.txt
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-20 13:51 UTC
+- Branch: `feat/s232-analytics-hub-scaffold`
+- Commit: `57517b0` — task[s232-phase2]: analytics hub accordion shell
+- Author: Claude
+- Files changed:
+  - src/components/admin/ReportsTab.tsx
+  - src/components/admin/analytics/AnalyticsHub.tsx
+  - src/components/admin/analytics/AnalyticsSection.tsx
+  - src/components/admin/analytics/sections/BlogSection.tsx
+  - src/components/admin/analytics/sections/PerformanceSection.tsx
+  - src/components/admin/analytics/sections/SEOSection.tsx
+  - src/components/admin/analytics/sections/SocialSection.tsx
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-20 13:52 UTC
+- Branch: `feat/s232-analytics-hub-scaffold`
+- Commit: `6142037` — chore: S232 session manifest + build info
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.md
+  - tsconfig.tsbuildinfo
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-20 14:03 UTC
+- Branch: `feat/s232-analytics-hub-scaffold`
+- Commit: `0ef45d5` — S232 Phase 2 hotfix: restore lead UI below Analytics Hub
+- Author: Claude
+- Files changed:
+  - src/components/admin/ReportsTab.tsx
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-20 14:03 UTC
+- Branch: `feat/s232-analytics-hub-scaffold`
+- Commit: `15f7d8b` — chore: S232 Phase 2 hotfix manifest log
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-20 14:08 UTC
+- Branch: `feat/s232-analytics-hub-scaffold`
+- Commit: `7a538b6` — S232 Phase 2 hotfix: drop LeadFunnel mount (match main)
+- Author: Claude
+- Files changed:
+  - src/components/admin/ReportsTab.tsx
+- Next recommended action: [Fill in next session: read this line, write what comes next]

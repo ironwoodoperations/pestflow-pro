@@ -1,0 +1,425 @@
+S232 — ANALYTICS HUB SCAFFOLDING — PHASE 1 INVENTORY AUDIT
+Branch: feat/s232-analytics-hub-scaffold (off origin/main at 3fac90d, post-S231 PR #100 merge)
+Date: 2026-05-19
+Kickoff: docs/audits/pestflow-pro-kickoff-S232.md (canonical, on main when added)
+REFERENCE: docs/audits/s228-death-audit.txt (format/depth model)
+STOP-AND-REPORT after this file — no patches before Scott acknowledges.
+
+================================================================================
+PART A — REPORTS TAB INVENTORY (src/components/admin/ReportsTab.tsx, 188 ln)
+================================================================================
+
+ReportsTab — root container, minTier=2 FeatureGate wrapping all (L85).
+  Grid structure: L158–182 — "4 left / 3 right" per S228/Phase-0.85 (#98).
+
+  LEFT COLUMN (space-y-4):
+    - SeoAnalyticsTile (~293 ln, src/components/admin/reports/SeoAnalyticsTile.tsx)
+      Imports: useSeoRuns hook, relativeTime util.
+      Data: seo_runs (rankings/competitors/opportunities kinds), via hook.
+      Collapsible (localStorage key: pfp_seo_tile_expanded).
+      Mounted: ReportsTab L163. Gate L162–166 (minTier=3).
+    - GscAnalyticsTile (~170 ln, src/components/admin/seo/GscAnalyticsTile.tsx)
+      Imports: useGscRuns hook, relativeTime util.
+      Data: gsc_runs (total_clicks, total_impressions, avg_ctr, avg_position).
+      Mounted: ReportsTab L164. Inside L162–166 minTier=3 gate.
+      Collapsible (localStorage: pfp_gsc_tile_expanded).
+    - Ga4AnalyticsTile (192 ln, src/components/admin/seo/Ga4AnalyticsTile.tsx)
+      Imports: useGa4Runs hook, relativeTime util.
+      Data: ga4_runs (total_users, total_sessions, avg_engagement_rate, total_page_views).
+      Mounted: ReportsTab L165. Inside L162–166 minTier=3 gate.
+      Collapsible (localStorage: pfp_ga4_tile_expanded).
+      [S231 PR #100 artifact — just merged.]
+    - SitePerformanceTile (~90 ln, src/components/admin/reports/SitePerformanceTile.tsx)
+      Imports: usePageSpeedRuns hook, relativeTime, pageSpeedTargetUrl.
+      Data: pagespeed_runs (performance score, audit results).
+      Mounted: ReportsTab L168. Gate L167–169 (minTier=2).
+    - SeoCoverageTile (~66 ln, src/components/admin/reports/SeoCoverageTile.tsx)
+      Imports: supabase direct read (no hook).
+      Data: seo_meta (meta_title, meta_description, focus_keyword counts).
+      Mounted: ReportsTab L171. Gate L170–172 (minTier=3).
+
+  RIGHT COLUMN (space-y-4, wrapped in minTier=3 gate L175–181):
+    - SocialPostsTile (~99 ln, src/components/admin/reports/SocialPostsTile.tsx)
+      Imports: supabase direct read.
+      Data: social_posts (status counts by platform).
+      Mounted: ReportsTab L177. No internal gate (parent FeatureGate L175).
+    - SocialAnalyticsTile (~136 ln, src/components/admin/reports/SocialAnalyticsTile.tsx)
+      Imports: useZernioRuns hook, relativeTime.
+      Data: zernio_runs (engagement, reach, followers [NULL pending S229]).
+      Mounted: ReportsTab L178. Collapsible (localStorage: pfp_social_analytics_tile_expanded).
+    - BlogAnalyticsTile (~92 ln, src/components/admin/reports/BlogAnalyticsTile.tsx)
+      Imports: supabase direct read.
+      Data: blog_posts (total, published, drafted counts; most recent post).
+      Mounted: ReportsTab L179. No internal gate.
+
+  TOP / STAT + LEAD CHARTS:
+    - ReportsStatCards (~42 ln, src/components/admin/reports/ReportsStatCards.tsx)
+      Mounted L96. Data: leads totals/trends/conversion rate.
+    - "Leads Over Time" (INLINE, ReportsTab L100–117 area, h3 at L102)
+      Data: leads (daily/weekly buckets via supabase).
+    - "Lead Status" (INLINE, h3 at L119)
+      Data: leads status breakdown (new/contacted/converted/lost).
+    - "Top Requested Services" (INLINE, h3 at L135)
+      Data: leads.services array parsing.
+    - LeadFunnel (src/components/admin/reports/LeadFunnel.tsx) — kept per
+      S228 keep-decision (Risk #6 in S228 audit).
+
+  ALSO IN reports/ DIR (NOT mounted on ReportsTab today):
+    - BlogAnalyticsSection.tsx (~112 ln) — mounted by BlogTab (see Part D).
+    - SocialSeoReport.tsx — legacy aggregate component, importer trail
+      reduced post-S228; verify usage during Phase 2.
+    - SocialVolumeChart.tsx (~79 ln) — mounted by Social/SocialAnalyticsTab
+      (see Part C). NOT mounted on ReportsTab (removed in S228).
+
+================================================================================
+PART B — SEO TAB & SUBTABS (src/components/admin/SEOTab.tsx, ~85 ln)
+================================================================================
+
+SEOTab — parent router, minTier=2 gate wrapping all.
+  Tab bar: overview, pages, keywords (minTier=3), aio (minTier=3), connect/insights.
+
+  OVERVIEW TAB → src/components/admin/seo/SeoOverviewTab.tsx
+    Analytics-flavored content:
+      - PageSpeedMini (renders Lighthouse perf score)
+      - SeoStatCards (page count / issues)
+      - Coverage cards (4) — title/desc/keyword coverage % from seo_meta
+    Data: pagespeed_runs (via usePageSpeedRuns), seo_meta, page_content.
+
+  INSIGHTS TAB → src/components/admin/seo/SeoInsightsTab.tsx (79 ln)
+    Mounts (top to bottom):
+      - PageSpeedPanel (from SeoConnectPreviews.tsx) — latest audit score.
+      - SeoAnalyticsTile — gated minTier=3 inside the subtab (L~64–67).
+      - GscAnalyticsTile — NO gate (all tiers see it here).
+      - Ga4AnalyticsTile (S231) — NO gate (all tiers see it here).
+    [Tier mismatch flag — see F2.]
+
+  PAGES TAB → src/components/admin/seo/SeoPagesTab.tsx — meta editor; no analytics.
+
+  KEYWORDS TAB → src/components/admin/seo/SeoKeywordsTab.tsx — keyword
+    research UI; minTier=3 gate from parent SEOTab.
+
+  AIO TAB → src/components/admin/seo/SeoAioTab.tsx — structured-data UI;
+    minTier=3 gate from parent SEOTab.
+
+ANALYTICS-FLAVORED COMPONENTS IN src/components/admin/seo/:
+  - SeoAnalyticsTile   — also mounted on Reports tab (Part A)
+  - GscAnalyticsTile   — also mounted on Reports tab (Part A)
+  - Ga4AnalyticsTile   — also mounted on Reports tab (Part A) [S231]
+  - SeoConnectPreviews.tsx — exports only PageSpeedPanel (others pruned in S228)
+
+================================================================================
+PART C — SOCIAL TAB (src/components/admin/SocialTab.tsx, 219 ln)
+================================================================================
+
+SocialTab — main container.
+  Subtabs: campaigns (minTier=3), queue, analytics (minTier=4 gate L148).
+
+  CAMPAIGNS TAB → src/components/admin/social/CampaignsTab.tsx — campaign
+    UI; no analytics tiles.
+  CONTENT QUEUE TAB → src/components/admin/social/ContentQueueTab.tsx — post
+    approval; no analytics tiles.
+
+  ANALYTICS TAB (SocialTab L148–162, gated minTier=4):
+    - SocialAnalyticsTile (~136 ln, /reports/SocialAnalyticsTile.tsx)
+      Mounted L~153–154. Optional (renders if integrations.zernio_profile_id set).
+      Data: zernio_runs (engagement, reach; followers NULL — S229 blocker).
+    - SocialAnalyticsTab.tsx (src/components/admin/social/SocialAnalyticsTab.tsx)
+      Mounted L~156. Imports SocialVolumeChart.
+      Data: social_posts (counts/status/platform), 6-month volume chart.
+
+ANALYTICS-FLAVORED COMPONENTS IN src/components/admin/social/:
+  - SocialAnalyticsTab.tsx — custom analytics tab content
+  - SocialVolumeChart.tsx (~79 ln) — 6-month bar chart; consumed only by
+    SocialAnalyticsTab now (ReportsTab usage removed in S228).
+  - useSocialData.ts (hook from S225) — feeds SocialTab analytics widget.
+
+================================================================================
+PART D — BLOG TAB (src/components/admin/BlogTab.tsx, 201 ln)
+================================================================================
+
+BlogTab — post CRUD; gated minTier=2.
+
+  ANALYTICS CONTENT:
+    - BlogAnalyticsSection (~112 ln, src/components/admin/reports/BlogAnalyticsSection.tsx)
+      Imported L14, mounted L~95.
+      Displays: Total posts, Published count, Days since last publish (3-card stat grid).
+      Data: blog_posts (published_at, created_at counts).
+
+  NOTE — duplication w/ Reports tab: BlogAnalyticsTile (in /reports/) shows
+    related data on the Reports tab. Different presentations of the same
+    underlying source. See F4 below.
+
+================================================================================
+PART E — DASHBOARD (src/pages/admin/Dashboard.tsx, 276 ln + dashboard/)
+================================================================================
+
+Dashboard.tsx — main shell, nav, internal tab routing.
+  Tab definitions: L31–45 (13 tabs total — see Part I).
+  Reports tab: key='reports', label='Reports', icon=TrendingUp, gated
+    minTier=2 (L~121).
+  Routing: /admin (catch-all) — Dashboard component routes via activeTab state.
+
+DashboardHome.tsx (122 ln) — composition:
+  - DashboardPlanSection (S228 plan card)
+  - DashboardStats (30 ln) — 4 LEAD stat cards (Total Leads / New This
+    Month / New This Week / Conversion Rate). Data: leads.
+  - WIDGET ROW (DashboardHome L~81–84):
+      * DashboardSeoWidget (~78 ln, src/components/admin/dashboard/DashboardSeoWidget.tsx)
+        S228 artifact (post-S228 it is real-data, NOT the localStorage Lighthouse
+        widget described in the original S228 audit). Reads via useSeoRuns —
+        keyword count + top ranking position. NO FeatureGate wrapper (F3).
+      * DashboardSocialWidget (~75 ln, src/components/admin/dashboard/DashboardSocialWidget.tsx)
+        S228 artifact. Reads via useZernioRuns — total engagement + total
+        reach + platform count. NO FeatureGate wrapper (F3).
+  - INLINE "Leads Per Month" chart (DashboardHome L~97–109). Data: leads.
+  - INLINE "Quick Links" footer (DashboardHome L~112–119). Static.
+
+ALSO IN src/components/admin/dashboard/:
+  - DashboardPlanCard.tsx, DashboardPlanSection.tsx, PlanOverviewCard.tsx,
+    DemoControls.tsx — non-analytics (plan/billing/demo UI).
+
+================================================================================
+PART F — SHARED ANALYTICS HOOKS (src/hooks/)
+================================================================================
+
+useGa4Runs.ts (85 ln) — table: ga4_runs
+  Returns: { loading, running, error, latestRun, runCheck }
+  latestRun.data: { total_users, total_sessions, avg_engagement_rate,
+    total_page_views, channels[], top_pages[] }
+  Consumers: Ga4AnalyticsTile.
+
+useGscRuns.ts (~84 ln) — table: gsc_runs
+  Returns: { loading, running, error, latestRun, runCheck }
+  latestRun.data: { total_clicks, total_impressions, avg_ctr, avg_position }
+  Consumers: GscAnalyticsTile.
+
+usePageSpeedRuns.ts (~85 ln) — table: pagespeed_runs
+  Returns: { loading, running, error, latestRun, runCheck }
+  latestRun.data: { scores: { performance, accessibility, best-practices, seo }, ... }
+  Consumers: SitePerformanceTile, SeoOverviewTab (PageSpeedMini).
+
+useSeoRuns.ts (~152 ln) — table: seo_runs (3 kinds: rankings / competitors / opportunities)
+  Returns: { rankings, competitors, opportunities } where each is a
+    SeoKindState { data, loading, error, lastRunAt } + per-kind runNow().
+  Consumers: SeoAnalyticsTile, DashboardSeoWidget.
+
+useZernioRuns.ts (~84 ln) — table: zernio_runs
+  Returns: { latestRun, loading, running, error, runCheck }
+  latestRun.data: platform-keyed { youtube|facebook|instagram: { followers,
+    engagement, reach } }. followers = NULL on all platforms (S229 backlog).
+  Consumers: SocialAnalyticsTile (reports), DashboardSocialWidget.
+
+useGoogleAnalytics.ts (~44 ln) — GA4 page-view tracking script (S231 Phase 1).
+  NOT a data-read hook; loads gtag.js. Unrelated to analytics tiles' reads.
+
+================================================================================
+PART G — SHARED INFRASTRUCTURE
+================================================================================
+
+FeatureGate (src/components/common/FeatureGate.tsx, 38 ln)
+  Signature: ({ minTier, featureName, children, fallback? })
+  Behavior: Renders children if usePlan().canAccess(minTier). Otherwise
+    renders a locked-CTA fallback (amber padlock per CLAUDE.md rule 13-ish).
+  Consumers: ReportsTab, SEOTab, SocialTab, BlogTab, SeoInsightsTab, and
+    individual tiles internally.
+
+usePlan (src/hooks/usePlan.ts re-export → src/context/PlanContext.tsx, 77 ln)
+  Provider: PlanProvider wraps the app tree (verify in App.tsx).
+  Signature: () => { tier, loading, canAccess(min), setTier(t), refreshPlan() }
+  setTier(t): writes settings.subscription.tier — Scott uses this for
+    per-tier verification in Dang admin (kickoff calls this out for
+    Phase 3 tier-gating verification).
+  Tier normalization is inlined (L~44–47 per agent inventory): handles
+    'growth'/'grow'/'pro'/'elite' string variants → numeric 1–4.
+
+normalize_tier RPC
+  Not found in repo TS calls. S227 added it server-side for cron eligibility
+  (see docs/migrations/s227-seo-cron.sql). PlanContext does its own inline
+  normalize for client-side. Out of scope for S232.
+
+shadcn Accordion (src/components/ui/accordion.tsx, 52 ln)
+  PRESENT — re-exports @radix-ui/react-accordion primitives
+  (Accordion, AccordionItem, AccordionTrigger, AccordionContent).
+  Not currently imported by any tile (existing collapsibles are hand-built
+  with useState + localStorage).
+  S232 Phase 2 SHOULD use this rather than hand-rolling.
+
+================================================================================
+PART H — ANALYTICS-RELEVANT DB TABLES (consumption map)
+================================================================================
+
+  [table]          [consumers — tile (via hook/direct)]
+  ga4_runs         Ga4AnalyticsTile (useGa4Runs)
+  gsc_runs         GscAnalyticsTile (useGscRuns)
+  seo_runs         SeoAnalyticsTile (useSeoRuns), DashboardSeoWidget (useSeoRuns)
+  zernio_runs      SocialAnalyticsTile (useZernioRuns), DashboardSocialWidget (useZernioRuns)
+  pagespeed_runs   SitePerformanceTile (usePageSpeedRuns), SeoOverviewTab/PageSpeedMini
+  social_posts     SocialPostsTile (direct), SocialVolumeChart (direct), SocialAnalyticsTab (direct)
+  blog_posts       BlogAnalyticsSection (direct), BlogAnalyticsTile (direct)
+  seo_meta         SeoCoverageTile (direct), SeoOverviewTab coverage cards (direct/via hook)
+  leads            ReportsTab inline charts (direct), DashboardStats (direct), DashboardHome chart (direct)
+
+NEW edge fns / tables / crons in S232: NONE (scaffolding only — kickoff explicit).
+
+================================================================================
+PART I — CURRENT ADMIN NAV CONFIG
+================================================================================
+
+Tab order (Dashboard.tsx L31–45, TABS array):
+   1. Dashboard       (BarChart3)
+   2. Content         (FileText)
+   3. SEO             (Search)
+   4. Blog            (BookOpen)
+   5. Social          (Share2)
+   6. Testimonials    (Star)
+   7. Locations       (MapPin)
+   8. Reports         (TrendingUp)   ← TARGET FOR RENAME → "Analytics"
+   9. CRM             (Users)
+  10. Team            (Users)
+  11. Billing         (CreditCard)
+  12. Support         (LifeBuoy)
+  13. Settings        (Settings)
+
+Reports gated minTier=2 (Dashboard L~121).
+No /admin/reports sub-route — Dashboard catches /admin and routes by
+activeTab state (no React Router subroute for tabs).
+
+S232 Phase 4 work:
+  - Rename label "Reports" → "Analytics" in Dashboard.tsx TABS array.
+  - Rename activeTab key 'reports' → 'analytics' (sweep references).
+  - Add Phase 4 plan calls for /admin/reports → /admin/analytics redirect.
+    Current architecture has no sub-routes; kickoff line "Update route:
+    `/admin/reports` → `/admin/analytics`" implies introducing a sub-route
+    or a query-param-based redirect. CLARIFY WITH SCOTT — flag F10.
+
+================================================================================
+PART J — ROUTING / CATCH-ALL ORDERING (App.tsx, ~123 ln)
+================================================================================
+
+Public/landing routes (order in App.tsx):
+   "/"                            RootRoute (marketing)
+   "/admin/login"                 Login
+   "/admin/onboarding"            Onboarding
+   "/admin/onboarding-live"       OnboardingLive
+   "/admin"                       Dashboard (protected, catches /admin/*)
+   "/ironwood/login","/ironwood/*"  IronwoodOps
+   "/payment-success"             PaymentSuccess
+   "/intake/:token"               IntakePage
+   "/intake-success"              IntakeSuccess
+   "/demos","/demos/admin"        DemosPage/DemosAdminPage
+   "/terms","/privacy"            legal
+   "*"                            NotFound
+
+Catch-all "*" at end. NO "/:slug" catch-all here (slug routing lives in
+SlugRouter / on the public side — separate concern).
+
+S232 Phase 4 routing impact:
+  - Today: tab nav is state-only inside /admin (no sub-routes).
+  - Kickoff asks for /admin/analytics + redirect from /admin/reports.
+  - Two implementation paths:
+      (1) Introduce sub-routes inside Dashboard (React Router nested
+          routes) — non-trivial refactor, scope creep risk.
+      (2) Detect /admin/reports in Dashboard via useLocation and bounce
+          to /admin/analytics + set activeTab = 'analytics' — minimal,
+          fits current architecture.
+  - Recommend Path 2 unless Scott wants the broader refactor. See F10.
+
+================================================================================
+PART K — FLAGS / CONTRADICTIONS & RISKS
+================================================================================
+
+F1. DUPLICATE ANALYTICS CONTENT ACROSS SURFACES
+    Same tile mounted in 2+ places today:
+      - SeoAnalyticsTile  : Reports tab L163 + SeoInsightsTab L~66
+      - GscAnalyticsTile  : Reports tab L164 + SeoInsightsTab L~71
+      - Ga4AnalyticsTile  : Reports tab L165 + SeoInsightsTab L~75 (S231)
+      - SocialAnalyticsTile: Reports tab L178 + Social tab L~153
+    Each instance has its own state and re-fetches independently (no shared
+    cache). Kickoff explicitly defers operational-tab cleanup to S233 —
+    PHASE 2 LEAVES THESE IN PLACE.
+
+F2. TIER GATING — INSIGHTS TAB UNGATED FOR Gsc/Ga4 TILES
+    SeoInsightsTab mounts:
+      - SeoAnalyticsTile  → minTier=3 gate INSIDE the subtab
+      - GscAnalyticsTile  → NO gate (all tiers)
+      - Ga4AnalyticsTile  → NO gate (all tiers)
+    On Reports tab, the same Gsc/Ga4 tiles are gated minTier=3.
+    This means a tier-1 tenant who clicks SEO → Insights sees GSC + GA4
+    data. CONTRADICTS S232 kickoff tier matrix (Tier 1 SEO = "Performance
+    score only", Tier 2 SEO = GSC top-line, Tier 3 = full GSC + GA4).
+    DECISION FOR SCOTT — is this a known gap to fix in S233 cleanup
+    (when SEO tab loses its duplicate analytics), or do we wrap with
+    FeatureGate as part of S232 Phase 3? RECOMMEND leave alone in S232
+    (Phase 3 only gates the NEW hub) and capture as an S233 cleanup item.
+
+F3. DASHBOARD MINI-TILE TIER GATING MISSING
+    DashboardSeoWidget and DashboardSocialWidget have NO FeatureGate wrapper
+    in DashboardHome.tsx L~81–84. They read tier-3-grade data sources
+    (seo_runs / zernio_runs). A tier-1 tenant on the Dashboard today sees
+    them empty (no successful run rows) rather than locked.
+    Out of scope for S232 — flag for S237 polish or a quick S233 follow-on.
+
+F4. BLOG ANALYTICS LIVES IN TWO PLACES TODAY
+    - BlogAnalyticsSection mounted on Blog tab (~L95).
+    - BlogAnalyticsTile mounted on Reports tab (L179).
+    Same underlying table (blog_posts), different presentations.
+    S232 Phase 2 puts a Blog accordion in the Analytics hub. S233 decides
+    whether either operational-tab version is removed. NOTHING REMOVED in
+    S232.
+
+F5. NO NEWSLETTER / EMAIL ANALYTICS EXIST
+    Kickoff does not specify, but worth recording: no email_runs / no
+    newsletter telemetry components found. S232 scope is the 4 sections
+    only (SEO / Social / Performance / Blog).
+
+F6. ALL TILES READ LATEST-RUN ONLY — NO HISTORICAL TRENDS YET
+    Every *_runs hook returns latestRun (single row). No multi-row trend
+    rendering anywhere. Tier-4 trend charts in S232 kickoff (e.g. "30-day
+    clicks trend chart", "best-time-to-post heatmap") are NEW work for
+    S234–S235, not S232. S232 placeholder content is fine.
+
+F7. ZERNIO followers = NULL (S229 blocker, still open)
+    Per S228 audit F3 — zernio_runs.followers is NULL on all 3 platforms.
+    DashboardSocialWidget intentionally omits it. SocialAnalyticsTile shows
+    engagement+reach only. S232 doesn't depend on this; flag carried
+    forward so S233 wiring knows the gap.
+
+F8. ORPHANS FROM S228 — ALREADY RESOLVED, NOT A RISK
+    (Earlier agent inventory flagged LeadSourceChart.tsx and
+    SearchConsoleMockPreview / GA4MockPreview as orphans. Verified on
+    disk 2026-05-19: LeadSourceChart.tsx no longer exists in
+    src/components/admin/reports/, and SeoConnectPreviews.tsx exports
+    only PageSpeedPanel. S228 cleanup landed cleanly. NO ACTION.)
+
+F9. INLINE SUPABASE READS (vs hook abstraction)
+    SeoCoverageTile, SocialPostsTile, BlogAnalyticsTile, SocialVolumeChart,
+    BlogAnalyticsSection fetch directly via supabase.from(...).select(...)
+    in useEffect — no shared hook. Functionally fine; consistency tidy-up
+    is an S233+ concern, not S232.
+
+F10. ROUTE RENAME — TWO IMPLEMENTATION PATHS
+    /admin uses a state-based tab router today, not React Router subroutes.
+    Kickoff Phase 4 says "Update route: /admin/reports → /admin/analytics
+    (preserve old path with redirect for any external links)". Two paths:
+      (1) Add nested React Router routes inside Dashboard — broader refactor.
+      (2) Detect path in Dashboard (useLocation), rewrite history to
+          /admin/analytics, set activeTab='analytics'. Minimal-touch.
+    DECISION FOR SCOTT before Phase 4. Recommend Path (2).
+
+F11. SHADCN ACCORDION IS AVAILABLE — USE IT
+    src/components/ui/accordion.tsx (52 ln) re-exports Radix accordion
+    primitives. Phase 2 should use it rather than hand-roll useState +
+    localStorage (matches kickoff guidance "Use shadcn Accordion if
+    available, otherwise hand-build"). NOTE: existing per-tile localStorage
+    collapsibles (pfp_seo_tile_expanded etc.) are NOT replaced in S232 —
+    only the new hub accordions.
+
+F12. PROJECT_MANIFEST.md NOT YET UPDATED FOR S231
+    PROJECT_MANIFEST.md's last session-log entry is the S231 PR #100 chore
+    log. PR #100 has since merged (sha 3fac90d on main). S232 Phase 6
+    handoff doc will pick that up.
+
+================================================================================
+END PHASE 1 INVENTORY — awaiting Scott on F2, F10 (and ack of F11) before
+Phase 2 begins. F1/F3/F4/F5/F6/F7/F8/F9/F12 are informational, not blocking.
+================================================================================

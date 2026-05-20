@@ -3,12 +3,12 @@ import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../context/TenantBootProvider'
 import { FeatureGate } from '../common/FeatureGate'
 import PageHelpBanner from './PageHelpBanner'
+import AnalyticsHub from './analytics/AnalyticsHub'
 import ReportsStatCards from './reports/ReportsStatCards'
 import SitePerformanceTile from './reports/SitePerformanceTile'
 import SocialAnalyticsTile from './reports/SocialAnalyticsTile'
 import SeoAnalyticsTile from './reports/SeoAnalyticsTile'
 import GscAnalyticsTile from './seo/GscAnalyticsTile'
-import Ga4AnalyticsTile from './seo/Ga4AnalyticsTile'
 import BlogAnalyticsTile from './reports/BlogAnalyticsTile'
 import SeoCoverageTile from './reports/SeoCoverageTile'
 import SocialPostsTile from './reports/SocialPostsTile'
@@ -75,85 +75,91 @@ export default function ReportsTab() {
   }
   const statusColors: Record<string, string> = { new: '#3b82f6', contacted: '#f59e0b', converted: '#10b981', lost: '#ef4444' }
 
-  if (loading) return <div className="text-gray-400 p-4">Loading analytics...</div>
-
   return (
     <div>
       <PageHelpBanner tab="reports" title="📊 Reports & Insights"
         body="A snapshot of your social media activity and SEO health. Use this to spot gaps and track progress over time." />
 
       <FeatureGate minTier={2} featureName="Reports">
-        {/* Range toggle */}
-        <div className="flex items-center gap-2 mb-6">
-          {(['7d', '30d', '90d', 'all'] as const).map(r => (
-            <button key={r} onClick={() => setRange(r)} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${range === r ? 'bg-emerald-500 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
-              {r === '7d' ? '7 Days' : r === '30d' ? '30 Days' : r === '90d' ? '90 Days' : 'All Time'}
-            </button>
-          ))}
-        </div>
+        <AnalyticsHub />
 
-        {/* Lead stat cards */}
-        <ReportsStatCards totalLeads={totalLeads} newLeads={newLeads} converted={converted}
-          conversionRate={conversionRate} leadsTrend={leadsTrend} convTrend={convTrend} range={range} />
-
-        {/* Leads Over Time + Lead Status */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 className="text-base font-semibold text-gray-900 mb-4">Leads Over Time</h3>
-            <div className="flex items-end gap-[2px] h-40">
-              {dailyLeads.map((d, i) => (
-                <div key={i} className="flex-1 flex flex-col items-center justify-end h-full group relative">
-                  <div className="w-full rounded-t bg-emerald-500/80 hover:bg-emerald-500 transition-colors" style={{ height: `${(d.count / maxDaily) * 100}%`, minHeight: d.count > 0 ? '4px' : '0' }} />
-                  <div className="hidden group-hover:block absolute -top-8 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
-                    {d.label}: {d.count} lead{d.count !== 1 ? 's' : ''}
-                  </div>
-                </div>
+        {loading ? (
+          <div className="text-gray-400 p-4 mt-8">Loading lead analytics...</div>
+        ) : (
+          <div className="mt-8 space-y-6">
+            {/* Range toggle */}
+            <div className="flex items-center gap-2 mb-6">
+              {(['7d', '30d', '90d', 'all'] as const).map(r => (
+                <button key={r} onClick={() => setRange(r)} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${range === r ? 'bg-emerald-500 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+                  {r === '7d' ? '7 Days' : r === '30d' ? '30 Days' : r === '90d' ? '90 Days' : 'All Time'}
+                </button>
               ))}
             </div>
-            <div className="flex justify-between mt-2 text-xs text-gray-400">
-              <span>{dailyLeads[0]?.label}</span>
-              <span>{dailyLeads[dailyLeads.length - 1]?.label}</span>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 className="text-base font-semibold text-gray-900 mb-4">Lead Status</h3>
-            <div className="space-y-3">
-              {Object.entries(statusCounts).map(([status, count]) => (
-                <div key={status}>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="capitalize text-gray-700 font-medium">{status}</span>
-                    <span className="text-gray-500">{count}</span>
-                  </div>
-                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full rounded-full transition-all duration-500" style={{ width: `${totalLeads > 0 ? (count / totalLeads) * 100 : 0}%`, background: statusColors[status] }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 lg:col-span-2">
-            <h3 className="text-base font-semibold text-gray-900 mb-4">Top Requested Services</h3>
-            {topServices.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {topServices.map(([service, count]) => (
-                  <div key={service} className="flex items-center gap-3">
-                    <div className="flex-1">
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-gray-700 font-medium">{service}</span>
-                        <span className="text-gray-500">{count} lead{count !== 1 ? 's' : ''}</span>
-                      </div>
-                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-blue-500 rounded-full" style={{ width: `${(count / maxServiceCount) * 100}%` }} />
+
+            {/* Lead stat cards */}
+            <ReportsStatCards totalLeads={totalLeads} newLeads={newLeads} converted={converted}
+              conversionRate={conversionRate} leadsTrend={leadsTrend} convTrend={convTrend} range={range} />
+
+            {/* Leads Over Time + Lead Status */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h3 className="text-base font-semibold text-gray-900 mb-4">Leads Over Time</h3>
+                <div className="flex items-end gap-[2px] h-40">
+                  {dailyLeads.map((d, i) => (
+                    <div key={i} className="flex-1 flex flex-col items-center justify-end h-full group relative">
+                      <div className="w-full rounded-t bg-emerald-500/80 hover:bg-emerald-500 transition-colors" style={{ height: `${(d.count / maxDaily) * 100}%`, minHeight: d.count > 0 ? '4px' : '0' }} />
+                      <div className="hidden group-hover:block absolute -top-8 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
+                        {d.label}: {d.count} lead{d.count !== 1 ? 's' : ''}
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+                <div className="flex justify-between mt-2 text-xs text-gray-400">
+                  <span>{dailyLeads[0]?.label}</span>
+                  <span>{dailyLeads[dailyLeads.length - 1]?.label}</span>
+                </div>
               </div>
-            ) : (
-              <p className="text-sm text-gray-400">No service data yet — leads with services will appear here.</p>
-            )}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h3 className="text-base font-semibold text-gray-900 mb-4">Lead Status</h3>
+                <div className="space-y-3">
+                  {Object.entries(statusCounts).map(([status, count]) => (
+                    <div key={status}>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="capitalize text-gray-700 font-medium">{status}</span>
+                        <span className="text-gray-500">{count}</span>
+                      </div>
+                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${totalLeads > 0 ? (count / totalLeads) * 100 : 0}%`, background: statusColors[status] }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 lg:col-span-2">
+                <h3 className="text-base font-semibold text-gray-900 mb-4">Top Requested Services</h3>
+                {topServices.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {topServices.map(([service, count]) => (
+                      <div key={service} className="flex items-center gap-3">
+                        <div className="flex-1">
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-gray-700 font-medium">{service}</span>
+                            <span className="text-gray-500">{count} lead{count !== 1 ? 's' : ''}</span>
+                          </div>
+                          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-blue-500 rounded-full" style={{ width: `${(count / maxServiceCount) * 100}%` }} />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-400">No service data yet — leads with services will appear here.</p>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Analytics grid — 4 left / 3 right */}
         <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -162,7 +168,6 @@ export default function ReportsTab() {
             <FeatureGate minTier={3} featureName="Analytics">
               <SeoAnalyticsTile />
               <GscAnalyticsTile />
-              <Ga4AnalyticsTile />
             </FeatureGate>
             <FeatureGate minTier={2} featureName="Site Performance">
               <SitePerformanceTile />
