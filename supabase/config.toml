@@ -1,2 +1,5 @@
 [functions.provision-tenant]
 verify_jwt = false
+
+[functions.outscraper-reviews]
+verify_jwt = false
