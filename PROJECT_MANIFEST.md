@@ -618,4 +618,20 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
 - Files changed:
   - QA_REPORT_S234.md
   - supabase/functions/places-reviews/index.ts
-- Next recommended action: [Fill in next session: read this line, write what comes next]
+- Next recommended action: Scott must seed google_place_id for Dang manually (QA report Option B) to verify happy path, then merge #113.
+
+---
+## Session — 2026-05-21 (S235) UTC
+- Branch: `feat/s235-outscraper-reviews`
+- Commit: `93bf14f` — task[s235]: outscraper-reviews edge fn + migration + TestimonialsTab refresh panel
+- Author: Claude
+- PR: #114 (OPEN) — https://github.com/ironwoodoperations/pestflow-pro/pull/114
+- Files changed:
+  - docs/migrations/s235-outscraper-reviews-setup.sql (new)
+  - docs/migrations/s235-outscraper-reviews-rollback.sql (new)
+  - supabase/functions/outscraper-reviews/index.ts (new, deployed v1 via MCP)
+  - supabase/config.toml (outscraper-reviews verify_jwt=false entry)
+  - src/components/admin/TestimonialsTab.tsx (Google Reviews Auto-Sync panel)
+  - PROJECT_MANIFEST.md
+- Migration applied to production (MCP): testimonials_tenant_google_review_id_unique partial unique index, rate-limit-cleanup cron extended to 12h retention, outscraper_cron_dispatch() SECURITY DEFINER function, outscraper-daily-dispatch cron at 0 2 * * *
+- Next recommended action: Scott must (1) create vault secret outscraper_cron_internal_secret via SQL Editor, (2) add OUTSCRAPER_API_KEY to edge fn secrets in Supabase Dashboard, (3) optionally add provision-tenant fire-and-forget block (blocked by protect-files hook — code snippet in PR #114 description), then merge #114 and test Refresh Now against Dang admin.
