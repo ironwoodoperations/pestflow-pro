@@ -108,27 +108,56 @@ export default function TestimonialsTab() {
 
   async function importGoogleReviews() {
     if (!tenantId) return
-    const apiKey = import.meta.env.VITE_GOOGLE_PLACES_API_KEY
-    if (!apiKey) { toast.error('Set VITE_GOOGLE_PLACES_API_KEY to import Google reviews.'); return }
-    const { data: settings } = await supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle()
-    const placeId = settings?.value?.google_place_id
-    if (!placeId) { toast.error('Set Google Place ID in Settings → Integrations first.'); return }
     setImporting(true)
     try {
-      const res = await fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=reviews&key=${apiKey}`)
-      const json = await res.json()
-      const gReviews = json?.result?.reviews || []
-      if (gReviews.length === 0) { toast.error('No reviews found for this Place ID.'); setImporting(false); return }
+      const { data: sessionData } = await supabase.auth.getSession()
+      const token = sessionData.session?.access_token
+      if (!token) { toast.error('Session expired. Please log in again.'); return }
+
+      const { data, error } = await supabase.functions.invoke('places-reviews', {
+        body: { tenant_id: tenantId },
+        headers: { Authorization: `Bearer ${token}` },
+      })
+
+      if (error) {
+        const msg = (error as { message?: string })?.message ?? ''
+        if (msg.includes('422') || msg.includes('No place_id')) {
+          toast.error('No Google location linked. Add a Place ID in Settings → Integrations.')
+        } else if (msg.includes('502') || msg.includes('Google Places API error')) {
+          toast.error('Google returned an error. Check the Place ID or try again later.')
+        } else {
+          toast.error('Failed to fetch Google reviews.')
+        }
+        return
+      }
+
+      const gReviews: { author_name: string; rating: number; text: string }[] = data?.reviews || []
+      if (gReviews.length === 0) { toast.error('No reviews found for this location.'); return }
+
       let imported = 0
       for (const r of gReviews) {
-        const { error } = await supabase.from('testimonials').insert({ tenant_id: tenantId, author_name: r.author_name || 'Google User', review_text: r.text || '', rating: r.rating || 5, source: 'Google', featured: false })
-        if (!error) imported++
+        const { error: insertErr } = await supabase.from('testimonials').insert({
+          tenant_id: tenantId,
+          author_name: r.author_name || 'Google User',
+          review_text: r.text || '',
+          rating: r.rating || 5,
+          source: 'Google',
+          featured: false,
+        })
+        if (!insertErr) imported++
       }
-      toast.success(`Imported ${imported} Google review${imported !== 1 ? 's' : ''}!`); fetchReviews()
+
+      toast.success(`Imported ${imported} Google review${imported !== 1 ? 's' : ''}!`)
+      fetchReviews()
       const { data: s } = await supabase.auth.getSession()
-      if (s.session?.access_token && tenantId) await triggerRevalidate({ type: 'testimonials', tenantId }, s.session.access_token)
-    } catch { toast.error('Failed to fetch Google reviews. Check API key and Place ID.') }
-    setImporting(false)
+      if (s.session?.access_token && tenantId) {
+        await triggerRevalidate({ type: 'testimonials', tenantId }, s.session.access_token)
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to fetch Google reviews.')
+    } finally {
+      setImporting(false)
+    }
   }
 
   const toggleExpand = (id: string) => setExpanded(prev => { const n = new Set(prev); if (n.has(id)) { n.delete(id) } else { n.add(id) } return n })

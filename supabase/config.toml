@@ -1,2 +1,5 @@
 [functions.provision-tenant]
 verify_jwt = false
+
+[functions.places-reviews]
+verify_jwt = true
