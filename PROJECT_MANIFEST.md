@@ -662,3 +662,12 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - supabase/functions/outscraper-reviews/index.ts
   - tsconfig.tsbuildinfo
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-22 17:50 UTC
+- Branch: `claude/bold-goodall-cyENR`
+- Commit: `d89182a` — hotfix[s236.5]: provision-tenant outscraper fire-and-forget initial sync
+- Author: Claude
+- Files changed:
+  - supabase/functions/provision-tenant/index.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
