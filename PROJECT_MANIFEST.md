@@ -635,3 +635,30 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - PROJECT_MANIFEST.md
 - Migration applied to production (MCP): testimonials_tenant_google_review_id_unique partial unique index, rate-limit-cleanup cron extended to 12h retention, outscraper_cron_dispatch() SECURITY DEFINER function, outscraper-daily-dispatch cron at 0 2 * * *
 - Next recommended action: Scott must (1) create vault secret outscraper_cron_internal_secret via SQL Editor, (2) add OUTSCRAPER_API_KEY to edge fn secrets in Supabase Dashboard, (3) optionally add provision-tenant fire-and-forget block (blocked by protect-files hook — code snippet in PR #114 description), then merge #114 and test Refresh Now against Dang admin.
+
+---
+## Session — 2026-05-22 03:01 UTC
+- Branch: `feat/s236-outscraper-cleanup`
+- Commit: `28557cd` — task[s236]: sync outscraper-reviews v3 source + strip attribution text
+- Author: csdevore2
+- Files changed:
+  - docs/audits/s235-outscraper-reviews-handoff.md
+  - docs/audits/s236-outscraper-cleanup-kickoff.md
+  - src/components/admin/TestimonialsTab.tsx
+  - supabase/functions/outscraper-reviews/index.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-22 03:32 UTC
+- Branch: `main`
+- Commit: `8d2c315` — task[s235]: outscraper-reviews — automated Google review sync (#114)
+- Author: csdevore2
+- Files changed:
+  - PROJECT_MANIFEST.md
+  - docs/migrations/s235-outscraper-reviews-rollback.sql
+  - docs/migrations/s235-outscraper-reviews-setup.sql
+  - src/components/admin/TestimonialsTab.tsx
+  - supabase/config.toml
+  - supabase/functions/outscraper-reviews/index.ts
+  - tsconfig.tsbuildinfo
+- Next recommended action: [Fill in next session: read this line, write what comes next]
