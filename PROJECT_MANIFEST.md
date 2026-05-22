@@ -671,3 +671,12 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
 - Files changed:
   - supabase/functions/provision-tenant/index.ts
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-22 17:51 UTC
+- Branch: `claude/bold-goodall-cyENR`
+- Commit: `972672e` — chore[s236.5]: session log entry for provision-tenant outscraper hotfix
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
