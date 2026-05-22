@@ -298,7 +298,7 @@ export default function TestimonialsTab() {
             <div>
               <p className="text-sm font-semibold text-gray-800">Google Reviews Auto-Sync</p>
               <p className="text-xs text-gray-500 mt-0.5">
-                Powered by Outscraper · Auto-refresh: <span className="font-medium">{cadenceLabel(tier)}</span>
+                Auto-refresh: <span className="font-medium">{cadenceLabel(tier)}</span>
               </p>
             </div>
           </div>
