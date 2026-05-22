@@ -901,6 +901,34 @@ export async function handler(req: Request): Promise<Response> {
     }
 
     const liveUrl = `https://${resolvedSlug}.pestflowpro.com`
+    // Step 10: Fire-and-forget initial Outscraper sync (non-blocking)
+    try {
+      const { data: intgRow } = await supabase
+        .from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle()
+      const intg = intgRow?.value ?? {}
+      const hasGoogleId = !!(
+        (intg.google_cid      && String(intg.google_cid).trim())      ||
+        (intg.google_fid      && String(intg.google_fid).trim())      ||
+        (intg.google_place_id && String(intg.google_place_id).trim())
+      )
+      if (hasGoogleId) {
+        const { data: vaultRow } = await supabase.schema('vault').from('decrypted_secrets')
+          .select('decrypted_secret').eq('name', 'outscraper_cron_internal_secret').maybeSingle()
+        const cronSecret = (vaultRow as any)?.decrypted_secret
+        if (cronSecret) {
+          fetch(`${SUPABASE_URL}/functions/v1/outscraper-reviews`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'apikey': cronSecret },
+            body: JSON.stringify({ tenant_id: tenantId, mode: 'initial' }),
+          }).catch((err: Error) =>
+            console.warn('[provision-tenant] Outscraper fire-and-forget failed (non-fatal):', err?.message),
+          )
+          console.log('[provision-tenant] Outscraper initial sync fired for tenant:', tenantId)
+        }
+      }
+    } catch (outscraperFireErr: any) {
+      console.warn('[provision-tenant] Outscraper fire-and-forget setup failed (non-fatal):', outscraperFireErr?.message)
+    }
     return new Response(JSON.stringify({ success: true, tenant_id: tenantId, slug: resolvedSlug, url: liveUrl }), {
       headers: { 'Content-Type': 'application/json', ...CORS },
     })
