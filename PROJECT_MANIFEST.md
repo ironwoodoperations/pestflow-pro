@@ -680,3 +680,12 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
 - Files changed:
   - PROJECT_MANIFEST.md
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-22 18:24 UTC
+- Branch: `claude/bold-goodall-cyENR`
+- Commit: `d7d410c` — fix: break session-end manifest hook infinite-churn loop
+- Author: Claude
+- Files changed:
+  - .claude/hooks/session-end.sh
+- Next recommended action: [Fill in next session: read this line, write what comes next]
