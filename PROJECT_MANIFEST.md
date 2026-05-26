@@ -707,3 +707,15 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
 - Files changed:
   - docs/audits/s237b-composer-wiring-audit.md
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-26 17:42 UTC
+- Branch: `claude/modest-einstein-aodiq`
+- Commit: `13b4d20` — feat[s237b]: image library picker + composer/blog wiring
+- Author: Claude
+- Files changed:
+  - src/components/admin/BlogPostEditor.tsx
+  - src/components/admin/social/ComposerImagePicker.tsx
+  - src/components/admin/social/ImageLibraryPicker.tsx
+  - src/hooks/useImageLibrary.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
