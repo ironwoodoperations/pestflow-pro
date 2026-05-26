@@ -4,7 +4,7 @@
 **Date:** 2026-05-22
 **Branch:** `claude/modest-einstein-aodiq`
 **Author:** Claude Code (Web)
-**Status:** Wave 2 DRAFT. **Implementation BLOCKED on validator gate** (Perplexity + Gemini) — see §9.
+**Status:** Wave 2 FINAL. **Validator gate GREEN** (Perplexity + Gemini, 2026-05-22) — amendments A–D applied; see §9 and `s237-validator-gate.md`.
 **Predecessor:** `docs/audits/s237-image-library-audit.md` (Wave 1).
 
 ---
@@ -55,7 +55,12 @@ CREATE TABLE image_library (
   uploaded_by uuid REFERENCES auth.users(id),
   created_at timestamptz NOT NULL DEFAULT now(),
   deleted_at timestamptz,                              -- soft-delete
-  CONSTRAINT image_library_path_unique UNIQUE (bucket_id, storage_path)  -- D7/D8: idempotent backfill + dedupe
+  CONSTRAINT image_library_path_unique UNIQUE (bucket_id, storage_path),  -- D7/D8: idempotent backfill + dedupe
+  -- Validator gate (Amendment A) — both validators:
+  CONSTRAINT image_library_path_tenant_prefix
+    CHECK (storage_path LIKE tenant_id::text || '/%'),   -- row can only point at its own tenant prefix
+  CONSTRAINT image_library_bucket_id_known
+    CHECK (bucket_id IN ('social-uploads', 'tenant-assets'))  -- catch typos / silent mis-categorization
 );
 
 CREATE INDEX idx_image_library_tenant_active ON image_library (tenant_id) WHERE deleted_at IS NULL;
@@ -71,18 +76,63 @@ Change vs kickoff DDL: added `bucket_id`, added `UNIQUE(bucket_id, storage_path)
 ```sql
 ALTER TABLE image_library ENABLE ROW LEVEL SECURITY;
 
+-- Amendment B: (SELECT current_tenant_id()) wrapping = per-statement eval (Supabase perf pattern);
+-- IS NOT NULL guard hardens against absent JWT claim.
 CREATE POLICY image_library_tenant_select ON image_library
   FOR SELECT TO authenticated
-  USING (tenant_id = current_tenant_id() AND deleted_at IS NULL);
+  USING (
+    (SELECT current_tenant_id()) IS NOT NULL
+    AND tenant_id = (SELECT current_tenant_id())
+    AND deleted_at IS NULL
+  );
 
 CREATE POLICY image_library_tenant_insert ON image_library
   FOR INSERT TO authenticated
-  WITH CHECK (tenant_id = current_tenant_id());
+  WITH CHECK (
+    (SELECT current_tenant_id()) IS NOT NULL
+    AND tenant_id = (SELECT current_tenant_id())
+  );
 
 CREATE POLICY image_library_tenant_update ON image_library
   FOR UPDATE TO authenticated
-  USING (tenant_id = current_tenant_id())
-  WITH CHECK (tenant_id = current_tenant_id());
+  USING (
+    (SELECT current_tenant_id()) IS NOT NULL
+    AND tenant_id = (SELECT current_tenant_id())
+  )
+  WITH CHECK (
+    (SELECT current_tenant_id()) IS NOT NULL
+    AND tenant_id = (SELECT current_tenant_id())
+  );
+```
+
+### Immutable-column trigger (Amendment C — both validators)
+
+The UPDATE policy checks `tenant_id` but does not lock `storage_path` / `bucket_id`, so a
+tenant could UPDATE their row's `storage_path` to point at another tenant's file. Postgres RLS
+cannot reference `OLD` in policy expressions, so this is enforced with a BEFORE UPDATE trigger
+(NOT Gemini's invalid `WITH CHECK (... = OLD.column)`):
+
+```sql
+CREATE OR REPLACE FUNCTION enforce_image_library_immutable_columns()
+  RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.tenant_id IS DISTINCT FROM OLD.tenant_id THEN
+    RAISE EXCEPTION 'image_library.tenant_id is immutable';
+  END IF;
+  IF NEW.storage_path IS DISTINCT FROM OLD.storage_path THEN
+    RAISE EXCEPTION 'image_library.storage_path is immutable';
+  END IF;
+  IF NEW.bucket_id IS DISTINCT FROM OLD.bucket_id THEN
+    RAISE EXCEPTION 'image_library.bucket_id is immutable';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER image_library_immutable_columns_trigger
+  BEFORE UPDATE ON image_library
+  FOR EACH ROW
+  EXECUTE FUNCTION enforce_image_library_immutable_columns();
 ```
 
 Notes vs kickoff:
@@ -161,7 +211,9 @@ Media tab ungated (absent from `gatedTabs` in `Dashboard.tsx`) → tier-1 (Start
 
 ---
 
-## 9. Validator gate (REQUIRED before Wave 3) — BLOCKED
+## 9. Validator gate (REQUIRED before Wave 3) — GREEN ✓
+
+> **GREEN with amendments (2026-05-22).** Both Perplexity and Gemini approved the core design and independently flagged three security gaps (path-tenant alignment CHECK, immutable-column trigger, bucket_id value CHECK), one perf hardening (SELECT-wrapped policies + NULL guard), and one deferred operational follow-up (reconciliation job). All applied — Amendments A–D above + §11. Full verbatim responses in `docs/audits/s237-validator-gate.md`. The submission payload that was sent is preserved below for the record.
 
 Per standing rule, the RLS policies (§3 table + §4 storage DELETE) must be reviewed by **Perplexity AND Gemini** before implementation. **This environment has no Perplexity/Gemini MCP access** (only Supabase, GitHub, Vercel, Google/Outlook/QuickBooks). Options for Scott:
 1. Run the submission (below) in his Claude.ai chat / external tools and paste responses → I record them in `s237-validator-gate.md` and proceed.
@@ -185,4 +237,19 @@ Responses + disposition → `docs/audits/s237-validator-gate.md`. **No migration
 **S237a:** `supabase/migrations/<ts>_s237_image_library_table_and_rls.sql` · `docs/migrations/s237-image-library-rollback.sql` · `src/components/admin/MediaTab.tsx` · `src/hooks/useImageLibrary.ts` · `src/pages/admin/Dashboard.tsx` (nav) · backfill SQL (in `docs/migrations/`, applied via MCP) · `docs/audits/s237-validator-gate.md`.
 **S237b:** `src/components/admin/social/ImageLibraryPicker.tsx` · `ComposerImagePicker.tsx` (add button) · `BlogPostEditor.tsx` (hero picker).
 
-**STOP. Spec ready for review. Validator gate must clear before any Wave 3 implementation.**
+## 11. Operational follow-up (deferred — not blocking S237a)
+
+Both validators flagged that orphan rows (storage upload succeeded, INSERT failed)
+and orphan objects (delete cascade from `tenants` removes rows but doesn't sweep
+storage) will accumulate over time. File a separate backlog item to add a
+nightly reconciliation job (Supabase Edge Function + pg_cron) that:
+
+1. Lists `image_library` rows where the corresponding storage object returns 404
+2. Lists storage objects under `<tenant>/social/` with no matching active row
+3. Logs both classes for manual review (do not auto-delete v1)
+
+This is operational hygiene; not a blocker for the Media tab to ship.
+
+---
+
+**Validator gate GREEN (2026-05-22) — see `docs/audits/s237-validator-gate.md`. Wave 3 (S237a) unblocked.**
