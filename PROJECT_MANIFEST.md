@@ -689,3 +689,12 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
 - Files changed:
   - .claude/hooks/session-end.sh
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-22 19:52 UTC
+- Branch: `claude/modest-einstein-aodiq`
+- Commit: `cd0a712` — docs[s237]: Wave 2 spec — S237a/S237b split, bucket_id, validator gate
+- Author: Claude
+- Files changed:
+  - docs/audits/s237-image-library-spec.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
