@@ -48,10 +48,13 @@ export function useImageLibrary() {
   const refresh = useCallback(async () => {
     if (!tenantId) return
     setLoading(true)
-    // RLS scopes to current tenant + deleted_at IS NULL; no client-side filter needed.
+    // RLS scopes to the current tenant; active-row filter (deleted_at IS NULL)
+    // is applied here — it cannot live in the SELECT policy or soft-delete
+    // UPDATEs fail RLS (PG checks the post-update row against the SELECT policy).
     const { data, error: selErr } = await supabase
       .from('image_library')
       .select('id, tenant_id, bucket_id, storage_path, original_filename, mime_type, size_bytes, width, height, folder, created_at')
+      .is('deleted_at', null)
       .order('created_at', { ascending: false })
     if (selErr) { setError(selErr.message); setLoading(false); return }
     setItems((data ?? []).map(withUrl))

@@ -32,12 +32,15 @@ CREATE INDEX IF NOT EXISTS idx_image_library_folder
 
 ALTER TABLE image_library ENABLE ROW LEVEL SECURITY;
 
+-- NOTE: deleted_at IS NULL is intentionally NOT in this policy. PostgreSQL
+-- checks the post-UPDATE row against the SELECT policy, so including it here
+-- makes soft-delete (setting deleted_at) fail RLS. The active-row filter is
+-- applied client-side in useImageLibrary. Tenant isolation is unchanged.
 CREATE POLICY image_library_tenant_select ON image_library
   FOR SELECT TO authenticated
   USING (
     (SELECT current_tenant_id()) IS NOT NULL
     AND tenant_id = (SELECT current_tenant_id())
-    AND deleted_at IS NULL
   );
 
 CREATE POLICY image_library_tenant_insert ON image_library

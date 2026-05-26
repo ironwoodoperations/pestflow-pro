@@ -78,12 +78,15 @@ ALTER TABLE image_library ENABLE ROW LEVEL SECURITY;
 
 -- Amendment B: (SELECT current_tenant_id()) wrapping = per-statement eval (Supabase perf pattern);
 -- IS NOT NULL guard hardens against absent JWT claim.
+-- QA-discovered fix (migration s237_image_library_select_policy_fix):
+-- deleted_at IS NULL must NOT be in this policy — PostgreSQL evaluates the
+-- post-UPDATE row against the SELECT policy, so it would make soft-delete fail
+-- RLS. Active-row filter moved client-side. Tenant isolation unchanged.
 CREATE POLICY image_library_tenant_select ON image_library
   FOR SELECT TO authenticated
   USING (
     (SELECT current_tenant_id()) IS NOT NULL
     AND tenant_id = (SELECT current_tenant_id())
-    AND deleted_at IS NULL
   );
 
 CREATE POLICY image_library_tenant_insert ON image_library

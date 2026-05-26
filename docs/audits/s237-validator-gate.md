@@ -39,6 +39,21 @@ immutable-column enforcement layered on top.
 **GREEN.** Wave 3 implementation is unblocked. Standing rule (no migration / no
 code until gate GREEN) is satisfied with these amendments in place.
 
+### Post-implementation correction (QA, migration `s237_image_library_select_policy_fix`)
+
+QA found the validator-approved SELECT policy (`... AND deleted_at IS NULL`)
+broke soft-delete: PostgreSQL evaluates the post-UPDATE row against the SELECT
+policy, so setting `deleted_at` made the new row fail the policy → `42501`.
+Fix: drop `deleted_at IS NULL` from the SELECT policy and apply the active-row
+filter client-side (`useImageLibrary`). **Tenant isolation is unchanged** — the
+policy is still `tenant_id = current_tenant_id()`, so a tenant reads only its
+own rows (cross-tenant SELECT/INSERT/UPDATE all still blocked, verified). The
+only behavior change: a tenant's own soft-deleted rows are now API-readable
+(and filtered out by the app), which is the standard Supabase soft-delete
+pattern. Verified end-to-end: read isolation (Dang 5 / Demo 12), cross-tenant
+INSERT blocked, path-spoof CHECK blocked, immutable-column trigger blocks
+storage_path mutation, folder edit allowed, soft-delete succeeds.
+
 ---
 
 ## Perplexity response (verbatim)
