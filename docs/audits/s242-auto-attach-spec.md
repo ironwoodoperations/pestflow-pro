@@ -9,6 +9,8 @@
 
 > ⚠️ **Blocker surfaced — see Open Question OQ1.** The locked design doc `docs/strategy/S242_AUTO_ATTACH_DESIGN.md` referenced by the kickoff **does not exist anywhere in the repo or git history**. This audit proceeds against the kickoff's embedded design summary (the 12 locked decisions + 3 strategies), which is self-contained for the repo probes. Cross-references to "design Section N" below are inferred from the kickoff text, not a committed doc.
 
+> 🛑 **P0 SECURITY BLOCKER — OQ2 resolved to Case 2.** Verification (see `## OQ2 evidence`) confirms the AI generation surface is a **direct browser `fetch` to `api.anthropic.com` with the key sourced from `import.meta.env.VITE_ANTHROPIC_API_KEY`** — and this pattern is **app-wide (9+ files), not isolated to the campaign modal**. Per the OQ2 Case 2 directive: **STOP.** The design doc is NOT committed, Section 8 is NOT drafted, and S242 is paused behind a P0 security session (move the Anthropic key server-side / proxy edge function) that must precede S242. Scott pinged.
+
 ---
 
 ## 1. DB audit (Claude.ai Supabase MCP, 2026-05-26) — verbatim, ground truth
@@ -162,6 +164,76 @@ Since the image-strategy section sits **inside** `NewCampaignModal`, which only 
 
 ---
 
+## OQ2 evidence — generation surface verification (2026-05-26)
+
+Scott's hypothesis: "Direct browser call to Anthropic contradicts the stack of record (`ANTHROPIC_API_KEY` lives in Supabase Edge Function Secrets, not retrievable from a browser)." **The repo contradicts the hypothesis. This is Case 2.**
+
+**Command 1 — `grep -rn "api.anthropic.com\|VITE_ANTHROPIC\|sk-ant" src/`:**
+```
+src/components/admin/ContentTab.tsx:45:  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
+src/components/admin/ContentTab.tsx:140:      const res = await fetch('https://api.anthropic.com/v1/messages', {
+src/components/admin/ContentPageForm.tsx:225: ... title={!apiKey ? 'Set VITE_ANTHROPIC_API_KEY to enable' ...}
+src/components/admin/social/ContentQueueTab.tsx:116:      const res = await fetch('https://api.anthropic.com/v1/messages', {
+src/components/admin/social/ContentQueueTab.tsx:119:          'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY,
+src/components/admin/social/useComposer.ts:95:      const res = await fetch('https://api.anthropic.com/v1/messages', {
+src/components/admin/social/useComposer.ts:97:        headers: { 'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY, ... 'anthropic-dangerous-direct-browser-access': 'true', ... }
+src/components/admin/social/useComposer.ts:118:      const res = await fetch('https://api.anthropic.com/v1/messages', {
+src/components/admin/social/useComposer.ts:120:        headers: { 'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY, ... }
+src/components/admin/social/NewCampaignModal.tsx:110:      const res = await fetch('https://api.anthropic.com/v1/messages', {
+src/components/admin/social/NewCampaignModal.tsx:114:          'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY || '',
+src/components/admin/seo/SeoKeywordsTab.tsx:23:  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
+src/components/admin/seo/SeoKeywordsTab.tsx:31:      const response = await fetch('https://api.anthropic.com/v1/messages', {
+src/components/admin/seo/useSeoAiGenerate.ts:34:      const res = await fetch('https://api.anthropic.com/v1/messages', {
+src/components/admin/seo/useSeoAiGenerate.ts:38:          'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY,
+src/components/ironwood/RedirectMapPanel.tsx:170:      const response = await fetch('https://api.anthropic.com/v1/messages', {
+src/components/ironwood/RedirectMapPanel.tsx:174:          'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY,
+src/lib/ai/generateBlogDraft.ts:1:const API_URL = 'https://api.anthropic.com/v1/messages'
+src/lib/ai/generateBlogDraft.ts:23:  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
+src/lib/ai/generateBlogSeo.ts:3:const API_URL = 'https://api.anthropic.com/v1/messages'
+src/lib/ai/generateBlogSeo.ts:23:  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
+```
+
+**Command 2 — `grep -rn "anthropic" NewCampaignModal.tsx`:**
+```
+110:      const res = await fetch('https://api.anthropic.com/v1/messages', {
+115:          'anthropic-version': '2023-06-01',
+116:          'anthropic-dangerous-direct-browser-access': 'true',
+```
+
+**Command 3 — `grep -n "fetch\|invoke\|supabase\." NewCampaignModal.tsx`:**
+```
+68:    supabase.from('settings').select('value')...          ← settings read
+110:      const res = await fetch('https://api.anthropic.com/v1/messages', {   ← AI gen
+143:    const { data: campaign } = await supabase.from('social_campaigns').insert({   ← campaign insert
+178:    const { error: postsErr } = await supabase.from('social_posts').insert(postsToInsert)  ← posts insert
+```
+→ **No `supabase.functions.invoke(...)` anywhere in the file.** The Anthropic request is not proxied.
+
+**Actual call site — `NewCampaignModal.tsx:109–123`:**
+```ts
+try {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY || '',
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 4000,
+      messages: [{ role: 'user', content: prompt }],
+    }),
+  })
+```
+
+**Verdict — Case 2 (P0).** The key is read from `import.meta.env.VITE_ANTHROPIC_API_KEY`. Any `VITE_`-prefixed var is **inlined into the client bundle at build time** and is therefore readable by anyone who loads the dashboard. The `'anthropic-dangerous-direct-browser-access': 'true'` header (CLAUDE.md non-negotiable #3) confirms this is a deliberate browser-direct call, not a proxy. The exposure is **not specific to S242** — it spans at least **9 modules** (campaign, content queue, single-post composer, SEO keywords, SEO generate, blog draft, blog SEO, ironwood redirect map, content tab), i.e. the platform-wide AI surface.
+
+**Action per OQ2 Case 2 directive:** STOP. Design doc not committed; Section 8 not drafted. This is a **P0 security session that must precede S242** — move the Anthropic key behind a proxy edge function (key in Edge Function Secrets, called via `supabase.functions.invoke`), eliminating `VITE_ANTHROPIC_API_KEY` from the bundle across all 9 call sites. S242 resumes only after that lands.
+
+---
+
 ## 3. Locked decisions
 
 **From the kickoff's embedded design summary (re-stated):**
@@ -172,18 +244,23 @@ Since the image-strategy section sits **inside** `NewCampaignModal`, which only 
 5. Tagging cost paid on upload, not on generation.
 6. Empty library → strategy section disabled; campaigns generate captions-only.
 7. Soft-deleted images excluded (already enforced by `useImageLibrary` line 66).
-8. Tier inherits from AI Campaign feature; no new gate. *(Conflict — see OQ3: the inherited gate is Pro+, not Elite.)*
+8. Tier inherits from AI Campaign feature; no new gate. **[OQ3 RESOLVED]** The existing AI Campaign feature is **Pro+ (`canAccess(3)`)**; auto-attach inherits this gate — no new tier surface. Managed Social tier layers on top (design Section 10). The design's prior "Elite-only" wording is superseded.
 9. Phase-2 "Auto folder per post" deferred to S242.1.
 10. Stem-matching via in-function lemmatizer, no dependency.
 11. `tag-image-vision` deployed via MCP, `verify_jwt: false`, cron-only.
 12. Validator gate (Perplexity + Gemini) REQUIRED before Wave 2.
 
-**New decision forced by this audit (P4):**
-13. **"All photos" sentinel = `'__all__'`** carried by the folder dropdown and persisted to `social_campaigns.image_strategy_folder`. Selection is a client-side filter over `useImageLibrary().items`, not SQL `WHERE folder = ?`.
+**New / confirmed decisions forced by this audit:**
+13. **[OQ4 LOCKED] All-photos sentinel.** Strategy 3 dropdown carries `'__all__'` when the customer picks "All photos". The selection algorithm in Section 7 reads `WHERE deleted_at IS NULL AND (folder = $1 OR $1 = '__all__')`. The literal `'__all__'` is documented in both the UI component and the helper to prevent drift. *(Repo realization per P4: the live filter is a client-side filter over `useImageLibrary().items` — already `deleted_at IS NULL` scoped — mirroring this predicate; there is no `list(folder?)` SQL method today.)*
+14. **[OQ5 LOCKED] FK behavior.** `social_campaigns.image_strategy_image_id REFERENCES image_library(id) ON DELETE SET NULL`. Soft-delete + hard-delete of a fixed-strategy image degrades the campaign to no-image-this-post; the Strategy 5 notify-creator toast (design Section 4) fires when the runtime SELECT returns no row, identical code path whether the FK has nulled out or the soft-delete is still in place.
+
+> These two decisions are recorded for the Wave 1 audit record. They do **not** unblock Wave 2 — S242 remains paused behind the OQ2 Case 2 P0 security session.
 
 ---
 
 ## 4. Open questions for Scott (binary — answer before Wave 2)
+
+> **Resolution status (2026-05-26):** OQ2 → **Case 2, P0 blocker** (S242 paused). OQ3 → Pro+, no new gate. OQ4 → `'__all__'` locked. OQ5 → `ON DELETE SET NULL` locked. OQ1 → design doc **not** committed (gated by OQ2 Case 2). Originals retained below for the record.
 
 **OQ1 — Missing design doc. [BLOCKER for traceability]**
 `docs/strategy/S242_AUTO_ATTACH_DESIGN.md` does not exist in the repo/git. Pick one:
