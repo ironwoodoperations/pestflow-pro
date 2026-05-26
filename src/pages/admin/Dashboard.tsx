@@ -7,7 +7,7 @@ import { usePlan } from '../../hooks/usePlan'
 import {
   FileText, Search, BookOpen, Share2, Star,
   MapPin, BarChart3, Users, Settings, LogOut, ExternalLink, Eye, EyeOff,
-  TrendingUp, Lock, CreditCard, LifeBuoy
+  TrendingUp, Lock, CreditCard, LifeBuoy, Image as ImageIcon
 } from 'lucide-react'
 import TierToggle from '../../components/admin/TierToggle'
 import { AdminTabErrorBoundary } from '../../components/admin/AdminTabErrorBoundary'
@@ -19,6 +19,7 @@ import { resetDemoData } from '../../lib/demoSeed'
 const ContentTab    = lazy(() => import('../../components/admin/ContentTab'))
 const SEOTab        = lazy(() => import('../../components/admin/SEOTab'))
 const BlogTab       = lazy(() => import('../../components/admin/BlogTab'))
+const MediaTab      = lazy(() => import('../../components/admin/MediaTab'))
 const SocialTab     = lazy(() => import('../../components/admin/SocialTab'))
 const TestimonialsTab = lazy(() => import('../../components/admin/TestimonialsTab'))
 const LocationsTab  = lazy(() => import('../../components/admin/LocationsTab'))
@@ -33,6 +34,7 @@ const TABS = [
   { key: 'content', label: 'Content', icon: FileText },
   { key: 'seo', label: 'SEO', icon: Search },
   { key: 'blog', label: 'Blog', icon: BookOpen },
+  { key: 'media', label: 'Media', icon: ImageIcon },
   { key: 'social', label: 'Social', icon: Share2 },
   { key: 'testimonials', label: 'Testimonials', icon: Star },
   { key: 'locations', label: 'Locations', icon: MapPin },
@@ -51,6 +53,7 @@ const TAB_SUBTITLES: Record<string, string> = {
   content: 'Manage page content across your website',
   seo: 'Optimize your search engine rankings',
   blog: 'Create and manage blog posts',
+  media: 'Upload and organize photos for posts',
   social: 'Schedule and manage social media',
   testimonials: 'Manage customer reviews and testimonials',
   locations: 'Manage service area locations',
@@ -201,6 +204,13 @@ export default function Dashboard() {
               <AdminTabErrorBoundary tabName="Blog">
                 <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-gray-400 text-sm">Loading...</div></div>}>
                   <BlogTab />
+                </Suspense>
+              </AdminTabErrorBoundary>
+            )}
+            {activeTab === 'media' && (
+              <AdminTabErrorBoundary tabName="Media">
+                <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-gray-400 text-sm">Loading...</div></div>}>
+                  <MediaTab />
                 </Suspense>
               </AdminTabErrorBoundary>
             )}
