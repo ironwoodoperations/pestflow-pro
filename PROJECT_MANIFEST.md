@@ -724,4 +724,10 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
 - Author: Claude
 - Files changed:
   - docs/audits/s242-auto-attach-spec.md
+## Session — 2026-05-26 19:34 UTC
+- Branch: `s243/wave1-investigate`
+- Commit: `990ff58` — investigate[s243]: Wave 1 audit — AI proxy attack surface + migration target
+- Author: Claude
+- Files changed:
+  - docs/audits/s243-ai-proxy-audit.md
 - Next recommended action: [Fill in next session: read this line, write what comes next]
