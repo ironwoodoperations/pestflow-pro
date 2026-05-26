@@ -3,6 +3,15 @@ import { supabase } from '../lib/supabase'
 import { useTenant } from '../context/TenantBootProvider'
 import { resizeImage } from '../components/admin/social/lib/resizeImage'
 
+// AI auto-attach (future managed-services tier, S242/S243): read candidate
+// images via this hook's `items` (already tenant-scoped, deleted_at filtered),
+// equivalent to:
+//   SELECT id, storage_path, bucket_id FROM image_library
+//   WHERE tenant_id = current_tenant_id() AND deleted_at IS NULL [AND folder = $1]
+//   ORDER BY created_at DESC;
+// Derive the public URL via getPublicUrl(bucket_id, storage_path); set
+// social_posts.image_url / blog_posts.featured_image_url accordingly.
+
 export interface ImageLibraryItem {
   id: string
   tenant_id: string

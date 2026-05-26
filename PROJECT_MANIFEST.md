@@ -698,3 +698,12 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
 - Files changed:
   - docs/audits/s237-image-library-spec.md
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-26 17:38 UTC
+- Branch: `claude/modest-einstein-aodiq`
+- Commit: `3e9d5e3` — investigate[s237b]: Wave 1 death audit — composer wiring
+- Author: Claude
+- Files changed:
+  - docs/audits/s237b-composer-wiring-audit.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
