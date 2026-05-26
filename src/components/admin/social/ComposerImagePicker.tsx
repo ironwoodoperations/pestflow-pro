@@ -1,5 +1,7 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
+import { X } from 'lucide-react'
 import type { UploadState } from './useComposer'
+import ImageLibraryPicker from './ImageLibraryPicker'
 
 interface Props {
   imageUrl: string
@@ -33,6 +35,7 @@ function generateTemplateImage(): string {
 
 export default function ComposerImagePicker({ imageUrl, onImageUrlChange, onFileUpload, uploadState, previewUrl }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [libraryOpen, setLibraryOpen] = useState(false)
 
   function handleDownloadTemplate() {
     const dataUrl = generateTemplateImage()
@@ -64,6 +67,12 @@ export default function ComposerImagePicker({ imageUrl, onImageUrlChange, onFile
 
       <div className="flex gap-2 mb-4">
         <button
+          onClick={() => setLibraryOpen(true)}
+          className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition"
+        >
+          🖼️ Choose from Library
+        </button>
+        <button
           onClick={() => fileInputRef.current?.click()}
           disabled={uploadState === 'uploading'}
           className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
@@ -94,12 +103,29 @@ export default function ComposerImagePicker({ imageUrl, onImageUrlChange, onFile
       {displayPreview && (
         <div className="mt-3 relative inline-block">
           <img src={displayPreview} alt="Preview" className="w-32 h-24 object-cover rounded-lg border border-gray-200" />
-          {uploadState === 'uploading' && (
+          {uploadState === 'uploading' ? (
             <div className="absolute inset-0 flex items-center justify-center bg-white/70 rounded-lg">
               <span className="text-xs text-gray-500 font-medium">Uploading…</span>
             </div>
+          ) : imageUrl && (
+            <button
+              type="button"
+              onClick={() => onImageUrlChange('')}
+              className="absolute -top-2 -right-2 bg-white border border-gray-300 rounded-full p-1 text-gray-500 hover:text-red-600 shadow-sm"
+              aria-label="Clear image"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           )}
         </div>
+      )}
+
+      {libraryOpen && (
+        <ImageLibraryPicker
+          open
+          onClose={() => setLibraryOpen(false)}
+          onSelect={(url) => { onImageUrlChange(url); setLibraryOpen(false) }}
+        />
       )}
     </div>
   )

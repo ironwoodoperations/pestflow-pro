@@ -6,6 +6,7 @@ import { triggerRevalidate } from '../../lib/revalidate'
 import { usePlan } from '../../context/PlanContext'
 import { autoGenBlogSeo } from '../../lib/ai/generateBlogSeo'
 import { generateBlogDraft } from '../../lib/ai/generateBlogDraft'
+import ImageLibraryPicker from './social/ImageLibraryPicker'
 
 interface Post {
   id: string; title: string; slug: string; content: string; excerpt: string
@@ -50,6 +51,7 @@ export default function BlogPostEditor({ editing, initialPost, tenantId, onSave,
   })
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [libraryOpen, setLibraryOpen] = useState(false)
   const [draft, setDraft] = useState<DraftPanel>({
     open: false, topic: '', tone: 'informative', wordCount: 600, generating: false,
   })
@@ -244,11 +246,27 @@ export default function BlogPostEditor({ editing, initialPost, tenantId, onSave,
                 </button>
               </div>
             ) : (
-              <label className="flex items-center gap-2 cursor-pointer bg-gray-50 border border-dashed border-gray-300 rounded-lg px-4 py-3 text-sm text-gray-500 hover:bg-gray-100 w-fit">
-                <Upload size={14} />
-                {uploading ? 'Uploading...' : 'Upload image'}
-                <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
-              </label>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setLibraryOpen(true)}
+                  className="flex items-center gap-2 bg-gray-50 border border-dashed border-gray-300 rounded-lg px-4 py-3 text-sm text-gray-500 hover:bg-gray-100 w-fit"
+                >
+                  🖼️ Choose from Library
+                </button>
+                <label className="flex items-center gap-2 cursor-pointer bg-gray-50 border border-dashed border-gray-300 rounded-lg px-4 py-3 text-sm text-gray-500 hover:bg-gray-100 w-fit">
+                  <Upload size={14} />
+                  {uploading ? 'Uploading...' : 'Upload image'}
+                  <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
+                </label>
+              </div>
+            )}
+            {libraryOpen && (
+              <ImageLibraryPicker
+                open
+                onClose={() => setLibraryOpen(false)}
+                onSelect={(url) => { setForm(p => ({ ...p, featured_image_url: url })); setLibraryOpen(false) }}
+              />
             )}
           </div>
           <div>
