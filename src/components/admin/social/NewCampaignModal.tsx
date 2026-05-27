@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../context/TenantBootProvider'
 import { usePlan } from '../../../context/PlanContext'
+import { callAi } from '../../../lib/ai/callAi'
 
 const ALL_PLATFORMS = [
   { key: 'facebook',        label: 'Facebook',        icon: '📘' },
@@ -107,22 +108,11 @@ Each object must have: day (number), platform (string), caption (string), hashta
 Make captions specific to the services described. Avoid repetition. Include emojis. Keep captions under 200 words. Hashtags are 2-4 per post.`
 
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY || '',
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 4000,
-          messages: [{ role: 'user', content: prompt }],
-        }),
+      const data = await callAi('campaign_generation', {
+        tenant_id: tenantId,
+        max_tokens: 4000,
+        messages: [{ role: 'user', content: prompt }],
       })
-      const data = await res.json()
-      if (data.error) { setGenError(data.error.message || 'AI request failed.'); setStep('setup'); return }
       const text = data.content?.[0]?.text || '[]'
       const cleaned = text.replace(/```json|```/g, '').trim()
       const parsed: GeneratedPost[] = JSON.parse(cleaned)

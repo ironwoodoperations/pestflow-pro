@@ -1,4 +1,4 @@
-const API_URL = 'https://api.anthropic.com/v1/messages'
+import { callAi } from './callAi'
 
 export interface BlogDraftInput {
   topic: string
@@ -6,6 +6,7 @@ export interface BlogDraftInput {
   word_count: number
   business_name: string
   business_city?: string
+  tenant_id: string
 }
 
 export interface BlogDraftOutput {
@@ -20,9 +21,6 @@ function toSlug(title: string): string {
 }
 
 export async function generateBlogDraft(input: BlogDraftInput): Promise<BlogDraftOutput> {
-  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
-  if (!apiKey) throw new Error('VITE_ANTHROPIC_API_KEY not set')
-
   const userPrompt = [
     `Topic: ${input.topic}`,
     `Business: ${input.business_name}`,
@@ -30,24 +28,12 @@ export async function generateBlogDraft(input: BlogDraftInput): Promise<BlogDraf
     `Target word count: ${input.word_count}`,
   ].filter(Boolean).join('\n')
 
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
+  const json = await callAi('blog_draft', {
+      tenant_id: input.tenant_id,
       max_tokens: 3500,
       system: `You are a content writer for a local pest control business. Write helpful, locally relevant, SEO-friendly blog posts. Output JSON ONLY (no markdown, no preamble) with title, slug (kebab-case), excerpt (1-2 sentences), content (clean HTML using h2/h3/p/ul/strong tags, no inline styles, no images). Target word_count ± 10%. Tone: ${input.tone}. Include the city naturally if provided.`,
       messages: [{ role: 'user', content: userPrompt }],
-    }),
   })
-
-  if (!res.ok) throw new Error(`Anthropic API error: ${res.status}`)
-  const json = await res.json()
   const raw = json.content?.[0]?.text || '{}'
   const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim())
 

@@ -8,6 +8,7 @@ import { triggerRevalidate } from '../../lib/revalidate'
 import PageHelpBanner from './PageHelpBanner'
 import ContentPageForm from './ContentPageForm'
 import FaqTab from './FaqTab'
+import { callAi } from '../../lib/ai/callAi'
 
 const STANDARD_SLUGS = [
   'home', 'about',
@@ -42,7 +43,6 @@ export default function ContentTab() {
   const [newPageForm, setNewPageForm] = useState({ title: '', slug: '' })
   const [creatingPage, setCreatingPage] = useState(false)
   const [applyHeroToAllPages, setApplyHeroToAllPages] = useState(false)
-  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
 
   // Load custom (non-standard) page slugs from DB
   useEffect(() => {
@@ -137,12 +137,11 @@ export default function ContentTab() {
   async function generateAI() {
     setAiLoading(true)
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true', 'content-type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: buildPrompt() }] }),
+      const data = await callAi('content_page', {
+        tenant_id: tenantId,
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: buildPrompt() }],
       })
-      const data = await res.json()
       const text = data.content?.map((i: { text?: string }) => i.text || '').join('') || ''
       const clean = text.replace(/```json?\n?/g, '').replace(/```/g, '').trim()
       const generated = JSON.parse(clean)
@@ -298,7 +297,7 @@ export default function ContentTab() {
             <ContentPageForm
               selectedSlug={selectedSlug} form={form} loading={loading} saving={saving}
               aiLoading={aiLoading} reverting={reverting} isPestPage={isPestPage}
-              apiKey={apiKey} heroHeadline={heroHeadline} onHeroHeadlineChange={setHeroHeadline}
+              heroHeadline={heroHeadline} onHeroHeadlineChange={setHeroHeadline}
               applyHeroToAllPages={applyHeroToAllPages}
               updateField={updateField} onSave={handleSave} onGenerateAI={generateAI} onRevert={handleRevert}
               onImageUpdate={(field, url) => updateField(field, url)}

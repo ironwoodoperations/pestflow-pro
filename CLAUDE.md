@@ -76,7 +76,7 @@ Stop only when you genuinely cannot proceed without information not in this file
 
 1. **Model string:** always `claude-sonnet-4-6` — never any other string, ever
 2. **Demo Tenant ID:** `9215b06b-3eb5-49a1-a16e-7ff214bf6783` — hardcoded constant, never change
-3. **Anthropic browser header:** `'anthropic-dangerous-direct-browser-access': 'true'` — required on every fetch
+3. **AI calls route through `ai-proxy`** (S243): every Anthropic request goes through the `ai-proxy` edge function via `callAi(feature, { tenant_id, … })` (`src/lib/ai/callAi.ts`) → `supabase.functions.invoke('ai-proxy', …)`. NEVER call `api.anthropic.com` directly from frontend code. NEVER reference `VITE_ANTHROPIC_API_KEY` or any `VITE_`-prefixed AI key — none exist; the key lives only in Edge Function Secrets. The proxy pins the model, enforces per-feature tier gating, rate-limits per tenant, and logs every call. (CI guard in `.github/workflows/ci.yml` blocks regressions.)
 4. **Single useState object for forms** — never per-field state. Per-field state causes focus/re-render bugs.
 5. **Strip backticks before JSON.parse** — `text.replace(/```json|```/g, '').trim()`
 6. **Routes in App.tsx MUST appear BEFORE `/:slug`** — specific routes before the catch-all

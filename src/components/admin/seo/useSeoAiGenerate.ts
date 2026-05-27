@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
 import type { EditorForm, SeoPageRow } from './seoTypes'
+import { callAi } from '../../../lib/ai/callAi'
 
 export function useSeoAiGenerate(
   tenantId: string,
@@ -31,22 +32,12 @@ Page title: ${pc?.title || 'not set'}
 Page intro: ${pc?.intro ? pc.intro.slice(0, 200) : 'not set'}
 Services offered: ${activeServices || 'pest control'}`
 
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 512,
-          system: 'You are an SEO specialist for pest control websites. Generate SEO metadata for the given page. Return ONLY a JSON object with these exact keys: metaTitle, metaDescription, focusKeyword, ogTitle, ogDescription. Rules: metaTitle 50-60 chars, includes city and primary keyword. metaDescription 150-160 chars, compelling, includes CTA. focusKeyword: 2-4 word phrase. ogTitle: same as metaTitle or slight variation. ogDescription: same as metaDescription or slight variation. No markdown, no backticks, JSON only.',
-          messages: [{ role: 'user', content: userMsg }],
-        }),
+      const json = await callAi('seo_metadata', {
+        tenant_id: tenantId,
+        max_tokens: 512,
+        system: 'You are an SEO specialist for pest control websites. Generate SEO metadata for the given page. Return ONLY a JSON object with these exact keys: metaTitle, metaDescription, focusKeyword, ogTitle, ogDescription. Rules: metaTitle 50-60 chars, includes city and primary keyword. metaDescription 150-160 chars, compelling, includes CTA. focusKeyword: 2-4 word phrase. ogTitle: same as metaTitle or slight variation. ogDescription: same as metaDescription or slight variation. No markdown, no backticks, JSON only.',
+        messages: [{ role: 'user', content: userMsg }],
       })
-      const json = await res.json()
       const raw = json.content?.[0]?.text || '{}'
       const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim())
       setEditorForm({

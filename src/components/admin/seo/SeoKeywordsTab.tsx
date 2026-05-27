@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../context/TenantBootProvider'
+import { callAi } from '../../../lib/ai/callAi'
 
 const PAGE_SLUGS = [
   'home', 'spider-control', 'mosquito-control', 'ant-control', 'wasp-hornet-control',
@@ -20,34 +21,22 @@ export default function SeoKeywordsTab() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
-
   async function generate() {
     if (!topic.trim()) { toast.error('Enter a focus topic first.'); return }
     setLoading(true)
     setError('')
     setKeywords([])
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 1000,
-          messages: [{ role: 'user', content: `You are an SEO expert for a pest control company in East Texas.\nGenerate 10 keyword suggestions for the page: "${page}"\nFocus topic: "${topic}"\nBusiness: local pest control serving Tyler TX and surrounding East Texas cities.\n\nRespond ONLY with a JSON array, no markdown, no explanation:\n[\n  { "keyword": "spider control tyler tx", "intent": "transactional", "difficulty": "low", "priority": "high" },\n  ...\n]\n\nIntent options: transactional | informational | local\nDifficulty options: low | medium | high\nPriority options: high | medium | low` }],
-        }),
+      const data = await callAi('seo_keywords', {
+        tenant_id: tenantId,
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: `You are an SEO expert for a pest control company in East Texas.\nGenerate 10 keyword suggestions for the page: "${page}"\nFocus topic: "${topic}"\nBusiness: local pest control serving Tyler TX and surrounding East Texas cities.\n\nRespond ONLY with a JSON array, no markdown, no explanation:\n[\n  { "keyword": "spider control tyler tx", "intent": "transactional", "difficulty": "low", "priority": "high" },\n  ...\n]\n\nIntent options: transactional | informational | local\nDifficulty options: low | medium | high\nPriority options: high | medium | low` }],
       })
-      const data = await response.json()
       const text = data.content?.map((i: { text?: string }) => i.text || '').join('') || ''
       const clean = text.replace(/```json|```/g, '').trim()
       setKeywords(JSON.parse(clean))
-    } catch {
-      setError('Failed to generate keywords. Check your API key and try again.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to generate keywords. Please try again.')
     }
     setLoading(false)
   }
@@ -66,12 +55,6 @@ export default function SeoKeywordsTab() {
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
       <h3 className="text-base font-semibold text-gray-900 mb-4">✨ AI Keyword Research</h3>
 
-      {!apiKey && (
-        <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-3 text-sm mb-4">
-          Set VITE_ANTHROPIC_API_KEY in your environment to enable AI features.
-        </div>
-      )}
-
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">Page</label>
@@ -84,7 +67,7 @@ export default function SeoKeywordsTab() {
           <input value={topic} onChange={e => setTopic(e.target.value)} placeholder="e.g. spider control" className={inputClass} />
         </div>
         <div className="flex items-end">
-          <button onClick={generate} disabled={loading || !apiKey} className="w-full bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
+          <button onClick={generate} disabled={loading} className="w-full bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
             {loading ? 'Generating...' : 'Generate Keywords'}
           </button>
         </div>

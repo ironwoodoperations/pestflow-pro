@@ -9,6 +9,7 @@ import UndoToast from '../../shared/UndoToast'
 import ConfirmDeleteModal from '../../shared/ConfirmDeleteModal'
 import { archiveRecord, restoreRecord, hardDeleteRecord } from '../../../lib/archiveUtils'
 import { useTenant } from '../../../context/TenantBootProvider'
+import { callAi } from '../../../lib/ai/callAi'
 
 interface Props {
   posts: SocialPost[]
@@ -113,21 +114,11 @@ export default function ContentQueueTab({ posts, campaigns, selectedCampaignId, 
     const drafts = filtered.filter(p => p.status === 'draft')
     if (drafts.length === 0) { toast.error('No drafts to schedule.'); return }
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 500,
-          messages: [{ role: 'user', content: `You are a social media scheduling expert. Suggest optimal posting times for ${drafts.length} posts for a home services company. Spread them over the next 7 days. Today is ${new Date().toISOString().split('T')[0]}. Return ONLY a JSON array:\n[{"post_index":0,"scheduled_for":"YYYY-MM-DDTHH:mm:00"},...]` }],
-        }),
+      const data = await callAi('content_queue_schedule', {
+        tenant_id: tenantId,
+        max_tokens: 500,
+        messages: [{ role: 'user', content: `You are a social media scheduling expert. Suggest optimal posting times for ${drafts.length} posts for a home services company. Spread them over the next 7 days. Today is ${new Date().toISOString().split('T')[0]}. Return ONLY a JSON array:\n[{"post_index":0,"scheduled_for":"YYYY-MM-DDTHH:mm:00"},...]` }],
       })
-      const data = await res.json()
       const text = data.content?.[0]?.text || ''
       const clean = text.replace(/```json|```/g, '').trim()
       const schedule = JSON.parse(clean) as { post_index: number; scheduled_for: string }[]
