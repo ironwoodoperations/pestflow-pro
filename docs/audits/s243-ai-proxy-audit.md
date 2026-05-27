@@ -165,8 +165,8 @@ export type AiFeature =
 export const FEATURE_TIER: Record<AiFeature, number | 'operator'> = {
   content_page:           1,   // ContentTab — ungated today
   composer_captions:      1,   // useComposer.generateCaptions — Starter-reachable (quota-limited)
-  composer_schedule:      2,   // useComposer.getSmartSchedule — scheduling = Grow+  [CONFIRM]
-  content_queue_schedule: 2,   // ContentQueueTab.handleSmartSchedule — scheduling = Grow+  [CONFIRM]
+  composer_schedule:      2,   // useComposer.getSmartSchedule — ComposerScheduler hides Smart Schedule behind a "Growth+" lock when isStarter (tier 1); reachable tier 2+
+  content_queue_schedule: 1,   // ContentQueueTab.handleSmartSchedule — NO tier gate anywhere (no useSocialTier/canAccess; SocialTab mounts queue with no canAccess wrapper); reachable by any admin with drafts incl. Starter
   seo_metadata:           2,   // useSeoAiGenerate — inside SEOTab FeatureGate minTier={2}
   blog_draft:             2,   // generateBlogDraft — BlogTab FeatureGate minTier={2}
   blog_seo:               2,   // generateBlogSeo — BlogTab FeatureGate minTier={2}
@@ -189,7 +189,9 @@ Behavior:
 
 **Tier source — accuracy note (deviates slightly from "no extra round-trip"):** `requireTenantUser` reads `profiles` (tenant_id, role); tier is **not** on `profiles`. Per CLAUDE.md the tier lives in `settings` key `subscription` (`{ tier: 1–4 }`, mirrors client `usePlan`). So the proxy needs **one additional `settings` read** (`select value where tenant_id=? and key='subscription'`) unless Wave 3 denormalizes tier onto `profiles`/a view. Recommend the extra read for MVP (cheap, indexed). Document this — Scott's "piggybacks on existing hit" assumed tier was co-located; it isn't.
 
-**`[CONFIRM]` items:** `composer_schedule` and `content_queue_schedule` are scheduling-adjacent; Starter (tier 1) reaches captions but not scheduling. If smoke-test shows Starter can today reach these AI calls, drop them to tier 1 to stay behavior-preserving. Default 2.
+**Scheduling-feature tiers (resolved 2026-05-26, was `[CONFIRM]`):**
+- `composer_schedule` → **tier 2.** `ComposerScheduler.tsx:36–40`: when `isStarter` (tier 1, from `useSocialTier`), the entire schedule-mode block — including the `✨ Smart Schedule` radio + "Get Best Time" button (`onGetSmartSchedule`) — is replaced by a `Lock` notice "Scheduling available on Growth plan and above." So `getSmartSchedule` is unreachable below tier 2. Gating at 2 is behavior-preserving.
+- `content_queue_schedule` → **tier 1.** `ContentQueueTab.tsx` has **no** tier gate (imports only `useTenant`; no `useSocialTier`/`usePlan`/`canAccess`/`FeatureGate`). The "Smart Schedule" button (`handleSmartSchedule`, L184) renders whenever `draftCount > 0`, and `SocialTab.tsx:143` mounts the queue tab with **no** `canAccess` wrapper (unlike campaigns=3 / analytics=4). Any admin reaching the queue with drafts — including Starter — can fire it today, so the proxy must allow tier 1 to avoid newly breaking a reachable path. (Auth + per-tenant rate-limit + logging still apply.)
 
 ## A2.3 — Rate-limit implementation (OQ-Q)
 
