@@ -782,3 +782,12 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - supabase/functions/ai-proxy/index.ts
   - tsconfig.tsbuildinfo
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-27 17:50 UTC
+- Branch: `s243/wave3-ai-proxy`
+- Commit: `f9b911a` — S243 Wave 3: fill operator UUID allowlist
+- Author: Claude
+- Files changed:
+  - supabase/functions/_shared/aiAuth.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
