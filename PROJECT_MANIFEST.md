@@ -731,3 +731,21 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
 - Files changed:
   - docs/audits/s243-ai-proxy-audit.md
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-27 12:41 UTC
+- Branch: `s243/wave1-investigate`
+- Commit: `4a764f5` — investigate[s243]: Wave 2 addendum — proxy contract & migration plan
+- Author: Claude
+- Files changed:
+  - docs/audits/s243-ai-proxy-audit.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-27 12:49 UTC
+- Branch: `s243/wave1-investigate`
+- Commit: `83e26f0` — investigate[s243]: resolve composer_schedule (tier 2) + content_queue_schedule (tier 1)
+- Author: Claude
+- Files changed:
+  - docs/audits/s243-ai-proxy-audit.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
