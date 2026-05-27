@@ -749,3 +749,12 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
 - Files changed:
   - docs/audits/s243-ai-proxy-audit.md
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-27 13:12 UTC
+- Branch: `s243/wave1-investigate`
+- Commit: `41e3e02` — S243 Wave 2 revision: validator-gate fixes
+- Author: Claude
+- Files changed:
+  - docs/audits/s243-ai-proxy-audit.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
