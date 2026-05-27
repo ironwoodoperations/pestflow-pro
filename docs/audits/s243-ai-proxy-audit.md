@@ -121,7 +121,9 @@ No other CLAUDE.md entry references Anthropic, AI, or browser-direct API access.
 
 # Wave 2 addendum — proxy contract & migration plan
 
-**Status:** Wave 2 (addendum on PR #123, same branch). Crash-priority — cutover targeted this week. **Validator gate (Perplexity + Gemini) runs against THIS addendum before Wave 3 implementation.** OQ resolutions locked by Scott (2026-05-26): OQ-R crash cutover w/ rotate-last-as-final-step · OQ-G server-side tier gating · OQ-I one proxy w/ operator branch · OQ-S streaming deferred · OQ-Q short-window rate limit only.
+**Status:** Wave 2 **revised** (addendum on PR #123, same branch). Crash-priority — cutover targeted this week. **Validator gate CLEARED:** Perplexity + Gemini returned substantive findings; this revision implements them (R1–R9 below). Net verdict: revise then proceed directly to Wave 3 — **no re-validation** (revisions implement validator output verbatim, no new architecture). OQ resolutions locked by Scott (2026-05-26): OQ-R crash cutover w/ rotate-last-as-final-step · OQ-G server-side tier gating · OQ-I one proxy w/ operator branch · OQ-S streaming deferred · OQ-Q short-window rate limit only.
+
+**Validator-gate revisions (R1–R9), all applied below:** R1 `callAi` unwraps `FunctionsHttpError.context` · R2 no HTTP-200 tunneling, 3 sites rewritten to try/catch · R3 operator hard-separation + UUID allowlist · R4 atomic `check_and_record_rate_limit` SQL fn · R5 two-layer (per-user 20 / per-tenant 60 per 5 min) · R6 request bounds (A2.1.1) · R7 48-h key overlap · R8 CORS on all responses (A2.1.2) · R9 log every terminal outcome. **Wave 3 (Block 2) also carries:** W1 CI grep guard · W2 dist/ + DevTools verification · W3 expanded auth-regression smoke matrix · W4 fail-closed on missing subscription · W5 pre-cutover model-pin grep — documented in the Wave 3 PR, not here.
 
 ## A2.1 — Proxy contract
 
@@ -144,18 +146,38 @@ No other CLAUDE.md entry references Anthropic, AI, or browser-direct API access.
 
 **Pass-through to Anthropic:** proxy forwards `{ model (pinned), max_tokens, messages, system?, temperature? }` to `POST https://api.anthropic.com/v1/messages` with `x-api-key: <secret>`, `anthropic-version: 2023-06-01`. No `tools`, no `stream` (none exist today; see A2.7 deferred). To stay future-proof for S242 vision, the proxy forwards `messages`/`system` **opaquely** rather than reshaping them.
 
-**Response shape (behavior-preserving — the critical detail):**
+**Response shape (R2 — single error contract, no status tunneling):**
 - **Success:** proxy returns the Anthropic `/v1/messages` JSON **verbatim**, HTTP 200. Via `supabase.functions.invoke`, the client receives this as `data`, so existing `data.content[0].text` / `data.content.map(...)` parsing is unchanged.
-- **Anthropic API error** (Anthropic returns 4xx/5xx): proxy forwards the Anthropic error body verbatim **at HTTP 200**, so the body carries `{ error: { message } }`. This preserves the `if (data.error) …` branches in `NewCampaignModal` (L125) and `useComposer` (L101, L124).
-- **Proxy-level rejection:** `401` (missing/invalid JWT), `403` (tenant mismatch / under-tier / not operator), `429` (rate limit) — body `{ error: { message } }`, non-2xx so `invoke` populates its `error`.
+- **Anthropic API error** (Anthropic returns 4xx/5xx): proxy returns the **upstream status as-is** (no 200-tunneling) with body `{ error: { message, anthropic_status, request_id } }`. `invoke` surfaces this as a `FunctionsHttpError`; `callAi` (A2.5) unwraps `error.context` → throws `error.message`.
+- **Proxy-level rejection:** `400` (validation — A2.1.1), `401` (missing/invalid JWT), `403` (tenant mismatch / under-tier / not operator), `429` (rate limit) — body `{ error: { message } }`, non-2xx → `FunctionsHttpError`.
 
-**Two client error-handling styles exist and both must keep working** (verified): (a) body-`data.error` readers — campaign, composer ×2; (b) `if (!res.ok) throw` — `generateBlogDraft` L49, `generateBlogSeo` L52; (c) bare-parse-in-try/catch — content, seo keywords/meta, content-queue, redirect. The shared `callAi` helper (A2.5) normalizes all three: returns Anthropic `data` on success, **throws** on proxy-level/transport error (caught by each site's existing try/catch), and leaves Anthropic `data.error` intact in the body.
+**One unified error path (post-R2).** Every terminal error — proxy-level *and* upstream Anthropic — comes back non-2xx and is thrown by `callAi`, caught by each call site's existing `try/catch`. Three sites currently read a 200-body `data.error` (`NewCampaignModal` L125, `useComposer` L101/L124); R2 rewrites those to the `try/catch` pattern the other seven already use (A2.6 rows #1–#3). This trades a tiny behavior-preservation deviation (three sites get a unified error path) for one consistent contract across all ten.
+
+### A2.1.1 — Request bounds (R6)
+
+Pre-flight validation, **before** auth (cheap rejection of malformed payloads). Reject with HTTP `400`, body `{ error: { message } }`, if any of:
+1. `max_tokens > 4096` (or missing / not a positive integer)
+2. serialized JSON request body `> 100 KB`
+3. `messages.length > 50` (or `messages` missing / not an array)
+4. `feature` not in the `AiFeature` union
+5. `tenant_id` not a valid UUID
+
+Order: body-size → JSON parse → field validation → auth (A2.2) → rate-limit (A2.3) → upstream. Each 400 is logged (R9).
+
+### A2.1.2 — CORS + preflight (R8)
+
+**Every** response — 200 success, 400 validation, 401/403 auth, 429 rate-limit, upstream 4xx/5xx, and unexpected 500 — must carry standard CORS headers (`Access-Control-Allow-Origin`, `Access-Control-Allow-Headers: authorization, x-client-info, apikey, content-type`) and `Content-Type: application/json`. The proxy must answer `OPTIONS` preflight with a clean `200` + CORS headers and no body. Without this the browser sees opaque network failures on error responses instead of the structured proxy body, and `callAi` can't unwrap `error.context`. Mirror the existing pattern in `_shared/cors.ts` (`getCorsHeaders(req)`), as used by `seo-analytics`.
 
 ## A2.2 — Auth implementation (OQ-G + OQ-I)
 
 New helper in `supabase/functions/_shared/auth/requireTenantUser.ts` (extends the file; reuses `requireTenantUser`):
 
 ```ts
+// R3: identity is email; AUTHORIZATION is UUID. Operator allowlist by user.id.
+const IRONWOOD_OPERATOR_USER_IDS = new Set<string>([
+  // TODO(scott): fill UUID — Scott's auth.users id, provided during Wave 3
+])
+
 export type AiFeature =
   | 'content_page' | 'composer_captions' | 'composer_schedule'
   | 'content_queue_schedule' | 'seo_metadata' | 'blog_draft'
@@ -184,8 +206,11 @@ export async function requireTenantAdminWithFeature(
 
 Behavior:
 1. `const { user, tenantId, role } = await requireTenantUser(req, requestedTenantId)` (JWT + tenant ownership).
-2. **Operator branch (OQ-I):** if `FEATURE_TIER[feature] === 'operator'`, require Ironwood-ops identity (`user.email === 'admin@pestflowpro.com'` / Ironwood tenant); else throw `AuthError(403)`. Tenant-tier features are NOT reachable by operator-only and vice-versa, except operator may also be allowed to call tenant features if desired (Wave 3 decision — default: operator passes all).
-3. **Tier check (OQ-G):** read the tenant tier and require `tier >= FEATURE_TIER[feature]`, else `AuthError(403, { error: 'Upgrade required' })`.
+2. **Operator branch (OQ-I + R3 — hard separation):**
+   - If `FEATURE_TIER[feature] === 'operator'`: require `IRONWOOD_OPERATOR_USER_IDS.has(user.id)` (UUID allowlist, **not** email) — else `throw new AuthError(403, …)`.
+   - If `FEATURE_TIER[feature]` is a tier (number): an operator-only identity may **not** invoke it — proceed to the tier check, which an operator-only user fails.
+   - **Hard separation (locked):** operator identities cannot invoke tenant-tier features; tenant-admin identities cannot invoke operator features. No "operator passes all" clause. If an operator needs a tenant feature on a tenant's behalf, they act through that tenant's admin session, logged separately.
+3. **Tier check (OQ-G):** for numeric-tier features, read the tenant tier and require `tier >= FEATURE_TIER[feature]`, else `AuthError(403, { error: 'Upgrade required' })`.
 
 **Tier source — accuracy note (deviates slightly from "no extra round-trip"):** `requireTenantUser` reads `profiles` (tenant_id, role); tier is **not** on `profiles`. Per CLAUDE.md the tier lives in `settings` key `subscription` (`{ tier: 1–4 }`, mirrors client `usePlan`). So the proxy needs **one additional `settings` read** (`select value where tenant_id=? and key='subscription'`) unless Wave 3 denormalizes tier onto `profiles`/a view. Recommend the extra read for MVP (cheap, indexed). Document this — Scott's "piggybacks on existing hit" assumed tier was co-located; it isn't.
 
@@ -195,42 +220,69 @@ Behavior:
 
 ## A2.3 — Rate-limit implementation (OQ-Q)
 
-Reuse `public.rate_limit_events` (no new table). Per authenticated tenant:
-```ts
-const key = `ai-proxy:${tenantId}`
-const since = new Date(Date.now() - 5 * 60 * 1000).toISOString()  // 5-min window
-const { count } = await svc.from('rate_limit_events')
-  .select('id', { count: 'exact', head: true }).eq('key', key).gte('created_at', since)
-if ((count ?? 0) >= 60) return json(429, { error: { message: 'Too many AI requests. Please wait a minute and try again.' } })
-await svc.from('rate_limit_events').insert({ key })
+Reuse `public.rate_limit_events` (no new table). **R4 — atomic check (the naive select-count-then-insert is racy: two concurrent requests can both observe `count < max` and both insert).** Apply this function in the Wave 3 migration set; the proxy calls it via service-role RPC:
+```sql
+create or replace function public.check_and_record_rate_limit(
+  p_key text,
+  p_window_seconds int,
+  p_max_count int
+) returns boolean
+language plpgsql
+security definer
+as $$
+declare
+  v_count int;
+begin
+  perform pg_advisory_xact_lock(hashtext(p_key));   -- serialize check+insert per key
+  select count(*) into v_count
+    from public.rate_limit_events
+    where key = p_key
+      and created_at >= now() - (p_window_seconds || ' seconds')::interval;
+  if v_count >= p_max_count then
+    return false;
+  end if;
+  insert into public.rate_limit_events(key) values (p_key);
+  return true;
+end;
+$$;
 ```
-- **Window 5 min, ceiling 60 req / 5 min / tenant** (Scott's suggested starting number — high enough for real bursts, caps runaway abuse). Tunable post-launch.
+
+**R5 — two-layer keys (a tenant-wide ceiling alone lets one rogue user starve the whole org).** Call the function twice per request; **both** must pass:
+```ts
+const userOk   = await rpc('check_and_record_rate_limit', { p_key: `ai-proxy:${tenantId}:${userId}`, p_window_seconds: 300, p_max_count: 20 })
+const tenantOk = await rpc('check_and_record_rate_limit', { p_key: `ai-proxy:${tenantId}`,            p_window_seconds: 300, p_max_count: 60 })
+if (!userOk || !tenantOk) return json(429, { error: { message: 'Too many AI requests. Please wait a minute and try again.' } })
+```
+- **Per-user: 20 req / 5 min. Per-tenant: 60 req / 5 min.** Both checked atomically; tunable post-launch.
 - **1-hr cleanup cron is compatible** (5-min window ≪ 1 hr). A daily/monthly **token quota is explicitly out of scope** (A2.7) — it would need a durable table the cleanup cron doesn't prune.
-- 429 body uses Anthropic-style `{ error: { message } }` so `data.error` sites surface it; non-2xx so `invoke` also flags `error`.
+- 429 body uses `{ error: { message } }`; non-2xx → `FunctionsHttpError` → `callAi` throws. Log the 429 (R9).
 
 ## A2.4 — Logging implementation (P7 pattern)
 
-New table `public.ai_proxy_log` (service-role RLS only), written after each Anthropic response:
+New table `public.ai_proxy_log` (service-role RLS only). **R9 — write a row for EVERY terminal outcome, not just successful Anthropic responses.** The denied attempts are the most interesting events for abuse attribution.
 
-| column | source |
-|---|---|
-| `id` BIGSERIAL PK | — |
-| `tenant_id` uuid | validated caller tenant |
-| `user_id` uuid | `user.id` |
-| `feature` text | request `feature` |
-| `model` text | pinned `claude-sonnet-4-6` |
-| `input_tokens` int | Anthropic `usage.input_tokens` |
-| `output_tokens` int | Anthropic `usage.output_tokens` |
-| `status` int | Anthropic HTTP status (or proxy 429/403) |
-| `created_at` timestamptz default now() | — |
+| column | nullable | source |
+|---|---|---|
+| `id` BIGSERIAL PK | — | — |
+| `tenant_id` uuid | yes | validated caller tenant (null if rejected before tenant resolves) |
+| `user_id` uuid | yes | `user.id` (**null** on 401 — no JWT) |
+| `feature` text | yes | request `feature` (null if 400 invalid-feature) |
+| `model` text | yes | pinned `claude-sonnet-4-6` (null for non-Anthropic outcomes) |
+| `input_tokens` int | **yes** | Anthropic `usage.input_tokens` (null unless Anthropic responded) |
+| `output_tokens` int | **yes** | Anthropic `usage.output_tokens` (null unless Anthropic responded) |
+| `status` int | — | terminal HTTP status: 200, 400, 401, 403, 429, or upstream Anthropic 4xx/5xx |
+| `created_at` timestamptz default now() | — | — |
 
-Plus a structured console line mirroring `send-credentials-email` (`[ai-proxy] tenant:<id> user:<email> feature:<f> status:<n> in:<n> out:<n>`). Console = ops debugging; table = billing/abuse attribution. (Token-quota enforcement later reads this table.)
+Outcomes logged: `200` success; `400` validation (A2.1.1); `401` missing/invalid JWT (`user_id=null`); `403` auth rejection (tenant mismatch / under-tier / operator-separation / **missing subscription**, W4); `429` rate-limit (both layers); upstream Anthropic 4xx/5xx; and transport failures the proxy can still record. Best-effort: a logging failure must not block the user response.
+
+Plus a structured console line mirroring `send-credentials-email` (`[ai-proxy] tenant:<id> user:<email|null> feature:<f> status:<n> in:<n|−> out:<n|−>`). Console = ops debugging; table = billing/abuse attribution. (Token-quota enforcement later reads this table.)
 
 ## A2.5 — `callAi` client helper (the single migration target)
 
 New `src/lib/ai/callAi.ts`:
 ```ts
 import { supabase } from '../supabase'
+import { FunctionsHttpError } from '@supabase/supabase-js'
 import type { AiFeature } from './aiFeatures'   // mirror of the edge-fn union
 
 export interface AiCallInput {
@@ -240,15 +292,26 @@ export interface AiCallInput {
   system?: string
   temperature?: number
 }
-// Returns the Anthropic /v1/messages JSON verbatim (incl. {error} body on Anthropic errors).
-// Throws on proxy-level/transport errors (401/403/429/network) — caught by each call site's existing try/catch.
+// Returns the Anthropic /v1/messages JSON on success. Throws on ANY non-2xx —
+// proxy 400/401/403/429 OR upstream Anthropic 4xx/5xx (R2: no more 200-tunneling).
+// invoke() yields a FunctionsHttpError whose structured { error: { message } }
+// body lives in error.context (a Response), NOT error.message — unwrap it.
 export async function callAi(feature: AiFeature, input: AiCallInput): Promise<any> {
   const { data, error } = await supabase.functions.invoke('ai-proxy', { body: { feature, ...input } })
-  if (error) throw new Error(error.message ?? 'AI request failed')
+  if (error) {
+    let message = error.message ?? 'AI request failed'
+    if (error instanceof FunctionsHttpError) {
+      try {
+        const body = await error.context.json()
+        if (body?.error?.message) message = body.error.message
+      } catch { /* fall through to generic message */ }
+    }
+    throw new Error(message)
+  }
   return data
 }
 ```
-Every call site swaps its `fetch('https://api.anthropic.com/v1/messages', {...})` + `await res.json()` for `const data = await callAi('<feature>', { tenant_id, max_tokens, messages, system? })`. **Response parsing downstream is untouched.**
+Every call site swaps its `fetch('https://api.anthropic.com/v1/messages', {...})` + `await res.json()` for `const data = await callAi('<feature>', { tenant_id, max_tokens, messages, system? })`. **Response parsing downstream is untouched** (except the three `data.error` sites — see R2 / A2.6).
 
 ## A2.6 — Migration sequence (file-by-file)
 
@@ -256,9 +319,9 @@ Uniform transform per site: delete the `fetch(ANTHROPIC, { method, headers:{x-ap
 
 | # | File | Old call (lines) | `feature` | tenant_id source | Notes |
 |---|---|---|---|---|---|
-| 1 | `social/NewCampaignModal.tsx` | 110–123 (+`data.error` L125) | `campaign_generation` | `tenantId` (useTenant, L44) | `data.error` branch preserved |
-| 2 | `social/useComposer.ts` `generateCaptions` | 95–99 (+`data.error` L101) | `composer_captions` | needs tenant — add via hook arg/useTenant | text-split parsing unchanged |
-| 3 | `social/useComposer.ts` `getSmartSchedule` | 118–122 (+`data.error` L124) | `composer_schedule` | same | — |
+| 1 | `social/NewCampaignModal.tsx` | 110–123 (+`data.error` L125) | `campaign_generation` | `tenantId` (useTenant, L44) | **R2: rewrite `if (data.error)` branch — proxy returns non-2xx on errors; rely on `callAi` throwing (existing try/catch L132 catches)** |
+| 2 | `social/useComposer.ts` `generateCaptions` | 95–99 (+`data.error` L101) | `composer_captions` | needs tenant — add via hook arg/useTenant | text-split parsing unchanged. **R2: rewrite `if (data.error)` branch — proxy returns non-2xx on errors** |
+| 3 | `social/useComposer.ts` `getSmartSchedule` | 118–122 (+`data.error` L124) | `composer_schedule` | same | **R2: rewrite `if (data.error)` branch — proxy returns non-2xx on errors** |
 | 4 | `social/ContentQueueTab.tsx` `handleSmartSchedule` | 116–129 | `content_queue_schedule` | `tenantId` (in file) | bare try/catch unchanged |
 | 5 | `admin/ContentTab.tsx` `generateAI` | 140–144 (`apiKey` L45) | `content_page` | `tenantId` (in file) | drop `apiKey` const |
 | 6 | `admin/seo/SeoKeywordsTab.tsx` `generate` | 31–44 (`apiKey` L23) | `seo_keywords` | `tenantId` (in file) | drop `apiKey` const |
@@ -290,10 +353,11 @@ Rules #1 (model string — now enforced by the proxy) and #5 (strip backticks be
 3. Smoke-test the proxy with ONE migrated site (recommend `blog_draft` on `dang.pestflowpro.ai/admin`) — confirm 200 + correct shape, 403 under-tier, 429 over-limit.
 4. Migrate the remaining 9 sites (single PR) per A2.6. Deploy frontend.
 5. **Full smoke test on `dang.pestflowpro.ai/admin`** (Kirk's surfaces): campaign generate, blog draft + SEO, SEO keywords + page meta, content page copy, single-post captions + smart schedule, content-queue smart schedule; Ironwood redirect-map on `/ironwood`.
-6. **Final cutover step — Scott:** revoke the OLD key in the Anthropic console. Breakage window = minutes (revoke → propagation), not days.
-7. Rebuild verification: `grep -r "api.anthropic.com\|VITE_ANTHROPIC" src/ public/_admin/` → **zero** matches (except removed). Scrub `.env.example:3`. Confirm new `/_admin/` bundle carries no key.
-8. PR body records cutover timestamps (key-added, proxy-deployed, migration-deployed, old-key-revoked) for the audit trail.
+6. **Hold — 48-hour overlap (R7).** After the migration deploy, the OLD key stays active for 48 h so open browser sessions can cycle and CDN caches clear. Monitor `ai_proxy_log` AND Anthropic console usage on the old key for any direct (non-proxy) Anthropic calls during the window — none should appear if the migration is complete; if any do, trace and fix the missed call site before proceeding.
+7. **Final cutover step — Scott:** after the 48 h with the window clean, revoke the OLD key in the Anthropic console.
+8. Rebuild verification: `grep -r "api.anthropic.com\|VITE_ANTHROPIC" src/ public/_admin/` → **zero** matches (except removed). Scrub `.env.example:3`. Confirm new `/_admin/` bundle carries no key. (W2: also grep post-build `dist/` and verify zero `api.anthropic.com` requests in a DevTools Network session.)
+9. PR body records cutover timestamps (key-added, proxy-deployed, migration-deployed, 48h-window-start, old-key-revoked) for the audit trail.
 
 ---
 
-**Wave 2 addendum complete. STOP — Scott runs Perplexity + Gemini validators against this addendum. Both must clear before Wave 3 implementation. Do not merge; do not write code.**
+**Wave 2 addendum revised (R1–R9 applied). Validators cleared — no re-validation. STOP for Scott's review of this revision; on his OK, Wave 3 implementation proceeds (build `ai-proxy`, extend auth helper, migrate all 10 sites via `callAi`, deploy per the revised runbook, hold the 48-h overlap, then revoke the old key). Block 2 (W1–W5) lands in the Wave 3 PR. Do not merge this doc-only PR.**
