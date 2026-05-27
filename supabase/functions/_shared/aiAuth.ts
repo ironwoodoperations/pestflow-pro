@@ -12,8 +12,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '
 
 // R3: identity is email; AUTHORIZATION is UUID. Operator allowlist by user.id.
 const IRONWOOD_OPERATOR_USER_IDS = new Set<string>([
-  // TODO(scott): fill UUID — Scott's auth.users id (provide before cutover;
-  // until filled, redirect_map will 403 for everyone — Ironwood-only tool).
+  '5181b30a-265f-4a70-a323-bf6e3c53641b', // admin@pestflowpro.com (operator)
 ])
 
 export type AiFeature =
