@@ -5,3 +5,13 @@ verify_jwt = false
 verify_jwt = false
 [functions.places-reviews]
 verify_jwt = true
+
+# S242 — AI Campaign Auto-Attach (Session 1)
+[functions.ai-proxy]
+verify_jwt = true
+[functions.generate-social-batch]
+verify_jwt = true
+[functions.process-campaign-job]
+verify_jwt = false
+[functions.tag-image-vision]
+verify_jwt = false
