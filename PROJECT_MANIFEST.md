@@ -707,3 +707,21 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
 - Files changed:
   - docs/audits/s237b-composer-wiring-audit.md
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-26 19:09 UTC
+- Branch: `s242/wave1-investigate`
+- Commit: `9001138` — investigate[s242]: Wave 1 death audit — auto-attach repo-side findings
+- Author: Claude
+- Files changed:
+  - docs/audits/s242-auto-attach-spec.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-26 19:20 UTC
+- Branch: `s242/wave1-investigate`
+- Commit: `7dd5ddc` — investigate[s242]: OQ2 evidence (Case 2 P0) + OQ3/OQ4/OQ5 locked decisions
+- Author: Claude
+- Files changed:
+  - docs/audits/s242-auto-attach-spec.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
