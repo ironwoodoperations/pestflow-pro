@@ -1,6 +1,5 @@
 import { supabase } from '../supabase'
-
-const API_URL = 'https://api.anthropic.com/v1/messages'
+import { callAi } from './callAi'
 
 export interface BlogSeoInput {
   title: string
@@ -9,6 +8,7 @@ export interface BlogSeoInput {
   business_name: string
   business_city?: string
   business_phone?: string
+  tenant_id: string
 }
 
 export interface BlogSeoOutput {
@@ -20,9 +20,6 @@ export interface BlogSeoOutput {
 }
 
 export async function generateBlogSeo(input: BlogSeoInput): Promise<BlogSeoOutput> {
-  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
-  if (!apiKey) throw new Error('VITE_ANTHROPIC_API_KEY not set')
-
   const contentSnippet = input.content.replace(/<[^>]+>/g, ' ').slice(0, 1500)
   const userPrompt = [
     `Title: ${input.title}`,
@@ -33,24 +30,12 @@ export async function generateBlogSeo(input: BlogSeoInput): Promise<BlogSeoOutpu
     input.business_phone ? `Phone: ${input.business_phone}` : '',
   ].filter(Boolean).join('\n')
 
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
+  const json = await callAi('blog_seo', {
+      tenant_id: input.tenant_id,
       max_tokens: 600,
       system: 'You are an SEO expert for a local service business. Generate JSON ONLY (no markdown, no preamble) with these keys: meta_title (≤60 chars), meta_description (≤160 chars), og_title (≤60 chars), og_description (≤200 chars), focus_keyword (2-4 words). Optimize for local search when business_city is provided. Do not include the business name in meta_title unless natural.',
       messages: [{ role: 'user', content: userPrompt }],
-    }),
   })
-
-  if (!res.ok) throw new Error(`Anthropic API error: ${res.status}`)
-  const json = await res.json()
   const raw = json.content?.[0]?.text || '{}'
   const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim())
   return {
@@ -92,6 +77,7 @@ export async function autoGenBlogSeo(slug: string, tenantId: string): Promise<vo
     business_name: biz.name || '',
     business_city: biz.address || biz.city || '',
     business_phone: biz.phone || '',
+    tenant_id: tenantId,
   })
 
   await supabase.from('seo_meta').upsert(

@@ -28,3 +28,13 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      # S243 W1 — fail the build if any browser-direct Anthropic reference
+      # reappears. All AI calls must route through ai-proxy via callAi().
+      - name: Guard — no browser-direct Anthropic calls
+        run: |
+          if grep -rEn "api\.anthropic\.com|VITE_ANTHROPIC" src/; then
+            echo "::error::Forbidden Anthropic-direct reference in src/. Route AI calls through ai-proxy (src/lib/ai/callAi.ts)."
+            exit 1
+          fi
+          echo "ai-proxy guard passed: no api.anthropic.com / VITE_ANTHROPIC in src/"

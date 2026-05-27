@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
 import RedirectMapTable, { type RedirectRow, type MatchType, STANDARD_ROUTES } from './RedirectMapTable'
+import { callAi } from '../../lib/ai/callAi'
 
 interface Props {
   prospectId: string
@@ -167,16 +168,8 @@ export default function RedirectMapPanel({ prospectId, tenantId, redirectMap, re
       const oldUrls = rows.map(r => r.old_url)
       const availableRoutes = [...STANDARD_ROUTES, ...customRoutes.filter(r => !STANDARD_ROUTES.includes(r))]
 
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
+      const data = await callAi('redirect_map', {
+          tenant_id: tenantId ?? null,
           max_tokens: 2048,
           messages: [{
             role: 'user',
@@ -204,11 +197,8 @@ Return ONLY a valid JSON array, no markdown, no explanation:
   {"old_url": "/lindale-tx/", "new_url": "/locations", "match_type": "slug_change"}
 ]`,
           }],
-        }),
       })
-
-      const data = await response.json()
-      const text = data.content[0].text.trim()
+      const text = data.content?.[0]?.text?.trim() ?? ''
       const clean = text.replace(/```json|```/g, '').trim()
       const mappings: Array<{ old_url: string; new_url: string; match_type: string }> = JSON.parse(clean)
 

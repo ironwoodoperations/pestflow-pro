@@ -83,6 +83,7 @@ export default function BlogPostEditor({ editing, initialPost, tenantId, onSave,
         word_count: draft.wordCount,
         business_name: biz.name || '',
         business_city: biz.address || biz.city || '',
+        tenant_id: tenantId,
       })
       setForm(p => ({ ...p, title: result.title, slug: result.slug, excerpt: result.excerpt, content: result.content }))
       setDraft(p => ({ ...p, open: false, generating: false }))
