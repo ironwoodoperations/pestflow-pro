@@ -757,4 +757,28 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
 - Author: Claude
 - Files changed:
   - docs/audits/s243-ai-proxy-audit.md
+## Session — 2026-05-27 13:47 UTC
+- Branch: `s243/wave3-ai-proxy`
+- Commit: `1719830` — S243 Wave 3: route all Anthropic calls through ai-proxy
+- Author: Claude
+- Files changed:
+  - .github/workflows/ci.yml
+  - CLAUDE.md
+  - docs/audits/s243-migration.sql
+  - src/components/admin/BlogPostEditor.tsx
+  - src/components/admin/ContentPageForm.tsx
+  - src/components/admin/ContentTab.tsx
+  - src/components/admin/seo/SeoKeywordsTab.tsx
+  - src/components/admin/seo/useSeoAiGenerate.ts
+  - src/components/admin/social/ContentQueueTab.tsx
+  - src/components/admin/social/NewCampaignModal.tsx
+  - src/components/admin/social/useComposer.ts
+  - src/components/ironwood/RedirectMapPanel.tsx
+  - src/lib/ai/aiFeatures.ts
+  - src/lib/ai/callAi.ts
+  - src/lib/ai/generateBlogDraft.ts
+  - src/lib/ai/generateBlogSeo.ts
+  - supabase/functions/_shared/aiAuth.ts
+  - supabase/functions/ai-proxy/index.ts
+  - tsconfig.tsbuildinfo
 - Next recommended action: [Fill in next session: read this line, write what comes next]
