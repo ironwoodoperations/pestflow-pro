@@ -814,3 +814,30 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - supabase/functions/process-campaign-job/index.ts
   - supabase/functions/tag-image-vision/index.ts
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-28 17:24 UTC
+- Branch: `s245-pr2-offboard-consumers`
+- Commit: `31939f9` — s245 PR2: offboard consumer + cron backstop
+- Author: Claude
+- Files changed:
+  - docs/audits/QA_REPORT_S245_PR2.md
+  - docs/audits/REVIEW_S245_PR2.md
+  - docs/migrations/s245-offboard-queue-cron.sql
+  - supabase/config.toml
+  - supabase/functions/_shared/offboardDrain.ts
+  - supabase/functions/offboard-tenant/index.ts
+  - supabase/functions/process-offboard-queue/index.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-28 17:38 UTC
+- Branch: `s245-pr1-offboard-foundation`
+- Commit: `7f0b148` — s245 PR1: durable offboard foundation (audit + outbox + RPC replace)
+- Author: Claude
+- Files changed:
+  - docs/audits/QA_REPORT_S245_PR1.md
+  - docs/audits/REVIEW_S245_PR1.md
+  - docs/migrations/s245-offboard-foundation-rollback.sql
+  - docs/migrations/s245-offboard-foundation.sql
+- Next recommended action: [Fill in next session: read this line, write what comes next]
