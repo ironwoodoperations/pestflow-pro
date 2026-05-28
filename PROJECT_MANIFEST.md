@@ -814,3 +814,18 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - supabase/functions/process-campaign-job/index.ts
   - supabase/functions/tag-image-vision/index.ts
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-28 18:55 UTC
+- Branch: `s245-pr2-offboard-consumers`
+- Commit: `298c7b7` — s245 PR2: corrections — Zernio terminal-4xx classification + vault-read cron auth
+- Author: Claude
+- Files changed:
+  - docs/audits/QA_REPORT_S245_PR2.md
+  - docs/audits/REVIEW_S245_PR2.md
+  - docs/migrations/s245-offboard-queue-auth.sql
+  - docs/migrations/s245-offboard-queue-cron.sql
+  - supabase/functions/_shared/offboardDrain.ts
+  - supabase/functions/offboard-tenant/index.ts
+  - supabase/functions/process-offboard-queue/index.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
