@@ -791,3 +791,26 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
 - Files changed:
   - supabase/functions/_shared/aiAuth.ts
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-27 22:05 UTC
+- Branch: `s242-session1-backend`
+- Commit: `5cd6421` — s242 session1: QA report + review doc
+- Author: Claude
+- Files changed:
+  - docs/audits/QA_REPORT_S242_session1.md
+  - docs/audits/REVIEW_S242_session1.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-28 03:07 UTC
+- Branch: `s242-session1-backend`
+- Commit: `85b4383` — s242 session1: fold in Scott decisions (F1 drop Supavisor, F3 Sonnet) + URL guards
+- Author: Claude
+- Files changed:
+  - docs/audits/QA_REPORT_S242_session1.md
+  - docs/audits/REVIEW_S242_session1.md
+  - docs/audits/s242-auto-attach-audit.md
+  - supabase/functions/process-campaign-job/index.ts
+  - supabase/functions/tag-image-vision/index.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
