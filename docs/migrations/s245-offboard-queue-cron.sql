@@ -1,10 +1,11 @@
 -- ============================================================================
 -- S245 PR2 — pg_cron registration for process-offboard-queue (STAGED, APPLY LAST)
 -- ============================================================================
--- Apply ONLY AFTER the process-offboard-queue edge fn is deployed & reachable.
--- Prereq: vault secret `process_offboard_queue_internal_secret` exists AND the
--- edge fn's env var PROCESS_OFFBOARD_QUEUE_INTERNAL_SECRET is set to the same
--- value (orchestrator). Mirrors the S213a sms-queue cron (vault-injected apikey).
+-- Apply ONLY AFTER the process-offboard-queue edge fn + s245-offboard-queue-auth.sql
+-- are deployed/applied. Prereq: vault secret `process_offboard_queue_internal_secret`
+-- (already staged). The cron sends it on header `x-pfp-internal-key`; the edge fn
+-- reads the same vault value via offboard_queue_internal_secret() and compares.
+-- No Edge Function Secret needed. Mirrors the S213a sms-queue vault-injected cron.
 -- ============================================================================
 
 select cron.schedule(
@@ -15,8 +16,8 @@ select cron.schedule(
     url     := 'https://biezzykcgzkrwdgqpsar.supabase.co/functions/v1/process-offboard-queue',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
-      'apikey', (select decrypted_secret from vault.decrypted_secrets
-                 where name = 'process_offboard_queue_internal_secret')
+      'x-pfp-internal-key', (select decrypted_secret from vault.decrypted_secrets
+                             where name = 'process_offboard_queue_internal_secret')
     ),
     body    := '{}'::jsonb
   );

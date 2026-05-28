@@ -84,7 +84,9 @@ serve(async (req) => {
     for (const row of ordered) {
       const r = await processQueueRow(admin, row)
       ;(report[row.target_type === 'auth_user' ? 'auth_results' : 'zernio_results'] as ItemResult[]).push(r)
-      if (r.status === 'pending' || r.status === 'failed') (report.manual_cleanup as string[]).push(`${row.target_type}:${row.target_id}`)
+      // Only TERMINAL failures need a human (e.g. Zernio profile with connected
+      // accounts). 'pending' is transient — the cron backstop retries it.
+      if (r.status === 'failed') (report.manual_cleanup as string[]).push(`${row.target_type}:${row.target_id}`)
     }
     report.final_state = await finalizeAudit(admin, report.request_id as string)
   } catch (e) {
