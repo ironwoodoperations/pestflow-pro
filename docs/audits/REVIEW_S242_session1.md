@@ -24,7 +24,7 @@
 - **RLS:** `campaign_jobs` SELECT = `current_tenant_id()` (no client writes); `delegation_jti` RLS-on/no-policy (service-role only).
 
 ## 3. Deviations from design v3 (flagged, all in audit §8)
-- **F1 Supavisor not wired.** `supabase-js` uses PostgREST (HTTP) — no PG pool to exhaust; `createClient()` can't take a `postgres://` URL anyway. Atomicity via single batched `.insert([...])`. `SUPAVISOR_TRANSACTION_URL` is referenced nowhere in the repo. **Confirm acceptable.**
+- **F1 Supavisor dropped** (Scott-confirmed). `supabase-js` uses PostgREST (HTTP) — no PG pool to exhaust; `createClient()` can't take a `postgres://` URL anyway. Atomicity via single batched `.insert([...])`. `SUPAVISOR_TRANSACTION_URL` referenced nowhere. v3 §8 superseded (v3.1 patch to follow).
 - **F3 model pin.** Reverse-selection + tagging run on the ai-proxy-pinned Sonnet, not Haiku — the design's Haiku cost math (§6/OQ9) isn't realizable until ai-proxy supports a per-purpose model override. Sonnet-pinned for now.
 - **F4 vision URL** uses the Storage **render** transform endpoint (`/render/image/public/...`), not plain `object/public`, to honor the §6 transform requirement.
 - **Concurrency:** guarded atomic `UPDATE … WHERE tag_status='pending'` (supabase-js) instead of raw `FOR UPDATE SKIP LOCKED` — same exclusivity, matches `process-sms-queue`.
@@ -37,7 +37,7 @@
 ## 5. Handoff to Session 2
 - `<ImageStrategyChooser>` + `NewCampaignDialog` refactor to call `generate-social-batch`; realtime on `campaign_jobs`; State-C inline "Untagged" grid; image_library **upload trigger** + `tag_status='pending'` on upload (NOT in Session 1 — not in the kickoff migration list); fire `enqueue_image_tagging_backfill` after monitoring; E2E QA on Dang.
 
-## 6. Open questions for Scott
-1. F1 — accept the supabase-js/batched-insert approach (drop Supavisor)? 
-2. F3 — OK to ship Sonnet-pinned for tagging/selection now, defer Haiku to an ai-proxy per-purpose model override?
-3. Confirm `social-uploads` bucket is public + image transforms enabled (vision URL depends on it).
+## 6. Open questions — ALL RESOLVED (Scott, 2026-05-27)
+1. **F1 — Supavisor dropped.** supabase-js/PostgREST has no pool to exhaust; Gemini finding superseded; v3 §8 to be patched in v3.1 (Claude.ai). No code change.
+2. **F3 — Sonnet-pinned, ship it.** Haiku per-purpose override deferred to S242.1. No code change.
+3. **Bucket verified via MCP probe.** `social-uploads` public + transforms enabled. **P0 found in design v3 §6** (`/object/public` ignores transform params) — staged code already uses the correct `/render/image/public` for the vision URL, so not present here; guarding comments added at both URL call sites; QA B2 adds a post-deploy header assertion.

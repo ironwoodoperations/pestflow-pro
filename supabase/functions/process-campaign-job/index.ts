@@ -39,6 +39,9 @@ function constantTimeEq(a: string, b: string): boolean {
   const ea = new TextEncoder().encode(a); const eb = new TextEncoder().encode(b)
   return ea.length === eb.length && timingSafeEqual(ea, eb)
 }
+// Stored as the post's image_url (published + shown full-size). Intentionally
+// /object/public — uploads are already resized at intake (useImageLibrary). Do
+// NOT switch to /render — that transform endpoint is only for the vision payload.
 const publicUrl = (bucket: string, path: string) => `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`
 const stripJson = (t: string) => t.replace(/```json|```/g, '').trim()
 

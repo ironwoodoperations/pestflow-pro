@@ -99,19 +99,21 @@ Current S243 shape: `id (bigint), tenant_id, user_id, feature, model, input_toke
 
 ## 8. Design-doc findings surfaced during audit (per kickoff: flag inline, no re-gate)
 
-### F1 — Supavisor + supabase-js conflation (design §8) — IMPLEMENTATION DEVIATION, flagged for review
-Design §8 says workers should `createClient(SUPAVISOR_TRANSACTION_URL, SERVICE_ROLE_KEY)` to avoid connection-pool exhaustion. **Technical issue:** `@supabase/supabase-js` talks to **PostgREST over HTTP**, not a raw Postgres socket — it has no PG connection pool to exhaust, and `createClient()` takes a Supabase REST URL, *not* a `postgres://` Supavisor connection string. Supavisor transaction mode only matters for raw PG clients (e.g. `postgres.js`/`deno-postgres`).
-
-**Resolution (to confirm with Scott on PR):** the workers use `supabase-js` with `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` (the established pattern in every existing worker — `process-sms-queue` etc.). Atomicity of the multi-row `social_posts` write is achieved by a **single batched `.insert([...])`** (one INSERT statement = atomic), not a raw multi-statement transaction. Net effect: the design's goal (no pool exhaustion + atomic insert) is met; the specific mechanism (Supavisor URL) is unnecessary and is intentionally **not** wired. `SUPAVISOR_TRANSACTION_URL` is **not referenced anywhere** in the existing codebase (confirmed in repo scan). Kickoff rule 3 says "if missing, stop and ask" — surfacing here rather than blocking, since the operations as designed don't require it.
+### F1 — Supavisor DROPPED (Scott decision 2026-05-27) ✅ RESOLVED
+Supavisor dropped — supabase-js → PostgREST is HTTP-based, no pool exhaustion path. Gemini's validator finding ("connection pool exhaustion") was based on a pattern (direct `pg`-driver connections from edge fns) we don't use; it is **superseded by stack-architecture verification**. `createClient()` takes a Supabase REST URL, not a `postgres://` connection string, so Supavisor transaction mode is inapplicable. `SUPAVISOR_TRANSACTION_URL` is referenced nowhere in the repo and was never wired. Atomicity of the multi-row `social_posts` write is achieved by a **single batched `.insert([...])`** (one INSERT statement = atomic). **Design v3 §8 "DB access through Supavisor" is now superseded — Claude.ai will produce a v3.1 patch separately.**
 
 ### F2 — `social_campaigns.status` value `'pending_generation'`
 No CHECK constraint on `status` → no migration needed; worker flips to `'active'` on completion. Documented so reviewers don't look for a missing enum migration.
 
-### F3 — Reverse-selection model pin (design OQ9)
-Design leaves Haiku-vs-Sonnet open. ai-proxy pins the model server-side (S243: `claude-sonnet-4-6`). For Session 1 the `reverse_selection` + `image_tagging` purposes route through ai-proxy `/internal`, which will use the **same pinned Sonnet model** unless/until ai-proxy gains per-feature model selection. **Flag:** the design's "fast/Haiku" cost assumption (§6, §13 OQ9) is not realizable until ai-proxy supports a model override per purpose. Session 1 ships Sonnet-pinned; Haiku optimization deferred (note for Scott — affects the §6 cost math).
+### F3 — Sonnet-pinned for all S242 features (Scott decision 2026-05-27) ✅ RESOLVED
+Sonnet-pinned for all S242 features. Per-purpose Haiku override deferred to S242.1 post-launch performance review if/when costs scale with customer count. No code change — ai-proxy already pins `claude-sonnet-4-6` globally for both `image_tagging` and `reverse_selection`; no override mechanism is built. Cost at current scale is negligible (18-image backfill ≈ $0.18; a 60-post reverse_selection ≈ $0.06; Haiku would save ≈ $2/yr at Dang's single-tenant scale — not worth refactoring ai-proxy's model-pin pre-launch).
 
-### F4 — bucket is `social-uploads`
-Vision-transform URL in `tag-image-vision` must target bucket `social-uploads` (the `image_library.bucket_id` default), using `…/storage/v1/render/image/public/social-uploads/<path>?width=800&resize=contain` (Storage **render** endpoint for transformations), not the plain `object/public` path the design pseudo-code shows.
+### F4 — bucket + vision URL (P0) ✅ RESOLVED + VERIFIED via MCP probe (Scott, 2026-05-27)
+`social-uploads` bucket exists, `public = true` (created 2026-03-29); image transformations enabled. Verified on Dang image `594ac7e2-259d-402d-9d4d-07b39a873c3c`: `/object/public/` → 165,066 bytes, **no** `x-transformations` header (raw); `/render/image/public/?width=800&resize=contain` → 75,390 bytes + `x-transformations: width:800,resizing_type:fit`.
+
+**P0 — design v3 §6 URL spec bug:** §6 shows `/storage/v1/object/public/…?width=800` which **ignores transform params** and returns the raw file (would feed Anthropic the full-size image and 400-out on >5MB uploads). Correct path is `/storage/v1/render/image/public/…`.
+
+**Status in this PR:** `tag-image-vision` already constructs the **render** URL (this finding was caught pre-implementation), so the P0 bug is **not present** in the staged code — confirmed by grep (only `tag-image-vision/visionUrl` uses `/render/image/public`). Distinct and intentional: `process-campaign-job` stores the post `image_url` via `/object/public` (full image, already resized at upload) — that one must NOT use the render transform. Both call sites now carry guarding comments. QA adds a post-deploy assertion (transformed bytes + `x-transformations` header).
 
 ---
 

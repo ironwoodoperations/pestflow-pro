@@ -43,6 +43,7 @@ Apply migrations M1–M6, deploy the 3 fns + ai-proxy v2, set the env secrets (�
 - [ ] Bad apikey → 401; non-`targeted` mode without apikey → 401
 - [ ] `{mode:'targeted',image_ids:[…],tenant_id}` with a tenant-admin JWT → only that tenant's rows tagged
 - [ ] Force a failure (e.g. bad storage path) → `tag_status` flips to `pending` (retry < 3) then `failed` (≥3), `tag_retry_count`/`tag_last_error` set
+- [ ] **Vision URL returns transformed bytes** (P0 / F4): `curl -sI` the constructed `/render/image/public/<bucket>/<path>?width=800&resize=contain` → expect `x-transformations` response header present and `content-length` << the `/object/public/` original (verified pattern: ~75KB vs ~165KB on the Dang sample). Guards against the v3 §6 `/object/public` spec bug.
 
 ### B3. `campaign_jobs` trigger + `process-campaign-job`
 - [ ] `INSERT INTO campaign_jobs(...)` via SQL (service-role) with `status='queued'` → trigger fires `net.http_post`; worker claims, posts appear in `social_posts`, job → `completed`

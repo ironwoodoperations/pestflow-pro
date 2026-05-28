@@ -46,8 +46,10 @@ function constantTimeEq(a: string, b: string): boolean {
 }
 
 function visionUrl(bucket: string, path: string): string {
-  // Storage render endpoint applies the transform server-side → caps payload
-  // well under Anthropic's image limit (design §6 / audit F4).
+  // Path is /render/image/public NOT /object/public — the latter ignores transform
+  // params (verified 2026-05-27: /object returned 165KB raw + no x-transformations
+  // header; /render returned 75KB). The render endpoint caps payload server-side,
+  // well under Anthropic's image limit (design §6 / audit F4 / P0 bug).
   return `${SUPABASE_URL}/storage/v1/render/image/public/${bucket}/${path}?width=800&resize=contain`
 }
 
