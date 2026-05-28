@@ -15,3 +15,9 @@ verify_jwt = true
 verify_jwt = false
 [functions.tag-image-vision]
 verify_jwt = false
+
+# S245 — one-click tenant offboard
+[functions.offboard-tenant]
+verify_jwt = true
+[functions.process-offboard-queue]
+verify_jwt = false
