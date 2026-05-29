@@ -911,3 +911,47 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - supabase/functions/scrape-prospect/analyzeSite.ts
   - supabase/functions/scrape-prospect/index.ts
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-29 18:55 UTC
+- Branch: `investigate/tier-gate-ux`
+- Commit: `bbf9eea` — docs(s247): tier-gate UX death audit (Wave 1)
+- Author: Claude
+- Files changed:
+  - docs/audits/s247-tier-gate-ux-audit.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-29 18:59 UTC
+- Branch: `investigate/tier-gate-ux`
+- Commit: `576771f` — docs(s247): tier-gate UX Wave 2 spec
+- Author: Claude
+- Files changed:
+  - docs/audits/s247-tier-gate-ux-spec.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-29 19:09 UTC
+- Branch: `investigate/tier-gate-ux`
+- Commit: `72c93c1` — feat(s247): tier-gate UX — pre-emptive upgrade prompt replaces raw 403
+- Author: Claude
+- Files changed:
+  - docs/audits/QA_REPORT_s247_tier_gate_ux.md
+  - docs/audits/REVIEW_s247_tier_gate_ux.md
+  - src/components/admin/MediaTab.tsx
+  - src/components/common/UpgradePrompt.tsx
+  - src/components/common/useTierGate.ts
+  - src/lib/requestUpgrade.ts
+  - src/lib/tierInfo.ts
+  - supabase/functions/notify-upgrade/index.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-29 19:13 UTC
+- Branch: `investigate/tier-gate-ux`
+- Commit: `e320dde` — docs(s247): record validator-gate ratification + remaining human gates
+- Author: Claude
+- Files changed:
+  - docs/audits/QA_REPORT_s247_tier_gate_ux.md
+  - docs/audits/REVIEW_s247_tier_gate_ux.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]

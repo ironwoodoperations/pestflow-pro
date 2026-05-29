@@ -16,10 +16,21 @@ const json = (body: unknown, status = 200) =>
 
 const TIER_NAMES: Record<number, string> = { 1: 'Starter', 2: 'Grow', 3: 'Pro', 4: 'Elite' }
 
+// s247 — HTML-encode any user-adjacent value before embedding it in the email
+// body (validator-gate finding: no sanitization is bulletproof, always encode).
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS })
   try {
-    const { tenant_id, old_tier, new_tier, plan_name, monthly_price } = await req.json()
+    const { tenant_id, old_tier, new_tier, plan_name, monthly_price, feature } = await req.json()
     if (!tenant_id || !new_tier) return json({ error: 'tenant_id and new_tier required' }, 400)
 
     // Gate: caller must be admin of this tenant
@@ -43,6 +54,13 @@ Deno.serve(async (req: Request) => {
     const newName = plan_name || TIER_NAMES[new_tier] || `Tier ${new_tier}`
     const price   = monthly_price ? `$${monthly_price}/mo` : ''
 
+    // s247 — OPTIONAL feature/trigger context for sales (e.g. "AI Vision tagging").
+    // Backward compatible: existing callers omit it → no line rendered. Escaped +
+    // length-capped before it lands in the HTML body.
+    const featureLine = typeof feature === 'string' && feature.trim()
+      ? `<p>Triggered by: <strong>${escapeHtml(feature.trim().slice(0, 120))}</strong></p>`
+      : ''
+
     // Email to sales inbox via Resend
     const resendKey = Deno.env.get('RESEND_API_KEY')
     if (resendKey) {
@@ -53,7 +71,7 @@ Deno.serve(async (req: Request) => {
           from: 'PestFlow Pro <onboarding@pestflow.ai>',
           to: 'sales@homeflowpro.ai',
           subject: `⬆️ Plan Upgrade: ${tenantName} → ${newName}`,
-          html: `<p><strong>${tenantName}</strong> started a plan upgrade to <strong>${newName}</strong> (${price}).</p><p>They moved from ${oldName}. Call to confirm and check in.</p><p>Slug: ${tenantSlug}</p>`,
+          html: `<p><strong>${tenantName}</strong> started a plan upgrade to <strong>${newName}</strong> (${price}).</p><p>They moved from ${oldName}. Call to confirm and check in.</p>${featureLine}<p>Slug: ${tenantSlug}</p>`,
           reply_to: 'sales@homeflowpro.ai',
         }),
       }).catch(e => console.error('[notify-upgrade] Resend failed:', e.message))
