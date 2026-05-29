@@ -7,8 +7,11 @@ verify_jwt = false
 verify_jwt = true
 
 # S242 — AI Campaign Auto-Attach (Session 1)
+# ai-proxy verify_jwt pinned false: it validates the user JWT inline on the
+# public route (requireAiCaller) and uses HMAC delegation envelopes on /internal
+# (which carry no JWT — a gateway 'true' would reject those service calls).
 [functions.ai-proxy]
-verify_jwt = true
+verify_jwt = false
 [functions.generate-social-batch]
 verify_jwt = true
 [functions.process-campaign-job]
