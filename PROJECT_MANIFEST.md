@@ -875,3 +875,16 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - docs/audits/REVIEW_cleanup_jwt_env.md
   - supabase/config.toml
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-29 14:00 UTC
+- Branch: `hotfix/campaigns-tier-pro-not-elite`
+- Commit: `b46baf4` — hotfix: AI Campaigns tier gate Elite → Pro across submission, worker, ai-proxy/internal
+- Author: Claude
+- Files changed:
+  - docs/audits/QA_REPORT_hotfix_campaigns_tier_pro.md
+  - docs/audits/REVIEW_hotfix_campaigns_tier_pro.md
+  - supabase/functions/ai-proxy/index.ts
+  - supabase/functions/generate-social-batch/index.ts
+  - supabase/functions/process-campaign-job/index.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]

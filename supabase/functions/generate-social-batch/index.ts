@@ -1,6 +1,6 @@
 // Edge Function: generate-social-batch — S242 §8.
 // Public submission endpoint for AI campaigns. Authenticates the tenant user,
-// re-verifies Elite tier, validates the request, writes the social_campaigns
+// re-verifies Pro tier, validates the request, writes the social_campaigns
 // row (status='pending_generation') + a queued campaign_jobs row, and returns
 // 202 + job_id. Fast (<500ms): no LLM calls, no social_posts writes — the
 // campaign_jobs INSERT trigger hands off to process-campaign-job.
@@ -14,7 +14,7 @@ import { requireTenantUser, AuthError } from '../_shared/auth/requireTenantUser.
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
-const ELITE_TIER = 4
+const PRO_TIER = 3
 const MAX_POSTS = 60
 const STRATEGIES = new Set(['none', 'folder', 'ai_vision', 'fixed'])
 
@@ -44,10 +44,10 @@ serve(async (req) => {
 
   const svc = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
-  // Elite gate (re-checked server-side; the worker + ai-proxy re-check again)
+  // Pro gate (re-checked server-side; the worker + ai-proxy re-check again)
   const { data: subRow } = await svc.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'subscription').maybeSingle()
   const tier = (subRow?.value as { tier?: unknown } | null)?.tier
-  if (typeof tier !== 'number' || tier < ELITE_TIER) return json(403, { error: 'AI Campaigns require the Elite plan.' })
+  if (typeof tier !== 'number' || tier < PRO_TIER) return json(403, { error: 'AI Campaigns require the Pro plan.' })
 
   // ── validate request ──
   const title = typeof body.title === 'string' && body.title.trim() ? body.title.trim() : 'AI Campaign'

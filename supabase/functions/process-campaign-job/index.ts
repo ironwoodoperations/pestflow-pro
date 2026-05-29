@@ -21,7 +21,7 @@ const INTERNAL_SECRET = Deno.env.get('PROCESS_CAMPAIGN_JOB_INTERNAL_SECRET') || 
 const DELEGATION_SECRET = Deno.env.get('INTERNAL_DELEGATION_SECRET') || ''
 const AI_PROXY_INTERNAL_URL = `${SUPABASE_URL}/functions/v1/ai-proxy/internal`
 
-const ELITE_TIER = 4
+const PRO_TIER = 3
 const CANDIDATE_CAP = 100        // reverse-selection candidate ceiling (§7)
 const DAILY_POST_QUOTA = 200     // per-tenant output cardinality cap (§12)
 
@@ -100,7 +100,7 @@ serve(async (req) => {
     // tier re-check at execution time (§4 subscription_lapsed)
     const { data: subRow } = await svc.from('settings').select('value').eq('tenant_id', job.tenant_id).eq('key', 'subscription').maybeSingle()
     const tier = (subRow?.value as { tier?: unknown } | null)?.tier
-    if (typeof tier !== 'number' || tier < ELITE_TIER) return await fail('subscription_lapsed')
+    if (typeof tier !== 'number' || tier < PRO_TIER) return await fail('subscription_lapsed')
 
     // daily output-cardinality quota (§12): sum batch_cardinality logged for this tenant today
     const dayStart = new Date(); dayStart.setUTCHours(0, 0, 0, 0)
