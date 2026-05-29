@@ -890,6 +890,14 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
 - Next recommended action: [Fill in next session: read this line, write what comes next]
 
 ---
+## Session — 2026-05-29 16:05 UTC
+- Branch: `chore/sync-tenant-isolation-migration`
+- Commit: `095b2e4` — chore: sync 20260529151005_sweep_findings_tenant_isolation_hardening migration
+- Author: Claude
+- Files changed:
+  - docs/audits/QA_REPORT_sync_tenant_isolation_migration.md
+  - docs/audits/REVIEW_sync_tenant_isolation_migration.md
+  - supabase/migrations/20260529151005_sweep_findings_tenant_isolation_hardening.sql
 ## Session — 2026-05-29 15:19 UTC
 - Branch: `cleanup/auth-edge-fn-batch`
 - Commit: `8a61bf8` — cleanup: config.toml audit + .env.example + scrape-prospect → ai-proxy operator route + UUID auth + CI grep widening
