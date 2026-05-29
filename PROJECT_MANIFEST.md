@@ -841,3 +841,13 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - docs/migrations/s245-offboard-foundation-rollback.sql
   - docs/migrations/s245-offboard-foundation.sql
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-29 12:07 UTC
+- Branch: `cleanup/revalidate-grep-and-provision-url`
+- Commit: `1e52b7b` — cleanup: surface /api/revalidate body shape (item 1); defer provision URL fix
+- Author: Claude
+- Files changed:
+  - docs/audits/QA_REPORT_cleanup_revalidate.md
+  - docs/audits/REVIEW_cleanup_revalidate.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
