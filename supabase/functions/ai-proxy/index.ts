@@ -6,7 +6,7 @@
 // Internal route POST /ai-proxy/internal — signed delegation envelope auth (S242 §9).
 //   For service callers (process-campaign-job, tag-image-vision). Never accepts
 //   user JWTs. Verifies HMAC + expiry + purpose allowlist (shared helper), then
-//   jti replay + tenant-exists + resource-ownership + Elite-tier + rate-limit
+//   jti replay + tenant-exists + resource-ownership + Pro-tier + rate-limit
 //   before forwarding to Anthropic. Logs the full actor chain (§11).
 //
 // DEPLOY (verify_jwt:true — do NOT pass --no-verify-jwt):
@@ -32,7 +32,7 @@ const MODEL = 'claude-sonnet-4-6'        // pinned — CLAUDE.md #1 + R2 (ignore
 const MAX_TOKENS_CAP = 4096
 const MAX_BODY_BYTES = 100 * 1024
 const MAX_MESSAGES = 50
-const ELITE_TIER = 4                     // internal purposes are all Elite-only (§12)
+const PRO_TIER = 3                       // internal purposes are Pro+ (§12)
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 interface LogRow {
@@ -135,10 +135,10 @@ async function handleInternal(req: Request, svc: SupabaseClient, json: JsonFn, l
       if (error || !data) { await logI(401); return json(401, { error: { message: 'campaign_id not in acting_tenant' } }) }
     }
 
-    // (8) tier re-check from the claimed tenant (never trust caller) — Elite only
+    // (8) tier re-check from the claimed tenant (never trust caller) — Pro+ only
     const { data: subRow } = await svc.from('settings').select('value').eq('tenant_id', env.acting_tenant).eq('key', 'subscription').maybeSingle()
     const tier = (subRow?.value as { tier?: unknown } | null)?.tier
-    if (typeof tier !== 'number' || tier < ELITE_TIER) { await logI(403); return json(403, { error: { message: 'Elite tier required' } }) }
+    if (typeof tier !== 'number' || tier < PRO_TIER) { await logI(403); return json(403, { error: { message: 'Pro tier required' } }) }
 
     // per-tenant rate limit (§12), fail-open on infra error
     const { data: rlData, error: rlErr } = await svc.rpc('check_and_record_rate_limit', {
