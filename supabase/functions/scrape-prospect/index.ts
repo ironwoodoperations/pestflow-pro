@@ -5,11 +5,11 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { pathToSlug, extractPageContent, PageContent } from './mapContent.ts'
 import { analyzeSite } from './analyzeSite.ts'
+import { IRONWOOD_OPERATOR_USER_IDS } from '../_shared/aiAuth.ts'
 
 const SUPABASE_URL              = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 const FIRECRAWL_API_KEY         = Deno.env.get('FIRECRAWL_API_KEY') || ''
-const ANTHROPIC_API_KEY         = Deno.env.get('ANTHROPIC_API_KEY') || ''
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -84,13 +84,14 @@ Deno.serve(async (req: Request) => {
     new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', ...CORS } })
 
   try {
-    // Verify admin caller
+    // Verify operator caller by UUID (R3: identity is email, AUTHORIZATION is
+    // UUID). Allowlist is the single source of truth in _shared/aiAuth.ts.
     const token = (req.headers.get('Authorization') || '').replace('Bearer ', '').trim()
     if (!token) return json({ success: false, error: 'Unauthorized' }, 401)
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
     const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-    if (authError || !user || user.email !== 'admin@pestflowpro.com') {
+    if (authError || !user || !IRONWOOD_OPERATOR_USER_IDS.has(user.id)) {
       return json({ success: false, error: 'Forbidden' }, 403)
     }
 
@@ -133,28 +134,35 @@ Deno.serve(async (req: Request) => {
       .join('\n\n---\n\n')
       .slice(0, 30000)
 
-    // Run prospect extraction and site recreation analysis in parallel
-    const [anthropicRes, siteRecreation] = await Promise.all([
-      fetch('https://api.anthropic.com/v1/messages', {
+    // Run prospect extraction and site recreation analysis in parallel. Both
+    // route through ai-proxy's public operator lane (feature
+    // 'scrape_prospect_analyze'); the operator's Bearer JWT is forwarded from
+    // the incoming request. ai-proxy pins the model + adds anthropic-version.
+    // Fail closed — no direct api.anthropic.com fallback.
+    const aiProxyUrl = `${SUPABASE_URL}/functions/v1/ai-proxy`
+    const authHeader = req.headers.get('Authorization') || ''
+
+    const [aiProxyRes, siteRecreation] = await Promise.all([
+      fetch(aiProxyUrl, {
         method: 'POST',
         headers: {
-          'x-api-key': ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01',
+          'Authorization': authHeader,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
+          feature: 'scrape_prospect_analyze',
+          tenant_id: null,
           max_tokens: 1000,
           messages: [{ role: 'user', content: EXTRACTION_PROMPT + combinedForClaude }],
         }),
       }),
-      analyzeSite(homepage.markdown, ANTHROPIC_API_KEY),
+      analyzeSite(homepage.markdown, aiProxyUrl, authHeader),
     ])
 
     let prospectFields: Record<string, any> = {}
-    if (anthropicRes.ok) {
-      const anthropicData = await anthropicRes.json()
-      const rawText = anthropicData?.content?.[0]?.text || ''
+    if (aiProxyRes.ok) {
+      const aiProxyData = await aiProxyRes.json()
+      const rawText = aiProxyData?.content?.[0]?.text || ''
       const cleaned = rawText.replace(/```json|```/g, '').trim()
       try { prospectFields = JSON.parse(cleaned) } catch { /* non-fatal */ }
     }

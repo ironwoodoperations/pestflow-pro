@@ -11,14 +11,17 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 
 // R3: identity is email; AUTHORIZATION is UUID. Operator allowlist by user.id.
-const IRONWOOD_OPERATOR_USER_IDS = new Set<string>([
+// Exported as the single source of truth — operator additions land here only
+// (scrape-prospect imports this Set rather than redeclaring it).
+export const IRONWOOD_OPERATOR_USER_IDS = new Set<string>([
   '5181b30a-265f-4a70-a323-bf6e3c53641b', // admin@pestflowpro.com (operator)
 ])
 
 export type AiFeature =
   | 'content_page' | 'composer_captions' | 'composer_schedule'
   | 'content_queue_schedule' | 'seo_metadata' | 'blog_draft'
-  | 'blog_seo' | 'seo_keywords' | 'campaign_generation' | 'redirect_map'
+  | 'blog_seo' | 'seo_keywords' | 'campaign_generation'
+  | 'redirect_map' | 'scrape_prospect_analyze'
 
 // feature → minimum tenant tier. 'operator' = Ironwood-ops only (no tenant tier).
 export const FEATURE_TIER: Record<AiFeature, number | 'operator'> = {
@@ -31,7 +34,8 @@ export const FEATURE_TIER: Record<AiFeature, number | 'operator'> = {
   blog_seo:               2,
   seo_keywords:           3,
   campaign_generation:    3,
-  redirect_map:           'operator',
+  redirect_map:            'operator',
+  scrape_prospect_analyze: 'operator',
 }
 
 export interface AiCaller {

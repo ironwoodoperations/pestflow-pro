@@ -888,3 +888,18 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - supabase/functions/generate-social-batch/index.ts
   - supabase/functions/process-campaign-job/index.ts
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-29 15:19 UTC
+- Branch: `cleanup/auth-edge-fn-batch`
+- Commit: `8a61bf8` — cleanup: config.toml audit + .env.example + scrape-prospect → ai-proxy operator route + UUID auth + CI grep widening
+- Author: Claude
+- Files changed:
+  - .env.example
+  - .github/workflows/ci.yml
+  - docs/audits/QA_REPORT_cleanup_auth_edge_fn_batch.md
+  - docs/audits/REVIEW_cleanup_auth_edge_fn_batch.md
+  - supabase/functions/_shared/aiAuth.ts
+  - supabase/functions/scrape-prospect/analyzeSite.ts
+  - supabase/functions/scrape-prospect/index.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
