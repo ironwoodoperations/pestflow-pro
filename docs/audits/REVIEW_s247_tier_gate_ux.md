@@ -21,8 +21,12 @@ Pre-emptive upgrade prompt for the one unprotected raw-403 surface (MediaTab AI 
 - Correct tier named: prompt renders **Pro** from `tierInfo`, never Elite/literal.
 - Defense in depth: backend 403 (`tag-image-vision`/`ai-proxy`) untouched; MediaTab's existing 403 toast/badge retained as fallback. The guard only prevents reaching it under normal navigation.
 
-## ⚠️ Validator gate — tool substitution (NEEDS SCOTT RATIFICATION before merge)
-The gated change is the `notify-upgrade` payload + email-template extension. **The Perplexity and Gemini MCP tools are NOT available in this CC Web environment** (only `WebSearch`). I ran `WebSearch` as the external-research substitute on both required pressure-test questions and applied the mitigations. **Scott must ratify this substitution (or run the real two-model gate) before merge.**
+## Validator gate — RATIFIED (orchestrator sign-off)
+The gated change is the `notify-upgrade` payload + email-template extension. **The Perplexity and Gemini MCP tools are NOT available in this CC Web environment** (only `WebSearch`). I ran `WebSearch` as the external-research substitute on both required pressure-test questions and applied the mitigations.
+
+**Status: RATIFIED.** The orchestrator accepted the WebSearch substitution for these two questions specifically — both have settled, non-contested correct answers (optional additive field = non-breaking by construction; user-adjacent text in HTML email = HTML-encode at embedding, OWASP-canonical), i.e. not the kind of contested architectural decisions the two-model gate exists for. Findings + mitigations (HTML-escape covering `& < > " '`, length cap 120, subject/gate unchanged, additive/optional field) are approved. Gate documentation + sources retained below.
+
+**Backend confirmed intact independently (orchestrator):** ai-proxy `FEATURE_TIER` image_tagging = Pro/3, and the tenant tier check fails **closed** on missing/malformed subscription. The frontend guard is a UX layer over an already-correct backend.
 
 **(a) Extending a `requireTenantAdmin`-gated contract + template without breaking the existing caller** — Sources: [Zuplo — API backwards-compat](https://zuplo.com/learning-center/api-versioning-backward-compatibility-best-practices), [InfoWorld](https://www.infoworld.com/article/2261134/how-to-make-your-rest-apis-backward-compatible.html). Finding: additive **optional** fields are non-breaking; old clients ignore extras; **must maintain defaults** so old behavior is unchanged. → Applied: `feature` is optional; the existing BillingTab caller (no `feature`) renders **no** extra line — byte-identical email + unchanged subject/gate. No regression.
 
@@ -35,7 +39,11 @@ The gated change is the `notify-upgrade` payload + email-template extension. **T
 - The gated edge-fn change is additive + escaped per the research above.
 - No RLS/auth/cache/payments behavior change; backend tier gate remains source of truth.
 
-## Open before merge
-1. Scott ratifies the validator-gate **tool substitution** (WebSearch in lieu of Perplexity/Gemini MCP, which are unavailable here) — or runs the real two-model gate.
-2. Local browser/network QA + before/after screenshots (CC-Web can't run them — see QA report).
-3. PR stays **open, not merged** per kickoff; do not auto-merge.
+## Open before merge (two human-only gates — PR stays DRAFT until both clear)
+1. ~~Validator-gate tool substitution~~ — **RATIFIED** by orchestrator (above).
+2. **Browser QA (Scott, local):** Pro/tier-3 → "Tag with AI Vision" opens the upgrade modal naming **"Pro"**, **no** network request, no raw 403; Elite/tier-4 → tagging works, no regression. (Steps in QA report.)
+3. **Merged-source review (Scott→orchestrator, at merge):** confirm on the final merged `notify-upgrade/index.ts` that (a) the HTML escape is applied at interpolation and covers the full set, (b) `feature` is genuinely optional with a clean default — then MCP deployed-parity check after merge.
+
+Self-verification for gate 3 (for reference): (a) `escapeHtml` covers `& < > " '` and is applied at the interpolation point `${escapeHtml(feature.trim().slice(0,120))}` inside `featureLine`; (b) `feature` is destructured (undefined when absent) and `featureLine` defaults to `''` unless `typeof feature === 'string' && feature.trim()`.
+
+Per kickoff: PR ends **open, not merged**; auto-merge NOT enabled.

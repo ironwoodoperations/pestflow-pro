@@ -28,5 +28,13 @@ The kickoff's Wave-4 requires clicking each surface as tier-3/tier-4 and checkin
 ## Tenant-isolation (kickoff §9.7)
 N/A to this change — no RLS/data-scope changes. `notify-upgrade` remains `requireTenantAdmin`-gated to the caller's own tenant; `requestUpgrade` sends only the caller's `tenant_id` from context.
 
+## Gate status
+- **Validator gate: RATIFIED** (orchestrator) — WebSearch substitution accepted for the two settled questions; mitigations approved.
+- **Backend confirmed intact** (orchestrator): ai-proxy `FEATURE_TIER` image_tagging = Pro/3, tenant tier check fails **closed**.
+
+## Two human-only gates remain (PR stays DRAFT until both clear)
+1. **Browser QA (Scott, local)** — the manual steps above (tier 1/2 prompt + no network call; tier 3/4 no regression).
+2. **Merged-source review (Scott→orchestrator, at merge)** — confirm escape-at-interpolation + optional `feature` default on the final merged `notify-upgrade/index.ts`; MCP deployed-parity check after merge.
+
 ## Verdict
-Code complete + statically green. Browser/network/screenshot QA pending (CC-Web limitation) — must be completed locally before this leaves draft.
+Code complete + statically green; validator gate ratified. Browser/network/screenshot QA + merged-source review pending (human-only) — PR held as draft until both clear.
