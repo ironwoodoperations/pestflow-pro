@@ -45,20 +45,24 @@ const DEFAULT: SiteRecreation = {
   ctaText: 'Get a Free Quote',
 }
 
+// Routes through ai-proxy's public operator lane (feature
+// 'scrape_prospect_analyze'), forwarding the operator's Bearer JWT. ai-proxy
+// pins the model + adds anthropic-version; never calls api.anthropic.com here.
 export async function analyzeSite(
   markdown: string,
-  anthropicApiKey: string,
+  aiProxyUrl: string,
+  authHeader: string,
 ): Promise<SiteRecreation> {
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch(aiProxyUrl, {
       method: 'POST',
       headers: {
-        'x-api-key': anthropicApiKey,
-        'anthropic-version': '2023-06-01',
+        'Authorization': authHeader,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
+        feature: 'scrape_prospect_analyze',
+        tenant_id: null,
         max_tokens: 500,
         system: SITE_ANALYSIS_PROMPT,
         messages: [{ role: 'user', content: markdown.slice(0, 15000) }],

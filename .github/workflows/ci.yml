@@ -29,12 +29,18 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      # S243 W1 — fail the build if any browser-direct Anthropic reference
-      # reappears. All AI calls must route through ai-proxy via callAi().
-      - name: Guard — no browser-direct Anthropic calls
+      # S243 W1 (widened) — fail the build if any direct Anthropic reference
+      # reappears in frontend OR edge functions. All AI calls must route through
+      # ai-proxy (frontend via callAi(); server via ai-proxy public/internal).
+      # ai-proxy itself is the one authorized direct caller, so it is excluded.
+      # The domain pattern requires the https:// scheme so it matches real API
+      # calls (always https://api.anthropic.com/v1/messages) without false-
+      # positiving on doc comments like "never calls api.anthropic.com" that
+      # live in functions outside the authorized edit set.
+      - name: Guard — no direct Anthropic calls
         run: |
-          if grep -rEn "api\.anthropic\.com|VITE_ANTHROPIC" src/; then
-            echo "::error::Forbidden Anthropic-direct reference in src/. Route AI calls through ai-proxy (src/lib/ai/callAi.ts)."
+          if grep -rEn "https://api\.anthropic\.com|VITE_ANTHROPIC" src/ supabase/functions/ --exclude-dir=ai-proxy; then
+            echo "::error::Forbidden Anthropic-direct reference. Route AI calls through ai-proxy (frontend: src/lib/ai/callAi.ts; server: ai-proxy public/internal route)."
             exit 1
           fi
-          echo "ai-proxy guard passed: no api.anthropic.com / VITE_ANTHROPIC in src/"
+          echo "ai-proxy guard passed: no direct api.anthropic.com / VITE_ANTHROPIC in src/ or supabase/functions/ (excluding ai-proxy)"
