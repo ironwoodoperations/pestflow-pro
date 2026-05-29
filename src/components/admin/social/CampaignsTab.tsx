@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { Campaign, SocialPost } from './useSocialData'
 import NewCampaignModal from './NewCampaignModal'
+import CampaignJobsPanel from './CampaignJobsPanel'
 
 interface Props {
   campaigns: Campaign[]
@@ -30,6 +31,9 @@ export default function CampaignsTab({ campaigns, posts, onCampaignSelect, selec
           + New Campaign
         </button>
       </div>
+
+      {/* S242 Item C — live generate-social-batch job status (realtime) */}
+      <CampaignJobsPanel campaigns={campaigns} />
 
       {campaigns.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-10 text-center">

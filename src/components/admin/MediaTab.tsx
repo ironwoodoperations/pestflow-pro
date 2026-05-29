@@ -1,8 +1,32 @@
 import { useRef, useState, useMemo } from 'react'
 import { toast } from 'sonner'
-import { Upload, Trash2, FolderInput, ImageIcon, Loader2 } from 'lucide-react'
+import { Upload, Trash2, FolderInput, ImageIcon, Loader2, Sparkles } from 'lucide-react'
+import { FunctionsHttpError } from '@supabase/supabase-js'
 import PageHelpBanner from './PageHelpBanner'
-import { useImageLibrary } from '../../hooks/useImageLibrary'
+import { useImageLibrary, type ImageLibraryItem } from '../../hooks/useImageLibrary'
+import { supabase } from '../../lib/supabase'
+import { useTenant } from '../../context/TenantBootProvider'
+
+// S242 — surface tag_status as a small corner badge on each image.
+function tagBadge(item: ImageLibraryItem, busy: boolean): { label: string; cls: string; title?: string } | null {
+  if (busy || item.tag_status === 'processing') return { label: 'Tagging…', cls: 'bg-blue-100 text-blue-700' }
+  switch (item.tag_status) {
+    case 'tagged':  return { label: item.tags.length ? `${item.tags.length} tags` : 'Tagged', cls: 'bg-emerald-100 text-emerald-700', title: item.tags.join(', ') }
+    case 'failed':  return { label: 'Tag failed', cls: 'bg-red-100 text-red-700', title: item.tag_last_error ?? undefined }
+    case 'pending': return { label: 'Queued', cls: 'bg-amber-100 text-amber-700' }
+    default:        return { label: 'Untagged', cls: 'bg-gray-200 text-gray-600' }
+  }
+}
+
+async function unwrapFnError(error: unknown): Promise<string> {
+  if (error instanceof FunctionsHttpError) {
+    try {
+      const body = await error.context.json()
+      if (body?.error) return typeof body.error === 'string' ? body.error : (body.error.message ?? 'Tagging failed.')
+    } catch { /* fall through */ }
+  }
+  return error instanceof Error ? error.message : 'Tagging failed.'
+}
 
 const ALL = '__all__'
 const UNFILED = '__unfiled__'
@@ -15,11 +39,13 @@ function formatSize(bytes: number): string {
 }
 
 export default function MediaTab() {
-  const { items, loading, error, uploadMany, softDelete, setFolder, folders } = useImageLibrary()
+  const { items, loading, error, uploadMany, softDelete, setFolder, folders, refresh } = useImageLibrary()
+  const { id: tenantId } = useTenant()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [dragOver, setDragOver] = useState(false)
   const [activeFolder, setActiveFolder] = useState<string>(ALL)
+  const [tagging, setTagging] = useState<Set<string>>(new Set())
 
   const visible = useMemo(() => {
     if (activeFolder === ALL) return items
@@ -65,6 +91,43 @@ export default function MediaTab() {
     }
   }
 
+  // S242 Item B — tag via tag-image-vision (targeted mode), DIRECT functions.invoke
+  // (not ai-proxy). Loops per-image so multi-image batches show real progress;
+  // refreshes rows afterward so new tags/status appear without a manual reload.
+  async function tagImages(ids: string[]) {
+    if (!tenantId || ids.length === 0) return
+    setTagging(prev => new Set([...prev, ...ids]))
+    const multi = ids.length > 1
+    const toastId = multi ? toast.loading(`Tagging 0/${ids.length}…`) : undefined
+    let ok = 0, failed = 0
+    for (let i = 0; i < ids.length; i++) {
+      const id = ids[i]
+      try {
+        const { data, error: fnErr } = await supabase.functions.invoke('tag-image-vision', {
+          body: { mode: 'targeted', image_ids: [id], tenant_id: tenantId },
+        })
+        if (fnErr) throw new Error(await unwrapFnError(fnErr))
+        if ((data?.tagged ?? 0) > 0) ok++
+        else { failed++; if (!multi) toast.error('Tagging failed — hover the image badge for details.') }
+      } catch (e) {
+        failed++
+        if (!multi) toast.error(e instanceof Error ? e.message : 'Tagging failed.')
+      } finally {
+        setTagging(prev => { const n = new Set(prev); n.delete(id); return n })
+        if (toastId) toast.loading(`Tagging ${i + 1}/${ids.length}…`, { id: toastId })
+      }
+    }
+    await refresh()
+    if (multi) {
+      if (failed === 0) toast.success(`Tagged ${ok} image${ok === 1 ? '' : 's'}.`, { id: toastId })
+      else toast.error(`Tagged ${ok}, ${failed} failed — see the failed badges.`, { id: toastId })
+    } else if (ok > 0) {
+      toast.success('Image tagged.')
+    }
+  }
+
+  const untaggedInView = visible.filter(i => i.tag_status !== 'tagged' && i.tag_status !== 'processing' && !tagging.has(i.id))
+
   return (
     <div
       onDragOver={e => { e.preventDefault(); setDragOver(true) }}
@@ -91,22 +154,35 @@ export default function MediaTab() {
             {folders.map(f => <option key={f} value={f}>{f}</option>)}
           </select>
         </div>
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          disabled={uploading}
-          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-          {uploading ? 'Uploading…' : 'Upload'}
-        </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          multiple
-          className="hidden"
-          onChange={e => { handleFiles(e.target.files); e.target.value = '' }}
-        />
+        <div className="flex items-center gap-2">
+          {untaggedInView.length > 0 && (
+            <button
+              onClick={() => tagImages(untaggedInView.map(i => i.id))}
+              disabled={tagging.size > 0}
+              title="Tag all untagged images in this view with AI Vision"
+              className="flex items-center gap-2 px-4 py-2 border border-emerald-300 text-emerald-700 rounded-lg text-sm font-medium hover:bg-emerald-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {tagging.size > 0 ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              Tag untagged ({untaggedInView.length})
+            </button>
+          )}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+            {uploading ? 'Uploading…' : 'Upload'}
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={e => { handleFiles(e.target.files); e.target.value = '' }}
+          />
+        </div>
       </div>
 
       {dragOver && (
@@ -133,8 +209,24 @@ export default function MediaTab() {
           {visible.map(img => (
             <div key={img.id} className="group relative aspect-square rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
               <img src={img.publicUrl} alt={img.original_filename} loading="lazy" className="w-full h-full object-cover" />
+              {(() => {
+                const b = tagBadge(img, tagging.has(img.id))
+                return b ? (
+                  <span className={`absolute top-1.5 left-1.5 z-10 px-1.5 py-0.5 rounded text-[10px] font-medium ${b.cls}`} title={b.title}>
+                    {b.label}
+                  </span>
+                ) : null
+              })()}
               <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition flex flex-col items-center justify-center gap-2">
                 <div className="flex gap-2">
+                  <button
+                    onClick={() => tagImages([img.id])}
+                    disabled={tagging.has(img.id)}
+                    title="Tag with AI Vision"
+                    className="p-2 bg-white/90 rounded-full text-emerald-600 hover:bg-white disabled:opacity-50"
+                  >
+                    {tagging.has(img.id) ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                  </button>
                   <button
                     onClick={() => handleAssignFolder(img.id, img.folder)}
                     title="Move to folder"

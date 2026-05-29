@@ -25,6 +25,10 @@ export interface ImageLibraryItem {
   folder: string | null
   created_at: string
   publicUrl: string
+  // S242 vision tagging
+  tags: string[]
+  tag_status: 'pending' | 'processing' | 'tagged' | 'failed' | 'skipped' | null
+  tag_last_error: string | null
 }
 
 type ImageLibraryRow = Omit<ImageLibraryItem, 'publicUrl'>
@@ -62,7 +66,7 @@ export function useImageLibrary() {
     // UPDATEs fail RLS (PG checks the post-update row against the SELECT policy).
     const { data, error: selErr } = await supabase
       .from('image_library')
-      .select('id, tenant_id, bucket_id, storage_path, original_filename, mime_type, size_bytes, width, height, folder, created_at')
+      .select('id, tenant_id, bucket_id, storage_path, original_filename, mime_type, size_bytes, width, height, folder, created_at, tags, tag_status, tag_last_error')
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
     if (selErr) { setError(selErr.message); setLoading(false); return }
