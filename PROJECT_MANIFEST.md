@@ -851,3 +851,19 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - docs/audits/QA_REPORT_cleanup_revalidate.md
   - docs/audits/REVIEW_cleanup_revalidate.md
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-29 13:10 UTC
+- Branch: `feature/s242-session2-frontend`
+- Commit: `28b0e92` — feat(s242): campaign image-strategy UI + targeted tagging + campaign_jobs realtime
+- Author: Claude
+- Files changed:
+  - docs/audits/QA_REPORT_S242_session2.md
+  - docs/audits/REVIEW_S242_session2.md
+  - src/components/admin/MediaTab.tsx
+  - src/components/admin/social/CampaignJobsPanel.tsx
+  - src/components/admin/social/CampaignsTab.tsx
+  - src/components/admin/social/ImageStrategyChooser.tsx
+  - src/components/admin/social/NewCampaignModal.tsx
+  - src/hooks/useImageLibrary.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
