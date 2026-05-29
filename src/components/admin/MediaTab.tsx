@@ -1,11 +1,16 @@
 import { useRef, useState, useMemo } from 'react'
 import { toast } from 'sonner'
-import { Upload, Trash2, FolderInput, ImageIcon, Loader2, Sparkles } from 'lucide-react'
+import { Upload, Trash2, FolderInput, ImageIcon, Loader2, Sparkles, Lock } from 'lucide-react'
 import { FunctionsHttpError } from '@supabase/supabase-js'
 import PageHelpBanner from './PageHelpBanner'
 import { useImageLibrary, type ImageLibraryItem } from '../../hooks/useImageLibrary'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../context/TenantBootProvider'
+import { useTierGate } from '../common/useTierGate'
+import UpgradePrompt from '../common/UpgradePrompt'
+
+// s247 — AI Vision tagging requires Pro (tier 3); ai-proxy/internal 403s below it.
+const TAG_MIN_TIER = 3
 
 // S242 — surface tag_status as a small corner badge on each image.
 function tagBadge(item: ImageLibraryItem, busy: boolean): { label: string; cls: string; title?: string } | null {
@@ -46,6 +51,7 @@ export default function MediaTab() {
   const [dragOver, setDragOver] = useState(false)
   const [activeFolder, setActiveFolder] = useState<string>(ALL)
   const [tagging, setTagging] = useState<Set<string>>(new Set())
+  const tagGate = useTierGate(TAG_MIN_TIER)
 
   const visible = useMemo(() => {
     if (activeFolder === ALL) return items
@@ -96,6 +102,9 @@ export default function MediaTab() {
   // refreshes rows afterward so new tags/status appear without a manual reload.
   async function tagImages(ids: string[]) {
     if (!tenantId || ids.length === 0) return
+    // s247 — pre-emptive gate: under Pro, open the upgrade prompt and fire NO
+    // request (backend 403 stays as defense-in-depth for entitled-but-lapsed).
+    if (!tagGate.allowed) { tagGate.openPrompt(); return }
     setTagging(prev => new Set([...prev, ...ids]))
     const multi = ids.length > 1
     const toastId = multi ? toast.loading(`Tagging 0/${ids.length}…`) : undefined
@@ -159,10 +168,13 @@ export default function MediaTab() {
             <button
               onClick={() => tagImages(untaggedInView.map(i => i.id))}
               disabled={tagging.size > 0}
-              title="Tag all untagged images in this view with AI Vision"
-              className="flex items-center gap-2 px-4 py-2 border border-emerald-300 text-emerald-700 rounded-lg text-sm font-medium hover:bg-emerald-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              title={tagGate.allowed ? 'Tag all untagged images in this view with AI Vision' : 'AI Vision tagging is a Pro feature'}
+              className={`flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed ${
+                tagGate.allowed ? 'border-emerald-300 text-emerald-700 hover:bg-emerald-50' : 'border-amber-300 text-amber-700 hover:bg-amber-50'
+              }`}
             >
-              {tagging.size > 0 ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              {tagging.size > 0 ? <Loader2 className="w-4 h-4 animate-spin" />
+                : tagGate.allowed ? <Sparkles className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
               Tag untagged ({untaggedInView.length})
             </button>
           )}
@@ -222,10 +234,11 @@ export default function MediaTab() {
                   <button
                     onClick={() => tagImages([img.id])}
                     disabled={tagging.has(img.id)}
-                    title="Tag with AI Vision"
-                    className="p-2 bg-white/90 rounded-full text-emerald-600 hover:bg-white disabled:opacity-50"
+                    title={tagGate.allowed ? 'Tag with AI Vision' : 'AI Vision tagging is a Pro feature'}
+                    className={`p-2 bg-white/90 rounded-full hover:bg-white disabled:opacity-50 ${tagGate.allowed ? 'text-emerald-600' : 'text-amber-600'}`}
                   >
-                    {tagging.has(img.id) ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                    {tagging.has(img.id) ? <Loader2 className="w-4 h-4 animate-spin" />
+                      : tagGate.allowed ? <Sparkles className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
                   </button>
                   <button
                     onClick={() => handleAssignFolder(img.id, img.folder)}
@@ -249,6 +262,13 @@ export default function MediaTab() {
           ))}
         </div>
       )}
+
+      <UpgradePrompt
+        open={tagGate.open}
+        requiredTier={TAG_MIN_TIER}
+        featureName="AI Vision tagging"
+        onClose={tagGate.closePrompt}
+      />
     </div>
   )
 }
