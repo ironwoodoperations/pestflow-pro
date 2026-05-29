@@ -866,4 +866,12 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - src/components/admin/social/ImageStrategyChooser.tsx
   - src/components/admin/social/NewCampaignModal.tsx
   - src/hooks/useImageLibrary.ts
+## Session — 2026-05-29 12:30 UTC
+- Branch: `cleanup/jwt-config-and-env`
+- Commit: `7fa465b` — cleanup: pin ai-proxy verify_jwt=false in config.toml (item 3); defer .env.example
+- Author: Claude
+- Files changed:
+  - docs/audits/QA_REPORT_cleanup_jwt_env.md
+  - docs/audits/REVIEW_cleanup_jwt_env.md
+  - supabase/config.toml
 - Next recommended action: [Fill in next session: read this line, write what comes next]
