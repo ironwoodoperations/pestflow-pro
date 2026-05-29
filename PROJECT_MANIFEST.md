@@ -888,3 +888,14 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - supabase/functions/generate-social-batch/index.ts
   - supabase/functions/process-campaign-job/index.ts
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-29 16:05 UTC
+- Branch: `chore/sync-tenant-isolation-migration`
+- Commit: `095b2e4` — chore: sync 20260529151005_sweep_findings_tenant_isolation_hardening migration
+- Author: Claude
+- Files changed:
+  - docs/audits/QA_REPORT_sync_tenant_isolation_migration.md
+  - docs/audits/REVIEW_sync_tenant_isolation_migration.md
+  - supabase/migrations/20260529151005_sweep_findings_tenant_isolation_hardening.sql
+- Next recommended action: [Fill in next session: read this line, write what comes next]
