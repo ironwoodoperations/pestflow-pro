@@ -980,6 +980,14 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
 - Next recommended action: [Fill in next session: read this line, write what comes next]
 
 ---
+## Session — 2026-05-30 13:33 UTC
+- Branch: `claude/charming-franklin-Q9GJr`
+- Commit: `a2fc6bd` — chore(s248): notify-upgrade — full-escape consistency pass
+- Author: Claude
+- Files changed:
+  - docs/audits/QA_REPORT_s248_notify_upgrade_escape_consistency.md
+  - docs/audits/REVIEW_s248_notify_upgrade_escape_consistency.md
+  - supabase/functions/notify-upgrade/index.ts
 ## Session — 2026-05-30 14:33 UTC
 - Branch: `chore/s248-trail-sync-seo-grep`
 - Commit: `0354326` — chore(s248): sync 3 RLS-lint migrations + SEO-helper usage grep
