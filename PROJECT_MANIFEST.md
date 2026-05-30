@@ -978,3 +978,14 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - supabase/functions/notify-upgrade/index.ts
   - supabase/migrations/20260529181502_logos_bucket_tenant_folder_write_scoping.sql
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-30 13:33 UTC
+- Branch: `claude/charming-franklin-Q9GJr`
+- Commit: `a2fc6bd` — chore(s248): notify-upgrade — full-escape consistency pass
+- Author: Claude
+- Files changed:
+  - docs/audits/QA_REPORT_s248_notify_upgrade_escape_consistency.md
+  - docs/audits/REVIEW_s248_notify_upgrade_escape_consistency.md
+  - supabase/functions/notify-upgrade/index.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
