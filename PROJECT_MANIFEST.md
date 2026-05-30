@@ -978,3 +978,16 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - supabase/functions/notify-upgrade/index.ts
   - supabase/migrations/20260529181502_logos_bucket_tenant_folder_write_scoping.sql
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-30 04:17 UTC
+- Branch: `feat/s248-tier-gate-borderlines`
+- Commit: `6cfaeb3` — feat(s248): wire #134 tier-gate onto composer smart-schedule + scheduling lock card
+- Author: Claude
+- Files changed:
+  - docs/audits/QA_REPORT_s248_tier_gate_borderlines.md
+  - docs/audits/REVIEW_s248_tier_gate_borderlines.md
+  - src/components/admin/social/ComposerScheduler.tsx
+  - src/components/admin/social/LegacyComposer.tsx
+  - src/components/admin/social/useComposer.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
