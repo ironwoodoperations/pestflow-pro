@@ -966,3 +966,15 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - docs/audits/REVIEW_s248_already_tagged.md
   - src/components/admin/MediaTab.tsx
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-30 03:50 UTC
+- Branch: `chore/s248-mcp-trail-sync`
+- Commit: `384d206` — chore(s248): sync MCP trail — logos write-scoping migration + notify-upgrade v26 parity
+- Author: Claude
+- Files changed:
+  - docs/audits/QA_REPORT_s248_mcp_trail_sync.md
+  - docs/audits/REVIEW_s248_mcp_trail_sync.md
+  - supabase/functions/notify-upgrade/index.ts
+  - supabase/migrations/20260529181502_logos_bucket_tenant_folder_write_scoping.sql
+- Next recommended action: [Fill in next session: read this line, write what comes next]
