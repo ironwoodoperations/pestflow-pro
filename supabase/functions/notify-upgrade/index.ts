@@ -1,8 +1,12 @@
-// Edge Function: notify-upgrade v13
+// Edge Function: notify-upgrade v14
 // Called from BillingTab when a client initiates a plan upgrade checkout,
 // and from the s247 tier-gate UpgradePrompt when a sub-tier tenant requests
 // access to a higher-tier feature (optional `feature` context).
 // Gate: requireTenantAdmin — caller must be admin of the requesting tenant.
+//
+// s248: consistency pass — every interpolated value in the email body/subject
+// runs through the same escapeHtml helper. featureLine remains a pre-built
+// HTML fragment (its content is escaped at construction); do NOT re-escape it.
 //
 // Deploy: supabase functions deploy notify-upgrade --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
 
@@ -72,8 +76,8 @@ Deno.serve(async (req: Request) => {
         body: JSON.stringify({
           from: 'PestFlow Pro <onboarding@pestflow.ai>',
           to: 'sales@homeflowpro.ai',
-          subject: `⬆️ Plan Upgrade: ${tenantName} → ${newName}`,
-          html: `<p><strong>${tenantName}</strong> started a plan upgrade to <strong>${newName}</strong> (${price}).</p><p>They moved from ${oldName}. Call to confirm and check in.</p>${featureLine}<p>Slug: ${tenantSlug}</p>`,
+          subject: `⬆️ Plan Upgrade: ${escapeHtml(tenantName)} → ${escapeHtml(newName)}`,
+          html: `<p><strong>${escapeHtml(tenantName)}</strong> started a plan upgrade to <strong>${escapeHtml(newName)}</strong> (${escapeHtml(price)}).</p><p>They moved from ${escapeHtml(oldName)}. Call to confirm and check in.</p>${featureLine}<p>Slug: ${escapeHtml(tenantSlug)}</p>`,
           reply_to: 'sales@homeflowpro.ai',
         }),
       }).catch(e => console.error('[notify-upgrade] Resend failed:', e.message))
