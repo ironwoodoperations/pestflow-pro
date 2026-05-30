@@ -988,4 +988,14 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - docs/audits/QA_REPORT_s248_notify_upgrade_escape_consistency.md
   - docs/audits/REVIEW_s248_notify_upgrade_escape_consistency.md
   - supabase/functions/notify-upgrade/index.ts
+## Session — 2026-05-30 14:33 UTC
+- Branch: `chore/s248-trail-sync-seo-grep`
+- Commit: `0354326` — chore(s248): sync 3 RLS-lint migrations + SEO-helper usage grep
+- Author: Claude
+- Files changed:
+  - docs/audits/QA_REPORT_s248_trail_sync_seo_grep.md
+  - docs/audits/REVIEW_s248_trail_sync_seo_grep.md
+  - supabase/migrations/20260530135952_s248_rls_lint_a_b_lockdown_and_searchpath.sql
+  - supabase/migrations/20260530141451_s248_rls_lint_c_revoke_internal_dispatchers.sql
+  - supabase/migrations/20260530141524_s248_rls_lint_c_revoke_public_on_two_dispatchers.sql
 - Next recommended action: [Fill in next session: read this line, write what comes next]
