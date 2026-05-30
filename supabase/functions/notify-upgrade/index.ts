@@ -1,5 +1,7 @@
-// Edge Function: notify-upgrade v12
-// Called from BillingTab when a client initiates a plan upgrade checkout.
+// Edge Function: notify-upgrade v13
+// Called from BillingTab when a client initiates a plan upgrade checkout,
+// and from the s247 tier-gate UpgradePrompt when a sub-tier tenant requests
+// access to a higher-tier feature (optional `feature` context).
 // Gate: requireTenantAdmin — caller must be admin of the requesting tenant.
 //
 // Deploy: supabase functions deploy notify-upgrade --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
@@ -55,7 +57,7 @@ Deno.serve(async (req: Request) => {
     const price   = monthly_price ? `$${monthly_price}/mo` : ''
 
     // s247 — OPTIONAL feature/trigger context for sales (e.g. "AI Vision tagging").
-    // Backward compatible: existing callers omit it → no line rendered. Escaped +
+    // Backward compatible: existing callers omit it -> no line rendered. Escaped +
     // length-capped before it lands in the HTML body.
     const featureLine = typeof feature === 'string' && feature.trim()
       ? `<p>Triggered by: <strong>${escapeHtml(feature.trim().slice(0, 120))}</strong></p>`
