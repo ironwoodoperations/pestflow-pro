@@ -1,6 +1,6 @@
 import { useRef, useState, useMemo } from 'react'
 import { toast } from 'sonner'
-import { Upload, Trash2, FolderInput, ImageIcon, Loader2, Sparkles, Lock } from 'lucide-react'
+import { Upload, Trash2, FolderInput, ImageIcon, Loader2, Sparkles, Lock, CheckCircle2 } from 'lucide-react'
 import { FunctionsHttpError } from '@supabase/supabase-js'
 import PageHelpBanner from './PageHelpBanner'
 import { useImageLibrary, type ImageLibraryItem } from '../../hooks/useImageLibrary'
@@ -100,6 +100,10 @@ export default function MediaTab() {
   // S242 Item B — tag via tag-image-vision (targeted mode), DIRECT functions.invoke
   // (not ai-proxy). Loops per-image so multi-image batches show real progress;
   // refreshes rows afterward so new tags/status appear without a manual reload.
+  // s248 — distinguish three outcomes from the backend summary
+  // ({mode,claimed,tagged,failed,skipped}). The backend SKIPS already-tagged rows
+  // (claim() never claims tag_status='tagged'), returning tagged:0 failed:0
+  // skipped:1 with HTTP 200 — that is NOT a failure.
   async function tagImages(ids: string[]) {
     if (!tenantId || ids.length === 0) return
     // s247 — pre-emptive gate: under Pro, open the upgrade prompt and fire NO
@@ -108,7 +112,7 @@ export default function MediaTab() {
     setTagging(prev => new Set([...prev, ...ids]))
     const multi = ids.length > 1
     const toastId = multi ? toast.loading(`Tagging 0/${ids.length}…`) : undefined
-    let ok = 0, failed = 0
+    let ok = 0, failed = 0, skipped = 0
     for (let i = 0; i < ids.length; i++) {
       const id = ids[i]
       try {
@@ -116,8 +120,23 @@ export default function MediaTab() {
           body: { mode: 'targeted', image_ids: [id], tenant_id: tenantId },
         })
         if (fnErr) throw new Error(await unwrapFnError(fnErr))
-        if ((data?.tagged ?? 0) > 0) ok++
-        else { failed++; if (!multi) toast.error('Tagging failed — hover the image badge for details.') }
+        const tagged  = data?.tagged  ?? 0
+        const failedN = data?.failed  ?? 0
+        const skipN   = data?.skipped ?? 0
+        if (tagged >= 1) {
+          ok++
+        } else if (failedN >= 1) {
+          failed++
+          if (!multi) toast.error('Tagging failed — hover the image badge for details.')
+        } else if (skipN >= 1) {
+          // Backend skipped an already-tagged (or in-flight) row. Not an error.
+          skipped++
+          if (!multi) toast('Already tagged.')
+        } else {
+          // Unexpected (e.g. claimed:0) — treat as failure defensively.
+          failed++
+          if (!multi) toast.error('Tagging failed.')
+        }
       } catch (e) {
         failed++
         if (!multi) toast.error(e instanceof Error ? e.message : 'Tagging failed.')
@@ -128,8 +147,19 @@ export default function MediaTab() {
     }
     await refresh()
     if (multi) {
-      if (failed === 0) toast.success(`Tagged ${ok} image${ok === 1 ? '' : 's'}.`, { id: toastId })
-      else toast.error(`Tagged ${ok}, ${failed} failed — see the failed badges.`, { id: toastId })
+      const parts: string[] = []
+      if (ok > 0)      parts.push(`${ok} tagged`)
+      if (skipped > 0) parts.push(`${skipped} already tagged`)
+      if (failed > 0)  parts.push(`${failed} failed`)
+      const summary = parts.join(', ') || 'No images processed'
+      if (failed > 0) {
+        toast.error(`${summary} — see the failed badges.`, { id: toastId })
+      } else if (ok > 0) {
+        toast.success(summary, { id: toastId })
+      } else {
+        // All skipped (no failures) — informational
+        toast(summary, { id: toastId })
+      }
     } else if (ok > 0) {
       toast.success('Image tagged.')
     }
@@ -231,15 +261,51 @@ export default function MediaTab() {
               })()}
               <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition flex flex-col items-center justify-center gap-2">
                 <div className="flex gap-2">
-                  <button
-                    onClick={() => tagImages([img.id])}
-                    disabled={tagging.has(img.id)}
-                    title={tagGate.allowed ? 'Tag with AI Vision' : 'AI Vision tagging is a Pro feature'}
-                    className={`p-2 bg-white/90 rounded-full hover:bg-white disabled:opacity-50 ${tagGate.allowed ? 'text-emerald-600' : 'text-amber-600'}`}
-                  >
-                    {tagging.has(img.id) ? <Loader2 className="w-4 h-4 animate-spin" />
-                      : tagGate.allowed ? <Sparkles className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-                  </button>
+                  {(() => {
+                    // s248 — already-tagged images get a CheckCircle affordance + an
+                    // info toast on click (no network), so the control never looks
+                    // like a no-op "failure" the way it did when the click fired.
+                    const busy = tagging.has(img.id)
+                    const isTagged = img.tag_status === 'tagged'
+                    if (busy) {
+                      return (
+                        <button disabled className="p-2 bg-white/90 rounded-full text-emerald-600 disabled:opacity-50">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        </button>
+                      )
+                    }
+                    if (!tagGate.allowed) {
+                      return (
+                        <button
+                          onClick={() => tagImages([img.id])}
+                          title="AI Vision tagging is a Pro feature"
+                          className="p-2 bg-white/90 rounded-full text-amber-600 hover:bg-white"
+                        >
+                          <Lock className="w-4 h-4" />
+                        </button>
+                      )
+                    }
+                    if (isTagged) {
+                      return (
+                        <button
+                          onClick={() => toast('Already tagged.')}
+                          title="Already tagged"
+                          className="p-2 bg-white/90 rounded-full text-emerald-600 hover:bg-white"
+                        >
+                          <CheckCircle2 className="w-4 h-4" />
+                        </button>
+                      )
+                    }
+                    return (
+                      <button
+                        onClick={() => tagImages([img.id])}
+                        title="Tag with AI Vision"
+                        className="p-2 bg-white/90 rounded-full text-emerald-600 hover:bg-white"
+                      >
+                        <Sparkles className="w-4 h-4" />
+                      </button>
+                    )
+                  })()}
                   <button
                     onClick={() => handleAssignFolder(img.id, img.folder)}
                     title="Move to folder"
