@@ -2,11 +2,17 @@ import { useComposer } from './useComposer'
 import { useSocialTier } from '../useSocialTier'
 import { useAiCaptionQuota } from '../useAiCaptionQuota'
 import { useTenant } from '../../../context/TenantBootProvider'
+import { useTierGate } from '../../common/useTierGate'
+import UpgradePrompt from '../../common/UpgradePrompt'
 import ComposerPlatformSelector from './ComposerPlatformSelector'
 import ComposerTemplates from './ComposerTemplates'
 import ComposerCaptionEditor from './ComposerCaptionEditor'
 import ComposerImagePicker from './ComposerImagePicker'
 import ComposerScheduler from './ComposerScheduler'
+
+// s248 — Grow tier gates post scheduling (composer smart-schedule + the
+// post-to-social scheduling path). Same #134 pattern as MediaTab.
+const SCHEDULE_MIN_TIER = 2
 
 interface Props {
   onClose?: () => void
@@ -18,7 +24,12 @@ export default function LegacyComposer({ onClose, onPosted, connectedKeys }: Pro
   const { isStarter } = useSocialTier()
   const { id: tenantId } = useTenant()
   const quota = useAiCaptionQuota(tenantId ?? '')
-  const c = useComposer(onPosted, isStarter ? quota.increment : undefined)
+  const scheduleGate = useTierGate(SCHEDULE_MIN_TIER)
+  const c = useComposer(
+    onPosted,
+    isStarter ? quota.increment : undefined,
+    scheduleGate.openPrompt,
+  )
 
   if (c.loading) return <div className="p-6 text-center text-gray-400">Loading composer...</div>
 
@@ -97,8 +108,16 @@ export default function LegacyComposer({ onClose, onPosted, connectedKeys }: Pro
           onSaveAsDraft={c.saveAsDraft}
           onPublishNow={c.publishNow}
           onResetForm={c.resetForm}
+          onUpgradeRequired={scheduleGate.openPrompt}
         />
       </div>
+
+      <UpgradePrompt
+        open={scheduleGate.open}
+        requiredTier={SCHEDULE_MIN_TIER}
+        featureName="Post scheduling"
+        onClose={scheduleGate.closePrompt}
+      />
     </div>
   )
 }

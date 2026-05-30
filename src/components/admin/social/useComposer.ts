@@ -17,7 +17,12 @@ export interface ComposerForm {
   scheduledFor: string
 }
 
-export function useComposer(onPosted?: () => void, onCaptionGenerated?: () => void) {
+export function useComposer(
+  onPosted?: () => void,
+  onCaptionGenerated?: () => void,
+  // s248 — opened when a sub-tier user reaches a Grow+ action (smart-schedule).
+  onUpgradeRequired?: () => void,
+) {
   const { id: tenantId } = useTenant()
   const { tier } = usePlan()
   const aiDailyLimit = AI_DAILY_LIMITS[tier] ?? 2
@@ -110,6 +115,10 @@ export function useComposer(onPosted?: () => void, onCaptionGenerated?: () => vo
   }, [aiTopic, industry, businessName, aiDailyLimit, aiDailyCount, postsPerGeneration, onCaptionGenerated])
 
   async function getSmartSchedule() {
+    // s248 — pre-emptive tier gate (Grow/2): open the upgrade prompt and fire
+    // NO request. Defense in depth — UI hides the 'smart' radio for Starter,
+    // but if this is ever reached sub-tier, we never silently no-op.
+    if (tier < 2) { onUpgradeRequired?.(); return }
     setSmartLoading(true); setSmartSchedule(null)
     const now = new Date()
     const prompt = `You are a social media scheduling expert. A ${industry.toLowerCase()} business wants to post on ${form.platform}. Recommend the single best day and time to post this week. Today is ${now.toLocaleDateString('en-US', { weekday: 'long' })}, ${now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}.\n\nReturn ONLY a JSON object, no preamble, no backticks:\n{"scheduled_for": "YYYY-MM-DDTHH:mm:00", "reasoning": "One sentence."}\n\nMust be future datetime within 7 days. Use 24-hour time.`

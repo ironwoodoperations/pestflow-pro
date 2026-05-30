@@ -17,6 +17,9 @@ interface Props {
   onSaveAsDraft: () => void
   onPublishNow: () => void
   onResetForm: () => void
+  // s248 — opens the UpgradePrompt modal when a Starter clicks the locked
+  // scheduling CTA. Optional so the prop stays backward-safe.
+  onUpgradeRequired?: () => void
 }
 
 const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-400'
@@ -25,7 +28,7 @@ export default function ComposerScheduler({
   scheduleMode, scheduledFor, smartSchedule, smartLoading,
   publishing, saving, editingPostId, schedulingDayCap, isStarter, uploadBusy,
   onScheduleModeChange, onScheduledForChange, onGetSmartSchedule,
-  onSaveAsDraft, onPublishNow, onResetForm,
+  onSaveAsDraft, onPublishNow, onResetForm, onUpgradeRequired,
 }: Props) {
   const maxDate = schedulingDayCap
     ? new Date(Date.now() + schedulingDayCap * 86400000).toISOString().substring(0, 16)
@@ -34,9 +37,23 @@ export default function ComposerScheduler({
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
       <h3 className="text-base font-semibold text-gray-900 mb-3">Schedule & Publish</h3>
       {isStarter ? (
-        <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 mb-4">
-          <Lock className="w-4 h-4 text-gray-400 flex-shrink-0" />
-          <p className="text-sm text-gray-500">Scheduling available on Growth plan and above</p>
+        // s248 — amber-lock affordance + "Upgrade to Grow" CTA (matches MediaTab
+        // pattern). Click fires the UpgradePrompt modal (notify-upgrade sales
+        // signal); no network request hits post-to-social. The Starter manual
+        // copy-paste publish path below is intentionally preserved.
+        <div className="flex items-center justify-between gap-3 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-4">
+          <div className="flex items-center gap-3">
+            <Lock className="w-4 h-4 text-amber-500 flex-shrink-0" />
+            <p className="text-sm text-amber-800">Post scheduling is available on the Grow plan and above.</p>
+          </div>
+          {onUpgradeRequired && (
+            <button
+              onClick={onUpgradeRequired}
+              className="shrink-0 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold transition-colors"
+            >
+              Upgrade to Grow
+            </button>
+          )}
         </div>
       ) : (
         <>
