@@ -955,3 +955,14 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - docs/audits/QA_REPORT_s247_tier_gate_ux.md
   - docs/audits/REVIEW_s247_tier_gate_ux.md
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-30 03:05 UTC
+- Branch: `fix/media-already-tagged-skipped`
+- Commit: `43a1658` — fix(s248): MediaTab — interpret tag-image-vision skipped, surface "Already tagged"
+- Author: Claude
+- Files changed:
+  - docs/audits/QA_REPORT_s248_already_tagged.md
+  - docs/audits/REVIEW_s248_already_tagged.md
+  - src/components/admin/MediaTab.tsx
+- Next recommended action: [Fill in next session: read this line, write what comes next]
