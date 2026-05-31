@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../context/TenantBootProvider'
+import InfoTooltip from '../common/InfoTooltip'
 
 interface SocialStats {
   total: number
@@ -55,14 +56,14 @@ export default function SocialPostsTile() {
         <>
           <div className="grid grid-cols-4 gap-2 mb-4">
             {[
-              { label: 'Total', value: social.total, color: 'text-gray-800' },
-              { label: 'Published', value: social.published, color: 'text-emerald-600' },
-              { label: 'Scheduled', value: social.scheduled, color: 'text-purple-600' },
-              { label: 'Drafts', value: social.drafts, color: 'text-amber-600' },
+              { label: 'Total', value: social.total, color: 'text-gray-800', metricKey: 'social.total' },
+              { label: 'Published', value: social.published, color: 'text-emerald-600', metricKey: 'social.published' },
+              { label: 'Scheduled', value: social.scheduled, color: 'text-purple-600', metricKey: 'social.scheduled' },
+              { label: 'Drafts', value: social.drafts, color: 'text-amber-600', metricKey: 'social.drafts' },
             ].map(s => (
               <div key={s.label} className="text-center">
                 <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
-                <p className="text-xs text-gray-500">{s.label}</p>
+                <p className="text-xs text-gray-500">{s.label}<InfoTooltip metricKey={s.metricKey} /></p>
               </div>
             ))}
           </div>

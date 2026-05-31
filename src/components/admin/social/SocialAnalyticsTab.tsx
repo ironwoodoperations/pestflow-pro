@@ -4,6 +4,7 @@ import { useTenant } from '../../../context/TenantBootProvider'
 import { usePlan } from '../../../context/PlanContext'
 import PageHelpBanner from '../PageHelpBanner'
 import SocialVolumeChart from '../reports/SocialVolumeChart'
+import InfoTooltip from '../common/InfoTooltip'
 
 interface SocialPost {
   id: string
@@ -74,13 +75,13 @@ export default function SocialAnalyticsTab() {
       {/* Summary Stat Cards — Pro and above */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           {[
-            { label: 'Total Posts Published', value: published.length, color: 'text-emerald-600' },
-            { label: 'Posts This Month', value: thisMonth, color: 'text-purple-600' },
-            { label: 'Platforms Active', value: activePlatforms, color: 'text-blue-600' },
+            { label: 'Total Posts Published', value: published.length, color: 'text-emerald-600', metricKey: 'social.total_posts_published' },
+            { label: 'Posts This Month', value: thisMonth, color: 'text-purple-600', metricKey: 'social.posts_this_month' },
+            { label: 'Platforms Active', value: activePlatforms, color: 'text-blue-600', metricKey: 'social.platforms_active' },
           ].map(s => (
             <div key={s.label} className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
               <p className={`text-3xl font-bold ${s.color}`}>{s.value}</p>
-              <p className="text-sm text-gray-500 mt-1">{s.label}</p>
+              <p className="text-sm text-gray-500 mt-1">{s.label}<InfoTooltip metricKey={s.metricKey} /></p>
             </div>
           ))}
         </div>
@@ -111,7 +112,7 @@ export default function SocialAnalyticsTab() {
         {tier >= 4 && (
           <>
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-              <h3 className="text-base font-semibold text-gray-900 mb-1">Best Performing Posts</h3>
+              <h3 className="text-base font-semibold text-gray-900 mb-1">Best Performing Posts<InfoTooltip metricKey="social.best_posts" /></h3>
               <p className="text-xs text-gray-400 mb-4">Connect Facebook to see reach &amp; engagement data</p>
               {bestPosts.length === 0 ? (
                 <p className="text-sm text-gray-400">No published posts yet.</p>

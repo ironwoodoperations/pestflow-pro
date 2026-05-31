@@ -1,4 +1,5 @@
 import { BarChart3, TrendingUp, Users, Calendar, ArrowUp, ArrowDown } from 'lucide-react'
+import InfoTooltip from '../common/InfoTooltip'
 
 interface Props {
   totalLeads: number
@@ -12,10 +13,10 @@ interface Props {
 
 export default function ReportsStatCards({ totalLeads, newLeads, converted, conversionRate, leadsTrend, convTrend, range }: Props) {
   const stats = [
-    { label: 'Total Leads', value: totalLeads, trend: leadsTrend, icon: Users, color: '#3b82f6' },
-    { label: 'New (Uncontacted)', value: newLeads, trend: 0, icon: Calendar, color: '#f59e0b' },
-    { label: 'Converted', value: converted, trend: 0, icon: TrendingUp, color: '#10b981' },
-    { label: 'Conversion Rate', value: `${conversionRate}%`, trend: convTrend, icon: BarChart3, color: '#a855f7' },
+    { label: 'Total Leads', value: totalLeads, trend: leadsTrend, icon: Users, color: '#3b82f6', metricKey: 'leads.total' },
+    { label: 'New (Uncontacted)', value: newLeads, trend: 0, icon: Calendar, color: '#f59e0b', metricKey: 'leads.new' },
+    { label: 'Converted', value: converted, trend: 0, icon: TrendingUp, color: '#10b981', metricKey: 'leads.converted' },
+    { label: 'Conversion Rate', value: `${conversionRate}%`, trend: convTrend, icon: BarChart3, color: '#a855f7', metricKey: 'leads.conversion_rate' },
   ]
 
   return (
@@ -34,7 +35,7 @@ export default function ReportsStatCards({ totalLeads, newLeads, converted, conv
             )}
           </div>
           <p className="text-2xl font-bold text-gray-900">{s.value}</p>
-          <p className="text-sm text-gray-500 mt-0.5">{s.label}</p>
+          <p className="text-sm text-gray-500 mt-0.5">{s.label}<InfoTooltip metricKey={s.metricKey} /></p>
         </div>
       ))}
     </div>

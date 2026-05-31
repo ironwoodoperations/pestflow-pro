@@ -3,16 +3,17 @@ import { ChevronDown, ChevronUp } from 'lucide-react'
 import { useTenant } from '../../../context/TenantBootProvider'
 import { useGa4Runs, type Ga4Run } from '../../../hooks/useGa4Runs'
 import { relativeTime } from './pageSpeedShared'
+import InfoTooltip from '../common/InfoTooltip'
 
 // Admin-dashboard tile: hardcoded Tailwind per CLAUDE.md.
 // S231 Phase 5: collapsible — default collapsed, showing 4 stat pills.
 // Expand/collapse state persisted in localStorage.
 // States: loading / unconfigured / error / success.
 
-function StatPill({ label, value }: { label: string; value: string }) {
+function StatPill({ label, value, metricKey }: { label: string; value: string; metricKey?: string }) {
   return (
     <div className="bg-gray-50 rounded-lg px-4 py-3 text-center">
-      <p className="text-xs text-gray-500 mb-0.5">{label}</p>
+      <p className="text-xs text-gray-500 mb-0.5">{label}{metricKey && <InfoTooltip metricKey={metricKey} />}</p>
       <p className="text-lg font-semibold text-gray-900">{value}</p>
     </div>
   )
@@ -42,10 +43,10 @@ function SummaryPills({ run }: { run: Ga4Run }) {
   if (!d) return null
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-      <StatPill label="Total Users"    value={fmtNum(d.total_users)} />
-      <StatPill label="Sessions"       value={fmtNum(d.total_sessions)} />
-      <StatPill label="Engagement Rate" value={fmtPct(d.avg_engagement_rate)} />
-      <StatPill label="Page Views"     value={fmtNum(d.total_page_views)} />
+      <StatPill label="Total Users"    value={fmtNum(d.total_users)} metricKey="ga4.users" />
+      <StatPill label="Sessions"       value={fmtNum(d.total_sessions)} metricKey="ga4.sessions" />
+      <StatPill label="Engagement Rate" value={fmtPct(d.avg_engagement_rate)} metricKey="ga4.engagement_rate" />
+      <StatPill label="Page Views"     value={fmtNum(d.total_page_views)} metricKey="ga4.page_views" />
     </div>
   )
 }
@@ -67,7 +68,7 @@ function SuccessBody({ run, expanded }: { run: Ga4Run; expanded: boolean }) {
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-gray-100">
-                      <Th>Channel</Th>
+                      <Th>Channel<InfoTooltip metricKey="ga4.channel" /></Th>
                       <Th>Sessions</Th>
                       <Th>Users</Th>
                     </tr>
@@ -93,7 +94,7 @@ function SuccessBody({ run, expanded }: { run: Ga4Run; expanded: boolean }) {
                   <thead>
                     <tr className="border-b border-gray-100">
                       <Th>Page</Th>
-                      <Th>Views</Th>
+                      <Th>Views<InfoTooltip metricKey="ga4.views" /></Th>
                     </tr>
                   </thead>
                   <tbody>

@@ -2,6 +2,7 @@ import { Gauge } from 'lucide-react'
 import { useTenant } from '../../../context/TenantBootProvider'
 import { usePageSpeedRuns } from '../../../hooks/usePageSpeedRuns'
 import { relativeTime, pageSpeedTargetUrl } from '../seo/pageSpeedShared'
+import InfoTooltip from '../common/InfoTooltip'
 
 function scoreColor(score: number | null): string {
   if (score === null) return '#9ca3af'
@@ -10,13 +11,13 @@ function scoreColor(score: number | null): string {
   return '#ef4444'
 }
 
-function ScorePill({ score, label }: { score: number | null; label: string }) {
+function ScorePill({ score, label, metricKey }: { score: number | null; label: string; metricKey?: string }) {
   return (
     <div className="flex-1 bg-gray-50 rounded-lg px-3 py-3 text-center">
       <div className="text-2xl font-bold" style={{ color: scoreColor(score) }}>
         {score ?? '–'}
       </div>
-      <div className="text-xs text-gray-500 mt-1 leading-tight">{label}</div>
+      <div className="text-xs text-gray-500 mt-1 leading-tight">{label}{metricKey && <InfoTooltip metricKey={metricKey} />}</div>
     </div>
   )
 }
@@ -67,13 +68,13 @@ export default function SitePerformanceTile() {
       ) : (
         <div className="space-y-4">
           <div className="flex gap-3">
-            <ScorePill score={latestRun.desktop_performance} label="Performance" />
-            <ScorePill score={latestRun.desktop_accessibility} label="Accessibility" />
-            <ScorePill score={latestRun.desktop_best_practices} label="Best Practices" />
-            <ScorePill score={latestRun.desktop_seo} label="SEO" />
+            <ScorePill score={latestRun.desktop_performance} label="Performance" metricKey="pagespeed.performance" />
+            <ScorePill score={latestRun.desktop_accessibility} label="Accessibility" metricKey="pagespeed.accessibility" />
+            <ScorePill score={latestRun.desktop_best_practices} label="Best Practices" metricKey="pagespeed.best_practices" />
+            <ScorePill score={latestRun.desktop_seo} label="SEO" metricKey="pagespeed.seo" />
           </div>
           <div className="text-sm text-gray-600">
-            Performance — Desktop:{' '}
+            Performance — Desktop<InfoTooltip metricKey="pagespeed.desktop_mobile" />:{' '}
             <span className="font-semibold text-gray-900">{latestRun.desktop_performance ?? '–'}</span>
             {' / '}Mobile:{' '}
             <span className="font-semibold text-gray-900">{latestRun.mobile_performance ?? '–'}</span>

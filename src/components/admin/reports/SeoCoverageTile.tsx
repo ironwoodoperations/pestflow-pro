@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../context/TenantBootProvider'
+import InfoTooltip from '../common/InfoTooltip'
 
 interface SeoStats {
   total: number
@@ -42,15 +43,15 @@ export default function SeoCoverageTile() {
       ) : (
         <div className="space-y-4">
           {[
-            { label: 'Meta Title', filled: seo.withTitle, total: seo.total },
-            { label: 'Meta Description', filled: seo.withDesc, total: seo.total },
-            { label: 'Focus Keyword', filled: seo.withKeyword, total: seo.total },
+            { label: 'Meta Title', filled: seo.withTitle, total: seo.total, metricKey: 'seo.meta_title' },
+            { label: 'Meta Description', filled: seo.withDesc, total: seo.total, metricKey: 'seo.meta_description' },
+            { label: 'Focus Keyword', filled: seo.withKeyword, total: seo.total, metricKey: 'seo.focus_keyword' },
           ].map(item => {
             const pct = Math.round((item.filled / item.total) * 100)
             return (
               <div key={item.label}>
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-700 font-medium">{item.label}</span>
+                  <span className="text-gray-700 font-medium">{item.label}<InfoTooltip metricKey={item.metricKey} /></span>
                   <span className="text-gray-500">{item.filled}/{item.total} ({pct}%)</span>
                 </div>
                 <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
