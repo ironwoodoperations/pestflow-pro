@@ -1030,3 +1030,15 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
 - Note: full S250 set is 4 commits — (1) edge repo-sync to deployed v51/v55, (2) media_type migration+rollback, (3) edge type-derivation, (4) this frontend commit.
 - Next recommended action: PR #142 open (draft, VALIDATOR-GATED). Hold merge for Scott's Perplexity+Gemini sign-off. Post-merge: orchestrator redeploys post-to-social + publish-scheduled-posts via MCP from repo files (copy-verbatim), applies the media_type migration, then PROD smoke on Dang (dang.pestflowpro.ai/admin → Social): upload .mp4 → <video> preview; publish-now video attaches; schedule video ~10min → cron path lands WITH video; existing image posts unchanged.
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-31 18:00 UTC
+- Branch: `feature/s250-media-accept-fix`
+- Commit: `1b2dc6e` — fix(s250): accept media from any source (Photos/Gallery/Drive/Files)
+- Author: Claude
+- Files changed:
+  - src/components/admin/social/ComposerImagePicker.tsx
+  - src/components/admin/social/LegacyComposer.tsx
+  - src/components/admin/social/useComposer.ts
+- Note: Hotfix for the merged S250 video feature — Drive/Files enforced the narrow `accept` MIME whitelist and greyed out valid videos. Broadened to image/*,video/* and moved format/size gatekeeping into useComposer.handleFileUpload.
+- Next recommended action: PR #144 MERGED — ships with next Vercel deploy (frontend-only). Verify on PROD/Dang on a phone: upload video via Google Drive, Photos/Gallery, and Files (all selectable, not greyed); unsupported video → plain-English rejection; normal photo still works.
