@@ -28,6 +28,7 @@ interface SocialPost {
   platform: 'facebook' | 'instagram' | 'both'
   caption: string
   image_url?: string
+  media_type?: string        // S250: 'image' | 'video' — drives Zernio mediaItems[].type
   status: string
   scheduled_for?: string
 }
@@ -154,7 +155,7 @@ export async function handler(req: Request): Promise<Response> {
     .eq('status', 'scheduled')
     .is('archived_at', null)
     .lte('scheduled_for', new Date().toISOString())
-    .select('id, tenant_id, platform, caption, image_url, status, scheduled_for')
+    .select('id, tenant_id, platform, caption, image_url, media_type, status, scheduled_for')
 
   if (postsError) {
     console.error('[publish-scheduled-posts] query error:', postsError.message)
@@ -206,8 +207,10 @@ export async function handler(req: Request): Promise<Response> {
       if (post.image_url) {
         try {
           const zernioPublicUrl = await uploadImageToZernio(post.image_url, zernioApiKey)
-          zernioBody.mediaItems = [{ type: 'image', url: zernioPublicUrl }]
-          console.log(`[publish-scheduled-posts] Zernio media uploaded for ${post.id}:`, zernioPublicUrl)
+          // S250: derive Zernio media kind from media_type (null/absent -> 'image').
+          const mediaItemType = post.media_type === 'video' ? 'video' : 'image'
+          zernioBody.mediaItems = [{ type: mediaItemType, url: zernioPublicUrl }]
+          console.log(`[publish-scheduled-posts] Zernio media uploaded for ${post.id}:`, zernioPublicUrl, 'type:', mediaItemType)
         } catch (err) {
           const msg = err instanceof Error ? err.message : 'Image upload failed'
           console.error(`[publish-scheduled-posts] Zernio media upload error ${post.id}:`, msg)

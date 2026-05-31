@@ -32,6 +32,7 @@ interface PostBody {
   mediaUrl?: string
   imageUrl?: string
   image_url?: string
+  mediaType?: string        // S250: 'image' | 'video' — drives Zernio mediaItems[].type
 }
 
 const TO_ZERNIO: Record<string, string> = {
@@ -149,19 +150,25 @@ serve(async (req) => {
 
   const supabase = createClient(supabaseUrl, serviceRoleKey)
 
-  // Resolve media URL from body OR fall back to DB row (v37 logic, unchanged in v38)
+  // Resolve media URL from body OR fall back to DB row (v37 logic, unchanged in v38).
+  // S250: also resolve media_type (kind) — body.mediaType wins, else the DB row's
+  // media_type; null/absent -> treated as 'image' downstream for backward compat.
   let effectiveMediaUrl: string | undefined =
     body.mediaUrl || body.imageUrl || body.image_url || undefined
+  let effectiveMediaType: string | undefined = body.mediaType
 
-  if (!effectiveMediaUrl && postId) {
+  if (postId && (!effectiveMediaUrl || !effectiveMediaType)) {
     const { data: postRow } = await supabase
       .from('social_posts')
-      .select('image_url')
+      .select('image_url, media_type')
       .eq('id', postId)
       .maybeSingle()
-    if (postRow?.image_url) {
+    if (!effectiveMediaUrl && postRow?.image_url) {
       effectiveMediaUrl = postRow.image_url
       console.log(`[post-to-social] media URL resolved from DB for postId=${postId}:`, effectiveMediaUrl)
+    }
+    if (!effectiveMediaType && postRow?.media_type) {
+      effectiveMediaType = postRow.media_type
     }
   }
 
@@ -236,8 +243,10 @@ serve(async (req) => {
   if (effectiveMediaUrl) {
     try {
       const zernioPublicUrl = await uploadImageToZernio(effectiveMediaUrl, zernioApiKey)
-      zernioBody.mediaItems = [{ type: 'image', url: zernioPublicUrl }]
-      console.log('[post-to-social] Zernio media uploaded:', zernioPublicUrl)
+      // S250: derive Zernio media kind from media_type (null/absent -> 'image').
+      const mediaItemType = effectiveMediaType === 'video' ? 'video' : 'image'
+      zernioBody.mediaItems = [{ type: mediaItemType, url: zernioPublicUrl }]
+      console.log('[post-to-social] Zernio media uploaded:', zernioPublicUrl, 'type:', mediaItemType)
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Image upload failed'
       console.error('[post-to-social] Zernio media upload error:', msg)
