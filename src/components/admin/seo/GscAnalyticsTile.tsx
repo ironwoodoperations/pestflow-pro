@@ -3,16 +3,17 @@ import { ChevronDown, ChevronUp } from 'lucide-react'
 import { useTenant } from '../../../context/TenantBootProvider'
 import { useGscRuns, type GscRun } from '../../../hooks/useGscRuns'
 import { relativeTime } from './pageSpeedShared'
+import InfoTooltip from '../common/InfoTooltip'
 
 // Admin-dashboard tile: hardcoded Tailwind per CLAUDE.md.
 // S231 Phase 0: collapsible — default collapsed, showing 4 stat pills.
 // Expand/collapse state persisted in localStorage.
 // States: loading / unconfigured / error / success.
 
-function StatPill({ label, value }: { label: string; value: string }) {
+function StatPill({ label, value, metricKey }: { label: string; value: string; metricKey?: string }) {
   return (
     <div className="bg-gray-50 rounded-lg px-4 py-3 text-center">
-      <p className="text-xs text-gray-500 mb-0.5">{label}</p>
+      <p className="text-xs text-gray-500 mb-0.5">{label}{metricKey && <InfoTooltip metricKey={metricKey} />}</p>
       <p className="text-lg font-semibold text-gray-900">{value}</p>
     </div>
   )
@@ -46,10 +47,10 @@ function SummaryPills({ run }: { run: GscRun }) {
   if (!d) return null
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-      <StatPill label="Total Clicks"  value={fmtNum(d.total_clicks)} />
-      <StatPill label="Impressions"   value={fmtNum(d.total_impressions)} />
-      <StatPill label="Avg CTR"       value={fmtCtr(d.avg_ctr)} />
-      <StatPill label="Avg Position"  value={fmtPosition(d.avg_position)} />
+      <StatPill label="Total Clicks"  value={fmtNum(d.total_clicks)} metricKey="gsc.clicks" />
+      <StatPill label="Impressions"   value={fmtNum(d.total_impressions)} metricKey="gsc.impressions" />
+      <StatPill label="Avg CTR"       value={fmtCtr(d.avg_ctr)} metricKey="gsc.ctr" />
+      <StatPill label="Avg Position"  value={fmtPosition(d.avg_position)} metricKey="gsc.avg_position" />
     </div>
   )
 }
@@ -71,7 +72,7 @@ function SuccessBody({ run, expanded }: { run: GscRun; expanded: boolean }) {
                   <Th>Query</Th>
                   <Th>Clicks</Th>
                   <Th>Impressions</Th>
-                  <Th>Position</Th>
+                  <Th>Position<InfoTooltip metricKey="gsc.position" /></Th>
                 </tr>
               </thead>
               <tbody>

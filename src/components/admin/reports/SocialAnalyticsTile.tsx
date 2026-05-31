@@ -3,6 +3,7 @@ import { BarChart3, ChevronDown, ChevronUp } from 'lucide-react'
 import { useTenant } from '../../../context/TenantBootProvider'
 import { useZernioRuns, type ZernioPlatformStats } from '../../../hooks/useZernioRuns'
 import { relativeTime } from '../seo/pageSpeedShared'
+import InfoTooltip from '../common/InfoTooltip'
 
 // S231 Phase 0.5: collapsible — default collapsed, summary pills visible.
 // Expand/collapse state persisted in localStorage.
@@ -19,13 +20,13 @@ const PLATFORM_LABELS: Record<string, string> = {
   tiktok: 'TikTok',
 }
 
-function StatPill({ value, label }: { value: number | null | undefined; label: string }) {
+function StatPill({ value, label, metricKey }: { value: number | null | undefined; label: string; metricKey?: string }) {
   return (
     <div className="flex-1 bg-gray-50 rounded-lg px-3 py-3 text-center">
       <div className="text-2xl font-bold text-gray-900">
         {value == null ? '–' : value.toLocaleString()}
       </div>
-      <div className="text-xs text-gray-500 mt-1 leading-tight">{label}</div>
+      <div className="text-xs text-gray-500 mt-1 leading-tight">{label}{metricKey && <InfoTooltip metricKey={metricKey} />}</div>
     </div>
   )
 }
@@ -107,8 +108,8 @@ export default function SocialAnalyticsTile() {
       ) : !expanded ? (
         // Collapsed: summary pills
         <div className="flex gap-3">
-          <StatPill value={platformCount} label="Platforms" />
-          <StatPill value={totalFollowers} label="Total Followers" />
+          <StatPill value={platformCount} label="Platforms" metricKey="social.platforms" />
+          <StatPill value={totalFollowers} label="Total Followers" metricKey="social.total_followers" />
         </div>
       ) : (
         // Expanded: full per-platform breakdown
@@ -119,9 +120,9 @@ export default function SocialAnalyticsTile() {
                 {PLATFORM_LABELS[key] ?? key}
               </p>
               <div className="flex gap-3">
-                <StatPill value={stats.followers} label="Followers" />
-                <StatPill value={stats.engagement} label="Engagement" />
-                <StatPill value={stats.reach} label="Reach" />
+                <StatPill value={stats.followers} label="Followers" metricKey="social.followers" />
+                <StatPill value={stats.engagement} label="Engagement" metricKey="social.engagement" />
+                <StatPill value={stats.reach} label="Reach" metricKey="social.reach" />
               </div>
             </div>
           ))}

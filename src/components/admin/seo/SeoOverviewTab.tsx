@@ -3,6 +3,7 @@ import { useGscRuns } from '../../../hooks/useGscRuns'
 import { useSeoRuns } from '../../../hooks/useSeoRuns'
 import type { SeoStats, SeoCoverage, AuditResult } from './seoTypes'
 import SeoStatCards from './SeoStatCards'
+import InfoTooltip from '../common/InfoTooltip'
 
 interface Props {
   stats: SeoStats
@@ -10,8 +11,8 @@ interface Props {
   lastAudit: AuditResult | null
 }
 
-function CoverageCard({ emoji, label, total, live }: {
-  emoji: string; label: string; total: number; live: number
+function CoverageCard({ emoji, label, total, live, metricKey }: {
+  emoji: string; label: string; total: number; live: number; metricKey?: string
 }) {
   const pct = total > 0 ? Math.round((live / total) * 100) : 0
   const barColor = pct === 100 ? 'bg-emerald-500' : pct > 0 ? 'bg-amber-400' : 'bg-gray-300'
@@ -19,7 +20,7 @@ function CoverageCard({ emoji, label, total, live }: {
     <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
       <div className="flex items-center gap-2 mb-1">
         <span className="text-lg">{emoji}</span>
-        <span className="font-medium text-gray-800 text-sm">{label}</span>
+        <span className="font-medium text-gray-800 text-sm">{label}{metricKey && <InfoTooltip metricKey={metricKey} />}</span>
       </div>
       <p className="text-xs text-gray-500 mb-2">{live} live &middot; {total} total</p>
       <div className="w-full bg-gray-100 rounded-full h-1.5">
@@ -53,7 +54,7 @@ function PageSpeedMini({ lastAudit }: { lastAudit: AuditResult | null }) {
             <span className={`text-2xl font-bold ${scoreColor}`}>{score}</span>
             <span className="text-xs text-gray-400">/ 100</span>
           </div>
-          <p className="text-xs text-gray-400 mt-1">Performance</p>
+          <p className="text-xs text-gray-400 mt-1">Performance<InfoTooltip metricKey="pagespeed.performance" /></p>
         </>
       )}
     </div>
@@ -74,11 +75,11 @@ function GscMini({ tenantId }: { tenantId: string }) {
         <div className="flex gap-5">
           <div>
             <p className="text-2xl font-bold text-gray-900">{fmtNum(data.total_clicks)}</p>
-            <p className="text-xs text-gray-400 mt-1">Clicks</p>
+            <p className="text-xs text-gray-400 mt-1">Clicks<InfoTooltip metricKey="gsc.clicks" /></p>
           </div>
           <div>
             <p className="text-2xl font-bold text-gray-900">{fmtNum(data.total_impressions)}</p>
-            <p className="text-xs text-gray-400 mt-1">Impressions</p>
+            <p className="text-xs text-gray-400 mt-1">Impressions<InfoTooltip metricKey="gsc.impressions" /></p>
           </div>
         </div>
       )}
@@ -105,11 +106,11 @@ function SeoAnalyticsMini({ tenantId }: { tenantId: string }) {
         <div className="flex gap-5">
           <div>
             <p className="text-2xl font-bold text-gray-900">{keywordCount}</p>
-            <p className="text-xs text-gray-400 mt-1">Keywords</p>
+            <p className="text-xs text-gray-400 mt-1">Keywords<InfoTooltip metricKey="seo.keywords" /></p>
           </div>
           <div>
             <p className="text-2xl font-bold text-gray-900">{oppCount}</p>
-            <p className="text-xs text-gray-400 mt-1">Opportunities</p>
+            <p className="text-xs text-gray-400 mt-1">Opportunities<InfoTooltip metricKey="seo.opportunities" /></p>
           </div>
         </div>
       )}
@@ -128,10 +129,10 @@ export default function SeoOverviewTab({ stats, coverage, lastAudit }: Props) {
       <div>
         <h3 className="text-sm font-semibold text-gray-700 mb-3">Content Coverage</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <CoverageCard emoji="🐛" label="Pest Pages" total={coverage.pest.total} live={coverage.pest.live} />
-          <CoverageCard emoji="📍" label="Service Area Pages" total={coverage.service_area.total} live={coverage.service_area.live} />
-          <CoverageCard emoji="✍️" label="Blog Posts" total={coverage.blog.total} live={coverage.blog.live} />
-          <CoverageCard emoji="📋" label="Static Pages" total={coverage.static.total} live={coverage.static.live} />
+          <CoverageCard emoji="🐛" label="Pest Pages" total={coverage.pest.total} live={coverage.pest.live} metricKey="coverage.pest_pages" />
+          <CoverageCard emoji="📍" label="Service Area Pages" total={coverage.service_area.total} live={coverage.service_area.live} metricKey="coverage.service_area_pages" />
+          <CoverageCard emoji="✍️" label="Blog Posts" total={coverage.blog.total} live={coverage.blog.live} metricKey="coverage.blog_pages" />
+          <CoverageCard emoji="📋" label="Static Pages" total={coverage.static.total} live={coverage.static.live} metricKey="coverage.static_pages" />
         </div>
       </div>
 

@@ -3,6 +3,7 @@ import { Search, ChevronDown, ChevronUp } from 'lucide-react'
 import { useTenant } from '../../../context/TenantBootProvider'
 import { useSeoRuns, type SeoKindState, type SeoRun } from '../../../hooks/useSeoRuns'
 import { relativeTime } from '../seo/pageSpeedShared'
+import InfoTooltip from '../common/InfoTooltip'
 
 // Admin-dashboard tile: hardcoded Tailwind per CLAUDE.md ("Admin dashboard
 // components keep their own hardcoded colors"). Mirrors SocialAnalyticsTile.
@@ -45,13 +46,13 @@ function RunButton(
 }
 
 function SectionShell(
-  { title, subtitle, children }:
-  { title: string; subtitle?: string; children: React.ReactNode },
+  { title, subtitle, metricKey, children }:
+  { title: string; subtitle?: string; metricKey?: string; children: React.ReactNode },
 ) {
   return (
     <div>
       <div className="mb-2">
-        <p className="text-sm font-semibold text-gray-700">{title}</p>
+        <p className="text-sm font-semibold text-gray-700">{title}{metricKey && <InfoTooltip metricKey={metricKey} />}</p>
         {subtitle && <p className="text-xs text-gray-400">{subtitle}</p>}
       </div>
       {children}
@@ -186,15 +187,15 @@ export default function SeoAnalyticsTile({ tenantId: tenantIdProp }: { tenantId?
         <div className="flex gap-3">
           <div className="flex-1 bg-gray-50 rounded-lg px-3 py-3 text-center">
             <div className="text-2xl font-bold text-gray-900">{keywordCount}</div>
-            <div className="text-xs text-gray-500 mt-1">Keywords</div>
+            <div className="text-xs text-gray-500 mt-1">Keywords<InfoTooltip metricKey="seo.keywords" /></div>
           </div>
           <div className="flex-1 bg-gray-50 rounded-lg px-3 py-3 text-center">
             <div className="text-2xl font-bold text-gray-900">{competitorCount}</div>
-            <div className="text-xs text-gray-500 mt-1">Competitors</div>
+            <div className="text-xs text-gray-500 mt-1">Competitors<InfoTooltip metricKey="seo.competitors" /></div>
           </div>
           <div className="flex-1 bg-gray-50 rounded-lg px-3 py-3 text-center">
             <div className="text-2xl font-bold text-gray-900">{oppCount}</div>
-            <div className="text-xs text-gray-500 mt-1">Opportunities</div>
+            <div className="text-xs text-gray-500 mt-1">Opportunities<InfoTooltip metricKey="seo.opportunities" /></div>
           </div>
         </div>
       ) : (
@@ -202,6 +203,7 @@ export default function SeoAnalyticsTile({ tenantId: tenantIdProp }: { tenantId?
           {/* Rankings */}
           <SectionShell
             title="Keyword Rankings"
+            metricKey="seo.keywords"
             subtitle={target ? `Top keywords for ${target}` : undefined}
           >
             <KindBody
@@ -213,7 +215,7 @@ export default function SeoAnalyticsTile({ tenantId: tenantIdProp }: { tenantId?
                   .slice(0, 20)
                 return (
                   <table className="w-full text-xs">
-                    <thead><tr><Th>Keyword</Th><Th>Position</Th><Th>Volume</Th><Th>URL</Th></tr></thead>
+                    <thead><tr><Th>Keyword</Th><Th>Position<InfoTooltip metricKey="gsc.position" /></Th><Th>Volume<InfoTooltip metricKey="seo.volume" /></Th><Th>URL</Th></tr></thead>
                     <tbody>
                       {items.map((it, i) => (
                         <tr key={i} className="border-t border-gray-50">
@@ -231,14 +233,14 @@ export default function SeoAnalyticsTile({ tenantId: tenantIdProp }: { tenantId?
           </SectionShell>
 
           {/* Competitors */}
-          <SectionShell title="Competitor Visibility">
+          <SectionShell title="Competitor Visibility" metricKey="seo.competitors">
             <KindBody
               state={competitors}
               render={(rows) => {
                 const items = (((rows[0]?.data as { items?: CompItem[] } | null)?.items) ?? [])
                 return (
                   <table className="w-full text-xs">
-                    <thead><tr><Th>Domain</Th><Th>Avg Position</Th><Th>Shared Keywords</Th><Th>Visibility</Th></tr></thead>
+                    <thead><tr><Th>Domain</Th><Th>Avg Position<InfoTooltip metricKey="seo.avg_position" /></Th><Th>Shared Keywords<InfoTooltip metricKey="seo.shared_keywords" /></Th><Th>Visibility<InfoTooltip metricKey="seo.visibility" /></Th></tr></thead>
                     <tbody>
                       {items.map((it, i) => (
                         <tr key={i} className="border-t border-gray-50">
@@ -256,7 +258,7 @@ export default function SeoAnalyticsTile({ tenantId: tenantIdProp }: { tenantId?
           </SectionShell>
 
           {/* Opportunities — grouped by competitor (one hook row per competitor) */}
-          <SectionShell title="Keyword Opportunities" subtitle="Keywords competitors rank for that you don't">
+          <SectionShell title="Keyword Opportunities" metricKey="seo.opportunities" subtitle="Keywords competitors rank for that you don't">
             <KindBody
               state={opportunities}
               render={(rows) => (
@@ -268,7 +270,7 @@ export default function SeoAnalyticsTile({ tenantId: tenantIdProp }: { tenantId?
                       <div key={row.id}>
                         <p className="text-xs font-semibold text-gray-600 mb-1">vs {d?.competitor ?? 'competitor'}</p>
                         <table className="w-full text-xs">
-                          <thead><tr><Th>Keyword</Th><Th>Their Position</Th><Th>Volume</Th></tr></thead>
+                          <thead><tr><Th>Keyword</Th><Th>Their Position<InfoTooltip metricKey="seo.competitor_position" /></Th><Th>Volume<InfoTooltip metricKey="seo.volume" /></Th></tr></thead>
                           <tbody>
                             {items.map((it, i) => (
                               <tr key={i} className="border-t border-gray-50">

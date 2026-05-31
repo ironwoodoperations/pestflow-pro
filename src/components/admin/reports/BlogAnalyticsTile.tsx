@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { BookOpen } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../context/TenantBootProvider'
+import InfoTooltip from '../common/InfoTooltip'
 
 // Blog view tracking not yet implemented in DB schema — backlog item.
 // This tile shows post counts only.
@@ -13,10 +14,10 @@ interface BlogPost {
   created_at: string
 }
 
-function StatCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
+function StatCard({ label, value, sub, metricKey }: { label: string; value: string | number; sub?: string; metricKey?: string }) {
   return (
     <div className="bg-gray-50 rounded-lg px-4 py-4">
-      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{label}</p>
+      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{label}{metricKey && <InfoTooltip metricKey={metricKey} />}</p>
       <p className="text-2xl font-bold text-gray-900">{value}</p>
       {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
     </div>
@@ -78,10 +79,10 @@ export default function BlogAnalyticsTile() {
         </p>
       ) : (
         <div className="grid grid-cols-3 gap-4">
-          <StatCard label="Published" value={published.length} />
-          <StatCard label="Last 30 Days" value={recentCount} />
+          <StatCard label="Published" value={published.length} metricKey="blog.published" />
+          <StatCard label="Last 30 Days" value={recentCount} metricKey="blog.last_30_days" />
           <StatCard
-            label="Most Recent"
+            label="Most Recent" metricKey="blog.most_recent"
             value={mostRecent ? (mostRecent.title.length > 18 ? mostRecent.title.slice(0, 18) + '…' : mostRecent.title) : '—'}
             sub={mostRecentLabel ?? undefined}
           />
