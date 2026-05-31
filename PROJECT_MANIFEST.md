@@ -1012,3 +1012,26 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - supabase/migrations/20260531141254_s249_add_tenants_render_model.sql
 - Next recommended action: PR #141 open (draft). Scott merges → sets Vercel env `STANDALONE_TENANT_SLUGS=dang` (Production, dashboard not .env) → redeploy. Then Claude.ai applies the render_model migration via MCP (byte-identical to repo file, reconcile timestamp) + runs prod smoke test (dang/ → 404 standalone-admin-only-404; dang/admin/ → SPA; coastal-pest/ → shell; verify render_model backfill).
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-31 17:41 UTC
+- Branch: `feature/s250-report-tooltips`
+- Commit: `77ed167` — feat(s250): plain-English info tooltips on report metrics
+- Author: Claude
+- Files changed:
+  - src/components/admin/common/InfoTooltip.tsx
+  - src/components/admin/common/metricHelp.ts
+  - src/components/admin/reports/BlogAnalyticsTile.tsx
+  - src/components/admin/reports/ReportsStatCards.tsx
+  - src/components/admin/reports/SeoAnalyticsTile.tsx
+  - src/components/admin/reports/SeoCoverageTile.tsx
+  - src/components/admin/reports/SitePerformanceTile.tsx
+  - src/components/admin/reports/SocialAnalyticsTile.tsx
+  - src/components/admin/reports/SocialPostsTile.tsx
+  - src/components/admin/seo/Ga4AnalyticsTile.tsx
+  - src/components/admin/seo/GscAnalyticsTile.tsx
+  - src/components/admin/seo/SeoOverviewTab.tsx
+  - src/components/admin/seo/SeoStatCards.tsx
+  - src/components/admin/social/SocialAnalyticsTab.tsx
+- Note: S250 spanned 3 PRs this session — #141 render_model routing (merged), #142 social video (merged), #143 report tooltips (merged, this entry).
+- Next recommended action: Owed post-merge steps. (#141) Scott sets Vercel env `STANDALONE_TENANT_SLUGS=dang` (Production) + redeploy; Claude.ai applies render_model migration via MCP + prod smoke. (#142) Claude.ai redeploys post-to-social + publish-scheduled-posts via MCP from repo files (copy-verbatim) + applies `20260531163944_s250_social_posts_media_type.sql` + Dang video smoke (incl. scheduled/cron path lands video). (#143) verify tooltips on Dang admin (hover desktop + tap mobile).
