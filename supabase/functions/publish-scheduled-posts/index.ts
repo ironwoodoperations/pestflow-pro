@@ -1,24 +1,18 @@
-// Supabase Edge Function: publish-scheduled-posts
+// Supabase Edge Function: publish-scheduled-posts v42
 // Fires every 5 minutes via pg_cron. Publishes all social_posts where
 // status = 'scheduled' AND scheduled_for <= now() AND archived_at IS NULL.
 //
+// CHANGE LOG v41 → v42 (S218 final fix):
+//   Same Zernio presign field-name fix as post-to-social v38. v41 sent
+//   fileName/fileType (from docs). Zernio's actual API rejects those and
+//   wants filename/contentType. v42 sends both naming conventions.
+//
 // Auth: verify_jwt:false at platform; in-source validation of `apikey` header
 //       against PUBLISH_SCHEDULED_POSTS_INTERNAL_SECRET env var. Sole legitimate
-//       caller: pg_cron 'publish-scheduled-posts' job. The Admin SPA "Publish
-//       Now" button hits post-to-social, NOT this function — the post_id body
-//       parse path that previously lived here was dead code (S211a cleanup).
-//
-// Posting provider: Zernio (zernio.com)
-//   zernio_accounts stored in settings.integrations as { [zernio_platform_key]: account_id }
-//   Fallback: Facebook Graph API (facebook_access_token + facebook_page_id)
+//       caller: pg_cron 'publish-scheduled-posts' job.
 //
 // DEPLOY:
 //   supabase functions deploy publish-scheduled-posts --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
-//
-// pg_cron setup (run via Supabase MCP after deploy — see
-//   docs/migrations/s211a-publish-scheduled-posts-cron-rewrite.sql):
-//   the cron body now includes the apikey header sourced from
-//   vault.decrypted_secrets.publish_scheduled_posts_internal_secret.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { timingSafeEqual } from 'node:crypto'
@@ -34,17 +28,17 @@ interface SocialPost {
   platform: 'facebook' | 'instagram' | 'both'
   caption: string
   image_url?: string
+  media_type?: string        // S250: 'image' | 'video' — drives Zernio mediaItems[].type
   status: string
   scheduled_for?: string
 }
 
 interface IntegrationSettings {
-  zernio_accounts?: Record<string, string>   // { [zernio_platform_key]: account_id }
+  zernio_accounts?: Record<string, string>
   facebook_access_token?: string
   facebook_page_id?: string
 }
 
-// Frontend platform key → Zernio platform string
 const TO_ZERNIO: Record<string, string> = {
   facebook:        'facebook',
   instagram:       'instagram',
@@ -58,12 +52,74 @@ function toPlatformArray(platform: string): string[] {
   return platform === 'both' ? ['facebook', 'instagram'] : [platform]
 }
 
+// ============================================================
+// Zernio media-upload helper (v42 — field-name fix)
+// ============================================================
+function inferContentType(fileName: string): string {
+  const ext = fileName.split('.').pop()?.toLowerCase()
+  switch (ext) {
+    case 'jpg':
+    case 'jpeg': return 'image/jpeg'
+    case 'png':  return 'image/png'
+    case 'gif':  return 'image/gif'
+    case 'webp': return 'image/webp'
+    case 'mp4':  return 'video/mp4'
+    case 'mov':  return 'video/quicktime'
+    default:     return 'image/jpeg'
+  }
+}
+
+async function uploadImageToZernio(imageUrl: string, zernioApiKey: string): Promise<string> {
+  const fetchRes = await fetch(imageUrl)
+  if (!fetchRes.ok) {
+    throw new Error(`Image fetch from source failed (HTTP ${fetchRes.status}): ${imageUrl}`)
+  }
+  const bytes = await fetchRes.arrayBuffer()
+
+  const urlPath = new URL(imageUrl).pathname
+  const fileName = urlPath.split('/').pop() || `pfp-${Date.now()}.jpg`
+  const contentType = fetchRes.headers.get('content-type') || inferContentType(fileName)
+
+  // v42: send BOTH camelCase (docs) and lowercase (actual API error) field names.
+  const presignRes = await fetch('https://zernio.com/api/v1/media/presign', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${zernioApiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      filename: fileName,
+      contentType: contentType,
+      fileName: fileName,
+      fileType: contentType,
+    }),
+  })
+  if (!presignRes.ok) {
+    const errBody = await presignRes.text()
+    throw new Error(`Zernio presign failed (HTTP ${presignRes.status}): ${errBody}`)
+  }
+  const presignData = await presignRes.json()
+  const { uploadUrl, publicUrl } = presignData
+  if (!uploadUrl || !publicUrl) {
+    throw new Error(`Zernio presign malformed: ${JSON.stringify(presignData)}`)
+  }
+
+  const putRes = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': contentType },
+    body: bytes,
+  })
+  if (!putRes.ok) {
+    const errBody = await putRes.text()
+    throw new Error(`Zernio upload PUT failed (HTTP ${putRes.status}): ${errBody}`)
+  }
+
+  return publicUrl
+}
+// ============================================================
+
 export async function handler(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
-  // ── AUTH (must run before anything else) ────────────────────────────
   const expectedSecret = Deno.env.get('PUBLISH_SCHEDULED_POSTS_INTERNAL_SECRET') || ''
   const presentedSecret = req.headers.get('apikey') || ''
 
@@ -75,9 +131,6 @@ export async function handler(req: Request): Promise<Response> {
     })
   }
 
-  // node:crypto.timingSafeEqual — constant-time compare. Throws on length mismatch,
-  // so length-equality pre-check is required. (crypto.subtle has no timingSafeEqual
-  // in Deno/Web Crypto; node:crypto is the supported primitive in Supabase Edge Runtime.)
   const enc = new TextEncoder()
   const a = enc.encode(expectedSecret)
   const b = enc.encode(presentedSecret)
@@ -96,22 +149,13 @@ export async function handler(req: Request): Promise<Response> {
   const zernioApiKey   = Deno.env.get('ZERNIO_API_KEY') ?? ''
   const supabase       = createClient(supabaseUrl, serviceRoleKey)
 
-  // Atomically claim posts by flipping status='scheduled' → 'publishing' in a
-  // single UPDATE. Prevents the SELECT-then-UPDATE race where two overlapping
-  // cron invocations both pick up the same scheduled rows and double-publish
-  // them. Postgres row-level locks make the WHERE status='scheduled' clause
-  // mutually exclusive — the second invocation sees 'publishing' and skips.
-  //
-  // S211a cleanup: the previous specificPostId branch was dead code (Admin SPA
-  // "Publish Now" calls post-to-social, not this fn). Now an unconditional
-  // .lte('scheduled_for', now()) claim — cron is the sole caller.
   const { data: posts, error: postsError } = await supabase
     .from('social_posts')
     .update({ status: 'publishing' })
     .eq('status', 'scheduled')
     .is('archived_at', null)
     .lte('scheduled_for', new Date().toISOString())
-    .select('id, tenant_id, platform, caption, image_url, status, scheduled_for')
+    .select('id, tenant_id, platform, caption, image_url, media_type, status, scheduled_for')
 
   if (postsError) {
     console.error('[publish-scheduled-posts] query error:', postsError.message)
@@ -136,7 +180,6 @@ export async function handler(req: Request): Promise<Response> {
     const intg = (settingsData?.value ?? {}) as IntegrationSettings
     const zernioAccounts = intg.zernio_accounts ?? {}
 
-    // ── 1. Zernio (primary) ─────────────────────────────────────────────────
     if (zernioApiKey && Object.keys(zernioAccounts).length > 0) {
       const frontendPlatforms = toPlatformArray(post.platform)
       const zernioPlatforms: { platform: string; accountId: string }[] = []
@@ -160,7 +203,24 @@ export async function handler(req: Request): Promise<Response> {
         platforms: zernioPlatforms,
         publishNow: true,
       }
-      if (post.image_url) zernioBody.mediaItems = [{ type: 'image', url: post.image_url }]
+
+      if (post.image_url) {
+        try {
+          const zernioPublicUrl = await uploadImageToZernio(post.image_url, zernioApiKey)
+          // S250: derive Zernio media kind from media_type (null/absent -> 'image').
+          const mediaItemType = post.media_type === 'video' ? 'video' : 'image'
+          zernioBody.mediaItems = [{ type: mediaItemType, url: zernioPublicUrl }]
+          console.log(`[publish-scheduled-posts] Zernio media uploaded for ${post.id}:`, zernioPublicUrl, 'type:', mediaItemType)
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : 'Image upload failed'
+          console.error(`[publish-scheduled-posts] Zernio media upload error ${post.id}:`, msg)
+          await supabase.from('social_posts')
+            .update({ status: 'failed', error_msg: `Image upload to Zernio failed: ${msg}` })
+            .eq('id', post.id)
+          failed++
+          continue
+        }
+      }
 
       console.log(`[publish-scheduled-posts] Zernio post ${post.id}:`, JSON.stringify(zernioBody))
 
@@ -201,7 +261,6 @@ export async function handler(req: Request): Promise<Response> {
       continue
     }
 
-    // ── 2. Facebook Graph API (last resort) ─────────────────────────────────
     if (post.platform === 'instagram' || !intg.facebook_access_token || !intg.facebook_page_id) {
       await supabase.from('social_posts').update({
         status: 'published',

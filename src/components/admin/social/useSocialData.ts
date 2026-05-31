@@ -9,6 +9,7 @@ export interface SocialPost {
   platform: string
   caption: string
   image_url: string | null
+  media_type: 'image' | 'video' | null   // S250: null on pre-S250 rows -> treat as image
   status: 'draft' | 'scheduled' | 'published' | 'failed' | 'approved'
   scheduled_for: string | null
   published_at: string | null

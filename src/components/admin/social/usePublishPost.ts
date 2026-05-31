@@ -22,7 +22,7 @@ export function usePublishPost({ tenantId, tier, form, aiCaptions, editingPostId
     setSaving(true)
     const postData = {
       tenant_id: tenantId, platform: form.platform, caption: form.caption,
-      image_url: form.imageUrl || null, status: 'draft' as const, ai_generated: aiCaptions.length > 0,
+      image_url: form.imageUrl || null, media_type: form.mediaType, status: 'draft' as const, ai_generated: aiCaptions.length > 0,
       scheduled_for: (form.scheduleMode === 'later' || form.scheduleMode === 'smart') && form.scheduledFor
         ? new Date(form.scheduledFor).toISOString() : null,
     }
@@ -39,7 +39,7 @@ export function usePublishPost({ tenantId, tier, form, aiCaptions, editingPostId
     if (tier < 2) {
       const postData = {
         tenant_id: tenantId, platform: form.platform, caption: form.caption,
-        image_url: form.imageUrl || null, status: 'sent' as const, ai_generated: aiCaptions.length > 0,
+        image_url: form.imageUrl || null, media_type: form.mediaType, status: 'sent' as const, ai_generated: aiCaptions.length > 0,
         scheduled_for: null,
       }
       if (editingPostId) { await supabase.from('social_posts').update(postData).eq('id', editingPostId) }
@@ -55,7 +55,7 @@ export function usePublishPost({ tenantId, tier, form, aiCaptions, editingPostId
     // Insert post row first so we have a postId to pass to the edge function
     const postData = {
       tenant_id: tenantId, platform: form.platform, caption: form.caption,
-      image_url: form.imageUrl || null, status: 'draft' as const, ai_generated: aiCaptions.length > 0,
+      image_url: form.imageUrl || null, media_type: form.mediaType, status: 'draft' as const, ai_generated: aiCaptions.length > 0,
       scheduled_for: scheduledFor || null,
     }
     let postId = editingPostId

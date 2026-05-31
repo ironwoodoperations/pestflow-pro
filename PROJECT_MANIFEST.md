@@ -1012,3 +1012,21 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - supabase/migrations/20260531141254_s249_add_tenants_render_model.sql
 - Next recommended action: PR #141 open (draft). Scott merges → sets Vercel env `STANDALONE_TENANT_SLUGS=dang` (Production, dashboard not .env) → redeploy. Then Claude.ai applies the render_model migration via MCP (byte-identical to repo file, reconcile timestamp) + runs prod smoke test (dang/ → 404 standalone-admin-only-404; dang/admin/ → SPA; coastal-pest/ → shell; verify render_model backfill).
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-31 16:46 UTC
+- Branch: `feature/s250-social-video`
+- Commit: `69b9e67` — feat(s250): video support in composer + media_type-aware post displays
+- Author: Claude
+- Files changed:
+  - src/components/admin/social/ComposerImagePicker.tsx
+  - src/components/admin/social/EditPostModal.tsx
+  - src/components/admin/social/LegacyComposer.tsx
+  - src/components/admin/social/PostCard.tsx
+  - src/components/admin/social/PostPreviewModal.tsx
+  - src/components/admin/social/useComposer.ts
+  - src/components/admin/social/usePublishPost.ts
+  - src/components/admin/social/useSocialData.ts
+- Note: full S250 set is 4 commits — (1) edge repo-sync to deployed v51/v55, (2) media_type migration+rollback, (3) edge type-derivation, (4) this frontend commit.
+- Next recommended action: PR #142 open (draft, VALIDATOR-GATED). Hold merge for Scott's Perplexity+Gemini sign-off. Post-merge: orchestrator redeploys post-to-social + publish-scheduled-posts via MCP from repo files (copy-verbatim), applies the media_type migration, then PROD smoke on Dang (dang.pestflowpro.ai/admin → Social): upload .mp4 → <video> preview; publish-now video attaches; schedule video ~10min → cron path lands WITH video; existing image posts unchanged.
+- Next recommended action: [Fill in next session: read this line, write what comes next]

@@ -1,6 +1,16 @@
-// Edge function: post-to-social v35
+// Edge function: post-to-social v38
 // Posts content to social media via Zernio (zernio.com) API.
 // Gate: requireTenantAdmin — caller must be admin of the requesting tenant.
+//
+// CHANGE LOG v37 → v38 (S218 final fix):
+//   v37's DB-fallback resolution worked (proven by Zernio presign error in logs
+//   for postId queried row). But the presign body used fileName/fileType from
+//   Zernio's docs, which their API rejects with:
+//     {"error":"Missing required fields: filename and contentType"}
+//   Their actual API wants filename (lowercase) and contentType (not fileType).
+//   v38 sends BOTH naming conventions so the call works regardless of which
+//   one Zernio accepts now or in the future.
+//
 // DEPLOY:
 //   supabase functions deploy post-to-social --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
 
@@ -15,14 +25,16 @@ const corsHeaders = {
 
 interface PostBody {
   content: string
-  platforms: string[]       // frontend platform keys: 'facebook' | 'instagram' | 'google_business' | etc.
-  scheduledFor?: string     // ISO 8601
+  platforms: string[]
+  scheduledFor?: string
   tenantId: string
-  postId?: string           // existing social_posts row to update
+  postId?: string
   mediaUrl?: string
+  imageUrl?: string
+  image_url?: string
+  mediaType?: string        // S250: 'image' | 'video' — drives Zernio mediaItems[].type
 }
 
-// Frontend platform key → Zernio platform string
 const TO_ZERNIO: Record<string, string> = {
   facebook:        'facebook',
   instagram:       'instagram',
@@ -31,6 +43,70 @@ const TO_ZERNIO: Record<string, string> = {
   tiktok:          'tiktok',
   google_business: 'googlebusiness',
 }
+
+// ============================================================
+// Zernio media-upload helper
+// ============================================================
+function inferContentType(fileName: string): string {
+  const ext = fileName.split('.').pop()?.toLowerCase()
+  switch (ext) {
+    case 'jpg':
+    case 'jpeg': return 'image/jpeg'
+    case 'png':  return 'image/png'
+    case 'gif':  return 'image/gif'
+    case 'webp': return 'image/webp'
+    case 'mp4':  return 'video/mp4'
+    case 'mov':  return 'video/quicktime'
+    default:     return 'image/jpeg'
+  }
+}
+
+async function uploadImageToZernio(imageUrl: string, zernioApiKey: string): Promise<string> {
+  const fetchRes = await fetch(imageUrl)
+  if (!fetchRes.ok) {
+    throw new Error(`Image fetch from source failed (HTTP ${fetchRes.status}): ${imageUrl}`)
+  }
+  const bytes = await fetchRes.arrayBuffer()
+
+  const urlPath = new URL(imageUrl).pathname
+  const fileName = urlPath.split('/').pop() || `pfp-${Date.now()}.jpg`
+  const contentType = fetchRes.headers.get('content-type') || inferContentType(fileName)
+
+  // v38: send BOTH camelCase (docs) and lowercase (actual API error) field names.
+  // Zernio API ignores unknown fields, so this is safe.
+  const presignRes = await fetch('https://zernio.com/api/v1/media/presign', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${zernioApiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      filename: fileName,
+      contentType: contentType,
+      fileName: fileName,
+      fileType: contentType,
+    }),
+  })
+  if (!presignRes.ok) {
+    const errBody = await presignRes.text()
+    throw new Error(`Zernio presign failed (HTTP ${presignRes.status}): ${errBody}`)
+  }
+  const presignData = await presignRes.json()
+  const { uploadUrl, publicUrl } = presignData
+  if (!uploadUrl || !publicUrl) {
+    throw new Error(`Zernio presign malformed: ${JSON.stringify(presignData)}`)
+  }
+
+  const putRes = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': contentType },
+    body: bytes,
+  })
+  if (!putRes.ok) {
+    const errBody = await putRes.text()
+    throw new Error(`Zernio upload PUT failed (HTTP ${putRes.status}): ${errBody}`)
+  }
+
+  return publicUrl
+}
+// ============================================================
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -57,7 +133,7 @@ serve(async (req) => {
     })
   }
 
-  const { content, platforms, scheduledFor, tenantId, postId, mediaUrl } = body
+  const { content, platforms, scheduledFor, tenantId, postId } = body
 
   if (!content || !platforms?.length || !tenantId) {
     return new Response(JSON.stringify({ error: 'content, platforms, and tenantId are required' }), {
@@ -65,7 +141,6 @@ serve(async (req) => {
     })
   }
 
-  // Gate: caller must be admin of this tenant
   try {
     await requireTenantAdmin(req, tenantId)
   } catch (e) {
@@ -75,7 +150,28 @@ serve(async (req) => {
 
   const supabase = createClient(supabaseUrl, serviceRoleKey)
 
-  // Read tenant settings (subscription + integrations) in parallel
+  // Resolve media URL from body OR fall back to DB row (v37 logic, unchanged in v38).
+  // S250: also resolve media_type (kind) — body.mediaType wins, else the DB row's
+  // media_type; null/absent -> treated as 'image' downstream for backward compat.
+  let effectiveMediaUrl: string | undefined =
+    body.mediaUrl || body.imageUrl || body.image_url || undefined
+  let effectiveMediaType: string | undefined = body.mediaType
+
+  if (postId && (!effectiveMediaUrl || !effectiveMediaType)) {
+    const { data: postRow } = await supabase
+      .from('social_posts')
+      .select('image_url, media_type')
+      .eq('id', postId)
+      .maybeSingle()
+    if (!effectiveMediaUrl && postRow?.image_url) {
+      effectiveMediaUrl = postRow.image_url
+      console.log(`[post-to-social] media URL resolved from DB for postId=${postId}:`, effectiveMediaUrl)
+    }
+    if (!effectiveMediaType && postRow?.media_type) {
+      effectiveMediaType = postRow.media_type
+    }
+  }
+
   const [subRes, intgRes] = await Promise.all([
     supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'subscription').maybeSingle(),
     supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle(),
@@ -83,7 +179,6 @@ serve(async (req) => {
 
   const tier: number = subRes.data?.value?.tier ?? 1
 
-  // Tier 1 (Starter): no scheduling
   if (tier === 1) {
     return new Response(
       JSON.stringify({ error: 'Scheduling not available on Starter plan. Upgrade to Grow to enable social scheduling.' }),
@@ -91,10 +186,8 @@ serve(async (req) => {
     )
   }
 
-  // zernio_accounts keyed by Zernio's platform strings (e.g. { facebook: 'acc_xxx', googlebusiness: 'acc_yyy' })
   const zernioAccounts: Record<string, string> = intgRes.data?.value?.zernio_accounts ?? {}
 
-  // Tier 2 (Grow): hard cap of 2 posts/day
   if (tier === 2) {
     const today = new Date().toISOString().split('T')[0]
     const { count } = await supabase
@@ -113,7 +206,6 @@ serve(async (req) => {
     }
   }
 
-  // Build Zernio platforms array — only include platforms that have a connected account
   const zernioPlatforms: { platform: string; accountId: string }[] = []
   const missingPlatforms: string[] = []
 
@@ -137,7 +229,6 @@ serve(async (req) => {
     })
   }
 
-  // Build Zernio post body
   const zernioBody: Record<string, unknown> = {
     content,
     platforms: zernioPlatforms,
@@ -148,8 +239,27 @@ serve(async (req) => {
   } else {
     zernioBody.publishNow = true
   }
-  if (mediaUrl) {
-    zernioBody.mediaItems = [{ type: 'image', url: mediaUrl }]
+
+  if (effectiveMediaUrl) {
+    try {
+      const zernioPublicUrl = await uploadImageToZernio(effectiveMediaUrl, zernioApiKey)
+      // S250: derive Zernio media kind from media_type (null/absent -> 'image').
+      const mediaItemType = effectiveMediaType === 'video' ? 'video' : 'image'
+      zernioBody.mediaItems = [{ type: mediaItemType, url: zernioPublicUrl }]
+      console.log('[post-to-social] Zernio media uploaded:', zernioPublicUrl, 'type:', mediaItemType)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Image upload failed'
+      console.error('[post-to-social] Zernio media upload error:', msg)
+      if (postId) {
+        await supabase.from('social_posts').update({
+          status: 'failed',
+          error_msg: `Image upload to Zernio failed: ${msg}`,
+        }).eq('id', postId)
+      }
+      return new Response(JSON.stringify({ error: `Image upload failed: ${msg}` }), {
+        status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
   }
 
   console.log('[post-to-social] Zernio request:', JSON.stringify(zernioBody))
@@ -175,7 +285,6 @@ serve(async (req) => {
       })
     }
 
-    // Success
     const zernioPostId: string = data?.post?._id ?? 'zernio-social'
     const platform = platforms.length > 1 ? 'both' : (platforms[0] as 'facebook' | 'instagram' | 'both')
     const newStatus = scheduledFor ? 'scheduled' : 'published'
@@ -188,7 +297,6 @@ serve(async (req) => {
       zernio_post_id: zernioPostId,
       error_msg: null,
     }
-    // Note partial failures if any platforms were skipped
     if (missingPlatforms.length > 0) {
       postUpdate.error_msg = `Not connected: ${missingPlatforms.join(', ')}`
     }
