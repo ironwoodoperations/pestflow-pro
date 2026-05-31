@@ -9,13 +9,20 @@ import { callAi } from '../../../lib/ai/callAi'
 
 export type UploadState = 'idle' | 'uploading' | 'success' | 'error'
 
+export type MediaType = 'image' | 'video'
+
 export interface ComposerForm {
   platform: string
   caption: string
-  imageUrl: string
+  imageUrl: string         // S250: URL column for BOTH kinds (image or video)
+  mediaType: MediaType     // S250: drives Zernio mediaItems[].type + which preview to render
   scheduleMode: 'now' | 'later' | 'smart'
   scheduledFor: string
 }
+
+// Video containers the composer accepts (mirrors ComposerImagePicker's accept attr).
+// Phones record .mov (iOS) / .mp4 (Android); .webm included for completeness.
+export const ACCEPTED_VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/webm']
 
 export function useComposer(
   onPosted?: () => void,
@@ -30,7 +37,7 @@ export function useComposer(
   const schedulingDayCap = SCHEDULING_DAY_CAP[tier] ?? 0
 
   const [form, setForm] = useState<ComposerForm>({
-    platform: 'facebook', caption: '', imageUrl: '',
+    platform: 'facebook', caption: '', imageUrl: '', mediaType: 'image',
     scheduleMode: 'now', scheduledFor: '',
   })
   const [aiTopic, setAiTopic] = useState('')
@@ -62,31 +69,49 @@ export function useComposer(
   }, [tenantId])
 
   function resetForm() {
-    setForm({ platform: 'facebook', caption: '', imageUrl: '', scheduleMode: 'now', scheduledFor: '' })
+    setForm({ platform: 'facebook', caption: '', imageUrl: '', mediaType: 'image', scheduleMode: 'now', scheduledFor: '' })
     setEditingPostId(null); setAiCaptions([]); setAiTopic(''); setSmartSchedule(null)
     setUploadState('idle')
     setPreviewUrl(prev => { if (prev) URL.revokeObjectURL(prev); return '' })
   }
 
   async function handleFileUpload(file: File) {
+    // S250: a post holds a SINGLE media slot (imageUrl + mediaType), so uploading
+    // a video automatically replaces any selected image and vice versa — the
+    // "one video OR photos, not both" rule Zernio/Twitter/TikTok enforce.
+    const isVideo = file.type.startsWith('video/') || ACCEPTED_VIDEO_TYPES.includes(file.type)
     const preview = URL.createObjectURL(file)
     setPreviewUrl(preview)
     setUploadState('uploading')
     try {
-      const resized = await resizeImage(file)
-      const filename = `${crypto.randomUUID()}.jpg`
+      let blob: Blob
+      let contentType: string
+      let ext: string
+      if (isVideo) {
+        // Video: upload the RAW file untouched. resizeImage() is a canvas→JPEG
+        // path that would destroy a video. The edge fn presigns to Zernio with
+        // the stored object's content-type, so the native container flows through.
+        blob = file
+        contentType = file.type || 'video/mp4'
+        ext = (file.name.split('.').pop() || 'mp4').toLowerCase()
+      } else {
+        blob = await resizeImage(file)
+        contentType = 'image/jpeg'
+        ext = 'jpg'
+      }
+      const filename = `${crypto.randomUUID()}.${ext}`
       const path = `${tenantId}/social/${filename}`
       const { error: uploadError } = await supabase.storage
         .from('social-uploads')
-        .upload(path, resized, { contentType: 'image/jpeg', cacheControl: '3600' })
+        .upload(path, blob, { contentType, cacheControl: '3600' })
       if (uploadError) throw uploadError
       const { data: { publicUrl } } = supabase.storage
         .from('social-uploads')
         .getPublicUrl(path)
-      setForm(p => ({ ...p, imageUrl: publicUrl }))
+      setForm(p => ({ ...p, imageUrl: publicUrl, mediaType: isVideo ? 'video' : 'image' }))
       setUploadState('success')
     } catch (err) {
-      console.error('[useComposer] image upload failed:', err)
+      console.error('[useComposer] media upload failed:', err)
       setUploadState('error')
     }
   }

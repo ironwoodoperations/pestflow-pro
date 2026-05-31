@@ -85,7 +85,10 @@ export default function LegacyComposer({ onClose, onPosted, connectedKeys }: Pro
 
         <ComposerImagePicker
           imageUrl={c.form.imageUrl}
-          onImageUrlChange={v => c.setForm(prev => ({ ...prev, imageUrl: v }))}
+          mediaType={c.form.mediaType}
+          // Paste-URL + library picks are images; selecting either resets the slot to
+          // 'image' (a video, if present, is replaced — one media slot per post).
+          onImageUrlChange={v => c.setForm(prev => ({ ...prev, imageUrl: v, mediaType: 'image' }))}
           onFileUpload={c.handleFileUpload}
           uploadState={c.uploadState}
           previewUrl={c.previewUrl}

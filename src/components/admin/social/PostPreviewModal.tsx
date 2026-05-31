@@ -64,7 +64,9 @@ function FBPreview({ post }: { post: SocialPost }) {
         <p className="text-sm text-gray-800 whitespace-pre-wrap">{post.caption}</p>
       </div>
       {post.image_url && (
-        <img src={post.image_url} alt="" className="w-full max-h-64 object-cover" />
+        post.media_type === 'video'
+          ? <video src={post.image_url} controls muted className="w-full max-h-64 object-cover bg-black" />
+          : <img src={post.image_url} alt="" className="w-full max-h-64 object-cover" />
       )}
       <div className="flex items-center justify-around border-t border-gray-200 px-4 py-2.5 text-xs text-gray-500">
         <span>👍 Like</span>
@@ -85,7 +87,9 @@ function IGPreview({ post }: { post: SocialPost }) {
       </div>
       <div className="aspect-square bg-gray-100 flex items-center justify-center overflow-hidden">
         {post.image_url
-          ? <img src={post.image_url} alt="" className="w-full h-full object-cover" />
+          ? (post.media_type === 'video'
+              ? <video src={post.image_url} controls muted className="w-full h-full object-cover bg-black" />
+              : <img src={post.image_url} alt="" className="w-full h-full object-cover" />)
           : <span className="text-4xl text-gray-300">📷</span>
         }
       </div>

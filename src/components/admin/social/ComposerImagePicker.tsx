@@ -1,10 +1,11 @@
 import { useRef, useState } from 'react'
 import { X } from 'lucide-react'
-import type { UploadState } from './useComposer'
+import type { UploadState, MediaType } from './useComposer'
 import ImageLibraryPicker from './ImageLibraryPicker'
 
 interface Props {
   imageUrl: string
+  mediaType?: MediaType
   onImageUrlChange: (v: string) => void
   onFileUpload?: (file: File) => void
   uploadState?: UploadState
@@ -12,6 +13,14 @@ interface Props {
 }
 
 const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-400'
+
+// S250 size guards (Zernio hard cap is 5GB; phone clips are normally well under).
+const VIDEO_WARN_BYTES = 200 * 1024 * 1024        // 200 MB — warn, don't block
+const VIDEO_MAX_BYTES = 5 * 1024 * 1024 * 1024    // 5 GB — Zernio platform max, reject
+const fmtSize = (bytes: number) =>
+  bytes >= 1024 * 1024 * 1024
+    ? `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
+    : `${Math.round(bytes / (1024 * 1024))} MB`
 
 function generateTemplateImage(): string {
   const canvas = document.createElement('canvas')
@@ -33,9 +42,10 @@ function generateTemplateImage(): string {
   return canvas.toDataURL('image/png')
 }
 
-export default function ComposerImagePicker({ imageUrl, onImageUrlChange, onFileUpload, uploadState, previewUrl }: Props) {
+export default function ComposerImagePicker({ imageUrl, mediaType = 'image', onImageUrlChange, onFileUpload, uploadState, previewUrl }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [libraryOpen, setLibraryOpen] = useState(false)
+  const [sizeNote, setSizeNote] = useState('')
 
   function handleDownloadTemplate() {
     const dataUrl = generateTemplateImage()
@@ -48,6 +58,20 @@ export default function ComposerImagePicker({ imageUrl, onImageUrlChange, onFile
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+    setSizeNote('')
+
+    // S250: size guard for video — reject over the 5GB platform max, warn (don't
+    // block) over 200MB so a non-technical owner understands slow/compressed uploads.
+    const isVideo = file.type.startsWith('video/')
+    if (isVideo && file.size > VIDEO_MAX_BYTES) {
+      setSizeNote(`That video is ${fmtSize(file.size)} — too large to post (5 GB max). Please trim it or export at a lower resolution.`)
+      e.target.value = ''
+      return
+    }
+    if (isVideo && file.size > VIDEO_WARN_BYTES) {
+      setSizeNote(`Heads up: this video is ${fmtSize(file.size)}. It will still post, but large videos upload slowly and some platforms may compress them.`)
+    }
+
     if (onFileUpload) {
       onFileUpload(file)
     } else {
@@ -60,10 +84,12 @@ export default function ComposerImagePicker({ imageUrl, onImageUrlChange, onFile
 
   // Show blob: preview while uploading; storage URL after success; text-input URL for paste path
   const displayPreview = uploadState === 'uploading' ? previewUrl : (imageUrl || previewUrl)
+  const isVideoMedia = mediaType === 'video'
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-      <h3 className="text-base font-semibold text-gray-900 mb-3">Photo</h3>
+      <h3 className="text-base font-semibold text-gray-900 mb-1">Photo or Video</h3>
+      <p className="text-xs text-gray-500 mb-3">You can post one video <em>or</em> photos — not both. Adding a video replaces a selected photo.</p>
 
       <div className="flex gap-2 mb-4">
         <button
@@ -77,7 +103,7 @@ export default function ComposerImagePicker({ imageUrl, onImageUrlChange, onFile
           disabled={uploadState === 'uploading'}
           className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {uploadState === 'uploading' ? '⏳ Uploading...' : '📁 Upload Photo'}
+          {uploadState === 'uploading' ? '⏳ Uploading...' : '📁 Upload Photo or Video'}
         </button>
         <button
           onClick={handleDownloadTemplate}
@@ -85,14 +111,17 @@ export default function ComposerImagePicker({ imageUrl, onImageUrlChange, onFile
         >
           ⬇ Download Template
         </button>
-        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+        <input ref={fileInputRef} type="file" accept="image/*,video/mp4,video/quicktime,video/webm" className="hidden" onChange={handleFileChange} />
       </div>
 
+      {sizeNote && (
+        <p className="text-xs text-amber-600 mb-3">{sizeNote}</p>
+      )}
       {uploadState === 'error' && (
         <p className="text-xs text-red-600 mb-3">Upload failed — please try again or paste an image URL below.</p>
       )}
       {uploadState === 'success' && (
-        <p className="text-xs text-emerald-600 mb-3">Image uploaded successfully.</p>
+        <p className="text-xs text-emerald-600 mb-3">{isVideoMedia ? 'Video uploaded successfully.' : 'Image uploaded successfully.'}</p>
       )}
 
       <div>
@@ -102,7 +131,11 @@ export default function ComposerImagePicker({ imageUrl, onImageUrlChange, onFile
       </div>
       {displayPreview && (
         <div className="mt-3 relative inline-block">
-          <img src={displayPreview} alt="Preview" className="w-32 h-24 object-cover rounded-lg border border-gray-200" />
+          {isVideoMedia ? (
+            <video src={displayPreview} controls muted className="w-48 max-h-32 rounded-lg border border-gray-200 bg-black" />
+          ) : (
+            <img src={displayPreview} alt="Preview" className="w-32 h-24 object-cover rounded-lg border border-gray-200" />
+          )}
           {uploadState === 'uploading' ? (
             <div className="absolute inset-0 flex items-center justify-center bg-white/70 rounded-lg">
               <span className="text-xs text-gray-500 font-medium">Uploading…</span>

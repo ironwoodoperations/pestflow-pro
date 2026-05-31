@@ -59,6 +59,18 @@ export default function EditPostModal({ post, onClose, onSave }: Props) {
         </div>
 
         <div className="space-y-4">
+          {/* Attached media (read-only here — S250: image or video) */}
+          {post.image_url && (
+            <div>
+              <label className="text-xs font-medium text-gray-700 block mb-1">
+                Attached {post.media_type === 'video' ? 'video' : 'photo'}
+              </label>
+              {post.media_type === 'video'
+                ? <video src={post.image_url} controls muted className="w-full max-h-48 rounded-lg border border-gray-200 bg-black" />
+                : <img src={post.image_url} alt="" className="w-full max-h-48 object-cover rounded-lg border border-gray-200" />}
+            </div>
+          )}
+
           <div>
             <label className="text-xs font-medium text-gray-700 block mb-1">Caption</label>
             <textarea value={form.caption} onChange={e => setForm(p => ({ ...p, caption: e.target.value }))}

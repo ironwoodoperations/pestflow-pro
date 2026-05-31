@@ -43,9 +43,11 @@ export default function PostCard({ post, onPreview, onEdit, onApprove, onDelete,
         <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${ss}`}>{post.status}</span>
       </div>
 
-      {/* Image */}
+      {/* Media (image or video — S250) */}
       {post.image_url && (
-        <img src={post.image_url} alt="" className="w-full max-h-32 object-cover" />
+        post.media_type === 'video'
+          ? <video src={post.image_url} muted className="w-full max-h-32 object-cover bg-black" />
+          : <img src={post.image_url} alt="" className="w-full max-h-32 object-cover" />
       )}
 
       {/* Body */}
