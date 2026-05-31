@@ -9,6 +9,27 @@ const APEX_HOSTS = new Set([
 
 const PFP_SUFFIXES = ['.pestflowpro.com', '.pestflowpro.ai'] as const;
 
+// Standalone-repo tenants: public site lives in a SEPARATE Vercel project
+// (e.g. Dang -> dangpestcontrol.com). On <slug>.pestflowpro.ai these tenants are
+// admin-only; every non-admin path 404s to prevent a duplicate public render from
+// this app's /tenant/<slug> shell. Source of truth = tenants.render_model column;
+// this env var is the edge-read projection (set in Vercel dashboard, production scope).
+// Validator-mandated defensive parse: undefined/empty -> empty Set (never matches "").
+const STANDALONE_SLUGS = new Set(
+  (process.env.STANDALONE_TENANT_SLUGS ?? '')
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean),
+);
+
+// Cold-start observability: surface the missing-env failure mode (DB says standalone
+// but env var never got set -> would silently fall through to a duplicate render).
+if (process.env.STANDALONE_TENANT_SLUGS === undefined) {
+  console.warn(
+    '[middleware] STANDALONE_TENANT_SLUGS is undefined — standalone routing disabled',
+  );
+}
+
 function extractSubdomain(host: string): string | null {
   const hostname = host.split(':')[0].toLowerCase();
 
@@ -107,18 +128,15 @@ export function middleware(req: NextRequest) {
     return NextResponse.rewrite(new URL('/_admin/index.html', req.url));
   }
 
-  // Dang is the only customer on the standalone-repo model — public lives at
-  // dangpestcontrol.com (separate Vercel project). dang.pestflowpro.com is
-  // admin-only: the /admin check above still fires for Kirk's admin URL,
-  // every other path returns 404 to prevent the duplicate public render.
-  if (slug === 'dang') {
-    // x-pfp-routing-decision header: filter Vercel logs to confirm this
-    // branch is firing as designed vs. catching unintended traffic. Per
-    // Perplexity + Gemini validator concurrence on observability for the
-    // new 404 branch.
+  // Standalone-repo tenants (data-driven via render_model column -> STANDALONE_SLUGS
+  // env projection). Public site is a separate Vercel project; here only /admin works
+  // (handled above), everything else 404s to prevent a duplicate public render.
+  // x-pfp-routing-decision header: filter Vercel logs to confirm this branch fires as
+  // designed vs. catching unintended traffic.
+  if (STANDALONE_SLUGS.has(slug)) {
     return new NextResponse(null, {
       status: 404,
-      headers: { 'x-pfp-routing-decision': 'dang-admin-only-404' },
+      headers: { 'x-pfp-routing-decision': 'standalone-admin-only-404' },
     });
   }
 
