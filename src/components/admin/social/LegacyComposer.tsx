@@ -91,6 +91,7 @@ export default function LegacyComposer({ onClose, onPosted, connectedKeys }: Pro
           onImageUrlChange={v => c.setForm(prev => ({ ...prev, imageUrl: v, mediaType: 'image' }))}
           onFileUpload={c.handleFileUpload}
           uploadState={c.uploadState}
+          uploadNotice={c.uploadNotice}
           previewUrl={c.previewUrl}
         />
 
