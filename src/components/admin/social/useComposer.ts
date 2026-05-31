@@ -11,6 +11,10 @@ export type UploadState = 'idle' | 'uploading' | 'success' | 'error'
 
 export type MediaType = 'image' | 'video'
 
+// Post-selection feedback surfaced by the picker. 'error' blocks the upload;
+// 'warn' is non-blocking (the file still uploads).
+export interface UploadNotice { type: 'error' | 'warn'; text: string }
+
 export interface ComposerForm {
   platform: string
   caption: string
@@ -20,9 +24,17 @@ export interface ComposerForm {
   scheduledFor: string
 }
 
-// Video containers the composer accepts (mirrors ComposerImagePicker's accept attr).
-// Phones record .mov (iOS) / .mp4 (Android); .webm included for completeness.
-export const ACCEPTED_VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/webm']
+// Accepted media for the social composer. The file picker uses a broad
+// accept="image/*,video/*" so Photos/Gallery/Drive/Files never grey out a valid
+// file (Drive/Files enforce `accept` as a hard filter). These lists are the REAL
+// gatekeeper, enforced after selection in handleFileUpload. Phones record .mov (iOS)
+// / .mp4 (Android); Zernio also accepts webm and avi.
+export const ACCEPTED_VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/webm', 'video/avi', 'video/x-msvideo']
+const ACCEPTED_VIDEO_EXT = ['mp4', 'mov', 'webm', 'avi']
+const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+const ACCEPTED_IMAGE_EXT = ['jpg', 'jpeg', 'png', 'gif', 'webp']
+const VIDEO_WARN_BYTES = 200 * 1024 * 1024        // 200 MB — warn, don't block
+const VIDEO_MAX_BYTES = 5 * 1024 * 1024 * 1024    // 5 GB — Zernio platform max, reject
 
 export function useComposer(
   onPosted?: () => void,
@@ -49,6 +61,7 @@ export function useComposer(
   const [loading, setLoading] = useState(true)
   const [editingPostId, setEditingPostId] = useState<string | null>(null)
   const [uploadState, setUploadState] = useState<UploadState>('idle')
+  const [uploadNotice, setUploadNotice] = useState<UploadNotice | null>(null)
   const [previewUrl, setPreviewUrl] = useState('')
   const [smartSchedule, setSmartSchedule] = useState<{ scheduled_for: string; reasoning: string } | null>(null)
   const [smartLoading, setSmartLoading] = useState(false)
@@ -71,35 +84,69 @@ export function useComposer(
   function resetForm() {
     setForm({ platform: 'facebook', caption: '', imageUrl: '', mediaType: 'image', scheduleMode: 'now', scheduledFor: '' })
     setEditingPostId(null); setAiCaptions([]); setAiTopic(''); setSmartSchedule(null)
-    setUploadState('idle')
+    setUploadState('idle'); setUploadNotice(null)
     setPreviewUrl(prev => { if (prev) URL.revokeObjectURL(prev); return '' })
   }
 
+  // The picker now uses a broad accept="image/*,video/*" (so Drive/Files don't grey
+  // out valid files) — so THIS function is the real gatekeeper. It classifies the
+  // selected file by MIME (with an extension fallback, since Drive/Files can hand us
+  // an empty MIME), rejects unsupported formats / oversized video with plain-English
+  // copy, and only then uploads.
   async function handleFileUpload(file: File) {
-    // S250: a post holds a SINGLE media slot (imageUrl + mediaType), so uploading
-    // a video automatically replaces any selected image and vice versa — the
-    // "one video OR photos, not both" rule Zernio/Twitter/TikTok enforce.
-    const isVideo = file.type.startsWith('video/') || ACCEPTED_VIDEO_TYPES.includes(file.type)
+    setUploadNotice(null)
+
+    const mime = file.type.toLowerCase()
+    const ext = file.name.includes('.') ? file.name.split('.').pop()!.toLowerCase() : ''
+
+    const isVideo = mime.startsWith('video/') || ACCEPTED_VIDEO_EXT.includes(ext)
+    const isImage = mime.startsWith('image/') || ACCEPTED_IMAGE_EXT.includes(ext)
+
+    // Format gatekeeper (replaces the old `accept` codec whitelist).
+    if (isVideo) {
+      const ok = ACCEPTED_VIDEO_TYPES.includes(mime) || ACCEPTED_VIDEO_EXT.includes(ext)
+      if (!ok) {
+        setUploadNotice({ type: 'error', text: "That video format isn't supported. Please use an MP4 or MOV — that's what your phone records by default." })
+        return
+      }
+    } else if (isImage) {
+      const ok = ACCEPTED_IMAGE_TYPES.includes(mime) || ACCEPTED_IMAGE_EXT.includes(ext)
+      if (!ok) {
+        setUploadNotice({ type: 'error', text: "That image format isn't supported. Please use a JPG, PNG, GIF, or WEBP." })
+        return
+      }
+    } else {
+      setUploadNotice({ type: 'error', text: "That file isn't a photo or video. Please choose an image or video from your phone, gallery, or drive." })
+      return
+    }
+
+    // Size guard (video): reject over the 5GB platform max; warn (non-blocking) over 200MB.
+    if (isVideo && file.size > VIDEO_MAX_BYTES) {
+      setUploadNotice({ type: 'error', text: 'That video is too large to post (5 GB max). Please trim it or export at a lower resolution.' })
+      return
+    }
+    const oversizedWarn = isVideo && file.size > VIDEO_WARN_BYTES
+
     const preview = URL.createObjectURL(file)
     setPreviewUrl(preview)
     setUploadState('uploading')
     try {
       let blob: Blob
       let contentType: string
-      let ext: string
+      let uploadExt: string
       if (isVideo) {
         // Video: upload the RAW file untouched. resizeImage() is a canvas→JPEG
         // path that would destroy a video. The edge fn presigns to Zernio with
         // the stored object's content-type, so the native container flows through.
         blob = file
-        contentType = file.type || 'video/mp4'
-        ext = (file.name.split('.').pop() || 'mp4').toLowerCase()
+        contentType = mime || 'video/mp4'
+        uploadExt = ext || 'mp4'
       } else {
         blob = await resizeImage(file)
         contentType = 'image/jpeg'
-        ext = 'jpg'
+        uploadExt = 'jpg'
       }
-      const filename = `${crypto.randomUUID()}.${ext}`
+      const filename = `${crypto.randomUUID()}.${uploadExt}`
       const path = `${tenantId}/social/${filename}`
       const { error: uploadError } = await supabase.storage
         .from('social-uploads')
@@ -108,8 +155,12 @@ export function useComposer(
       const { data: { publicUrl } } = supabase.storage
         .from('social-uploads')
         .getPublicUrl(path)
+      // S250: single media slot — uploading a video replaces any selected image and vice versa.
       setForm(p => ({ ...p, imageUrl: publicUrl, mediaType: isVideo ? 'video' : 'image' }))
       setUploadState('success')
+      if (oversizedWarn) {
+        setUploadNotice({ type: 'warn', text: 'Heads up: that’s a large video — it still posted, but large videos upload slowly and some platforms may compress them.' })
+      }
     } catch (err) {
       console.error('[useComposer] media upload failed:', err)
       setUploadState('error')
@@ -184,7 +235,7 @@ export function useComposer(
     publishing, saving,
     businessName, industry, loading, editingPostId, smartSchedule,
     smartLoading, captionRef, charLimit, tier,
-    uploadState, previewUrl,
+    uploadState, uploadNotice, previewUrl,
     generateCaptions, getSmartSchedule,
     saveAsDraft, publishNow, appendEmoji, resetForm, handleFileUpload,
   }
