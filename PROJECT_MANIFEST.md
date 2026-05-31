@@ -999,3 +999,16 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - supabase/migrations/20260530141451_s248_rls_lint_c_revoke_internal_dispatchers.sql
   - supabase/migrations/20260530141524_s248_rls_lint_c_revoke_public_on_two_dispatchers.sql
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-05-31 14:16 UTC
+- Branch: `claude/youthful-hawking-33FUq`
+- Commit: `4a89736` — feat(s249): data-driven standalone-tenant routing via render_model
+- Author: Claude
+- Files changed:
+  - docs/migrations/s249-render-model-rollback.sql
+  - middleware.ts
+  - supabase/migrations/20260530144952_s248_rls_lint_c_revoke_seo_helpers_authenticated.sql
+  - supabase/migrations/20260531141254_s249_add_tenants_render_model.sql
+- Next recommended action: PR #141 open (draft). Scott merges → sets Vercel env `STANDALONE_TENANT_SLUGS=dang` (Production, dashboard not .env) → redeploy. Then Claude.ai applies the render_model migration via MCP (byte-identical to repo file, reconcile timestamp) + runs prod smoke test (dang/ → 404 standalone-admin-only-404; dang/admin/ → SPA; coastal-pest/ → shell; verify render_model backfill).
+- Next recommended action: [Fill in next session: read this line, write what comes next]
