@@ -67,7 +67,7 @@ export default function MediaTab() {
     setUploading(true)
     try {
       const n = await uploadMany(list, target)
-      if (n === 0) toast.error('No image files found.')
+      if (n === 0) toast.error("The Media Library holds photos only — to post a video, use 'Upload Photo or Video' when creating a post.")
       else toast.success(`Uploaded ${n} image${n === 1 ? '' : 's'}.`)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Upload failed.')
@@ -226,6 +226,10 @@ export default function MediaTab() {
           />
         </div>
       </div>
+
+      <p className="text-xs text-gray-500 -mt-2 mb-4">
+        Photos only. To post a video, use <span className="font-medium">Upload Photo or Video</span> in the post composer.
+      </p>
 
       {dragOver && (
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-emerald-50/80 border-2 border-dashed border-emerald-400">
