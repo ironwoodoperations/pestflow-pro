@@ -70,7 +70,7 @@ export default function ComposerImagePicker({ imageUrl, mediaType = 'image', onI
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
       <h3 className="text-base font-semibold text-gray-900 mb-1">Photo or Video</h3>
-      <p className="text-xs text-gray-500">Upload a photo or video from your phone, gallery, or drive.</p>
+      <p className="text-xs text-gray-500">Upload a photo or video from your phone, gallery, or drive — use <span className="font-medium">Upload Photo or Video</span> for video. The Library holds photos only.</p>
       <p className="text-xs text-gray-500 mb-3">You can post one video <em>or</em> photos — not both. Adding a video replaces a selected photo.</p>
 
       <div className="flex gap-2 mb-4">
@@ -78,7 +78,7 @@ export default function ComposerImagePicker({ imageUrl, mediaType = 'image', onI
           onClick={() => setLibraryOpen(true)}
           className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition"
         >
-          🖼️ Choose from Library
+          🖼️ Choose Photo from Library
         </button>
         <button
           onClick={() => fileInputRef.current?.click()}
