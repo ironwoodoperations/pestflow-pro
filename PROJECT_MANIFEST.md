@@ -1040,3 +1040,12 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - src/components/admin/MediaTab.tsx
   - src/components/admin/social/ComposerImagePicker.tsx
 - Next recommended action: PR #145 open (draft) — Option A relabel (photos-only Library; video via composer). Scott merges. ALSO: manually delete dead remote branch feature/s250-media-accept-diagnose (git push --delete returns 403 from this env). Verify on prod after deploy.
+
+---
+## Session — 2026-06-02 15:50 UTC
+- Branch: `claude/festive-ritchie-H8xDo`
+- Commit: `cb2c56d` — task[1]: add voice-intake edge function (Remi AI receptionist VAPI webhook handler)
+- Author: Claude
+- Files changed:
+  - supabase/functions/voice-intake/index.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
