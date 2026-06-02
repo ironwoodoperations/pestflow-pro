@@ -1040,3 +1040,15 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - src/components/admin/MediaTab.tsx
   - src/components/admin/social/ComposerImagePicker.tsx
 - Next recommended action: PR #145 open (draft) — Option A relabel (photos-only Library; video via composer). Scott merges. ALSO: manually delete dead remote branch feature/s250-media-accept-diagnose (git push --delete returns 403 from this env). Verify on prod after deploy.
+
+---
+## Session — 2026-06-02 13:18 UTC
+- Branch: `claude/inspiring-noether-j6bpU`
+- Commit: `e32265d` — feat(s251): self-serve subscription upgrade (upgrade-only)
+- Author: Claude
+- Files changed:
+  - src/components/admin/BillingTab.tsx
+  - src/components/admin/UpgradeCards.tsx
+  - supabase/functions/create-upgrade-session/index.ts
+  - supabase/functions/stripe-webhook/index.ts
+- Next recommended action: PR #146 MERGED. Orchestrator post-merge steps: (1) redeploy create-upgrade-session with verify_jwt=ON; (2) redeploy stripe-webhook (new customer.subscription.updated branch); (3) apply processed_webhook_events migration via MCP; (4) stage coastal-pest stripe_billing row for testing; (5) Scott: disable self-serve downgrade in Stripe Billing Portal config.
