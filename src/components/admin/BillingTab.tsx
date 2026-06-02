@@ -270,9 +270,10 @@ export default function BillingTab() {
         </div>
       </div>
 
-      {/* Upgrade cards — only shown on real (non-demo) clients below Elite */}
-      {!isDemoTenant && subscription && tierNum(subscription.tier) < 4 && (
-        <UpgradeCards currentTier={tierNum(subscription.tier)} businessName={businessName} />
+      {/* Self-serve upgrade cards — real (non-demo) clients. Reads current tier from
+          usePlan() and calls create-upgrade-session; renders one card per tier. */}
+      {!isDemoTenant && subscription && (
+        <UpgradeCards businessName={businessName} />
       )}
 
       {/* Payment history */}

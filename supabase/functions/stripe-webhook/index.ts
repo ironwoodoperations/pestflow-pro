@@ -1,7 +1,13 @@
-// Edge Function: stripe-webhook
+// Edge Function: stripe-webhook v42
 // Handles Stripe webhook events: checkout.session.completed, invoice.payment_succeeded,
 // customer.subscription.deleted.
 // On checkout.session.completed: marks payment paid, then calls provision-tenant.
+//
+// Outbound calls:
+//   - provision-tenant     : x-pfp-internal-key + Authorization Bearer service-role [unchanged]
+//   - send-onboarding-email: apikey: SEND_ONBOARDING_EMAIL_INTERNAL_SECRET [v42: swapped
+//                            from Authorization Bearer service-role; matches new C3 gate
+//                            on send-onboarding-email v36+]
 
 import Stripe from 'https://esm.sh/stripe@14?target=deno'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -105,16 +111,18 @@ Deno.serve(async (req: Request) => {
         const companyName = pd.business_info?.name || pd.biz_name || clientEmail
         const slug = provisionData.slug || meta.slug || pd.slug
 
-        // Send onboarding email with login creds (non-blocking)
         if (clientEmail && pd.admin_password) {
+          // v42: swapped from Authorization Bearer service-role → apikey C3 gate
           fetch(`${supabaseUrl}/functions/v1/send-onboarding-email`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceRoleKey}` },
-            body: JSON.stringify({ to: clientEmail, company_name: companyName, live_url: `https://${slug}.pestflowpro.com`, admin_url: `https://${slug}.pestflowpro.com/admin/login`, admin_email: clientEmail, admin_password: pd.admin_password }),
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': Deno.env.get('SEND_ONBOARDING_EMAIL_INTERNAL_SECRET') ?? '',
+            },
+            body: JSON.stringify({ to: clientEmail, company_name: companyName, live_url: `https://${slug}.pestflowpro.ai`, admin_url: `https://${slug}.pestflowpro.ai/admin/login`, admin_email: clientEmail, admin_password: pd.admin_password }),
           }).catch(e => console.error('send-onboarding-email failed:', e.message))
         }
 
-        // Update prospect stage + Teams ping + welcome email
         try {
           const prospectEmail = session.customer_details?.email || (session as any).customer_email || clientEmail || ''
           const prospectId = session.metadata?.prospect_id
@@ -142,6 +150,81 @@ Deno.serve(async (req: Request) => {
       const subscription = event.data.object as Stripe.Subscription
       await supabase.from('stripe_payments').update({ status: 'cancelled', updated_at: new Date().toISOString() }).eq('stripe_subscription_id', subscription.id)
       console.log(`Subscription cancelled: ${subscription.id}`)
+
+    } else if (event.type === 'customer.subscription.updated') {
+      // S251: tier sync on self-serve upgrade / any managed price change.
+      // Resolution by STORED stripe_customer_id (no email). Fetch-fresh from Stripe.
+      // event.id idempotency. 500 on transient (DB) errors so Stripe retries; 200 on
+      // logic errors (unknown price / unresolvable tenant) since retry won't help.
+
+      const TIER_PRICE: Record<number, string> = {
+        1: 'price_1TNP7E2SfqMqfaLwlydZQM5u', 2: 'price_1TNP7A2SfqMqfaLwxVVdp6rf',
+        3: 'price_1TNP762SfqMqfaLwhC7MTvIm', 4: 'price_1TNP722SfqMqfaLwu8vH6hre',
+      }
+      const PRICE_TIER: Record<string, number> =
+        Object.fromEntries(Object.entries(TIER_PRICE).map(([t, p]) => [p, Number(t)]))
+      const KNOWN_PRICES = new Set(Object.values(TIER_PRICE))
+      const TIER_META: Record<number, { plan_name: string; monthly_price: number }> = {
+        1: { plan_name: 'Starter', monthly_price: 149 }, 2: { plan_name: 'Growth', monthly_price: 249 },
+        3: { plan_name: 'Pro', monthly_price: 349 }, 4: { plan_name: 'Elite', monthly_price: 499 },
+      }
+
+      // event.id idempotency (at-least-once delivery)
+      const { data: seen } = await supabase
+        .from('processed_webhook_events').select('event_id').eq('event_id', event.id).maybeSingle()
+      if (seen) { console.log(`[sub.updated] event ${event.id} already processed`); return ok() }
+
+      const evtSub = event.data.object as Stripe.Subscription
+
+      // fetch FRESH from Stripe (ordering/retry safety)
+      let sub: Stripe.Subscription
+      try {
+        const stripeClient = new Stripe(stripeKey, { apiVersion: '2023-10-16' as any })
+        sub = await stripeClient.subscriptions.retrieve(evtSub.id)
+      } catch (e: any) {
+        console.error('[sub.updated] subscription retrieve failed (transient):', e.message)
+        return new Response('retrieve failed', { status: 500 })
+      }
+
+      if (sub.status !== 'active') { console.log(`[sub.updated] status=${sub.status} — skip`); return ok() }
+
+      const tierItem = sub.items.data.find(it => KNOWN_PRICES.has(it.price.id))
+      const newTier = tierItem ? PRICE_TIER[tierItem.price.id] : undefined
+      if (!newTier) { console.warn(`[sub.updated] no known managed price on ${sub.id} — skip`); return ok() }
+
+      // resolve tenant by STORED stripe_customer_id (no email)
+      const { data: rows, error: rowsErr } = await supabase
+        .from('settings').select('tenant_id, value').eq('key', 'stripe_billing')
+      if (rowsErr) { console.error('[sub.updated] settings read failed (transient):', rowsErr.message); return new Response('db error', { status: 500 }) }
+      const match = (rows || []).find((r: any) => r.value?.customer_id === sub.customer)
+      const tenantId = match?.tenant_id || null
+      if (!tenantId) { console.warn(`[sub.updated] no tenant for customer ${sub.customer} — skip`); return ok() }
+
+      // idempotent tier write
+      const { data: subRow, error: subReadErr } = await supabase
+        .from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'subscription').maybeSingle()
+      if (subReadErr) { console.error('[sub.updated] tier read failed (transient):', subReadErr.message); return new Response('db error', { status: 500 }) }
+      const currentTier = (subRow?.value as { tier?: number } | null)?.tier
+
+      if (currentTier !== newTier) {
+        const meta = TIER_META[newTier]
+        const { error: upErr } = await supabase.from('settings')
+          .update({ value: { tier: newTier, plan_name: meta.plan_name, monthly_price: meta.monthly_price } })
+          .eq('tenant_id', tenantId).eq('key', 'subscription')
+        if (upErr) { console.error(`[sub.updated] tier write failed (transient) tenant ${tenantId}:`, upErr.message); return new Response('db error', { status: 500 }) }
+        console.log(`[sub.updated] tenant ${tenantId} tier ${currentTier ?? '?'} -> ${newTier}`)
+      } else {
+        console.log(`[sub.updated] tenant ${tenantId} already tier ${newTier} — no-op`)
+      }
+
+      // keep stripe_billing.current_price_id in sync (best-effort, non-fatal)
+      if (tierItem) {
+        const newVal = { ...(match.value || {}), current_price_id: tierItem.price.id }
+        await supabase.from('settings').update({ value: newVal }).eq('tenant_id', tenantId).eq('key', 'stripe_billing')
+      }
+
+      // mark event processed LAST
+      await supabase.from('processed_webhook_events').insert({ event_id: event.id, event_type: event.type })
     }
   } catch (err: any) {
     console.error('Webhook handler error:', err.message)
