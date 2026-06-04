@@ -1040,3 +1040,30 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - src/components/admin/MediaTab.tsx
   - src/components/admin/social/ComposerImagePicker.tsx
 - Next recommended action: PR #145 open (draft) — Option A relabel (photos-only Library; video via composer). Scott merges. ALSO: manually delete dead remote branch feature/s250-media-accept-diagnose (git push --delete returns 403 from this env). Verify on prod after deploy.
+
+---
+## Session — 2026-06-04 16:07 UTC
+- Branch: `feat/s253-a1-ai-authority`
+- Commit: `0b300f5` — feat(s253-a1): AI Authority Score — 3-engine, tier-gated (perplexity+openai live, claude deferred)
+- Author: Claude
+- Files changed:
+  - docs/audits/QA_REPORT_s253_a1.md
+  - docs/audits/REVIEW_s253_a1.md
+  - docs/migrations/s253-a1-ai-authority-scores-rpc.sql
+  - src/components/admin/ReportsTab.tsx
+  - src/components/admin/reports/AIAuthorityTile.tsx
+  - src/hooks/useAiAuthorityScore.ts
+  - src/lib/aiAuthority/engines.ts
+  - src/lib/aiAuthority/score.test.ts
+  - src/lib/aiAuthority/score.ts
+  - supabase/functions/_shared/aiAuthority/match.test.ts
+  - supabase/functions/_shared/aiAuthority/match.ts
+  - supabase/functions/_shared/aiAuthority/parsers.test.ts
+  - supabase/functions/_shared/aiAuthority/parsers.ts
+  - supabase/functions/_shared/aiAuthority/types.ts
+  - supabase/functions/_shared/aiProxyShared.ts
+  - supabase/functions/ai-authority-openai/index.ts
+  - supabase/functions/ai-authority-perplexity/index.ts
+  - supabase/functions/ai-authority-worker/index.ts
+  - supabase/functions/ai-proxy/index.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
