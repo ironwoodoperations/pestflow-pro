@@ -1089,3 +1089,20 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - supabase/functions/publish-scheduled-posts/index.ts
   - supabase/functions/run-migration/index.ts
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-06-04 18:55 UTC
+- Branch: `claude/nice-ride-heitZ`
+- Commit: `7fa54f2` — fix(s254): fail-hard getTenantSecret + reversible strip migration (validator gate)
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.md
+  - docs/migrations/s254-get-tenant-secret-rpc.sql
+  - docs/migrations/s254-strip-settings-secrets-rollback.sql
+  - docs/migrations/s254-strip-settings-secrets.sql
+  - supabase/functions/_shared/secrets/getTenantSecret.ts
+  - supabase/functions/ga4-analytics/index.ts
+  - supabase/functions/gsc-analytics/index.ts
+  - supabase/functions/process-sms-queue/index.ts
+  - supabase/functions/publish-scheduled-posts/index.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
