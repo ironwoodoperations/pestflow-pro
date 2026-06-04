@@ -4,6 +4,7 @@
 // never the model's self-report.
 
 import type { TenantContext, EngineAnswer } from './types.ts';
+import { getRegistrableDomain, isRegistrableCollapseEligible } from './registrableDomain.ts';
 
 // Normalize a hostname for exact comparison: lowercase, strip a single leading
 // "www.". (Ports/paths are already gone once we pull .hostname from URL.)
@@ -40,12 +41,46 @@ export function normalizeUrl(rawUrl: string): string {
   }
 }
 
-// True when a citation URL belongs to the tenant: exact owner-hostname match, OR
-// exact tracked-URL (host+path) match. Exact, NOT substring — avoids
-// austinpestpro vs austinpestpros (validator note).
+// True when a citation URL belongs to the tenant. Three independent signals:
+//   1. EXACT owner-host match — covers tenant-specific subdomains on shared/
+//      multi-tenant platforms (e.g. <slug>.pestflowpro.ai) which must NOT collapse.
+//   2. REGISTRABLE-domain (eTLD+1) match — only for owner hosts the tenant
+//      exclusively owns (bare apex / www./admin./… subdomain) plus an optional
+//      per-tenant canonical_apex override. Lets admin.X.com / www.X.com / X.com all
+//      match a citation of X.com (the A1 bug: tenants.custom_domain was the admin
+//      host while the engine cited the public apex). A cited URL on the same
+//      registrable domain — any subdomain — counts.
+//   3. EXACT tracked-URL (host+path) match — directory/listing URLs are never
+//      collapsed (citing yelp.com/biz/<competitor> must not count as the tenant).
+// Host/URL extraction drops query + fragment (URL.hostname / URL.pathname), so
+// tracking params like ?utm_source=openai never affect matching.
+// Exact-where-it-matters, NOT substring — avoids austinpestpro vs austinpestpros.
 export function citationMatchesTenant(rawUrl: string, ctx: TenantContext): boolean {
-  const owner = new Set(ctx.ownerHosts.map(normalizeHostname).filter(Boolean));
-  if (owner.has(hostnameOf(rawUrl))) return true;
+  const citedHost = hostnameOf(rawUrl);
+
+  if (citedHost) {
+    // 1) Exact owner-host match.
+    const ownerExact = new Set(ctx.ownerHosts.map(normalizeHostname).filter(Boolean));
+    if (ownerExact.has(citedHost)) return true;
+
+    // 2) Registrable-domain match for exclusively-owned apexes + canonical_apex.
+    const ownerApexes = new Set<string>();
+    for (const oh of ctx.ownerHosts) {
+      const n = normalizeHostname(oh);
+      if (n && isRegistrableCollapseEligible(n)) ownerApexes.add(getRegistrableDomain(n));
+    }
+    if (ctx.canonicalApex) {
+      // Pinned apex — trusted directly, bypassing the reducer (the long-tail
+      // safety net for any domain the reducer would get wrong).
+      const ca = normalizeHostname(ctx.canonicalApex);
+      if (ca) ownerApexes.add(ca);
+    }
+    for (const apex of ownerApexes) {
+      if (apex && (citedHost === apex || citedHost.endsWith(`.${apex}`))) return true;
+    }
+  }
+
+  // 3) Tracked directory/listing URLs — exact normalized URL (host + path).
   const tracked = new Set(ctx.trackedUrls.map(normalizeUrl).filter(Boolean));
   return tracked.size > 0 && tracked.has(normalizeUrl(rawUrl));
 }

@@ -55,18 +55,35 @@ async function resolveTenantContext(svc: SupabaseClient, tenantId: string): Prom
   if (tenant?.subdomain) addHost(tenant.subdomain.includes('.') ? tenant.subdomain : `${tenant.subdomain}.pestflowpro.ai`);
   if (tenant?.slug) addHost(`${tenant.slug}.pestflowpro.ai`);
 
+  // S253/A1 fix: the tenant's REAL public domain lives in tenant_domains, not in
+  // tenants.custom_domain (which often holds the admin host, e.g.
+  // admin.dangpestcontrol.com). Without these, the cited public apex never matches
+  // an owner host and the 0.45-weighted citation-rate component is silently zeroed.
+  const { data: domainRows } = await svc.from('tenant_domains')
+    .select('custom_domain').eq('tenant_id', tenantId);
+  for (const row of (domainRows ?? []) as Array<{ custom_domain?: string | null }>) {
+    addHost(row.custom_domain);
+  }
+
   const { data: biz } = await svc.from('settings')
     .select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle();
   const businessName = (biz?.value as { name?: string } | null)?.name || tenant?.name || '';
 
-  // Optional per-tenant tracked listing URLs (Yelp/Angi/GBP), settings key
-  // 'ai_authority' → { tracked_urls: string[] }. Absent → owner hosts only.
+  // Optional per-tenant settings key 'ai_authority':
+  //   { tracked_urls: string[], canonical_apex?: string }
+  // tracked_urls = directory/listing URLs (Yelp/Angi/GBP). canonical_apex = manual
+  // registrable-domain pin for tenants the reducer would get wrong. Both optional.
   const { data: aa } = await svc.from('settings')
     .select('value').eq('tenant_id', tenantId).eq('key', 'ai_authority').maybeSingle();
-  const trackedRaw = (aa?.value as { tracked_urls?: unknown } | null)?.tracked_urls;
+  const aaVal = (aa?.value as { tracked_urls?: unknown; canonical_apex?: unknown } | null);
+  const trackedRaw = aaVal?.tracked_urls;
   const trackedUrls = Array.isArray(trackedRaw) ? trackedRaw.filter((u): u is string => typeof u === 'string') : [];
+  const canonicalApexRaw = typeof aaVal?.canonical_apex === 'string' ? aaVal.canonical_apex.trim() : '';
+  const canonicalApex = canonicalApexRaw
+    ? normalizeHostname(canonicalApexRaw.includes('://') ? new URL(canonicalApexRaw).hostname : canonicalApexRaw.split('/')[0])
+    : undefined;
 
-  return { tenantId, businessName, ownerHosts: [...new Set(ownerHosts)], trackedUrls };
+  return { tenantId, businessName, ownerHosts: [...new Set(ownerHosts)], trackedUrls, canonicalApex };
 }
 
 serve(async (req) => {

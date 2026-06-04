@@ -27,13 +27,20 @@ export interface ParsedCitation {
 export interface TenantContext {
   tenantId: string;
   businessName: string;
-  // Hostnames the tenant OWNS (matched by exact hostname): custom_domain,
-  // <subdomain>.pestflowpro.ai, <slug>.pestflowpro.ai. Normalized (lowercase, no www).
+  // Hostnames the tenant OWNS. Matched by exact host AND — for exclusively-owned
+  // apexes (bare apex / www./admin./… subdomain) — by registrable domain (eTLD+1).
+  // Sourced from tenants.custom_domain, tenant_domains.custom_domain (the real
+  // public domain), <subdomain>.pestflowpro.ai, <slug>.pestflowpro.ai. Normalized
+  // (lowercase, no www).
   ownerHosts: string[];
   // Specific directory/listing URLs the tenant controls (Yelp/Angi/GBP profile
   // pages). Matched by normalized full URL (host + path), NOT bare hostname —
   // otherwise every yelp.com citation would count. Optional per-tenant list.
   trackedUrls: string[];
+  // Optional per-tenant canonical apex override (settings.ai_authority.canonical_apex).
+  // When set, used directly as an owned registrable domain — bypasses the reducer
+  // for tenants whose domain the reducer would get wrong. Absent → reducer runs.
+  canonicalApex?: string;
 }
 
 // Per-engine answer extracted from an engine response before scoring.
