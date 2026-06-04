@@ -1,45 +1,43 @@
--- s254 strip settings secrets — ROLLBACK
+-- s254 strip settings secrets — ROLLBACK (restore from backup table)
 --
--- Re-inserts the 4 secrets back into settings.integrations FROM VAULT, undoing
--- s254-strip-settings-secrets.sql. Only needed if the vault read-path has to be
--- abandoned and the functions reverted to reading from settings.
+-- Restores settings.integrations from public._secret_migration_backup, undoing
+-- s254-strip-settings-secrets.sql. No full DB snapshot / downtime required.
 --
--- IMPORTANT: rollback requires reading the vault values back out. It depends on
--- the get_tenant_secret RPC (or direct vault access) still being present and the
--- per-tenant vault entries (tenant_<id>_<secret>) still populated. If vault has
--- already been torn down, there is nothing to restore from — re-collect the
--- secrets from their sources (Facebook, Google OAuth, Textbelt) instead.
+-- This restores the ENTIRE integrations blob captured at strip time (which
+-- includes the 4 secrets and all non-secret keys as they were then). Run this
+-- only if the Vault read-path has to be abandoned and the functions reverted to
+-- reading secrets from settings.
 --
--- This restores each secret per-tenant for every tenant that has a vault entry.
--- Keys whose vault entry is absent/empty are left out (matches pre-strip state
--- where the key may simply not have existed).
+-- PREREQUISITE: public._secret_migration_backup must still exist (it is kept for
+-- at least one sprint post-strip). If it was already dropped, restore from Vault
+-- instead (re-collect the 4 secrets via get_tenant_secret per tenant) or from a
+-- DB snapshot.
+--
+-- NOTE: any NON-secret edits made to settings.integrations between the strip and
+-- this rollback would be reverted to their strip-time values, because this does
+-- a full-blob restore (matches the validator-specified DOWN form). If preserving
+-- post-strip non-secret edits matters, restore only the 4 secret keys instead
+-- (commented variant below).
 
-DO $$
-DECLARE
-  r RECORD;
-  _secret_names text[] := ARRAY[
-    'facebook_access_token',
-    'ga4_oauth_refresh_token',
-    'gsc_oauth_refresh_token',
-    'textbelt_api_key'
-  ];
-  _name text;
-  _val text;
-BEGIN
-  FOR r IN SELECT tenant_id FROM public.settings WHERE key = 'integrations' LOOP
-    FOREACH _name IN ARRAY _secret_names LOOP
-      SELECT decrypted_secret INTO _val
-      FROM vault.decrypted_secrets
-      WHERE name = 'tenant_' || r.tenant_id::text || '_' || _name
-      LIMIT 1;
+-- Full-blob restore (validator-specified form):
+UPDATE public.settings s
+  SET value = b.integration_blob,
+      updated_at = now()
+  FROM public._secret_migration_backup b
+  WHERE s.id = b.id;
 
-      IF _val IS NOT NULL AND _val <> '' THEN
-        UPDATE public.settings
-          SET value = value || jsonb_build_object(_name, _val)
-          WHERE key = 'integrations' AND tenant_id = r.tenant_id;
-      END IF;
-    END LOOP;
-  END LOOP;
-END $$;
+-- Alternative — restore ONLY the 4 secret keys, preserving any post-strip
+-- non-secret edits (uncomment to use instead of the full-blob restore above):
+-- UPDATE public.settings s
+--   SET value = s.value
+--         || jsonb_strip_nulls(jsonb_build_object(
+--              'facebook_access_token',    b.integration_blob->>'facebook_access_token',
+--              'ga4_oauth_refresh_token',  b.integration_blob->>'ga4_oauth_refresh_token',
+--              'gsc_oauth_refresh_token',  b.integration_blob->>'gsc_oauth_refresh_token',
+--              'textbelt_api_key',         b.integration_blob->>'textbelt_api_key'
+--            )),
+--       updated_at = now()
+--   FROM public._secret_migration_backup b
+--   WHERE s.id = b.id;
 
 NOTIFY pgrst, 'reload schema';

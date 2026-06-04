@@ -21,12 +21,37 @@
 //   (trigger_notify_new_lead reads vault inside a SECURITY DEFINER function).
 //
 // SERVICE-ROLE ONLY: pass a service-role Supabase client. get_tenant_secret is
-// not executable by anon/authenticated.
+// not executable by anon/authenticated. tenantId AND secretName are passed
+// explicitly — never derived from a JWT/session inside this helper.
 //
-// FAIL-SOFT: on any missing/empty value or error, returns null and logs a
-// warning — never throws. Callers treat null exactly like the old empty
-// settings value (no-op / skip gracefully). This matches the
-// trigger_notify_new_lead fail-soft convention.
+// FAIL-HARD (S254 validator gate): this helper NEVER returns null/empty. A
+// missing secret throws VaultSecretMissingError; a decryption/transport/RPC
+// error throws VaultSecretAccessError. This makes it impossible to silently
+// pass a null credential to Textbelt / Facebook Graph / Google. Each call site
+// catches and decides: treat "missing" as the integration's not-configured
+// state (skip / unconfigured / no-credentials), and surface an access error
+// loudly. There is intentionally NO fallback-read to settings.integrations —
+// Vault is populated + verified before the strip, so a fallback would only
+// mask the missing-secret failure we want surfaced.
+
+// Thrown when the named secret simply does not exist (or is empty) in Vault.
+// Call sites map this to "this integration isn't configured for this tenant".
+export class VaultSecretMissingError extends Error {
+  constructor(public readonly vaultName: string) {
+    super(`Vault secret missing: ${vaultName}`)
+    this.name = 'VaultSecretMissingError'
+  }
+}
+
+// Thrown when the RPC/decryption/transport itself failed (pgsodium/key issue,
+// network, RPC error). Distinct from "missing" so call sites can fail loudly
+// instead of silently treating a broken Vault as "not configured".
+export class VaultSecretAccessError extends Error {
+  constructor(public readonly vaultName: string, cause: string) {
+    super(`Vault read failed for ${vaultName}: ${cause}`)
+    this.name = 'VaultSecretAccessError'
+  }
+}
 
 // Loosely typed to avoid version-coupling this shared helper to a specific
 // supabase-js import. Any client exposing .rpc() satisfies it.
@@ -41,35 +66,33 @@ export async function getTenantSecret(
   serviceClient: RpcCapableClient,
   tenantId: string,
   secretName: string,
-): Promise<string | null> {
-  if (!tenantId || !secretName) {
-    console.warn('[getTenantSecret] missing tenantId or secretName; returning null')
-    return null
-  }
-
+): Promise<string> {
   const vaultName = `tenant_${tenantId}_${secretName}`
 
+  if (!tenantId || !secretName) {
+    throw new VaultSecretAccessError(vaultName, 'missing tenantId or secretName')
+  }
+
+  let data: unknown
   try {
-    const { data, error } = await serviceClient.rpc('get_tenant_secret', {
+    const res = await serviceClient.rpc('get_tenant_secret', {
       p_tenant_id: tenantId,
       p_secret_name: secretName,
     })
-
-    if (error) {
-      console.warn(`[getTenantSecret] vault read failed for ${vaultName}: ${error.message}`)
-      return null
+    if (res.error) {
+      throw new VaultSecretAccessError(vaultName, res.error.message)
     }
-
-    const value = typeof data === 'string' ? data.trim() : ''
-    if (!value) {
-      console.warn(`[getTenantSecret] no vault secret for ${vaultName} (returning null)`)
-      return null
-    }
-
-    return value
+    data = res.data
   } catch (err) {
+    if (err instanceof VaultSecretAccessError) throw err
     const msg = err instanceof Error ? err.message : String(err)
-    console.warn(`[getTenantSecret] unexpected error reading ${vaultName}: ${msg}`)
-    return null
+    throw new VaultSecretAccessError(vaultName, msg)
   }
+
+  const value = typeof data === 'string' ? data.trim() : ''
+  if (!value) {
+    throw new VaultSecretMissingError(vaultName)
+  }
+
+  return value
 }

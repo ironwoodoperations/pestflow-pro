@@ -16,7 +16,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { timingSafeEqual } from 'node:crypto'
-import { getTenantSecret } from '../_shared/secrets/getTenantSecret.ts'
+import { getTenantSecret, VaultSecretMissingError } from '../_shared/secrets/getTenantSecret.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -261,18 +261,42 @@ export async function handler(req: Request): Promise<Response> {
       continue
     }
 
-    // S254: Facebook page access token now lives in Vault (was
-    // settings.integrations.facebook_access_token). Resolved only on the FB
-    // fallback path (the Zernio path above `continue`s before reaching here).
-    const fbAccessToken = await getTenantSecret(supabase, post.tenant_id, 'facebook_access_token')
-
-    if (post.platform === 'instagram' || !fbAccessToken || !intg.facebook_page_id) {
+    // Instagram, or no FB page configured → no Facebook send (no token needed).
+    if (post.platform === 'instagram' || !intg.facebook_page_id) {
       await supabase.from('social_posts').update({
         status: 'published',
         published_at: new Date().toISOString(),
         fb_post_id: 'no-credentials',
       }).eq('id', post.id)
       published++
+      continue
+    }
+
+    // S254: Facebook page access token now lives in Vault (was
+    // settings.integrations.facebook_access_token). Fail-hard helper: a missing
+    // token = this tenant has no FB credentials (same as the old no-credentials
+    // path); a Vault access error fails the post loudly rather than POSTing an
+    // empty access_token to Facebook Graph.
+    let fbAccessToken: string
+    try {
+      fbAccessToken = await getTenantSecret(supabase, post.tenant_id, 'facebook_access_token')
+    } catch (e) {
+      if (e instanceof VaultSecretMissingError) {
+        await supabase.from('social_posts').update({
+          status: 'published',
+          published_at: new Date().toISOString(),
+          fb_post_id: 'no-credentials',
+        }).eq('id', post.id)
+        published++
+        continue
+      }
+      const msg = e instanceof Error ? e.message : String(e)
+      console.error(`[publish-scheduled-posts] vault read error ${post.id}:`, msg)
+      await supabase.from('social_posts').update({
+        status: 'failed',
+        error_msg: `Vault read error (facebook_access_token): ${msg}`,
+      }).eq('id', post.id)
+      failed++
       continue
     }
 

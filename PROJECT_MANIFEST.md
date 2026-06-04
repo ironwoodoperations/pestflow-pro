@@ -1070,3 +1070,22 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - docs/onboarding/CUSTOMER_SITE_DISCOVERY_PROMPT.md
   - docs/onboarding/faithful-rebuild-runbook.md
 - Next recommended action: PR #149 open (draft, docs-only) — adds the Redirect Cutover Verification Gate to the rebuild runbook. Scott reviews/merges. Operational reminder still stands: the redirect map is fail-soft, so for any rebuild-on-shell cutover run the 4-gate verification (env-vars → row-count → deployed-map → live spot-check) before marking complete — a green deploy alone does NOT prove redirects shipped.
+
+---
+## Session — 2026-06-04 18:32 UTC
+- Branch: `claude/nice-ride-heitZ`
+- Commit: `a171eb1` — feat(s254): vault migration for settings secrets + remove run-migration fn
+- Author: Claude
+- Files changed:
+  - docs/migrations/s254-get-tenant-secret-rpc-rollback.sql
+  - docs/migrations/s254-get-tenant-secret-rpc.sql
+  - docs/migrations/s254-strip-settings-secrets-rollback.sql
+  - docs/migrations/s254-strip-settings-secrets.sql
+  - supabase/functions/_shared/secrets/getTenantSecret.ts
+  - supabase/functions/ga4-analytics/index.ts
+  - supabase/functions/gsc-analytics/index.ts
+  - supabase/functions/notify-new-lead/index.ts
+  - supabase/functions/process-sms-queue/index.ts
+  - supabase/functions/publish-scheduled-posts/index.ts
+  - supabase/functions/run-migration/index.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]

@@ -15,7 +15,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { requireTenantUser, AuthError } from '../_shared/auth/requireTenantUser.ts'
 import { getCorsHeaders } from '../_shared/cors.ts'
-import { getTenantSecret } from '../_shared/secrets/getTenantSecret.ts'
+import { getTenantSecret, VaultSecretMissingError } from '../_shared/secrets/getTenantSecret.ts'
 
 // verify_jwt:true validates signature before this code runs.
 // Reading `role` claim from the already-trusted JWT is safe.
@@ -114,12 +114,25 @@ serve(async (req) => {
 
     // Check refresh token first — gate on unconfigured before anything else.
     // S254: GSC OAuth refresh token now lives in Vault (was
-    // settings.integrations.gsc_oauth_refresh_token).
-    const refreshToken = await getTenantSecret(supabaseAdmin, tenantId, 'gsc_oauth_refresh_token')
-    if (!refreshToken) {
-      const run = await writeRun({ status: 'unconfigured' })
+    // settings.integrations.gsc_oauth_refresh_token). Fail-hard helper:
+    // "missing" = not connected (unconfigured); a Vault access error is surfaced
+    // loudly as an error run rather than attempting a token exchange with a null
+    // refresh token.
+    let refreshToken: string
+    try {
+      refreshToken = await getTenantSecret(supabaseAdmin, tenantId, 'gsc_oauth_refresh_token')
+    } catch (e) {
+      if (e instanceof VaultSecretMissingError) {
+        const run = await writeRun({ status: 'unconfigured' })
+        return new Response(
+          JSON.stringify({ status: 'unconfigured', message: 'Google Search Console not connected.', run }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        )
+      }
+      const msg = e instanceof Error ? e.message : String(e)
+      const run = await writeRun({ status: 'error', api_error_code: 'vault_read_error', api_error_msg: msg })
       return new Response(
-        JSON.stringify({ status: 'unconfigured', message: 'Google Search Console not connected.', run }),
+        JSON.stringify({ status: 'error', message: 'Failed to read Google Search Console credentials from Vault.', run }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }

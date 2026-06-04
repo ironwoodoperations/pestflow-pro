@@ -15,7 +15,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { requireTenantUser, AuthError } from '../_shared/auth/requireTenantUser.ts'
 import { getCorsHeaders } from '../_shared/cors.ts'
-import { getTenantSecret } from '../_shared/secrets/getTenantSecret.ts'
+import { getTenantSecret, VaultSecretMissingError } from '../_shared/secrets/getTenantSecret.ts'
 
 function isServiceRoleToken(token: string): boolean {
   try {
@@ -98,12 +98,25 @@ serve(async (req) => {
     }
 
     // S254: GA4 OAuth refresh token now lives in Vault (was
-    // settings.integrations.ga4_oauth_refresh_token).
-    const refreshToken = await getTenantSecret(supabaseAdmin, tenantId, 'ga4_oauth_refresh_token')
-    if (!refreshToken) {
-      const run = await writeRun({ status: 'unconfigured' })
+    // settings.integrations.ga4_oauth_refresh_token). Fail-hard helper:
+    // "missing" = not connected (unconfigured); a Vault access error is surfaced
+    // loudly as an error run rather than attempting a token exchange with a null
+    // refresh token.
+    let refreshToken: string
+    try {
+      refreshToken = await getTenantSecret(supabaseAdmin, tenantId, 'ga4_oauth_refresh_token')
+    } catch (e) {
+      if (e instanceof VaultSecretMissingError) {
+        const run = await writeRun({ status: 'unconfigured' })
+        return new Response(
+          JSON.stringify({ status: 'unconfigured', message: 'Google Analytics 4 not connected.', run }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        )
+      }
+      const msg = e instanceof Error ? e.message : String(e)
+      const run = await writeRun({ status: 'error', api_error_code: 'vault_read_error', api_error_msg: msg })
       return new Response(
-        JSON.stringify({ status: 'unconfigured', message: 'Google Analytics 4 not connected.', run }),
+        JSON.stringify({ status: 'error', message: 'Failed to read Google Analytics credentials from Vault.', run }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
