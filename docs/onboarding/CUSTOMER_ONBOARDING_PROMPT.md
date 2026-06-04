@@ -133,7 +133,7 @@ Skip this entire phase if `deployment_model: shared_shell` AND `migration_path: 
      ]
    }
    ```
-   For `rebuild_on_shell` customers: **confirm whether per-tenant redirect mechanism exists on shared shells.** If not, this is a known gap surfaced in discovery Phase 6 — either build the mechanism first, switch the customer to `custom_build`, or accept that legacy URLs return 404 (record the SEO loss).
+   For `rebuild_on_shell` customers: the per-tenant redirect mechanism **exists** (S253/D1). Do NOT edit `vercel.json` — instead insert one row per redirect into `public.tenant_redirects` (`from_path`, `to_path`, `status_code` default 308) keyed by the tenant's `tenant_id`. The map is bundled at build time, so **redirects go live on the next (cutover) deploy, not instantly.** Full flow: `docs/onboarding/faithful-rebuild-runbook.md`.
 7. **First deploy:** Vercel auto-builds on the feature branch. Confirm READY state via `list_deployments`.
 8. **Admin subdomain:** `{slug}.pestflowpro.ai/admin` always lives on the PFP Vite SPA (NOT the standalone site). Confirm DNS for the `{slug}` CNAME under `pestflowpro.ai` resolves.
 
