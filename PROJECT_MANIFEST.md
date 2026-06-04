@@ -1070,3 +1070,12 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - docs/onboarding/CUSTOMER_SITE_DISCOVERY_PROMPT.md
   - docs/onboarding/faithful-rebuild-runbook.md
 - Next recommended action: PR #149 open (draft, docs-only) — adds the Redirect Cutover Verification Gate to the rebuild runbook. Scott reviews/merges. Operational reminder still stands: the redirect map is fail-soft, so for any rebuild-on-shell cutover run the 4-gate verification (env-vars → row-count → deployed-map → live spot-check) before marking complete — a green deploy alone does NOT prove redirects shipped.
+
+---
+## Session — 2026-06-04 17:17 UTC
+- Branch: `chore/s253-a1-config-verify-jwt`
+- Commit: `0824f8b` — chore(s253-a1): pin verify_jwt=false for the 3 AI Authority edge functions
+- Author: Claude
+- Files changed:
+  - supabase/config.toml
+- Next recommended action: [Fill in next session: read this line, write what comes next]
