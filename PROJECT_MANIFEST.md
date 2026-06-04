@@ -1040,3 +1040,33 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - src/components/admin/MediaTab.tsx
   - src/components/admin/social/ComposerImagePicker.tsx
 - Next recommended action: PR #145 open (draft) — Option A relabel (photos-only Library; video via composer). Scott merges. ALSO: manually delete dead remote branch feature/s250-media-accept-diagnose (git push --delete returns 403 from this env). Verify on prod after deploy.
+
+---
+## Session — 2026-06-04 13:16 UTC
+- Branch: `claude/peaceful-sagan-xbCiL`
+- Commit: `b4efddd` — feat(s253-d1): per-tenant redirect mechanism via build-time JSON map
+- Author: Claude
+- Files changed:
+  - docs/audits/QA_REPORT_s253_d1.md
+  - docs/audits/REVIEW_s253_d1.md
+  - docs/migrations/s253-d1-tenant-redirects-rollback.sql
+  - docs/onboarding/CUSTOMER_ONBOARDING_PROMPT.md
+  - docs/onboarding/CUSTOMER_SITE_DISCOVERY_PROMPT.md
+  - docs/onboarding/faithful-rebuild-runbook.md
+  - middleware.ts
+  - package.json
+  - redirects-map.json
+  - redirects-normalize.mjs
+  - scripts/generate-redirects-map.mjs
+- Next recommended action: PR #148 MERGED to main. Before Customer #2 cutover: set `SUPABASE_SERVICE_ROLE_KEY` (+ `SUPABASE_URL`/`VITE_SUPABASE_URL`) in the Vercel project (production scope) so `prebuild` populates `redirects-map.json` — absent → empty map (safe, but no redirects fire). Author redirects as rows in `public.tenant_redirects` (NOT vercel.json) per `docs/onboarding/faithful-rebuild-runbook.md`; redirects go live only on the next deploy.
+
+---
+## Session — 2026-06-04 13:40 UTC
+- Branch: `claude/peaceful-sagan-xbCiL`
+- Commit: `ce7b6d4` — docs(s253-d1): add Redirect Cutover Verification Gate to rebuild runbook
+- Author: Claude
+- Files changed:
+  - docs/onboarding/CUSTOMER_ONBOARDING_PROMPT.md
+  - docs/onboarding/CUSTOMER_SITE_DISCOVERY_PROMPT.md
+  - docs/onboarding/faithful-rebuild-runbook.md
+- Next recommended action: PR #149 open (draft, docs-only) — adds the Redirect Cutover Verification Gate to the rebuild runbook. Scott reviews/merges. Operational reminder still stands: the redirect map is fail-soft, so for any rebuild-on-shell cutover run the 4-gate verification (env-vars → row-count → deployed-map → live spot-check) before marking complete — a green deploy alone does NOT prove redirects shipped.
