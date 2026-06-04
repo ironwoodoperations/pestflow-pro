@@ -1,4 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import redirectsMapJson from './redirects-map.json';
+import { canonicalizePath } from './redirects-normalize.mjs';
+
+// S253 / D1 — per-tenant redirect projection. Source of truth is
+// public.tenant_redirects; this JSON is a build-time derived artifact emitted by
+// scripts/generate-redirects-map.mjs (prebuild). Middleware does a synchronous
+// in-memory lookup — NO DB round-trip on the Edge path. Bundle hygiene (Task 2):
+// the only redirect imports here are this JSON and the tiny zero-dep normalizer.
+type RedirectEntry = { to: string; status: number };
+const redirectsMap = redirectsMapJson as Record<string, Record<string, RedirectEntry>>;
 
 const APEX_HOSTS = new Set([
   'pestflowpro.com',
@@ -121,6 +131,22 @@ export function middleware(req: NextRequest) {
     }
 
     return new NextResponse(null, { status: 404 });
+  }
+
+  // S253 / D1 — per-tenant 301/308 redirects (build-time bundled map; no DB on
+  // the Edge path). PURELY ADDITIVE: only a positive match early-returns; every
+  // miss falls through to the existing routing below unchanged. Slug is non-null
+  // here (apex returned above). Default status is 308 (preserves HTTP method;
+  // Google treats it as 301 for link equity) but each row carries its own status.
+  const slugRedirects = redirectsMap[slug];
+  if (slugRedirects) {
+    const match = slugRedirects[canonicalizePath(pathname)];
+    if (match) {
+      const target = new URL(match.to, req.url);
+      // Re-append the original query string so UTM/tracking params survive.
+      target.search = req.nextUrl.search;
+      return NextResponse.redirect(target, { status: match.status });
+    }
   }
 
   // Client admin on any subdomain → Vite SPA
