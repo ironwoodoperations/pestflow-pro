@@ -14,6 +14,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { timingSafeEqual } from 'node:crypto'
 import { classifyNumber } from '../_shared/area-code-states.ts'
 import { isInQuietWindow } from '../_shared/quiet-hours.ts'
+import { getTenantSecret, VaultSecretMissingError } from '../_shared/secrets/getTenantSecret.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -27,10 +28,6 @@ interface QueueRow {
   message: string
   type: string
   attempts: number
-}
-
-interface IntegrationSettings {
-  textbelt_api_key?: string
 }
 
 const BACKOFF_MS = [
@@ -110,12 +107,29 @@ serve(async (req) => {
       continue
     }
 
-    // Resolve Textbelt key: tenant integrations first, env fallback.
-    const { data: settingsData } = await supabase
-      .from('settings').select('value')
-      .eq('tenant_id', row.tenant_id).eq('key', 'integrations').maybeSingle()
-    const intg = (settingsData?.value ?? {}) as IntegrationSettings
-    const textbeltKey = intg.textbelt_api_key?.trim() || envTextbeltKey
+    // Resolve Textbelt key: tenant secret from Vault first (S254), platform env
+    // key as fallback. Was settings.integrations.textbelt_api_key. getTenantSecret
+    // fails hard, so we distinguish "no tenant key in Vault" (→ use the platform
+    // env key) from a Vault access error (→ requeue this row loudly; never
+    // blind-send with no credential).
+    let tenantTextbeltKey: string | null = null
+    try {
+      tenantTextbeltKey = await getTenantSecret(supabase, row.tenant_id, 'textbelt_api_key')
+    } catch (e) {
+      if (!(e instanceof VaultSecretMissingError)) {
+        const msg = e instanceof Error ? e.message : String(e)
+        console.error(`[process-sms-queue] ${row.id} vault read error:`, msg)
+        await supabase.from('sms_queue').update({
+          status: 'queued',
+          last_error: `Vault read error (textbelt_api_key): ${msg}`,
+          updated_at: new Date().toISOString(),
+        }).eq('id', row.id)
+        requeued++
+        continue
+      }
+      // VaultSecretMissingError → no tenant-specific key; fall through to env key.
+    }
+    const textbeltKey = tenantTextbeltKey || envTextbeltKey
     if (!textbeltKey) {
       await supabase.from('sms_queue').update({
         status: 'failed',

@@ -99,12 +99,13 @@ export async function handler(req: Request): Promise<Response> {
     const firstName = lead.name?.split(' ')[0] || lead.name || 'there'
     const timestamp = new Date(lead.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })
 
-    // Use tenant's own Textbelt key if set; fall back to platform key from secrets
-    const textbeltKey = intRes.data?.value?.textbelt_api_key?.trim() ||
-                        Deno.env.get('TEXTBELT_API_KEY') || ''
+    // S254: the tenant Textbelt key read here was vestigial — it was only logged,
+    // never used to send (the SMS below routes through the send-sms function,
+    // which uses the platform TEXTBELT_API_KEY env secret). Removed the dead
+    // settings read so this secret no longer leaves Vault.
     const ownerSms: string = intRes.data?.value?.owner_sms_number || ''
 
-    console.log('[notify-new-lead] settings loaded — lead_email:', notifyEmail || '(none)', 'sms_number:', ownerSms || '(none)', 'textbelt_key_len:', textbeltKey.length)
+    console.log('[notify-new-lead] settings loaded — lead_email:', notifyEmail || '(none)', 'sms_number:', ownerSms || '(none)')
 
     const results: Record<string, unknown> = {}
 
