@@ -16,6 +16,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { timingSafeEqual } from 'node:crypto'
+import { getTenantSecret } from '../_shared/secrets/getTenantSecret.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -35,7 +36,6 @@ interface SocialPost {
 
 interface IntegrationSettings {
   zernio_accounts?: Record<string, string>
-  facebook_access_token?: string
   facebook_page_id?: string
 }
 
@@ -261,7 +261,12 @@ export async function handler(req: Request): Promise<Response> {
       continue
     }
 
-    if (post.platform === 'instagram' || !intg.facebook_access_token || !intg.facebook_page_id) {
+    // S254: Facebook page access token now lives in Vault (was
+    // settings.integrations.facebook_access_token). Resolved only on the FB
+    // fallback path (the Zernio path above `continue`s before reaching here).
+    const fbAccessToken = await getTenantSecret(supabase, post.tenant_id, 'facebook_access_token')
+
+    if (post.platform === 'instagram' || !fbAccessToken || !intg.facebook_page_id) {
       await supabase.from('social_posts').update({
         status: 'published',
         published_at: new Date().toISOString(),
@@ -276,8 +281,8 @@ export async function handler(req: Request): Promise<Response> {
         ? `https://graph.facebook.com/v19.0/${intg.facebook_page_id}/photos`
         : `https://graph.facebook.com/v19.0/${intg.facebook_page_id}/feed`
       const fbBody: Record<string, string> = post.image_url
-        ? { url: post.image_url, caption: post.caption, access_token: intg.facebook_access_token }
-        : { message: post.caption, access_token: intg.facebook_access_token }
+        ? { url: post.image_url, caption: post.caption, access_token: fbAccessToken }
+        : { message: post.caption, access_token: fbAccessToken }
 
       const res = await fetch(endpoint, {
         method: 'POST',

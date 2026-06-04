@@ -14,6 +14,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { timingSafeEqual } from 'node:crypto'
 import { classifyNumber } from '../_shared/area-code-states.ts'
 import { isInQuietWindow } from '../_shared/quiet-hours.ts'
+import { getTenantSecret } from '../_shared/secrets/getTenantSecret.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -27,10 +28,6 @@ interface QueueRow {
   message: string
   type: string
   attempts: number
-}
-
-interface IntegrationSettings {
-  textbelt_api_key?: string
 }
 
 const BACKOFF_MS = [
@@ -110,12 +107,11 @@ serve(async (req) => {
       continue
     }
 
-    // Resolve Textbelt key: tenant integrations first, env fallback.
-    const { data: settingsData } = await supabase
-      .from('settings').select('value')
-      .eq('tenant_id', row.tenant_id).eq('key', 'integrations').maybeSingle()
-    const intg = (settingsData?.value ?? {}) as IntegrationSettings
-    const textbeltKey = intg.textbelt_api_key?.trim() || envTextbeltKey
+    // Resolve Textbelt key: tenant secret from Vault first (S254), env fallback.
+    // Was settings.integrations.textbelt_api_key; now lives in Vault so it can
+    // never be re-exposed by a settings RLS/policy change.
+    const tenantTextbeltKey = await getTenantSecret(supabase, row.tenant_id, 'textbelt_api_key')
+    const textbeltKey = tenantTextbeltKey || envTextbeltKey
     if (!textbeltKey) {
       await supabase.from('sms_queue').update({
         status: 'failed',

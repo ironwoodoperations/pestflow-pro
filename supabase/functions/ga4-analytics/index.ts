@@ -15,6 +15,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { requireTenantUser, AuthError } from '../_shared/auth/requireTenantUser.ts'
 import { getCorsHeaders } from '../_shared/cors.ts'
+import { getTenantSecret } from '../_shared/secrets/getTenantSecret.ts'
 
 function isServiceRoleToken(token: string): boolean {
   try {
@@ -80,7 +81,6 @@ serve(async (req) => {
       .maybeSingle()
 
     const integrations = (intSetting?.value ?? {}) as {
-      ga4_oauth_refresh_token?: string | null
       ga4_property_id?: string | null
     }
 
@@ -97,7 +97,9 @@ serve(async (req) => {
       return data
     }
 
-    const refreshToken = integrations.ga4_oauth_refresh_token
+    // S254: GA4 OAuth refresh token now lives in Vault (was
+    // settings.integrations.ga4_oauth_refresh_token).
+    const refreshToken = await getTenantSecret(supabaseAdmin, tenantId, 'ga4_oauth_refresh_token')
     if (!refreshToken) {
       const run = await writeRun({ status: 'unconfigured' })
       return new Response(

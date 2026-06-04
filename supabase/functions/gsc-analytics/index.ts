@@ -15,6 +15,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { requireTenantUser, AuthError } from '../_shared/auth/requireTenantUser.ts'
 import { getCorsHeaders } from '../_shared/cors.ts'
+import { getTenantSecret } from '../_shared/secrets/getTenantSecret.ts'
 
 // verify_jwt:true validates signature before this code runs.
 // Reading `role` claim from the already-trusted JWT is safe.
@@ -94,7 +95,6 @@ serve(async (req) => {
       .maybeSingle()
 
     const integrations = (intSetting?.value ?? {}) as {
-      gsc_oauth_refresh_token?: string | null
       gsc_site_url?: string | null
       google_search_console_url?: string | null
     }
@@ -113,7 +113,9 @@ serve(async (req) => {
     }
 
     // Check refresh token first — gate on unconfigured before anything else.
-    const refreshToken = integrations.gsc_oauth_refresh_token
+    // S254: GSC OAuth refresh token now lives in Vault (was
+    // settings.integrations.gsc_oauth_refresh_token).
+    const refreshToken = await getTenantSecret(supabaseAdmin, tenantId, 'gsc_oauth_refresh_token')
     if (!refreshToken) {
       const run = await writeRun({ status: 'unconfigured' })
       return new Response(
