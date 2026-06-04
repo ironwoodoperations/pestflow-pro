@@ -77,17 +77,102 @@ mechanism is the **`public.tenant_redirects` table → build-time
    redirects. The build needs `SUPABASE_SERVICE_ROLE_KEY` (and
    `SUPABASE_URL`/`VITE_SUPABASE_URL`) set in the Vercel project (production
    scope); if absent the build emits an empty map and logs a warning rather than
-   failing.
+   failing — see Gate 1 below, this is the #1 silent-failure cause.
 
-5. **Verify after the deploy is READY.** Spot-test the HIGH-priority redirects:
+5. **Run the [Redirect Cutover Verification Gate](#redirect-cutover-verification-gate).**
+   A green deploy does not prove the redirects shipped. Complete all four gates
+   below — do not mark the cutover complete until Gate 3 and Gate 4 both pass.
 
-   ```
-   curl -I https://<slug>.pestflowpro.ai/<old_path>
-   # expect: 308 (or the row's status) with Location: <to_path>, query string preserved
-   ```
+## Redirect Cutover Verification Gate
 
-   UTM/tracking query params on the incoming request are re-appended to the
-   destination automatically.
+**This gate is MANDATORY for every rebuild-on-shell cutover.** The redirect map
+is fail-soft: a misconfigured deploy ships zero redirects AND goes green, which
+silently collapses the tenant's SEO with no error anywhere.
+
+> **A green deploy is not proof the redirects shipped. Only the deployed-map
+> assertion (step 3) and the live redirect spot-check (step 4) prove it. Do not
+> mark a cutover complete until both pass.**
+
+Work the gates in order. Each is pass/fail — a failure blocks the cutover.
+
+### Gate 1 — Env-var presence (PRE-deploy) → PASS/FAIL
+
+Confirm all three are set in the Vercel project, **Production** scope, BEFORE
+triggering the cutover deploy:
+
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_URL`
+- `VITE_SUPABASE_URL`
+
+- **PASS:** all three present in Production scope.
+- **FAIL:** any missing. The build will emit `{}`, log a warning, and **still go
+  green** — this is the #1 silent-failure cause. Do NOT proceed past this gate
+  until the vars exist.
+
+### Gate 2 — Row-count assertion (POST-authoring, PRE-deploy) → PASS/FAIL
+
+After authoring the tenant's redirects into `public.tenant_redirects`, run:
+
+```sql
+SELECT COUNT(*) FROM tenant_redirects WHERE tenant_id = '<tenant_id>';
+```
+
+- **PASS:** count is non-zero AND equals the number of old URLs mapped during
+  discovery (the row count in `docs/customers/<slug>/discovery/redirect-map.csv`).
+- **FAIL:** count is `0` (rows never inserted) or does not match the discovery
+  mapping (rows dropped — likely an `ON CONFLICT` collision or a bad insert).
+  Re-author and re-run before deploying.
+
+### Gate 3 — Deployed-map assertion (POST-deploy) → PASS/FAIL
+
+After the cutover deploy completes, confirm the tenant actually made it into the
+shipped map. Two ways to inspect, use either:
+
+- **Build log (fastest):** in the Vercel deploy's build logs, find the projector
+  line:
+  `[generate-redirects-map] wrote <path>/redirects-map.json — N redirect(s) across M tenant(s).`
+  `N` must be non-zero. If it logged the "emitting empty redirects-map.json ({})"
+  warning instead, Gate 1 failed — stop.
+- **Generated artifact:** inspect `redirects-map.json` from the deploy and confirm
+  the tenant's **slug appears as a top-level key** with the expected number of
+  path entries. PowerShell:
+
+  ```powershell
+  Get-Content redirects-map.json | ConvertFrom-Json |
+    Select-Object -ExpandProperty '<slug>'
+  ```
+
+- **PASS:** the slug is a key in the deployed map and its entry count matches
+  Gate 2's row count.
+- **FAIL:** build went green but the map is empty, or the slug key is missing.
+  This is exactly the "silent zero-redirects" failure. Fix env/rows and redeploy.
+
+### Gate 4 — Live redirect spot-check (POST-deploy) → PASS/FAIL
+
+On the **PRODUCTION subdomain** — `https://<slug>.pestflowpro.ai` — NOT a Vercel
+preview URL (preview URLs return "Site Not Found" for tenant subdomains). Curl
+2–3 of the highest-traffic old URLs from discovery. Windows/PowerShell — use
+`curl.exe` (not the `curl` alias, which maps to `Invoke-WebRequest`):
+
+```powershell
+curl.exe -sI https://<slug>.pestflowpro.ai/<old-path>
+```
+
+Read the status line and `location:` header:
+
+- **PASS:** `HTTP/2 308` (or the authored status) with
+  `location: https://<slug>.pestflowpro.ai/<to-path>` — the expected destination.
+- **FAIL — `200`:** silent miss. The map didn't match this path — almost always a
+  normalization mismatch (the row's `from_path` does not canonicalize to the
+  requested path). Re-check the authored `from_path` vs the live old URL.
+- **FAIL — `404`:** redirect absent. The path is not in the map at all (Gate 2/3
+  would have caught the systemic case; a single 404 means this specific row is
+  missing or misspelled).
+
+Spot-check at least the top-3-by-clicks URLs. All must PASS before the cutover is
+complete.
+
+---
 
 ### What changed from older docs
 

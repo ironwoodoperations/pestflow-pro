@@ -137,7 +137,7 @@ Skip this entire phase if `deployment_model: shared_shell` AND `migration_path: 
 7. **First deploy:** Vercel auto-builds on the feature branch. Confirm READY state via `list_deployments`.
 8. **Admin subdomain:** `{slug}.pestflowpro.ai/admin` always lives on the PFP Vite SPA (NOT the standalone site). Confirm DNS for the `{slug}` CNAME under `pestflowpro.ai` resolves.
 
-**Verification gate:** `curl -I https://<customer_domain>` returns 200; `curl -I https://<slug>.pestflowpro.ai/admin` returns 200; admin login works. For migrations: spot-test 10 redirects from `redirect_map_csv` and confirm 301s to expected destinations.
+**Verification gate:** `curl -I https://<customer_domain>` returns 200; `curl -I https://<slug>.pestflowpro.ai/admin` returns 200; admin login works. For migrations: spot-test 10 redirects from `redirect_map_csv` and confirm 301s to expected destinations. **For `rebuild_on_shell` migrations, this is NOT sufficient — a green deploy can ship zero redirects silently. Complete the [Redirect Cutover Verification Gate](faithful-rebuild-runbook.md#redirect-cutover-verification-gate) (env-var check, row-count assertion, deployed-map assertion, live spot-check) before marking the cutover complete.**
 
 ---
 

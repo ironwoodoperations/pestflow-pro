@@ -334,7 +334,7 @@ For these, decide: 301 to the next-best-fit page, OR 410 Gone if the page should
 | Clone (standalone Vercel project) | Same as above |
 | Rebuild on shell | **`public.tenant_redirects` table → build-time `redirects-map.json` → Edge middleware** (shipped S253/D1). Insert one row per redirect (`from_path`, `to_path`, `status_code` default 308) keyed by `tenant_id`; the cutover deploy regenerates the bundled map and middleware serves the redirects. See `docs/onboarding/faithful-rebuild-runbook.md`. |
 
-The per-tenant redirect mechanism for shared shells now EXISTS (S253/D1), so `rebuild_on_shell` is no longer a blocker for SEO-preserving migrations. **Redirects are NOT live until a deploy runs** — the cutover deploy is what regenerates the map. See the faithful-rebuild runbook for the concrete insert-and-deploy flow.
+The per-tenant redirect mechanism for shared shells now EXISTS (S253/D1), so `rebuild_on_shell` is no longer a blocker for SEO-preserving migrations. **Redirects are NOT live until a deploy runs** — the cutover deploy is what regenerates the map. See the faithful-rebuild runbook for the concrete insert-and-deploy flow. **At cutover, a green deploy does NOT prove redirects shipped** — the build is fail-soft and ships `{}` on a missing service-role key. The [Redirect Cutover Verification Gate](faithful-rebuild-runbook.md#redirect-cutover-verification-gate) (env-var → row-count → deployed-map → live spot-check) is mandatory before marking the migration complete.
 
 **Output artifact:** `docs/customers/<slug>/discovery/phase6-redirect-map.md` + the CSV.
 
