@@ -22,6 +22,7 @@ import { getCorsHeaders } from '../_shared/cors.ts'
 import { AuthError } from '../_shared/auth/requireTenantUser.ts'
 import { requireAiCaller, FEATURE_TIER, type AiFeature } from '../_shared/aiAuth.ts'
 import { verifyEnvelopeSignature, EnvelopeError, type DelegationEnvelope } from '../_shared/delegationEnvelope.ts'
+import { insertAiProxyLog, checkRateLimit } from '../_shared/aiProxyShared.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
@@ -140,12 +141,9 @@ async function handleInternal(req: Request, svc: SupabaseClient, json: JsonFn, l
     const tier = (subRow?.value as { tier?: unknown } | null)?.tier
     if (typeof tier !== 'number' || tier < PRO_TIER) { await logI(403); return json(403, { error: { message: 'Pro tier required' } }) }
 
-    // per-tenant rate limit (§12), fail-open on infra error
-    const { data: rlData, error: rlErr } = await svc.rpc('check_and_record_rate_limit', {
-      p_key: `ai-proxy-internal:${env.acting_tenant}`, p_window_seconds: 300, p_max_count: 120,
-    })
-    if (rlErr) console.error('[ai-proxy/internal] rate-limit rpc error (fail-open):', rlErr.message)
-    else if (rlData !== true) { await logI(429); return json(429, { error: { message: 'Too many AI requests. Please wait a minute and try again.' } }) }
+    // per-tenant rate limit (§12), fail-open on infra error (shared helper)
+    const rlOk = await checkRateLimit(svc, `ai-proxy-internal:${env.acting_tenant}`, 300, 120)
+    if (!rlOk) { await logI(429); return json(429, { error: { message: 'Too many AI requests. Please wait a minute and try again.' } }) }
 
     // (9) upstream Anthropic — model pinned
     const { upstream, data } = await callAnthropic({
@@ -186,10 +184,9 @@ serve(async (req) => {
   if (req.method !== 'POST') return json(405, { error: { message: 'Method not allowed' } })
 
   const svc: SupabaseClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-  const log: LogFn = async (row) => {
-    try { await svc.from('ai_proxy_log').insert(row) }
-    catch (e) { console.error('[ai-proxy] log insert failed:', (e as Error)?.message) }
-  }
+  // S253/A1 — logging extracted to _shared/aiProxyShared.ts (shared with the
+  // per-engine AI-Authority proxies). Behavior identical: best-effort, never throws.
+  const log: LogFn = (row) => insertAiProxyLog(svc, row)
 
   // S242 — route internal service-to-service calls to the envelope-authed handler.
   if (new URL(req.url).pathname.replace(/\/+$/, '').endsWith('/internal')) {
@@ -251,15 +248,9 @@ serve(async (req) => {
     tenantForLog = callerTenant
 
     // ── two-layer atomic rate limit (R4/R5) — fail-open on RPC infra error ──
-    const rl = async (key: string, max: number) => {
-      const { data, error } = await svc.rpc('check_and_record_rate_limit', {
-        p_key: key, p_window_seconds: 300, p_max_count: max,
-      })
-      if (error) { console.error('[ai-proxy] rate-limit rpc error (fail-open):', error.message); return true }
-      return data === true
-    }
-    const userOk = await rl(`ai-proxy:${callerTenant ?? 'op'}:${userId}`, 20)
-    const tenantOk = callerTenant ? await rl(`ai-proxy:${callerTenant}`, 60) : true
+    // (shared helper — same RPC, same fail-open semantics)
+    const userOk = await checkRateLimit(svc, `ai-proxy:${callerTenant ?? 'op'}:${userId}`, 300, 20)
+    const tenantOk = callerTenant ? await checkRateLimit(svc, `ai-proxy:${callerTenant}`, 300, 60) : true
     if (!userOk || !tenantOk) {
       await log({ status: 429, feature, tenant_id: callerTenant, user_id: userId })
       return json(429, { error: { message: 'Too many AI requests. Please wait a minute and try again.' } })

@@ -5,6 +5,7 @@ import { FeatureGate } from '../common/FeatureGate'
 import PageHelpBanner from './PageHelpBanner'
 import AnalyticsHub from './analytics/AnalyticsHub'
 import ReportsStatCards from './reports/ReportsStatCards'
+import AIAuthorityTile from './reports/AIAuthorityTile'
 
 interface LeadRow {
   id: string
@@ -75,6 +76,11 @@ export default function ReportsTab() {
 
       <FeatureGate minTier={1} featureName="Analytics">
         <AnalyticsHub />
+
+        {/* S253/A1 — AI Authority Score. Per-engine gating + upsell handled inside
+            the tile (locked tiles for engines above the tenant's tier), so it sits
+            in the tier-1 gate and every plan sees it. */}
+        <AIAuthorityTile />
 
         <FeatureGate minTier={2} featureName="Lead Reports">
           {loading ? (
