@@ -24,3 +24,14 @@ verify_jwt = false
 verify_jwt = true
 [functions.process-offboard-queue]
 verify_jwt = false
+
+# S253/A1 — AI Authority Score. Worker + two sibling proxies authenticate via the
+# X-Internal-Secret header (== AI_AUTHORITY_INTERNAL_SECRET edge secret), NOT a
+# Supabase JWT. Pin verify_jwt=false so a future CLI redeploy can't flip it on and
+# 401 the internal callers.
+[functions.ai-authority-worker]
+verify_jwt = false
+[functions.ai-authority-perplexity]
+verify_jwt = false
+[functions.ai-authority-openai]
+verify_jwt = false
