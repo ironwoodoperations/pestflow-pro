@@ -22,6 +22,7 @@ import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-
 import { constantTimeEq } from '../_shared/aiProxyShared.ts';
 import { parseByEngine } from '../_shared/aiAuthority/parsers.ts';
 import { normalizeHostname } from '../_shared/aiAuthority/match.ts';
+import { getRegistrableDomain, isSharedPlatformHost } from '../_shared/aiAuthority/registrableDomain.ts';
 import type { EngineId, TenantContext } from '../_shared/aiAuthority/types.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
@@ -41,32 +42,87 @@ interface JobRow {
   tier_slug: number; status: string; attempts: number; batch_id: string;
 }
 
+// Reduce any raw host/URL string to a bare normalized hostname (no scheme, path,
+// or query). Returns '' on junk.
+function toHostname(raw?: string | null): string {
+  if (!raw) return '';
+  try {
+    return normalizeHostname(raw.includes('://') ? new URL(raw).hostname : raw.split('/')[0].split('?')[0]);
+  } catch {
+    return normalizeHostname(raw.split('/')[0].split('?')[0]);
+  }
+}
+
 async function resolveTenantContext(svc: SupabaseClient, tenantId: string): Promise<TenantContext> {
   const { data: tenant } = await svc.from('tenants')
     .select('name, slug, subdomain, custom_domain').eq('id', tenantId).maybeSingle();
 
+  // ownerHosts → matched EXACTLY. ownerDomains → matched by registrable domain
+  // (eTLD+1). Every owned host is added to ownerHosts (exact always works); a host
+  // is ALSO added to ownerDomains only when the tenant EXCLUSIVELY owns it (so the
+  // registrable collapse is safe). Shared-platform hosts and the *.pestflowpro.ai
+  // subdomain/slug hosts stay exact-only — collapsing them would credit other
+  // tenants on the same platform (cross-tenant bleed; validator REQUIRED 3).
   const ownerHosts: string[] = [];
-  const addHost = (raw?: string | null) => {
-    if (!raw) return;
-    const h = normalizeHostname(raw.includes('://') ? new URL(raw).hostname : raw.split('/')[0]);
+  const ownerDomains: string[] = [];
+
+  const addExact = (raw?: string | null) => {
+    const h = toHostname(raw);
     if (h) ownerHosts.push(h);
   };
-  addHost(tenant?.custom_domain);
-  if (tenant?.subdomain) addHost(tenant.subdomain.includes('.') ? tenant.subdomain : `${tenant.subdomain}.pestflowpro.ai`);
-  if (tenant?.slug) addHost(`${tenant.slug}.pestflowpro.ai`);
+  const addOwned = (raw?: string | null) => {
+    const h = toHostname(raw);
+    if (!h) return;
+    ownerHosts.push(h);
+    // Exclusively-owned signal → collapse to registrable domain, UNLESS the host
+    // lives on a known shared/multi-tenant platform (then exact-host only).
+    if (!isSharedPlatformHost(h)) ownerDomains.push(getRegistrableDomain(h));
+  };
+
+  // tenants.custom_domain — the tenant's configured own domain (e.g. Dang's
+  // admin.dangpestcontrol.com). Exclusively owned → collapsible.
+  addOwned(tenant?.custom_domain);
+  // tenants.subdomain / slug — ALWAYS *.pestflowpro.ai (OUR shared platform):
+  // exact-host ONLY. Collapsing to pestflowpro.ai would match every tenant.
+  if (tenant?.subdomain) addExact(tenant.subdomain.includes('.') ? tenant.subdomain : `${tenant.subdomain}.pestflowpro.ai`);
+  if (tenant?.slug) addExact(`${tenant.slug}.pestflowpro.ai`);
+
+  // tenant_domains — the tenant's REAL public domains (apex + www). Previously
+  // unread; this omission was the A1 bug (the engine cited the public domain, not
+  // the admin host). Exclusively owned → collapsible.
+  const { data: domainRows } = await svc.from('tenant_domains')
+    .select('custom_domain').eq('tenant_id', tenantId);
+  for (const row of (domainRows || [])) addOwned((row as { custom_domain?: string | null }).custom_domain);
 
   const { data: biz } = await svc.from('settings')
     .select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle();
   const businessName = (biz?.value as { name?: string } | null)?.name || tenant?.name || '';
 
-  // Optional per-tenant tracked listing URLs (Yelp/Angi/GBP), settings key
-  // 'ai_authority' → { tracked_urls: string[] }. Absent → owner hosts only.
+  // Optional per-tenant 'ai_authority' settings:
+  //   tracked_urls   — directory/listing URLs (Yelp/Angi/GBP), matched exact-URL.
+  //   canonical_apex — manual registrable-domain override for tenants the reducer
+  //                    gets wrong. When present, trusted DIRECTLY as an owned
+  //                    registrable domain (bypasses the reducer). Long-tail safety
+  //                    net behind the suffix allowlist (validator REQUIRED 2).
   const { data: aa } = await svc.from('settings')
     .select('value').eq('tenant_id', tenantId).eq('key', 'ai_authority').maybeSingle();
-  const trackedRaw = (aa?.value as { tracked_urls?: unknown } | null)?.tracked_urls;
+  const aaVal = aa?.value as { tracked_urls?: unknown; canonical_apex?: unknown } | null;
+  const trackedRaw = aaVal?.tracked_urls;
   const trackedUrls = Array.isArray(trackedRaw) ? trackedRaw.filter((u): u is string => typeof u === 'string') : [];
 
-  return { tenantId, businessName, ownerHosts: [...new Set(ownerHosts)], trackedUrls };
+  const canonicalApex = typeof aaVal?.canonical_apex === 'string' ? toHostname(aaVal.canonical_apex) : '';
+  if (canonicalApex) {
+    ownerHosts.push(canonicalApex);
+    ownerDomains.push(canonicalApex); // verbatim — explicit override, no reducer
+  }
+
+  return {
+    tenantId,
+    businessName,
+    ownerHosts: [...new Set(ownerHosts)],
+    ownerDomains: [...new Set(ownerDomains)],
+    trackedUrls,
+  };
 }
 
 serve(async (req) => {

@@ -27,9 +27,18 @@ export interface ParsedCitation {
 export interface TenantContext {
   tenantId: string;
   businessName: string;
-  // Hostnames the tenant OWNS (matched by exact hostname): custom_domain,
-  // <subdomain>.pestflowpro.ai, <slug>.pestflowpro.ai. Normalized (lowercase, no www).
+  // Hostnames the tenant OWNS, matched by EXACT hostname. Includes shared-platform
+  // subdomains (<subdomain>/<slug>.pestflowpro.ai) which MUST stay exact — never
+  // collapsed — or every tenant's *.pestflowpro.ai citation would cross-match.
+  // Normalized (lowercase, no www).
   ownerHosts: string[];
+  // Registrable domains (eTLD+1) the tenant EXCLUSIVELY owns — from tenant_domains,
+  // tenants.custom_domain, or the per-tenant canonical_apex override. A citation
+  // matches when the registrable domain of its host is in this set, so apex / www.
+  // / admin. / deep-page citations all resolve to the same owned domain. Hosts on
+  // a known shared platform are deliberately excluded (kept exact-host) to avoid
+  // cross-tenant credit bleed. Optional: absent → owner-host exact match only.
+  ownerDomains?: string[];
   // Specific directory/listing URLs the tenant controls (Yelp/Angi/GBP profile
   // pages). Matched by normalized full URL (host + path), NOT bare hostname —
   // otherwise every yelp.com citation would count. Optional per-tenant list.
