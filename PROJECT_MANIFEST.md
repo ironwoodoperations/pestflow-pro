@@ -1115,3 +1115,16 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - supabase/functions/process-sms-queue/index.ts
   - supabase/functions/publish-scheduled-posts/index.ts
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-06-05 12:28 UTC
+- Branch: `claude/lucid-dirac-YcVgi`
+- Commit: `f6479f1` — fix(s253-a1): AI Authority cited=false — resolve owner host via tenant_domains + registrable-domain match
+- Author: Claude
+- Files changed:
+  - supabase/functions/_shared/aiAuthority/match.test.ts
+  - supabase/functions/_shared/aiAuthority/match.ts
+  - supabase/functions/_shared/aiAuthority/registrableDomain.ts
+  - supabase/functions/_shared/aiAuthority/types.ts
+  - supabase/functions/ai-authority-worker/index.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
