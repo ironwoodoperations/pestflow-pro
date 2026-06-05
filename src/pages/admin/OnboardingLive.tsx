@@ -105,10 +105,23 @@ export default function OnboardingLive() {
       { tenant_id: tenantId, key: 'branding', value: { logo_url: form.logoUrl, primary_color: form.primaryColor, theme: form.template } },
       { tenant_id: tenantId, key: 'social_links', value: { facebook: form.facebookUrl, instagram: form.instagramUrl, google: form.googleUrl } },
       { tenant_id: tenantId, key: 'notifications', value: { lead_email: form.leadEmail } },
-      { tenant_id: tenantId, key: 'integrations', value: { facebook_page_id: form.facebookPageId, facebook_access_token: form.facebookToken, google_place_id: form.googlePlaceId, google_maps_embed_url: form.mapsEmbedUrl } },
+      // S255: facebook_access_token is a Vault secret — written below via
+      // set-tenant-secret, NEVER into settings.integrations. Non-secret keys only.
+      { tenant_id: tenantId, key: 'integrations', value: { facebook_page_id: form.facebookPageId, google_place_id: form.googlePlaceId, google_maps_embed_url: form.mapsEmbedUrl } },
       { tenant_id: tenantId, key: 'hero_media', value: { youtube_id: form.youtubeId } },
       { tenant_id: tenantId, key: 'onboarding_complete', value: { complete: true } },
     ], { onConflict: 'tenant_id,key' })
+
+    // S255: route the Facebook access token to Vault (optional field). The edge
+    // function authorizes via the admin's JWT; a failure here must not block
+    // onboarding completion — the token can be re-entered later in admin.
+    if (form.facebookToken.trim()) {
+      const { error: secretErr } = await supabase.functions.invoke('set-tenant-secret', {
+        body: { tenant_id: tenantId, secret_name: 'facebook_access_token', secret_value: form.facebookToken.trim() },
+      })
+      if (secretErr) console.error('[onboarding] facebook_access_token vault save failed:', secretErr.message)
+    }
+
     setSaving(false)
     setDone(true)
     setTimeout(() => navigate('/admin'), 3000)

@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../context/TenantBootProvider'
 import { triggerRevalidate } from '../../../lib/revalidate'
+import { stripVaultSecrets } from '../../../lib/integrationSecretKeys'
 
 const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-400'
 
@@ -27,7 +28,9 @@ export default function SocialLinksSection() {
     if (!tenantId) return
     setSaving(true)
     const { data: existing } = await supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle()
-    const merged = { ...(existing?.value || {}), owner_sms_number: form.owner_sms_number }
+    // S255: strip Vault-managed secret keys from the round-tripped blob so this
+    // owner_sms_number save can never re-leak them into settings.integrations.
+    const merged = { ...stripVaultSecrets(existing?.value as Record<string, unknown>), owner_sms_number: form.owner_sms_number }
     const { error } = await supabase.from('settings').upsert({ tenant_id: tenantId, key: 'integrations', value: merged }, { onConflict: 'tenant_id,key' })
     setSaving(false)
     if (error) { toast.error(`Failed to save: ${error.message}`); return }

@@ -480,13 +480,17 @@ export async function handler(req: Request): Promise<Response> {
         google:    wsl.google    || social?.google    || (body as any).social_google    || '',
         youtube:   wsl.youtube   || social?.youtube   || (body as any).social_youtube   || '',
       }},
+      // S255: facebook_access_token and textbelt_api_key are Vault secrets — no
+      // longer seeded as empty placeholders here. Until set via set-tenant-secret
+      // they simply don't exist in Vault; the read-path helper raises
+      // VaultSecretMissingError, handled per function as "not configured".
+      // google_maps_api_key is a client-side browser key and intentionally stays
+      // in settings (out of scope for the Vault migration).
       { tenant_id: tenantId, key: 'integrations', value: {
         google_place_id:     integrations?.google_place_id || '',
         google_analytics_id: integrations?.ga4_id          || '',
         google_maps_api_key: '',
-        textbelt_api_key:    '',
         owner_sms_number:    (wbi.phone || bi.phone || '').replace(/\D/g, ''),
-        facebook_access_token: '',
         facebook_page_id:    '',
       }},
       { tenant_id: tenantId, key: 'onboarding_complete', value: { complete: false } },

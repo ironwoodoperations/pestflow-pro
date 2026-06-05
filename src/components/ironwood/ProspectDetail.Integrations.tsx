@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
+import { stripVaultSecrets } from '../../lib/integrationSecretKeys'
 import type { Prospect } from './types'
 
 interface Props {
@@ -49,9 +50,13 @@ export default function IntegrationsSection({ prospectId, form }: Props) {
 
   async function save() {
     setSaving(true)
+    // S255: never write the 4 Vault-managed secret keys back into
+    // settings.integrations, even if a loaded blob still carried them. Non-secret
+    // keys (this form's fields) are preserved.
+    const safeValues = stripVaultSecrets(values)
     if (tenantId) {
       const { error } = await supabase.from('settings')
-        .upsert({ tenant_id: tenantId, key: 'integrations', value: values }, { onConflict: 'tenant_id,key' })
+        .upsert({ tenant_id: tenantId, key: 'integrations', value: safeValues }, { onConflict: 'tenant_id,key' })
       if (error) { toast.error('Save failed: ' + error.message); setSaving(false); return }
       // Save GSC verification as a direct column on the integrations row
       await supabase.from('settings')
@@ -62,7 +67,7 @@ export default function IntegrationsSection({ prospectId, form }: Props) {
       // No tenant yet — store in prospect intake_data.integrations as holding field
       const { data: row } = await supabase.from('prospects').select('intake_data').eq('id', prospectId).maybeSingle()
       const existing = row?.intake_data || {}
-      const { error } = await supabase.from('prospects').update({ intake_data: { ...existing, integrations: values } }).eq('id', prospectId)
+      const { error } = await supabase.from('prospects').update({ intake_data: { ...existing, integrations: safeValues } }).eq('id', prospectId)
       if (error) { toast.error('Save failed: ' + error.message); setSaving(false); return }
     }
     setSaving(false)

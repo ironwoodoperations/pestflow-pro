@@ -7,6 +7,7 @@
 //   supabase functions deploy zernio-connect --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { stripVaultSecrets } from '../_shared/secrets/stripVaultSecrets.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -139,7 +140,8 @@ Deno.serve(async (req: Request) => {
 
     // Sync to settings
     await supabase.from('settings')
-      .update({ value: { ...integrations, zernio_accounts: zernioAccounts } })
+      // S255: strip Vault-managed secrets before the blob round-trip.
+      .update({ value: { ...stripVaultSecrets(integrations), zernio_accounts: zernioAccounts } })
       .eq('tenant_id', tenantId)
       .eq('key', 'integrations')
 
