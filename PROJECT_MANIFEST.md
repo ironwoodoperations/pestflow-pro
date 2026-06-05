@@ -1129,3 +1129,12 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - supabase/functions/_shared/aiAuthority/types.ts
   - supabase/functions/ai-authority-worker/index.ts
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-06-05 13:59 UTC
+- Branch: `claude/cool-volta-42pOv`
+- Commit: `778ef2b` — fix(s253-a1): AI Authority card reads live completed_runs from RPC (was stuck at 0/40)
+- Author: Claude
+- Files changed:
+  - src/hooks/useAiAuthorityScore.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
