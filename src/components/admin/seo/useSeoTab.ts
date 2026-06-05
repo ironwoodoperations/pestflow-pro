@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../context/TenantBootProvider'
+import { stripVaultSecrets } from '../../../lib/integrationSecretKeys'
 import { useSeoAudit, getCachedAudit } from './useSeoAudit'
 import { useSeoAiGenerate } from './useSeoAiGenerate'
 import type {
@@ -136,8 +137,10 @@ export function useSeoTab() {
     setConnectSaving(field)
     try {
       const { data: current } = await supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle()
+      // S255: strip the 4 Vault-managed secret keys from the round-tripped blob
+      // so this connect-field save (a non-secret key) can never re-leak them.
       const { error } = await supabase.from('settings').upsert(
-        { tenant_id: tenantId, key: 'integrations', value: { ...(current?.value || {}), [field]: connectForm[field] } },
+        { tenant_id: tenantId, key: 'integrations', value: { ...stripVaultSecrets(current?.value as Record<string, unknown>), [field]: connectForm[field] } },
         { onConflict: 'tenant_id,key' }
       )
       if (error) { toast.error(`Failed to save: ${error.message}`); return }

@@ -8,6 +8,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { requireTenantUser, AuthError } from '../_shared/auth/requireTenantUser.ts'
 import { getCorsHeaders } from '../_shared/cors.ts'
+import { stripVaultSecrets } from '../_shared/secrets/stripVaultSecrets.ts'
 
 interface PlacesReviewsBody {
   tenant_id: string
@@ -152,7 +153,8 @@ serve(async (req) => {
     // Cache-back: write resolved place_id to settings.integrations (service-role)
     await serviceClient
       .from('settings')
-      .update({ value: { ...integrations, google_place_id: placeId } })
+      // S255: strip Vault-managed secrets before the blob round-trip.
+      .update({ value: { ...stripVaultSecrets(integrations), google_place_id: placeId } })
       .eq('tenant_id', tenantId)
       .eq('key', 'integrations')
 

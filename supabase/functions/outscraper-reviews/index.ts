@@ -3,6 +3,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { stripVaultSecrets } from '../_shared/secrets/stripVaultSecrets.ts'
 
 function getCorsHeaders(req) {
   const baseDomain = Deno.env.get('APP_BASE_DOMAIN') || 'pestflowpro.ai'
@@ -64,7 +65,8 @@ function parseTier(raw) {
 
 async function updateOutscraperError(serviceClient, tenantId, currentIntegrations, errorMessage) {
   await serviceClient.from('settings').update({
-    value: { ...currentIntegrations, outscraper_last_error: errorMessage },
+    // S255: never round-trip Vault-managed secrets back into settings.integrations.
+    value: { ...stripVaultSecrets(currentIntegrations), outscraper_last_error: errorMessage },
   }).eq('tenant_id', tenantId).eq('key', 'integrations')
 }
 
@@ -224,7 +226,8 @@ serve(async (req) => {
   }
 
   await serviceClient.from('settings').update({
-    value: { ...integrations, outscraper_last_synced_at: new Date().toISOString(), outscraper_review_total: totalReviews, outscraper_last_error: null },
+    // S255: strip Vault-managed secrets before the blob round-trip.
+    value: { ...stripVaultSecrets(integrations), outscraper_last_synced_at: new Date().toISOString(), outscraper_review_total: totalReviews, outscraper_last_error: null },
   }).eq('tenant_id', tenantId).eq('key', 'integrations')
 
   console.log(`[outscraper-reviews v3] DONE: fetched=${fetchedCount} inserted=${insertedCount} total=${totalReviews}`)

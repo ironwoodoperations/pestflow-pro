@@ -1,6 +1,13 @@
 [functions.provision-tenant]
 verify_jwt = false
 
+# S255 — secret WRITE path → Vault. verify_jwt=true so the gateway rejects
+# anonymous calls; the function then re-derives the user and calls
+# set_tenant_secret with the USER's JWT so auth.uid() drives the in-RPC
+# tenant-ownership check (never service-role — that would fail open).
+[functions.set-tenant-secret]
+verify_jwt = true
+
 [functions.outscraper-reviews]
 verify_jwt = false
 [functions.places-reviews]
