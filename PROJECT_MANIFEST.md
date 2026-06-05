@@ -1138,3 +1138,27 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
 - Files changed:
   - src/hooks/useAiAuthorityScore.ts
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-06-05 14:28 UTC
+- Branch: `claude/cool-volta-42pOv`
+- Commit: `4b57029` — feat(s255): secret WRITE path → Vault (hardened set-tenant-secret + strip write surface)
+- Author: Claude
+- Files changed:
+  - docs/migrations/s255-set-tenant-secret-rpc-rollback.sql
+  - docs/migrations/s255-set-tenant-secret-rpc.sql
+  - docs/migrations/s255-settings-strip-guard-trigger-rollback.sql
+  - docs/migrations/s255-settings-strip-guard-trigger.sql
+  - src/components/admin/seo/useSeoTab.ts
+  - src/components/admin/settings/SocialLinksSection.tsx
+  - src/components/ironwood/ProspectDetail.Integrations.tsx
+  - src/lib/integrationSecretKeys.ts
+  - src/pages/admin/OnboardingLive.tsx
+  - supabase/config.toml
+  - supabase/functions/_shared/secrets/stripVaultSecrets.ts
+  - supabase/functions/outscraper-reviews/index.ts
+  - supabase/functions/places-reviews/index.ts
+  - supabase/functions/provision-tenant/index.ts
+  - supabase/functions/set-tenant-secret/index.ts
+  - supabase/functions/zernio-connect/index.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
