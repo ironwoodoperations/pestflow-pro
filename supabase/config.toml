@@ -63,3 +63,10 @@ verify_jwt = false
 verify_jwt = false
 [functions.ai-authority-openai]
 verify_jwt = false
+
+# S257 — lead-bridge-dispatch. Invoked (fire-and-forget via pg_net) by the
+# trigger_lead_bridge_dispatch() / reconcile_lead_bridge_queue() DB callers,
+# which present the hop-1 `apikey` (Vault: lead_bridge_dispatch_internal_secret),
+# NOT a user JWT. verify_jwt=false so the gateway can't 401 those JWT-less calls.
+[functions.lead-bridge-dispatch]
+verify_jwt = false
