@@ -104,11 +104,17 @@ serve(async (req) => {
     p_secret_value: secretValue,
   })
   if (rpcErr) {
-    // rpcErr.message may surface 'unauthorized for tenant' etc. — it never
+    // rpcErr.message may surface 'not an admin of tenant' etc. — it never
     // contains the secret value (we never pass the value into a message).
     console.error('[set-tenant-secret] rpc error for tenant', tenantId, 'secret', secretName, ':', rpcErr.message)
-    const forbidden = /unauthorized|forbidden/i.test(rpcErr.message)
-    return json(forbidden ? 403 : 500, { error: forbidden ? 'Forbidden' : 'write failed' })
+    // Key the 403 off the PostgreSQL error CODE, not the message text. The RPC's
+    // ownership-denial RAISEs with ERRCODE '42501' (insufficient_privilege),
+    // surfaced by supabase-js as error.code. This only fires on a TOCTOU race
+    // where admin is revoked between the pre-check above and the RPC — the
+    // pre-check is the primary 403 path. A bare message regex (/unauthorized/i)
+    // missed the RPC's "not an admin" wording and mis-mapped denials to 500.
+    if (rpcErr.code === '42501') return json(403, { error: 'Forbidden' })
+    return json(500, { error: 'write failed' })
   }
 
   return json(200, { ok: true, action: result ?? (secretValue === null ? 'cleared' : 'saved') })
