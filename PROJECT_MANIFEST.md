@@ -1162,3 +1162,13 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - supabase/functions/set-tenant-secret/index.ts
   - supabase/functions/zernio-connect/index.ts
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-06-08 17:31 UTC
+- Branch: `feat/s257-lead-bridge-dispatch`
+- Commit: `7986045` — feat(s257): lead-bridge-dispatch edge function
+- Author: Claude
+- Files changed:
+  - supabase/config.toml
+  - supabase/functions/lead-bridge-dispatch/index.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
