@@ -8,6 +8,27 @@ verify_jwt = false
 [functions.set-tenant-secret]
 verify_jwt = true
 
+# Internal/cron/webhook callers authenticated by in-source secret comparison
+# (apikey header == <FN>_INTERNAL_SECRET edge secret), NOT a user JWT. Pin
+# verify_jwt=false so a future CLI redeploy can't flip it on and 401 their
+# legitimate (JWT-less) callers. Values confirmed against the deployed state.
+[functions.process-sms-queue]
+verify_jwt = false
+[functions.publish-scheduled-posts]
+verify_jwt = false
+[functions.notify-new-lead]
+verify_jwt = false
+
+# ga4-analytics / gsc-analytics authenticate the END USER's JWT (requireTenantUser
+# gate for interactive "Run Now") and read the service_role `role` claim from an
+# already-signature-verified token for the cron path — same rationale as
+# set-tenant-secret. They are USER-JWT callers, NOT internal-secret callers, so
+# verify_jwt=true. Pinned to match the deployed state (both confirmed true).
+[functions.ga4-analytics]
+verify_jwt = true
+[functions.gsc-analytics]
+verify_jwt = true
+
 [functions.outscraper-reviews]
 verify_jwt = false
 [functions.places-reviews]

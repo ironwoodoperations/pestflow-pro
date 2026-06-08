@@ -81,8 +81,9 @@ Before touching anything, verify:
 2. **Owner email not taken.** `SELECT id, email FROM auth.users WHERE email = '<owner_email>';` — must return 0 rows.
 3. **Theme exists.** `<theme>` is one of the 5 known shells. If not, halt and ask Scott to pick.
 4. **Customer domain DNS pre-check** (if `standalone`). `dig <customer_domain> A` — note current A record so we can confirm DNS cutover later.
+5. **Exclusively-owned public domain (AI-Authority gate).** Verify the tenant's PUBLIC cited domain is an exclusively-owned registrable domain (their own purchased apex, e.g. `acmepest.com` — agency/Wix/GoDaddy-BUILT is fine as long as the live site is on the tenant's own domain). If the tenant's public site is instead served from a SHARED multi-tenant builder host (e.g. `*.wixsite.com`, `*.godaddysites.com`, `*.square.site`, `*.weebly.com`), the AI-Authority registrable-domain collapse can over-count sibling businesses on that shared host as this tenant. In that case, set a per-tenant `canonical_apex` pin in `settings.ai_authority` and do NOT rely on structural collapse. _Confirmed safe for customer #2 (Tops, Group M7 — both own their domains)._
 
-**Verification gate:** Report all 4 checks before moving to Phase 2. If any fail, stop.
+**Verification gate:** Report all 5 checks before moving to Phase 2. If any fail, stop.
 
 ---
 
