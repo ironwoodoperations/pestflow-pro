@@ -1138,3 +1138,16 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
 - Files changed:
   - src/hooks/useAiAuthorityScore.ts
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-06-08 13:04 UTC
+- Branch: `claude/hopeful-ptolemy-UaiKu`
+- Commit: `2e99aa8` — chore: pin verify_jwt for 7 vault-touched fns + set-tenant-secret 403 via SQLSTATE + onboarding domain gate
+- Author: Claude
+- Files changed:
+  - docs/audits/QA_REPORT_chore_verify_jwt_pin.md
+  - docs/audits/REVIEW_chore_verify_jwt_pin.md
+  - docs/onboarding/CUSTOMER_ONBOARDING_PROMPT.md
+  - supabase/config.toml
+  - supabase/functions/set-tenant-secret/index.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
