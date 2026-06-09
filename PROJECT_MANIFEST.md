@@ -1200,3 +1200,13 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
 - Files changed:
   - supabase/migrations/20260609000000_s257_lead_bridge_secret_accessor.sql
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-06-09 14:50 UTC
+- Branch: `chore/s258-dryrun-runbook-seohead-guard`
+- Commit: `a700f69` — chore(s258): dry-run runbook notes + null-safe SEOHead schema_config read
+- Author: Claude
+- Files changed:
+  - docs/onboarding/faithful-rebuild-runbook.md
+  - src/components/seo/SEOHead.tsx
+- Next recommended action: [Fill in next session: read this line, write what comes next]

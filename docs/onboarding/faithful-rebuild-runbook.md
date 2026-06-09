@@ -188,3 +188,42 @@ instead. (`vercel.json` redirects remain correct for standalone `custom_build` /
 The reversal SQL for the table itself is staged at
 `docs/migrations/s253-d1-tenant-redirects-rollback.sql`. To undo a bad cutover
 without dropping the table, `DELETE` the offending rows and redeploy.
+
+---
+
+## Operational notes (S258 dry-run findings)
+
+1. **MCP-driven provision timeout.** When invoking `provision-tenant` from in-DB
+   `net.http_post` (operator/MCP lane), pass `timeout_milliseconds := 30000`. The
+   `pg_net` default is 5000ms, which is **shorter** than `provision-tenant`'s full
+   run (Zernio + Outscraper external calls push it past 5s). Without the override
+   you get a **false-negative** client-side timeout while the function completes
+   fine server-side. Verify success by querying the tenant's DB state, **not** the
+   `net._http_response` row.
+
+2. **`schema_config` is NOT auto-seeded.** `provision-tenant` does not write the
+   `schema_config` settings key. This is **harmless** on the live Next.js
+   `/tenant/[slug]` path — the key is never read there (`app/tenant/[slug]/layout.tsx`
+   passes a hardcoded literal into `generateLocalBusinessSchema`, whose config
+   param has been intentionally unused since S165.9). Seed it manually **only** if
+   a future feature wires `schema_config` into `app/`. Do **not** patch
+   `provision-tenant` for parity alone.
+   - *Latent:* legacy `src/components/seo/SEOHead.tsx` reads `schema_config`
+     unguarded — guarded defensively in this PR; only relevant if a tenant is ever
+     routed through the old Vite SPA.
+
+3. **Canonical fresh-tenant shape (prospect-overlay provision):** 12 settings keys
+   / 21 `page_content` rows / 1 member / 3 live + 3 draft `service_areas` / 3 blog
+   posts. **NOTE:** older demo tenants show 13 settings / 19 pages — they were
+   seeded by an earlier path (they carry `schema_config`, lack quote + contact
+   pages). Use **12/21** as the oracle for any new provision, **not** the demo
+   baseline.
+
+4. **ISR purge requires a tenant-admin USER JWT.** The operator/MCP lane **cannot**
+   purge ISR cache for a tenant (the `/api/revalidate` route is gated by a
+   tenant-admin Bearer JWT, verified against `tenant_users` role in
+   `['admin','owner']`). Therefore: any tenant content edit made via MCP/SQL **must**
+   be followed by a CC Web `git commit --allow-empty -m "chore: purge ISR for <slug>"`
+   push to trigger a full rebuild — **not** a `/api/revalidate` call (we won't hold
+   the customer's JWT). The admin UI fires revalidate correctly with the logged-in
+   user's JWT; that path is unaffected.
