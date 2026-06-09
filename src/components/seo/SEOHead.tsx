@@ -137,11 +137,16 @@ export default function SEOHead({
     // Page-type-specific schemas
     if (pageType === 'home') {
       injectScript('ld-website', generateWebsiteSchema(businessInfo.name, baseUrl))
-      injectScript('ld-rating', generateRatingSchema(
-        businessInfo.name,
-        schemaConfig.aggregate_rating.value,
-        schemaConfig.aggregate_rating.count
-      ))
+      // Null-safe: a tenant may lack schema_config entirely (not seeded by
+      // provision-tenant). Only emit the rating block when a value is present —
+      // never throw, and don't emit an empty/zero AggregateRating.
+      if (schemaConfig?.aggregate_rating?.value) {
+        injectScript('ld-rating', generateRatingSchema(
+          businessInfo.name,
+          schemaConfig.aggregate_rating.value,
+          schemaConfig.aggregate_rating.count ?? 0
+        ))
+      }
     }
 
     if (pageType === 'service' && serviceName && serviceDescription) {
@@ -156,11 +161,14 @@ export default function SEOHead({
 
     if (pageType === 'about') {
       injectScript('ld-about', generateAboutSchema(businessInfo, seoSettings, baseUrl))
-      injectScript('ld-rating', generateRatingSchema(
-        businessInfo.name,
-        schemaConfig.aggregate_rating.value,
-        schemaConfig.aggregate_rating.count
-      ))
+      // Null-safe (see home block): only emit the rating when a value is present.
+      if (schemaConfig?.aggregate_rating?.value) {
+        injectScript('ld-rating', generateRatingSchema(
+          businessInfo.name,
+          schemaConfig.aggregate_rating.value,
+          schemaConfig.aggregate_rating.count ?? 0
+        ))
+      }
     }
 
     return () => {
