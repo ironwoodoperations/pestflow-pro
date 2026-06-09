@@ -1191,3 +1191,12 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
 - Files changed:
   - supabase/functions/lead-bridge-dispatch/index.ts
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-06-09 13:39 UTC
+- Branch: `chore/s257-lead-bridge-secret-accessor-backfill`
+- Commit: `c538a59` — chore(s257): repo-truth backfill for get_lead_bridge_internal_secret() accessor
+- Author: Claude
+- Files changed:
+  - supabase/migrations/20260609000000_s257_lead_bridge_secret_accessor.sql
+- Next recommended action: [Fill in next session: read this line, write what comes next]
