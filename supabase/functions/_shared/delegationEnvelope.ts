@@ -14,8 +14,8 @@
 
 import { createHmac, timingSafeEqual } from 'node:crypto'
 
-export type DelegationPurpose = 'generate_social_batch' | 'reverse_selection' | 'image_tagging'
-export type DelegationCaller = 'process-campaign-job' | 'tag-image-vision'
+export type DelegationPurpose = 'generate_social_batch' | 'reverse_selection' | 'image_tagging' | 'monthly_report_narration'
+export type DelegationCaller = 'process-campaign-job' | 'tag-image-vision' | 'generate-monthly-report'
 
 export interface DelegationEnvelope {
   purpose: DelegationPurpose
@@ -32,6 +32,10 @@ export interface DelegationEnvelope {
 export const CALLER_PURPOSES: Record<DelegationCaller, ReadonlySet<DelegationPurpose>> = {
   'process-campaign-job': new Set<DelegationPurpose>(['generate_social_batch', 'reverse_selection']),
   'tag-image-vision': new Set<DelegationPurpose>(['image_tagging']),
+  // S259 — monthly prescriptive report worker narrates findings via ai-proxy/internal.
+  // ai-proxy/internal still applies its own Pro-tier gate (§12); sub-Pro tenants 403
+  // and the worker falls back to templated narration (report still generates).
+  'generate-monthly-report': new Set<DelegationPurpose>(['monthly_report_narration']),
 }
 
 export const ENVELOPE_HEADER = 'x-delegation-envelope'
