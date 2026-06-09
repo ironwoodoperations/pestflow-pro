@@ -19,7 +19,15 @@ const STATIC_SLUGS = ['home','about','contact','quote','pricing','faq','reviews'
 
 export function useSeoTab() {
   const { id: tenantId } = useTenant()
-  const [activeTab, setActiveTab]       = useState<SeoTabId>('overview')
+  // S259b — read the 'seotab' deep-link param ONCE on mount (this hook only runs
+  // after the Dashboard section is 'seo', so the param is read at the right time).
+  // Allowlist against SeoTabId; absent/garbage → 'overview'. One-way URL→state:
+  // no sync back to the URL, normal sub-tab clicking unchanged.
+  const [activeTab, setActiveTab]       = useState<SeoTabId>(() => {
+    const VALID: SeoTabId[] = ['overview', 'pages', 'keywords', 'aio', 'connect']
+    const param = new URLSearchParams(window.location.search).get('seotab')
+    return (VALID as string[]).includes(param ?? '') ? (param as SeoTabId) : 'overview'
+  })
   const [pages, setPages]               = useState<SeoPageRow[]>([])
   const [loading, setLoading]           = useState(true)
   const [integrations, setIntegrations] = useState<IntegrationValues>({ google_api_key: '', google_analytics_id: '', google_search_console_url: '' })
