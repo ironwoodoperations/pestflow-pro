@@ -1172,3 +1172,13 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - supabase/config.toml
   - supabase/functions/lead-bridge-dispatch/index.ts
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-06-08 18:34 UTC
+- Branch: `chore/s257-bridge-migration-backfill`
+- Commit: `e23dbbd` — chore(s256/s257): repo-truth migration backfill for bridge DB objects
+- Author: Claude
+- Files changed:
+  - supabase/migrations/20260608000000_s256_set_tenant_secret_sqlstate_backfill.sql
+  - supabase/migrations/20260608000001_s257_lead_bridge_backfill.sql
+- Next recommended action: [Fill in next session: read this line, write what comes next]
