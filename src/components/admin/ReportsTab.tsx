@@ -6,6 +6,7 @@ import PageHelpBanner from './PageHelpBanner'
 import AnalyticsHub from './analytics/AnalyticsHub'
 import ReportsStatCards from './reports/ReportsStatCards'
 import AIAuthorityTile from './reports/AIAuthorityTile'
+import MonthlyReportsCard from './reports/MonthlyReportsCard'
 
 interface LeadRow {
   id: string
@@ -81,6 +82,12 @@ export default function ReportsTab() {
             the tile (locked tiles for engines above the tenant's tier), so it sits
             in the tier-1 gate and every plan sees it. */}
         <AIAuthorityTile />
+
+        {/* S259 — Monthly prescriptive reports. Not tier-gated (sits at the
+            tier-1 level like the AI Authority tile); RLS keeps it admin-only. */}
+        <div className="mt-8">
+          <MonthlyReportsCard />
+        </div>
 
         <FeatureGate minTier={2} featureName="Lead Reports">
           {loading ? (
