@@ -61,20 +61,17 @@ serve(async (req) => {
 
   // ── HOP 1: verify the caller (trigger/reconciler) ─────────────────────────
   // Single source of truth for the hop-1 secret is Vault — NOT an edge secret.
-  // vault.decrypted_secrets is reachable here via the service-role client's
-  // .schema('vault') accessor (same pattern as outscraper-reviews).
+  // vault.decrypted_secrets is NOT exposed to PostgREST, so .schema('vault')
+  // fails from an edge fn (the in-DB trigger/reconciler read it fine because
+  // they're in-database). We read it through the SECURITY DEFINER accessor
+  // public.get_lead_bridge_internal_secret() (service_role-only EXECUTE).
   const presentedKey = req.headers.get('apikey') || ''
-  const { data: vaultRow, error: vaultErr } = await admin
-    .schema('vault')
-    .from('decrypted_secrets')
-    .select('decrypted_secret')
-    .eq('name', 'lead_bridge_dispatch_internal_secret')
-    .maybeSingle()
-  const expectedKey = vaultRow?.decrypted_secret ?? ''
+  const { data: expectedKey, error: vaultErr } = await admin
+    .rpc('get_lead_bridge_internal_secret')
 
   if (vaultErr || !expectedKey) {
     // Misconfigured server (Vault unreadable / secret absent) — never auth-pass.
-    console.error('[lead-bridge-dispatch] hop-1 secret unavailable from Vault:', vaultErr?.message ?? 'not found')
+    console.error('[lead-bridge-dispatch] hop-1 secret unavailable via RPC:', vaultErr?.message ?? 'null')
     return json(500, { error: 'Server misconfigured' })
   }
   if (!presentedKey || !secretsMatch(expectedKey, presentedKey)) {
