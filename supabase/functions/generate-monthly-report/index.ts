@@ -133,10 +133,11 @@ serve(async (req) => {
     const titleBySlug = new Map<string, string>()
     for (const p of pageRows) if (p.page_slug && p.title) titleBySlug.set(p.page_slug, p.title)
     const pageName = (slug: string | null) => slug ? (titleBySlug.get(slug) ?? titleCase(slug)) : 'Your website'
-    // No URL-param deep-link contract exists in the admin SPA (Dashboard.tsx uses
-    // useState for tab selection; SeoPagesTab has no slug filter param). v1 links
-    // to the admin dashboard root; the finding text names the page to open.
-    const ADMIN_DEEPLINK = '/admin'
+    // S259b — deep-link to the SEO → Pages sub-tab. Dashboard reads ?section and
+    // SEOTab reads ?seotab once on mount (one-way URL→state, allowlisted), landing
+    // the owner on the page list (search + Edit SEO + AI Generate). Per-page editor
+    // deep-links are a later iteration; all findings share this one link for now.
+    const ADMIN_DEEPLINK = '/admin?section=seo&seotab=pages'
 
     const findings: Finding[] = []
     const ransRules: string[] = []

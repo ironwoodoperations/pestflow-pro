@@ -66,7 +66,15 @@ const TAB_SUBTITLES: Record<string, string> = {
 }
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState<TabKey>('dashboard')
+  // S259b — one-way URL→state, read ONCE via a lazy initializer (no router
+  // subscription, no state→URL sync). Lets the monthly-report "Fix it here" links
+  // land on a section (e.g. ?section=seo). Allowlist against known section ids;
+  // absent/garbage → today's default ('dashboard'). Normal tab clicking is
+  // unchanged — setActiveTab still drives everything after mount.
+  const [activeTab, setActiveTab] = useState<TabKey>(() => {
+    const param = new URLSearchParams(window.location.search).get('section')
+    return TABS.some(t => t.key === param) ? (param as TabKey) : 'dashboard'
+  })
   const [businessName, setBusinessName] = useState('Your Business')
   const [accentColor, setAccentColor] = useState('#10b981')
   const [onboardingComplete] = useState(true)
