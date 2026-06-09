@@ -1210,3 +1210,17 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - docs/onboarding/faithful-rebuild-runbook.md
   - src/components/seo/SEOHead.tsx
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-06-09 17:02 UTC
+- Branch: `feat/s259-monthly-report`
+- Commit: `5423e50` — S259: prescriptive monthly report (v1, HTML-only)
+- Author: Claude
+- Files changed:
+  - docs/migrations/s259_monthly_report_cron.sql
+  - docs/migrations/s259_monthly_report_foundation.sql
+  - src/components/admin/ReportsTab.tsx
+  - src/components/admin/reports/MonthlyReportsCard.tsx
+  - supabase/functions/_shared/delegationEnvelope.ts
+  - supabase/functions/generate-monthly-report/index.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
