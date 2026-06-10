@@ -47,8 +47,6 @@ interface Finding {
 }
 
 const SEVERITY_RANK: Record<Severity, number> = { high: 0, medium: 1, low: 2 }
-// Non-service pages — the all-images-empty LOW rule only fires on service/location pages.
-const NON_SERVICE_SLUGS = new Set(['home', 'about', 'contact', 'quote', 'faq', 'blog'])
 
 function constantTimeEq(a: string, b: string): boolean {
   const ea = new TextEncoder().encode(a); const eb = new TextEncoder().encode(b)
@@ -194,7 +192,7 @@ serve(async (req) => {
       })
     }
 
-    // CONTENT — thin intro + all-images-empty service/location page
+    // CONTENT — thin intro text (reads page_content.intro, a real column).
     ransRules.push('content')
     for (const p of pageRows) {
       const slug = p.page_slug as string
@@ -202,10 +200,6 @@ serve(async (req) => {
       const intro = (p.intro ?? '') as string
       if (!intro.trim() || intro.length < 120) {
         findings.push({ id: nextId(), category: 'content', severity: 'medium', page_slug: slug, page_name: name, admin_deeplink: ADMIN_DEEPLINK, problem: `The "${name}" page has very little intro text${intro.trim() ? ` (${intro.length} characters)` : ''}. Google and customers both want a few clear sentences about what you do here.`, metric: intro.trim() ? `${intro.length} chars` : 'empty' })
-      }
-      const imagesAllEmpty = !p.image_url && !p.page_hero_image_url && !p.image_1_url && !p.image_2_url && !p.image_3_url
-      if (imagesAllEmpty && !NON_SERVICE_SLUGS.has(slug)) {
-        findings.push({ id: nextId(), category: 'content', severity: 'low', page_slug: slug, page_name: name, admin_deeplink: ADMIN_DEEPLINK, problem: `The "${name}" page has no photos. Real photos of your team and work build trust and keep visitors on the page longer.` })
       }
     }
 
@@ -382,7 +376,7 @@ function renderReport(args: {
         `<div class="fhead"><span class="sev" style="background:${SEV_COLOR[f.severity]}">${SEV_LABEL[f.severity]}</span>` +
         `<span class="page">${escapeHtml(f.page_name)}</span>${metric}</div>` +
         `<p class="narr">${escapeHtml(narration)}</p>` +
-        `<a class="fix" href="${escapeHtml(f.admin_deeplink)}">Fix it here →</a>` +
+        `<p class="fixhint">Open your SEO → Pages tab and look for the page marked "Needs update."</p>` +
         `</div>`
       )
     }).join('')
@@ -408,7 +402,7 @@ function renderReport(args: {
   .page{font-weight:700;font-size:14px;color:#111827}
   .metric{color:#6b7280;font-size:12px;margin-left:8px}
   .narr{margin:6px 0 10px;font-size:14px;color:#374151}
-  .fix{display:inline-block;font-size:13px;font-weight:600;color:#0e7490;text-decoration:none}
+  .fixhint{margin:0;font-size:13px;color:#6b7280;font-style:italic}
   footer{margin-top:28px;border-top:1px solid #e5e7eb;padding-top:14px;color:#9ca3af;font-size:12px;text-align:center}
 </style></head>
 <body><div class="wrap">
