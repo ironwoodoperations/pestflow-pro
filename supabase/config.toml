@@ -70,3 +70,11 @@ verify_jwt = false
 # NOT a user JWT. verify_jwt=false so the gateway can't 401 those JWT-less calls.
 [functions.lead-bridge-dispatch]
 verify_jwt = false
+
+# S259/S260 — generate-monthly-report. Async report worker invoked
+# server-to-server by the report-queue cron (pg_net), which presents the
+# `apikey` header (GENERATE_MONTHLY_REPORT_INTERNAL_SECRET, timing-safe), NOT a
+# user JWT. verify_jwt=false so a future CLI redeploy can't flip it on and 401
+# those JWT-less internal calls.
+[functions.generate-monthly-report]
+verify_jwt = false
