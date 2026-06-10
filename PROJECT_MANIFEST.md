@@ -1221,3 +1221,16 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - src/pages/admin/Dashboard.tsx
   - supabase/functions/generate-monthly-report/index.ts
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-06-10 13:40 UTC
+- Branch: `claude/practical-einstein-2jpoae`
+- Commit: `6b7a482` — S260-1: in-app monthly report viewer (v1, bare-sandbox iframe)
+- Author: Claude
+- Files changed:
+  - docs/audits/QA_REPORT_s260-1.md
+  - docs/audits/REVIEW_s260-1.md
+  - src/components/admin/reports/MonthlyReportViewer.tsx
+  - src/components/admin/reports/MonthlyReportsCard.tsx
+  - tsconfig.tsbuildinfo
+- Next recommended action: [Fill in next session: read this line, write what comes next]
