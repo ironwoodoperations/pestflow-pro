@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react'
-import { FileText, AlertTriangle, ExternalLink } from 'lucide-react'
+import { FileText, AlertTriangle, Eye } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../context/TenantBootProvider'
+import MonthlyReportViewer from './MonthlyReportViewer'
 
 // S259 — Monthly prescriptive reports. Reads tenant_reports (RLS: admin-only by
-// policy, so isolation is enforced server-side). "View" fetches a short-lived
-// signed URL for the private 'reports' bucket — never a public URL. Not
-// tier-gated: every plan that can see the Reports tab sees this card.
+// policy, so isolation is enforced server-side). Not tier-gated: every plan that
+// can see the Reports tab sees this card.
+// S260-1 — "View" now opens an in-app sandboxed-iframe viewer (MonthlyReportViewer)
+// instead of opening the signed URL in a tab (Supabase serves the HTML as
+// text/plain, so a tab showed raw source). The viewer fetches a fresh signed URL
+// each time it opens.
 
 interface ReportRow {
   id: string
@@ -29,7 +33,7 @@ export default function MonthlyReportsCard() {
   const { id: tenantId } = useTenant()
   const [reports, setReports] = useState<ReportRow[]>([])
   const [loading, setLoading] = useState(true)
-  const [opening, setOpening] = useState<string | null>(null)
+  const [selected, setSelected] = useState<ReportRow | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -49,19 +53,6 @@ export default function MonthlyReportsCard() {
       })
     return () => { active = false }
   }, [tenantId])
-
-  const view = async (r: ReportRow) => {
-    if (!r.storage_path) return
-    setOpening(r.id)
-    setError(null)
-    const { data, error: signErr } = await supabase.storage.from('reports').createSignedUrl(r.storage_path, 60)
-    setOpening(null)
-    if (signErr || !data?.signedUrl) {
-      setError('Could not open this report. Please try again.')
-      return
-    }
-    window.open(data.signedUrl, '_blank', 'noopener,noreferrer')
-  }
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -96,15 +87,26 @@ export default function MonthlyReportsCard() {
                 </div>
               </div>
               <button
-                onClick={() => view(r)}
-                disabled={!r.storage_path || opening === r.id}
+                onClick={() => { setError(null); setSelected(r) }}
+                disabled={!r.storage_path}
                 className="shrink-0 inline-flex items-center gap-1.5 text-xs px-3 py-1.5 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 disabled:opacity-50"
               >
-                {opening === r.id ? 'Opening…' : <>View <ExternalLink className="w-3.5 h-3.5" /></>}
+                View <Eye className="w-3.5 h-3.5" />
               </button>
             </div>
           ))}
         </div>
+      )}
+
+      {selected && (
+        <MonthlyReportViewer
+          report={{
+            id: selected.id,
+            storage_path: selected.storage_path,
+            periodLabel: formatPeriod(selected.period),
+          }}
+          onClose={() => setSelected(null)}
+        />
       )}
     </div>
   )
