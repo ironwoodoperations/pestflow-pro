@@ -268,12 +268,25 @@ serve(async (req) => {
     const up = await svc.storage.from('reports').upload(storagePath, enc, { contentType: 'text/html; charset=utf-8', upsert: true })
     if (up.error) return await failJob(`storage upload: ${up.error.message}`)
 
-    const upsertRes = await svc.from('tenant_reports').upsert({
-      tenant_id: tenantId, period, storage_path: storagePath,
-      findings_count: findings.length, high_count: highCount,
-      status: 'html_ready', generated_at: nowIso(),
-    }, { onConflict: 'tenant_id,period' })
-    if (upsertRes.error) return await failJob(`tenant_reports upsert: ${upsertRes.error.message}`)
+    // Persist the parent summary row + every finding atomically via RPC. The
+    // SECURITY-DEFINER insert_report_and_findings does delete-and-reinsert per
+    // (tenant_id, period) in one transaction, so it fully replaces the old
+    // tenant_reports upsert and keeps re-runs idempotent (no stale partial
+    // finding set). suggested_fix is intentionally left NULL (later tier-gated
+    // feature); page_slug is passed straight through (null = site-wide).
+    const { error: persistErr } = await svc.rpc('insert_report_and_findings', {
+      p_tenant_id: tenantId,
+      p_period: period,
+      p_storage_path: storagePath,
+      p_findings_count: findings.length,
+      p_high_count: highCount,
+      p_findings: findings.map((f) => ({
+        id: f.id, category: f.category, severity: f.severity,
+        page_slug: f.page_slug, page_name: f.page_name,
+        problem: f.problem, metric: f.metric ?? null,
+      })),
+    })
+    if (persistErr) return await failJob(`persist report+findings: ${persistErr.message}`)
 
     // ── 7. FINISH ────────────────────────────────────────────────────────────────
     await svc.from('report_jobs').update({ status: 'complete', finished_at: nowIso(), last_error: null }).eq('id', jobRow.id)

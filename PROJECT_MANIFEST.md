@@ -1243,3 +1243,15 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
 - Files changed:
   - supabase/migrations/20260610000000_s260_report_findings_table_and_rpc.sql
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-06-10 15:29 UTC
+- Branch: `feat/s260-2b-report-findings-rpc`
+- Commit: `857c0c6` — feat(s260-2b): generate-monthly-report persists findings via insert_report_and_findings RPC
+- Author: Claude
+- Files changed:
+  - docs/audits/QA_REPORT_s260-2b.md
+  - docs/audits/REVIEW_s260-2b.md
+  - supabase/config.toml
+  - supabase/functions/generate-monthly-report/index.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
