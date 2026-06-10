@@ -1,5 +1,7 @@
 export type SeoTabId = 'overview' | 'pages' | 'keywords' | 'aio' | 'connect'
 
+export type FindingSeverity = 'high' | 'medium' | 'low'
+
 export interface SeoPageRow {
   slug: string
   label: string
@@ -13,6 +15,12 @@ export interface SeoPageRow {
   ogTitle: string
   ogDescription: string
   userEdited: boolean
+  // S260-3 — open (unresolved) monthly-report findings scoped to this page's slug.
+  // Site-wide findings (page_slug null) are excluded upstream, so these are
+  // always page-scoped. Absent when the page has no open findings.
+  needsUpdate?: boolean
+  findingCount?: number
+  findingSeverity?: FindingSeverity
 }
 
 export interface AuditScores {
