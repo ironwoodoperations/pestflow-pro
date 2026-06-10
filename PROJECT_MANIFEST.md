@@ -1234,3 +1234,12 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - src/components/admin/reports/MonthlyReportsCard.tsx
   - tsconfig.tsbuildinfo
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-06-10 15:18 UTC
+- Branch: `claude/practical-einstein-2jpoae`
+- Commit: `f49467b` — chore(s260-2a): repo-trail migration for report_findings table + insert_report_and_findings RPC
+- Author: Claude
+- Files changed:
+  - supabase/migrations/20260610000000_s260_report_findings_table_and_rpc.sql
+- Next recommended action: [Fill in next session: read this line, write what comes next]
