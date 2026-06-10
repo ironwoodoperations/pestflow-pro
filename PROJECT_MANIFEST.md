@@ -4,6 +4,11 @@
 **Workflow:** branch + PR + manual merge (see GIT_RULES.md)
 **Last Updated:** 2026-05-16 by framework upgrade session
 
+> 📁 **Session logs moved (S261-3):** the Stop hook now writes per-session entries
+> to one file per branch under `PROJECT_MANIFEST.d/` instead of appending here, so
+> branches no longer self-conflict on this file. This file is the static index /
+> standing-orders doc; the live per-session record is in `PROJECT_MANIFEST.d/`.
+
 > ⚠️ This file is preserved from the S117 (April 2026) snapshot with the v3.1
 > upgrade banner appended above. Session log entries S118–S222 are not
 > reflected here yet; the working state of record between this manifest
