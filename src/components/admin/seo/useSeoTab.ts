@@ -18,7 +18,7 @@ const PEST_SLUGS = [
   'mosquito-control','flea-tick-control','wasp-hornet-control','bed-bug-control',
   'scorpion-control','rodent-control','pest-control','termite-inspections',
 ]
-const STATIC_SLUGS = ['home','about','contact','quote','pricing','faq','reviews','service-area']
+const STATIC_SLUGS = ['home','about','contact','quote','faq','reviews','service-area']
 
 export function useSeoTab() {
   const { id: tenantId } = useTenant()
