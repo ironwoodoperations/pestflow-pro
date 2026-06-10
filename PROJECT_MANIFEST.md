@@ -1255,3 +1255,16 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - supabase/config.toml
   - supabase/functions/generate-monthly-report/index.ts
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-06-10 16:49 UTC
+- Branch: `feat/s260-3-needs-update-badges`
+- Commit: `7fdcd44` — feat(s260-3): 'Needs update' badges on SEO Pages list from report_findings
+- Author: Claude
+- Files changed:
+  - docs/audits/QA_REPORT_s260-3.md
+  - docs/audits/REVIEW_s260-3.md
+  - src/components/admin/seo/SeoPagesTab.tsx
+  - src/components/admin/seo/seoTypes.ts
+  - src/components/admin/seo/useSeoTab.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
