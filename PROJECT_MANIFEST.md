@@ -1268,3 +1268,14 @@ supabase/functions/_shared/auth/       ← (PROTECTED) Shared auth modules (C2 p
   - src/components/admin/seo/seoTypes.ts
   - src/components/admin/seo/useSeoTab.ts
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-06-10 18:06 UTC
+- Branch: `feat/s260-4-report-link-text-drop-photos-rule`
+- Commit: `6526dc5` — feat(s260-4): report link→plain-text hint + retire unreliable no-photos rule
+- Author: Claude
+- Files changed:
+  - docs/audits/QA_REPORT_s260-4.md
+  - docs/audits/REVIEW_s260-4.md
+  - supabase/functions/generate-monthly-report/index.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
