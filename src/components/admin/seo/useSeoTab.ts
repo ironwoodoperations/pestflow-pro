@@ -7,8 +7,11 @@ import { useSeoAudit, getCachedAudit } from './useSeoAudit'
 import { useSeoAiGenerate } from './useSeoAiGenerate'
 import type {
   SeoTabId, SeoPageRow, SeoStats, SeoCoverage,
-  IntegrationValues, EditorForm, ConnectForm,
+  IntegrationValues, EditorForm, ConnectForm, FindingSeverity,
 } from './seoTypes'
+
+// S260-3 — highest-severity wins when a page has multiple open findings.
+const SEVERITY_RANK: Record<FindingSeverity, number> = { high: 3, medium: 2, low: 1 }
 
 const PEST_SLUGS = [
   'spider-control','ant-control','roach-control','termite-control',
@@ -48,26 +51,44 @@ export function useSeoTab() {
   async function loadAll() {
     setLoading(true)
     try {
-      const [metaRes, pageRes, locRes, blogRes, intRes, auditRes] = await Promise.all([
+      const [metaRes, pageRes, locRes, blogRes, intRes, auditRes, findingsRes] = await Promise.all([
         supabase.from('seo_meta').select('page_slug,meta_title,meta_description,focus_keyword,og_title,og_description,user_edited').eq('tenant_id', tenantId),
         supabase.from('page_content').select('page_slug').eq('tenant_id', tenantId),
         supabase.from('service_areas').select('slug,city,is_live').eq('tenant_id', tenantId),
         supabase.from('blog_posts').select('slug,title,published_at').eq('tenant_id', tenantId),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'last_lighthouse_audit').maybeSingle(),
+        // S260-3 — open report findings for the "Needs update" badge. Page-scoped
+        // only (site-wide page_slug=null excluded). Light payload: slug + severity.
+        supabase.from('report_findings').select('page_slug, severity').eq('tenant_id', tenantId).eq('is_resolved', false).not('page_slug', 'is', null),
       ])
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const metaMap: Record<string, any> = {}
       for (const row of metaRes.data || []) metaMap[row.page_slug] = row
 
+      // S260-3 — reduce findings into per-slug { count, topSeverity }.
+      const findingMap = new Map<string, { count: number; topSeverity: FindingSeverity }>()
+      for (const row of findingsRes.data || []) {
+        const slug = row.page_slug as string
+        const sev = (row.severity as FindingSeverity) || 'low'
+        const existing = findingMap.get(slug)
+        if (!existing) findingMap.set(slug, { count: 1, topSeverity: sev })
+        else findingMap.set(slug, {
+          count: existing.count + 1,
+          topSeverity: SEVERITY_RANK[sev] > SEVERITY_RANK[existing.topSeverity] ? sev : existing.topSeverity,
+        })
+      }
+
       const makeRow = (slug: string, label: string, url: string, type: SeoPageRow['type'], isLive: boolean): SeoPageRow => {
         const m = metaMap[slug]
+        const f = findingMap.get(slug)
         return {
           slug, label, url, type, isLive,
           hasMeta: !!(m?.meta_title?.trim()),
           metaTitle: m?.meta_title || '', metaDescription: m?.meta_description || '',
           focusKeyword: m?.focus_keyword || '', ogTitle: m?.og_title || '',
           ogDescription: m?.og_description || '', userEdited: m?.user_edited || false,
+          needsUpdate: !!f, findingCount: f?.count, findingSeverity: f?.topSeverity,
         }
       }
 

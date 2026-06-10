@@ -25,6 +25,15 @@ const TYPE_LABELS: Record<string, { label: string; color: string }> = {
   static:   { label: 'Static',   color: 'bg-gray-100 text-gray-600' },
 }
 
+// S260-3 — "Needs update" badge severity colors. Border style keeps it visually
+// distinct from the solid "✓ Configured" SEO-status pill (different meaning: a
+// monthly-report finding flagged this page, vs. simply having meta set).
+const FINDING_SEVERITY_STYLE: Record<string, string> = {
+  high:   'bg-red-50 text-red-700 border border-red-300',
+  medium: 'bg-amber-50 text-amber-700 border border-amber-300',
+  low:    'bg-slate-50 text-slate-600 border border-slate-300',
+}
+
 export default function SeoPagesTab({
   stats, pages, openEditorSlug, editorForm,
   editorSaving, aiGenerating, aiGeneratedSlug,
@@ -113,9 +122,18 @@ export default function SeoPagesTab({
                     }`}>{page.isLive ? 'Live' : 'Draft'}</span>
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                      page.hasMeta ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
-                    }`}>{page.hasMeta ? '✓ Configured' : '⚠ Missing'}</span>
+                    <div className="flex flex-col items-start gap-1">
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                        page.hasMeta ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+                      }`}>{page.hasMeta ? '✓ Configured' : '⚠ Missing'}</span>
+                      {page.needsUpdate && (
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                          FINDING_SEVERITY_STYLE[page.findingSeverity ?? 'low']
+                        }`} title="Open issues from your latest monthly report">
+                          Needs update{page.findingCount ? ` (${page.findingCount})` : ''}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-right">
                     <button
