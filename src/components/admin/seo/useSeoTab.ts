@@ -7,7 +7,7 @@ import { useSeoAudit, getCachedAudit } from './useSeoAudit'
 import { useSeoAiGenerate } from './useSeoAiGenerate'
 import type {
   SeoTabId, SeoPageRow, SeoStats, SeoCoverage,
-  IntegrationValues, EditorForm, ConnectForm, FindingSeverity,
+  IntegrationValues, EditorForm, ConnectForm, FindingSeverity, PageFinding,
 } from './seoTypes'
 
 // S260-3 — highest-severity wins when a page has multiple open findings.
@@ -59,25 +59,34 @@ export function useSeoTab() {
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle(),
         supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'last_lighthouse_audit').maybeSingle(),
         // S260-3 — open report findings for the "Needs update" badge. Page-scoped
-        // only (site-wide page_slug=null excluded). Light payload: slug + severity.
-        supabase.from('report_findings').select('page_slug, severity').eq('tenant_id', tenantId).eq('is_resolved', false).not('page_slug', 'is', null),
+        // only (site-wide page_slug=null excluded).
+        // Session A — also pull `problem` (the plain-English finding text) so the
+        // inline editor can show the SAME findings the badge counts. Same table,
+        // same WHERE, same already-authorized rows — only a wider column projection.
+        supabase.from('report_findings').select('page_slug, severity, problem').eq('tenant_id', tenantId).eq('is_resolved', false).not('page_slug', 'is', null),
       ])
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const metaMap: Record<string, any> = {}
       for (const row of metaRes.data || []) metaMap[row.page_slug] = row
 
-      // S260-3 — reduce findings into per-slug { count, topSeverity }.
-      const findingMap = new Map<string, { count: number; topSeverity: FindingSeverity }>()
+      // S260-3 / Session A — reduce findings into per-slug { count, topSeverity, items }.
+      // `items` carries each finding's plain-English `problem` text (highest severity
+      // first) so the inline editor can list them; the badge still uses count + topSeverity.
+      const findingMap = new Map<string, { count: number; topSeverity: FindingSeverity; items: PageFinding[] }>()
       for (const row of findingsRes.data || []) {
         const slug = row.page_slug as string
         const sev = (row.severity as FindingSeverity) || 'low'
+        const item: PageFinding = { severity: sev, problem: (row.problem as string) || '' }
         const existing = findingMap.get(slug)
-        if (!existing) findingMap.set(slug, { count: 1, topSeverity: sev })
-        else findingMap.set(slug, {
-          count: existing.count + 1,
-          topSeverity: SEVERITY_RANK[sev] > SEVERITY_RANK[existing.topSeverity] ? sev : existing.topSeverity,
-        })
+        if (!existing) findingMap.set(slug, { count: 1, topSeverity: sev, items: [item] })
+        else {
+          existing.count += 1
+          existing.items.push(item)
+          if (SEVERITY_RANK[sev] > SEVERITY_RANK[existing.topSeverity]) existing.topSeverity = sev
+        }
       }
+      // sort each page's findings high → low so the most important reads first
+      for (const f of findingMap.values()) f.items.sort((a, b) => SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity])
 
       const makeRow = (slug: string, label: string, url: string, type: SeoPageRow['type'], isLive: boolean): SeoPageRow => {
         const m = metaMap[slug]
@@ -89,6 +98,7 @@ export function useSeoTab() {
           focusKeyword: m?.focus_keyword || '', ogTitle: m?.og_title || '',
           ogDescription: m?.og_description || '', userEdited: m?.user_edited || false,
           needsUpdate: !!f, findingCount: f?.count, findingSeverity: f?.topSeverity,
+          findings: f?.items,
         }
       }
 
