@@ -2,6 +2,13 @@ export type SeoTabId = 'overview' | 'pages' | 'keywords' | 'aio' | 'connect'
 
 export type FindingSeverity = 'high' | 'medium' | 'low'
 
+// Session A — a single open monthly-report finding scoped to a page, carrying the
+// plain-English `problem` text so the inline editor can surface what was flagged.
+export interface PageFinding {
+  severity: FindingSeverity
+  problem: string
+}
+
 export interface SeoPageRow {
   slug: string
   label: string
@@ -21,6 +28,9 @@ export interface SeoPageRow {
   needsUpdate?: boolean
   findingCount?: number
   findingSeverity?: FindingSeverity
+  // Session A — the open findings' plain-English text (high→low), for inline display
+  // in the editor. Reuses the same rows the badge counts; absent when none are open.
+  findings?: PageFinding[]
 }
 
 export interface AuditScores {
