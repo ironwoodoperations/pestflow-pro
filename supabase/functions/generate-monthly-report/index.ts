@@ -1,9 +1,19 @@
-// Edge Function: generate-monthly-report — S259.
+// Edge Function: generate-monthly-report — S259 / S261-report-fix.
 // Async worker that builds a per-tenant, per-month PRESCRIPTIVE SEO/content
 // report: deterministic rules detect issues, attach the page + an admin
 // deep-link, ai-proxy narrates them into plain-English owner guidance, and the
 // result is rendered to a self-contained HTML doc stored in the PRIVATE
 // 'reports' bucket and listed to tenant admins on the Reports tab.
+//
+// S261-report-fix: narration system prompt hardened (validator-gated). The AI
+// rephrasing layer was hallucinating external SEO tools (Yoast / Rank Math)
+// because the old prompt asked for "the exact step to fix it" with no platform
+// constraint. The prompt now (1) declares PestFlow Pro as the only platform the
+// owner uses, (2) hard-bans naming or implying ANY external tool/plugin/CMS/
+// platform (generically, not just by example), and (3) scopes the "SEO -> Pages"
+// destination to page-level findings while telling the model to stay general for
+// site-wide findings rather than invent a single page. Deterministic detection,
+// renderReport, and auth are UNCHANGED.
 //
 // Invoked server-to-server by the report-queue worker cron (pg_net) — NOT by a
 // browser. Auth (verify_jwt:false): apikey header == GENERATE_MONTHLY_REPORT_INTERNAL_SECRET
@@ -303,11 +313,13 @@ async function narrate(findings: Finding[], tenantId: string): Promise<Record<st
       acting_tenant: tenantId, acting_user: null, resource: {}, ttl_seconds: 300,
     })
     const system =
-      'You write a monthly website report for a pest-control business owner with no SEO background. ' +
-      'Rephrase each finding into friendly, encouraging plain-English guidance: (1) what is going on, ' +
-      '(2) why it matters for getting more phone calls, and (3) the exact step to fix it. ' +
-      'DO NOT invent findings, numbers, or pages that are not in the input. Keep each to 2–4 short sentences. ' +
-      'Return ONLY a JSON object keyed by the finding id, where each value is the guidance string. No markdown.'
+      'You write a monthly website report for a pest-control business owner with no SEO background.\n\n' +
+      'PLATFORM RULES (highest priority — never violate, even if it means a fix step must be more general):\n' +
+      '- The owner\'s website lives entirely on the PestFlow Pro platform. Every change they make happens inside the PestFlow Pro admin dashboard. Assume PestFlow Pro is the only system they ever log into to work on their website.\n' +
+      '- NEVER name, suggest, or reference any other tool, plugin, CMS, platform, or software — not by name and not generically. This includes (but is not limited to) WordPress, Wix, Squarespace, Webflow, Yoast, Rank Math, Google Search Console, Google Business Profile settings, "your SEO plugin," "your CMS," "your website builder," or any external analytics or SEO tool. The owner does not use them and has no access to them.\n' +
+      '- For a finding about ONE specific page, direct the owner to SEO -> Pages in PestFlow Pro and edit that page (e.g. "In PestFlow Pro, go to SEO -> Pages and edit the title and description for this page"). For a finding that is clearly site-wide (such as duplicate titles across pages, page-2 search rankings, or site speed), describe what to adjust in PestFlow Pro in general terms — do NOT pretend there is a single page to click, and do NOT invent menus, tabs, or settings that aren\'t obviously implied.\n' +
+      '- If you don\'t know the exact button or tab name, describe the action in simple generic terms inside PestFlow Pro (e.g. "edit the page\'s description field") rather than guessing a specific control or mentioning any outside tool.\n\n' +
+      'TASK: Rephrase each finding into friendly, encouraging plain-English guidance, following the platform rules above: (1) what is going on, (2) why it matters for getting more pest-control phone calls, and (3) the step to fix it inside PestFlow Pro. DO NOT invent findings, numbers, or pages that are not in the input. Keep each to 2–4 short sentences. Return ONLY a JSON object keyed by the finding id, where each value is the guidance string. No markdown.'
     const input = findings.map((f) => ({ id: f.id, category: f.category, severity: f.severity, page: f.page_name, problem: f.problem, metric: f.metric ?? null }))
     const res = await fetch(AI_PROXY_INTERNAL_URL, {
       method: 'POST',
