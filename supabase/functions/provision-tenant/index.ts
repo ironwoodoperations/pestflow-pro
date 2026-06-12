@@ -204,6 +204,19 @@ export async function handler(req: Request): Promise<Response> {
     const wsl  = wd?.social_links   || {}
     const wsub = wd?.subscription   || {}
 
+    // S262 — numeric access entitlement (1=Starter…4=Elite) for tenants.entitlement,
+    // set EXPLICITLY at provisioning. The column has NO database default; absence
+    // must fail loud, never silently default to Starter. Derived from the SOLD plan,
+    // never from a payment record (entitlement ≠ price is a permanent business rule).
+    const _entToNum = (raw: string | number | undefined | null): number => {
+      if (typeof raw === 'number') return raw >= 1 && raw <= 4 ? raw : 1
+      const sl = typeof raw === 'string' ? raw.toLowerCase().trim() : ''
+      return sl === 'elite' ? 4 : sl === 'pro' ? 3 : (sl === 'growth' || sl === 'grow') ? 2 : 1
+    }
+    const entitlement = _entToNum(
+      wsub.tier ?? subscription?.tier ?? wsub.plan_name ?? subscription?.plan_name ?? body.plan,
+    )
+
     // Resolve slug
     const resolvedSlug = (wd?.slug || slug || bi.name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20)).trim()
     if (!resolvedSlug) {
@@ -247,7 +260,7 @@ export async function handler(req: Request): Promise<Response> {
         const name = wbi.name || bi.name || resolvedSlug
         const { data: newTenant, error: tenantError } = await supabase
           .from('tenants')
-          .insert({ slug: resolvedSlug, name })
+          .insert({ slug: resolvedSlug, name, entitlement })
           .select('id')
           .single()
         if (tenantError || !newTenant) {
@@ -259,7 +272,7 @@ export async function handler(req: Request): Promise<Response> {
       }
     } else {
       const name = wbi.name || bi.name || resolvedSlug
-      await supabase.from('tenants').update({ slug: resolvedSlug, name }).eq('id', tenantId)
+      await supabase.from('tenants').update({ slug: resolvedSlug, name, entitlement }).eq('id', tenantId)
     }
 
     // Step 2: Create auth user
