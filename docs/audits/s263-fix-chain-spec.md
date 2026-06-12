@@ -21,6 +21,8 @@ called out explicitly below and the spec wins (with Scott's sign-off).
    `apply-finding-fix` edge fn (`requireTenantAdmin` + `check_tenant_access(tenant, 3)`,
    service-role write). The frontend calls the **existing** `triggerRevalidate({type:'page'})`
    immediately after it returns. Tier enforcement is server-side, not cosmetic.
+3. **`fix_field` migration approved.** The additive `report_findings.fix_field` column (§2) is
+   confirmed over text-parsing — deterministic + allow-listed; one additive migration is accepted.
 
 ---
 
