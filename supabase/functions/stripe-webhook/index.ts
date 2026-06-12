@@ -152,22 +152,26 @@ Deno.serve(async (req: Request) => {
       console.log(`Subscription cancelled: ${subscription.id}`)
 
     } else if (event.type === 'customer.subscription.updated') {
-      // S251: tier sync on self-serve upgrade / any managed price change.
-      // Resolution by STORED stripe_customer_id (no email). Fetch-fresh from Stripe.
-      // event.id idempotency. 500 on transient (DB) errors so Stripe retries; 200 on
-      // logic errors (unknown price / unresolvable tenant) since retry won't help.
+      // S262 — webhook SEVERED from the gate path. This block NO LONGER writes
+      // settings.subscription (tier/plan_name/monthly_price). Access entitlement
+      // lives in tenants.entitlement and changes ONLY by deliberate operator action
+      // / provisioning — NEVER derived from the Stripe price.
+      //
+      // WHY: intentional entitlement≠price divergence is a PERMANENT business rule.
+      // Dang is the canonical case (Elite entitlement, Starter price $149). Before
+      // severance, a customer.subscription.updated for Dang would resolve his stored
+      // price_1TNP7E2…(Starter) → tier 1 and silently downgrade him out of Elite.
+      // Re-coupling entitlement to Stripe price in any future change requires an
+      // explicit decision (see view: entitlement_price_reconciliation).
+      //
+      // We STILL maintain BILLING-ONLY state (stripe_billing.current_price_id) that
+      // NOTHING gates on, for invoice/billing tracking + the reconciliation report.
 
       const TIER_PRICE: Record<number, string> = {
         1: 'price_1TNP7E2SfqMqfaLwlydZQM5u', 2: 'price_1TNP7A2SfqMqfaLwxVVdp6rf',
         3: 'price_1TNP762SfqMqfaLwhC7MTvIm', 4: 'price_1TNP722SfqMqfaLwu8vH6hre',
       }
-      const PRICE_TIER: Record<string, number> =
-        Object.fromEntries(Object.entries(TIER_PRICE).map(([t, p]) => [p, Number(t)]))
       const KNOWN_PRICES = new Set(Object.values(TIER_PRICE))
-      const TIER_META: Record<number, { plan_name: string; monthly_price: number }> = {
-        1: { plan_name: 'Starter', monthly_price: 149 }, 2: { plan_name: 'Growth', monthly_price: 249 },
-        3: { plan_name: 'Pro', monthly_price: 349 }, 4: { plan_name: 'Elite', monthly_price: 499 },
-      }
 
       // event.id idempotency (at-least-once delivery)
       const { data: seen } = await supabase
@@ -189,8 +193,7 @@ Deno.serve(async (req: Request) => {
       if (sub.status !== 'active') { console.log(`[sub.updated] status=${sub.status} — skip`); return ok() }
 
       const tierItem = sub.items.data.find(it => KNOWN_PRICES.has(it.price.id))
-      const newTier = tierItem ? PRICE_TIER[tierItem.price.id] : undefined
-      if (!newTier) { console.warn(`[sub.updated] no known managed price on ${sub.id} — skip`); return ok() }
+      if (!tierItem) { console.warn(`[sub.updated] no known managed price on ${sub.id} — skip`); return ok() }
 
       // resolve tenant by STORED stripe_customer_id (no email)
       const { data: rows, error: rowsErr } = await supabase
@@ -200,28 +203,12 @@ Deno.serve(async (req: Request) => {
       const tenantId = match?.tenant_id || null
       if (!tenantId) { console.warn(`[sub.updated] no tenant for customer ${sub.customer} — skip`); return ok() }
 
-      // idempotent tier write
-      const { data: subRow, error: subReadErr } = await supabase
-        .from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'subscription').maybeSingle()
-      if (subReadErr) { console.error('[sub.updated] tier read failed (transient):', subReadErr.message); return new Response('db error', { status: 500 }) }
-      const currentTier = (subRow?.value as { tier?: number } | null)?.tier
-
-      if (currentTier !== newTier) {
-        const meta = TIER_META[newTier]
-        const { error: upErr } = await supabase.from('settings')
-          .update({ value: { tier: newTier, plan_name: meta.plan_name, monthly_price: meta.monthly_price } })
-          .eq('tenant_id', tenantId).eq('key', 'subscription')
-        if (upErr) { console.error(`[sub.updated] tier write failed (transient) tenant ${tenantId}:`, upErr.message); return new Response('db error', { status: 500 }) }
-        console.log(`[sub.updated] tenant ${tenantId} tier ${currentTier ?? '?'} -> ${newTier}`)
-      } else {
-        console.log(`[sub.updated] tenant ${tenantId} already tier ${newTier} — no-op`)
-      }
-
-      // keep stripe_billing.current_price_id in sync (best-effort, non-fatal)
-      if (tierItem) {
-        const newVal = { ...(match.value || {}), current_price_id: tierItem.price.id }
-        await supabase.from('settings').update({ value: newVal }).eq('tenant_id', tenantId).eq('key', 'stripe_billing')
-      }
+      // BILLING-ONLY: keep stripe_billing.current_price_id in sync. This is NOT a
+      // gate input — entitlement is untouched. (best-effort, non-fatal)
+      const newVal = { ...(match.value || {}), current_price_id: tierItem.price.id }
+      const { error: billErr } = await supabase.from('settings').update({ value: newVal }).eq('tenant_id', tenantId).eq('key', 'stripe_billing')
+      if (billErr) { console.error('[sub.updated] stripe_billing write failed (transient):', billErr.message); return new Response('db error', { status: 500 }) }
+      console.log(`[sub.updated] tenant ${tenantId} billing price → ${tierItem.price.id} (entitlement UNCHANGED — gate severed)`)
 
       // mark event processed LAST
       await supabase.from('processed_webhook_events').insert({ event_id: event.id, event_type: event.type })
