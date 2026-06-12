@@ -19,4 +19,4 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
 - Author: Claude
 - Files changed:
   - docs/audits/s263-fix-chain-spec.md
-- Next recommended action: [Fill in next session: read this line, write what comes next]
+- Next recommended action: S263 spec on #181 is AMENDED post-validator-gate — all five §7 seams resolved server-side (Seam1 await-then-revalidate; Seam2 JWT-derived tenant in WHERE; Seam3 hardcoded fix_field→column map, 400 else, no SQL interpolation; Seam4 distinct `mode='fix_all'` with own `check_tenant_access(tenant,4)` before enumerate; Seam5 `user_edited=false`+`updated_at=fix_base_updated_at` in WHERE, 409 on 0 rows). Migration is now TWO additive nullable cols: `fix_field` + `fix_base_updated_at`, plus a `seo_meta` updated_at trigger. BUILD IS PAUSED pending Scott's explicit confirm of the amendments. On confirm: CC Web build on this branch (apply-finding-fix edge fn w/ single+fix_all modes, ai-proxy Pro feature, generator stamps both cols, SEO-tab Generate/Apply/Fix-all UI + Fix-all confirm modal + latent seo_meta revalidate fix). No migration/deploy until verified post-merge source.
