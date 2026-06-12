@@ -12,4 +12,5 @@ export type AiFeature =
   | 'blog_seo'
   | 'seo_keywords'
   | 'campaign_generation'
+  | 'seo_fix'
   | 'redirect_map'

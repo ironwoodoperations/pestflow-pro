@@ -54,6 +54,10 @@ interface Finding {
   admin_deeplink: string
   problem: string            // deterministic templated text (always present)
   metric?: string
+  // S263 — the target column the one-click apply writes to. Set only on page-scoped
+  // (applyable) meta/content findings; absent on site-wide / keyword / engagement /
+  // technical findings. Closed enum, validated again server-side at apply time.
+  fix_field?: 'intro' | 'meta_title' | 'meta_description' | 'focus_keyword'
 }
 
 const SEVERITY_RANK: Record<Severity, number> = { high: 0, medium: 1, low: 2 }
@@ -166,20 +170,20 @@ serve(async (req) => {
       const desc = (m.meta_description ?? '') as string
       const title = (m.meta_title ?? '') as string
       if (!desc.trim()) {
-        findings.push({ id: nextId(), category: 'meta', severity: 'high', page_slug: slug, page_name: name, admin_deeplink: ADMIN_DEEPLINK, problem: `The "${name}" page has no meta description — Google often shows a random snippet instead of a sentence that sells your service.` })
+        findings.push({ id: nextId(), category: 'meta', severity: 'high', page_slug: slug, page_name: name, admin_deeplink: ADMIN_DEEPLINK, fix_field: 'meta_description', problem: `The "${name}" page has no meta description — Google often shows a random snippet instead of a sentence that sells your service.` })
       } else if (desc.length < 70 || desc.length > 160) {
-        findings.push({ id: nextId(), category: 'meta', severity: 'medium', page_slug: slug, page_name: name, admin_deeplink: ADMIN_DEEPLINK, problem: `The "${name}" page meta description is ${desc.length} characters — aim for 70–160 so Google shows the whole thing.`, metric: `${desc.length} chars` })
+        findings.push({ id: nextId(), category: 'meta', severity: 'medium', page_slug: slug, page_name: name, admin_deeplink: ADMIN_DEEPLINK, fix_field: 'meta_description', problem: `The "${name}" page meta description is ${desc.length} characters — aim for 70–160 so Google shows the whole thing.`, metric: `${desc.length} chars` })
       }
       if (!title.trim()) {
-        findings.push({ id: nextId(), category: 'meta', severity: 'high', page_slug: slug, page_name: name, admin_deeplink: ADMIN_DEEPLINK, problem: `The "${name}" page has no SEO title — this is the blue clickable headline in Google results.` })
+        findings.push({ id: nextId(), category: 'meta', severity: 'high', page_slug: slug, page_name: name, admin_deeplink: ADMIN_DEEPLINK, fix_field: 'meta_title', problem: `The "${name}" page has no SEO title — this is the blue clickable headline in Google results.` })
       } else if (title.length > 60) {
-        findings.push({ id: nextId(), category: 'meta', severity: 'medium', page_slug: slug, page_name: name, admin_deeplink: ADMIN_DEEPLINK, problem: `The "${name}" page SEO title is ${title.length} characters — over ~60 Google cuts it off with "…".`, metric: `${title.length} chars` })
+        findings.push({ id: nextId(), category: 'meta', severity: 'medium', page_slug: slug, page_name: name, admin_deeplink: ADMIN_DEEPLINK, fix_field: 'meta_title', problem: `The "${name}" page SEO title is ${title.length} characters — over ~60 Google cuts it off with "…".`, metric: `${title.length} chars` })
       }
       // focus_keyword null + tenant has GSC impressions. NOTE: GSC data has no
       // per-page impressions (only tenant aggregate + per-query top_queries), so
       // this uses tenant-level impressions>0 as the gate rather than per-page.
       if (!m.focus_keyword && (gscData?.total_impressions ?? 0) > 0) {
-        findings.push({ id: nextId(), category: 'meta', severity: 'medium', page_slug: slug, page_name: name, admin_deeplink: ADMIN_DEEPLINK, problem: `The "${name}" page has no focus keyword set, even though your site is showing up in Google searches — setting one helps you rank for the term you care about.` })
+        findings.push({ id: nextId(), category: 'meta', severity: 'medium', page_slug: slug, page_name: name, admin_deeplink: ADMIN_DEEPLINK, fix_field: 'focus_keyword', problem: `The "${name}" page has no focus keyword set, even though your site is showing up in Google searches — setting one helps you rank for the term you care about.` })
       }
     }
     // duplicate meta_title across 2+ pages → one site-wide MEDIUM
@@ -209,7 +213,7 @@ serve(async (req) => {
       const name = pageName(slug)
       const intro = (p.intro ?? '') as string
       if (!intro.trim() || intro.length < 120) {
-        findings.push({ id: nextId(), category: 'content', severity: 'medium', page_slug: slug, page_name: name, admin_deeplink: ADMIN_DEEPLINK, problem: `The "${name}" page has very little intro text${intro.trim() ? ` (${intro.length} characters)` : ''}. Google and customers both want a few clear sentences about what you do here.`, metric: intro.trim() ? `${intro.length} chars` : 'empty' })
+        findings.push({ id: nextId(), category: 'content', severity: 'medium', page_slug: slug, page_name: name, admin_deeplink: ADMIN_DEEPLINK, fix_field: 'intro', problem: `The "${name}" page has very little intro text${intro.trim() ? ` (${intro.length} characters)` : ''}. Google and customers both want a few clear sentences about what you do here.`, metric: intro.trim() ? `${intro.length} chars` : 'empty' })
       }
     }
 
@@ -288,6 +292,8 @@ serve(async (req) => {
         id: f.id, category: f.category, severity: f.severity,
         page_slug: f.page_slug, page_name: f.page_name,
         problem: f.problem, metric: f.metric ?? null,
+        // S263 — target field for the one-click apply (null on non-applyable findings).
+        fix_field: f.fix_field ?? null,
       })),
     })
     if (persistErr) return await failJob(`persist report+findings: ${persistErr.message}`)

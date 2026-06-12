@@ -23,7 +23,7 @@ export default function SEOTab() {
     aiGenerating, aiGeneratedSlug,
     lastAudit, auditLoading, auditMode, pages,
     handleOpenEditor, handleCloseEditor, handleEditorChange, handleSaveMeta,
-    handleAiGenerate,
+    handleAiGenerate, fixChain,
     setAuditMode, runLighthouseAudit, handleRefreshScore,
   } = useSeoTab()
 
@@ -62,6 +62,7 @@ export default function SEOTab() {
           <SeoPagesTab stats={stats} pages={pages} openEditorSlug={openEditorSlug}
             editorForm={editorForm} editorSaving={editorSaving}
             aiGenerating={aiGenerating} aiGeneratedSlug={aiGeneratedSlug}
+            fixChain={fixChain}
             onOpenEditor={handleOpenEditor} onCloseEditor={handleCloseEditor}
             onEditorChange={handleEditorChange} onSaveMeta={handleSaveMeta}
             onAiGenerate={handleAiGenerate} />

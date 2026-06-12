@@ -21,7 +21,7 @@ export type AiFeature =
   | 'content_page' | 'composer_captions' | 'composer_schedule'
   | 'content_queue_schedule' | 'seo_metadata' | 'blog_draft'
   | 'blog_seo' | 'seo_keywords' | 'campaign_generation'
-  | 'redirect_map' | 'scrape_prospect_analyze'
+  | 'redirect_map' | 'scrape_prospect_analyze' | 'seo_fix'
 
 // feature → minimum tenant tier (canonical 1=Starter…4=Elite). 'operator' =
 // Ironwood-ops only (no tenant tier).
@@ -38,6 +38,8 @@ export const FEATURE_TIER: Record<AiFeature, number | 'operator'> = {
   blog_seo:               2,
   seo_keywords:           3,
   campaign_generation:    3,
+  // S263 — Report Fix-Chain suggested-fix generation. Pro+ to generate AND view.
+  seo_fix:                3,
   redirect_map:            'operator',
   scrape_prospect_analyze: 'operator',
 }

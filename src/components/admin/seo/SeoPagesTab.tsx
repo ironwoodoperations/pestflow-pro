@@ -1,7 +1,10 @@
 import React, { useState } from 'react'
+import { usePlan } from '../../../context/PlanContext'
 import type { SeoPageRow, SeoStats, EditorForm } from './seoTypes'
+import type { SeoFixChain } from './useSeoFixChain'
 import SeoStatCards from './SeoStatCards'
 import SeoInlineEditor from './SeoInlineEditor'
+import FixAllModal from './FixAllModal'
 
 interface Props {
   stats: SeoStats
@@ -11,6 +14,7 @@ interface Props {
   editorSaving: boolean
   aiGenerating: string | null
   aiGeneratedSlug: string | null
+  fixChain: SeoFixChain
   onOpenEditor: (slug: string) => void
   onCloseEditor: () => void
   onEditorChange: (field: keyof EditorForm, value: string) => void
@@ -36,13 +40,18 @@ const FINDING_SEVERITY_STYLE: Record<string, string> = {
 
 export default function SeoPagesTab({
   stats, pages, openEditorSlug, editorForm,
-  editorSaving, aiGenerating, aiGeneratedSlug,
+  editorSaving, aiGenerating, aiGeneratedSlug, fixChain,
   onOpenEditor, onCloseEditor, onEditorChange, onSaveMeta, onAiGenerate
 }: Props) {
+  const { canAccess } = usePlan()
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
   const [seoFilter, setSeoFilter] = useState('all')
+
+  // S263 — Elite "Fix all". Button is cosmetic (canAccess(4)); the server enforces
+  // the tier-4 gate before it loops. Only shown when generated fixes are ready.
+  const readyCount = fixChain.applyableFindings.length
 
   const filtered = pages.filter(p => {
     if (search && !p.label.toLowerCase().includes(search.toLowerCase()) &&
@@ -60,6 +69,18 @@ export default function SeoPagesTab({
   return (
     <div className="space-y-4">
       <SeoStatCards stats={stats} />
+
+      {canAccess(4) && readyCount > 0 && (
+        <div className="bg-violet-50 border border-violet-200 rounded-xl px-4 py-3 flex items-center justify-between">
+          <span className="text-sm text-violet-800">
+            ✨ {readyCount} generated fix{readyCount === 1 ? '' : 'es'} ready to apply across your flagged pages.
+          </span>
+          <button onClick={fixChain.openFixAll}
+            className="text-xs px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-semibold">
+            Fix all →
+          </button>
+        </div>
+      )}
 
       {stats.issuesFound > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center justify-between">
@@ -150,6 +171,7 @@ export default function SeoPagesTab({
                         page={page} form={editorForm} saving={editorSaving}
                         aiGenerating={aiGenerating === page.slug}
                         aiGenerated={aiGeneratedSlug === page.slug}
+                        fixChain={fixChain}
                         onChange={onEditorChange} onSave={() => onSaveMeta(page.slug)}
                         onCancel={onCloseEditor} onAiGenerate={() => onAiGenerate(page.slug)}
                       />
@@ -168,6 +190,8 @@ export default function SeoPagesTab({
           </tbody>
         </table>
       </div>
+
+      <FixAllModal fixChain={fixChain} />
     </div>
   )
 }
