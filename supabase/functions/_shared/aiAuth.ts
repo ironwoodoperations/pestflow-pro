@@ -23,12 +23,16 @@ export type AiFeature =
   | 'blog_seo' | 'seo_keywords' | 'campaign_generation'
   | 'redirect_map' | 'scrape_prospect_analyze'
 
-// feature → minimum tenant tier. 'operator' = Ironwood-ops only (no tenant tier).
+// feature → minimum tenant tier (canonical 1=Starter…4=Elite). 'operator' =
+// Ironwood-ops only (no tenant tier).
+// S262 re-maps (locked, PFP_Pricing_Tiers.docx §5): composer_captions 1→3
+// ("Growth schedules it, Pro writes it") and content_queue_schedule 1→2 (all
+// scheduling lives at Growth). Keep the SPA mirror (socialLimits.ts) in lockstep.
 export const FEATURE_TIER: Record<AiFeature, number | 'operator'> = {
   content_page:           1,
-  composer_captions:      1,
+  composer_captions:      3,
   composer_schedule:      2,
-  content_queue_schedule: 1,
+  content_queue_schedule: 2,
   seo_metadata:           2,
   blog_draft:             2,
   blog_seo:               2,
@@ -78,18 +82,20 @@ export async function requireAiCaller(
     throw new AuthError(403, { error: 'Forbidden' })
   }
 
-  // tier check, fail-closed (W4): missing/malformed subscription → 403, never default-to-1
+  // S262 — tier check via the single authoritative RPC. No tier parsing on the
+  // edge anymore: check_tenant_access(p_tenant_id, p_required_tier) reads
+  // tenants.entitlement in the DB (the one place that can't desync across
+  // runtimes/deploys). Fail-closed on RPC error OR a non-true result.
   const svc = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-  const { data, error } = await svc
-    .from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'subscription').maybeSingle()
-  const tier = (data?.value as { tier?: unknown } | null)?.tier
-  if (error || typeof tier !== 'number') {
-    console.warn('[aiAuth] subscription missing/malformed for tenant:', tenantId)
-    throw new AuthError(403, { error: 'Subscription not configured' })
-  }
-  if (tier < (required as number)) {
+  const { data: allowed, error } = await svc.rpc('check_tenant_access', {
+    p_tenant_id: tenantId,
+    p_required_tier: required as number,
+  })
+  if (error || allowed !== true) {
+    console.warn('[aiAuth] access denied tenant:', tenantId, 'feature:', feature, error ? `(rpc error: ${error.message})` : '')
     throw new AuthError(403, { error: 'Upgrade required' })
   }
 
-  return { user, tenantId, tier }
+  // tier value is no longer parsed on the edge; report the satisfied threshold.
+  return { user, tenantId, tier: required as number }
 }

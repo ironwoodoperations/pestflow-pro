@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../context/TenantBootProvider'
 import { applyTheme } from '../../../lib/shellThemes'
+import { usePlan } from '../../../context/PlanContext'
 import BrandingLogo from './BrandingLogo'
 import PalettePicker from '../../shared/PalettePicker'
 import { triggerRevalidate } from '../../../lib/revalidate'
@@ -25,40 +26,34 @@ const templates: { value: BrandingForm['theme']; label: string; desc: string; bg
 
 export default function BrandingSection() {
   const { id: tenantId } = useTenant()
+  // S262 — tier (for the Pro-only template gate) comes from usePlan()
+  // (tenants.entitlement), the single source. No settings.subscription read here.
+  const { tier: tierNum } = usePlan()
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [tierNum, setTierNum] = useState(1)
   const [form, setForm] = useState<BrandingForm>({
     logo_url: '', favicon_url: '', primary_color: '#10b981', accent_color: '#f5c518', theme: 'modern-pro', cta_text: '', apply_hero_to_all_pages: false
   })
 
   useEffect(() => {
     if (!tenantId) return
-    Promise.all([
-      supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle(),
-      supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'subscription').maybeSingle(),
-    ]).then(([brandingRes, subRes]) => {
-      if (brandingRes.data?.value) {
-        const v = brandingRes.data.value as Partial<BrandingForm>
-        setForm(prev => ({
-          ...prev,
-          logo_url:      v.logo_url      ?? prev.logo_url,
-          favicon_url:   v.favicon_url   ?? prev.favicon_url,
-          primary_color: v.primary_color ?? prev.primary_color,
-          accent_color:  v.accent_color  ?? prev.accent_color,
-          theme:         v.theme         ?? prev.theme,
-          cta_text:                v.cta_text                ?? prev.cta_text,
-          apply_hero_to_all_pages: v.apply_hero_to_all_pages ?? false,
-        }))
-      }
-      const TIER_RANK: Record<string, number> = { starter: 1, grow: 2, pro: 3, elite: 4 }
-      const rawTier = subRes.data?.value?.tier
-      if (rawTier != null) {
-        const n = typeof rawTier === 'number' ? rawTier : (TIER_RANK[String(rawTier).toLowerCase()] ?? Number(rawTier))
-        setTierNum(n || 1)
-      }
-      setLoading(false)
-    })
+    supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle()
+      .then(({ data }) => {
+        if (data?.value) {
+          const v = data.value as Partial<BrandingForm>
+          setForm(prev => ({
+            ...prev,
+            logo_url:      v.logo_url      ?? prev.logo_url,
+            favicon_url:   v.favicon_url   ?? prev.favicon_url,
+            primary_color: v.primary_color ?? prev.primary_color,
+            accent_color:  v.accent_color  ?? prev.accent_color,
+            theme:         v.theme         ?? prev.theme,
+            cta_text:                v.cta_text                ?? prev.cta_text,
+            apply_hero_to_all_pages: v.apply_hero_to_all_pages ?? false,
+          }))
+        }
+        setLoading(false)
+      })
   }, [tenantId])
 
   async function handleSave() {

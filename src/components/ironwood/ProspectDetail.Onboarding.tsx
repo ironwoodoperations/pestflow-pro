@@ -9,7 +9,7 @@ const PACKAGES = [
 ]
 const PLANS = [
   { id: 'starter', name: 'Starter', price: 149, tier: 1 },
-  { id: 'grow',    name: 'Grow',    price: 249, tier: 2 },
+  { id: 'grow',    name: 'Growth',  price: 249, tier: 2 },
   { id: 'pro',     name: 'Pro',     price: 349, tier: 3 },
   { id: 'elite',   name: 'Elite',   price: 499, tier: 4 },
 ]

@@ -136,10 +136,13 @@ async function handleInternal(req: Request, svc: SupabaseClient, json: JsonFn, l
       if (error || !data) { await logI(401); return json(401, { error: { message: 'campaign_id not in acting_tenant' } }) }
     }
 
-    // (8) tier re-check from the claimed tenant (never trust caller) — Pro+ only
-    const { data: subRow } = await svc.from('settings').select('value').eq('tenant_id', env.acting_tenant).eq('key', 'subscription').maybeSingle()
-    const tier = (subRow?.value as { tier?: unknown } | null)?.tier
-    if (typeof tier !== 'number' || tier < PRO_TIER) { await logI(403); return json(403, { error: { message: 'Pro tier required' } }) }
+    // (8) tier re-check from the claimed tenant (never trust caller) — Pro+ only.
+    // S262 — via the single authoritative RPC (tenants.entitlement), fail-closed.
+    const { data: allowed, error: gateErr } = await svc.rpc('check_tenant_access', {
+      p_tenant_id: env.acting_tenant,
+      p_required_tier: PRO_TIER,
+    })
+    if (gateErr || allowed !== true) { await logI(403); return json(403, { error: { message: 'Pro tier required' } }) }
 
     // per-tenant rate limit (§12), fail-open on infra error (shared helper)
     const rlOk = await checkRateLimit(svc, `ai-proxy-internal:${env.acting_tenant}`, 300, 120)

@@ -15,7 +15,7 @@ export const MONTHLY_PLANS = [
   },
   {
     tier: 2,
-    name: 'Grow',
+    name: 'Growth',
     price: 249,
     features: [
       'Everything in Starter',
@@ -30,7 +30,7 @@ export const MONTHLY_PLANS = [
     name: 'Pro',
     price: 349,
     features: [
-      'Everything in Grow',
+      'Everything in Growth',
       'AI content tools',
       'Advanced reports',
       'Campaign management',

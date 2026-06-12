@@ -33,7 +33,7 @@ const PLAN_DETAILS: Record<number, { subtitle: string; features: string[] }> = {
   3: {
     subtitle: 'AI tools + campaigns + advanced reports',
     features: [
-      'Everything in Grow',
+      'Everything in Growth',
       'AI keyword research',
       'AI social post generation',
       'Multi-day campaign batch posting',

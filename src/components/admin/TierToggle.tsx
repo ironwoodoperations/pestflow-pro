@@ -2,7 +2,7 @@ import { usePlan } from '../../hooks/usePlan'
 
 const TIERS = [
   { value: 1, label: 'S', name: 'Starter' },
-  { value: 2, label: 'G', name: 'Grow' },
+  { value: 2, label: 'G', name: 'Growth' },
   { value: 3, label: 'P', name: 'Pro' },
   { value: 4, label: 'E', name: 'Elite' },
 ]

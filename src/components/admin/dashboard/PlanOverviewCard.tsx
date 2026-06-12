@@ -2,7 +2,7 @@ import { usePlan } from '../../../context/PlanContext'
 
 const TIER_INFO: Record<number, { name: string; price: number; tagline: string }> = {
   1: { name: 'Starter', price: 149, tagline: 'Website + CRM + basic SEO' },
-  2: { name: 'Grow',    price: 249, tagline: 'Full SEO + Blog + Social scheduling' },
+  2: { name: 'Growth',  price: 249, tagline: 'Full SEO + Blog + Social scheduling' },
   3: { name: 'Pro',     price: 349, tagline: 'AI tools + campaigns + advanced reports' },
   4: { name: 'Elite',   price: 499, tagline: 'All platforms + live reviews + priority support' },
 }

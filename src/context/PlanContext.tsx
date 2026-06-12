@@ -2,18 +2,11 @@ import { createContext, useContext, useState, useEffect, useCallback, type React
 import { supabase } from '../lib/supabase'
 import { useTenant } from '../context/TenantBootProvider'
 
-const TIER_MAP: Record<number, { plan_name: string; monthly_price: number }> = {
-  1: { plan_name: 'Starter', monthly_price: 149 },
-  2: { plan_name: 'Grow', monthly_price: 249 },
-  3: { plan_name: 'Pro', monthly_price: 349 },
-  4: { plan_name: 'Elite', monthly_price: 499 },
-}
-
 interface PlanContextValue {
   tier: number
   loading: boolean
   canAccess: (minTier: number) => boolean
-  setTier: (newTier: number) => Promise<void>
+  setTier: (newTier: number) => void
   refreshPlan: () => void
 }
 
@@ -21,7 +14,7 @@ const PlanContext = createContext<PlanContextValue>({
   tier: 1,
   loading: true,
   canAccess: () => false,
-  setTier: async () => {},
+  setTier: () => {},
   refreshPlan: () => {},
 })
 
@@ -30,23 +23,27 @@ export function PlanProvider({ children }: { children: ReactNode }) {
   const [tier, setTierState] = useState(1)
   const [loading, setLoading] = useState(true)
 
+  // S262 — read the canonical access entitlement straight off tenants.entitlement
+  // (smallint 1–4): the SINGLE source of truth, written only by operator action /
+  // provisioning (enforced by tenants RLS). The old settings.subscription
+  // string→number coercion ('elite'→4, 'pro'→3, …) is GONE — there is no string
+  // tier to coerce anymore, which kills the client-vs-edge drift that let
+  // string-"elite" pass on the client but fail-closed on the edge.
+  //
+  // This read is COSMETIC (dashboard show/hide). Real enforcement is server-side:
+  // every gated action re-checks via the check_tenant_access RPC in the edge
+  // functions, so a tampered client value cannot unlock a gated feature.
   const refreshPlan = useCallback(() => {
     if (!tenantId) return
     supabase
-      .from('settings')
-      .select('value')
-      .eq('tenant_id', tenantId)
-      .eq('key', 'subscription')
+      .from('tenants')
+      .select('entitlement')
+      .eq('id', tenantId)
       .maybeSingle()
       .then(({ data }) => {
-        if (data?.value?.tier != null) {
-          const raw = data.value.tier
-          // Convert string tier ('growth', 'pro', etc.) to numeric for all comparisons
-          const num = typeof raw === 'number' ? raw
-            : raw === 'elite' ? 4 : raw === 'pro' ? 3
-            : (raw === 'growth' || raw === 'grow') ? 2 : 1
-          setTierState(num)
-        }
+        const e = (data as { entitlement?: unknown } | null)?.entitlement
+        // Fail-restrictive: anything unreadable/absent → Starter (cosmetic only).
+        setTierState(typeof e === 'number' && e >= 1 && e <= 4 ? e : 1)
         setLoading(false)
       })
   }, [tenantId])
@@ -55,13 +52,12 @@ export function PlanProvider({ children }: { children: ReactNode }) {
 
   const canAccess = (minTier: number) => tier >= minTier
 
-  const setTier = async (newTier: number) => {
-    const meta = TIER_MAP[newTier] || TIER_MAP[1]
-    await supabase.from('settings').upsert(
-      { tenant_id: tenantId, key: 'subscription', value: { tier: newTier, ...meta } },
-      { onConflict: 'tenant_id,key' }
-    )
-    refreshPlan()
+  // S262 — DEMO/PREVIEW ONLY. Entitlement is NOT client-writable (tenants RLS lets
+  // only the Ironwood operator context write it). This sets LOCAL state so the
+  // operator can preview the dashboard at a given tier during a sales demo; it does
+  // NOT persist and does NOT change real entitlement or server-side gating.
+  const setTier = (newTier: number) => {
+    setTierState(newTier >= 1 && newTier <= 4 ? newTier : 1)
   }
 
   return (

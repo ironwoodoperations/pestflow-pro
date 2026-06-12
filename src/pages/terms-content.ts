@@ -12,8 +12,8 @@ export const termsMeta = {
 
 export const planTable = [
   { plan: "Starter", fee: "$149 / mo", features: "Website, CRM, basic SEO, locations (up to 3), team" },
-  { plan: "Grow",    fee: "$249 / mo", features: "All Starter + full SEO suite, blog, social scheduling" },
-  { plan: "Pro",     fee: "$349 / mo", features: "All Grow + AI tools, advanced reports, campaigns" },
+  { plan: "Growth",  fee: "$249 / mo", features: "All Starter + full SEO suite, blog, social scheduling" },
+  { plan: "Pro",     fee: "$349 / mo", features: "All Growth + AI tools, advanced reports, campaigns" },
   { plan: "Elite",   fee: "$499 / mo", features: "All Pro + social analytics, Buffer, live reviews" },
 ];
 

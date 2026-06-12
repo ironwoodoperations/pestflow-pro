@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../context/TenantBootProvider'
+import { usePlan } from '../../context/PlanContext'
+import { tierInfo } from '../../lib/tierInfo'
 import PageHelpBanner from './PageHelpBanner'
 import UpgradeCards from './UpgradeCards'
 import { CreditCard, Calendar, CheckCircle, Clock, XCircle } from 'lucide-react'
@@ -15,26 +17,13 @@ interface PaymentRow {
   subscription_price_id: string | null
 }
 
-interface SubscriptionSettings {
-  tier: number | string
-  plan_name: string
-  monthly_price: number
-}
-
-// Convert tier to numeric for comparisons — handles legacy number or new string format
-function tierNum(tier: number | string | undefined): number {
-  if (typeof tier === 'number') return tier
-  if (!tier) return 1
-  const s = String(tier).toLowerCase()
-  if (s === 'elite') return 4
-  if (s === 'pro') return 3
-  if (s === 'growth' || s === 'grow') return 2
-  return 1
-}
+// S262 — the current tier comes from usePlan() (tenants.entitlement), the single
+// source of truth. This component no longer reads settings.subscription, and the
+// old string/number tierNum() coercion is gone.
 
 const PLAN_PRICE_LABELS: Record<string, string> = {
   [import.meta.env.VITE_STRIPE_PRICE_SUB_STARTER || '']: 'Tier 1 — Starter',
-  [import.meta.env.VITE_STRIPE_PRICE_SUB_GROWTH  || '']: 'Tier 2 — Grow',
+  [import.meta.env.VITE_STRIPE_PRICE_SUB_GROWTH  || '']: 'Tier 2 — Growth',
   [import.meta.env.VITE_STRIPE_PRICE_SUB_PRO     || '']: 'Tier 3 — Pro',
   [import.meta.env.VITE_STRIPE_PRICE_SUB_ELITE   || '']: 'Tier 4 — Elite',
 }
@@ -42,10 +31,10 @@ const PLAN_PRICE_LABELS: Record<string, string> = {
 const TIERS = [
   { tier: 1, name: 'Starter', price: 149, priceId: import.meta.env.VITE_STRIPE_PRICE_SUB_STARTER || '',
     features: ['Website + hosting', 'Lead capture form', 'Content editor', 'SEO tools', 'Blog'] },
-  { tier: 2, name: 'Grow', price: 249, priceId: import.meta.env.VITE_STRIPE_PRICE_SUB_GROWTH || '',
+  { tier: 2, name: 'Growth', price: 249, priceId: import.meta.env.VITE_STRIPE_PRICE_SUB_GROWTH || '',
     features: ['Everything in Starter', 'Social media posts', 'Review requests', 'CRM tools', 'Priority support'] },
   { tier: 3, name: 'Pro', price: 349, priceId: import.meta.env.VITE_STRIPE_PRICE_SUB_PRO || '',
-    features: ['Everything in Grow', 'SMS notifications', 'Advanced analytics', 'Google Business sync', 'Team accounts'] },
+    features: ['Everything in Growth', 'SMS notifications', 'Advanced analytics', 'Google Business sync', 'Team accounts'] },
   { tier: 4, name: 'Elite', price: 499, priceId: import.meta.env.VITE_STRIPE_PRICE_SUB_ELITE || '',
     features: ['Everything in Pro', 'White-glove onboarding', 'Custom integrations', 'Dedicated support line', 'Monthly strategy call'] },
 ]
@@ -75,8 +64,8 @@ function totalAmount(row: PaymentRow): string {
 
 export default function BillingTab() {
   const { id: tenantId } = useTenant()
+  const { tier: currentTier } = usePlan()
   const [payments, setPayments] = useState<PaymentRow[]>([])
-  const [subscription, setSubscription] = useState<SubscriptionSettings | null>(null)
   const [loading, setLoading] = useState(true)
   const [upgrading, setUpgrading] = useState<number | null>(null)
   const [clientEmail, setClientEmail] = useState('')
@@ -99,13 +88,11 @@ export default function BillingTab() {
         .select('id, created_at, payment_type, status, setup_amount, subscription_amount, subscription_price_id')
         .eq('tenant_id', tenantId)
         .order('created_at', { ascending: false }),
-      supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'subscription').maybeSingle(),
       supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'notifications').maybeSingle(),
       supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
       supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'demo_mode').maybeSingle(),
-    ]).then(([paymentsRes, subRes, notifRes, bizRes, demoRes]) => {
+    ]).then(([paymentsRes, notifRes, bizRes, demoRes]) => {
       setPayments(paymentsRes.data || [])
-      if (subRes.data?.value) setSubscription(subRes.data.value as SubscriptionSettings)
       const email =
         notifRes.data?.value?.lead_email ||
         bizRes.data?.value?.email ||
@@ -163,7 +150,7 @@ export default function BillingTab() {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${accessToken}`,
           },
-          body: JSON.stringify({ tenant_id: tenantId, old_tier: tierNum(subscription!.tier), new_tier: tier.tier, plan_name: tier.name, monthly_price: tier.price }),
+          body: JSON.stringify({ tenant_id: tenantId, old_tier: currentTier, new_tier: tier.tier, plan_name: tier.name, monthly_price: tier.price }),
         }).catch(() => {})
         window.location.href = data.url
       } else { setUpgradeError(data.error || 'Failed to start checkout') }
@@ -184,14 +171,14 @@ export default function BillingTab() {
       )}
 
       {/* Tier upgrade cards — only shown on demo tenant */}
-      {isDemoTenant && subscription && tierNum(subscription.tier) < 4 && (
+      {isDemoTenant && currentTier < 4 && (
         <div className="mb-6">
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Plans</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {TIERS.map(tier => {
-              const isCurrent = tierNum(subscription.tier) === tier.tier
-              const isUpgrade = tier.tier > tierNum(subscription.tier)
-              const isDowngrade = tier.tier < tierNum(subscription.tier)
+              const isCurrent = currentTier === tier.tier
+              const isUpgrade = tier.tier > currentTier
+              const isDowngrade = tier.tier < currentTier
               return (
                 <div key={tier.tier}
                   className={`bg-white rounded-xl border-2 p-5 flex flex-col ${isCurrent ? 'border-emerald-500 shadow-md' : 'border-gray-200'}`}>
@@ -242,22 +229,20 @@ export default function BillingTab() {
           </div>
         </div>
 
-        {subscription ? (
+        {loading ? (
+          <p className="text-sm text-gray-400">Loading...</p>
+        ) : (
           <div className="flex items-end gap-4">
             <div>
               <p className="text-2xl font-bold text-gray-900">
-                {subscription.plan_name}
+                {tierInfo(currentTier).name}
                 <span className="text-base font-normal text-gray-500 ml-1">
-                  — ${subscription.monthly_price}/mo
+                  — ${tierInfo(currentTier).price}/mo
                 </span>
               </p>
-              <p className="text-sm text-gray-500 mt-1">Tier {tierNum(subscription.tier)}</p>
+              <p className="text-sm text-gray-500 mt-1">Tier {currentTier}</p>
             </div>
           </div>
-        ) : loading ? (
-          <p className="text-sm text-gray-400">Loading...</p>
-        ) : (
-          <p className="text-sm text-gray-500">No subscription data found.</p>
         )}
 
         <div className="mt-5 pt-4 border-t border-gray-100">
@@ -272,7 +257,7 @@ export default function BillingTab() {
 
       {/* Self-serve upgrade cards — real (non-demo) clients. Reads current tier from
           usePlan() and calls create-upgrade-session; renders one card per tier. */}
-      {!isDemoTenant && subscription && (
+      {!isDemoTenant && (
         <UpgradeCards businessName={businessName} />
       )}
 

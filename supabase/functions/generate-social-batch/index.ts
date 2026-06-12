@@ -44,10 +44,10 @@ serve(async (req) => {
 
   const svc = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
-  // Pro gate (re-checked server-side; the worker + ai-proxy re-check again)
-  const { data: subRow } = await svc.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'subscription').maybeSingle()
-  const tier = (subRow?.value as { tier?: unknown } | null)?.tier
-  if (typeof tier !== 'number' || tier < PRO_TIER) return json(403, { error: 'AI Campaigns require the Pro plan.' })
+  // Pro gate (re-checked server-side; the worker + ai-proxy re-check again) —
+  // S262: via the single authoritative RPC (tenants.entitlement), fail-closed.
+  const { data: allowed, error: gateErr } = await svc.rpc('check_tenant_access', { p_tenant_id: tenantId, p_required_tier: PRO_TIER })
+  if (gateErr || allowed !== true) return json(403, { error: 'AI Campaigns require the Pro plan.' })
 
   // ── validate request ──
   const title = typeof body.title === 'string' && body.title.trim() ? body.title.trim() : 'AI Campaign'
