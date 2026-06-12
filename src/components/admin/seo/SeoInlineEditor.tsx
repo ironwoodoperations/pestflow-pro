@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
+import { usePlan } from '../../../context/PlanContext'
 import type { SeoPageRow, EditorForm, FindingSeverity } from './seoTypes'
+import type { SeoFixChain } from './useSeoFixChain'
 
 // Count pill (e.g. 72/60). Green/amber/red logic unchanged from S2xx — extended
 // only by the plain-language guidance line below (see lengthGuidance).
@@ -45,20 +47,58 @@ const FINDING_DOT: Record<FindingSeverity, string> = {
 }
 
 // CHANGE 1 — surface the stored monthly-report findings inline, connecting the
-// "Needs update (N)" badge → the report → this edit screen. Reuses the findings
-// the badge already reads (page.findings); renders nothing when there are none.
-function FlaggedFindings({ findings }: { findings: SeoPageRow['findings'] }) {
+// "Needs update (N)" badge → the report → this edit screen.
+// S263 — Pro+ also get per-finding Generate + one-click Apply on applyable findings
+// (the AI suggestion is Pro+ to generate AND view). Growth/below see coaching only.
+function FlaggedFindings({ page, fixChain }: { page: SeoPageRow; fixChain: SeoFixChain }) {
+  const { canAccess } = usePlan()
+  const isPro = canAccess(3)
+  const findings = page.findings
   if (!findings || findings.length === 0) return null
   return (
     <div className="bg-white border border-amber-200 rounded-lg p-3">
       <p className="text-xs font-semibold text-amber-800 mb-1.5">What this month's report flagged:</p>
-      <ul className="space-y-1">
-        {findings.map((f, i) => (
-          <li key={i} className="flex items-start gap-2 text-xs text-gray-700">
-            <span className={`mt-1 w-1.5 h-1.5 rounded-full flex-shrink-0 ${FINDING_DOT[f.severity]}`} />
-            <span>{f.problem}</span>
-          </li>
-        ))}
+      <ul className="space-y-2">
+        {findings.map((f) => {
+          const suggested = fixChain.suggestedOverride[f.id] ?? f.suggestedFix
+          const status = fixChain.findingStatus[f.id]
+          const generating = fixChain.generatingId === f.id
+          const applying = fixChain.applyingId === f.id
+          return (
+            <li key={f.id} className="text-xs text-gray-700">
+              <div className="flex items-start gap-2">
+                <span className={`mt-1 w-1.5 h-1.5 rounded-full flex-shrink-0 ${FINDING_DOT[f.severity]}`} />
+                <span className="flex-1">{f.problem}</span>
+              </div>
+              {isPro && f.applyable && status !== 'applied' && (
+                <div className="mt-1.5 ml-3.5">
+                  {suggested ? (
+                    <div className="space-y-1.5">
+                      <div className="bg-emerald-50 border border-emerald-200 rounded p-2 text-emerald-900">{suggested}</div>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => fixChain.handleApplyFix(f, page.slug)} disabled={applying || generating}
+                          className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded font-medium disabled:opacity-50">
+                          {applying ? 'Applying…' : 'Apply fix'}
+                        </button>
+                        <button onClick={() => fixChain.handleGenerateFix(f, page.label)} disabled={generating || applying}
+                          className="px-2.5 py-1 border border-gray-300 rounded text-gray-600 hover:bg-gray-50 disabled:opacity-50">
+                          {generating ? 'Regenerating…' : 'Regenerate'}
+                        </button>
+                        {status === 'conflict' && <span className="text-amber-600">Your manual edit was kept.</span>}
+                      </div>
+                    </div>
+                  ) : (
+                    <button onClick={() => fixChain.handleGenerateFix(f, page.label)} disabled={generating}
+                      className="px-2.5 py-1 bg-violet-600 hover:bg-violet-700 text-white rounded font-medium disabled:opacity-50">
+                      {generating ? 'Generating…' : '✨ Generate fix'}
+                    </button>
+                  )}
+                </div>
+              )}
+              {status === 'applied' && <p className="mt-1 ml-3.5 text-emerald-700 font-medium">✓ Applied — live site refreshed.</p>}
+            </li>
+          )
+        })}
       </ul>
     </div>
   )
@@ -88,13 +128,14 @@ interface Props {
   saving: boolean
   aiGenerating: boolean
   aiGenerated: boolean
+  fixChain: SeoFixChain
   onChange: (field: keyof EditorForm, value: string) => void
   onSave: () => void
   onCancel: () => void
   onAiGenerate: () => void
 }
 
-export default function SeoInlineEditor({ page, form, saving, aiGenerating, aiGenerated, onChange, onSave, onCancel, onAiGenerate }: Props) {
+export default function SeoInlineEditor({ page, form, saving, aiGenerating, aiGenerated, fixChain, onChange, onSave, onCancel, onAiGenerate }: Props) {
   const cls = 'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm'
   return (
     <div className="bg-blue-50 border-t border-b border-blue-200 p-5 space-y-3">
@@ -111,7 +152,7 @@ export default function SeoInlineEditor({ page, form, saving, aiGenerating, aiGe
         </div>
       </div>
 
-      <FlaggedFindings findings={page.findings} />
+      <FlaggedFindings page={page} fixChain={fixChain} />
 
       <SerpPreview title={form.meta_title} description={form.meta_description} url={page.url} label={page.label} />
 

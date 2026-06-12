@@ -3,8 +3,10 @@ import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../context/TenantBootProvider'
 import { stripVaultSecrets } from '../../../lib/integrationSecretKeys'
+import { triggerRevalidate } from '../../../lib/revalidate'
 import { useSeoAudit, getCachedAudit } from './useSeoAudit'
 import { useSeoAiGenerate } from './useSeoAiGenerate'
+import { useSeoFixChain } from './useSeoFixChain'
 import type {
   SeoTabId, SeoPageRow, SeoStats, SeoCoverage,
   IntegrationValues, EditorForm, ConnectForm, FindingSeverity, PageFinding,
@@ -61,9 +63,10 @@ export function useSeoTab() {
         // S260-3 — open report findings for the "Needs update" badge. Page-scoped
         // only (site-wide page_slug=null excluded).
         // Session A — also pull `problem` (the plain-English finding text) so the
-        // inline editor can show the SAME findings the badge counts. Same table,
-        // same WHERE, same already-authorized rows — only a wider column projection.
-        supabase.from('report_findings').select('page_slug, severity, problem').eq('tenant_id', tenantId).eq('is_resolved', false).not('page_slug', 'is', null),
+        // inline editor can show the SAME findings the badge counts.
+        // S263 — also pull id/category/fix_field/suggested_fix so the Fix-Chain can
+        // render Generate/Apply per finding. Same rows, wider projection only.
+        supabase.from('report_findings').select('id, page_slug, severity, problem, category, fix_field, suggested_fix').eq('tenant_id', tenantId).eq('is_resolved', false).not('page_slug', 'is', null),
       ])
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const metaMap: Record<string, any> = {}
@@ -76,7 +79,17 @@ export function useSeoTab() {
       for (const row of findingsRes.data || []) {
         const slug = row.page_slug as string
         const sev = (row.severity as FindingSeverity) || 'low'
-        const item: PageFinding = { severity: sev, problem: (row.problem as string) || '' }
+        const fixField = (row.fix_field as PageFinding['fixField']) ?? null
+        const item: PageFinding = {
+          id: row.id as string,
+          severity: sev,
+          problem: (row.problem as string) || '',
+          category: (row.category as string) || '',
+          fixField,
+          suggestedFix: (row.suggested_fix as string) ?? null,
+          // page-scoped (query guarantees) AND a mapped target field → applyable.
+          applyable: !!fixField,
+        }
         const existing = findingMap.get(slug)
         if (!existing) findingMap.set(slug, { count: 1, topSeverity: sev, items: [item] })
         else {
@@ -163,6 +176,14 @@ export function useSeoTab() {
         { onConflict: 'tenant_id,page_slug' }
       )
       if (error) { toast.error(`Failed to save SEO data: ${error.message}`); return }
+      // S263 Step 4 — purge ISR after a manual seo_meta save. This editor never did
+      // (latent bug: meta edits silently didn't bust the CDN cache). The Fix-Chain
+      // apply purges correctly; this closes the manual-editor gap so the two match.
+      const { data: s } = await supabase.auth.getSession()
+      if (s.session?.access_token && tenantId) {
+        const ok = await triggerRevalidate({ type: 'page', tenantId, slug }, s.session.access_token)
+        if (!ok) toast.warning('Saved — your live site may take a few minutes to update.')
+      }
       toast.success('SEO data saved!')
       setPages(prev => prev.map(p => p.slug === slug
         ? { ...p, hasMeta: editorForm.meta_title.trim().length > 0, metaTitle: editorForm.meta_title, metaDescription: editorForm.meta_description }
@@ -196,12 +217,17 @@ export function useSeoTab() {
     (form: EditorForm) => setEditorForm(form),
   )
 
+  // S263 — Report Fix-Chain (Generate / Apply per finding; Elite Fix-all). Server
+  // enforces every tier gate; this just drives the buttons + reloads on success.
+  const fixChain = useSeoFixChain(tenantId, pages, loadAll)
+
   return {
     activeTab, setActiveTab, pages, loading, integrations, stats, coverage,
     openEditorSlug, editorForm, editorSaving, connectForm, connectSaving,
     aiGenerating, aiGeneratedSlug,
     handleOpenEditor, handleCloseEditor, handleEditorChange, handleSaveMeta,
     handleAiGenerate, handleConnectChange, handleConnectSave, handleRunCheckNow,
+    fixChain,
     ...audit,
     handleRefreshScore: () => { audit.clearCacheAndRefresh(); setTimeout(() => audit.runLighthouseAudit(), 50) },
   }

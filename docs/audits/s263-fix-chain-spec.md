@@ -88,6 +88,18 @@ on the finding.**
     edited after the fix was generated is never silently clobbered (see §7 Seam 5). Both
     `page_content` and `seo_meta` carry `updated_at` (verified live), so this is universally
     available for every applyable target.
+  - **DB belt:** a `CHECK (fix_field IN (...4 values...) OR NULL)` constraint so no writer can ever
+    persist an off-list `fix_field` (defense-in-depth behind the apply fn's 400 — §7 Seam 3).
+- **Second additive migration (`seo_meta` updated_at trigger):** `settings` + `page_content` got
+  the shared `bump_updated_at` trigger in S257 (20260419) but **`seo_meta` was missed**, so its
+  `updated_at` only reflected insert time. The Seam-5 concurrency guard needs `updated_at` to
+  advance on every change, so this attaches the same trigger to `seo_meta`. (`user_edited = false`
+  stays the load-bearing manual-edit guard on `seo_meta`; the trigger makes the `updated_at` guard
+  bite there too.) Additive, idempotent, harmless to the existing manual editor.
+- **Repo-truth location:** both SQL files live in **`docs/migrations/`** (`s263-fix-chain-columns-
+  and-rpc.sql`, `s263-seo-meta-updated-at-trigger.sql`), not `supabase/migrations/`, because the
+  latter is on the CLAUDE.md DO-NOT-TOUCH list (protect-files hook). Copy into `supabase/migrations/`
+  with human approval if `db reset` reproduction is wanted. I apply both live via MCP off merged source.
 - **Generator (`generate-monthly-report`, CC Web → I deploy):** set `fix_field` on each
   `content`/page-scoped-`meta` finding at the `findings.push(...)` site. One literal per branch.
 - **Suggested-fix generate action (§4 Step 1):** when it writes `suggested_fix + suggested_fix_at`,
@@ -131,17 +143,27 @@ write logic to human-readable copy; brittle if copy changes; conservative-wins g
 ## 4. Build — step by step
 
 ### Step 1 — Generate suggested fix (Pro-gated, lazy, cached)
-- **New ai-proxy feature(s)** registered at **tier 3**: e.g. `seo_fix_content` and `seo_fix_meta`
-  (or one `seo_fix` keyed on `fix_field`). ai-proxy enforces the Pro gate server-side; model pinned
-  `claude-sonnet-4-6`. (CC Web edits `ai-proxy` source; **I deploy via MCP**.)
-- **Frontend** (`useSeoTab` action): if `suggested_fix` already set → no-op (cached). Else
-  `callAi('seo_fix_*', { tenant_id, max_tokens, system, messages })` with a per-`fix_field` prompt
-  (e.g. meta_title ≤ 60 chars, meta_description 70–160, focus_keyword = single phrase, intro =
-  2–4 sentences grounded in business_info + page). Strip backticks before any JSON parse. Write
-  `suggested_fix + suggested_fix_at` to `report_findings` (RLS-scoped admin write; cache), and in
-  the same write stamp `fix_base_updated_at` = the resolved target row's current `updated_at`
-  (§2) — the concurrency baseline the apply later matches against.
-- **View gate:** the generated text renders only under `FeatureGate minTier={3}` (Pro+ to VIEW).
+- **New ai-proxy feature** `seo_fix` registered at **tier 3** (one feature, prompt keyed on
+  `fix_field`). ai-proxy enforces the Pro gate server-side; model pinned `claude-sonnet-4-6`.
+  (CC Web edits `ai-proxy`/`aiAuth.ts` source; **I deploy via MCP**.)
+- **Frontend** (`useSeoFixChain`): if `suggested_fix` already set → no-op (cached). Else
+  `callAi('seo_fix', { tenant_id, max_tokens, system, messages })` with a per-`fix_field` prompt
+  (meta_title ≤ 60 chars, meta_description 70–160, focus_keyword = single phrase, intro =
+  2–4 sentences grounded in business_info + page). Plain-text output, de-quoted/backtick-stripped.
+- **Persist server-side, NOT a client RLS write (as-built divergence — see note).** The client
+  hands the generated text to `apply-finding-fix` **`mode:'generate'`** (service-role, tier-3
+  re-checked) which writes `suggested_fix + suggested_fix_at` **and stamps `fix_base_updated_at`**
+  = the resolved target row's current `updated_at`, read **server-side** (authoritative — better
+  than a client read). The frontend caches the text in local state for immediate display.
+- **View gate:** the generated text renders only under a Pro check (`usePlan().canAccess(3)`).
+
+> **As-built divergence (more conservative).** The earlier draft had the frontend UPDATE
+> `report_findings` directly ("RLS-scoped admin write"). Grounding showed `report_findings` has
+> **only a SELECT RLS policy** — a direct client UPDATE is denied, and adding an UPDATE policy
+> would open a new client-write surface on the findings table (is_resolved/suggested_fix tampering).
+> Routing the persist through the existing tier-3 edge fn (`mode:'generate'`) keeps **all**
+> `report_findings` writes server-side and needs **no** RLS change. Strictly safer; the
+> conservative-wins gate prefers it.
 
 ### Step 2 — Per-finding apply (Pro-gated edge fn) — THE core work
 New edge fn **`apply-finding-fix`** (`verify_jwt: true`), default `mode: 'single'` (the
@@ -229,8 +251,8 @@ so the purge is effective — verify in `app/tenant/[slug]/_lib/queries.ts` duri
 | Action | Frontend (cosmetic) | Server enforcement |
 |--------|---------------------|--------------------|
 | See findings + coaching | `FeatureGate minTier={2}` (existing SEO tab) | RLS on `report_findings` read |
-| Generate suggested fix | `FeatureGate minTier={3}` | ai-proxy feature tier 3 |
-| View suggested fix | `FeatureGate minTier={3}` | (cosmetic; text is non-sensitive) |
+| Generate suggested fix | `usePlan().canAccess(3)` | ai-proxy `seo_fix` tier 3 (text gen) **+** `apply-finding-fix` `mode:'generate'` → `check_tenant_access(t,3)` (server-side persist) |
+| View suggested fix | `usePlan().canAccess(3)` | (cosmetic; text is the tenant's own copy) |
 | Apply (per finding) | `FeatureGate minTier={3}` | `apply-finding-fix` (`mode:'single'`) → JWT-derived tenant + `check_tenant_access(jwtTenant,3)` + tenant/concurrency/user_edited WHERE guards |
 | Fix all | `FeatureGate minTier={4}` | `apply-finding-fix` (`mode:'fix_all'`) → **explicit `check_tenant_access(jwtTenant,4)` FIRST**, then server-side loop of the tier-3 single-apply (defense-in-depth) |
 
@@ -244,19 +266,23 @@ so the purge is effective — verify in `app/tenant/[slug]/_lib/queries.ts` duri
 
 ## 6. Files — who writes what
 
-**CC Web (repo writes, branch + PR, Scott merges):**
-- `supabase/functions/apply-finding-fix/index.ts` (new, < 200 lines; `mode:'single'|'fix_all'`,
+**CC Web (repo writes, branch + PR, Scott merges) — BUILT this session:**
+- `supabase/functions/apply-finding-fix/index.ts` (new, ~210 lines; `mode:'generate'|'single'|'fix_all'`,
   JWT-derived tenant, hardcoded `fix_field`→column map, tenant/concurrency/`user_edited` WHERE guards,
-  409-on-0-rows)
-- `supabase/functions/ai-proxy/index.ts` (add Pro-tier feature key(s) — source only)
-- `supabase/functions/generate-monthly-report/index.ts` (stamp `fix_field`)
-- `src/components/admin/seo/useSeoTab.ts` (generate action; apply caller; fix-all loop; seo_meta revalidate fix)
-- `src/components/admin/seo/SeoPagesTab.tsx` / `SeoInlineEditor.tsx` (Generate/Apply/Fix-all buttons + state)
-- New small modal component for Fix-all preview/confirm
-- `src/lib/ai/aiFeatures.ts` (register new feature name(s))
+  409-on-0-rows, tier-4-first `fix_all`)
+- `supabase/functions/_shared/aiAuth.ts` (register `seo_fix` feature at tier 3)
+- `src/lib/ai/aiFeatures.ts` (mirror `seo_fix` in the client AiFeature union)
+- `supabase/functions/generate-monthly-report/index.ts` (stamp `fix_field` on the 6 applyable push-sites; thread through the persist RPC)
+- `src/components/admin/seo/useSeoFixChain.ts` (new — generate/apply/fix-all logic + state)
+- `src/components/admin/seo/useSeoTab.ts` (widen findings projection; integrate fix-chain; **seo_meta revalidate fix**)
+- `src/components/admin/seo/seoTypes.ts` (extend `PageFinding`)
+- `src/components/admin/seo/SeoInlineEditor.tsx` / `SeoPagesTab.tsx` / `SEOTab.tsx` (Generate/Apply per finding; Fix-all banner; prop threading)
+- `src/components/admin/seo/FixAllModal.tsx` (new — Elite preview/confirm)
+- `docs/migrations/s263-fix-chain-columns-and-rpc.sql` + `docs/migrations/s263-seo-meta-updated-at-trigger.sql` (repo-truth SQL — `supabase/migrations/` is hook-protected)
+- _(No `ai-proxy/index.ts` change needed — it gates generically off `FEATURE_TIER`, so registering `seo_fix` in `aiAuth.ts` is sufficient.)_
 
 **Claude.ai / MCP (Scott triggers; I run after verified merged source):**
-- Additive migration: `report_findings.fix_field text` **+ `report_findings.fix_base_updated_at timestamptz`** (both nullable; apply_migration)
+- Apply both repo-truth migrations: `report_findings.fix_field` + `fix_base_updated_at` (+ CHECK + RPC); `seo_meta` updated_at trigger
 - Deploy edge fns: `apply-finding-fix`, `ai-proxy`, `generate-monthly-report`
 - Regenerate Dang's report (stamp `fix_field` on the 8 applyable findings)
 - Verify artifacts (not success messages): row writes, ISR purge effect on live page

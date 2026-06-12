@@ -2,11 +2,22 @@ export type SeoTabId = 'overview' | 'pages' | 'keywords' | 'aio' | 'connect'
 
 export type FindingSeverity = 'high' | 'medium' | 'low'
 
+// S263 — the closed set of columns a one-click apply can target.
+export type FixField = 'intro' | 'meta_title' | 'meta_description' | 'focus_keyword'
+
 // Session A — a single open monthly-report finding scoped to a page, carrying the
 // plain-English `problem` text so the inline editor can surface what was flagged.
+// S263 — extended with the fields the Fix-Chain needs: the finding id, its target
+// field, any cached suggested_fix, and whether it is one-click applyable.
 export interface PageFinding {
+  id: string
   severity: FindingSeverity
   problem: string
+  category: string
+  fixField: FixField | null
+  suggestedFix: string | null
+  // page-scoped AND has a mapped target field → eligible for Generate/Apply.
+  applyable: boolean
 }
 
 export interface SeoPageRow {
