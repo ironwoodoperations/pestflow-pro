@@ -12,13 +12,13 @@ export const SOCIAL_LIMITS = {
     canUseCampaigns: false,
     provider: 'none',
   },
-  2: { // Grow — Zernio with hard cap
+  2: { // Growth — Zernio with hard cap; scheduling yes, AI caption writing NO
     postsPerDay: 2,         // HARD CAP 2 posts/day via Zernio
-    aiGenerationsPerDay: 5,
-    captionsPerClick: 2,
+    aiGenerationsPerDay: 5, // (only consulted when canUseAI is true)
+    captionsPerClick: 2,    // (only consulted when canUseAI is true)
     daysAhead: 0,           // today only
-    canSchedule: true,
-    canUseAI: true,
+    canSchedule: true,      // S262: scheduling stays at Growth (content_queue_schedule 1→2)
+    canUseAI: false,        // S262: composer_captions re-mapped 1→3 — AI caption writing is Pro+
     canUseCampaigns: false,
     provider: 'zernio',
   },

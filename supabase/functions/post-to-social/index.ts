@@ -172,23 +172,25 @@ serve(async (req) => {
     }
   }
 
-  const [subRes, intgRes] = await Promise.all([
-    supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'subscription').maybeSingle(),
+  // S262 — access via the single authoritative RPC (tenants.entitlement), fail-closed.
+  // Scheduling requires Growth (tier ≥ 2); the daily 2-post cap applies to Growth
+  // only (Pro+ unlimited). No settings.subscription read, no numeric tier parsing.
+  const [intgRes, gateRes, proRes] = await Promise.all([
     supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle(),
+    supabase.rpc('check_tenant_access', { p_tenant_id: tenantId, p_required_tier: 2 }),
+    supabase.rpc('check_tenant_access', { p_tenant_id: tenantId, p_required_tier: 3 }),
   ])
 
-  const tier: number = subRes.data?.value?.tier ?? 1
-
-  if (tier === 1) {
+  if (gateRes.error || gateRes.data !== true) {
     return new Response(
-      JSON.stringify({ error: 'Scheduling not available on Starter plan. Upgrade to Grow to enable social scheduling.' }),
+      JSON.stringify({ error: 'Scheduling not available on Starter plan. Upgrade to Growth to enable social scheduling.' }),
       { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 
   const zernioAccounts: Record<string, string> = intgRes.data?.value?.zernio_accounts ?? {}
 
-  if (tier === 2) {
+  if (proRes.data !== true) {   // Growth — daily 2-post hard cap (Pro+ unlimited)
     const today = new Date().toISOString().split('T')[0]
     const { count } = await supabase
       .from('social_posts')

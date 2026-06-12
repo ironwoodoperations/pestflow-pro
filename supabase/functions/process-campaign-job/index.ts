@@ -97,10 +97,10 @@ serve(async (req) => {
     if (campErr || !campRow) return await fail('campaign_not_found')
     const campaign = campRow as Campaign
 
-    // tier re-check at execution time (§4 subscription_lapsed)
-    const { data: subRow } = await svc.from('settings').select('value').eq('tenant_id', job.tenant_id).eq('key', 'subscription').maybeSingle()
-    const tier = (subRow?.value as { tier?: unknown } | null)?.tier
-    if (typeof tier !== 'number' || tier < PRO_TIER) return await fail('subscription_lapsed')
+    // tier re-check at execution time (§4 subscription_lapsed) — S262: via the
+    // single authoritative RPC (tenants.entitlement), not settings.subscription.
+    const { data: allowed, error: gateErr } = await svc.rpc('check_tenant_access', { p_tenant_id: job.tenant_id, p_required_tier: PRO_TIER })
+    if (gateErr || allowed !== true) return await fail('subscription_lapsed')
 
     // daily output-cardinality quota (§12): sum batch_cardinality logged for this tenant today
     const dayStart = new Date(); dayStart.setUTCHours(0, 0, 0, 0)

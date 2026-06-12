@@ -8,7 +8,7 @@ const isValidEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)
 
 const TIER_PROVISION: Record<string, { tier: number; plan_name: string; monthly_price: number }> = {
   starter: { tier: 1, plan_name: 'Starter', monthly_price: 149 },
-  growth:  { tier: 2, plan_name: 'Grow',    monthly_price: 249 },
+  growth:  { tier: 2, plan_name: 'Growth',  monthly_price: 249 },
   pro:     { tier: 3, plan_name: 'Pro',     monthly_price: 349 },
   elite:   { tier: 4, plan_name: 'Elite',   monthly_price: 499 },
 }

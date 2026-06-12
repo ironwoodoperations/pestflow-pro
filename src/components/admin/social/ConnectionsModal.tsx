@@ -12,7 +12,7 @@ interface Props {
 
 const PLAN_INFO: Record<number, { name: string; price: number }> = {
   1: { name: 'Starter', price: 149 },
-  2: { name: 'Grow',    price: 249 },
+  2: { name: 'Growth',  price: 249 },
   3: { name: 'Pro',     price: 349 },
   4: { name: 'Elite',   price: 499 },
 }
