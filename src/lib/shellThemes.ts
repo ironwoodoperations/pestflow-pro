@@ -3,7 +3,7 @@ export type ThemePalette = {
   name: string
   primary: string
   accent: string
-  themeKey: 'modern-pro' | 'clean-friendly' | 'rustic-rugged' | 'metro-pro'
+  themeKey: 'modern-pro' | 'clean-friendly' | 'rustic-rugged' | 'metro-pro' | 'bold-local'
 }
 
 export const PALETTES: ThemePalette[] = [
@@ -16,6 +16,10 @@ export const PALETTES: ThemePalette[] = [
   { id: 'rr-1', name: 'Brown & Tan',    primary: '#78350f', accent: '#fef3c7', themeKey: 'rustic-rugged' },
   { id: 'rr-2', name: 'Green & Earth',  primary: '#365314', accent: '#fef9c3', themeKey: 'rustic-rugged' },
   { id: 'rr-3', name: 'Rust & Cream',   primary: '#9a3412', accent: '#fff7ed', themeKey: 'rustic-rugged' },
+  // bold-local palettes
+  { id: 'bl-1', name: 'Amber & Charcoal', primary: '#e87800', accent: '#f59e0b', themeKey: 'bold-local' },
+  { id: 'bl-2', name: 'Red & Charcoal',   primary: '#b91c1c', accent: '#f59e0b', themeKey: 'bold-local' },
+  { id: 'bl-3', name: 'Green & Charcoal', primary: '#15803d', accent: '#f59e0b', themeKey: 'bold-local' },
   // metro-pro palettes — Pro/Elite only
   { id: 'mtp-1', name: 'Corporate Blue',   primary: '#1565C0', accent: '#00ACC1', themeKey: 'metro-pro' },
   { id: 'mtp-2', name: 'Executive Navy',   primary: '#0D2137', accent: '#C9A84C', themeKey: 'metro-pro' },
@@ -46,6 +50,10 @@ const PALETTE_HERO: Record<string, { hero: string; end: string; cta: string; nav
   '#78350f': { hero: '#2d1305', end: '#1a0a02', cta: '#2d1305', nav: '#78350f',  navText: '#ffffff', footer: '#3b1a05' }, // Brown & Tan
   '#365314': { hero: '#162105', end: '#0d1503', cta: '#162105', nav: '#365314',  navText: '#ffffff', footer: '#1a2d08' }, // Green & Earth
   '#9a3412': { hero: '#3b1205', end: '#1a0802', cta: '#3b1205', nav: '#9a3412',  navText: '#ffffff', footer: '#3b1205' }, // Rust & Cream
+  // bold-local primaries — charcoal nav, dark footer
+  '#e87800': { hero: '#2d1a00', end: '#1a0f00', cta: '#2d1a00', nav: '#1a1a1a', navText: '#ffffff', footer: '#111111' },
+  '#b91c1c': { hero: '#3b0a0a', end: '#1a0505', cta: '#3b0a0a', nav: '#1a1a1a', navText: '#ffffff', footer: '#111111' },
+  '#15803d': { hero: '#0a2d1a', end: '#071a0f', cta: '#0a2d1a', nav: '#1a1a1a', navText: '#ffffff', footer: '#111111' },
   // metro-pro primaries — dark primary nav, dark footer
   '#1565c0': { hero: '#0a1628', end: '#0d1f35', cta: '#0a1628', nav: '#1565C0', navText: '#ffffff', footer: '#0d1f2d' }, // Corporate Blue
   '#0d2137': { hero: '#060f1a', end: '#091525', cta: '#060f1a', nav: '#0D2137', navText: '#ffffff', footer: '#060f1a' }, // Executive Navy
@@ -114,24 +122,44 @@ export const THEME_CONFIGS: Record<string, Record<string, string>> = {
     '--font-heading':          'Oswald, sans-serif',
     '--font-body':             'Inter, sans-serif',
   },
-  // metro-pro theme — slate + electric teal upscale-concierge palette
-  'metro-pro-shell': {
-    '--color-primary':         '#1E293B',
-    '--color-primary-dark':    '#0F172A',
-    '--color-primary-light':   '#cbd5e1',
-    '--color-accent':          '#14B8A6',
+  // metro-pro — server twin of THEME_CONFIGS['metro-pro'] in shared/lib/shellCssVars.ts
+  'metro-pro': {
+    '--color-primary':         '#1565C0',
+    '--color-primary-dark':    '#0d47a1',
+    '--color-primary-light':   '#e3f2fd',
+    '--color-accent':          '#00ACC1',
     '--color-text-on-primary': '#ffffff',
-    '--color-bg-hero':         '#0F172A',
-    '--color-bg-hero-end':     '#1E293B',
-    '--color-bg-section':      '#f8fafc',
-    '--color-bg-cta':          '#0F172A',
-    '--color-nav-bg':          '#1E293B',
+    '--color-bg-hero':         '#0a1628',
+    '--color-bg-hero-end':     '#0d1f35',
+    '--color-bg-section':      '#f8f9fa',
+    '--color-bg-cta':          '#0a1628',
+    '--color-nav-bg':          '#1565C0',
     '--color-nav-text':        '#ffffff',
-    '--color-footer-bg':       '#0F172A',
+    '--color-footer-bg':       '#0d1f2d',
     '--color-footer-text':     '#ffffff',
-    '--color-btn-bg':          '#14B8A6',
+    '--color-btn-bg':          '#00ACC1',
     '--color-btn-text':        '#ffffff',
-    '--color-heading':         '#0F172A',
+    '--color-heading':         '#1a1a1a',
+    '--font-heading':          'Inter, sans-serif',
+    '--font-body':             'Inter, sans-serif',
+  },
+  'bold-local': {
+    '--color-primary':         '#f59e0b',
+    '--color-primary-dark':    '#d97706',
+    '--color-primary-light':   '#fef3c7',
+    '--color-accent':          '#f59e0b',
+    '--color-text-on-primary': '#1c1c1e',
+    '--color-bg-hero':         '#2d1a00',
+    '--color-bg-hero-end':     '#1a0f00',
+    '--color-bg-section':      '#f5f5f5',
+    '--color-bg-cta':          '#1c1c1e',
+    '--color-nav-bg':          '#1c1c1e',
+    '--color-nav-text':        '#ffffff',
+    '--color-footer-bg':       '#1c1c1e',
+    '--color-footer-text':     '#ffffff',
+    '--color-btn-bg':          '#f59e0b',
+    '--color-btn-text':        '#1c1c1e',
+    '--color-heading':         '#1c1c1e',
     '--font-heading':          "'Barlow Condensed', Inter, sans-serif",
     '--font-body':             'Inter, sans-serif',
   },

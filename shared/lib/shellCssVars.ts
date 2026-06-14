@@ -88,7 +88,7 @@ const SHELL_THEMES: Record<string, ShellVars> = {
     '--font-heading':          'var(--font-oswald), Oswald, sans-serif',
     '--font-body':             'Inter, sans-serif',
   },
-  // metro-pro maps to 'metro-pro-shell' key in Vite; we keep the same here
+  // metro-pro — server twin of THEME_CONFIGS['metro-pro'] in src/lib/shellThemes.ts
   'metro-pro': {
     '--color-primary':         '#1565C0',
     '--color-primary-dark':    '#0d47a1',
