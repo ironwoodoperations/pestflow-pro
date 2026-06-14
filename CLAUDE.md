@@ -174,7 +174,7 @@ Tier mapping: Starter→1, Grow→2, Pro→3, Elite→4
 Shells are applied via CSS custom properties on document.documentElement.
 File: src/lib/shellThemes.ts
 
-Four shells: 'modern-pro' | 'bold-local' | 'clean-friendly' | 'rustic-rugged'
+Five shells: 'modern-pro' | 'clean-friendly' | 'rustic-rugged' | 'metro-pro' | 'bold-local'
 
 applyShellTheme(template, primaryOverride?, accentOverride?) sets all vars at root.
 Call on app init (before Supabase fetch) using localStorage cache to prevent flash.
