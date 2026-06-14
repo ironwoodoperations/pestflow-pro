@@ -44,6 +44,25 @@ Stop only when you genuinely cannot proceed without information not in this file
 
 ---
 
+## SESSION CLOSE RITUAL
+
+At the end of **any session where repo or DB state changed**, do both of the following
+WITHOUT being asked — then stop and wait for Scott's confirmation before committing:
+
+1. **Update `docs/ROADMAP.md`** — move completed items out, promote new work into the
+   right section, add new Open Follow-ups as needed. ROADMAP is perishable state only:
+   never copy durable rules into it (no stack details, no RLS matrix, no merge-posture
+   rules — those live in the brain's `05-clients/pestflow-pro/CONTEXT.md`).
+
+2. **Write a session handoff** in `docs/handoffs/` using the naming convention and format
+   of the latest file there (e.g. `pestflow-pro-handoff-SNNN-shipped.md`). Sections:
+   what shipped, verified live state, and "Open / pending (carried to next)".
+
+**Propose both drafts at session end. Wait for Scott's confirmation before committing or
+pushing. Never auto-commit. Never push to `main` (require-pr blocks it regardless).**
+
+---
+
 ## AUTONOMY RULES
 
 ### Proceed without asking:
