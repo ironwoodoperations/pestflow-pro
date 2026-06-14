@@ -53,6 +53,10 @@ const FINDING_DOT: Record<FindingSeverity, string> = {
 function FlaggedFindings({ page, fixChain }: { page: SeoPageRow; fixChain: SeoFixChain }) {
   const { canAccess } = usePlan()
   const isPro = canAccess(3)
+  // S264 — Growth(2) gets a READ-ONLY view of an already-generated suggested fix.
+  // Generation + apply stay Pro+ (enforced server-side by seo_fix / apply-finding-fix);
+  // this is display-only. Below Growth never reaches here (SEO tab is minTier 2).
+  const isGrowthView = canAccess(2) && !isPro
   const findings = page.findings
   if (!findings || findings.length === 0) return null
   return (
@@ -93,6 +97,13 @@ function FlaggedFindings({ page, fixChain }: { page: SeoPageRow; fixChain: SeoFi
                       {generating ? 'Generating…' : '✨ Generate fix'}
                     </button>
                   )}
+                </div>
+              )}
+              {isGrowthView && f.applyable && f.suggestedFix && status !== 'applied' && (
+                <div className="mt-1.5 ml-3.5 space-y-1.5">
+                  <p className="text-[11px] uppercase tracking-wide text-gray-400 font-semibold">Suggested fix</p>
+                  <div className="bg-emerald-50 border border-emerald-200 rounded p-2 text-emerald-900">{f.suggestedFix}</div>
+                  <p className="text-amber-600 font-medium">🔒 Upgrade to Pro to apply this fix with one click.</p>
                 </div>
               )}
               {status === 'applied' && <p className="mt-1 ml-3.5 text-emerald-700 font-medium">✓ Applied — live site refreshed.</p>}

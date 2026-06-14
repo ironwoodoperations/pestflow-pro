@@ -44,14 +44,14 @@ export default function ComposerScheduler({
         <div className="flex items-center justify-between gap-3 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-4">
           <div className="flex items-center gap-3">
             <Lock className="w-4 h-4 text-amber-500 flex-shrink-0" />
-            <p className="text-sm text-amber-800">Post scheduling is available on the Grow plan and above.</p>
+            <p className="text-sm text-amber-800">Post scheduling is available on the Growth plan and above.</p>
           </div>
           {onUpgradeRequired && (
             <button
               onClick={onUpgradeRequired}
               className="shrink-0 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold transition-colors"
             >
-              Upgrade to Grow
+              Upgrade to Growth
             </button>
           )}
         </div>

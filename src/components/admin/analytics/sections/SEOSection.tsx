@@ -15,7 +15,7 @@ export default function SEOSection() {
         fallback={
           <LockedSectionCard
             title="Site Performance"
-            bodyText="Site performance scores are available on the Grow plan and above."
+            bodyText="Site performance scores are available on the Growth plan and above."
             mailtoSubject="Upgrade Request - Site Performance"
           />
         }

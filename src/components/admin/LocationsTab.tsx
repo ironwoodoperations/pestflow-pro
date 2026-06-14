@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { Plus, X, Trash2, ExternalLink } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../context/TenantBootProvider'
+import { usePlan } from '../../context/PlanContext'
 import { triggerRevalidate } from '../../lib/revalidate'
 import { syncServiceAreasJsonb } from '../../lib/service-areas/syncJsonbFromTable'
 import PageHelpBanner from './PageHelpBanner'
@@ -25,8 +26,14 @@ const toSlug = (city: string) => {
   return s
 }
 
+// S264 — per-tier service-area caps (PFP pricing matrix). SPA-only enforcement;
+// NO server backstop yet (location_data has no tier trigger/RLS) — see PR note.
+// Existing over-cap rows are grandfathered (never hidden or deleted).
+const LOCATION_CAPS: Record<number, number> = { 1: 3, 2: 5, 3: 10, 4: Infinity }
+
 export default function LocationsTab() {
   const { id: tenantId } = useTenant()
+  const { tier } = usePlan()
   const [serviceAreas, setServiceAreas] = useState<ServiceArea[]>([])
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
@@ -49,6 +56,11 @@ export default function LocationsTab() {
   }, [tenantId])
 
   function openNew() {
+    const cap = LOCATION_CAPS[tier] ?? 3
+    if (serviceAreas.length >= cap) {
+      toast.error(`Your plan includes ${cap === Infinity ? 'unlimited' : cap} service area page${cap === 1 ? '' : 's'}. Upgrade for more locations.`)
+      return
+    }
     setForm({ city: '', slug: '', hero_title: '', intro: '', is_live: false, meta_title: '', meta_description: '', focus_keyword: '' })
     setEditingId(null); setModalOpen(true)
   }
@@ -69,6 +81,9 @@ export default function LocationsTab() {
       const { error } = await supabase.from('service_areas').update({ city: form.city, slug, hero_title, intro: form.intro, is_live: form.is_live, ...seoFields }).eq('id', editingId)
       if (error) { toast.error(`Failed to update: ${error.message}`) } else { writeOk = true; toast.success('Service area updated!') }
     } else {
+      // S264 — belt-and-suspenders cap check on the create path (modal could be open from before).
+      const cap = LOCATION_CAPS[tier] ?? 3
+      if (serviceAreas.length >= cap) { toast.error(`Your plan's limit of ${cap === Infinity ? 'unlimited' : cap} service areas has been reached. Upgrade for more.`); setSaving(false); return }
       const { error } = await supabase.from('service_areas').insert({ tenant_id: tenantId, city: form.city, slug, hero_title, intro: form.intro, is_live: form.is_live, ...seoFields })
       if (error) { toast.error(`Failed to add service area: ${error.message}`) } else { writeOk = true; toast.success('Service area added!') }
     }
@@ -104,19 +119,28 @@ export default function LocationsTab() {
   }
 
   const activeCount = serviceAreas.filter(l => l.is_live).length
-  const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-400'
+  const cap = LOCATION_CAPS[tier] ?? 3
+  const atCap = serviceAreas.length >= cap
+  const capLabel = cap === Infinity ? 'unlimited' : `${cap} included`
+  const inputClass ='w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-400'
 
   return (
     <div>
       <PageHelpBanner tab="locations" title="📍 Service Areas" body="Each city you add gets its own SEO-optimized page. Add the city name and a URL slug (e.g. tyler-tx), then toggle Live when the page is ready to publish. More service area pages = more Google traffic." />
 
       <div className="flex items-center justify-between mb-6">
-        <p className="text-sm text-gray-500">{activeCount} active service area{activeCount !== 1 ? 's' : ''} · {serviceAreas.length} total</p>
+        <p className="text-sm text-gray-500">{activeCount} active service area{activeCount !== 1 ? 's' : ''} · {serviceAreas.length} total · {capLabel}</p>
         <button onClick={openNew} className="flex items-center gap-2 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:opacity-90"
           style={{ backgroundColor: 'var(--admin-accent, #10b981)' }}>
           <Plus size={16} /> Add Service Area
         </button>
       </div>
+
+      {atCap && (
+        <div className="mb-6 -mt-3 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+          You've reached your plan's limit of {cap} service area page{cap === 1 ? '' : 's'}. <span className="font-semibold">Upgrade for more locations.</span>
+        </div>
+      )}
 
       {loading ? <p className="text-gray-400 p-4">Loading...</p> : (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">

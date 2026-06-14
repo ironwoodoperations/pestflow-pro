@@ -29,7 +29,7 @@ export const GUIDE_SECTIONS: Record<string, GuideSection> = {
       { type: 'bullet',  text: 'Google Business profile URL' },
       { type: 'heading', text: 'Deal Terms' },
       { type: 'bullet',  text: 'Setup fee amount agreed' },
-      { type: 'bullet',  text: 'Subscription tier: Starter $149 / Grow $249 / Pro $349 / Elite $499' },
+      { type: 'bullet',  text: 'Subscription tier: Starter $149 / Growth $249 / Pro $349 / Elite $499' },
     ],
   },
   'theme-palette': {
@@ -72,10 +72,10 @@ export const GUIDE_SECTIONS: Record<string, GuideSection> = {
     items: [
       { type: 'heading', text: 'Pricing Reference' },
       { type: 'bullet',  text: 'Starter  — $149/mo  |  Setup: $500–$1,000' },
-      { type: 'bullet',  text: 'Grow     — $249/mo  |  Setup: $1,000–$1,500' },
+      { type: 'bullet',  text: 'Growth   — $249/mo  |  Setup: $1,000–$1,500' },
       { type: 'bullet',  text: 'Pro      — $349/mo  |  Setup: $2,000–$3,500' },
       { type: 'bullet',  text: 'Elite    — $499/mo  |  Setup: $4,000–$10,000' },
-      { type: 'tip',     text: '"Most clients are on Grow — it hits the sweet spot of features and value."' },
+      { type: 'tip',     text: '"Most clients are on Growth — it hits the sweet spot of features and value."' },
       { type: 'tip',     text: 'Setup fee covers the build cost. Position it as a one-time investment, not a recurring charge.' },
       { type: 'heading', text: 'If They Push Back on Setup Fee' },
       { type: 'bullet',  text: '"We can look at waiving or reducing it depending on your timeline."' },

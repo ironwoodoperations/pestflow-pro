@@ -6,7 +6,7 @@ import { IMPLEMENTATION_PACKAGES } from '../../../lib/pricingConfig'
 
 const PLAN_LABELS: Record<string, string> = {
   starter: 'Starter — $149/mo',
-  grow:    'Grow — $249/mo',
+  grow:    'Growth — $249/mo',
   pro:     'Pro — $349/mo',
   elite:   'Elite — $499/mo',
 }

@@ -6,12 +6,12 @@ import SocialAnalyticsTile from '../../reports/SocialAnalyticsTile'
 export default function SocialSection() {
   return (
     <FeatureGate
-      minTier={3}
+      minTier={4}
       featureName="Social Analytics"
       fallback={
         <LockedSectionCard
           title="Social Analytics"
-          bodyText="Social engagement metrics and post performance are available on the Pro plan and above."
+          bodyText="Social engagement metrics and post performance are available on the Elite plan."
           mailtoSubject="Upgrade Request - Social Analytics"
         />
       }
