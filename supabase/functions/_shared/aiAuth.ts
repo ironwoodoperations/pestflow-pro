@@ -34,8 +34,8 @@ export const FEATURE_TIER: Record<AiFeature, number | 'operator'> = {
   composer_schedule:      2,
   content_queue_schedule: 2,
   seo_metadata:           2,
-  blog_draft:             2,
-  blog_seo:               2,
+  blog_draft:             3,
+  blog_seo:               3,
   seo_keywords:           3,
   campaign_generation:    3,
   // S263 — Report Fix-Chain suggested-fix generation. Pro+ to generate AND view.

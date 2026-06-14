@@ -121,8 +121,8 @@ export default function ConnectionsModal({ onClose, onNavigate, isDemoTenant = t
           <h3 className="font-semibold text-gray-900 mb-2">Social Connections</h3>
           {isDemoTenant ? (
             <>
-              <p className="text-sm text-gray-500 mb-4">Upgrade to Grow to connect your social accounts and enable automated posting.</p>
-              <p className="text-xs font-semibold text-amber-700 mb-4">Requires Grow — $249/mo</p>
+              <p className="text-sm text-gray-500 mb-4">Upgrade to Growth to connect your social accounts and enable automated posting.</p>
+              <p className="text-xs font-semibold text-amber-700 mb-4">Requires Growth — $249/mo</p>
               {onNavigate
                 ? <button onClick={() => { onClose(); onNavigate('billing') }} className="px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600">Upgrade Plan →</button>
                 : <a href="mailto:support@pestflow.ai?subject=Plan Upgrade Request" className="px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 inline-block">Upgrade Plan →</a>

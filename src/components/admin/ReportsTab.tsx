@@ -103,10 +103,13 @@ export default function ReportsTab() {
                 ))}
               </div>
 
-              {/* Lead stat cards */}
+              {/* Lead stat cards — standard, stays at Growth(2) */}
               <ReportsStatCards totalLeads={totalLeads} newLeads={newLeads} converted={converted}
                 conversionRate={conversionRate} leadsTrend={leadsTrend} convTrend={convTrend} range={range} />
 
+              {/* S264 — advanced reports / trend charts move to Pro(3). Basic stat
+                  cards above stay at Growth(2); only the trend/breakdown layer is gated. */}
+              <FeatureGate minTier={3} featureName="Advanced Reports & Trends">
               {/* Leads Over Time + Lead Status */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -165,6 +168,7 @@ export default function ReportsTab() {
                   )}
                 </div>
               </div>
+              </FeatureGate>
             </div>
           )}
 
