@@ -1,6 +1,6 @@
 # PestFlow Pro — Roadmap
 
-*State as of S268 (2026-06-15). Update at end of each session; retire the versioned pestflow-pro-todo-vNNN.html snapshots.*
+*State as of S269 (2026-06-15). Update at end of each session; retire the versioned pestflow-pro-todo-vNNN.html snapshots.*
 
 ---
 
@@ -11,6 +11,8 @@
 ---
 
 ## Recently Shipped
+
+- **Concierge plan-card rebuild — Dashboard + Billing (S269, shipped PR #199).** Both four-card surfaces rebuilt from the locked tier matrix via a shared single-source-of-truth module (`src/lib/planCardContent.ts`) — Dashboard (`DashboardPlanSection.tsx` + `DashboardPlanCard.tsx`) and Billing (`BillingTab.tsx`) now render identical content, ending the demo-copy drift. All upgrade/downgrade button variants replaced with a single "Contact us to switch" mailto (`sales@pestflowpro.ai`, per-tier subject) + "or call (430) 367-5601"; current tier keeps non-clickable Current Plan state. Pro flagged "Most popular." New full-width Remi add-on strip (`RemiAddonStrip.tsx`) below the cards on both surfaces (100 min included + $0.50/min overage; block price Starter $99 / Growth $75 / Pro $50 / Elite included), styled as an add-on not a fifth plan. Removed the dead self-serve `create-checkout-session` call site from Billing (frontend only; edge fn untouched). Current tier still read from `usePlan()` — no entitlement/gating/edge-function code touched. Verified live on coastal-pest /admin (both tabs, mailto opens correctly). Concierge model confirmed: no self-serve checkout, by design.
 
 - **S268 — custom-color palette fallback (PR #197).** `computeShellCssVars` now derives a full coherent surface set for any custom (non-preset) primary, keyed off the base shell's hero luminance (light/dark) instead of half-applying. Two guards: G1 `contrastRatio` keeps buttons >=3:1 vs hero; G2 `ensureContrast` lifts surfaces to >=4.5:1 text contrast. 16-entry `PALETTE_HERO` preset path byte-identical; bold-local early return and accent handling untouched. Validator-gated (Perplexity+Gemini, conservative-wins). Prod-verified on coastal-pest (#2E6F95/#7AB87A): all routes blue/green, zero purple, half-apply split gone. Full handoff: `docs/handoffs/pestflow-pro-handoff-S268-shipped.md`.
 
