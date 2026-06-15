@@ -1,6 +1,6 @@
 # PestFlow Pro — Roadmap
 
-*State as of S266 (2026-06-14). Update at end of each session; retire the versioned pestflow-pro-todo-vNNN.html snapshots.*
+*State as of S268 (2026-06-15). Update at end of each session; retire the versioned pestflow-pro-todo-vNNN.html snapshots.*
 
 ---
 
@@ -11,6 +11,8 @@
 ---
 
 ## Recently Shipped
+
+- **S268 — custom-color palette fallback (PR #197).** `computeShellCssVars` now derives a full coherent surface set for any custom (non-preset) primary, keyed off the base shell's hero luminance (light/dark) instead of half-applying. Two guards: G1 `contrastRatio` keeps buttons >=3:1 vs hero; G2 `ensureContrast` lifts surfaces to >=4.5:1 text contrast. 16-entry `PALETTE_HERO` preset path byte-identical; bold-local early return and accent handling untouched. Validator-gated (Perplexity+Gemini, conservative-wins). Prod-verified on coastal-pest (#2E6F95/#7AB87A): all routes blue/green, zero purple, half-apply split gone. Full handoff: `docs/handoffs/pestflow-pro-handoff-S268-shipped.md`.
 
 - **Theming Phase 1.5 — bold-local public inner-page dark conversion (S267, shipped PR #194).** `--color-*` block synced to BL_TOKENS charcoal + new `--color-body-text: #C9CDD2` / `--color-text-muted: #9AA3AD` tokens + `computeShellCssVars`/`applyTheme` bold-local guard (palette = accent only). Per-component edits gated behind `template === 'bold-local'` across the **9 verified render sites** (service-area branch, `faq`, `blog`, `blog/[post]`, `LegalPageLayout`, `CityFaqAccordion`, `WhyChooseUs` + the unchanged `Process`/`CtaBanner`) — Dang/modern-pro byte-identical. Validator gate: all 13 charcoal pairings PASS AA (worst 6.47:1); WhyChooseUs white-on-amber fixed 2.03→16.55:1. Verified charcoal live on prod (urban-strike). Full handoff: `docs/handoffs/pestflow-pro-handoff-S267-shipped.md`.
 
