@@ -185,6 +185,33 @@ function readableTextOn(bg: string): string {
   return relativeLuminance(bg) > 0.4 ? '#0F1216' : '#FFFFFF';
 }
 
+/** WCAG contrast ratio between two hex colors (1 = identical, 21 = max). */
+function contrastRatio(a: string, b: string): number {
+  const la = relativeLuminance(a);
+  const lb = relativeLuminance(b);
+  const light = Math.max(la, lb);
+  const dark = Math.min(la, lb);
+  return (light + 0.05) / (dark + 0.05);
+}
+
+/**
+ * Push `bg` (in `direction`) in small increments until it clears 4.5:1 against
+ * every `text` color, or we run out of steps. Contrast-based, not hue-based, so
+ * it works for any custom brand color. Lighten blends toward white; darken
+ * multiplies toward black.
+ */
+function ensureContrast(
+  bg: string,
+  texts: string[],
+  direction: 'lighten' | 'darken',
+): string {
+  let result = bg;
+  for (let i = 0; i < 40 && texts.some((t) => contrastRatio(result, t) < 4.5); i++) {
+    result = direction === 'lighten' ? lightenHex(result, 0.05) : darkenHex(result, 0.92);
+  }
+  return result;
+}
+
 /**
  * Server-side counterpart to applyShellTheme().
  * Returns a full map of CSS custom properties for the given shell config.
@@ -219,6 +246,8 @@ export function computeShellCssVars(
 
     const palette = PALETTE_HERO[primary];
     if (palette) {
+      // PRESET PATH — primary is one of the 16 curated palette colors.
+      // Output here is intentionally unchanged from prior behavior.
       vars['--color-bg-hero']     = palette.hero;
       vars['--color-bg-hero-end'] = palette.end;
       vars['--color-bg-cta']      = palette.cta;
@@ -226,18 +255,47 @@ export function computeShellCssVars(
       vars['--color-nav-text']    = palette.navText;
       vars['--color-footer-bg']   = palette.footer;
       vars['--color-footer-text'] = '#ffffff';
-    } else if (template === 'clean-friendly') {
-      vars['--color-bg-hero']     = lightenHex(primaryColor, 0.85);
-      vars['--color-bg-hero-end'] = lightenHex(primaryColor, 0.93);
-    } else {
-      vars['--color-bg-hero']     = darkenHex(primaryColor, 0.35);
-      vars['--color-bg-hero-end'] = darkenHex(primaryColor, 0.2);
-    }
 
-    // btn-bg follows accent if provided, else primary
-    const btnBg = accent && /^#[0-9a-f]{6}$/i.test(accent) ? accent : primaryColor;
-    vars['--color-btn-bg']   = btnBg;
-    vars['--color-btn-text'] = (PALETTE_HERO[primary]?.navText === '#ffffff') ? '#ffffff' : '#1c1c1e';
+      // btn-bg follows accent if provided, else primary
+      const btnBg = accent && /^#[0-9a-f]{6}$/i.test(accent) ? accent : primaryColor;
+      vars['--color-btn-bg']   = btnBg;
+      vars['--color-btn-text'] = palette.navText === '#ffffff' ? '#ffffff' : '#1c1c1e';
+    } else {
+      // CUSTOM PATH — primary is a custom brand color, not one of the 16
+      // presets. Derive a full, coherent surface set from the shell's own
+      // light/dark identity (read off the BASE hero luminance), so backgrounds
+      // recolor consistently instead of half-applying. No template-name checks.
+      const isLight = relativeLuminance(base['--color-bg-hero']) > 0.4;
+
+      let heroBg: string;
+      if (isLight) {
+        heroBg = ensureContrast(lightenHex(primaryColor, 0.85), ['#1e293b', '#374151'], 'lighten');
+        vars['--color-bg-hero']     = heroBg;
+        vars['--color-bg-hero-end'] = lightenHex(primaryColor, 0.93);
+        vars['--color-bg-cta']      = lightenHex(primaryColor, 0.90);
+        vars['--color-nav-bg']      = '#ffffff';
+        vars['--color-nav-text']    = '#1e293b';
+        vars['--color-footer-bg']   = ensureContrast(darkenHex(primaryColor, 0.45), ['#ffffff'], 'darken');
+        vars['--color-footer-text'] = '#ffffff';
+      } else {
+        heroBg = ensureContrast(darkenHex(primaryColor, 0.35), ['#ffffff'], 'darken');
+        vars['--color-bg-hero']     = heroBg;
+        vars['--color-bg-hero-end'] = darkenHex(primaryColor, 0.20);
+        vars['--color-bg-cta']      = darkenHex(primaryColor, 0.35);
+        // nav + footer: leave shell base untouched on dark shells.
+      }
+
+      // btn-bg follows accent if provided, else primary
+      let btnBg = accent && /^#[0-9a-f]{6}$/i.test(accent) ? accent : primaryColor;
+      // G1 — keep the button distinguishable from the hero behind it. If they
+      // collide (both dark on a dark shell, or both light on a light shell),
+      // step the button away from the hero until it clears 3:1.
+      for (let i = 0; i < 40 && contrastRatio(btnBg, heroBg) < 3; i++) {
+        btnBg = isLight ? darkenHex(btnBg, 0.92) : lightenHex(btnBg, 0.05);
+      }
+      vars['--color-btn-bg']   = btnBg;
+      vars['--color-btn-text'] = readableTextOn(btnBg);
+    }
   }
 
   if (accent && /^#[0-9a-f]{6}$/i.test(accent)) {
