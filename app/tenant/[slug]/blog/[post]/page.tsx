@@ -27,6 +27,10 @@ export default async function BlogPostPage({ params }: Params) {
     siteUrl,
   );
 
+  // S267: dark article body + closing band gated to bold-local. Other themes
+  // keep `prose prose-gray` and white bands exactly — no Dang change.
+  const isBoldLocal = tenant.template === 'bold-local';
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
       <JsonLdScript schema={postSchema} id="ld-blog-post" />
@@ -43,14 +47,14 @@ export default async function BlogPostPage({ params }: Params) {
         <Link href="/blog" className="font-medium hover:underline text-sm mb-6 block" style={{ color: 'var(--color-primary)' }}>← Back to Blog</Link>
         <h1 className="text-4xl font-bold mb-4" style={{ color: 'var(--color-heading, #1a1a1a)' }}>{p.title}</h1>
         {p.published_at && (
-          <p className="text-gray-400 text-sm mb-8">
+          <p className={`text-sm mb-8 ${isBoldLocal ? '' : 'text-gray-400'}`} style={isBoldLocal ? { color: '#9AA3AD' } : undefined}>
             {new Date(p.published_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
           </p>
         )}
-        <div className="prose prose-gray max-w-none" dangerouslySetInnerHTML={{ __html: p.content || '' }} />
+        <div className={`prose max-w-none ${isBoldLocal ? 'prose-invert' : 'prose-gray'}`} dangerouslySetInnerHTML={{ __html: p.content || '' }} />
       </article>
 
-      <section className="py-12 bg-white">
+      <section className="py-12" style={{ backgroundColor: isBoldLocal ? 'var(--color-bg-cta)' : '#ffffff' }}>
         <div className="max-w-3xl mx-auto px-4 text-center">
           <h2 className="text-2xl font-bold mb-4" style={{ color: 'var(--color-heading, #1a1a1a)' }}>Ready to Protect Your Home?</h2>
           <Link href="/quote" className="inline-block font-bold rounded-lg px-8 py-4 text-white transition hover:opacity-90" style={{ backgroundColor: 'var(--color-primary)' }}>

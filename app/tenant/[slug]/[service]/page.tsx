@@ -44,6 +44,9 @@ export default async function ServicePage({ params }: Params) {
     const locIntro  = loc.intro?.trim() || null;
     const phone     = tenant.phone ?? '';
     const bizName   = tenant.business_name ?? '';
+    // S267: dark-surface styling is gated to bold-local; every other theme
+    // (incl. Dang / modern-pro) keeps its exact prior light markup.
+    const isBoldLocal = tenant.template === 'bold-local';
     type LocItem = { slug: string; city: string };
     const others = (allLocs as LocItem[]).filter((l) => l.slug !== params.service);
 
@@ -78,7 +81,7 @@ export default async function ServicePage({ params }: Params) {
           </div>
         </nav>
 
-        <section className="py-16 bg-white">
+        <section className="py-16" style={{ backgroundColor: isBoldLocal ? 'var(--color-bg-section)' : '#ffffff' }}>
           <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="rounded-xl overflow-hidden" style={{ minHeight: '280px', background: 'linear-gradient(135deg, var(--color-bg-hero, #0a1628) 0%, var(--color-primary) 100%)' }}>
               <div className="h-full min-h-[280px] flex items-center justify-center">
@@ -89,31 +92,31 @@ export default async function ServicePage({ params }: Params) {
               <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--color-accent)' }}>Local Service</p>
               <h2 className="text-2xl md:text-3xl font-bold mb-4" style={{ color: 'var(--color-primary)' }}>{bizName || 'Professional Pest Control'} in {city}</h2>
               {locIntro
-                ? <p className="text-gray-600 mb-4 leading-relaxed">{locIntro}</p>
+                ? <p className={isBoldLocal ? 'mb-4 leading-relaxed' : 'text-gray-600 mb-4 leading-relaxed'} style={isBoldLocal ? { color: 'var(--color-body-text)' } : undefined}>{locIntro}</p>
                 : <>
-                    <p className="text-gray-600 mb-4 leading-relaxed">Our licensed technicians provide comprehensive pest control services throughout {city}. Whether you&apos;re dealing with ants, roaches, rodents, termites, or mosquitoes, we have the solution.</p>
-                    <p className="text-gray-600 mb-6 leading-relaxed">We combine local knowledge with professional-grade treatments to deliver lasting results for {city} homeowners and businesses.</p>
+                    <p className={isBoldLocal ? 'mb-4 leading-relaxed' : 'text-gray-600 mb-4 leading-relaxed'} style={isBoldLocal ? { color: 'var(--color-body-text)' } : undefined}>Our licensed technicians provide comprehensive pest control services throughout {city}. Whether you&apos;re dealing with ants, roaches, rodents, termites, or mosquitoes, we have the solution.</p>
+                    <p className={isBoldLocal ? 'mb-6 leading-relaxed' : 'text-gray-600 mb-6 leading-relaxed'} style={isBoldLocal ? { color: 'var(--color-body-text)' } : undefined}>We combine local knowledge with professional-grade treatments to deliver lasting results for {city} homeowners and businesses.</p>
                   </>
               }
               <div className="flex flex-col sm:flex-row gap-3">
                 <Link href="/quote" className="font-semibold px-6 py-3 rounded-lg text-white text-center transition hover:opacity-90" style={{ backgroundColor: 'var(--color-primary)' }}>Get Free Quote</Link>
-                <Link href="/service-area" className="font-semibold px-6 py-3 rounded-lg text-center transition hover:bg-gray-50" style={{ border: '2px solid var(--color-primary)', color: 'var(--color-primary)' }}>View Service Area</Link>
+                <Link href="/service-area" className={`font-semibold px-6 py-3 rounded-lg text-center transition ${isBoldLocal ? 'hover:bg-white/10' : 'hover:bg-gray-50'}`} style={{ border: '2px solid var(--color-primary)', color: 'var(--color-primary)' }}>View Service Area</Link>
               </div>
             </div>
           </div>
         </section>
 
-        <WhyChooseUs businessName={bizName} />
+        <WhyChooseUs businessName={bizName} isBoldLocal={isBoldLocal} />
         <Process />
-        <CityFaqAccordion city={city} faqs={cityFaqs} />
+        <CityFaqAccordion city={city} faqs={cityFaqs} isBoldLocal={isBoldLocal} />
 
         {others.length >= 2 && (
-          <section className="py-12 bg-white">
+          <section className="py-12" style={{ backgroundColor: isBoldLocal ? 'var(--color-bg-section)' : '#ffffff' }}>
             <div className="max-w-6xl mx-auto px-4 text-center">
               <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--color-heading, #1a1a1a)' }}>We Also Serve</h2>
               <div className="flex flex-wrap justify-center gap-3 mt-6">
                 {others.slice(0, 6).map(loc => (
-                  <Link key={loc.slug} href={`/${loc.slug}`} className="px-4 py-2 rounded-full border bg-white text-sm font-medium transition hover:opacity-80" style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}>
+                  <Link key={loc.slug} href={`/${loc.slug}`} className="px-4 py-2 rounded-full border text-sm font-medium transition hover:opacity-80" style={{ backgroundColor: isBoldLocal ? 'var(--color-primary-light)' : '#ffffff', borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}>
                     {loc.city} Pest Control
                   </Link>
                 ))}

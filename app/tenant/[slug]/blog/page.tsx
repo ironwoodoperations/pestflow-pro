@@ -36,6 +36,10 @@ export default async function BlogPage({ params }: Params) {
   type BlogPost = { id: string; title: string; slug: string; excerpt?: string | null; published_at?: string | null; intro_image?: string | null };
   const posts: BlogPost[] = (rawPosts.length > 0 ? rawPosts : PLACEHOLDER_POSTS) as BlogPost[];
 
+  // S267: dark cards/inputs gated to bold-local; Dang and other light themes
+  // keep their exact white cards + gray text.
+  const isBoldLocal = tenant.template === 'bold-local';
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
 
@@ -53,7 +57,7 @@ export default async function BlogPage({ params }: Params) {
         <div className="max-w-6xl mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {posts.map(post => (
-              <Link key={post.id} href={`/blog/${post.slug}`} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition group">
+              <Link key={post.id} href={`/blog/${post.slug}`} className={`rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition group ${isBoldLocal ? 'border-[#2A3038]' : 'bg-white border-gray-200'}`} style={isBoldLocal ? { backgroundColor: 'var(--color-bg-cta)' } : undefined}>
                 <div className="h-40 overflow-hidden" style={{ backgroundColor: 'var(--color-primary)' }}>
                   <img
                     src={post.intro_image || '/images/pests/pest_control.jpg'}
@@ -62,9 +66,9 @@ export default async function BlogPage({ params }: Params) {
                   />
                 </div>
                 <div className="p-5">
-                  {post.published_at && <p className="text-sm text-gray-400 mb-2">{new Date(post.published_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>}
+                  {post.published_at && <p className={`text-sm mb-2 ${isBoldLocal ? '' : 'text-gray-400'}`} style={isBoldLocal ? { color: '#9AA3AD' } : undefined}>{new Date(post.published_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>}
                   <h3 className="text-lg font-bold mb-2 group-hover:opacity-70 transition" style={{ color: 'var(--color-heading, #1a1a1a)' }}>{post.title}</h3>
-                  {post.excerpt && <p className="text-gray-600 text-sm mb-3">{post.excerpt.slice(0, 120)}…</p>}
+                  {post.excerpt && <p className={`text-sm mb-3 ${isBoldLocal ? '' : 'text-gray-600'}`} style={isBoldLocal ? { color: 'var(--color-body-text)' } : undefined}>{post.excerpt.slice(0, 120)}…</p>}
                   <span className="font-medium text-sm" style={{ color: 'var(--color-primary)' }}>Read More →</span>
                 </div>
               </Link>
@@ -73,12 +77,17 @@ export default async function BlogPage({ params }: Params) {
         </div>
       </section>
 
-      <section className="py-16 bg-white">
+      <section className="py-16" style={{ backgroundColor: isBoldLocal ? 'var(--color-bg-cta)' : '#ffffff' }}>
         <div className="max-w-lg mx-auto px-4 text-center">
           <h2 className="text-2xl font-bold mb-4" style={{ color: 'var(--color-heading, #1a1a1a)' }}>Stay Updated</h2>
-          <p className="text-gray-600 mb-6">Get pest control tips and seasonal alerts delivered to your inbox.</p>
+          <p className={`mb-6 ${isBoldLocal ? '' : 'text-gray-600'}`} style={isBoldLocal ? { color: 'var(--color-body-text)' } : undefined}>Get pest control tips and seasonal alerts delivered to your inbox.</p>
           <div className="flex gap-2">
-            <input type="email" placeholder="Your email address" className="flex-1 border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none" />
+            <input
+              type="email"
+              placeholder="Your email address"
+              className={`flex-1 border rounded-lg px-4 py-3 focus:outline-none ${isBoldLocal ? 'border-[#2A3038] text-white placeholder:text-[#9AA3AD]' : 'border-gray-300 text-gray-900'}`}
+              style={isBoldLocal ? { backgroundColor: 'var(--color-primary-light)' } : undefined}
+            />
             <button className="font-bold rounded-lg px-6 py-3 transition hover:opacity-90 text-white" style={{ backgroundColor: 'var(--color-primary)' }}>Subscribe</button>
           </div>
         </div>
