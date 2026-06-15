@@ -60,6 +60,9 @@ export default async function FaqPage({ params }: Params) {
   const heroImageUrl = resolveHeroImage(content, heroMedia);
   const phone = tenant.phone ?? '';
   const isCF = tenant.template === 'clean-friendly';
+  // S267: gate dark-surface body text to bold-local; Dang and other light
+  // themes keep their exact gray-600 answer text.
+  const isBoldLocal = tenant.template === 'bold-local';
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
@@ -86,7 +89,7 @@ export default async function FaqPage({ params }: Params) {
                 {cat.faqs.map((faq, i) => (
                   <div key={i}>
                     <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--color-heading, #1a1a1a)' }}>{faq.q}</h3>
-                    <p className="text-gray-600">{faq.a}</p>
+                    <p className={isBoldLocal ? undefined : 'text-gray-600'} style={isBoldLocal ? { color: 'var(--color-body-text)' } : undefined}>{faq.a}</p>
                   </div>
                 ))}
               </div>

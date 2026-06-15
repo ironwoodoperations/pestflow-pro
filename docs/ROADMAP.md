@@ -6,13 +6,7 @@
 
 ## In Progress
 
-*(nothing active — clear to start next session)*
-
----
-
-## Next Up
-
-- Theming Phase 1.5 — bold-local public inner-page dark conversion — bold-local home renders shell sections (--bl-* charcoal) but inner routes (service/blog/faq/legal, all _components/sections/*) render SHARED components reading --color-* warm-brown: this IS the S265 charcoal-home/warm-inner split, confirmed in source S266. Converting --color-* to charcoal for bold-local requires a 38-component text-color contrast audit (no --color-text/--color-body-text token exists; body text is Tailwind-default, not token-driven) — own scoped session, validator-gated. BLOCKS full shell+palette choice to customer #2; SPA preview honesty already shipped S266.
+- Theming Phase 1.5 — bold-local public inner-page dark conversion (S267 Wave 2, PR open) — `--color-*` block synced to BL_TOKENS charcoal + new `--color-body-text` / `--color-text-muted` tokens + `computeShellCssVars`/`applyTheme` bold-local guard (palette = accent only). The audit's "38-component" estimate was corrected to the **verified 9 render sites**: `[service]` service-area branch, `faq`, `blog`, `blog/[post]`, `LegalPageLayout`, `CityFaqAccordion`, plus `WhyChooseUs`/`Process`/`CtaBanner` (the latter two unchanged). Inner routes are SHARED across all 5 themes, so every per-component dark edit is gated behind `template === 'bold-local'` — Dang (modern-pro) is byte-identical. Validator gate (deterministic WCAG): all charcoal pairings PASS AA (worst 6.47:1). Pre-existing WhyChooseUs white-on-amber 2.03:1 fixed in its own commit. **Post-merge: ISR cache purge for affected bold-local tenants is a separate Claude.ai/MCP step.**
 - Tops onboarding shell decision — prospect meeting this week; onboarding mechanism verified via provision-tenant v97 read; standard render_model=standard path is clear for a customer who accepts an existing shell+palette
 - Remi warm transfer — configure VAPI assistant with transfer tool and transferPlan; voice-intake transfer branch already built; pure VAPI-dashboard work
 - Claire two-identity setup — murphygurl92→Dang admin profile repoint + claire@homeflowpro.ai operator login; sequence both together

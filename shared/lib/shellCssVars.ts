@@ -25,26 +25,35 @@ const SHELL_THEMES: Record<string, ShellVars> = {
     '--color-btn-bg':          '#10b981',
     '--color-btn-text':        '#ffffff',
     '--color-heading':         '#0f172a',
+    '--color-body-text':       '#374151',
+    '--color-text-muted':      '#6b7280',
     '--font-heading':          'var(--font-oswald), Oswald, sans-serif',
     '--font-body':             'Inter, sans-serif',
   },
+  // bold-local — charcoal is canonical (S267 / Phase 1.5 Option 1). Every
+  // --color-* surface is synced to its BL_TOKENS (--bl-*) source so inner
+  // pages (faq/blog/legal/service-area) match the already-dark homepage. The
+  // palette selects ACCENT only; see the bold-local guard in computeShellCssVars.
   'bold-local': {
-    '--color-primary':         '#f59e0b',
-    '--color-primary-dark':    '#d97706',
-    '--color-primary-light':   '#fef3c7',
-    '--color-accent':          '#f59e0b',
-    '--color-text-on-primary': '#1c1c1e',
-    '--color-bg-hero':         '#2d1a00',
-    '--color-bg-hero-end':     '#1a0f00',
-    '--color-bg-section':      '#f5f5f5',
-    '--color-bg-cta':          '#1c1c1e',
-    '--color-nav-bg':          '#1c1c1e',
-    '--color-nav-text':        '#ffffff',
-    '--color-footer-bg':       '#1c1c1e',
-    '--color-footer-text':     '#ffffff',
-    '--color-btn-bg':          '#f59e0b',
-    '--color-btn-text':        '#1c1c1e',
-    '--color-heading':         '#1c1c1e',
+    '--color-primary':         '#F5A623',  // = --bl-accent (palette-selectable accent)
+    '--color-primary-dark':    '#E2541C',  // = --bl-accent-hot
+    '--color-primary-light':   '#22282F',  // = --bl-surface-elevated
+    '--color-accent':          '#F5A623',  // = --bl-accent
+    '--color-text-on-primary': '#0F1216',  // = --bl-surface (dark text on amber)
+    '--color-bg-hero':         '#0F1216',  // = --bl-surface
+    '--color-bg-hero-end':     '#1A1F27',  // = --bl-surface-2
+    '--color-bg-section':      '#0F1216',  // = --bl-surface
+    '--color-bg-cta':          '#1A1F27',  // = --bl-surface-2
+    '--color-nav-bg':          '#0F1216',  // = --bl-surface
+    '--color-nav-text':        '#FFFFFF',  // = --bl-text
+    '--color-footer-bg':       '#0F1216',  // = --bl-surface
+    '--color-footer-text':     '#FFFFFF',  // = --bl-text
+    '--color-btn-bg':          '#F5A623',  // = --bl-accent
+    '--color-btn-text':        '#0F1216',  // = --bl-surface
+    '--color-heading':         '#FFFFFF',  // = --bl-text
+    '--color-body-text':       '#C9CDD2',  // = --bl-text-secondary
+    '--color-text-muted':      '#9AA3AD',  // = --bl-text-muted
+    '--color-border':          '#2A3038',  // = --bl-border
     '--font-heading':          'var(--font-oswald), Oswald, sans-serif',
     '--font-body':             'Inter, sans-serif',
   },
@@ -65,6 +74,8 @@ const SHELL_THEMES: Record<string, ShellVars> = {
     '--color-btn-bg':          '#3b82f6',
     '--color-btn-text':        '#ffffff',
     '--color-heading':         '#1e293b',
+    '--color-body-text':       '#374151',
+    '--color-text-muted':      '#6b7280',
     '--font-heading':          'var(--font-raleway), Raleway, sans-serif',
     '--font-body':             'Inter, sans-serif',
   },
@@ -85,6 +96,8 @@ const SHELL_THEMES: Record<string, ShellVars> = {
     '--color-btn-bg':          '#c2410c',
     '--color-btn-text':        '#ffffff',
     '--color-heading':         '#3b1a08',
+    '--color-body-text':       '#374151',
+    '--color-text-muted':      '#6b7280',
     '--font-heading':          'var(--font-oswald), Oswald, sans-serif',
     '--font-body':             'Inter, sans-serif',
   },
@@ -106,6 +119,8 @@ const SHELL_THEMES: Record<string, ShellVars> = {
     '--color-btn-bg':          '#00ACC1',
     '--color-btn-text':        '#ffffff',
     '--color-heading':         '#1a1a1a',
+    '--color-body-text':       '#374151',
+    '--color-text-muted':      '#6b7280',
     '--font-heading':          'Inter, sans-serif',
     '--font-body':             'Inter, sans-serif',
   },
@@ -152,6 +167,24 @@ function lightenHex(hex: string, white: number): string {
   return '#' + [r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('');
 }
 
+/** WCAG relative luminance of a #rrggbb hex (0 = black, 1 = white). */
+function relativeLuminance(hex: string): number {
+  const h = hex.startsWith('#') ? hex.slice(1) : hex;
+  const chan = (v: number) => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  };
+  const r = chan(parseInt(h.slice(0, 2), 16));
+  const g = chan(parseInt(h.slice(2, 4), 16));
+  const b = chan(parseInt(h.slice(4, 6), 16));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/** Pick the BL surface (dark) or white as the more readable text on `bg`. */
+function readableTextOn(bg: string): string {
+  return relativeLuminance(bg) > 0.4 ? '#0F1216' : '#FFFFFF';
+}
+
 /**
  * Server-side counterpart to applyShellTheme().
  * Returns a full map of CSS custom properties for the given shell config.
@@ -166,6 +199,20 @@ export function computeShellCssVars(
 
   const primary = primaryColor?.toLowerCase().trim() ?? '';
   const accent = accentColor?.trim() ?? '';
+
+  // Bold-local is canonically charcoal (S267 / Phase 1.5 Option 1). The palette
+  // selects the ACCENT only — every surface stays fixed at the charcoal base
+  // values. We deliberately bypass the PALETTE_HERO / darkenHex surface
+  // derivation below so a tenant's primary_color cannot re-warm the dark shell.
+  if (template === 'bold-local') {
+    const resolvedAccent =
+      accent && /^#[0-9a-f]{6}$/i.test(accent) ? accent : base['--color-accent'];
+    vars['--color-accent']   = resolvedAccent;
+    vars['--color-primary']  = resolvedAccent;
+    vars['--color-btn-bg']   = resolvedAccent;
+    vars['--color-btn-text'] = readableTextOn(resolvedAccent);
+    return vars;
+  }
 
   if (primary && /^#[0-9a-f]{6}$/.test(primary)) {
     vars['--color-primary'] = primaryColor;
