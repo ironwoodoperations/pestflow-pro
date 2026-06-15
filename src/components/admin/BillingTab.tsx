@@ -5,6 +5,8 @@ import { usePlan } from '../../context/PlanContext'
 import { tierInfo } from '../../lib/tierInfo'
 import PageHelpBanner from './PageHelpBanner'
 import UpgradeCards from './UpgradeCards'
+import RemiAddonStrip from './RemiAddonStrip'
+import { PLAN_CARD_TIERS, planChangeMailto, PLAN_CHANGE_PHONE } from '../../lib/planCardContent'
 import { CreditCard, Calendar, CheckCircle, Clock, XCircle } from 'lucide-react'
 
 interface PaymentRow {
@@ -27,17 +29,6 @@ const PLAN_PRICE_LABELS: Record<string, string> = {
   [import.meta.env.VITE_STRIPE_PRICE_SUB_PRO     || '']: 'Tier 3 — Pro',
   [import.meta.env.VITE_STRIPE_PRICE_SUB_ELITE   || '']: 'Tier 4 — Elite',
 }
-
-const TIERS = [
-  { tier: 1, name: 'Starter', price: 149, priceId: import.meta.env.VITE_STRIPE_PRICE_SUB_STARTER || '',
-    features: ['Website + hosting', 'Lead capture form', 'Content editor', 'SEO tools', 'Blog'] },
-  { tier: 2, name: 'Growth', price: 249, priceId: import.meta.env.VITE_STRIPE_PRICE_SUB_GROWTH || '',
-    features: ['Everything in Starter', 'Social media posts', 'Review requests', 'CRM tools', 'Priority support'] },
-  { tier: 3, name: 'Pro', price: 349, priceId: import.meta.env.VITE_STRIPE_PRICE_SUB_PRO || '',
-    features: ['Everything in Growth', 'SMS notifications', 'Advanced analytics', 'Google Business sync', 'Team accounts'] },
-  { tier: 4, name: 'Elite', price: 499, priceId: import.meta.env.VITE_STRIPE_PRICE_SUB_ELITE || '',
-    features: ['Everything in Pro', 'White-glove onboarding', 'Custom integrations', 'Dedicated support line', 'Monthly strategy call'] },
-]
 
 function statusBadge(status: string) {
   if (status === 'paid') return <span className="inline-flex items-center gap-1 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5"><CheckCircle size={11} /> Paid</span>
@@ -67,9 +58,6 @@ export default function BillingTab() {
   const { tier: currentTier } = usePlan()
   const [payments, setPayments] = useState<PaymentRow[]>([])
   const [loading, setLoading] = useState(true)
-  const [upgrading, setUpgrading] = useState<number | null>(null)
-  const [clientEmail, setClientEmail] = useState('')
-  const [upgradeError, setUpgradeError] = useState<string | null>(null)
   const [isDemoTenant, setIsDemoTenant] = useState(false)
   const [businessName, setBusinessName] = useState('')
 
@@ -88,75 +76,16 @@ export default function BillingTab() {
         .select('id, created_at, payment_type, status, setup_amount, subscription_amount, subscription_price_id')
         .eq('tenant_id', tenantId)
         .order('created_at', { ascending: false }),
-      supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'notifications').maybeSingle(),
       supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle(),
       supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'demo_mode').maybeSingle(),
-    ]).then(([paymentsRes, notifRes, bizRes, demoRes]) => {
+    ]).then(([paymentsRes, bizRes, demoRes]) => {
       setPayments(paymentsRes.data || [])
-      const email =
-        notifRes.data?.value?.lead_email ||
-        bizRes.data?.value?.email ||
-        ''
-      setClientEmail(email)
       if (bizRes.data?.value?.name) setBusinessName(bizRes.data.value.name)
       const demoActive = demoRes.data?.value?.active === true || clientSlug === 'pestflow-pro' || clientSlug === ''
       setIsDemoTenant(demoActive)
       setLoading(false)
     })
   }, [tenantId, clientSlug])
-
-  async function handleUpgrade(tier: typeof TIERS[number]) {
-    if (!tenantId) return
-    setUpgradeError(null)
-
-    if (!clientEmail) {
-      setUpgradeError('Could not find your email address — please update it in Settings → Business Info.')
-      return
-    }
-
-    setUpgrading(tier.tier)
-    try {
-      let { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
-        const { data: refreshData } = await supabase.auth.refreshSession()
-        session = refreshData.session
-      }
-      if (!session) { setUpgradeError('Session expired. Please refresh the page.'); return }
-      const accessToken = session.access_token
-
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-        },
-        body: JSON.stringify({
-          plan:         tier.name.toLowerCase(),
-          tenant_id:    tenantId,
-          client_email: clientEmail,
-          client_name:  '',
-          slug:         clientSlug,
-          setup_amount_override: 0,
-          prospect_id:  '',
-        }),
-      })
-      const data = await res.json()
-      if (data.url) {
-        // Notify sales + Teams (non-blocking) — fires before redirect
-        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-upgrade`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({ tenant_id: tenantId, old_tier: currentTier, new_tier: tier.tier, plan_name: tier.name, monthly_price: tier.price }),
-        }).catch(() => {})
-        window.location.href = data.url
-      } else { setUpgradeError(data.error || 'Failed to start checkout') }
-    } catch (e: any) { setUpgradeError(e.message || 'Network error') }
-    finally { setUpgrading(null) }
-  }
 
   return (
     <div>
@@ -166,27 +95,26 @@ export default function BillingTab() {
         body="View your current plan and full payment history. To upgrade, downgrade, or request a plan change, use the link below to contact support."
       />
 
-      {upgradeError && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{upgradeError}</div>
-      )}
-
-      {/* Tier upgrade cards — only shown on demo tenant */}
-      {isDemoTenant && currentTier < 4 && (
+      {/* Plan menu — concierge contact model, demo tenant only */}
+      {isDemoTenant && (
         <div className="mb-6">
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Plans</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {TIERS.map(tier => {
-              const isCurrent = currentTier === tier.tier
-              const isUpgrade = tier.tier > currentTier
-              const isDowngrade = tier.tier < currentTier
+            {PLAN_CARD_TIERS.map(plan => {
+              const isCurrent = currentTier === plan.tier
               return (
-                <div key={tier.tier}
-                  className={`bg-white rounded-xl border-2 p-5 flex flex-col ${isCurrent ? 'border-emerald-500 shadow-md' : 'border-gray-200'}`}>
+                <div key={plan.tier}
+                  className={`relative bg-white rounded-xl border-2 p-5 flex flex-col ${isCurrent ? 'border-emerald-500 shadow-md' : plan.mostPopular ? 'border-purple-300' : 'border-gray-200'}`}>
+                  {plan.mostPopular && !isCurrent && (
+                    <span className="absolute top-0 right-0 bg-purple-600 text-white text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-bl-lg">Most popular</span>
+                  )}
                   {isCurrent && <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full self-start mb-2">Current Plan</span>}
-                  <h3 className="font-bold text-gray-900 text-lg">{tier.name}</h3>
-                  <p className="text-2xl font-bold text-gray-900 mb-3">${tier.price}<span className="text-sm font-normal text-gray-500">/mo</span></p>
+                  <h3 className="font-bold text-gray-900 text-lg">{plan.name}</h3>
+                  <p className="text-2xl font-bold text-gray-900 mb-1">${plan.price}<span className="text-sm font-normal text-gray-500">/mo</span></p>
+                  <p className="text-xs text-gray-500 mb-3">{plan.tagline}</p>
+                  {plan.headerLine && <p className="text-xs font-semibold text-gray-700 mb-1">{plan.headerLine}</p>}
                   <ul className="space-y-1 mb-4 flex-1">
-                    {tier.features.map(f => (
+                    {plan.features.map(f => (
                       <li key={f} className="flex items-start gap-1.5 text-xs text-gray-600">
                         <span className="text-emerald-500 mt-0.5 shrink-0">✓</span> {f}
                       </li>
@@ -194,26 +122,22 @@ export default function BillingTab() {
                   </ul>
                   {isCurrent ? (
                     <button disabled className="w-full py-2 rounded-lg text-sm font-medium bg-emerald-50 text-emerald-600 cursor-default">Current Plan</button>
-                  ) : isUpgrade ? (
-                    <button
-                      onClick={() => handleUpgrade(tier)}
-                      disabled={upgrading === tier.tier}
-                      className="w-full py-2 rounded-lg text-sm font-medium bg-emerald-500 text-white hover:bg-emerald-600 disabled:opacity-50 transition"
-                    >
-                      {upgrading === tier.tier ? 'Redirecting...' : 'Upgrade'}
-                    </button>
-                  ) : isDowngrade ? (
-                    <a
-                      href="mailto:support@pestflowpro.ai?subject=Downgrade Request"
-                      className="w-full py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition text-center block"
-                    >
-                      Contact us to downgrade
-                    </a>
-                  ) : null}
+                  ) : (
+                    <div>
+                      <a
+                        href={planChangeMailto(plan.name)}
+                        className="block w-full py-2 rounded-lg text-sm font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition text-center"
+                      >
+                        Contact us to switch
+                      </a>
+                      <p className="text-center text-xs text-gray-500 mt-1.5">or call {PLAN_CHANGE_PHONE}</p>
+                    </div>
+                  )}
                 </div>
               )
             })}
           </div>
+          <RemiAddonStrip />
         </div>
       )}
 

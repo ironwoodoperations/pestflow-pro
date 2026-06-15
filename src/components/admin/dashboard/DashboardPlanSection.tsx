@@ -1,67 +1,22 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { usePlan } from '../../../hooks/usePlan'
-import { MONTHLY_PLANS } from '../../../lib/pricingConfig'
+import { PLAN_CARD_TIERS } from '../../../lib/planCardContent'
 import DashboardPlanCard from './DashboardPlanCard'
+import RemiAddonStrip from '../RemiAddonStrip'
 
 interface Props {
-  onNavigate: (tab: string) => void
   demoActive?: boolean
 }
 
-const PLAN_DETAILS: Record<number, { subtitle: string; features: string[] }> = {
-  1: {
-    subtitle: 'Website + CRM + basic SEO',
-    features: [
-      'Professional website',
-      'Lead capture + CRM',
-      'Service area pages (up to 3)',
-      'Basic SEO meta editor',
-      'Basic reports',
-    ],
-  },
-  2: {
-    subtitle: 'Full SEO + Blog + Social scheduling',
-    features: [
-      'Everything in Starter',
-      'Full SEO suite (Lighthouse, CWV, GSC/GA4)',
-      'Blog / content management',
-      'Unlimited service area pages',
-      'Social scheduling (manual)',
-    ],
-  },
-  3: {
-    subtitle: 'AI tools + campaigns + advanced reports',
-    features: [
-      'Everything in Growth',
-      'AI keyword research',
-      'AI social post generation',
-      'Multi-day campaign batch posting',
-      'AIO structured data',
-    ],
-  },
-  4: {
-    subtitle: 'All platforms + live reviews + priority support',
-    features: [
-      'Everything in Pro',
-      'Social analytics (all platforms)',
-      'Multi-platform social publishing',
-      'Live Google reviews',
-      'White-glove onboarding support',
-    ],
-  },
-}
-
-export default function DashboardPlanSection({ onNavigate, demoActive }: Props) {
+export default function DashboardPlanSection({ demoActive }: Props) {
   const { tier, loading } = usePlan()
   const [accordionOpen, setAccordionOpen] = useState(false)
 
   if (loading) return null
-  if (!demoActive) return null  // Only show upgrade cards on the demo tenant
-  if (tier >= 4) return null    // Elite — no upgrade options to show
+  if (!demoActive) return null  // Only show the plan menu on the demo tenant
 
-  const currentPlan = MONTHLY_PLANS.find(p => p.tier === tier) ?? MONTHLY_PLANS[0]
-  const currentDetails = PLAN_DETAILS[tier] ?? PLAN_DETAILS[1]
+  const currentPlan = PLAN_CARD_TIERS.find(p => p.tier === tier) ?? PLAN_CARD_TIERS[0]
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
@@ -77,32 +32,33 @@ export default function DashboardPlanSection({ onNavigate, demoActive }: Props) 
       </div>
 
       {/* 4 plan cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
-        {MONTHLY_PLANS.map(plan => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-2">
+        {PLAN_CARD_TIERS.map(plan => (
           <DashboardPlanCard
             key={plan.tier}
-            tier={plan.tier}
-            name={plan.name}
-            price={plan.price}
-            subtitle={PLAN_DETAILS[plan.tier].subtitle}
-            features={PLAN_DETAILS[plan.tier].features}
+            plan={plan}
             currentTier={tier}
-            onNavigate={onNavigate}
           />
         ))}
       </div>
 
-      {/* Collapsible accordion */}
+      {/* Remi add-on strip — below the four cards, visually separate */}
+      <RemiAddonStrip />
+
+      {/* Collapsible accordion — what's included in the current plan */}
       <button
         onClick={() => setAccordionOpen(o => !o)}
-        className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-800 transition"
+        className="mt-5 flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-800 transition"
       >
         {accordionOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         What&apos;s included in {currentPlan.name}
       </button>
       {accordionOpen && (
         <div className="mt-3 pl-5 space-y-1 border-l-2 border-gray-100">
-          {currentDetails.features.map((f, i) => (
+          {currentPlan.headerLine && (
+            <p className="text-sm font-semibold text-gray-700">{currentPlan.headerLine}</p>
+          )}
+          {currentPlan.features.map((f, i) => (
             <p key={i} className="text-sm text-gray-600">✓ {f}</p>
           ))}
         </div>
