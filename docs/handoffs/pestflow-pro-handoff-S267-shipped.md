@@ -1,6 +1,7 @@
 # PestFlow Pro — S267 Handoff (SHIPPED)
 
 **Date:** 2026-06-15 · **Session:** S267 · **Orchestrator:** Claude.ai (MCP-first) + Claude Code
+**Shipped via:** PR #193 (Wave 1 audit/spec) → PR #194 (Wave 2 implementation) → PR #195 (this close-out: handoff + ROADMAP).
 **Theme:** Theming Phase 1.5 — bold-local public inner-page **dark conversion**. The S266-deferred
 charcoal remap, executed: bold-local inner routes now render charcoal to match the already-dark
 homepage, gated so no other theme (esp. Dang/modern-pro) changes.
