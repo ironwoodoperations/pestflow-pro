@@ -7,9 +7,13 @@ const FEATURES = [
   { title: 'You Come First', desc: 'Our technicians take time to explain treatments, answer questions, and ensure your complete satisfaction.' },
 ];
 
-export function WhyChooseUs({ businessName }: { businessName: string }) {
+export function WhyChooseUs({ businessName, isBoldLocal = false }: { businessName: string; isBoldLocal?: boolean }) {
+  // S267: on bold-local the brand band would be a bright amber block (white
+  // text ≈ 2.1:1, a pre-existing AA failure surfaced by the dark conversion).
+  // Render it on the charcoal CTA surface there instead; every other theme
+  // keeps its `--color-primary` band exactly.
   return (
-    <section className="py-16 relative overflow-hidden" style={{ backgroundColor: 'var(--color-primary)' }}>
+    <section className="py-16 relative overflow-hidden" style={{ backgroundColor: isBoldLocal ? 'var(--color-bg-cta)' : 'var(--color-primary)' }}>
       <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }} />
       <div className="relative max-w-6xl mx-auto px-4">
         <div className="text-center mb-12">
