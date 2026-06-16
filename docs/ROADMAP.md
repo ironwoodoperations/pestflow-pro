@@ -1,6 +1,6 @@
 # PestFlow Pro — Roadmap
 
-*State as of S271 (2026-06-16). Update at end of each session; retire the versioned pestflow-pro-todo-vNNN.html snapshots.*
+*State as of S272 (2026-06-16). Update at end of each session; retire the versioned pestflow-pro-todo-vNNN.html snapshots.*
 
 ---
 
@@ -11,6 +11,8 @@
 ---
 
 ## Recently Shipped
+
+- **Production outage fixed — empty `NEXT_PUBLIC_SUPABASE_*` env vars (S272).** Total production outage: pestflowpro.ai and every tenant subdomain were serving "Site Not Found" to all real users, with Next-rendered lead forms broken — undetected by monitoring, surfaced only because Claire couldn't log in. Root cause: the **Next.js** public-site build reads `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY`, which were empty strings in Vercel Production scope and flagged "Sensitive" (silently blocking in-place edits); the Vite admin app's `VITE_SUPABASE_*` separately held a placeholder `aBcDe` URL. Fix: deduped + re-added all four vars (real Supabase URL + anon key, all environments, NOT Sensitive), then forced a clean **CLI** rebuild (`vercel pull --environment=production && vercel build --prod && vercel deploy --prebuilt --prod --force`) — dashboard "Redeploy" only re-publishes the cached artifact and never rebuilt. Verified live by curling rendered Next pages (urban-strike renders real content; dang `/admin/login` works), confirmed on two devices. Supabase backend was healthy throughout (anon REST 200, RLS correct) — the fault was 100% the frontend env/deploy layer. Full post-mortem: `docs/handoffs/pestflow-pro-handoff-S272-shipped.md`.
 
 - **Prospect Teardown Engine — built, validated, hardened (S270 PR #201 + S271 PR #202, both merged).** New standalone CLI tooling under `tools/teardown/` (opportunity scorer + mobile walkthrough recorder + orchestrator). Sandbox only — does NOT touch provision-tenant, RLS, or any tenant-isolation path; scrapes only public marketing pages, one pass per domain. v0.2 ran end-to-end against Tops (topspest.com); compared against the human Tops assessment, which exposed three scorer gaps. v0.3 fixed all three: (1) hosted-builder detection (Wix/Squarespace/GoDaddy/Duda) → new signals.platform +20 — Wix was previously "Other/Unknown" scoring 0, the biggest miss; (2) platform-boilerplate denylist killing the bogus "Website Builder" vendor credit; (3) placeholder/template-leftover scan (placeholder phone +15). Recorder dwell bumped 1200→2500ms so the clip clears ~15s and all 4 frames land. Re-run on Tops verified live: platform=Wix, placeholder phone "(222) 222-222" caught, bogus credit gone, tier moved D→B (12→52) — now matching the human "strong upgrade target" read. Engine validated on the Wix path.
 
@@ -24,6 +26,7 @@
 
 ## Next Up
 
+- **Production health monitoring (HIGH PRIORITY, new S272)** — add an automated uptime/health check so a broken deploy is caught by alerting, not a customer call. Minimum viable: a cron curling `urban-strike.pestflowpro.ai` (and pestflowpro.ai) for "Site Not Found" / non-200; scope a real check. The S272 outage went undetected until Claire reported a login failure.
 - Tops onboarding shell decision — prospect meeting this week; onboarding mechanism verified via provision-tenant v97 read; standard render_model=standard path is clear for a customer who accepts an existing shell+palette
 - Remi warm transfer — configure VAPI assistant with transfer tool and transferPlan; voice-intake transfer branch already built; pure VAPI-dashboard work
 - Claire two-identity setup — murphygurl92→Dang admin profile repoint + claire@homeflowpro.ai operator login; sequence both together
@@ -42,3 +45,6 @@
 - PROJECT_MANIFEST per-session log churn — accumulated session entries create noise; harmless; clean up when convenient
 - Scorer v0.4 — three known non-blocking issues: (a) bracket-placeholder regex false-positives on Wix component names like "[AddressInput]" — require visible body copy / exclude CamelCase code identifiers; (b) hasGA false positive off Wix internal CSS classes (g-calculated etc.) — tighten GA fingerprint; (c) h1Count source-vs-rendered discrepancy (scorer 3, human 2). Low priority.
 - Optional: validate scorer v0.3 against one real WordPress pest-control site to confirm a genuine Blue Duck still tiers A/B correctly — fully closes the engine-proving exercise.
+- Vercel env-var "Sensitive" flag cleanup (S272) — set the 4 Supabase vars (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`) to NOT Sensitive so future dashboard edits don't silently fail; keep one row per key across all environments (dedupe).
+- Throwaway branch/PR cleanup (S272) — close/delete the rebuild scratch branches `chore/rebuild-env`, `chore/rebuild-2` and PRs #204/#205 (rebuild commits, not real code).
+- Supabase URL Configuration fix (S272) — Site URL is still `localhost:3000` with no redirect URLs; correct to production before any OAuth / magic-link / password-reset flow ships.
