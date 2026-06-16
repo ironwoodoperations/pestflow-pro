@@ -21,7 +21,9 @@ async function record(url, outDir) {
   }
   // scripted scroll walkthrough
   const h = await page.evaluate(() => document.body.scrollHeight);
-  for (let i = 1; i <= 5; i++) { await page.evaluate(y => window.scrollTo({top:y,behavior:'smooth'}), (h/5)*i); await page.waitForTimeout(1200); }
+  // v0.3 fix: dwell 2500ms/step so the clip reliably clears ~15s. v0.2's 1200ms produced a 7.6s
+  // video, so run.sh's frames at 10s/14s landed past the end (only 2 of 4 extracted; spec needs >=3).
+  for (let i = 1; i <= 5; i++) { await page.evaluate(y => window.scrollTo({top:y,behavior:'smooth'}), (h/5)*i); await page.waitForTimeout(2500); }
   await page.evaluate(() => window.scrollTo({top:0,behavior:'smooth'})); await page.waitForTimeout(1000);
   await context.close(); await browser.close();
   return fs.readdirSync(outDir).find(f => f.endsWith('.webm'));

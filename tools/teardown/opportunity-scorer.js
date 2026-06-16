@@ -1,10 +1,18 @@
 const { chromium } = require('playwright');
 
 /*
-  IRONWOOD OPPORTUNITY SCORER v0.2
+  IRONWOOD OPPORTUNITY SCORER v0.3
   HIGH score = better target. Hunts the "Blue Duck pattern":
   paying a vendor, dated WP stack, slow, thin conversion, hidden SEO.
   Must throw back genuinely well-served sites (Orkin-style).
+
+  v0.3 — three gaps closed against Tops Pest Control (topspest.com) ground truth:
+    FIX 1: detect hosted site builders (Wix/Squarespace/GoDaddy/Duda), not just WordPress.
+           Tops is on Wix; v0.2 scored it stack="Other/Unknown" = 0 stack points (mis-tiered D).
+    FIX 2: kill vendor-credit false positives from platform boilerplate.
+           v0.2 read Wix's own "Website Builder" footer text as a paid agency credit (+8).
+    FIX 3: detect placeholder/template leftovers — e.g. a live "(222) 222-2222" phone next
+           to a CTA. v0.2 had no concept of unreplaced template values (highest-value tell).
 */
 async function scoreSite(url) {
   const browser = await chromium.launch();
@@ -35,15 +43,34 @@ async function scoreSite(url) {
   if (/\/wp-content\/plugins\/elementor\//i.test(html)) builders.push('Elementor');
   if (/\/wp-content\/plugins\/js_composer\//i.test(html)) builders.push('WPBakery');
   if (/\/wp-content\/themes\/Divi\//i.test(html)) builders.push('Divi');
+
+  // v0.3 fix: hosted site builders are a DIFFERENT but equally valid Blue-Duck signal (rented
+  // presence, no automation extensibility, builder bloat). v0.2 let these fall through to Unknown.
+  const isWix = /\.wix\.com|wix-instantsearch|X-Wix-|static\.parastorage\.com/i.test(html)
+             || /name=["']generator["'][^>]*Wix\.com Website Builder/i.test(html);
+  const isSquarespace = /static1\.squarespace\.com|squarespace\.com/i.test(html)
+                     || /name=["']generator["'][^>]*Squarespace/i.test(html);
+  const isDuda = /\.multiscreensite\.com|dudamobile|duda/i.test(html);
+  // GoDaddy: a bare generator "Website Builder" is ambiguous, so only count it when corroborated
+  // by a real GoDaddy/Duda host signal (this is the same string Fix 2 denylists from vendor credit).
+  const isGoDaddy = /img\.cdn4dd|godaddy|websitebuilder|w\.sharedcount/i.test(html)
+                 || (/name=["']generator["'][^>]*Website Builder/i.test(html)
+                     && /godaddy|img\.cdn4dd|\.multiscreensite\.com/i.test(html));
   const isModern = /__next|_next\/static|data-reactroot|__nuxt|svelte-/i.test(html);
 
-  signals.stack = isWP ? 'WordPress' + (wpVer ? ` ${wpVer[1]}` : '') : isModern ? 'Modern JS framework' : 'Other/Unknown';
+  const hostedBuilder = isWix ? 'Wix' : isSquarespace ? 'Squarespace' : isGoDaddy ? 'GoDaddy' : isDuda ? 'Duda' : null;
+  signals.platform = isWP ? 'WordPress' : hostedBuilder ? hostedBuilder : isModern ? 'Modern JS framework' : 'Other/Unknown';
+  // signals.stack kept for back-compat — same detection, with WP version appended when known
+  signals.stack = isWP ? 'WordPress' + (wpVer ? ` ${wpVer[1]}` : '') : signals.platform;
   signals.pageBuilders = builders;
 
   if (isWP) {
     score += 25;
     evidence.push(`Running WordPress${wpVer?' '+wpVer[1]:''}${builders.length?' + '+builders.join('/'):''} — heavy, dated stack we replace with Next.js (Dang pattern)`);
     if (builders.length) { score += 10; evidence.push(`Page-builder bloat (${builders.join(', ')}) — performance tax, easy speed win on rebuild`); }
+  } else if (hostedBuilder) {
+    score += 20;
+    evidence.push(`Built on ${hostedBuilder} — a hosted site builder; presence is rented and cannot be extended into an automation platform (the PestFlow Pro angle)`);
   } else if (isModern) { score -= 15; evidence.push(`Already on a modern JS framework — likely well-served, lower rebuild upside`); }
 
   // 2. REAL PERFORMANCE
@@ -80,9 +107,60 @@ async function scoreSite(url) {
   if (hasGA && !hasGSC) { score += 6; evidence.push(`Analytics present but no owner search-console verification — classic "vendor holds the keys" tell`); }
 
   // 5. VENDOR-LOCK TELL — cleaned extraction (v0.2 fix)
+  // v0.3 false-positive fix: a credit only counts when it looks like a real agency/person, NEVER
+  // a platform's own footer boilerplate (e.g. Wix's "Website Builder"). Those prove nothing about
+  // willingness-to-pay, so they must not earn the +8. Denylisted phrases are discarded outright.
   const vc = html.match(/(?:web design|website|digital marketing|powered by|site by|developed by)\s*(?:&[^;]+;|by)?\s*[A-Z][\w .,'&-]{2,40}/i);
-  if (vc) { signals.vendorCredit = vc[0].replace(/\s+/g,' ').trim().slice(0,80); score += 8;
-    evidence.push(`Vendor credited in footer ("${signals.vendorCredit}") — already PAYING someone; willingness-to-pay proven, delivery is the gap`); }
+  const PLATFORM_BOILERPLATE = /^\s*(?:website builder|wix(?:\.com)?|squarespace|godaddy|duda|powered by shopify|wordpress\.com)\b/i;
+  if (vc) {
+    const candidate = vc[0].replace(/\s+/g,' ').trim().slice(0,80);
+    if (!PLATFORM_BOILERPLATE.test(candidate)) {
+      signals.vendorCredit = candidate; score += 8;
+      evidence.push(`Vendor credited in footer ("${signals.vendorCredit}") — already PAYING someone; willingness-to-pay proven, delivery is the gap`);
+    }
+    // else: platform boilerplate (e.g. "Website Builder"), not a paid vendor — discarded, no points
+  }
+
+  // 6. PLACEHOLDER / TEMPLATE-LEFTOVER SCAN (v0.3 new) — unreplaced template values are some of the
+  // most persuasive findings in a sales conversation (e.g. a live "(222) 222-2222" next to a CTA
+  // is directly costing real calls). v0.2 had no concept of this and missed it entirely.
+  const visibleText = await page.evaluate(() => document.body.innerText || '');
+  const placeholders = []; let placeholderScore = 0;
+
+  // Placeholder phone numbers — the single highest-value tell (it leaks calls): +15
+  const phonePlaceholders = [
+    /\(?2{3}\)?[\s.-]?2{3}[\s.-]?2{2,4}/,        // (222) 222-2222 / 222-222-222
+    /\(?123\)?[\s.-]?456[\s.-]?7890/,            // 123-456-7890
+    /\(?555\)?[\s.-]?555[\s.-]?5555/,            // 555-555-5555
+    /555[\s.-]?01\d\d/,                          // 555-01xx reserved range
+  ];
+  let phoneHit = null;
+  for (const re of phonePlaceholders) { const m = visibleText.match(re) || html.match(re); if (m) { phoneHit = m[0].trim(); break; } }
+  if (phoneHit) {
+    placeholders.push(`placeholder phone: ${phoneHit}`); placeholderScore += 15;
+    evidence.push(`Live PLACEHOLDER PHONE NUMBER on the page ("${phoneHit}") — an unreplaced template value sitting next to a CTA, directly costing real calls`);
+  }
+
+  // Other template leftovers: +8 each
+  const otherPlaceholders = [
+    { re: /lorem ipsum/i,                                          label: 'Lorem ipsum filler text',                         hay: 'both' },
+    { re: /\[(your|company|business|phone|email|address)[^\]]*\]/i, label: 'literal bracket placeholder (e.g. "[Your Company]")', hay: 'both' },
+    { re: /\byour-?(company|business|domain)\b/i,                  label: 'unreplaced "your-company/business/domain" text',  hay: 'both' },
+    { re: /\[email protected\]/i,                                  label: 'literal "[email protected]" left in markup',       hay: 'both' },
+    { re: /insert\s+[\w ]{1,20}\s+here/i,                          label: 'leftover "Insert … here" instruction',            hay: 'both' },
+    { re: /example\.com/i,                                         label: 'placeholder "example.com" in visible contact text', hay: 'visible' },
+  ];
+  for (const p of otherPlaceholders) {
+    const hay = p.hay === 'visible' ? visibleText : visibleText + '\n' + html;
+    if (p.re.test(hay)) {
+      placeholders.push(p.label); placeholderScore += 8;
+      evidence.push(`Template leftover: ${p.label} — unfinished/templated content that undermines trust and signals neglect`);
+    }
+  }
+
+  if (placeholderScore > 20) placeholderScore = 20; // cap: one messy page can't dominate the score
+  score += placeholderScore;
+  signals.placeholders = placeholders;
 
   await browser.close();
 
