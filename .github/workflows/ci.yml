@@ -91,8 +91,12 @@ jobs:
           echo "SUPABASE_ANON_KEY=$(grep -E '^ANON_KEY=' .supabase-status.env | cut -d= -f2- | tr -d '\"')" >> "$GITHUB_ENV"
           rm -f .supabase-status.env
 
+      # --no-check: this job verifies RUNTIME behaviour (the tenant-isolation
+      # boundary), not types. Deno's type-checker follows the esm.sh supabase-js
+      # types into a @types/node reference it can't resolve without node_modules;
+      # src/ type safety is already covered by the Validate job's `tsc`.
       - name: Run cross-tenant isolation test
-        run: deno test --allow-net --allow-env supabase/functions/_shared/auth/
+        run: deno test --no-check --allow-net --allow-env supabase/functions/_shared/auth/
 
       - name: Stop local Supabase
         if: always()
