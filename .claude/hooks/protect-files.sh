@@ -18,11 +18,9 @@ fi
 PROTECTED_PATTERNS=(
   "\.env"
   "doppler\.yaml"
-  # --- TEMPORARILY RELAXED FOR PR #1 (S273 auth reroute) — RESTORE BEFORE MERGE ---
-  # "supabase/migrations/"
-  # "supabase/functions/_shared/auth/"
-  # "supabase/functions/provision-tenant/"
-  # --- END TEMPORARY RELAXATION ---
+  "supabase/migrations/"
+  "supabase/functions/_shared/auth/"
+  "supabase/functions/provision-tenant/"
   "supabase/functions/ironwood-provision/"
   "supabase/functions/stripe-webhook/"
   "supabase/functions/create-checkout-session/"
