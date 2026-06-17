@@ -51,3 +51,12 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
 - Files changed:
   - .github/workflows/ci.yml
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-06-17 13:15 UTC
+- Branch: `claude/adoring-ritchie-0abf2a`
+- Commit: `9576315` — ci(s273): grant fixture tables to PostgREST roles
+- Author: Claude
+- Files changed:
+  - supabase/tests/fixtures/00000000000001_iso_min_schema.sql
+- Next recommended action: [Fill in next session: read this line, write what comes next]
