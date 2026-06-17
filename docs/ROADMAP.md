@@ -6,11 +6,13 @@
 
 ## In Progress
 
-*(nothing active — clear to start next session)*
+- **S273 Self-Serve Auth wave — PR #1 (role-store SSOT) MERGED & live** (PR #207, squash `05a7504`), **except the `profiles.role` column drop**, which is **blocked** by the `master_admin_read_provisioning_status` RLS policy still reading `profiles.role`. Fix plan (rewrite that operator-gate policy to `tenant_users.role`, dependency-scan, then re-run the column drop) is in `docs/handoffs/pestflow-pro-handoff-S273-pr1.md`. **PR #2** (permissions + invite + reset + content RLS) **not started.** That handoff is the cold-start resume doc.
 
 ---
 
 ## Recently Shipped
+
+- **Role-store SSOT reconciliation — S273 PR #1 (PR #207, squash `05a7504`, merged & prod-verified).** Rerouted **all 18 tenant-context edge functions** from `profiles.role` → `tenant_users.role` via `_shared/auth/requireTenantUser.ts` (membership keyed to the requested tenant: caller in A asking for B → 403); inline copy in `outscraper-reviews` rerouted too; `provision-tenant` + dev scripts stopped writing `user_roles`/`profiles.role`. **Dropped the dead `user_roles` table + `has_role()` function + its policy** (zero callers — confirmed by repo-wide grep). Added the **first CI test-runner step** ever (`auth-isolation-test`: `supabase start` + `deno test`, real member-of-A JWT, asserts cross-tenant B→403) — works around the non-replayable migration history with a focused fixture schema. `protect-files.sh` was temporarily relaxed for the build and restored byte-identical before merge. **Record correction:** `profiles.role` was the **LIVE server gate** (read by all 18 edge fns), NOT "legacy" as the original death-audit labeled it; `user_roles` + `has_role()` were the dead ones. **Still open:** the `profiles.role` column drop is blocked on one RLS dependency — see In Progress + `docs/handoffs/pestflow-pro-handoff-S273-pr1.md`.
 
 - **Production outage fixed — empty `NEXT_PUBLIC_SUPABASE_*` env vars (S272).** Total production outage: pestflowpro.ai and every tenant subdomain were serving "Site Not Found" to all real users, with Next-rendered lead forms broken — undetected by monitoring, surfaced only because Claire couldn't log in. Root cause: the **Next.js** public-site build reads `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY`, which were empty strings in Vercel Production scope and flagged "Sensitive" (silently blocking in-place edits); the Vite admin app's `VITE_SUPABASE_*` separately held a placeholder `aBcDe` URL. Fix: deduped + re-added all four vars (real Supabase URL + anon key, all environments, NOT Sensitive), then forced a clean **CLI** rebuild (`vercel pull --environment=production && vercel build --prod && vercel deploy --prebuilt --prod --force`) — dashboard "Redeploy" only re-publishes the cached artifact and never rebuilt. Verified live by curling rendered Next pages (urban-strike renders real content; dang `/admin/login` works), confirmed on two devices. Supabase backend was healthy throughout (anon REST 200, RLS correct) — the fault was 100% the frontend env/deploy layer. Full post-mortem: `docs/handoffs/pestflow-pro-handoff-S272-shipped.md`.
 
@@ -29,7 +31,7 @@
 - **Production health monitoring (HIGH PRIORITY, new S272)** — add an automated uptime/health check so a broken deploy is caught by alerting, not a customer call. Minimum viable: a cron curling `urban-strike.pestflowpro.ai` (and pestflowpro.ai) for "Site Not Found" / non-200; scope a real check. The S272 outage went undetected until Claire reported a login failure.
 - Tops onboarding shell decision — prospect meeting this week; onboarding mechanism verified via provision-tenant v97 read; standard render_model=standard path is clear for a customer who accepts an existing shell+palette
 - Remi warm transfer — configure VAPI assistant with transfer tool and transferPlan; voice-intake transfer branch already built; pure VAPI-dashboard work
-- Claire two-identity setup — murphygurl92→Dang admin profile repoint + claire@homeflowpro.ai operator login; sequence both together
+- **S273 PR #2 — the feature wave** (after the PR #1 `profiles.role` drop closes): permission map (`src/lib/permissions.ts`) + permission-aware `ProtectedRoute` + `get_my_tenant_role` helper + content-table write RLS, then `invite-team-member` (Settings→Users tab) + `password-reset` + shared set-password page. Locked design in `docs/handoffs/pestflow-pro-handoff-S273-pr1.md`.
 
 ---
 
@@ -38,7 +40,8 @@
 - bold-local FAQ category label ("General") renders red on charcoal (prod, urban-strike) — a category-tag color outside the S267 `--color-*` conversion scope; harmonize with the bold-local palette (amber). Cosmetic, low priority, non-blocking.
 - bold-local service-page "OUR HIT PLAN" section-label renders dim against charcoal (prod, urban-strike) — check legibility / intended contrast (likely a muted eyebrow that needs a brighter token on the dark surface). Cosmetic, low priority, non-blocking.
 - provision-tenant v97 hardcodes pestflowpro.com in legal pages and liveUrl — should be .ai; low priority
-- Role-store single-source-of-truth — legacy profiles.role vs tenant_users.role disagreements only; no new tenants affected; low priority
+- **Finish the `profiles.role` column drop (IMMEDIATE next task, S273 PR #1).** Blocked by the `master_admin_read_provisioning_status` RLS policy (operator gate on `provisioning_status`) still reading `profiles.role`. Rewrite that policy to `tenant_users.role` (validator reflex), dependency-scan for other consumers, then re-run `20260617120100_s273_neutralize_profiles_role.sql`. Safe interim state — column exists but only that one policy reads it. Full plan: `docs/handoffs/pestflow-pro-handoff-S273-pr1.md`.
+- **Migration history not replayable from zero** — `supabase/migrations/20260405_fix_rls_policies.sql` references `stripe_payments`, which no earlier migration creates (exists only on the live remote), so a from-scratch `supabase start` dies on it. CI's isolation test works around it with a focused fixture schema; a real "make migrations replayable from zero" cleanup is separate/out-of-scope but worth doing before the next CI job that needs full-schema replay.
 - No-credential provision-path hardening — provision-tenant skips profile write when no admin email/password resolved; never triggered in practice; optional defensive note
 - export-tenant-data capability — portable tenant-scoped export for churn portability; P2 backlog
 - Remi ring-delay / no-answer forwarding — what happens on unanswered calls; parked; message-capture mode is viable now
@@ -47,4 +50,4 @@
 - Optional: validate scorer v0.3 against one real WordPress pest-control site to confirm a genuine Blue Duck still tiers A/B correctly — fully closes the engine-proving exercise.
 - Vercel env-var "Sensitive" flag cleanup (S272) — set the 4 Supabase vars (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`) to NOT Sensitive so future dashboard edits don't silently fail; keep one row per key across all environments (dedupe).
 - Throwaway branch/PR cleanup (S272) — close/delete the rebuild scratch branches `chore/rebuild-env`, `chore/rebuild-2` and PRs #204/#205 (rebuild commits, not real code).
-- Supabase URL Configuration fix (S272) — Site URL is still `localhost:3000` with no redirect URLs; correct to production before any OAuth / magic-link / password-reset flow ships.
+- ~~Supabase URL Configuration fix (S272)~~ **DONE (S273):** Site URL = `https://pestflowpro.ai`, redirect allowlist = `https://*.pestflowpro.ai/**` — prereq cleared for the PR #2 password-reset / set-password flow.
