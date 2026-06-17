@@ -26,15 +26,8 @@ async function main() {
   if (profileError) throw profileError
   console.log('Profile upserted')
 
-  // 3. Insert user role
-  const { error: roleError } = await supabase.from('user_roles').insert({
-    user_id: userId,
-    role: 'admin',
-  })
-  if (roleError) throw roleError
-  console.log('User role inserted')
-
-  // 4. Insert tenant_users row (required for login gate in Login.tsx)
+  // 3. Insert tenant_users row — SSOT for membership + role, and the login gate
+  //    in Login.tsx (S273: the dead `user_roles` write was removed here).
   const { error: tuError } = await supabase.from('tenant_users').insert({
     tenant_id: DANG_TENANT_ID,
     user_id: userId,

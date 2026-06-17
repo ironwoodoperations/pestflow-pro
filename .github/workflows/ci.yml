@@ -44,3 +44,60 @@ jobs:
             exit 1
           fi
           echo "ai-proxy guard passed: no direct api.anthropic.com / VITE_ANTHROPIC in src/ or supabase/functions/ (excluding ai-proxy)"
+
+  # S273 — TENANT-ISOLATION GATE (Principle 7). Spins up a real local Supabase stack
+  # and runs the Deno cross-tenant isolation test against requireTenantUser — the SSOT
+  # auth boundary all 18 tenant-context edge functions funnel through. This is the first
+  # test-runner step in CI (previously only tsc/lint/grep ran). The test mints a REAL
+  # member-of-A JWT and asserts a request for tenant B returns 403 — authenticated
+  # context, not service-role bypass.
+  auth-isolation-test:
+    name: Auth isolation (Deno + local Supabase)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # The repo's full migration history is NOT replayable from zero (e.g.
+      # 20260405_fix_rls_policies.sql references stripe_payments, never created by an
+      # earlier migration — it exists only on the live remote). requireTenantUser
+      # reads ONLY tenant_users, so we replace the migration set with a focused
+      # fixture and run against real Postgres + GoTrue. Replayable full-history
+      # migrations are a separate pre-existing cleanup, out of scope for this PR.
+      - name: Stage focused test schema
+        run: |
+          rm -rf supabase/migrations
+          mkdir -p supabase/migrations
+          cp supabase/tests/fixtures/00000000000001_iso_min_schema.sql supabase/migrations/
+
+      - name: Start local Supabase
+        run: supabase start
+
+      - name: Export local Supabase env
+        run: |
+          supabase status -o env > .supabase-status.env
+          echo "SUPABASE_URL=$(grep -E '^API_URL=' .supabase-status.env | cut -d= -f2- | tr -d '\"')" >> "$GITHUB_ENV"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$(grep -E '^SERVICE_ROLE_KEY=' .supabase-status.env | cut -d= -f2- | tr -d '\"')" >> "$GITHUB_ENV"
+          echo "SUPABASE_ANON_KEY=$(grep -E '^ANON_KEY=' .supabase-status.env | cut -d= -f2- | tr -d '\"')" >> "$GITHUB_ENV"
+          rm -f .supabase-status.env
+
+      # --no-check: this job verifies RUNTIME behaviour (the tenant-isolation
+      # boundary), not types. Deno's type-checker follows the esm.sh supabase-js
+      # types into a @types/node reference it can't resolve without node_modules;
+      # src/ type safety is already covered by the Validate job's `tsc`.
+      - name: Run cross-tenant isolation test
+        run: deno test --no-check --allow-net --allow-env supabase/functions/_shared/auth/
+
+      - name: Stop local Supabase
+        if: always()
+        run: supabase stop --no-backup || true

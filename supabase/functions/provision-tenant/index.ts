@@ -379,25 +379,20 @@ export async function handler(req: Request): Promise<Response> {
 
       if (resolvedUserId) {
         const companyName = wbi.name || bi?.name || resolvedSlug
-        // tenant_users
+        // tenant_users — the SSOT for tenant membership + role (S273).
         const { error: tuError } = await supabase
           .from('tenant_users')
           .insert({ tenant_id: tenantId, user_id: resolvedUserId, role: 'admin' })
         if (tuError && tuError.code !== '23505') {
           console.error('Failed to insert tenant_users:', tuError.message)
         }
-        // profiles
+        // profiles — display/full_name only. S273: `role` removed (retired column,
+        // dropped in the S273 migration); privilege lives solely in tenant_users.role.
+        // The `user_roles` write is also gone (dead table dropped in S273).
         const { error: profError } = await supabase
           .from('profiles')
-          .upsert({ id: resolvedUserId, tenant_id: tenantId, full_name: companyName + ' Admin', role: 'admin' }, { onConflict: 'id' })
+          .upsert({ id: resolvedUserId, tenant_id: tenantId, full_name: companyName + ' Admin' }, { onConflict: 'id' })
         if (profError) console.error('Failed to upsert profiles:', profError.message)
-        // user_roles
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .insert({ user_id: resolvedUserId, role: 'admin' })
-        if (roleError && roleError.code !== '23505') {
-          console.error('Failed to insert user_roles:', roleError.message)
-        }
       }
     } else {
       console.warn('Skipping auth user creation — missing email or password')
