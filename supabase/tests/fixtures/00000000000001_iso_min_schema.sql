@@ -31,3 +31,9 @@ create table public.tenant_users (
   created_at timestamptz default now(),
   unique (tenant_id, user_id)
 );
+
+-- Tables created in a migration get no table-level grants for the PostgREST roles
+-- by default, so the service_role client (test fixture setup + requireTenantUser's
+-- own lookup) would hit "permission denied". Grant explicitly.
+grant all on public.tenants to anon, authenticated, service_role;
+grant all on public.tenant_users to anon, authenticated, service_role;
