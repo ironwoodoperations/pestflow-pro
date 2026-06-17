@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useTenant } from '../context/TenantBootProvider'
+import { isValidRole } from '../lib/permissions'
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { id: tenantId } = useTenant()
@@ -11,14 +12,18 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { setLoading(false); return }
+      // S273 PR #2a — admit ANY valid tenant role (admin/manager/user). The route
+      // is the membership gate; per-surface access is decided by the permission map
+      // (src/lib/permissions.ts) and enforced server-side by content-table RLS. This
+      // resolves the prior mismatch where ProtectedRoute demanded role='admin' while
+      // Login admitted any membership row (Manager/User authenticated then bounced).
       const { data } = await supabase
         .from('tenant_users')
-        .select('id')
+        .select('role')
         .eq('tenant_id', tenantId)
         .eq('user_id', session.user.id)
-        .eq('role', 'admin')
         .maybeSingle()
-      setAuthed(!!data)
+      setAuthed(isValidRole(data?.role))
       setLoading(false)
     })
   }, [tenantId])
