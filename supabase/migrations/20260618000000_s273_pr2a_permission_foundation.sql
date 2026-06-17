@@ -127,6 +127,18 @@ create policy image_library_tenant_update on public.image_library
   using (tenant_id = public.current_tenant_id() and public.get_my_tenant_role(tenant_id) in ('admin','manager'))
   with check (tenant_id = public.current_tenant_id() and public.get_my_tenant_role(tenant_id) in ('admin','manager'));
 
+-- ── 4d. Revoke TRUNCATE from authenticated on the 9 content surfaces ──
+-- RLS does NOT cover TRUNCATE, and `authenticated` currently holds it (grant-all
+-- inheritance) — a user-role member could TRUNCATE around the role gate. Revoke to
+-- complete the defense-in-depth (validator/ChatGPT gate; low live exposure since
+-- PostgREST/SPA never issue TRUNCATE). Operator (ironwood_admin) path + sensitive
+-- tables are intentionally NOT included — 9 content surfaces only.
+revoke truncate on
+  public.blog_posts, public.social_posts, public.seo_meta, public.page_content,
+  public.faqs, public.service_areas, public.testimonials, public.image_library,
+  public.team_members
+from authenticated;
+
 -- ── 5. Divergence guard (audit, NOT a hard FK; FK deferred to demo-deauth wave) ──
 -- Lists profiles tenant-bindings with no matching tenant_users membership row.
 -- Excludes the operator tenant so the shared-login admin@demo.com demo seed

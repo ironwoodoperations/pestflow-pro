@@ -47,6 +47,13 @@ create policy image_library_tenant_update on public.image_library
   using (current_tenant_id() is not null and tenant_id = current_tenant_id())
   with check (current_tenant_id() is not null and tenant_id = current_tenant_id());
 
+-- 4d. Restore TRUNCATE to authenticated (pre-#2a grant-all state).
+grant truncate on
+  public.blog_posts, public.social_posts, public.seo_meta, public.page_content,
+  public.faqs, public.service_areas, public.testimonials, public.image_library,
+  public.team_members
+to authenticated;
+
 -- 5/3/2/1. Drop the #2a objects.
 drop view if exists public.tenant_role_binding_drift;
 drop index if exists public.tenant_users_user_id_tenant_id_idx;

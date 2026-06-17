@@ -33,10 +33,20 @@ Foundation only. Invite / password-reset / set-password page / Settings→Users 
 - **pgTAP** (`supabase/tests/pr2a_permissions.pgtap.sql`): `user` cannot INSERT/UPDATE/DELETE (blog_posts, faqs, image_library); `manager`/`admin` can; user DELETE leaves the row (hole closed); drift view empty with the operator seed excluded. Runs in authenticated context (`SET ROLE authenticated` + jwt claims), not superuser.
 - **Deno** cross-tenant isolation test (PR #1) still runs green.
 
-## ⚠️ Gates before /ship (NOT done here — STOPPING per protocol)
-1. **VALIDATOR RE-CHECK REQUIRED** — splitting FOR ALL → per-command policies is an RLS structural change. Run Perplexity + Gemini (conservative-wins) on the split shape; record verdict before apply.
-2. **Apply order (Claude.ai via MCP):** this migration is idempotent against live (DROP IF EXISTS + guarded CHECK + IF NOT EXISTS). Confirm live policy names still match the inventory above at apply time, then `NOTIFY pgrst`.
-3. CI must be green (Validate + Deno + pgTAP) on the PR.
+## Validator gate — PASSED
+Perplexity + Gemini + ChatGPT converged (conservative-wins): split shape is strictly safer than the FOR ALL it replaces — DELETE hole closed, no OR-stack widening, UPDATE tenant-hop prevented, NULL role fails closed. Recursion guard verified live: `tenant_users` has only the `auth.uid()=user_id` self-policy and does not call `get_my_tenant_role` — no loop.
+
+**ChatGPT-flagged addition folded in:** `REVOKE TRUNCATE ... FROM authenticated` on all 9 content surfaces (RLS does not cover TRUNCATE; `authenticated` held it via grant-all). Operator/sensitive tables excluded. Rollback re-grants it.
+
+## Role × command × table matrix (pgTAP, 16 assertions)
+- **blog_posts (simple):** user INSERT/UPDATE/DELETE/**TRUNCATE** all denied (+ rows unchanged); manager INSERT/UPDATE/DELETE allowed; admin INSERT allowed.
+- **faqs (divergent):** user INSERT denied, user DELETE denied (row remains), manager INSERT allowed.
+- **image_library (divergent, no-delete):** user INSERT denied; manager INSERT + UPDATE allowed; manager DELETE is a no-op (no policy) — row remains.
+- **drift view** empty (operator seed excluded).
+
+## ⚠️ Remaining before merge
+1. **Apply (Claude.ai via MCP):** migration is idempotent vs live (DROP IF EXISTS + guarded CHECK + IF NOT EXISTS + REVOKE). Re-confirm live policy names match the inventory at apply time, then `NOTIFY pgrst`.
+2. CI green (Validate + Deno + pgTAP) on the PR.
 
 ## Risk / rollback
 - Blast radius: write-RLS on 9 content tables + `tenant_users` constraint. Read paths preserved (SELECT member + anon + operator). Rollback script restores the prior FOR ALL shape and drops #2a objects (re-opens the DELETE hole — only revert if the split itself must go).
