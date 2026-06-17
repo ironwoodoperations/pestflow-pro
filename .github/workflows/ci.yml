@@ -68,6 +68,18 @@ jobs:
         with:
           version: latest
 
+      # The repo's full migration history is NOT replayable from zero (e.g.
+      # 20260405_fix_rls_policies.sql references stripe_payments, never created by an
+      # earlier migration — it exists only on the live remote). requireTenantUser
+      # reads ONLY tenant_users, so we replace the migration set with a focused
+      # fixture and run against real Postgres + GoTrue. Replayable full-history
+      # migrations are a separate pre-existing cleanup, out of scope for this PR.
+      - name: Stage focused test schema
+        run: |
+          rm -rf supabase/migrations
+          mkdir -p supabase/migrations
+          cp supabase/tests/fixtures/00000000000001_iso_min_schema.sql supabase/migrations/
+
       - name: Start local Supabase
         run: supabase start
 
