@@ -74,11 +74,19 @@ jobs:
       # reads ONLY tenant_users, so we replace the migration set with a focused
       # fixture and run against real Postgres + GoTrue. Replayable full-history
       # migrations are a separate pre-existing cleanup, out of scope for this PR.
-      - name: Stage focused test schema
+      # The repo's full migration history is NOT replayable from zero (e.g.
+      # 20260405_fix_rls_policies.sql references stripe_payments, never created by an
+      # earlier migration — it exists only on the live remote). So we stage a focused
+      # fixture, then apply the REAL PR #2a migration on top (so pgTAP exercises the
+      # actual role-gated RLS, helper, hardening + drift view — not a copy).
+      - name: Stage focused test schema + real PR #2a migration
         run: |
+          mkdir -p /tmp/stage
+          cp supabase/tests/fixtures/00000000000001_iso_min_schema.sql /tmp/stage/
+          cp supabase/migrations/20260618000000_s273_pr2a_permission_foundation.sql /tmp/stage/
           rm -rf supabase/migrations
           mkdir -p supabase/migrations
-          cp supabase/tests/fixtures/00000000000001_iso_min_schema.sql supabase/migrations/
+          cp /tmp/stage/* supabase/migrations/
 
       - name: Start local Supabase
         run: supabase start
@@ -89,14 +97,24 @@ jobs:
           echo "SUPABASE_URL=$(grep -E '^API_URL=' .supabase-status.env | cut -d= -f2- | tr -d '\"')" >> "$GITHUB_ENV"
           echo "SUPABASE_SERVICE_ROLE_KEY=$(grep -E '^SERVICE_ROLE_KEY=' .supabase-status.env | cut -d= -f2- | tr -d '\"')" >> "$GITHUB_ENV"
           echo "SUPABASE_ANON_KEY=$(grep -E '^ANON_KEY=' .supabase-status.env | cut -d= -f2- | tr -d '\"')" >> "$GITHUB_ENV"
+          echo "SUPABASE_DB_URL=$(grep -E '^DB_URL=' .supabase-status.env | cut -d= -f2- | tr -d '\"')" >> "$GITHUB_ENV"
           rm -f .supabase-status.env
 
-      # --no-check: this job verifies RUNTIME behaviour (the tenant-isolation
-      # boundary), not types. Deno's type-checker follows the esm.sh supabase-js
-      # types into a @types/node reference it can't resolve without node_modules;
-      # src/ type safety is already covered by the Validate job's `tsc`.
-      - name: Run cross-tenant isolation test
+      # --no-check: this job verifies RUNTIME behaviour, not types. Deno's type-checker
+      # follows the esm.sh supabase-js types into a @types/node reference it can't
+      # resolve without node_modules; src/ type safety is covered by the Validate tsc.
+      - name: Run cross-tenant isolation test (Deno)
         run: deno test --no-check --allow-net --allow-env supabase/functions/_shared/auth/
+
+      # S273 PR #2a — pgTAP: role-gated content-table RLS. Asserts a 'user' member
+      # cannot INSERT/UPDATE/DELETE content surfaces, 'manager'/'admin' can, and the
+      # binding-drift view excludes the operator seed. Runs in authenticated context
+      # (SET ROLE authenticated + jwt claims), not as the RLS-bypassing superuser.
+      - name: Run role-RLS test (pgTAP)
+        run: |
+          psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/tests/pr2a_permissions.pgtap.sql > pgtap.out 2>&1 || { echo '--- pgTAP output ---'; cat pgtap.out; exit 1; }
+          echo '--- pgTAP output ---'; cat pgtap.out
+          if grep -qE '^not ok' pgtap.out; then echo '::error::pgTAP role-RLS assertions failed'; exit 1; fi
 
       - name: Stop local Supabase
         if: always()
