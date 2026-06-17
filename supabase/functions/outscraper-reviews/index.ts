@@ -35,10 +35,11 @@ async function requireTenantUser(req, requestedTenantId) {
   const supabase = createClient(Deno.env.get('SUPABASE_URL') || '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '')
   const { data: { user }, error: authError } = await supabase.auth.getUser(token)
   if (authError || !user) throw new AuthError(401, { error: 'Unauthorized' })
-  const { data: profile, error: profileError } = await supabase.from('profiles').select('tenant_id, role').eq('id', user.id).maybeSingle()
-  if (profileError || !profile?.tenant_id) throw new AuthError(403, { error: 'Forbidden' })
-  if (profile.tenant_id !== requestedTenantId) throw new AuthError(403, { error: 'Forbidden' })
-  return { user: { id: user.id, email: user.email }, tenantId: profile.tenant_id, role: profile.role }
+  // S273 — membership + role from tenant_users (SSOT), keyed to the requested tenant.
+  const { data: membership, error: membershipError } = await supabase
+    .from('tenant_users').select('role').eq('user_id', user.id).eq('tenant_id', requestedTenantId).maybeSingle()
+  if (membershipError || !membership) throw new AuthError(403, { error: 'Forbidden' })
+  return { user: { id: user.id, email: user.email }, tenantId: requestedTenantId, role: membership.role }
 }
 
 function buildOutscraperQuery(integrations) {

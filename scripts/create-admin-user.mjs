@@ -19,8 +19,10 @@ if (error) { console.error('Auth error:', error.message); process.exit(1) }
 const userId = data.user.id
 const tenantId = crypto.randomUUID()
 
-await supabase.from('profiles').insert({ id: userId, tenant_id: tenantId, full_name: 'Admin', role: 'admin' })
-await supabase.from('user_roles').insert({ user_id: userId, role: 'admin' })
+// S273 — tenant_users is the SSOT for membership + role. profiles is display-only
+// (no `role` column); the dead `user_roles` table is gone.
+await supabase.from('profiles').insert({ id: userId, tenant_id: tenantId, full_name: 'Admin' })
+await supabase.from('tenant_users').insert({ tenant_id: tenantId, user_id: userId, role: 'admin' })
 
 const defaults = [
   { tenant_id: tenantId, key: 'business_info', value: { name: 'My Pest Control', phone: '', email, address: '', hours: 'Mon-Fri 8am-6pm', tagline: '', license: '' } },

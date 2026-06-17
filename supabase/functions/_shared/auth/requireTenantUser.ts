@@ -21,8 +21,17 @@ export class AuthError extends Error {
 }
 
 /**
- * Validates Bearer JWT + tenant ownership. Returns user, tenant_id, and role.
- * Use for surfaces where any tenant user (admin or future non-admin roles) is acceptable.
+ * Validates Bearer JWT + tenant membership. Returns user, tenant_id, and role.
+ * Use for surfaces where any tenant user (admin/manager/user) is acceptable.
+ *
+ * SSOT (S273): tenant membership + role are read from `tenant_users` — the single
+ * source of truth — NOT `profiles.role` (retired). The membership lookup is keyed
+ * to the REQUESTED tenant, so a caller who belongs to tenant A but asks for tenant
+ * B finds no row → 403. That filter is the cross-tenant isolation boundary. The
+ * lookup runs with the service-role key (RLS-bypassing) by design; the boundary is
+ * the explicit (user_id, tenant_id) predicate against real rows, exercised under a
+ * real caller JWT. `tenant_users` also supports multi-tenant membership, which the
+ * old single-row `profiles.tenant_id` model could not represent.
  */
 export async function requireTenantUser(
   req: Request,
@@ -36,19 +45,19 @@ export async function requireTenantUser(
   const { data: { user }, error: authError } = await supabase.auth.getUser(token)
   if (authError || !user) throw new AuthError(401, { error: 'Unauthorized' })
 
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles').select('tenant_id, role').eq('id', user.id).maybeSingle()
-  if (profileError || !profile?.tenant_id) {
+  const { data: membership, error: membershipError } = await supabase
+    .from('tenant_users')
+    .select('role')
+    .eq('user_id', user.id)
+    .eq('tenant_id', requestedTenantId)
+    .maybeSingle()
+  if (membershipError || !membership) {
+    console.warn('[requireTenantUser] no membership — user:', user.email,
+                 'requested:', requestedTenantId, 'err:', membershipError?.message)
     throw new AuthError(403, { error: 'Forbidden' })
   }
 
-  if (profile.tenant_id !== requestedTenantId) {
-    console.warn('[requireTenantUser] tenant mismatch — user:', user.email,
-                 'profile.tenant_id:', profile.tenant_id, 'requested:', requestedTenantId)
-    throw new AuthError(403, { error: 'Forbidden' })
-  }
-
-  return { user: { id: user.id, email: user.email }, tenantId: profile.tenant_id, role: profile.role }
+  return { user: { id: user.id, email: user.email }, tenantId: requestedTenantId, role: membership.role }
 }
 
 /**

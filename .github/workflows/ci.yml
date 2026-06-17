@@ -44,3 +44,44 @@ jobs:
             exit 1
           fi
           echo "ai-proxy guard passed: no direct api.anthropic.com / VITE_ANTHROPIC in src/ or supabase/functions/ (excluding ai-proxy)"
+
+  # S273 — TENANT-ISOLATION GATE (Principle 7). Spins up a real local Supabase stack
+  # and runs the Deno cross-tenant isolation test against requireTenantUser — the SSOT
+  # auth boundary all 18 tenant-context edge functions funnel through. This is the first
+  # test-runner step in CI (previously only tsc/lint/grep ran). The test mints a REAL
+  # member-of-A JWT and asserts a request for tenant B returns 403 — authenticated
+  # context, not service-role bypass.
+  auth-isolation-test:
+    name: Auth isolation (Deno + local Supabase)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start local Supabase
+        run: supabase start
+
+      - name: Export local Supabase env
+        run: |
+          supabase status -o env > .supabase-status.env
+          echo "SUPABASE_URL=$(grep -E '^API_URL=' .supabase-status.env | cut -d= -f2- | tr -d '\"')" >> "$GITHUB_ENV"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$(grep -E '^SERVICE_ROLE_KEY=' .supabase-status.env | cut -d= -f2- | tr -d '\"')" >> "$GITHUB_ENV"
+          echo "SUPABASE_ANON_KEY=$(grep -E '^ANON_KEY=' .supabase-status.env | cut -d= -f2- | tr -d '\"')" >> "$GITHUB_ENV"
+          rm -f .supabase-status.env
+
+      - name: Run cross-tenant isolation test
+        run: deno test --allow-net --allow-env supabase/functions/_shared/auth/
+
+      - name: Stop local Supabase
+        if: always()
+        run: supabase stop --no-backup || true
