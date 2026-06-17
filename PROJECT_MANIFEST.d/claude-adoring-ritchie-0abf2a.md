@@ -60,3 +60,12 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
 - Files changed:
   - supabase/tests/fixtures/00000000000001_iso_min_schema.sql
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-06-17 13:48 UTC
+- Branch: `claude/adoring-ritchie-0abf2a`
+- Commit: `9631de3` — chore(s273): restore protect-files patterns post-reroute build
+- Author: csdevore2
+- Files changed:
+  - .claude/hooks/protect-files.sh
+- Next recommended action: [Fill in next session: read this line, write what comes next]
