@@ -7,16 +7,31 @@ import NotificationsSection from './NotificationsSection'
 import HeroMediaSection from './HeroMediaSection'
 import HolidayModeSection from './HolidayModeSection'
 import DomainSection from './DomainSection'
+import UsersSection from './UsersSection'
 import { useTenant } from '../../../context/TenantBootProvider'
+import { useTenantRole } from '../../../hooks/useTenantRole'
+import { can } from '../../../lib/permissions'
 
-const CLIENT_TABS = ['Business Info', 'Branding', 'Social Links', 'Notifications', 'Master Hero Image', 'Holiday Mode'] as const
-const IRONWOOD_TABS = ['Business Info', 'Branding', 'Social Links', 'Notifications', 'Master Hero Image', 'Holiday Mode', 'Domain'] as const
-type SubTab = (typeof IRONWOOD_TABS)[number]
+// Base tabs every client admin sees. 'Users' (admin-only) and 'Domain' (operator-only) are
+// appended conditionally below.
+const BASE_TABS = ['Business Info', 'Branding', 'Social Links', 'Notifications', 'Master Hero Image', 'Holiday Mode'] as const
+type SubTab = (typeof BASE_TABS)[number] | 'Users' | 'Domain'
 
 export default function SettingsTab() {
   const tenant = useTenant()
+  const { role } = useTenantRole()
   const isIronwood = tenant.slug === 'pestflow-pro'
-  const SUB_TABS = isIronwood ? IRONWOOD_TABS : CLIENT_TABS
+  // S273 PR #2b — admin-only Users tab. UX gate ONLY (the tab is also unguarded at the Dashboard
+  // nav level, which is tier-gated not role-gated); the real boundary is server-side
+  // (invite-team-member re-reads get_my_tenant_role; list_tenant_members is admin-gated).
+  const canManageUsers = can(role, 'user_mgmt', 'view')
+
+  const SUB_TABS: SubTab[] = [
+    ...BASE_TABS,
+    ...(canManageUsers ? (['Users'] as const) : []),
+    ...(isIronwood ? (['Domain'] as const) : []),
+  ]
+
   const [activeSubTab, setActiveSubTab] = useState<SubTab>('Business Info')
 
   return (
@@ -43,6 +58,7 @@ export default function SettingsTab() {
       {activeSubTab === 'Notifications'  && <NotificationsSection />}
       {activeSubTab === 'Master Hero Image' && <HeroMediaSection />}
       {activeSubTab === 'Holiday Mode'   && <HolidayModeSection />}
+      {activeSubTab === 'Users'          && canManageUsers && <UsersSection />}
       {activeSubTab === 'Domain'         && <DomainSection />}
     </div>
   )

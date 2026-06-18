@@ -78,3 +78,13 @@ verify_jwt = false
 # those JWT-less internal calls.
 [functions.generate-monthly-report]
 verify_jwt = false
+
+# S273 PR #2b — team invites. Caller is an authenticated tenant admin; the function
+# re-reads the role fresh from the DB. verify_jwt=true so the gateway rejects anon callers.
+[functions.invite-team-member]
+verify_jwt = true
+
+# S273 PR #2b — password reset request. Caller is unauthenticated by definition.
+# verify_jwt=false so the gateway can't 401 the JWT-less request. Re-check OFF after every deploy.
+[functions.password-reset-request]
+verify_jwt = false
