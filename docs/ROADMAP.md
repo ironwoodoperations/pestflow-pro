@@ -6,11 +6,13 @@
 
 ## In Progress
 
-- **S273 Self-Serve Auth wave — PR #1 (role-store SSOT) FULLY CLOSED & live.** `profiles.role` column dropped; operator gate (`master_admin_read_provisioning_status`) rewritten onto `tenant_users.role` via `operator_tenant_id()` `SECURITY DEFINER` helper, validator-gated, applied + verified. **PR #2** (permissions + invite + reset + content RLS) **NOT started** — locked design in `docs/handoffs/pestflow-pro-handoff-S273-pr1-CLOSED.md`.
+- **S273 PR #2b — feature wave: invite-team-member edge fn (Settings→new Users tab, admin-only) + password-reset + shared set-password page. NOT started.** Locked design in `docs/handoffs/pestflow-pro-handoff-S273-pr2a-CLOSED.md`.
 
 ---
 
 ## Recently Shipped
+
+- **S273 PR #2a — Permission Foundation (PR #212, squash-merged, migration applied + verified live).** `get_my_tenant_role(tenant_id)` SECURITY DEFINER helper; `tenant_users` hardened (dropped `'admin'` default, added CHECK `role IN ('admin','manager','user')`, composite index `(user_id,tenant_id)`); split per-command content RLS on 9 surfaces (blog_posts, social_posts, seo_meta, page_content, faqs, service_areas, testimonials, image_library, team_members) — SELECT tenant-only, INSERT/UPDATE/DELETE gated on `get_my_tenant_role IN ('admin','manager')`, closing the FOR-ALL DELETE hole; REVOKE TRUNCATE from authenticated on all 9; `tenant_role_binding_drift` audit view (excludes operator tenant). `ironwood_admin_*_write` operator policies preserved untouched. `permissions.ts` typed map + role-aware `ProtectedRoute`. Validator-PASSED (Perplexity+Gemini+ChatGPT converged: split shape strictly safer than FOR ALL); CI green incl. pgTAP role-RLS + Deno cross-tenant. Post-apply verified live via MCP (helper exists, default gone, CHECK+index present, 0 leftover old policies, 13 ironwood policies preserved, 0 TRUNCATE grants, drift=0).
 
 - **S273 PR #1 closeout — operator-gate rewrite + `profiles.role` drop (PR #210, `c04d3e3`).** Rewrote the `master_admin_read_provisioning_status` RLS policy (operator-only SELECT gate on `provisioning_status`) off `profiles.role` onto `tenant_users.role` via a new `SECURITY DEFINER` helper `public.operator_tenant_id()` (resolves slug `'pestflow-pro'`, bypasses `tenants` RLS). Validator-gated (the first JOIN-`tenants` version was caught transitively depending on `profiles.tenant_id` and sent back; helper version approved). Applied via MCP, then re-ran the blocked `profiles.role` column drop — column now gone (verified count 0); operator gate verified intact (operator uid passes, 6 non-operator rows + demo seed denied). S273 PR #1 is now fully closed.
 
@@ -35,7 +37,6 @@
 - **Production health monitoring (HIGH PRIORITY, new S272)** — add an automated uptime/health check so a broken deploy is caught by alerting, not a customer call. Minimum viable: a cron curling `urban-strike.pestflowpro.ai` (and pestflowpro.ai) for "Site Not Found" / non-200; scope a real check. The S272 outage went undetected until Claire reported a login failure.
 - Tops onboarding shell decision — prospect meeting this week; onboarding mechanism verified via provision-tenant v97 read; standard render_model=standard path is clear for a customer who accepts an existing shell+palette
 - Remi warm transfer — configure VAPI assistant with transfer tool and transferPlan; voice-intake transfer branch already built; pure VAPI-dashboard work
-- **S273 PR #2 — the feature wave:** permission map (`src/lib/permissions.ts`) + permission-aware `ProtectedRoute` + `get_my_tenant_role` helper + content-table write RLS, then `invite-team-member` (Settings→Users tab) + `password-reset` + shared set-password page. Locked design in `docs/handoffs/pestflow-pro-handoff-S273-pr1-CLOSED.md`.
 
 ---
 
@@ -44,7 +45,8 @@
 - bold-local FAQ category label ("General") renders red on charcoal (prod, urban-strike) — a category-tag color outside the S267 `--color-*` conversion scope; harmonize with the bold-local palette (amber). Cosmetic, low priority, non-blocking.
 - bold-local service-page "OUR HIT PLAN" section-label renders dim against charcoal (prod, urban-strike) — check legibility / intended contrast (likely a muted eyebrow that needs a brighter token on the dark surface). Cosmetic, low priority, non-blocking.
 - provision-tenant v97 hardcodes pestflowpro.com in legal pages and liveUrl — should be .ai; low priority
-- **`operator_tenant_id()` helper now exists** (`SECURITY DEFINER`, resolves the `pestflow-pro` operator tenant id) — reuse it for operator identity in PR #2; do NOT re-derive. PR #2's `get_my_tenant_role(tenant_id)` is the customer-tenant analog.
+- **Role helpers exist — reuse, do NOT re-derive:** `operator_tenant_id()` (operator identity) and `get_my_tenant_role(tenant_id)` (customer-tenant role), both `SECURITY DEFINER`. Use them in PR #2b.
+- **Demo-deauth wave (new, prereq for a strict binding FK).** Remove the shared `admin@demo.com` login printed on `pestflowpro.ai/demos/admin`; convert demo dashboards to no-session forced-read-only; THEN delete the `admin@demo.com` seed; THEN upgrade `tenant_role_binding_drift` from an audit view to a hard `profiles`↔`tenant_users` FK — that seed (operator-tenant binding, no membership) is the one row blocking a strict FK today. Real customer auth + `provision-tenant` are OUT of scope for this wave.
 - **Migration history not replayable from zero** — `supabase/migrations/20260405_fix_rls_policies.sql` references `stripe_payments`, which no earlier migration creates (exists only on the live remote), so a from-scratch `supabase start` dies on it. CI's isolation test works around it with a focused fixture schema; a real "make migrations replayable from zero" cleanup is separate/out-of-scope but worth doing before the next CI job that needs full-schema replay.
 - No-credential provision-path hardening — provision-tenant skips profile write when no admin email/password resolved; never triggered in practice; optional defensive note
 - export-tenant-data capability — portable tenant-scoped export for churn portability; P2 backlog
