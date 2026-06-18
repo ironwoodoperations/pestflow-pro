@@ -154,6 +154,21 @@ export function middleware(req: NextRequest) {
     return NextResponse.rewrite(new URL('/_admin/index.html', req.url));
   }
 
+  // S273 PR #2c — set-password (invite + recovery) is served by the TOP-LEVEL Next route
+  // app/set-password (NOT under /tenant/<slug>, so it skips the marketing layout's notFound()/
+  // GA4/navbar chrome). Allowlisted BEFORE the STANDALONE_SLUGS 404 so standalone tenants (e.g.
+  // Dang) resolve it too. NextResponse.next() lets Next serve /set-password directly; the page
+  // reads the tenant slug from the host. Exact-match — the token rides in the query string
+  // (?token_hash=…&type=…), preserved through next(). Security headers: Referrer-Policy guards the
+  // token-in-query before the page's replaceState runs; anti-framing on a public subdomain.
+  if (pathname === '/set-password') {
+    const res = NextResponse.next();
+    res.headers.set('Referrer-Policy', 'no-referrer');
+    res.headers.set('X-Frame-Options', 'DENY');
+    res.headers.set('Content-Security-Policy', "frame-ancestors 'none'");
+    return res;
+  }
+
   // Standalone-repo tenants (data-driven via render_model column -> STANDALONE_SLUGS
   // env projection). Public site is a separate Vercel project; here only /admin works
   // (handled above), everything else 404s to prevent a duplicate public render.
