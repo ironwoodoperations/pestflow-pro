@@ -11,18 +11,28 @@
 - `next build`: **PASS** — `/set-password` registers as a top-level route; middleware compiles
 - tests: N/A locally (Deno/pgTAP CI job unaffected — no DB/edge-fn change)
 
-## /qa — local (next start + Host headers)
+## /qa — local (next start + Host headers, REAL anon key)
 | Check | Result |
 |-------|--------|
-| (a) coastal-pest `/set-password` renders | **200**, page markup present |
-| (a) standalone **dang** `/set-password` resolves (allowlist before standalone 404) | **200** |
-| standalone gate intact — dang `/other` | **404** |
+| (a) coastal-pest (standard) `/set-password` renders | **200**, page markup present |
+| (b) standalone **dang** `/set-password` resolves (allowlist before standalone 404) | **200** |
+| (c) coastal-pest `/pest-control` routes to `[service]` (not set-password, not a routing 404) | **reached `[service]`** (500 only from missing service-role secret — see note) |
+| standalone gate intact — dang `/pest-control` | **404** |
 | apex `/set-password` (subdomain-only) | **404** |
 | (f/N2) `token_hash` in server-rendered HTML | **absent (0)** |
+| (f/GA4) `gtag`/`googletagmanager` on the set-password page | **absent (0)** — genuinely not loaded (top-level, no tenant layout) |
 | (H2/H3) `Referrer-Policy: no-referrer` + `X-Frame-Options: DENY` + CSP `frame-ancestors 'none'` | **present** |
 
-**Deferred to production /qa** (needs real minted tokens + auth, can't run pre-deploy): (c) invite
-end-to-end → land on correct tenant login; (d) reset end-to-end; (e) slug-tampered redirect rejected.
+**Note on the `[service]`/homepage 500s:** purely a local-env artifact —
+`SUPABASE_SERVICE_ROLE_KEY is required for server-side Supabase` (the marketing pages do
+server-side ISR fetches; the secret isn't available locally). It is **not** a regression: my change
+is exact-match `/set-password` only; everything else falls through unchanged, and `/pest-control`
+correctly reached `[service]` (a data-fetch 500, not a routing 404, not the set-password page). The
+set-password page renders **200 without any service-role key**, confirming it does **no** server-side
+Supabase — cleanly client-only.
+
+**Deferred to production /qa** (needs real minted tokens + an authenticated session): (d) invite
+end-to-end → land on the correct tenant login; (e) reset end-to-end; slug-tampered redirect rejected.
 
 ## Findings
 

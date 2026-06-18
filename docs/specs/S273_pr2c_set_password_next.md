@@ -77,10 +77,23 @@ needs no `[slug]` path segment. Middleware serves it with **`NextResponse.next()
 `/tenant/<slug>/…`). **LOCK 1 (static-vs-`[service]` precedence) is now moot** — the page is no longer
 under `[slug]`, so `[service]` can never match `/set-password`; the regression surface is gone entirely.
 
-**/qa verified locally** (next start + Host headers): coastal-pest `/set-password` → **200** (renders);
-**token absent from server HTML** (N2); `Referrer-Policy: no-referrer` + `X-Frame-Options: DENY` + CSP
-`frame-ancestors 'none'` present (H2/H3); **dang** `/set-password` → **200** (allowlist before standalone
-404); dang `/other` → **404** (standalone gate intact); apex `/set-password` → **404** (subdomain-only).
+**/qa verified locally** (next start + Host headers, real anon key): coastal-pest `/set-password` →
+**200** (renders); **token absent from server HTML** (N2); **`gtag`/`googletagmanager` absent (0)** on the
+page (GA4 genuinely not loaded — top-level route, no tenant layout); `Referrer-Policy: no-referrer` +
+`X-Frame-Options: DENY` + CSP `frame-ancestors 'none'` present (H2/H3); **dang** `/set-password` → **200**
+(allowlist before standalone 404); dang `/pest-control` → **404** (standalone gate intact); coastal-pest
+`/pest-control` correctly reaches `[service]` (unaffected by the exact-match); apex `/set-password` →
+**404** (subdomain-only).
+
+**Operator-confirmed (Option 1).** The validator gate's binding constraints were the SECURITY
+properties (token off the SSR path / N2; no analytics reading the URL before replaceState / H5;
+referrer + anti-frame headers; slug-validated redirect / N1) — `/tenant/[slug]` was a means to "resolve
+on tenant subdomains," not itself a requirement. Top-level placement satisfies all of them *better*
+(GA4 eliminated structurally, not merely mitigated). **Middleware uses `NextResponse.next()`** (not a
+clone-rewrite): the route is now top-level at the *same* path `/set-password`, so no path transformation
+is needed and the query is preserved on the pass-through; a `clone()`-rewrite to the identical path would
+be a redundant no-op. N1 still derives the slug from the host and validates it against the token-bound
+user's membership before composing any redirect.
 
 ---
 
