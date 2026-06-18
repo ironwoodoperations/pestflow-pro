@@ -22,6 +22,9 @@ const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'))
 // Intake form — public, no theme needed
 const IntakePage = lazy(() => import('./pages/IntakePage'))
 
+// Set-password — public; handles BOTH invite + recovery (S273 PR #2b)
+const SetPassword = lazy(() => import('./pages/SetPassword'))
+
 // Post-intake branded preview — public, no theme needed
 const IntakeSuccess = lazy(() => import('./pages/IntakeSuccess'))
 
@@ -110,6 +113,9 @@ export default function App() {
         {/* ─── Apex legal pages ─── */}
         <Route path="/terms"   element={<Suspense fallback={LOADING}><TermsPage /></Suspense>} />
         <Route path="/privacy" element={<Suspense fallback={LOADING}><PrivacyPage /></Suspense>} />
+
+        {/* ─── Set password (invite + recovery) — MUST stay above the catch-all ─── */}
+        <Route path="/set-password" element={<Suspense fallback={LOADING}><SetPassword /></Suspense>} />
 
         {/* ─── Catch-all ─── */}
         <Route path="*" element={<NotFound />} />
