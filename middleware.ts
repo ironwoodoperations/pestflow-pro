@@ -154,17 +154,15 @@ export function middleware(req: NextRequest) {
     return NextResponse.rewrite(new URL('/_admin/index.html', req.url));
   }
 
-  // S273 PR #2c — set-password (invite + recovery) renders from THIS Next.js app on the tenant
-  // subdomain the invite/reset link targets (https://<slug>.pestflowpro.ai/set-password). Placed
-  // BEFORE the STANDALONE_SLUGS 404 so standalone tenants (e.g. Dang) resolve it too; converges on
-  // the same public-shell rewrite as normal tenants. Exact-match (not startsWith) — the token rides
-  // in the query string (?token_hash=…&type=…), which nextUrl.clone() preserves. Security headers:
-  // Referrer-Policy guards the token-in-query before the page's replaceState runs; anti-framing
-  // since the page sits on a public subdomain.
+  // S273 PR #2c — set-password (invite + recovery) is served by the TOP-LEVEL Next route
+  // app/set-password (NOT under /tenant/<slug>, so it skips the marketing layout's notFound()/
+  // GA4/navbar chrome). Allowlisted BEFORE the STANDALONE_SLUGS 404 so standalone tenants (e.g.
+  // Dang) resolve it too. NextResponse.next() lets Next serve /set-password directly; the page
+  // reads the tenant slug from the host. Exact-match — the token rides in the query string
+  // (?token_hash=…&type=…), preserved through next(). Security headers: Referrer-Policy guards the
+  // token-in-query before the page's replaceState runs; anti-framing on a public subdomain.
   if (pathname === '/set-password') {
-    const spUrl = req.nextUrl.clone();
-    spUrl.pathname = `/tenant/${slug}/set-password`;
-    const res = NextResponse.rewrite(spUrl);
+    const res = NextResponse.next();
     res.headers.set('Referrer-Policy', 'no-referrer');
     res.headers.set('X-Frame-Options', 'DENY');
     res.headers.set('Content-Security-Policy', "frame-ancestors 'none'");

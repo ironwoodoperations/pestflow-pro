@@ -1,39 +1,45 @@
 'use client'
 
-// S273 PR #2c — set-password page in the Next.js public-site app, so it resolves on the
-// tenant subdomain the invite/reset link targets (https://<slug>.pestflowpro.ai/set-password).
+// S273 PR #2c — set-password page in the Next.js public-site app, served at the TOP LEVEL
+// (app/set-password) so it does NOT inherit app/tenant/[slug]/layout.tsx. That tenant layout
+// calls notFound() on unresolved tenants, injects GA4 (which would capture the token-bearing
+// URL before replaceState runs), and renders marketing navbar/footer chrome — all wrong for an
+// auth utility page. This route uses only the minimal root layout. Middleware serves it on the
+// tenant subdomain the invite/reset link targets (https://<slug>.pestflowpro.ai/set-password)
+// and the slug is read from the host, so the page needs no [slug] path segment.
+//
 // Handles BOTH invite (type=invite) and recovery (type=recovery) on one route.
 //
 // Security model (validator-locked):
 //  - Own Supabase client, constructed INSIDE the component (never the shared
 //    createBrowserSupabase factory, never module-global), with detectSessionInUrl:false AND
 //    persistSession:false — otherwise verifyOtp would persist a session and silently log the
-//    user in off the recovery/invite token (H2/H4 of #2b carried forward).
+//    user in off the recovery/invite token.
 //  - N2: token_hash + type are read ONLY client-side from window.location.search inside
-//    useEffect — never via the Next server searchParams prop (would leak the token into server
-//    request logs). The token is stripped from the URL (replaceState) BEFORE await verifyOtp.
+//    useEffect — never via the Next server searchParams prop. The token is stripped from the URL
+//    (replaceState) BEFORE await verifyOtp.
 //  - H1: fail closed unless both token_hash and a valid type ∈ {invite,recovery} are present.
-//  - N1: the post-success redirect host is NOT trusted from the URL slug. We validate the
-//    current subdomain's tenant (get_tenant_boot) against the token-bound user's membership;
-//    only a validated match redirects (relative /admin/login), else fall back to apex. The raw
-//    slug is never interpolated into a redirect URL.
-//  - The page NEVER calls notFound() — it resolves for every slug, incl. standalone tenants.
+//  - N1: the post-success redirect host is NOT trusted from the URL slug. We validate the current
+//    subdomain's tenant (get_tenant_boot) against the token-bound user's membership; only a
+//    validated match redirects (relative /admin/login), else fall back to apex. The raw slug is
+//    never interpolated into a redirect URL.
+//  - The page NEVER calls notFound() — it resolves for every subdomain, incl. standalone tenants.
 //  - Referrer-Policy/X-Frame-Options/CSP for this route are set in middleware.ts.
 
 import { useEffect, useRef, useState } from 'react'
-import { useParams } from 'next/navigation'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
 type Phase = 'verifying' | 'ready' | 'submitting' | 'done' | 'error'
 
 const APEX_LOGIN = 'https://pestflowpro.ai/admin/login'
 
-export default function SetPasswordPage() {
-  const params = useParams<{ slug: string }>()
-  const urlSlug = typeof params?.slug === 'string'
-    ? params.slug
-    : Array.isArray(params?.slug) ? params.slug[0] : ''
+/** Left-most label of <slug>.pestflowpro.ai — read from the host, never from the path/query. */
+function slugFromHost(): string {
+  if (typeof window === 'undefined') return ''
+  return window.location.hostname.split('.')[0] || ''
+}
 
+export default function SetPasswordPage() {
   const clientRef = useRef<SupabaseClient | null>(null)
   const [phase, setPhase] = useState<Phase>('verifying')
   const [linkType, setLinkType] = useState<'invite' | 'recovery'>('recovery')
@@ -82,7 +88,7 @@ export default function SetPasswordPage() {
       const { data: { user } } = await sb.auth.getUser()
       if (!user) return APEX_LOGIN
       const [{ data: boot }, { data: memberships }] = await Promise.all([
-        sb.rpc('get_tenant_boot', { slug_param: urlSlug }),
+        sb.rpc('get_tenant_boot', { slug_param: slugFromHost() }),
         sb.from('tenant_users').select('tenant_id').eq('user_id', user.id),
       ])
       const currentTenantId = (boot as { id?: string } | null)?.id
