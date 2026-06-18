@@ -10,6 +10,73 @@ validator-locked deltas from the pr2a-CLOSED doc are carried verbatim and called
 
 ---
 
+## VALIDATOR AMENDMENTS — BUILD AUTHORITY (override the prose below where they conflict)
+
+Conservative-wins reconciliation of Perplexity + Gemini + ChatGPT. PASS with mandatory amendments.
+
+**H1 — TWO clients in the edge fns, not one.** `auth.admin.generateLink` requires the **service-role
+key**; a caller-JWT anon client will 403.
+- `invite-team-member`: **(a)** anon client w/ caller `Authorization` in `global.headers` → `getUser()`
+  + fresh `get_my_tenant_role` for **identity + authz ONLY**; **(b)** a **separate service-role client**
+  used **solely** for `generateLink` (and the membership upsert).
+- `password-reset-request`: fully unauthenticated → **service-role client only** for `generateLink`,
+  no caller client.
+
+**H2 — set-password own client = `detectSessionInUrl:false` AND `persistSession:false`.** `verifyOtp`
+persists a session to localStorage by default; without `persistSession:false` the user lands on
+`/admin/login` already authenticated, defeating the no-auto-session requirement. This client must
+**never** be the shared singleton, and **never** module-level / exported (create it inside the
+component).
+
+**M1 — `history.replaceState` BEFORE `await verifyOtp`** (corrects the original "after verify").
+Order: parse `token_hash`+`type` into JS vars → `replaceState` immediately → `await verifyOtp` →
+`updateUser` → redirect. If verify fails the token is already stripped — correct.
+
+**M2 — Last-admin lockout guard.** `ON CONFLICT DO UPDATE SET role` can demote the last admin (incl.
+self) → zero admins → unrecoverable. Enforced as a **`BEFORE UPDATE OR DELETE` trigger** on
+`tenant_users` (fires regardless of service-role/RLS path): if an existing `'admin'` row is being
+demoted/removed and the tenant would retain **0** admins, `raise exception`. Normal upserts and
+non-last-admin downgrades pass.
+
+**M3 — Timing/response-shape oracle on reset.** always-200 closes the boolean leak, but
+`generateLink(recovery)` throws instantly for a nonexistent email (faster path). Required: **identical
+JSON body on both paths** (no Supabase error text), **catch+swallow** the `generateLink` error and
+return the same 200 shape, **and equalize timing** (fixed minimum response duration / equivalent work
+on both branches).
+
+**M4 — gate surface = `user_mgmt`, NOT `settings`.** `'user_mgmt'` **already exists** in
+`permissions.ts` (`{ view: ADMIN_ONLY, edit: ADMIN_ONLY }`) — confirmed at build-time read; **no map
+edit needed** (so no DB-touching delta). Gate the Users sub-tab **button + panel** on
+`can(role, 'user_mgmt', 'view')`. (Reusing `'settings'` would be too broad — a future settings change
+would leak the tab.)
+
+**HARDENING (folded in):**
+- `list_tenant_members`: SECURITY DEFINER, `SET search_path`, **strict `= 'admin'`** (never loose/`!=`;
+  NULL fails closed), returns **only** `{user_id, email, role}` (no auth metadata / recovery / audit
+  cols), and takes **NO caller-supplied tenant arg** — derives tenant internally from the caller
+  (`current_tenant_id()`).
+- **Invite ACCEPTANCE derives role from the current `tenant_users` row**, never a role baked into the
+  link (a stale/superseded invite must not resurrect old permissions). The set-password page never
+  trusts a role from the URL.
+- **Global `auth.users` collision:** if the invited email already exists globally (another tenant), the
+  invite fn **branches — add a membership row, do NOT re-create identity.** Deliberate, not
+  GoTrue-config-dependent.
+- **Strict `=== 'admin'`** on the invite authz check (not `includes`/loose).
+- **Stale client-role gap is INTENDED:** a demoted admin still sees the tab until refresh but the
+  server 403s every call; a promoted admin doesn't see it until refresh. Documented so no future dev
+  relaxes the server check to "fix" it.
+
+**DEPLOYMENT PREREQ (Scott's surface, not code):** confirm SPF/DKIM/DMARC on `pestflow.ai` for the
+Resend sending domain, or invite/reset mail lands in spam.
+
+**OPEN DECISIONS — RESOLVED:**
+- **(D1) Post-recovery redirect:** BOTH flows → tenant subdomain `/admin/login`, **no auto-session**
+  (guaranteed by H2's `persistSession:false`).
+- **(D2) Re-invite role change:** `DO UPDATE SET role = excluded.role` (re-invite updates role), gated
+  by M2's last-admin trigger.
+
+---
+
 ## 0. RESOLVED: the role-source gap (the recon's one open item)
 
 **Problem the recon proved:** the locked design assumed "Settings is admin-gated." It is NOT.
@@ -202,29 +269,55 @@ locked scope (invite + reset + set-password + Users tab read/invite).
 
 ## 5. Migrations (DDL — applied via MCP after review)
 
-**`list_tenant_members(p_tenant_id uuid)`** — SECURITY DEFINER, admin-gated, self-contained
-(no policy recursion because function bodies bypass RLS):
+**(a) `list_tenant_members()`** — SECURITY DEFINER, **NO caller-supplied tenant arg** (derives tenant
+internally), strict `= 'admin'` (NULL fails closed), returns only `{user_id, email, role}`:
 ```sql
-create or replace function public.list_tenant_members(p_tenant_id uuid)
+create or replace function public.list_tenant_members()
 returns table (user_id uuid, email text, role text)
 language plpgsql stable security definer set search_path = public, pg_temp
 as $$
+declare v_tenant uuid;
 begin
-  if public.get_my_tenant_role(p_tenant_id) <> 'admin' then
-    return;  -- non-admins get zero rows (UX gate already hides the tab)
+  v_tenant := public.current_tenant_id();        -- server-derived; not from the client
+  if v_tenant is null then return; end if;
+  if public.get_my_tenant_role(v_tenant) = 'admin' then   -- strict; NULL → false → no rows
+    return query
+      select tu.user_id, u.email::text, tu.role
+      from public.tenant_users tu
+      join auth.users u on u.id = tu.user_id
+      where tu.tenant_id = v_tenant;
   end if;
-  return query
-    select tu.user_id, u.email::text, tu.role
-    from public.tenant_users tu
-    join auth.users u on u.id = tu.user_id
-    where tu.tenant_id = p_tenant_id;
+  return;                                          -- non-admin / NULL role → zero rows (fail closed)
 end $$;
-revoke all on function public.list_tenant_members(uuid) from public, anon;
-grant execute on function public.list_tenant_members(uuid) to authenticated, service_role;
+revoke all on function public.list_tenant_members() from public, anon;
+grant execute on function public.list_tenant_members() to authenticated, service_role;
 ```
-- Admin gate re-read fresh inside the function (consistent with the server-authority principle).
+
+**(b) Last-admin lockout trigger (M2)** — `BEFORE UPDATE OR DELETE` on `tenant_users`, fires on every
+path (service-role insert/upsert bypasses RLS but NOT triggers):
+```sql
+create or replace function public.tenant_users_block_last_admin()
+returns trigger language plpgsql security definer set search_path = public, pg_temp
+as $$
+begin
+  if (TG_OP = 'UPDATE' and OLD.role = 'admin' and NEW.role <> 'admin')
+     or (TG_OP = 'DELETE' and OLD.role = 'admin') then
+    if (select count(*) from public.tenant_users
+        where tenant_id = OLD.tenant_id and role = 'admin' and user_id <> OLD.user_id) = 0 then
+      raise exception 'Cannot demote or remove the last admin of tenant %', OLD.tenant_id
+        using errcode = 'check_violation';
+    end if;
+  end if;
+  return case when TG_OP = 'DELETE' then OLD else NEW end;
+end $$;
+
+drop trigger if exists trg_tenant_users_block_last_admin on public.tenant_users;
+create trigger trg_tenant_users_block_last_admin
+  before update or delete on public.tenant_users
+  for each row execute function public.tenant_users_block_last_admin();
+```
 - No new RLS policy on `tenant_users` (recursion guard preserved).
-- Invite INSERT uses **service role** (bypasses RLS) → no policy change needed for writes.
+- Invite upsert uses **service role** (bypasses RLS) → no write policy needed; the trigger still guards.
 
 No other schema changes. `get_my_tenant_role`, `operator_tenant_id`, `current_tenant_id`,
 `tenant_users` CHECK + composite index all already live (recon §7).
