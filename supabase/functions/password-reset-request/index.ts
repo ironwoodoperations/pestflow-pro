@@ -30,6 +30,15 @@ const CORS = {
 }
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
+// Run a promise without blocking the response, so total response time never depends on
+// email-send latency (a timing oracle). Uses EdgeRuntime.waitUntil to keep the worker alive
+// past the response when available; falls back to a fire-and-forget catch otherwise.
+function runDetached(p: Promise<unknown>): void {
+  const swallowed = p.catch(() => {})
+  const er = (globalThis as { EdgeRuntime?: { waitUntil?: (p: Promise<unknown>) => void } }).EdgeRuntime
+  if (er?.waitUntil) er.waitUntil(swallowed)
+}
+
 function validEmail(e: string): boolean {
   return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)
 }
@@ -90,7 +99,9 @@ export async function handler(req: Request): Promise<Response> {
           if (!error && hashed) {
             const link = `${setPasswordBase}?token_hash=${hashed}&type=recovery`
             const { subject, html, text } = recoveryEmail(businessName, link)
-            await sendEmail({ to: email, subject, html, text, fromName: businessName })
+            // Detached: the response must not wait on Resend, or send latency leaks as a
+            // timing oracle distinguishing existing vs nonexistent emails (M3).
+            runDetached(sendEmail({ to: email, subject, html, text, fromName: businessName }))
           }
         } catch (_e) {
           // swallowed — never surfaced to the caller
