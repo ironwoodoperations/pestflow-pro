@@ -22,3 +22,13 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
 - Files changed:
   - docs/specs/S273_pr2b_invite_reset_setpassword.md
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-06-18 16:45 UTC
+- Branch: `claude/laughing-mccarthy-cm6p7t`
+- Commit: `73562d2` — review(S273 PR #2b): ready — fix HIGH timing oracle in password-reset-request
+- Author: Claude
+- Files changed:
+  - REVIEW_S273_PR2B.md
+  - supabase/functions/password-reset-request/index.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
