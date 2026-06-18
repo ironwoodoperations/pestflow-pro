@@ -154,6 +154,23 @@ export function middleware(req: NextRequest) {
     return NextResponse.rewrite(new URL('/_admin/index.html', req.url));
   }
 
+  // S273 PR #2c — set-password (invite + recovery) renders from THIS Next.js app on the tenant
+  // subdomain the invite/reset link targets (https://<slug>.pestflowpro.ai/set-password). Placed
+  // BEFORE the STANDALONE_SLUGS 404 so standalone tenants (e.g. Dang) resolve it too; converges on
+  // the same public-shell rewrite as normal tenants. Exact-match (not startsWith) — the token rides
+  // in the query string (?token_hash=…&type=…), which nextUrl.clone() preserves. Security headers:
+  // Referrer-Policy guards the token-in-query before the page's replaceState runs; anti-framing
+  // since the page sits on a public subdomain.
+  if (pathname === '/set-password') {
+    const spUrl = req.nextUrl.clone();
+    spUrl.pathname = `/tenant/${slug}/set-password`;
+    const res = NextResponse.rewrite(spUrl);
+    res.headers.set('Referrer-Policy', 'no-referrer');
+    res.headers.set('X-Frame-Options', 'DENY');
+    res.headers.set('Content-Security-Policy', "frame-ancestors 'none'");
+    return res;
+  }
+
   // Standalone-repo tenants (data-driven via render_model column -> STANDALONE_SLUGS
   // env projection). Public site is a separate Vercel project; here only /admin works
   // (handled above), everything else 404s to prevent a duplicate public render.
