@@ -1,16 +1,20 @@
 # PestFlow Pro — Roadmap
 
-*State as of S272 (2026-06-16). Update at end of each session; retire the versioned pestflow-pro-todo-vNNN.html snapshots.*
+*State as of S273 (2026-06-22). Update at end of each session; retire the versioned pestflow-pro-todo-vNNN.html snapshots.*
 
 ---
 
 ## In Progress
 
-- **S273 PR #2b — feature wave: invite-team-member edge fn (Settings→new Users tab, admin-only) + password-reset + shared set-password page. NOT started.** Locked design in `docs/handoffs/pestflow-pro-handoff-S273-pr2a-CLOSED.md`.
+- *(nothing in flight)*
 
 ---
 
 ## Recently Shipped
+
+- **S273 PR #2b — Team Invites · Password Reset (PR #215, merged; DDL applied + verified live; both edge fns deployed).** `list_tenant_members()` SECURITY DEFINER (no tenant arg, derives `current_tenant_id()`, strict admin fail-closed) + `tenant_users_block_last_admin` BEFORE UPDATE/DELETE trigger (blocks removing/demoting a tenant's last admin on every write path). `invite-team-member` edge fn (`verify_jwt=TRUE`, two-client pattern, server-derived tenant_id, generateLink+Resend link never logged, global-email collision → add-membership branch, last-admin → clean 409). `password-reset-request` edge fn (`verify_jwt=FALSE`, anti-enumeration: identical ok response, 700ms floor, detached send). Client: `useTenantRole()` single role source (ProtectedRoute refactored onto it), admin-only Users tab in SettingsTab, Login "Forgot password?". Seats unlimited. Full detail: `docs/handoffs/pestflow-pro-handoff-S273-pr2bc-SHIPPED.md`.
+
+- **S273 PR #2c — set-password placement fix (PR #217, merged).** #2b put the set-password route in the Vite SPA, but tenant subdomains are served by the Next.js public-site app via middleware — real invite/reset links 404'd on every tenant. Fix (Option 1, after `/qa` found `/tenant/[slug]/set-password` inherited the tenant marketing layout incl. GA4 → token leak): set-password lives at **top-level `app/set-password`** (root layout only, no GA4/notFound/marketing chrome); middleware rewrites `/set-password` via `nextUrl.clone()` (query preserved) for both normal and standalone tenants; Vite route deleted. Page uses a dedicated inline Supabase client (`detectSessionInUrl:false`+`persistSession:false`), reads token client-side from `window.location.search`, validates `type`, `replaceState` before `verifyOtp`→`updateUser`, slug-validated redirect (N1 open-redirect fix), no-referrer + anti-frame headers. **Verified end-to-end on Dang (live paying tenant):** add user → invite → set password → login → logout → forgot password → reset → login. Full detail: `docs/handoffs/pestflow-pro-handoff-S273-pr2bc-SHIPPED.md`.
 
 - **S273 PR #2a — Permission Foundation (PR #212, squash-merged, migration applied + verified live).** `get_my_tenant_role(tenant_id)` SECURITY DEFINER helper; `tenant_users` hardened (dropped `'admin'` default, added CHECK `role IN ('admin','manager','user')`, composite index `(user_id,tenant_id)`); split per-command content RLS on 9 surfaces (blog_posts, social_posts, seo_meta, page_content, faqs, service_areas, testimonials, image_library, team_members) — SELECT tenant-only, INSERT/UPDATE/DELETE gated on `get_my_tenant_role IN ('admin','manager')`, closing the FOR-ALL DELETE hole; REVOKE TRUNCATE from authenticated on all 9; `tenant_role_binding_drift` audit view (excludes operator tenant). `ironwood_admin_*_write` operator policies preserved untouched. `permissions.ts` typed map + role-aware `ProtectedRoute`. Validator-PASSED (Perplexity+Gemini+ChatGPT converged: split shape strictly safer than FOR ALL); CI green incl. pgTAP role-RLS + Deno cross-tenant. Post-apply verified live via MCP (helper exists, default gone, CHECK+index present, 0 leftover old policies, 13 ironwood policies preserved, 0 TRUNCATE grants, drift=0).
 
@@ -45,7 +49,7 @@
 - bold-local FAQ category label ("General") renders red on charcoal (prod, urban-strike) — a category-tag color outside the S267 `--color-*` conversion scope; harmonize with the bold-local palette (amber). Cosmetic, low priority, non-blocking.
 - bold-local service-page "OUR HIT PLAN" section-label renders dim against charcoal (prod, urban-strike) — check legibility / intended contrast (likely a muted eyebrow that needs a brighter token on the dark surface). Cosmetic, low priority, non-blocking.
 - provision-tenant v97 hardcodes pestflowpro.com in legal pages and liveUrl — should be .ai; low priority
-- **Role helpers exist — reuse, do NOT re-derive:** `operator_tenant_id()` (operator identity) and `get_my_tenant_role(tenant_id)` (customer-tenant role), both `SECURITY DEFINER`. Use them in PR #2b.
+- **Role helpers exist — reuse, do NOT re-derive:** `operator_tenant_id()` (operator identity), `get_my_tenant_role(tenant_id)` (customer-tenant role), and `list_tenant_members()` (admin-only member list, derives current tenant internally) — all `SECURITY DEFINER`.
 - **Demo-deauth wave (new, prereq for a strict binding FK).** Remove the shared `admin@demo.com` login printed on `pestflowpro.ai/demos/admin`; convert demo dashboards to no-session forced-read-only; THEN delete the `admin@demo.com` seed; THEN upgrade `tenant_role_binding_drift` from an audit view to a hard `profiles`↔`tenant_users` FK — that seed (operator-tenant binding, no membership) is the one row blocking a strict FK today. Real customer auth + `provision-tenant` are OUT of scope for this wave.
 - **Migration history not replayable from zero** — `supabase/migrations/20260405_fix_rls_policies.sql` references `stripe_payments`, which no earlier migration creates (exists only on the live remote), so a from-scratch `supabase start` dies on it. CI's isolation test works around it with a focused fixture schema; a real "make migrations replayable from zero" cleanup is separate/out-of-scope but worth doing before the next CI job that needs full-schema replay.
 - No-credential provision-path hardening — provision-tenant skips profile write when no admin email/password resolved; never triggered in practice; optional defensive note
