@@ -148,6 +148,12 @@ serve(async (req) => {
     throw e
   }
 
+  // S273 confused-deputy closure: requireTenantAdmin validated `tenantId`, so EVERY
+  // social_posts read/write below is double-scoped by id AND tenant_id. Without the
+  // tenant predicate a validated admin of tenant A could pass a postId owned by
+  // tenant B and read its media or flip its status — the auth check
+  // alone does not bind the row to the caller's tenant.
+
   const supabase = createClient(supabaseUrl, serviceRoleKey)
 
   // Resolve media URL from body OR fall back to DB row (v37 logic, unchanged in v38).
@@ -161,7 +167,7 @@ serve(async (req) => {
     const { data: postRow } = await supabase
       .from('social_posts')
       .select('image_url, media_type')
-      .eq('id', postId)
+      .eq('id', postId).eq('tenant_id', tenantId)
       .maybeSingle()
     if (!effectiveMediaUrl && postRow?.image_url) {
       effectiveMediaUrl = postRow.image_url
@@ -224,7 +230,7 @@ serve(async (req) => {
   if (zernioPlatforms.length === 0) {
     const errMsg = `No connected accounts for: ${missingPlatforms.join(', ')}. Go to Social → Connections to connect your accounts.`
     if (postId) {
-      await supabase.from('social_posts').update({ status: 'failed', error_msg: errMsg }).eq('id', postId)
+      await supabase.from('social_posts').update({ status: 'failed', error_msg: errMsg }).eq('id', postId).eq('tenant_id', tenantId)
     }
     return new Response(JSON.stringify({ error: errMsg }), {
       status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -256,7 +262,7 @@ serve(async (req) => {
         await supabase.from('social_posts').update({
           status: 'failed',
           error_msg: `Image upload to Zernio failed: ${msg}`,
-        }).eq('id', postId)
+        }).eq('id', postId).eq('tenant_id', tenantId)
       }
       return new Response(JSON.stringify({ error: `Image upload failed: ${msg}` }), {
         status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -280,7 +286,7 @@ serve(async (req) => {
       const errMsg = data?.error || data?.message || `Zernio error: ${res.status}`
       console.error('[post-to-social] Zernio API error:', errMsg)
       if (postId) {
-        await supabase.from('social_posts').update({ status: 'failed', error_msg: errMsg }).eq('id', postId)
+        await supabase.from('social_posts').update({ status: 'failed', error_msg: errMsg }).eq('id', postId).eq('tenant_id', tenantId)
       }
       return new Response(JSON.stringify({ error: errMsg }), {
         status: res.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -304,7 +310,7 @@ serve(async (req) => {
     }
 
     if (postId) {
-      await supabase.from('social_posts').update(postUpdate).eq('id', postId)
+      await supabase.from('social_posts').update(postUpdate).eq('id', postId).eq('tenant_id', tenantId)
     } else {
       await supabase.from('social_posts').insert({
         tenant_id: tenantId,
@@ -322,7 +328,7 @@ serve(async (req) => {
     const msg = err instanceof Error ? err.message : 'Network error'
     console.error('[post-to-social] unexpected error:', msg)
     if (postId) {
-      await supabase.from('social_posts').update({ status: 'failed', error_msg: msg }).eq('id', postId)
+      await supabase.from('social_posts').update({ status: 'failed', error_msg: msg }).eq('id', postId).eq('tenant_id', tenantId)
     }
     return new Response(JSON.stringify({ error: msg }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },

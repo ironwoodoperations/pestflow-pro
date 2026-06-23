@@ -1,0 +1,86 @@
+name: Redeploy edge functions on _shared change
+
+# ── WHY THIS EXISTS (S273 root-cause fix) ────────────────────────────────────
+# Supabase bundles supabase/functions/_shared/** into each function AT DEPLOY TIME.
+# Editing a shared file (e.g. _shared/auth/requireTenantUser.ts) does NOT hot-update
+# already-deployed functions — every consumer must be redeployed to pick up the change.
+#
+# In S273 a shared-auth fix (read role from tenant_users, not the dropped
+# profiles.role) landed on main, but the consumer functions were never redeployed.
+# Production kept running the STALE bundle, which selected the dropped profiles.role
+# column → PostgREST error → AuthError(403 "Forbidden") on every user-context edge
+# function. This workflow propagates any _shared change to all consumers so a
+# shared-file edit can never again silently leave stale bundles behind.
+#
+# ── verify_jwt SAFETY (config.toml is the single source of truth) ─────────────
+# Functions are deployed with NO per-function verify_jwt flag. The Supabase CLI reads
+# each function's pinned value from supabase/config.toml ([functions.<name>].verify_jwt),
+# so a single atomic deploy applies the authoritative setting and a redeploy can never
+# flip a gateway JWT setting or drift to the CLI default. (This replaces the old
+# two-pass `--no-verify-jwt` split, which kept verify_jwt state OUTSIDE config.toml and
+# risked wrong-group / CLI-default drift.) The deploy LIST lives in
+# .github/edge-shared-consumers.txt; the verify_jwt VALUES live in config.toml.
+# After deploying, a verification step asserts the DEPLOYED verify_jwt matches
+# config.toml for every consumer, failing the run on any drift.
+#
+# When you add a new _shared consumer: add it to .github/edge-shared-consumers.txt AND
+# add an explicit [functions.<name>].verify_jwt to supabase/config.toml. The verifier
+# fails if a consumer lacks an explicit config.toml pin (no reliance on the default).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/_shared/**'
+      - 'supabase/config.toml'
+      - '.github/edge-shared-consumers.txt'
+      - '.github/scripts/verify_verify_jwt.py'
+      - '.github/workflows/redeploy-edge-on-shared-change.yml'
+  workflow_dispatch: {}   # manual run — e.g. to repair stale bundles on demand
+
+concurrency:
+  group: redeploy-edge-shared
+  cancel-in-progress: false
+
+env:
+  # Pin the Supabase CLI so deploy + config.toml parsing behaviour is reproducible.
+  SUPABASE_CLI_VERSION: 2.84.2
+
+jobs:
+  redeploy:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_REF: biezzykcgzkrwdgqpsar
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Guard — require deploy token
+        run: |
+          if [ -z "${SUPABASE_ACCESS_TOKEN}" ]; then
+            echo "::error::SUPABASE_ACCESS_TOKEN secret is not set. Add it under repo Settings → Secrets and variables → Actions, then re-run."
+            exit 1
+          fi
+
+      - name: Install Supabase CLI (pinned)
+        uses: supabase/setup-cli@v1
+        with:
+          version: ${{ env.SUPABASE_CLI_VERSION }}
+
+      # Single atomic pass. No verify_jwt flag — config.toml drives each function's
+      # pinned setting. The list is read from the SSOT file (comments + blanks stripped).
+      - name: Redeploy shared-auth consumers (verify_jwt from config.toml)
+        run: |
+          set -euo pipefail
+          while IFS= read -r raw; do
+            fn="${raw%%#*}"; fn="$(echo "$fn" | xargs)"
+            [ -z "$fn" ] && continue
+            echo "::group::deploy $fn (verify_jwt from config.toml)"
+            supabase functions deploy "$fn" --project-ref "$PROJECT_REF"
+            echo "::endgroup::"
+          done < .github/edge-shared-consumers.txt
+
+      # Assert the platform actually matches config.toml after the deploy — closes the
+      # split-state gap (e.g. the historical places-reviews config(true)/deployed(false)).
+      - name: Verify deployed verify_jwt matches config.toml
+        run: python3 .github/scripts/verify_verify_jwt.py

@@ -66,7 +66,9 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Pinned (S273) — keep in lockstep with redeploy-edge-on-shared-change.yml
+          # so local stack / migration behaviour is reproducible across CI jobs.
+          version: 2.84.2
 
       # The repo's full migration history is NOT replayable from zero (e.g.
       # 20260405_fix_rls_policies.sql references stripe_payments, never created by an
