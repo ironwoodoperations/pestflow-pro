@@ -1,3 +1,10 @@
+-- ⚠️ SUPERSEDED by 20260624180000_s273_collapse_check_tenant_access_single_integer.sql.
+-- This migration ADDS an integer overload ALONGSIDE the smallint signature, which
+-- created the PGRST203 ambiguity (PostgREST resolves by param name, not type). The
+-- later collapse migration DROPs both and creates exactly one integer function, so a
+-- fresh replay applies this then immediately collapses it — net result is one overload.
+-- Left in place (not neutralized) because the timestamp ordering already makes replay safe.
+--
 -- S273 follow-up — repo trail for an MCP-applied migration.
 --
 -- The integer overload of public.check_tenant_access was applied LIVE this session
