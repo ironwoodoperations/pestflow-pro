@@ -31,8 +31,14 @@ verify_jwt = true
 
 [functions.outscraper-reviews]
 verify_jwt = false
+# S273 — DRIFT RESOLVED AT SOURCE. Was `true` here while the deployed platform value
+# was `false`. places-reviews does its own inline auth (requireTenantUser reads the
+# bearer token itself), so the gateway check is redundant and the function must stay
+# reachable for that inline path → verify_jwt=false, matching deployed reality. This
+# file is now the single source of truth; the redeploy workflow deploys with NO
+# per-function flag, so config.toml drives verify_jwt and this can't silently re-drift.
 [functions.places-reviews]
-verify_jwt = true
+verify_jwt = false
 
 # S242 — AI Campaign Auto-Attach (Session 1)
 # ai-proxy verify_jwt pinned false: it validates the user JWT inline on the
@@ -87,4 +93,41 @@ verify_jwt = true
 # S273 PR #2b — password reset request. Caller is unauthenticated by definition.
 # verify_jwt=false so the gateway can't 401 the JWT-less request. Re-check OFF after every deploy.
 [functions.password-reset-request]
+verify_jwt = false
+
+# ── S273 — SHARED-AUTH CONSUMERS (config.toml is the SSOT for verify_jwt) ──────────
+# The functions below import _shared/auth/requireTenantUser.ts (directly or via
+# _shared/aiAuth.ts) and so are redeployed by
+# .github/workflows/redeploy-edge-on-shared-change.yml whenever _shared changes.
+# That workflow deploys with NO per-function verify_jwt flag — these values are
+# authoritative. Each entry's value matches the deployed platform setting at S273.
+#
+#   verify_jwt=true  → user-JWT callers; the gateway validates the JWT signature
+#                      before the function re-checks tenant membership/role.
+#   verify_jwt=false → the function validates the bearer token INLINE
+#                      (requireTenantUser) and/or accepts a non-JWT internal/cron
+#                      credential, so the gateway check must stay OFF.
+# (ga4-analytics, gsc-analytics, generate-social-batch, tag-image-vision, ai-proxy,
+#  outscraper-reviews, places-reviews are pinned above — do not duplicate them here.)
+
+# verify_jwt=true consumers
+[functions.apply-finding-fix]
+verify_jwt = true
+[functions.create-upgrade-session]
+verify_jwt = true
+[functions.zernio-analytics]
+verify_jwt = true
+[functions.seo-analytics]
+verify_jwt = true
+[functions.pagespeed-proxy]
+verify_jwt = true
+
+# verify_jwt=false consumers (inline auth via requireTenantUser; gateway must stay off)
+[functions.post-to-social]
+verify_jwt = false
+[functions.notify-upgrade]
+verify_jwt = false
+[functions.notify-support-ticket]
+verify_jwt = false
+[functions.list-checkout-sessions]
 verify_jwt = false

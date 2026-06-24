@@ -1,0 +1,32 @@
+# Shared-auth edge-function consumers — single source of truth for the deploy LIST.
+#
+# These functions import supabase/functions/_shared/** (the auth boundary —
+# _shared/auth/requireTenantUser.ts, directly or via _shared/aiAuth.ts). Supabase
+# bundles _shared at deploy time, so a _shared edit does NOT hot-update them — each
+# must be redeployed to pick up the change. Both the redeploy workflow and the
+# post-deploy verifier read this file, so the list lives in exactly one place.
+#
+# verify_jwt is NOT specified here — it is read per-function from supabase/config.toml
+# at deploy time (the SSOT for that value). One function per line; '#' starts a comment.
+#
+# (outscraper-reviews carries its OWN inline copy of requireTenantUser rather than
+# importing _shared, so a _shared edit can't change its bundle — but it is kept in the
+# list so its verify_jwt is covered by the post-deploy assertion and a manual run can
+# repair it too.)
+
+apply-finding-fix
+create-upgrade-session
+zernio-analytics
+gsc-analytics
+ga4-analytics
+generate-social-batch
+seo-analytics
+pagespeed-proxy
+ai-proxy
+notify-upgrade
+post-to-social
+tag-image-vision
+notify-support-ticket
+list-checkout-sessions
+places-reviews
+outscraper-reviews
