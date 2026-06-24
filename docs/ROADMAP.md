@@ -1,41 +1,46 @@
 # PestFlow Pro — Roadmap
 
-*State as of S274 (2026-06-24). Update at end of each session; retire the versioned pestflow-pro-todo-vNNN.html snapshots.*
+*State as of S275 (2026-06-24). Update at end of each session; retire the versioned pestflow-pro-todo-vNNN.html snapshots.*
 
 ---
 
-## Platform status (S274)
+## Platform status (S275)
 
-Production-ready, **idle capacity**. Active leads out — **Capture, Blue Duck, TOPS** — awaiting responses; **no new tenant onboarding in flight.** **Dang** is the only live customer (separate-repo Vite SPA → dangpestcontrol.com, reads shared PFP Supabase `biezzykcgzkrwdgqpsar`, tenant `1611b16f-381b-4d4f-ba3a-fbde56ad425b`). Full state + the Dang revalidation arc (resolved incidents, SEO mechanism finding): `docs/handoffs/pestflow-pro-handoff-S274-dang-revalidation.md`.
+Production-ready, **idle capacity**. Active leads out — **Capture, Blue Duck, TOPS** — awaiting responses; **no new tenant onboarding in flight.** **Dang** is the only live customer (separate-repo Vite SPA → dangpestcontrol.com, reads shared PFP Supabase `biezzykcgzkrwdgqpsar`, tenant `1611b16f-381b-4d4f-ba3a-fbde56ad425b`). The `dang-pfp` migration is now baselined with all 8 build decisions locked (Phase 0 complete; Phase 1 next) — baseline spec `docs/audits/dang-pfp-teardown-baseline.md`, handoff `docs/handoffs/pestflow-pro-handoff-S275-dang-pfp-baseline.md`. Prior Dang revalidation arc (resolved incidents, SEO mechanism finding): `docs/handoffs/pestflow-pro-handoff-S274-dang-revalidation.md`.
 
 ---
 
 ## In Progress
 
-- **Dang → PestFlow Pro Next.js migration (`dang-pfp`) — Phase 0 scheduled NOW (idle-capacity rehearsal).** See the project block under "Major Projects" below. Phase 0 runs Dang through the full PFP onboarding pipeline from Ironwood ops as a known-answer-key rehearsal **before the next paying customer (Capture / Blue Duck / TOPS)** — live Dang site untouched, stops at "built & compared," **no cutover**.
+- **Dang → PestFlow Pro migration (`dang-pfp`) — Phase 0 COMPLETE; Phase 1 (baseline lock + 301 map) NEXT.** Teardown done, full baseline captured, **all 8 build decisions LOCKED** (custom comic shell **inside `pestflow-pro`'s shell system**, reuse DANG tables, SSR `seo_meta` with take-better guard, keep slugs + map 301s first, 816 Riding Road schema-only, `#F26B0F` canonical, leave live content as-is, defer orphan-row delete). Spec: `docs/audits/dang-pfp-teardown-baseline.md`. Handoff: `docs/handoffs/pestflow-pro-handoff-S275-dang-pfp-baseline.md`. Live Vite site untouched; no build/provision/cutover yet.
 
 ---
 
 ## Major Projects
 
-### Dang → PestFlow Pro Next.js migration (`dang-pfp`)
+### Dang → PestFlow Pro migration (`dang-pfp`)
 
-> **Slug `dang-pfp`** to distinguish from the live Vite tenant slug `dang`. Live tenant id `1611b16f-381b-4d4f-ba3a-fbde56ad425b`; shared Supabase `biezzykcgzkrwdgqpsar`.
+> **Custom comic shell registered INSIDE `pestflow-pro`'s multi-tenant shell system** (`src/shells/`, alongside `bold-local`/`modern-pro`) — **NOT a separate repo.** Dang is already a tenant (id `1611b16f-381b-4d4f-ba3a-fbde56ad425b`, shared Supabase `biezzykcgzkrwdgqpsar`); the migration replaces only the public rendering layer, retiring the standalone Vite repo and serving Dang's public site through the standard Next.js tenant path. Working slug `dang-pfp` distinguishes the migration target from the live Vite tenant slug `dang`.
 
-**WHY:** Makes dashboard SEO/content edits **real and crawler-visible via SSR**. Today Dang is a client-rendered Vite SPA (`react-helmet-async`, no SSR/SSG/prerender); Vercel serves one generic `index.html` head for every URL, so AI crawlers (ChatGPT/GPTBot, Perplexity, ClaudeBot) see only that static head. `/contact` and all 12 pest pages are hardcoded components that shadow the DB-reading path and never read the `seo:/<slug>` rows the dashboard writes (plus a leading-slash key mismatch `seo:/x` written vs `seo:x` read); only home/about honor dashboard SEO, and only post-hydration. Net: **Dang's working SEO is carried by hardcoded build-time values, not the dashboard.** An SSR rebuild is a **strict upgrade** over the current post-hydration/unread SPA SEO, and **protects and extends Dang's existing Google + AI (ChatGPT/Perplexity) visibility**. (Mechanism source: `docs/audits/dang-revalidation-investigation.md` + SEO field-flow follow-up; recorded in the S274 handoff.)
+**WHY:** Makes dashboard SEO/content edits real and crawler-visible via SSR, and folds Dang into the SaaS tenant rendering structure so it stops being a maintenance island. Verified baseline (S275): raw HTML is generic with **zero structured data on every route** (invisible to AI crawlers); post-hydration helmet swaps title/canonical/JSON-LD on most routes but **9 silently fail** (about, contact, service-area, reviews, bullard/jacksonville/lindale/whitehouse/longview-tx); meta description generic on 100% of routes. SSR is a **strict upgrade**. Full baseline + locked decisions: `docs/audits/dang-pfp-teardown-baseline.md`.
 
-> **GATING PRINCIPLE — this is an SEO-PRESERVATION-AND-UPGRADE project, not a rewrite-and-pray.** The **live Vite site keeps serving real traffic untouched** until `dang-pfp` proves **SEO parity-or-better**. Build-and-compare is safe and can proceed freely. **DNS/301 cutover is a SEPARATE, gated decision** requiring rankings monitoring + a rollback plan — the Vite site stays deployable throughout.
+> **GATING PRINCIPLE — SEO-preservation-and-upgrade, not rewrite-and-pray.** Live Vite site keeps serving traffic untouched until `dang-pfp` proves **parity-or-better** per route. Build-and-compare is safe. **DNS/301 cutover is a SEPARATE gated decision** (rankings monitoring + rollback).
 
-- **Phase 0 — idle-capacity onboarding-pipeline rehearsal (SCHEDULE NOW, while awaiting leads).** From the Ironwood ops admin, run Dang through the **full PFP onboarding pipeline**: scrape dangpestcontrol.com → pull content/structure → rebuild as Next.js tenant `dang-pfp`. **Live Dang site untouched.** Purpose: (1) **end-to-end validation of the onboarding pipeline before the next paying customer** (Capture / Blue Duck / TOPS), using Dang as a **known-answer-key** input; (2) produce the migration target. **STOPS at "built & compared" — NO cutover in this phase.**
-- **Phase 1 — baseline + 301 map.** Capture the **current live Dang SEO baseline per route** (exact title / meta / structured data Google + AI see *today*) as the parity target. Build the **exhaustive 301 map** (every live URL → `dang-pfp` equivalent; note existing redirects, e.g. `/quote` → `/contact`).
-- **Phase 2 — prove parity-or-better.** Prove SSR'd `dang-pfp` SEO **matches-or-beats baseline per route**; **preserve sitemap** (built from `location_data`) **+ structured data**.
-- **Phase 3 — cutover (GATED, later).** DNS/301 cutover **with rankings monitoring + rollback plan**. Separate go/no-go decision; only after Phase 2 proves parity-or-better.
+- **Phase 0 — teardown + baseline (✅ DONE, S275).** Read-only; live site untouched; 8 decisions locked; baseline spec produced.
+- **Phase 1 — baseline lock + 301 map (NEXT).** Freeze the per-route SEO matrix as the immutable parity target; generate the full 1:1 301 map (56 URLs → identical slugs; preserve `/quote→/contact`) as a committed artifact. No build, no live-site contact.
+- **Phase 2 — build the custom comic shell inside `pestflow-pro`.** Register `src/shells/dang/` (working name) selected by the existing `template`/theme mechanism; wire to existing DANG tables via the standard tenant-scoped read path; reuse storage assets; reproduce design identically (Bangers/Open Sans, `#F26B0F`, `.text-comic`, 4 hero templates, 12 service cards, superhero trust section, footer, contact form + both SMS consent strings); carry integrations (api-quote, GA4 `G-5NZFW0ZLMZ`, GSC domain property, Remi/VAPI, Zernio, Outscraper, social; drop bundle.social/ayrshare); render SEO server-side from `seo_meta` with diff-and-take-better guard; fix the 9 broken routes + generic-description + doubled-suffix/`arp-tx` quirks; **816 Riding Road in schema only, never customer-facing**; generate sitemap/robots server-side. ⚠️ Touches shared rendering code in a manual-merge prod repo — validator gate + merge discipline.
+- **Phase 3 — prove parity-or-better (GATED).** Per-route raw-HTML SEO diff vs Phase-1 baseline; match-or-beat on every route before any DNS discussion; preserve sitemap (from `location_data`) + structured data.
+- **Phase 4 — cutover (GATED, later).** DNS/301 flip with rankings monitoring + rollback; Vite site stays deployable throughout. Map all 301s first, expand after.
 
-**Dependency:** any caching / SEO / auth changes go through the **validator gate**.
+**Build-phase cleanup chores (deferred):** set `branding.theme` to the new shell key; delete orphan `wasp-control` `page_content` row; reconcile logo path (`logos/dang/` vs `logos/{tenant}/`); standardize geo to the 816 Riding Road geocode (3 conflicting sets); confirm GSC verification carries.
+
+**Dependency:** any caching/SEO/auth/shell-rendering change goes through the validator gate.
 
 ---
 
 ## Recently Shipped
+
+- **S275 — dang-pfp teardown + baseline (decisions-locked; investigate/teardown session).** Full Phase 0 teardown of live Dang: per-route SEO baseline (raw-HTML zero-structured-data vs uneven post-hydration; 9 broken routes identified), 56-URL inventory + 301 skeleton, content inventory across all DANG tables, full custom-shell design spec, integrations carry-forward, sitemap structure. **All 8 build decisions locked** (key correction: custom comic shell goes **INSIDE `pestflow-pro`'s shell system, not a separate repo**). Read-only DB; live Vite site untouched; no build/provision/cutover. Spec: `docs/audits/dang-pfp-teardown-baseline.md`. Handoff: `docs/handoffs/pestflow-pro-handoff-S275-dang-pfp-baseline.md`.
 
 - **S274 — Dang revalidation arc (3 incidents resolved; investigate/docs-only session).** (a) `requireTenantUser` `profiles.role`→`tenant_users` **403** — fixed by **redeploying the affected consumers** so the live bundle matches the S273 SSOT reroute. (b) `check_tenant_access` **PGRST203** overload ambiguity — fixed by **collapsing to a single integer overload**, live via MCP migration `s273_collapse_check_tenant_access_to_single_integer_overload` (⚠️ **repo-trail PR still outstanding** — see Open Follow-ups). (c) `post-to-social` **confused-deputy cross-tenant** path closed, **deployed v64**. Verified live: `ai-proxy` v19, `apply-finding-fix` v2, `post-to-social` v64; **Dang entitlement = 4 (Elite)** correct; SEO **"Generate fix" returns 200** (verified `ai_proxy_log`) **but output does not surface on the live Vite pages** — see the `dang-pfp` project for why (hardcoded routes shadow the `seo:/<slug>` rows; client-only render invisible to crawlers). Full detail: `docs/handoffs/pestflow-pro-handoff-S274-dang-revalidation.md`.
 
