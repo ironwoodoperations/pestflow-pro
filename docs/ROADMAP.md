@@ -1,6 +1,6 @@
 # PestFlow Pro — Roadmap
 
-*State as of S275 (2026-06-24). Update at end of each session; retire the versioned pestflow-pro-todo-vNNN.html snapshots.*
+*State as of S276 (2026-06-25). Update at end of each session; retire the versioned pestflow-pro-todo-vNNN.html snapshots.*
 
 ---
 
@@ -12,7 +12,13 @@ Production-ready, **idle capacity**. Active leads out — **Capture, Blue Duck, 
 
 ## In Progress
 
-- **Dang → PestFlow Pro migration (`dang-pfp`) — Phase 0 COMPLETE; Phase 1 (baseline lock + 301 map) NEXT.** Teardown done, full baseline captured, **all 8 build decisions LOCKED** (custom comic shell **inside `pestflow-pro`'s shell system**, reuse DANG tables, SSR `seo_meta` with take-better guard, keep slugs + map 301s first, 816 Riding Road schema-only, `#F26B0F` canonical, leave live content as-is, defer orphan-row delete). Spec: `docs/audits/dang-pfp-teardown-baseline.md`. Handoff: `docs/handoffs/pestflow-pro-handoff-S275-dang-pfp-baseline.md`. Live Vite site untouched; no build/provision/cutover yet.
+- **Dang → PestFlow Pro migration (`dang-pfp`) — Phase 2 IN PROGRESS (shared infra + comic shell build).** Phases 0 (teardown/baseline) and 1 (frozen SEO matrix + 1:1 301 map) COMPLETE. Phase 2 is a **5-PR plan**, each **validator-gated** (Perplexity + Gemini, conservative-wins) for shell / SEO / caching / routing changes:
+  - **PR 1 — Shared `seo_meta` SSR metadata infrastructure — ✅ SHIPPED** (PR #229, merged, verified in prod).
+  - **PR 2 — Shared service/location/FAQ JSON-LD infrastructure — NEXT.**
+  - **PR 3 — Register empty comic shell at `app/tenant/[slug]/_shells/dang/`.**
+  - **PR 4 — Full comic design reproduction + read-path wiring + comic art-asset migration.**
+  - **PR 5 — Server-side sitemap/robots.**
+  Specs: `docs/audits/dang-pfp-teardown-baseline.md`, frozen matrix `docs/audits/dang-pfp-seo-baseline-matrix.md`, comic design `docs/audits/dang-pfp-comic-shell-design-spec.md`. Handoff: `docs/handoffs/pestflow-pro-handoff-S276-phase2-pr1.md`. Live Vite site untouched; no cutover yet.
 
 ---
 
@@ -20,15 +26,22 @@ Production-ready, **idle capacity**. Active leads out — **Capture, Blue Duck, 
 
 ### Dang → PestFlow Pro migration (`dang-pfp`)
 
-> **Custom comic shell registered INSIDE `pestflow-pro`'s multi-tenant shell system** (`src/shells/`, alongside `bold-local`/`modern-pro`) — **NOT a separate repo.** Dang is already a tenant (id `1611b16f-381b-4d4f-ba3a-fbde56ad425b`, shared Supabase `biezzykcgzkrwdgqpsar`); the migration replaces only the public rendering layer, retiring the standalone Vite repo and serving Dang's public site through the standard Next.js tenant path. Working slug `dang-pfp` distinguishes the migration target from the live Vite tenant slug `dang`.
+> **Custom comic shell registered INSIDE `pestflow-pro`'s multi-tenant shell system** (`app/tenant/[slug]/_shells/`, alongside `bold-local`/`modern-pro`) — **NOT a separate repo.** Dang is already a tenant (id `1611b16f-381b-4d4f-ba3a-fbde56ad425b`, shared Supabase `biezzykcgzkrwdgqpsar`); the migration replaces only the public rendering layer, retiring the standalone Vite repo and serving Dang's public site through the standard Next.js tenant path. Working slug `dang-pfp` distinguishes the migration target from the live Vite tenant slug `dang`.
+
+**LOCKED shell-mechanism facts (PR #226 death-audit — do not re-litigate):**
+- Shells live at **`app/tenant/[slug]/_shells/`** — NOT `src/shells/` (that path holds only dead Vite-era `_shared/` utils). The teardown baseline's `src/shells/dang/` path was **WRONG**; the comic shell goes under **`app/tenant/[slug]/_shells/dang/`**.
+- **There is NO shell registry.** Selection is parallel `if (tenant.template === …)` chains in `layout.tsx`, `page.tsx`, and `[service]/page.tsx`. At PR 3 build time, **grep ALL such chains** — do not trust just those three.
+- Theme key = **`settings.branding.theme`** (default `'modern-pro'`), read in `shared/lib/tenant/resolve.ts`.
+- Read path = per-table cached `.eq('tenant_id')` SELECTs in `app/tenant/[slug]/_lib/queries.ts` (no RPC). SSR client is **service-role (RLS bypassed)**.
+- Comic shell color authority: a **`--dang-*` token block** following the bold-local precedent (canonical **`#F26B0F`**), NOT `computeShellCssVars` derivation.
 
 **WHY:** Makes dashboard SEO/content edits real and crawler-visible via SSR, and folds Dang into the SaaS tenant rendering structure so it stops being a maintenance island. Verified baseline (S275): raw HTML is generic with **zero structured data on every route** (invisible to AI crawlers); post-hydration helmet swaps title/canonical/JSON-LD on most routes but **9 silently fail** (about, contact, service-area, reviews, bullard/jacksonville/lindale/whitehouse/longview-tx); meta description generic on 100% of routes. SSR is a **strict upgrade**. Full baseline + locked decisions: `docs/audits/dang-pfp-teardown-baseline.md`.
 
 > **GATING PRINCIPLE — SEO-preservation-and-upgrade, not rewrite-and-pray.** Live Vite site keeps serving traffic untouched until `dang-pfp` proves **parity-or-better** per route. Build-and-compare is safe. **DNS/301 cutover is a SEPARATE gated decision** (rankings monitoring + rollback).
 
 - **Phase 0 — teardown + baseline (✅ DONE, S275).** Read-only; live site untouched; 8 decisions locked; baseline spec produced.
-- **Phase 1 — baseline lock + 301 map (NEXT).** Freeze the per-route SEO matrix as the immutable parity target; generate the full 1:1 301 map (56 URLs → identical slugs; preserve `/quote→/contact`) as a committed artifact. No build, no live-site contact.
-- **Phase 2 — build the custom comic shell inside `pestflow-pro`.** Register `src/shells/dang/` (working name) selected by the existing `template`/theme mechanism; wire to existing DANG tables via the standard tenant-scoped read path; reuse storage assets; reproduce design identically (Bangers/Open Sans, `#F26B0F`, `.text-comic`, 4 hero templates, 12 service cards, superhero trust section, footer, contact form + both SMS consent strings); carry integrations (api-quote, GA4 `G-5NZFW0ZLMZ`, GSC domain property, Remi/VAPI, Zernio, Outscraper, social; drop bundle.social/ayrshare); render SEO server-side from `seo_meta` with diff-and-take-better guard; fix the 9 broken routes + generic-description + doubled-suffix/`arp-tx` quirks; **816 Riding Road in schema only, never customer-facing**; generate sitemap/robots server-side. ⚠️ Touches shared rendering code in a manual-merge prod repo — validator gate + merge discipline.
+- **Phase 1 — baseline lock + 301 map (✅ DONE, S276).** Froze the per-route SEO matrix as the immutable parity target (`docs/audits/dang-pfp-seo-baseline-matrix.md`, PR #225) and committed the full 1:1 301 map (56 URLs → identical slugs; `/quote→/contact` preserved). No build, no live-site contact.
+- **Phase 2 — build the custom comic shell inside `pestflow-pro` (IN PROGRESS, 5-PR plan).** Shell goes under **`app/tenant/[slug]/_shells/dang/`** (NOT `src/shells/` — see LOCKED facts above), selected by the existing `settings.branding.theme` mechanism; wired to existing DANG tables via the standard tenant-scoped read path; reproduce design identically (Bangers/Open Sans, `#F26B0F`, `.text-comic`, 4 hero templates, 12 service cards, superhero trust section, footer, contact form + both SMS consent strings); carry integrations (api-quote, GA4 `G-5NZFW0ZLMZ`, GSC domain property, Remi/VAPI, Zernio, Outscraper, social; drop bundle.social/ayrshare); render SEO server-side from `seo_meta`; **816 Riding Road in schema only, never customer-facing**; generate sitemap/robots server-side. Broken into: **PR 1** shared `seo_meta` SSR metadata infra (✅ shipped, #229), **PR 2** shared service/location/FAQ JSON-LD infra (NEXT), **PR 3** empty comic shell registration, **PR 4** full comic design + read-path wiring + comic art-asset migration, **PR 5** server-side sitemap/robots. ⚠️ Touches shared rendering code in a manual-merge prod repo — validator gate + merge discipline on every PR.
 - **Phase 3 — prove parity-or-better (GATED).** Per-route raw-HTML SEO diff vs Phase-1 baseline; match-or-beat on every route before any DNS discussion; preserve sitemap (from `location_data`) + structured data.
 - **Phase 4 — cutover (GATED, later).** DNS/301 flip with rankings monitoring + rollback; Vite site stays deployable throughout. Map all 301s first, expand after.
 
@@ -40,6 +53,11 @@ Production-ready, **idle capacity**. Active leads out — **Capture, Blue Duck, 
 ---
 
 ## Recently Shipped
+
+- **S276 PR #229 — shared `seo_meta` SSR metadata infrastructure (merged, verified in prod).** New `resolveSiteUrl` helper (`.ai` platform host + `dang`/`dang-pfp` custom-domain map; **6 hardcoded `.com` siteUrl call sites refactored**), `buildPageMetadata` helper (precedence `seo_meta` → tenant `settings.seo` → generic fallback, OG→meta fallback), `getSeoMeta` loader (React `cache()` + service-role + slug guard, no `unstable_cache`), and `generateMetadata` wired into service/location (`[service]`), blog index, `blog/[post]`, and home. Regression-gated byte-identical on the no-row path; `revalidate=300` untouched. Tenant-agnostic — improves metadata for ALL tenants.
+- **S276 PR #228 — host-preserving `*.pestflowpro.com` → `*.pestflowpro.ai` 308 redirect (merged, verified in prod).** First check in `middleware.ts` (before tenant resolution, early-return), guarded on `hostname.endsWith('.pestflowpro.com')` AND non-null `extractSubdomain` (apex + `www` excluded via `APEX_HOSTS`); 308, path+query preserved; `vercel.json` flipped to `permanent:true`. Verified 308/301/200 in prod, no loop.
+- **S276 PR #227 — comic-shell visual design spec (merged).** `docs/audits/dang-pfp-comic-shell-design-spec.md` — the Phase 2 PR 4 design target.
+- **S276 PR #226 — dang-pfp shell-mechanism death-audit (merged).** Read-only audit that produced the LOCKED shell-mechanism facts above (correct shell path `app/tenant/[slug]/_shells/`, no registry, `settings.branding.theme` key, service-role read path, `--dang-*` token authority).
 
 - **S275 — dang-pfp teardown + baseline (decisions-locked; investigate/teardown session).** Full Phase 0 teardown of live Dang: per-route SEO baseline (raw-HTML zero-structured-data vs uneven post-hydration; 9 broken routes identified), 56-URL inventory + 301 skeleton, content inventory across all DANG tables, full custom-shell design spec, integrations carry-forward, sitemap structure. **All 8 build decisions locked** (key correction: custom comic shell goes **INSIDE `pestflow-pro`'s shell system, not a separate repo**). Read-only DB; live Vite site untouched; no build/provision/cutover. Spec: `docs/audits/dang-pfp-teardown-baseline.md`. Handoff: `docs/handoffs/pestflow-pro-handoff-S275-dang-pfp-baseline.md`.
 
@@ -66,6 +84,18 @@ Production-ready, **idle capacity**. Active leads out — **Capture, Blue Duck, 
 - **S268 — custom-color palette fallback (PR #197).** `computeShellCssVars` now derives a full coherent surface set for any custom (non-preset) primary, keyed off the base shell's hero luminance (light/dark) instead of half-applying. Two guards: G1 `contrastRatio` keeps buttons >=3:1 vs hero; G2 `ensureContrast` lifts surfaces to >=4.5:1 text contrast. 16-entry `PALETTE_HERO` preset path byte-identical; bold-local early return and accent handling untouched. Validator-gated (Perplexity+Gemini, conservative-wins). Prod-verified on coastal-pest (#2E6F95/#7AB87A): all routes blue/green, zero purple, half-apply split gone. Full handoff: `docs/handoffs/pestflow-pro-handoff-S268-shipped.md`.
 
 - **Theming Phase 1.5 — bold-local public inner-page dark conversion (S267, shipped PR #194).** `--color-*` block synced to BL_TOKENS charcoal + new `--color-body-text: #C9CDD2` / `--color-text-muted: #9AA3AD` tokens + `computeShellCssVars`/`applyTheme` bold-local guard (palette = accent only). Per-component edits gated behind `template === 'bold-local'` across the **9 verified render sites** (service-area branch, `faq`, `blog`, `blog/[post]`, `LegalPageLayout`, `CityFaqAccordion`, `WhyChooseUs` + the unchanged `Process`/`CtaBanner`) — Dang/modern-pro byte-identical. Validator gate: all 13 charcoal pairings PASS AA (worst 6.47:1); WhyChooseUs white-on-amber fixed 2.03→16.55:1. Verified charcoal live on prod (urban-strike). Full handoff: `docs/handoffs/pestflow-pro-handoff-S267-shipped.md`.
+
+---
+
+## Open Follow-ups (non-blocking) — dang-pfp Phase 2
+
+- **Canonical-domain infra (done, recorded for reference).** Apex `pestflowpro.com` + `www` → 301 to `.ai` configured via the Vercel dashboard 2026-06-25. Wildcard `*.com` subdomains are handled by the **PR #228 middleware 308** (the Vercel dashboard CANNOT do a subdomain-preserving wildcard redirect — that's why it lives in middleware). Confirmed in prod: `urban-strike.pestflowpro.com/ant-control` → 308 → `.ai`; apex → 301; `.ai` untouched, no loop.
+- **PR 1.5 (fast-follow).** Dashboard `seo_meta` WRITE → ISR revalidation via the `revalidatePath('/tenant/[slug]', 'layout')` pattern form. Deferred from PR 1 (touches the write surface).
+- **`resolveSiteUrl` custom-domain TODO.** Currently hardcodes `dang`/`dang-pfp` → `dangpestcontrol.com` with a TODO; should later read `tenant_domains WHERE verified=true`.
+- **Comic art-asset migration is a PR 4 prerequisite.** Vite repo `/assets` + `/public` → PFP repo/storage. Teardown baseline decision #6 ("all media already in DB/storage") was **WRONG**.
+- **Two homepage video embeds** ("Meet Kirk", "Get Free Pest Control For Life") carry forward as **embeds, not static images**.
+- **Footer "Powered by PestFlow Pro" link** in the shell footer still hardcodes `pestflowpro.com` (301s via #228, but worth a one-line `.ai` cleanup in a future PR).
+- **Seed-tenant (non-Dang) `seo_meta` meta_descriptions** still contain bulk-generation contamination ("Ironclad" brand, mismatched phone, stray keywords). Cosmetic, demo-only; **Dang data is clean**. Fix only if these tenants get demoed.
 
 ---
 
