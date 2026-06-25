@@ -1,16 +1,48 @@
 # PestFlow Pro — Roadmap
 
-*State as of S273 (2026-06-22). Update at end of each session; retire the versioned pestflow-pro-todo-vNNN.html snapshots.*
+*State as of S275 (2026-06-24). Update at end of each session; retire the versioned pestflow-pro-todo-vNNN.html snapshots.*
+
+---
+
+## Platform status (S275)
+
+Production-ready, **idle capacity**. Active leads out — **Capture, Blue Duck, TOPS** — awaiting responses; **no new tenant onboarding in flight.** **Dang** is the only live customer (separate-repo Vite SPA → dangpestcontrol.com, reads shared PFP Supabase `biezzykcgzkrwdgqpsar`, tenant `1611b16f-381b-4d4f-ba3a-fbde56ad425b`). The `dang-pfp` migration is now baselined with all 8 build decisions locked (Phase 0 complete; Phase 1 next) — baseline spec `docs/audits/dang-pfp-teardown-baseline.md`, handoff `docs/handoffs/pestflow-pro-handoff-S275-dang-pfp-baseline.md`. Prior Dang revalidation arc (resolved incidents, SEO mechanism finding): `docs/handoffs/pestflow-pro-handoff-S274-dang-revalidation.md`.
 
 ---
 
 ## In Progress
 
-- *(nothing in flight)*
+- **Dang → PestFlow Pro migration (`dang-pfp`) — Phase 0 COMPLETE; Phase 1 (baseline lock + 301 map) NEXT.** Teardown done, full baseline captured, **all 8 build decisions LOCKED** (custom comic shell **inside `pestflow-pro`'s shell system**, reuse DANG tables, SSR `seo_meta` with take-better guard, keep slugs + map 301s first, 816 Riding Road schema-only, `#F26B0F` canonical, leave live content as-is, defer orphan-row delete). Spec: `docs/audits/dang-pfp-teardown-baseline.md`. Handoff: `docs/handoffs/pestflow-pro-handoff-S275-dang-pfp-baseline.md`. Live Vite site untouched; no build/provision/cutover yet.
+
+---
+
+## Major Projects
+
+### Dang → PestFlow Pro migration (`dang-pfp`)
+
+> **Custom comic shell registered INSIDE `pestflow-pro`'s multi-tenant shell system** (`src/shells/`, alongside `bold-local`/`modern-pro`) — **NOT a separate repo.** Dang is already a tenant (id `1611b16f-381b-4d4f-ba3a-fbde56ad425b`, shared Supabase `biezzykcgzkrwdgqpsar`); the migration replaces only the public rendering layer, retiring the standalone Vite repo and serving Dang's public site through the standard Next.js tenant path. Working slug `dang-pfp` distinguishes the migration target from the live Vite tenant slug `dang`.
+
+**WHY:** Makes dashboard SEO/content edits real and crawler-visible via SSR, and folds Dang into the SaaS tenant rendering structure so it stops being a maintenance island. Verified baseline (S275): raw HTML is generic with **zero structured data on every route** (invisible to AI crawlers); post-hydration helmet swaps title/canonical/JSON-LD on most routes but **9 silently fail** (about, contact, service-area, reviews, bullard/jacksonville/lindale/whitehouse/longview-tx); meta description generic on 100% of routes. SSR is a **strict upgrade**. Full baseline + locked decisions: `docs/audits/dang-pfp-teardown-baseline.md`.
+
+> **GATING PRINCIPLE — SEO-preservation-and-upgrade, not rewrite-and-pray.** Live Vite site keeps serving traffic untouched until `dang-pfp` proves **parity-or-better** per route. Build-and-compare is safe. **DNS/301 cutover is a SEPARATE gated decision** (rankings monitoring + rollback).
+
+- **Phase 0 — teardown + baseline (✅ DONE, S275).** Read-only; live site untouched; 8 decisions locked; baseline spec produced.
+- **Phase 1 — baseline lock + 301 map (NEXT).** Freeze the per-route SEO matrix as the immutable parity target; generate the full 1:1 301 map (56 URLs → identical slugs; preserve `/quote→/contact`) as a committed artifact. No build, no live-site contact.
+- **Phase 2 — build the custom comic shell inside `pestflow-pro`.** Register `src/shells/dang/` (working name) selected by the existing `template`/theme mechanism; wire to existing DANG tables via the standard tenant-scoped read path; reuse storage assets; reproduce design identically (Bangers/Open Sans, `#F26B0F`, `.text-comic`, 4 hero templates, 12 service cards, superhero trust section, footer, contact form + both SMS consent strings); carry integrations (api-quote, GA4 `G-5NZFW0ZLMZ`, GSC domain property, Remi/VAPI, Zernio, Outscraper, social; drop bundle.social/ayrshare); render SEO server-side from `seo_meta` with diff-and-take-better guard; fix the 9 broken routes + generic-description + doubled-suffix/`arp-tx` quirks; **816 Riding Road in schema only, never customer-facing**; generate sitemap/robots server-side. ⚠️ Touches shared rendering code in a manual-merge prod repo — validator gate + merge discipline.
+- **Phase 3 — prove parity-or-better (GATED).** Per-route raw-HTML SEO diff vs Phase-1 baseline; match-or-beat on every route before any DNS discussion; preserve sitemap (from `location_data`) + structured data.
+- **Phase 4 — cutover (GATED, later).** DNS/301 flip with rankings monitoring + rollback; Vite site stays deployable throughout. Map all 301s first, expand after.
+
+**Build-phase cleanup chores (deferred):** set `branding.theme` to the new shell key; delete orphan `wasp-control` `page_content` row; reconcile logo path (`logos/dang/` vs `logos/{tenant}/`); standardize geo to the 816 Riding Road geocode (3 conflicting sets); confirm GSC verification carries.
+
+**Dependency:** any caching/SEO/auth/shell-rendering change goes through the validator gate.
 
 ---
 
 ## Recently Shipped
+
+- **S275 — dang-pfp teardown + baseline (decisions-locked; investigate/teardown session).** Full Phase 0 teardown of live Dang: per-route SEO baseline (raw-HTML zero-structured-data vs uneven post-hydration; 9 broken routes identified), 56-URL inventory + 301 skeleton, content inventory across all DANG tables, full custom-shell design spec, integrations carry-forward, sitemap structure. **All 8 build decisions locked** (key correction: custom comic shell goes **INSIDE `pestflow-pro`'s shell system, not a separate repo**). Read-only DB; live Vite site untouched; no build/provision/cutover. Spec: `docs/audits/dang-pfp-teardown-baseline.md`. Handoff: `docs/handoffs/pestflow-pro-handoff-S275-dang-pfp-baseline.md`.
+
+- **S274 — Dang revalidation arc (3 incidents resolved; investigate/docs-only session).** (a) `requireTenantUser` `profiles.role`→`tenant_users` **403** — fixed by **redeploying the affected consumers** so the live bundle matches the S273 SSOT reroute. (b) `check_tenant_access` **PGRST203** overload ambiguity — fixed by **collapsing to a single integer overload**, live via MCP migration `s273_collapse_check_tenant_access_to_single_integer_overload` (⚠️ **repo-trail PR still outstanding** — see Open Follow-ups). (c) `post-to-social` **confused-deputy cross-tenant** path closed, **deployed v64**. Verified live: `ai-proxy` v19, `apply-finding-fix` v2, `post-to-social` v64; **Dang entitlement = 4 (Elite)** correct; SEO **"Generate fix" returns 200** (verified `ai_proxy_log`) **but output does not surface on the live Vite pages** — see the `dang-pfp` project for why (hardcoded routes shadow the `seo:/<slug>` rows; client-only render invisible to crawlers). Full detail: `docs/handoffs/pestflow-pro-handoff-S274-dang-revalidation.md`.
 
 - **S273 PR #2b — Team Invites · Password Reset (PR #215, merged; DDL applied + verified live; both edge fns deployed).** `list_tenant_members()` SECURITY DEFINER (no tenant arg, derives `current_tenant_id()`, strict admin fail-closed) + `tenant_users_block_last_admin` BEFORE UPDATE/DELETE trigger (blocks removing/demoting a tenant's last admin on every write path). `invite-team-member` edge fn (`verify_jwt=TRUE`, two-client pattern, server-derived tenant_id, generateLink+Resend link never logged, global-email collision → add-membership branch, last-admin → clean 409). `password-reset-request` edge fn (`verify_jwt=FALSE`, anti-enumeration: identical ok response, 700ms floor, detached send). Client: `useTenantRole()` single role source (ProtectedRoute refactored onto it), admin-only Users tab in SettingsTab, Login "Forgot password?". Seats unlimited. Full detail: `docs/handoffs/pestflow-pro-handoff-S273-pr2bc-SHIPPED.md`.
 
@@ -46,6 +78,9 @@
 
 ## Open Follow-ups
 
+- **Repo-trail PR for the `check_tenant_access` collapse migration (S274, outstanding).** Add `s273_collapse_check_tenant_access_to_single_integer_overload` (live in DB via MCP, no repo trail) to the repo. In the same PR: **neutralize the earlier `20260622170000` add-integer-overload migration** so a from-zero replay leaves **exactly ONE overload** (two would re-create the PGRST203 ambiguity on replay); **tighten grants to `service_role`-only**.
+- **Dang repo `config.toml` stale project link (S274).** Linked to `bqavwwqebcsshsdrvczz`; should be `biezzykcgzkrwdgqpsar` (shared PFP Supabase). Repo-config hygiene; fix before any CLI op against the Dang repo.
+- **Optional PFP dashboard SEO/content UX honesty fix (S274).** Label/hide the SEO + content edit fields that Dang's hardcoded routes don't read, so the dashboard doesn't imply an edit went live when it didn't. Optional; the real fix is the `dang-pfp` migration.
 - bold-local FAQ category label ("General") renders red on charcoal (prod, urban-strike) — a category-tag color outside the S267 `--color-*` conversion scope; harmonize with the bold-local palette (amber). Cosmetic, low priority, non-blocking.
 - bold-local service-page "OUR HIT PLAN" section-label renders dim against charcoal (prod, urban-strike) — check legibility / intended contrast (likely a muted eyebrow that needs a brighter token on the dark surface). Cosmetic, low priority, non-blocking.
 - provision-tenant v97 hardcodes pestflowpro.com in legal pages and liveUrl — should be .ai; low priority
