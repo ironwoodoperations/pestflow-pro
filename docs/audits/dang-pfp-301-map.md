@@ -201,6 +201,21 @@ The full 57-entry JSON below is the complete authoritative set for traceability/
 
 ---
 
+## §3. Phase 2 target format — `tenant_redirects` rows (NOT `vercel.json`)
+
+> **Wiring rule (S253 / PR #148):** this repo already has a per-tenant redirect mechanism. Redirects live as **rows in `public.tenant_redirects`**; a prebuild step generates `redirects-map.json` from those rows, and `middleware.ts` fires them at request time. **Redirects do NOT go in `vercel.json`.** Canonical procedure: `docs/onboarding/faithful-rebuild-runbook.md`.
+
+The JSON array in §2 is the **source-of-truth mapping content** and the human/portable form of the 301 set — it is **retained as-is**. It is **not** pasted into `vercel.json`. At Phase 2, each entry is **imported as a row into `public.tenant_redirects`** following `docs/onboarding/faithful-rebuild-runbook.md`:
+
+- One `tenant_redirects` row **per JSON entry**, scoped to the **Dang tenant `1611b16f-381b-4d4f-ba3a-fbde56ad425b`**.
+- Field mapping per row: `source` → source path, `destination` → destination path, `permanent: true` → `permanent = true` (301).
+- The prebuild step regenerates `redirects-map.json` from these rows; `middleware.ts` serves the redirects. No `vercel.json` redirect block is added.
+- Same-host identity guidance from §2 still applies: only the non-identity entry (`/quote` → `/contact`) plus the host/scheme normalization rules actually fire; identity slugs are served in place. Importing identity rows is harmless (they no-op) but the loop-safe subset may be imported instead — owner's call at Phase 2.
+
+In short: the generic `{ source, destination, permanent }` array above = the portable mapping; **`public.tenant_redirects` (per `faithful-rebuild-runbook.md`) = the wiring path.**
+
+---
+
 ## Count check
 
 | Set | Count |
