@@ -215,6 +215,31 @@ export const getSeoSettings = cache(
   }
 );
 
+export const getSeoMeta = cache(
+  async (tenantId: string, pageSlug: string) => {
+    // Whitelist pageSlug before the PostgREST query. Slugs flow in from
+    // Next.js dynamic route segments (params.service / params.post), which
+    // Next.js URL-decodes before populating params — same precedent as
+    // resolveTenantBySlug's slug guard. Anything outside the clean
+    // seo_meta.page_slug charset cannot match a row anyway.
+    if (!/^[a-z0-9-]+$/.test(pageSlug)) {
+      return null;
+    }
+    const supabase = getServerSupabaseForISR();
+    const { data, error } = await supabase
+      .from('seo_meta')
+      .select('page_slug, meta_title, meta_description, og_title, og_description')
+      .eq('tenant_id', tenantId)
+      .eq('page_slug', pageSlug)
+      .maybeSingle();
+    if (error) {
+      console.error('[getSeoMeta] error', { tenantId, pageSlug, code: error.code, message: error.message });
+      return null;
+    }
+    return data;
+  }
+);
+
 export const getBusinessInfo = cache(
   async (tenantId: string): Promise<unknown> => {
     const supabase = getServerSupabaseForISR();

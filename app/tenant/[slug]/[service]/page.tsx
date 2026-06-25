@@ -1,14 +1,16 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChevronRight } from 'lucide-react';
 import { resolveTenantBySlug } from '../../../../shared/lib/tenant/resolve';
+import { buildPageMetadata } from '../../../../shared/lib/buildPageMetadata';
 
 export const revalidate = 300;
 
 export async function generateStaticParams() {
   return [];
 }
-import { getPageContent, getLocation, getAllLocations, getHeroMedia } from '../_lib/queries';
+import { getPageContent, getLocation, getAllLocations, getHeroMedia, getSeoMeta } from '../_lib/queries';
 import { SERVICE_SLUGS } from '../_lib/serviceData';
 import { WhyChooseUs } from '../_components/sections/WhyChooseUs';
 import { Process } from '../_components/sections/Process';
@@ -25,6 +27,23 @@ import { DefaultPestPage } from '../_components/DefaultPestPage';
 type Params = { params: { slug: string; service: string } };
 
 function titleCase(s: string) { return s.replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()); }
+
+export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  const tenant = await resolveTenantBySlug(params.slug);
+  if (!tenant) return {};
+  const businessName = tenant.business_name || tenant.name;
+  // Both service slugs (pest-control) and location slugs (tyler-tx) key on
+  // seo_meta.page_slug = params.service.
+  const seoMeta = await getSeoMeta(tenant.id, params.service);
+  return buildPageMetadata(tenant, {
+    pathname: `/${params.service}`,
+    seoMeta,
+    fallback: {
+      title: businessName,
+      description: `${businessName} — professional pest control services`,
+    },
+  });
+}
 
 export default async function ServicePage({ params }: Params) {
   const tenant = await resolveTenantBySlug(params.slug);

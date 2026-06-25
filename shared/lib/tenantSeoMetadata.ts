@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import type { Tenant } from './tenant/types';
+import { resolveSiteUrl } from './resolveSiteUrl';
 
 type Opts = {
   title: string;
@@ -11,7 +12,7 @@ export function tenantSeoMetadata(
   tenant: Tenant,
   opts: Opts,
 ): Pick<Metadata, 'alternates' | 'openGraph' | 'twitter'> {
-  const siteUrl = `https://${tenant.subdomain ?? tenant.slug}.pestflowpro.com`;
+  const siteUrl = resolveSiteUrl(tenant);
   const url = opts.pathname ? `${siteUrl}${opts.pathname}` : siteUrl;
   const businessName = tenant.business_name ?? tenant.name ?? 'PestFlow Pro';
   const ogImage = tenant.logo_url ?? `${siteUrl}/og-default.png`;

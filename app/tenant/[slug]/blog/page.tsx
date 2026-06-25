@@ -1,13 +1,15 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { resolveTenantBySlug } from '../../../../shared/lib/tenant/resolve';
+import { buildPageMetadata } from '../../../../shared/lib/buildPageMetadata';
 
 export const revalidate = 300;
 
 export async function generateStaticParams() {
   return [];
 }
-import { getAllBlogPosts, getPageContent, getHeroMedia } from '../_lib/queries';
+import { getAllBlogPosts, getPageContent, getHeroMedia, getSeoMeta } from '../_lib/queries';
 import { resolveHeroImage } from '../_lib/heroImage';
 
 const PLACEHOLDER_POSTS = [
@@ -17,6 +19,21 @@ const PLACEHOLDER_POSTS = [
 ];
 
 type Params = { params: { slug: string } };
+
+export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  const tenant = await resolveTenantBySlug(params.slug);
+  if (!tenant) return {};
+  const businessName = tenant.business_name || tenant.name;
+  const seoMeta = await getSeoMeta(tenant.id, 'blog');
+  return buildPageMetadata(tenant, {
+    pathname: '/blog',
+    seoMeta,
+    fallback: {
+      title: businessName,
+      description: `${businessName} — professional pest control services`,
+    },
+  });
+}
 
 export default async function BlogPage({ params }: Params) {
   const tenant = await resolveTenantBySlug(params.slug);

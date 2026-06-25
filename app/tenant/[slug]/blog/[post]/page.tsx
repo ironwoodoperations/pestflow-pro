@@ -1,17 +1,35 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { resolveTenantBySlug } from '../../../../../shared/lib/tenant/resolve';
+import { resolveSiteUrl } from '../../../../../shared/lib/resolveSiteUrl';
+import { buildPageMetadata } from '../../../../../shared/lib/buildPageMetadata';
 
 export const revalidate = 300;
 
 export async function generateStaticParams() {
   return [];
 }
-import { getBlogPost } from '../../_lib/queries';
+import { getBlogPost, getSeoMeta } from '../../_lib/queries';
 import { JsonLdScript } from '../../_components/JsonLdScripts';
 import { generateBlogPostingSchema } from '../../../../../shared/lib/seoSchema';
 
 type Params = { params: { slug: string; post: string } };
+
+export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  const tenant = await resolveTenantBySlug(params.slug);
+  if (!tenant) return {};
+  const businessName = tenant.business_name || tenant.name;
+  const seoMeta = await getSeoMeta(tenant.id, params.post);
+  return buildPageMetadata(tenant, {
+    pathname: `/blog/${params.post}`,
+    seoMeta,
+    fallback: {
+      title: businessName,
+      description: `${businessName} — professional pest control services`,
+    },
+  });
+}
 
 export default async function BlogPostPage({ params }: Params) {
   const tenant = await resolveTenantBySlug(params.slug);
@@ -21,7 +39,7 @@ export default async function BlogPostPage({ params }: Params) {
   if (!post) notFound();
 
   const p = post as { title: string; slug: string; content: string; published_at?: string | null; intro_image?: string | null; excerpt?: string | null; author_name?: string | null };
-  const siteUrl = `https://${tenant.subdomain ?? tenant.slug}.pestflowpro.com`;
+  const siteUrl = resolveSiteUrl(tenant);
   const postSchema = generateBlogPostingSchema(
     { title: p.title, slug: p.slug ?? params.post, excerpt: p.excerpt, published_at: p.published_at, author_name: p.author_name },
     siteUrl,
