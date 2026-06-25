@@ -11,7 +11,7 @@
         }
       ],
       "destination": "https://:subdomain.pestflowpro.ai/:path*",
-      "permanent": false
+      "permanent": true
     },
     { "source": "/accessibility/", "destination": "/", "permanent": true }
   ]
