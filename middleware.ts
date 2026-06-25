@@ -67,6 +67,30 @@ export function middleware(req: NextRequest) {
   const hostname = host.split(':')[0].toLowerCase();
   const { pathname } = req.nextUrl;
 
+  // ── .com → .ai canonical-domain redirect (MUST be the first check) ──────────
+  // Completes the .com→.ai migration for the WILDCARD tenant subdomains, which
+  // the Vercel dashboard cannot redirect subdomain-preserving. Apex + www are
+  // already 301'd at the dashboard; this handles {sub}.pestflowpro.com only.
+  // This short-circuits BEFORE any tenant resolution/rewrite so it cannot
+  // interact with downstream routing. The shadowed vercel.json rule is the
+  // belt; this is the actual fix (middleware otherwise rewrites .com subdomains
+  // to /tenant/<slug>, serving live 200 duplicate content).
+  //   • Match: host endsWith '.pestflowpro.com' AND extractSubdomain() yields a
+  //     real subdomain (returns null for apex + 'www' — they never hit this).
+  //   • Apex 'pestflowpro.com' fails endsWith('.pestflowpro.com') too → excluded.
+  //   • '.ai' hosts can never match '.pestflowpro.com' → no redirect loop.
+  //   • 308 (permanent, method-preserving; Google treats as 301 for equity).
+  //   • Full path + query preserved.
+  if (hostname.endsWith('.pestflowpro.com')) {
+    const comSub = extractSubdomain(host);
+    if (comSub) {
+      const target = new URL(
+        `https://${comSub}.pestflowpro.ai${pathname}${req.nextUrl.search}`,
+      );
+      return NextResponse.redirect(target, { status: 308 });
+    }
+  }
+
   // Local dev pure localhost: pass through so /_tenant/* direct URLs work
   if (process.env.NODE_ENV !== 'production' && hostname === 'localhost') {
     return NextResponse.next();
