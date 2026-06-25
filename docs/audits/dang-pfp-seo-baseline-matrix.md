@@ -47,10 +47,10 @@ The `seo_meta` table uses slash-less / short keys for some routes. The meta-desc
 | 3 | `/contact` | *(generic fallback)* | ❌ none | none | **BROKEN** | Contact Dang Pest Control \| Tyler & East TX | self | LocalBusiness + ContactPage | `seo_meta.meta_description` (slug `contact`) |
 | 4 | `/service-area` | *(generic fallback)* | ❌ none | none | **BROKEN** | Our Service Area \| Dang Pest Control | self | LocalBusiness (areaServed) | `seo_meta.meta_description` (slug `service-area`) |
 | 5 | `/reviews` | *(generic fallback)* | ❌ none | none | **BROKEN** | Dang Pest Control Reviews \| Trusted Local Experts | self | LocalBusiness + AggregateRating | `seo_meta.meta_description` (slug `reviews`) |
-| 6 | `/blog` | Blog \| Dang Pest Control | ✅ self | Blog (lists 15 posts) | OK | Blog \| Dang Pest Control | self | Blog (enumerate 15 BlogPosting) | `seo_meta.meta_description` ⚠️ no DB `blog` row — fall back to static blog-index description |
+| 6 | `/blog` | Blog \| Dang Pest Control | ✅ self | Blog (lists 15 posts) | OK | Blog \| Dang Pest Control | self | Blog (enumerate 15 BlogPosting) | **SSR-generated index description** (no per-post `seo_meta` row — correctly none; composed server-side, not DB-sourced) |
 | 7 | `/faq` | Frequently Asked Questions \| Dang Pest Control | ✅ self | FAQPage (10 Qs) | OK | Frequently Asked Questions \| Dang Pest Control | self | FAQPage | `seo_meta.meta_description` (slug `faq`) |
 
-**Notes:** Row 1 — DB title chosen (richer than live), trailing `| mosquito…` cruft stripped. Rows 2–5 — broken live, DB wins by default; `about` cruft `| pest control` and `service-area` cruft `| pest control Bullard TX` stripped. Row 6 — no `seo_meta` row keyed `blog`; live title is the parity floor and is retained; description falls back to a static blog-index string (⚠️ flagged). Row 7 — live title kept over DB alt ("Pest Control FAQ | Dang Pest Control") to avoid regressing the currently-ranking title; either satisfies parity.
+**Notes:** Row 1 — DB title chosen (richer than live), trailing `| mosquito…` cruft stripped. Rows 2–5 — broken live, DB wins by default; `about` cruft `| pest control` and `service-area` cruft `| pest control Bullard TX` stripped. Row 6 — `/blog` is an index page with **no** per-post `seo_meta` row (correctly none); the title is retained as the parity floor and the meta description is **SSR-generated server-side** (not DB-sourced). Resolved — not a soft cell. Row 7 — live title kept over DB alt ("Pest Control FAQ | Dang Pest Control") to avoid regressing the currently-ranking title; either satisfies parity.
 
 ## §B. Service pages (12 — all OK live)
 
@@ -59,7 +59,7 @@ The `seo_meta` table uses slash-less / short keys for some routes. The meta-desc
 | 8 | `/pest-control` | Pest Control Services in Tyler, TX \| Dang Pest Control | ✅ self | Service | OK | Local Pest Control Services in Tyler TX & Nearby \| Dang Pest Control | self | Service | `seo_meta.meta_description` (slug `pest-control`) |
 | 9 | `/ant-control` | Ant Control in Tyler, TX \| Dang Pest Control | ✅ self | Service + FAQPage | OK | Ant Control Services in Tyler, TX \| Dang Pest Control | self | Service + FAQPage | `seo_meta.meta_description` (slug `ant-control`) |
 | 10 | `/termite-control` | Termite Control in Tyler, TX \| Dang Pest Control | ✅ self | Service + FAQPage | OK | Local Termite Control Experts in Tyler TX & Nearby \| Dang Pest Control | self | Service + FAQPage | `seo_meta.meta_description` (slug `termite-control`) |
-| 11 | `/termite-inspections` | Termite Inspections in Tyler, TX \| Dang Pest Control | ✅ self | Service (no FAQ) | OK | Local Termite Inspections in Tyler TX \| Dang Pest Control | self | Service | `seo_meta.meta_description` (slug `termite-inspections`) ⚠️ DB desc references "Longview" — verify/fix copy at build |
+| 11 | `/termite-inspections` | Termite Inspections in Tyler, TX \| Dang Pest Control | ✅ self | Service (no FAQ) | OK | Local Termite Inspections in Tyler TX \| Dang Pest Control | self | Service | **Live post-hydration (Tyler) description** — DB `seo_meta.meta_description` (slug `termite-inspections`) is **defective** (Longview cross-contamination); per decision #3 diff-and-take-better, SSR uses the correct live Tyler description, NOT the DB value. DB `meta_title` is correct. See **DB content defects** note. |
 | 12 | `/spider-control` | Spider Control in Tyler, TX \| Dang Pest Control | ✅ self | Service + FAQPage | OK | Spider Control Services in Tyler TX & Nearby \| Dang Pest Control | self | Service + FAQPage | `seo_meta.meta_description` (slug `spider-control`) |
 | 13 | `/wasp-hornet-control` | Wasp & Hornet Control in Tyler, TX \| Dang Pest Control | ✅ self | Service + FAQPage | OK | Expert Wasp & Hornet Control Services in Tyler TX \| Dang Pest Control | self | Service + FAQPage | `seo_meta.meta_description` (slug `wasp-hornet-control`) |
 | 14 | `/scorpion-control` | Scorpion Control in Tyler, TX \| Dang Pest Control | ✅ self | Service + FAQPage | OK | Scorpion Control Services in Tyler TX & Nearby \| Dang Pest Control | self | Service + FAQPage | `seo_meta.meta_description` (slug `scorpion-control`) |
@@ -69,7 +69,7 @@ The `seo_meta` table uses slash-less / short keys for some routes. The meta-desc
 | 18 | `/roach-control` | Roach Control in Tyler, TX \| Dang Pest Control | ✅ self | Service + FAQPage | OK | Expert Cockroach Control Services in Tyler TX \| Dang Pest Control | self | Service + FAQPage | `seo_meta.meta_description` (slug `roach-control`) |
 | 19 | `/bed-bug-control` | Bed Bug Control in Tyler, TX \| Dang Pest Control | ✅ self | Service + FAQPage | OK | Bed Bug Control Experts in Tyler TX & Nearby \| Dang Pest Control | self | Service + FAQPage | `seo_meta.meta_description` (slug `bed-bug-control`) |
 
-**Notes:** All 12 take the richer DB `meta_title` (longer-tail "… in Tyler TX & Nearby" / "Experts" / "Professional" framing) over the shorter live title — take-better per the parity rule. `ant-control` DB cruft `| red ant contro…` stripped. SSR JSON-LD mirrors the live `Service` / `Service + FAQPage` split exactly (only `pest-control` and `termite-inspections` lack the FAQPage node).
+**Notes:** All 12 take the richer DB `meta_title` (longer-tail "… in Tyler TX & Nearby" / "Experts" / "Professional" framing) over the shorter live title — take-better per the parity rule. `ant-control` DB cruft `| red ant contro…` stripped. SSR JSON-LD mirrors the live `Service` / `Service + FAQPage` split exactly (only `pest-control` and `termite-inspections` lack the FAQPage node). Row 11 (`termite-inspections`) is the one exception to "render DB description": its DB `meta_description` is cross-contaminated with the Longview copy, so SSR takes the live Tyler description instead (decision #3) — logged under **DB content defects** below.
 
 ## §C. Location pages (18 — 13 OK, 5 BROKEN)
 
@@ -115,23 +115,23 @@ Live pattern: `{Post Title} | Dang Pest Control`; canonical self; `Article` sche
 
 | # | Route (`/blog/<slug>`) | Live post-hydration title | Canonical (live) | Schema (live) | Live status | SSR target title | SSR canonical | SSR schema | Meta-description source |
 |---|---|---|---|---|---|---|---|---|---|
-| 42 | `/blog/wed-rather-pay-you-than-google-dang-pest-control-referral-program` | We'd Rather Pay You Than Google: Dang Pest Control Referral Program \| Dang Pest Control | ✅ self | Article | OK | *(title)* \| Dang Pest Control | self | Article | `seo_meta.meta_description` (per-post slug) ⚠️ fall back to `blog_posts.excerpt` if no row |
-| 43 | `/blog/rodents-are-still-a-problem-in-tyler-tx-during-summer` | Rodents Are Still a Problem in Tyler, TX During Summer \| Dang Pest Control | ✅ self | Article | OK | *(title)* \| Dang Pest Control | self | Article | `seo_meta.meta_description` ⚠️ excerpt fallback |
-| 44 | `/blog/brown-recluse-black-widow-spiders-east-texas-tyler` | Brown Recluse and Black Widow Spiders in East Texas \| Dang Pest Control | ✅ self | Article | OK | *(title)* \| Dang Pest Control | self | Article | `seo_meta.meta_description` ⚠️ excerpt fallback |
-| 45 | `/blog/ant-invasions-east-texas-tyler-homeowners-pest-control` | Ant Invasions in East Texas: Why Tyler Homeowners need pest control \| Dang Pest Control | ✅ self | Article | OK | *(title)* \| Dang Pest Control | self | Article | `seo_meta.meta_description` ⚠️ excerpt fallback |
-| 46 | `/blog/why-mosquitoes-are-exploding-in-tyler-tx` | Why Mosquitoes Are Exploding in Tyler, TX Right Now (And What Homeowners Need To Know!) \| Dang Pest Control | ✅ self | Article | OK | *(title)* \| Dang Pest Control | self | Article | `seo_meta.meta_description` ⚠️ excerpt fallback |
-| 47 | `/blog/memorial-weekend-bbq-mosquito-control-tyler-tx` | Don't Let Mosquitoes Crash Your Memorial Weekend BBQ in Tyler, TX \| Dang Pest Control | ✅ self | Article | OK | *(title)* \| Dang Pest Control | self | Article | `seo_meta.meta_description` ⚠️ excerpt fallback |
-| 48 | `/blog/top-10-pest-problems-homeowners-face-in-tyler-texas` | Top 10 Pest Problems Homeowners Face in Tyler, Texas \| Dang Pest Control | ✅ self | Article | OK | *(title)* \| Dang Pest Control | self | Article | `seo_meta.meta_description` ⚠️ excerpt fallback |
-| 49 | `/blog/stop-mosquitoes-at-the-source-eliminate-standing-water` | Stop Mosquitoes at the Source: Eliminate Standing Water \| Dang Pest Control | ✅ self | Article | OK | *(title)* \| Dang Pest Control | self | Article | `seo_meta.meta_description` ⚠️ excerpt fallback |
-| 50 | `/blog/stop-rats-and-mice-before-they-take-over-your-home-or-business` | Stop Rats and Mice Before They Take Over Your Home or Business \| Dang Pest Control | ✅ self | Article | OK | *(title)* \| Dang Pest Control | self | Article | `seo_meta.meta_description` ⚠️ excerpt fallback |
-| 51 | `/blog/a-fresh-start-begins-with-professional-rodent-control-in-tyler` | A Fresh Start Begins With Professional Rodent Control in Tyler \| Dang Pest Control | ✅ self | Article | OK | *(title)* \| Dang Pest Control | self | Article | `seo_meta.meta_description` ⚠️ excerpt fallback |
-| 52 | `/blog/a-seasonal-guide-for-winter-bed-bug-treatments` | A Seasonal Guide For Winter Bed Bug Treatments \| Dang Pest Control | ✅ self | Article | OK | *(title)* \| Dang Pest Control | self | Article | `seo_meta.meta_description` ⚠️ excerpt fallback |
-| 53 | `/blog/5-effective-rodent-control-tips-for-a-pest-free-home` | 5 Effective Rodent Control Tips for a Pest-Free Home \| Dang Pest Control | ✅ self | Article | OK | *(title)* \| Dang Pest Control | self | Article | `seo_meta.meta_description` ⚠️ excerpt fallback |
-| 54 | `/blog/say-goodbye-to-crickets-with-expert-cricket-control` | Say Goodbye to Crickets with Expert Cricket Control \| Dang Pest Control | ✅ self | Article | OK | *(title)* \| Dang Pest Control | self | Article | `seo_meta.meta_description` ⚠️ excerpt fallback |
-| 55 | `/blog/tyler-pest-control-services-that-work` | Tyler Pest Control Services That Work \| Dang Pest Control | ✅ self | Article | OK | *(title)* \| Dang Pest Control | self | Article | `seo_meta.meta_description` ⚠️ excerpt fallback |
-| 56 | `/blog/why-are-there-so-many-pests-in-tyler-texas` | Why Are There So Many Pests in Tyler, Texas? \| Dang Pest Control | ✅ self | Article | OK | *(title)* \| Dang Pest Control | self | Article | `seo_meta.meta_description` ⚠️ excerpt fallback |
+| 42 | `/blog/wed-rather-pay-you-than-google-dang-pest-control-referral-program` | We'd Rather Pay You Than Google: Dang Pest Control Referral Program \| Dang Pest Control | ✅ self | Article | OK | *(title)* \| Dang Pest Control | self | Article | `seo_meta.meta_description` — verified present (DB) |
+| 43 | `/blog/rodents-are-still-a-problem-in-tyler-tx-during-summer` | Rodents Are Still a Problem in Tyler, TX During Summer \| Dang Pest Control | ✅ self | Article | OK | *(title)* \| Dang Pest Control | self | Article | `seo_meta.meta_description` — verified present (DB) |
+| 44 | `/blog/brown-recluse-black-widow-spiders-east-texas-tyler` | Brown Recluse and Black Widow Spiders in East Texas \| Dang Pest Control | ✅ self | Article | OK | *(title)* \| Dang Pest Control | self | Article | `seo_meta.meta_description` — verified present (DB) |
+| 45 | `/blog/ant-invasions-east-texas-tyler-homeowners-pest-control` | Ant Invasions in East Texas: Why Tyler Homeowners need pest control \| Dang Pest Control | ✅ self | Article | OK | *(title)* \| Dang Pest Control | self | Article | `seo_meta.meta_description` — verified present (DB) |
+| 46 | `/blog/why-mosquitoes-are-exploding-in-tyler-tx` | Why Mosquitoes Are Exploding in Tyler, TX Right Now (And What Homeowners Need To Know!) \| Dang Pest Control | ✅ self | Article | OK | *(title)* \| Dang Pest Control | self | Article | `seo_meta.meta_description` — verified present (DB) |
+| 47 | `/blog/memorial-weekend-bbq-mosquito-control-tyler-tx` | Don't Let Mosquitoes Crash Your Memorial Weekend BBQ in Tyler, TX \| Dang Pest Control | ✅ self | Article | OK | *(title)* \| Dang Pest Control | self | Article | `seo_meta.meta_description` — verified present (DB) |
+| 48 | `/blog/top-10-pest-problems-homeowners-face-in-tyler-texas` | Top 10 Pest Problems Homeowners Face in Tyler, Texas \| Dang Pest Control | ✅ self | Article | OK | *(title)* \| Dang Pest Control | self | Article | `seo_meta.meta_description` — verified present (DB) |
+| 49 | `/blog/stop-mosquitoes-at-the-source-eliminate-standing-water` | Stop Mosquitoes at the Source: Eliminate Standing Water \| Dang Pest Control | ✅ self | Article | OK | *(title)* \| Dang Pest Control | self | Article | `seo_meta.meta_description` — verified present (DB) |
+| 50 | `/blog/stop-rats-and-mice-before-they-take-over-your-home-or-business` | Stop Rats and Mice Before They Take Over Your Home or Business \| Dang Pest Control | ✅ self | Article | OK | *(title)* \| Dang Pest Control | self | Article | `seo_meta.meta_description` — verified present (DB) |
+| 51 | `/blog/a-fresh-start-begins-with-professional-rodent-control-in-tyler` | A Fresh Start Begins With Professional Rodent Control in Tyler \| Dang Pest Control | ✅ self | Article | OK | *(title)* \| Dang Pest Control | self | Article | `seo_meta.meta_description` — verified present (DB) |
+| 52 | `/blog/a-seasonal-guide-for-winter-bed-bug-treatments` | A Seasonal Guide For Winter Bed Bug Treatments \| Dang Pest Control | ✅ self | Article | OK | *(title)* \| Dang Pest Control | self | Article | `seo_meta.meta_description` — verified present (DB) |
+| 53 | `/blog/5-effective-rodent-control-tips-for-a-pest-free-home` | 5 Effective Rodent Control Tips for a Pest-Free Home \| Dang Pest Control | ✅ self | Article | OK | *(title)* \| Dang Pest Control | self | Article | `seo_meta.meta_description` — verified present (DB) |
+| 54 | `/blog/say-goodbye-to-crickets-with-expert-cricket-control` | Say Goodbye to Crickets with Expert Cricket Control \| Dang Pest Control | ✅ self | Article | OK | *(title)* \| Dang Pest Control | self | Article | `seo_meta.meta_description` — verified present (DB) |
+| 55 | `/blog/tyler-pest-control-services-that-work` | Tyler Pest Control Services That Work \| Dang Pest Control | ✅ self | Article | OK | *(title)* \| Dang Pest Control | self | Article | `seo_meta.meta_description` — verified present (DB) |
+| 56 | `/blog/why-are-there-so-many-pests-in-tyler-texas` | Why Are There So Many Pests in Tyler, Texas? \| Dang Pest Control | ✅ self | Article | OK | *(title)* \| Dang Pest Control | self | Article | `seo_meta.meta_description` — verified present (DB) |
 
-> **Blog meta-description flag:** per-post `seo_meta` rows were **not** individually verified this session (only the 41 static/service/location/legal slugs were). The SSR build must read `seo_meta.meta_description` keyed by post slug and fall back to `blog_posts.excerpt` where no row exists. These cells are flagged `⚠️` accordingly.
+> **Blog meta-description — RESOLVED (verified):** all 15 live blog slugs have a populated `seo_meta.meta_title` **and** `meta_description` (confirmed this session via read-only `SELECT` on `seo_meta`). The SSR build reads `seo_meta.meta_description` keyed by post slug; no excerpt fallback is needed for the live set. **Render-as-is for parity:** several DB descriptions are ellipsis-truncated (e.g. `a-seasonal-guide-for-winter-bed-bug-treatments`, `say-goodbye-to-crickets…`, `stop-mosquitoes-at-the-source…`, `tyler-pest-control-services-that-work`, `why-are-there-so-many-pests-in-tyler-texas` all end mid-sentence with `…`) and **one DB `meta_title` is truncated** — `wed-rather-pay-you-than-google-…` = `"Earn $75 Per Referral – Pest Control Referral Program in Tyl"` (cut off at "Tyl"). These are pre-existing live-DB content issues; render them as-is to preserve parity and **flag for Claire as content cleanup — out of migration scope** (logged under **DB content defects** below).
 
 ---
 
@@ -148,13 +148,27 @@ Live pattern: `{Post Title} | Dang Pest Control`; canonical self; `Article` sche
 
 ---
 
-## Cells flagged (could not fully verify this session)
+## Previously-flagged cells — ALL RESOLVED
 
-1. **`/blog` description** (row 6): no `seo_meta` row keyed `blog`; SSR falls back to a static blog-index description. Title/schema verified.
-2. **All 15 blog post descriptions** (rows 42–56): per-post `seo_meta` rows not individually queried; read `seo_meta.meta_description` by post slug at build, fall back to `blog_posts.excerpt`.
-3. **`/termite-inspections` DB description** (row 11): DB `meta_description` references "Longview" (likely a copy-paste artifact from `longview-tx`); verify/fix at build. Title unaffected.
+The three cells flagged at first draft are now resolved with verified DB data (read-only `SELECT`s this session):
 
-All other cells verified against teardown §1/§3 + this session's read-only `seo_meta` / `blog_posts` SELECTs. **No DB writes were performed.**
+1. **`/blog` description** (row 6): **Resolved — not a soft cell.** `/blog` is an index page with no per-post `seo_meta` row (correctly none); its meta description is SSR-generated server-side, not DB-sourced.
+2. **All 15 blog post descriptions** (rows 42–56): **Resolved — verified present.** Every live blog slug has populated `seo_meta.meta_title` + `meta_description` in the DB. No excerpt fallback needed for the live set. (Truncation defects noted below; render-as-is for parity.)
+3. **`/termite-inspections` description** (row 11): **Resolved.** DB `seo_meta.meta_description` is **defective** (Longview cross-contamination); per decision #3 diff-and-take-better, SSR uses the correct live Tyler description, not the DB value. DB `meta_title` is correct.
+
+Every cell in this matrix is now verified against teardown §1/§3 + this session's read-only `seo_meta` / `blog_posts` SELECTs. **No DB writes were performed.**
+
+---
+
+## DB content defects found at baseline (flag for Claire, NOT migration scope)
+
+These are **pre-existing live-DB content issues** in Dang's `seo_meta` rows, recorded here for awareness. They are **explicitly out of the rebuild's scope** — the SSR migration renders the live content set as-is (per decision #7, Claire owns content). The one exception is the cross-contaminated description (#1), which decision #3's take-better guard routes around at render time so a defective value is not shipped. Hand to Claire as a content-cleanup backlog:
+
+1. **`termite-inspections` — wrong meta description.** DB `seo_meta.meta_description` for slug `termite-inspections` contains the **Longview-TX** copy verbatim ("Need an exterminator in Longview, TX…") cross-contaminated onto a Tyler termite-inspections page. Title is correct. → SSR takes the live Tyler description instead (decision #3); DB value should be rewritten by Claire.
+2. **Truncated blog meta descriptions (5).** `a-seasonal-guide-for-winter-bed-bug-treatments`, `say-goodbye-to-crickets-with-expert-cricket-control`, `stop-mosquitoes-at-the-source-eliminate-standing-water`, `tyler-pest-control-services-that-work`, `why-are-there-so-many-pests-in-tyler-texas` — DB `meta_description` ends mid-sentence with an ellipsis (`…`).
+3. **Truncated blog meta title (1).** `wed-rather-pay-you-than-google-dang-pest-control-referral-program` — DB `seo_meta.meta_title` = `"Earn $75 Per Referral – Pest Control Referral Program in Tyl"`, cut off at "Tyl".
+
+Migration renders all of the above as-is for parity; cleanup is a separate content task for Claire.
 
 ---
 
