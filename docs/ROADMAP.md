@@ -33,6 +33,7 @@ Production-ready, **idle capacity**. Active leads out — **Capture, Blue Duck, 
 - **Phase 4 — cutover (GATED, later).** DNS/301 flip with rankings monitoring + rollback; Vite site stays deployable throughout. Map all 301s first, expand after.
 
 **Build-phase cleanup chores (deferred):** set `branding.theme` to the new shell key; delete orphan `wasp-control` `page_content` row; reconcile logo path (`logos/dang/` vs `logos/{tenant}/`); standardize geo to the 816 Riding Road geocode (3 conflicting sets); confirm GSC verification carries.
+- Fix two defective seo_meta rows at SSR-build time (dang-pfp Phase 2): (1) termite-inspections meta_description is the Longview-TX text cross-contaminated onto a Tyler page (title is correct) — take-better guard routes around it, but correct the DB value so SSR renders clean source; (2) referral post wed-rather-pay-you-than-google-dang-pest-control-referral-program meta_title is truncated ("...in Tyl") — restore full title. Both surface only once the SSR shell renders seo_meta server-side; fold into the Phase 2 build. (Pre-existing live-DB defects found read-only at S276 baseline; NOT a standalone edit — live Vite site hardcodes SEO and ignores seo_meta.)
 
 **Dependency:** any caching/SEO/auth/shell-rendering change goes through the validator gate.
 
