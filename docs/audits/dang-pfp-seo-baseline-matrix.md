@@ -131,7 +131,7 @@ Live pattern: `{Post Title} | Dang Pest Control`; canonical self; `Article` sche
 | 55 | `/blog/tyler-pest-control-services-that-work` | Tyler Pest Control Services That Work \| Dang Pest Control | ✅ self | Article | OK | *(title)* \| Dang Pest Control | self | Article | `seo_meta.meta_description` — verified present (DB) |
 | 56 | `/blog/why-are-there-so-many-pests-in-tyler-texas` | Why Are There So Many Pests in Tyler, Texas? \| Dang Pest Control | ✅ self | Article | OK | *(title)* \| Dang Pest Control | self | Article | `seo_meta.meta_description` — verified present (DB) |
 
-> **Blog meta-description — RESOLVED (verified):** all 15 live blog slugs have a populated `seo_meta.meta_title` **and** `meta_description` (confirmed this session via read-only `SELECT` on `seo_meta`). The SSR build reads `seo_meta.meta_description` keyed by post slug; no excerpt fallback is needed for the live set. **Render-as-is for parity:** several DB descriptions are ellipsis-truncated (e.g. `a-seasonal-guide-for-winter-bed-bug-treatments`, `say-goodbye-to-crickets…`, `stop-mosquitoes-at-the-source…`, `tyler-pest-control-services-that-work`, `why-are-there-so-many-pests-in-tyler-texas` all end mid-sentence with `…`) and **one DB `meta_title` is truncated** — `wed-rather-pay-you-than-google-…` = `"Earn $75 Per Referral – Pest Control Referral Program in Tyl"` (cut off at "Tyl"). These are pre-existing live-DB content issues; render them as-is to preserve parity and **flag for Claire as content cleanup — out of migration scope** (logged under **DB content defects** below).
+> **Blog meta-description — RESOLVED (verified):** all 15 live blog slugs have a populated `seo_meta.meta_title` **and** `meta_description` (confirmed this session via read-only `SELECT` on `seo_meta`). The SSR build reads `seo_meta.meta_description` keyed by post slug; no excerpt fallback is needed for the live set. **Render-as-is for parity:** several DB descriptions are ellipsis-truncated (e.g. `a-seasonal-guide-for-winter-bed-bug-treatments`, `say-goodbye-to-crickets…`, `stop-mosquitoes-at-the-source…`, `tyler-pest-control-services-that-work`, `why-are-there-so-many-pests-in-tyler-texas` all end mid-sentence with `…`) and **one DB `meta_title` is truncated** — `wed-rather-pay-you-than-google-…` = `"Earn $75 Per Referral – Pest Control Referral Program in Tyl"` (cut off at "Tyl"). These are pre-existing live-DB content issues; render them as-is to preserve parity and **fix during the dang-pfp Phase 2 SSR build (migration-owned, NOT a Claire/dashboard task)** (logged under **DB content defects** below).
 
 ---
 
@@ -160,15 +160,15 @@ Every cell in this matrix is now verified against teardown §1/§3 + this sessio
 
 ---
 
-## DB content defects found at baseline (flag for Claire, NOT migration scope)
+## DB content defects found at baseline (to be fixed during the dang-pfp Phase 2 SSR build — migration-owned, NOT a Claire/dashboard task)
 
-These are **pre-existing live-DB content issues** in Dang's `seo_meta` rows, recorded here for awareness. They are **explicitly out of the rebuild's scope** — the SSR migration renders the live content set as-is (per decision #7, Claire owns content). The one exception is the cross-contaminated description (#1), which decision #3's take-better guard routes around at render time so a defective value is not shipped. Hand to Claire as a content-cleanup backlog:
+These are **pre-existing live-DB content issues** in Dang's `seo_meta` rows, found read-only at the S276 baseline. They are **to be fixed during the dang-pfp Phase 2 SSR build — migration-owned, NOT a Claire/dashboard task** (they surface only once the SSR shell renders `seo_meta` server-side; the live Vite site hardcodes SEO and ignores `seo_meta`). The cross-contaminated description (#1) is additionally routed around at render time by decision #3's take-better guard so a defective value is never shipped, but the DB value is still corrected as part of the Phase 2 build. Fold into the Phase 2 build chores:
 
-1. **`termite-inspections` — wrong meta description.** DB `seo_meta.meta_description` for slug `termite-inspections` contains the **Longview-TX** copy verbatim ("Need an exterminator in Longview, TX…") cross-contaminated onto a Tyler termite-inspections page. Title is correct. → SSR takes the live Tyler description instead (decision #3); DB value should be rewritten by Claire.
+1. **`termite-inspections` — wrong meta description.** DB `seo_meta.meta_description` for slug `termite-inspections` contains the **Longview-TX** copy verbatim ("Need an exterminator in Longview, TX…") cross-contaminated onto a Tyler termite-inspections page. Title is correct. → SSR takes the live Tyler description instead (decision #3); DB value corrected during the Phase 2 build.
 2. **Truncated blog meta descriptions (5).** `a-seasonal-guide-for-winter-bed-bug-treatments`, `say-goodbye-to-crickets-with-expert-cricket-control`, `stop-mosquitoes-at-the-source-eliminate-standing-water`, `tyler-pest-control-services-that-work`, `why-are-there-so-many-pests-in-tyler-texas` — DB `meta_description` ends mid-sentence with an ellipsis (`…`).
 3. **Truncated blog meta title (1).** `wed-rather-pay-you-than-google-dang-pest-control-referral-program` — DB `seo_meta.meta_title` = `"Earn $75 Per Referral – Pest Control Referral Program in Tyl"`, cut off at "Tyl".
 
-Migration renders all of the above as-is for parity; cleanup is a separate content task for Claire.
+Migration renders all of the above as-is for parity at first paint, then corrects the DB values as part of the Phase 2 SSR build (migration-owned).
 
 ---
 
