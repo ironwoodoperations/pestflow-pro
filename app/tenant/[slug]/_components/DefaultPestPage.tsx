@@ -5,6 +5,7 @@ import { ServiceTabs } from './service/ServiceTabs';
 import { resolveHeroImage } from '../_lib/heroImage';
 import { SERVICE_DATA, PEST_IMAGES } from '../_lib/serviceData';
 import { generateServiceSchema } from '../../../../shared/lib/seoSchema';
+import { resolveSiteUrl } from '../../../../shared/lib/resolveSiteUrl';
 import { formatPhone } from '../../../../shared/lib/formatPhone';
 
 const GUARANTEES = [
@@ -40,7 +41,7 @@ export function DefaultPestPage({ tenant, pestSlug, content, heroMedia }: Props)
   const pestImg = PEST_IMAGES[pestSlug] || '/images/pests/pest_control.jpg';
   const phone = tenant.phone ?? '';
   const bizName = tenant.business_name ?? '';
-  const siteUrl = `https://${tenant.subdomain ?? tenant.slug}.pestflowpro.com`;
+  const siteUrl = resolveSiteUrl(tenant);
   const serviceSchema = generateServiceSchema(heroTitle, heroSubtitle, `${siteUrl}/${pestSlug}`, siteUrl);
 
   return (

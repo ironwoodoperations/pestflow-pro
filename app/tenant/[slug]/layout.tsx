@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Script from 'next/script';
 import { resolveTenantBySlug } from '../../../shared/lib/tenant/resolve';
+import { resolveSiteUrl } from '../../../shared/lib/resolveSiteUrl';
 import { tenantSeoMetadata } from '../../../shared/lib/tenantSeoMetadata';
 import { getAllServicePages, getSocialLinks, getSeoSettings, getBusinessInfo, getIntegrations } from './_lib/queries';
 import { JsonLdScript } from './_components/JsonLdScripts';
@@ -58,7 +59,7 @@ export default async function TenantLayout({
     getIntegrations(tenant.id),
   ]);
 
-  const siteUrl = `https://${tenant.subdomain ?? tenant.slug}.pestflowpro.com`;
+  const siteUrl = resolveSiteUrl(tenant);
   const businessInfo: BusinessInfo = {
     name: tenant.business_name ?? '',
     phone: tenant.phone ?? '',

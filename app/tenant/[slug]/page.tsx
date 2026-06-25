@@ -1,4 +1,7 @@
+import type { Metadata } from 'next';
 import { resolveTenantBySlug } from '../../../shared/lib/tenant/resolve';
+import { resolveSiteUrl } from '../../../shared/lib/resolveSiteUrl';
+import { buildPageMetadata } from '../../../shared/lib/buildPageMetadata';
 import { JsonLdScript } from './_components/JsonLdScripts';
 import { generateWebsiteSchema } from '../../../shared/lib/seoSchema';
 
@@ -7,7 +10,7 @@ export const revalidate = 300;
 export async function generateStaticParams() {
   return [];
 }
-import { getPageContent, getTestimonials, getAllBlogPosts, getHeroMedia, getAllLocations } from './_lib/queries';
+import { getPageContent, getTestimonials, getAllBlogPosts, getHeroMedia, getAllLocations, getSeoMeta } from './_lib/queries';
 import { resolveHeroImage } from './_lib/heroImage';
 import { MetroHero } from './_components/MetroHero';
 import { ServicesGrid } from './_components/sections/ServicesGrid';
@@ -60,6 +63,21 @@ const MODERN_PRO_SERVICES = [
 
 type Params = { params: { slug: string } };
 
+export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  const tenant = await resolveTenantBySlug(params.slug);
+  if (!tenant) return {};
+  const businessName = tenant.business_name || tenant.name;
+  const seoMeta = await getSeoMeta(tenant.id, 'home');
+  return buildPageMetadata(tenant, {
+    pathname: '/',
+    seoMeta,
+    fallback: {
+      title: businessName,
+      description: `${businessName} — professional pest control services`,
+    },
+  });
+}
+
 export default async function TenantHome({ params }: Params) {
   const tenant = await resolveTenantBySlug(params.slug);
   if (!tenant) return null;
@@ -72,7 +90,7 @@ export default async function TenantHome({ params }: Params) {
   ]);
 
   const heroImageUrl = resolveHeroImage(content, heroMedia);
-  const siteUrl = `https://${tenant.subdomain ?? tenant.slug}.pestflowpro.com`;
+  const siteUrl = resolveSiteUrl(tenant);
   const websiteSchema = generateWebsiteSchema(tenant.business_name ?? tenant.name, siteUrl);
 
   if (tenant.template === 'modern-pro') {

@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { resolveTenantBySlug } from '../../../../shared/lib/tenant/resolve';
+import { resolveSiteUrl } from '../../../../shared/lib/resolveSiteUrl';
 import { JsonLdScript } from '../_components/JsonLdScripts';
 import { generateAboutSchema, type BusinessInfo, type SeoSettings } from '../../../../shared/lib/seoSchema';
 
@@ -46,7 +47,7 @@ export default async function AboutPage({ params }: Params) {
   const introParagraphs = introTrimmed
     ? introTrimmed.split(/\n\n+/).map((p) => p.trim()).filter(Boolean)
     : FALLBACK_INTRO_PARAGRAPHS;
-  const siteUrl = `https://${tenant.subdomain ?? tenant.slug}.pestflowpro.com`;
+  const siteUrl = resolveSiteUrl(tenant);
   const aboutBizInfo: BusinessInfo = { name: tenant.business_name ?? '', phone: tenant.phone ?? '', email: tenant.email ?? '', address: tenant.address ?? '' };
   const aboutSeoInfo: SeoSettings = { meta_description: tenant.meta_description ?? '', service_areas: [], certifications: [], founded_year: '', owner_name: tenant.owner_name ?? '' };
   const aboutSchema = generateAboutSchema(aboutBizInfo, aboutSeoInfo, siteUrl);
