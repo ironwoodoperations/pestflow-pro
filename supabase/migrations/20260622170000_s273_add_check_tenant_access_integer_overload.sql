@@ -1,28 +1,22 @@
--- S273 follow-up — repo trail for an MCP-applied migration.
+-- ⚠️ SUPERSEDED by 20260624180000_s273_collapse_check_tenant_access_single_integer.sql.
+-- NEUTRALIZED — NO-OP. This migration originally ADDED an additive integer overload of
+-- public.check_tenant_access ALONGSIDE the original smallint signature (20260612144629).
+-- Having both signatures present is exactly the PGRST203 ambiguity the collapse migration
+-- (20260624180000) exists to fix: PostgREST resolves RPCs by parameter NAME, not type, so a
+-- JSON-number argument could not choose between check_tenant_access(uuid, smallint) and
+-- check_tenant_access(uuid, integer).
 --
--- The integer overload of public.check_tenant_access was applied LIVE this session
--- via the Supabase MCP apply_migration tool (migration name on the platform:
--- `add_check_tenant_access_integer_overload`). That path writes a ledger row but
--- does NOT create a file, so this commit reconciles repo <-> DB to prevent drift.
+-- WHY NEUTRALIZED (not just re-ordered): relying on timestamp ordering alone is fragile. A
+-- from-zero replay, an out-of-order apply, a cherry-pick, or a partial replay that stops
+-- after this file but before 20260624180000 would re-introduce the second overload and bring
+-- back PGRST203. By making this migration a no-op, the on-disk migration set yields EXACTLY
+-- ONE check_tenant_access overload (the integer one created by 20260624180000) regardless of
+-- replay order or which subset of migrations is applied.
 --
--- WHAT IT DOES: adds an additive integer-typed overload of check_tenant_access that
--- delegates to the canonical smallint implementation. Several edge functions call the
--- RPC with a JS number (serialized as integer); without this overload PostgREST could
--- fail to resolve the smallint signature. The overload is a thin cast wrapper — the
--- access rule (tenants.entitlement >= required_tier) lives ONLY in the smallint impl.
+-- The file is intentionally LEFT IN PLACE (not deleted) so its schema_migrations ledger row
+-- and the historical trail remain intact. The DDL that added the second overload has been
+-- removed; the canonical single integer-typed function is defined solely by 20260624180000.
 --
--- Idempotent (CREATE OR REPLACE + idempotent REVOKE/GRANT), safe to re-apply.
+-- Live DB is already in the correct single-overload state; this only fixes the repo trail.
 
-CREATE OR REPLACE FUNCTION public.check_tenant_access(p_tenant_id uuid, p_required_tier integer)
-RETURNS boolean
-LANGUAGE sql
-SECURITY DEFINER
-SET search_path TO 'public'
-AS $function$
-  SELECT public.check_tenant_access(p_tenant_id, p_required_tier::smallint);
-$function$;
-
-REVOKE ALL ON FUNCTION public.check_tenant_access(uuid, integer) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.check_tenant_access(uuid, integer) TO service_role;
-
-NOTIFY pgrst, 'reload schema';
+SELECT 1;
