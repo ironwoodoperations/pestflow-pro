@@ -22,6 +22,7 @@ import { BoldLocalPestPage } from '../_shells/bold-local/BoldLocalPestPage';
 import { ModernProPestPage } from '../_shells/modern-pro/ModernProPestPage';
 import { RusticRuggedPestPage } from '../_shells/rustic-rugged/RusticRuggedPestPage';
 import { MetroProPestPage } from '../_shells/metro-pro/MetroProPestPage';
+import { DangComicPestPage } from '../_shells/dang/DangComicPestPage';
 import { DefaultPestPage } from '../_components/DefaultPestPage';
 
 type Params = { params: { slug: string; service: string } };
@@ -169,6 +170,12 @@ export default async function ServicePage({ params }: Params) {
   }
   if (tenant.template === 'metro-pro') {
     return <MetroProPestPage tenant={tenant} pestSlug={params.service} content={content} />;
+  }
+  // Dang comic shell (PR 3 scaffold). Placeholder pest page — real comic
+  // service page + FAQ/service schema is PR 4. Unreachable until a tenant's
+  // branding.theme is flipped to 'dang-comic'.
+  if (tenant.template === 'dang-comic') {
+    return <DangComicPestPage tenant={tenant} pestSlug={params.service} content={content} />;
   }
 
   return <DefaultPestPage tenant={tenant} pestSlug={params.service} content={content} heroMedia={heroMedia} />;

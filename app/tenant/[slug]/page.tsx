@@ -51,6 +51,7 @@ import { RusticRuggedStatsBanner } from './_shells/rustic-rugged/RusticRuggedSta
 import { RusticRuggedResComFac } from './_shells/rustic-rugged/RusticRuggedResComFac';
 import { RusticRuggedTestimonials } from './_shells/rustic-rugged/RusticRuggedTestimonials';
 import { RusticRuggedCtaBanner } from './_shells/rustic-rugged/RusticRuggedCtaBanner';
+import { DangComicHome } from './_shells/dang/DangComicHome';
 
 const MODERN_PRO_SERVICES = [
   { name: 'Pest Control', slug: 'pest-control' }, { name: 'Termite Control', slug: 'termite-control' },
@@ -184,6 +185,13 @@ export default async function TenantHome({ params }: Params) {
         <RusticRuggedCtaBanner phone={tenant.phone || undefined} tenantSlug={tenant.slug} ctaText={tenant.cta_text || 'Get a Free Quote'} />
       </>
     );
+  }
+
+  // Dang comic shell (PR 3 scaffold). Placeholder home only — no JSON-LD /
+  // seo_meta / faqs wiring here (deferred to PR 4). Unreachable until a
+  // tenant's branding.theme is flipped to 'dang-comic'.
+  if (tenant.template === 'dang-comic') {
+    return <DangComicHome />;
   }
 
   return (

@@ -16,6 +16,7 @@ import { BoldLocalAboutPage } from '../_shells/bold-local/BoldLocalAboutPage';
 import { ModernProAboutPage } from '../_shells/modern-pro/ModernProAboutPage';
 import { RusticRuggedAboutPage } from '../_shells/rustic-rugged/RusticRuggedAboutPage';
 import { MetroProAboutPage } from '../_shells/metro-pro/MetroProAboutPage';
+import { DangComicAboutPage } from '../_shells/dang/DangComicAboutPage';
 import { DefaultAboutPage } from '../_components/DefaultAboutPage';
 
 const FALLBACK_INTRO_PARAGRAPHS = [
@@ -147,6 +148,26 @@ export default async function AboutPage({ params }: Params) {
           licenseNumber={tenant.license_number || undefined}
         />
       </>
+    );
+  }
+
+  // Dang comic shell (PR 3 scaffold). Placeholder about page — no JSON-LD
+  // here (deferred to PR 4). Registered because bold-local (the mirror
+  // precedent) participates in this chain too. Unreachable until a tenant's
+  // branding.theme is flipped to 'dang-comic'.
+  if (tenant.template === 'dang-comic') {
+    return (
+      <DangComicAboutPage
+        heroTitle={heroTitle}
+        heroSub={heroSub}
+        heroImageUrl={heroImageUrl}
+        aboutImage={aboutImage}
+        team={teamTyped}
+        foundedYear={foundedYear}
+        businessName={businessName}
+        licenseNumber={tenant.license_number || undefined}
+        introParagraphs={introParagraphs}
+      />
     );
   }
 
