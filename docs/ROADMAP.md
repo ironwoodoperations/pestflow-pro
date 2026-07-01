@@ -14,7 +14,7 @@ Production-ready, **idle capacity**. Active leads out — **Capture, Blue Duck, 
 
 - **Dang → PestFlow Pro migration (`dang-pfp`) — Phase 2 IN PROGRESS (shared infra + comic shell build).** Phases 0 (teardown/baseline) and 1 (frozen SEO matrix + 1:1 301 map) COMPLETE. Phase 2 is a **5-PR plan**, each **validator-gated** (Perplexity + Gemini, conservative-wins) for shell / SEO / caching / routing changes:
   - **PR 1 — Shared `seo_meta` SSR metadata infrastructure — ✅ SHIPPED** (PR #229, merged, verified in prod).
-  - **PR 2 — Shared service/location/FAQ JSON-LD infrastructure — NEXT.**
+  - **PR 2 — Shared service/location/FAQ JSON-LD infrastructure — RESCOPED (in review).** The FAQ JSON-LD infra is largely **PRE-EXISTING**: `shared/lib/seoSchema.ts` already exports the full schema family and `app/tenant/[slug]/faq/page.tsx` already SSR-emits `FAQPage` from the DB `faqs` table. PR 2 is now the **thin connective layer only** — a versioned category→slug map (`_lib/faqCategoryMap.ts`, build-time slug assertion) plus `getAllFaqs`/`getServiceFaqs` loaders in `_lib/queries.ts`. **Per-service FAQ EMISSION moves to PR 4**, gated on the visible-render switch (Google FAQPage policy requires schema Q&A to match visible on-page content; service pages still render hardcoded `serviceData.ts` FAQs today).
   - **PR 3 — Register empty comic shell at `app/tenant/[slug]/_shells/dang/`.**
   - **PR 4 — Full comic design reproduction + read-path wiring + comic art-asset migration.**
   - **PR 5 — Server-side sitemap/robots.**
@@ -96,6 +96,7 @@ Production-ready, **idle capacity**. Active leads out — **Capture, Blue Duck, 
 - **Two homepage video embeds** ("Meet Kirk", "Get Free Pest Control For Life") carry forward as **embeds, not static images**.
 - **Footer "Powered by PestFlow Pro" link** in the shell footer still hardcodes `pestflowpro.com` (301s via #228, but worth a one-line `.ai` cleanup in a future PR).
 - **Seed-tenant (non-Dang) `seo_meta` meta_descriptions** still contain bulk-generation contamination ("Ironclad" brand, mismatched phone, stray keywords). Cosmetic, demo-only; **Dang data is clean**. Fix only if these tenants get demoed.
+- **Seed-tenant FAQ data backfill (horizon; PR 2 infra enables it).** Every non-Dang tenant renders hardcoded `serviceData.ts` FAQs with **zero DB `faqs` rows** and no FAQ schema — so `getServiceFaqs`/`getAllFaqs` return `[]` for them (byte-identical no-op). Giving them dynamic, crawlable, schema-emitting FAQs like Dang requires seeding/migrating their `faqs` tables from `serviceData.ts` (category labels must match `faqCategoryMap.ts`). Separate downstream data project; do only when those tenants go live (currently demo/idle).
 
 ---
 

@@ -1,6 +1,7 @@
 import { cache } from 'react';
 import { getServerSupabaseForISR } from '../../../../shared/lib/supabase/server';
 import { CUSTOM_PAGE_SLUGS, NON_SERVICE_SLUGS } from './navConfig';
+import { SLUG_TO_FAQ_CATEGORY } from './faqCategoryMap';
 
 export const getPageContent = cache(
   async (tenantId: string, pageSlug: string) => {
@@ -237,6 +238,50 @@ export const getSeoMeta = cache(
       return null;
     }
     return data;
+  }
+);
+
+export type FaqRow = { question: string; answer: string; category: string; sort_order: number };
+
+// All FAQs for a tenant, ordered deterministically. sort_order is uniform within
+// a category (it orders categories, not rows), so intra-category order is
+// otherwise undefined — the (category, sort_order, question) key pins it stable
+// across renders. Non-Dang tenants have zero faqs rows today, so this returns [].
+export const getAllFaqs = cache(
+  async (tenantId: string): Promise<FaqRow[]> => {
+    const supabase = getServerSupabaseForISR();
+    const { data, error } = await supabase
+      .from('faqs')
+      .select('question, answer, category, sort_order')
+      .eq('tenant_id', tenantId)
+      .order('category')
+      .order('sort_order')
+      .order('question');
+    if (error) {
+      console.error('[getAllFaqs] error', { tenantId, code: error.code, message: error.message });
+      return [];
+    }
+    return (data ?? []) as FaqRow[];
+  }
+);
+
+// FAQs for a single service page, resolved by slug → category. No category maps
+// (e.g. termite-control / termite-inspections, or an unknown/invalid slug) →
+// zero FAQs WITHOUT a DB call. Otherwise filters the single cached getAllFaqs
+// fetch in memory (no extra round-trip).
+export const getServiceFaqs = cache(
+  async (tenantId: string, serviceSlug: string): Promise<FaqRow[]> => {
+    // Slug guard mirrors getSeoMeta: reject anything outside the clean slug
+    // charset before mapping. serviceSlug flows in from a dynamic route segment.
+    if (!/^[a-z0-9-]+$/.test(serviceSlug)) {
+      return [];
+    }
+    const category = SLUG_TO_FAQ_CATEGORY[serviceSlug];
+    if (!category) {
+      return [];
+    }
+    const all = await getAllFaqs(tenantId);
+    return all.filter((f) => f.category === category);
   }
 );
 
