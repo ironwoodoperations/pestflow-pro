@@ -23,6 +23,9 @@ import { barlowFont, interFont as blInterFont, BL_TOKENS } from './_shells/bold-
 import { interFont as cfInterFont, CF_TOKENS } from './_shells/clean-friendly/CleanFriendlyFonts';
 import { RusticRuggedNavbar } from './_shells/rustic-rugged/RusticRuggedNavbar';
 import { RusticRuggedFooter } from './_shells/rustic-rugged/RusticRuggedFooter';
+import { DangComicNavbar } from './_shells/dang/DangComicNavbar';
+import { DangComicFooter } from './_shells/dang/DangComicFooter';
+import { DANG_TOKENS } from './_shells/dang/DangComicFonts';
 import { computeShellCssVars, shellCssVarsString } from '../../../shared/lib/shellCssVars';
 
 type Params = { params: { slug: string } };
@@ -190,6 +193,28 @@ export default async function TenantLayout({
           <RusticRuggedNavbar servicePages={servicePages} />
           <main id="main-content">{children}</main>
           <RusticRuggedFooter tenant={tenant} social={social} />
+        </TenantProvider>
+      </>
+    );
+  }
+
+  // Dang comic shell (PR 3 scaffold). Empty-but-selectable: emits the same
+  // universal localBusiness org node + chrome as every other branch, wraps
+  // placeholder navbar/footer, and stubs the `--dang-*` token block. Real
+  // comic design + per-page schema land in PR 4. Unreachable until a later
+  // cutover flips a tenant's branding.theme to 'dang-comic'.
+  if (theme === 'dang-comic') {
+    return (
+      <>
+        <JsonLdScript schema={localBusinessSchema} id="ld-local-business" />
+        <style dangerouslySetInnerHTML={{ __html: cssVars + `:root{${DANG_TOKENS}}` }} />
+        {ga4Scripts}
+        <TenantProvider tenant={tenant}>
+          <div style={{ backgroundColor: 'var(--dang-surface)', color: 'var(--dang-text)' }}>
+            <DangComicNavbar servicePages={servicePages} />
+            <main id="main-content">{children}</main>
+            <DangComicFooter tenant={tenant} social={social} />
+          </div>
         </TenantProvider>
       </>
     );
