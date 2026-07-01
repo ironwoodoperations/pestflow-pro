@@ -187,11 +187,30 @@ export default async function TenantHome({ params }: Params) {
     );
   }
 
-  // Dang comic shell (PR 3 scaffold). Placeholder home only — no JSON-LD /
-  // seo_meta / faqs wiring here (deferred to PR 4). Unreachable until a
-  // tenant's branding.theme is flipped to 'dang-comic'.
+  // Dang comic shell (PR 4). Emits websiteSchema (restored — every home branch
+  // emits it) + the real comic home. Unreachable until a tenant's
+  // branding.theme is flipped to 'dang-comic'.
   if (tenant.template === 'dang-comic') {
-    return <DangComicHome />;
+    const [aboutContent, locations] = await Promise.all([
+      getPageContent(tenant.id, 'about'),
+      getAllLocations(tenant.id),
+    ]);
+    const aboutIntro = (aboutContent as { intro?: string } | null)?.intro || '';
+    const serviceAreas = (locations as { city: string }[]).map((l) => l.city);
+    type DangTestimonial = { id: string; author_name: string; review_text: string; rating: number; author_image_url?: string | null };
+    return (
+      <>
+        <JsonLdScript schema={websiteSchema} id="ld-website" />
+        <DangComicHome
+          tenant={tenant}
+          content={content}
+          heroImageUrl={heroImageUrl}
+          aboutIntro={aboutIntro}
+          serviceAreas={serviceAreas}
+          testimonials={testimonials as DangTestimonial[]}
+        />
+      </>
+    );
   }
 
   return (

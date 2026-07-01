@@ -10,7 +10,7 @@ export const revalidate = 300;
 export async function generateStaticParams() {
   return [];
 }
-import { getPageContent, getLocation, getAllLocations, getHeroMedia, getSeoMeta } from '../_lib/queries';
+import { getPageContent, getLocation, getAllLocations, getHeroMedia, getSeoMeta, getServiceFaqs } from '../_lib/queries';
 import { SERVICE_SLUGS } from '../_lib/serviceData';
 import { WhyChooseUs } from '../_components/sections/WhyChooseUs';
 import { Process } from '../_components/sections/Process';
@@ -174,8 +174,13 @@ export default async function ServicePage({ params }: Params) {
   // Dang comic shell (PR 3 scaffold). Placeholder pest page — real comic
   // service page + FAQ/service schema is PR 4. Unreachable until a tenant's
   // branding.theme is flipped to 'dang-comic'.
+  // Dang comic shell (PR 4). Fetch DB faqs here (keeps the component pure) and
+  // pass down; the component renders the SAME array it emits as FAQPage schema
+  // (debt-c: schema matches visible content). Slugs mapping to no category
+  // resolve to [] → no FAQ block, no schema. Unreachable until cutover.
   if (tenant.template === 'dang-comic') {
-    return <DangComicPestPage tenant={tenant} pestSlug={params.service} content={content} />;
+    const faqs = await getServiceFaqs(tenant.id, params.service);
+    return <DangComicPestPage tenant={tenant} pestSlug={params.service} content={content} faqs={faqs} />;
   }
 
   return <DefaultPestPage tenant={tenant} pestSlug={params.service} content={content} heroMedia={heroMedia} />;

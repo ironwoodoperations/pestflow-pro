@@ -124,6 +124,33 @@ const SHELL_THEMES: Record<string, ShellVars> = {
     '--font-heading':          'Inter, sans-serif',
     '--font-body':             'Inter, sans-serif',
   },
+  // dang-comic — light comic surfaces; canonical brand orange #F26B0F. These
+  // --color-* values are the shell's base map ONLY; the real color authority is
+  // the hardcoded --dang-* block injected in the layout (see computeShellCssVars
+  // guard + DangComicFonts DANG_TOKENS). branding.primary_color is bypassed.
+  'dang-comic': {
+    '--color-primary':         '#F26B0F',
+    '--color-primary-dark':    '#D15C0A',
+    '--color-primary-light':   '#FFE8D6',
+    '--color-accent':          '#F26B0F',
+    '--color-text-on-primary': '#ffffff',
+    '--color-bg-hero':         '#F26B0F',
+    '--color-bg-hero-end':     '#D15C0A',
+    '--color-bg-section':      '#ffffff',
+    '--color-bg-cta':          '#F26B0F',
+    '--color-nav-bg':          '#F26B0F',
+    '--color-nav-text':        '#111111',
+    '--color-footer-bg':       '#ffffff',
+    '--color-footer-text':     '#111111',
+    '--color-btn-bg':          '#F26B0F',
+    '--color-btn-text':        '#ffffff',
+    '--color-heading':         '#111111',
+    '--color-body-text':       '#333333',
+    '--color-text-muted':      '#666666',
+    '--color-border':          '#111111',
+    '--font-heading':          "var(--font-bangers), 'Bangers', cursive",
+    '--font-body':             "var(--font-open-sans), 'Open Sans', sans-serif",
+  },
 };
 
 
@@ -238,6 +265,21 @@ export function computeShellCssVars(
     vars['--color-primary']  = resolvedAccent;
     vars['--color-btn-bg']   = resolvedAccent;
     vars['--color-btn-text'] = readableTextOn(resolvedAccent);
+    return vars;
+  }
+
+  // dang-comic — the comic shell's SOLE color authority is the hardcoded --dang-*
+  // token block injected in layout.tsx (canonical brand orange #F26B0F). A
+  // tenant's branding.primary_color (the #F97316 shadow) must NOT re-derive the
+  // --color-* surfaces via the preset/custom path below, or an activated
+  // dang-comic tenant would render orange-derived surfaces off the wrong hex.
+  // Pin primary/accent to canonical orange and return the base map unchanged.
+  // Mirrors the bold-local guard above. Fires ONLY for template==='dang-comic'.
+  if (template === 'dang-comic') {
+    vars['--color-primary']  = '#F26B0F';
+    vars['--color-accent']   = '#F26B0F';
+    vars['--color-btn-bg']   = '#F26B0F';
+    vars['--color-btn-text'] = readableTextOn('#F26B0F');
     return vars;
   }
 

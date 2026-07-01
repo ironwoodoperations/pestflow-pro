@@ -12,6 +12,7 @@ import { ContactForm } from '../_components/forms/ContactForm';
 import { ModernProContactPage } from '../_shells/modern-pro/ModernProContactPage';
 import { RusticRuggedContactPage } from '../_shells/rustic-rugged/RusticRuggedContactPage';
 import { MetroProContactPage } from '../_shells/metro-pro/MetroProContactPage';
+import { DangComicContactPage } from '../_shells/dang/DangComicContactPage';
 
 type Params = { params: { slug: string } };
 
@@ -50,6 +51,7 @@ export default async function ContactPage({ params }: Params) {
   if (tenant.template === 'modern-pro') return <ModernProContactPage {...sharedFormProps} />;
   if (tenant.template === 'rustic-rugged') return <RusticRuggedContactPage {...sharedFormProps} />;
   if (tenant.template === 'metro-pro') return <MetroProContactPage {...sharedFormProps} />;
+  if (tenant.template === 'dang-comic') return <DangComicContactPage {...sharedFormProps} />;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
