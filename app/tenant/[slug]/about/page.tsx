@@ -152,22 +152,25 @@ export default async function AboutPage({ params }: Params) {
   }
 
   // Dang comic shell (PR 3 scaffold). Placeholder about page — no JSON-LD
-  // here (deferred to PR 4). Registered because bold-local (the mirror
-  // precedent) participates in this chain too. Unreachable until a tenant's
+  // Dang comic shell (PR 4). Emits aboutSchema (restored — every about branch
+  // emits it) + the real comic about page. Unreachable until a tenant's
   // branding.theme is flipped to 'dang-comic'.
   if (tenant.template === 'dang-comic') {
     return (
-      <DangComicAboutPage
-        heroTitle={heroTitle}
-        heroSub={heroSub}
-        heroImageUrl={heroImageUrl}
-        aboutImage={aboutImage}
-        team={teamTyped}
-        foundedYear={foundedYear}
-        businessName={businessName}
-        licenseNumber={tenant.license_number || undefined}
-        introParagraphs={introParagraphs}
-      />
+      <>
+        <JsonLdScript schema={aboutSchema} id="ld-about" />
+        <DangComicAboutPage
+          heroTitle={heroTitle}
+          heroSub={heroSub}
+          heroImageUrl={heroImageUrl}
+          aboutImage={aboutImage}
+          team={teamTyped}
+          foundedYear={foundedYear}
+          businessName={businessName}
+          licenseNumber={tenant.license_number || undefined}
+          introParagraphs={introParagraphs}
+        />
+      </>
     );
   }
 

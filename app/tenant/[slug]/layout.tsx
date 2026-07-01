@@ -25,7 +25,7 @@ import { RusticRuggedNavbar } from './_shells/rustic-rugged/RusticRuggedNavbar';
 import { RusticRuggedFooter } from './_shells/rustic-rugged/RusticRuggedFooter';
 import { DangComicNavbar } from './_shells/dang/DangComicNavbar';
 import { DangComicFooter } from './_shells/dang/DangComicFooter';
-import { DANG_TOKENS } from './_shells/dang/DangComicFonts';
+import { DANG_TOKENS, bangersFont, openSansFont } from './_shells/dang/DangComicFonts';
 import { computeShellCssVars, shellCssVarsString } from '../../../shared/lib/shellCssVars';
 
 type Params = { params: { slug: string } };
@@ -210,8 +210,11 @@ export default async function TenantLayout({
         <style dangerouslySetInnerHTML={{ __html: cssVars + `:root{${DANG_TOKENS}}` }} />
         {ga4Scripts}
         <TenantProvider tenant={tenant}>
-          <div style={{ backgroundColor: 'var(--dang-surface)', color: 'var(--dang-text)' }}>
-            <DangComicNavbar servicePages={servicePages} />
+          <div
+            className={`${bangersFont.variable} ${openSansFont.variable}`}
+            style={{ backgroundColor: 'var(--dang-surface)', color: 'var(--dang-text)', fontFamily: 'var(--dang-font-body)' }}
+          >
+            <DangComicNavbar servicePages={servicePages} tenant={tenant} social={social} />
             <main id="main-content">{children}</main>
             <DangComicFooter tenant={tenant} social={social} />
           </div>
