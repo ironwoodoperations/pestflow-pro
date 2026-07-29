@@ -1,11 +1,11 @@
 import { ContactForm } from '../../_components/forms/ContactForm';
-import { VitaGlowGlyph, GoldDivider, resolveBookingHref } from './VitaGlowGlyph';
+import { VitaGlowGlyph, GoldDivider, resolveBookingHref, VG_A11Y_CSS } from './VitaGlowGlyph';
 
 // Book-a-Consult page — editorial chrome around the SHARED ContactForm (same
-// wrapper pattern as DangComicContactPage). The booking CTA is config-driven
-// (brief §6): a Square URL from settings.integrations renders a primary "Book
-// Online" button; shipping blank, this route IS the fallback, so it simply
-// presents the consult form. Copy comes from page_content via the route.
+// wrapper pattern as DangComicContactPage). The booking CTA is config-driven: a
+// Square URL from settings.integrations renders a primary "Book Online" button;
+// shipping blank, this route IS the fallback, so it presents the consult form.
+// Copy comes from page_content via the route.
 interface Props {
   heroTitle: string;
   heroSub: string;
@@ -25,8 +25,7 @@ interface Props {
 
 const display = (size: string): React.CSSProperties => ({
   fontFamily: 'var(--vg-font-display)', fontWeight: 300, fontSize: size,
-  letterSpacing: 'var(--vg-tracking-display)', lineHeight: 'var(--vg-line-tight)', margin: 0,
-  color: 'var(--vg-ink)',
+  letterSpacing: 'var(--vg-tracking-display)', lineHeight: 'var(--vg-line-tight)', margin: 0, color: 'var(--vg-espresso)',
 });
 const eyebrow: React.CSSProperties = {
   fontFamily: 'var(--vg-font-body)', fontWeight: 500, fontSize: 12.5,
@@ -39,17 +38,18 @@ export function VitaGlowContactPage(props: Props) {
 
   return (
     <div style={{ background: 'var(--vg-cream)', color: 'var(--vg-text)', fontFamily: 'var(--vg-font-body)' }}>
+      <style>{VG_A11Y_CSS}</style>
       {/* HERO */}
       <section style={{ padding: '4.5rem 1.5rem 3rem', textAlign: 'center' }}>
         <div style={{ display: 'flex', justifyContent: 'center' }}><VitaGlowGlyph size={44} tone="gold" /></div>
         <p style={{ ...eyebrow, marginTop: '1.25rem' }}>Book a Consult</p>
         <h1 style={{ ...display('clamp(40px,6vw,72px)'), marginTop: '0.9rem' }}>{heroTitle || 'Book a Consult'}</h1>
-        {heroSub && <p style={{ marginTop: '1.5rem', fontFamily: 'var(--vg-font-display)', fontStyle: 'italic', fontWeight: 300, fontSize: 'clamp(19px,2.2vw,24px)', lineHeight: 'var(--vg-line-body)', color: 'var(--vg-grey)', maxWidth: '52ch', marginInline: 'auto' }}>{heroSub}</p>}
+        {heroSub && <p style={{ marginTop: '1.5rem', fontFamily: 'var(--vg-font-display)', fontStyle: 'italic', fontWeight: 300, fontSize: 'clamp(19px,2.2vw,24px)', lineHeight: 'var(--vg-line-body)', color: 'var(--vg-taupe)', maxWidth: '52ch', marginInline: 'auto' }}>{heroSub}</p>}
 
         {/* Config-driven booking CTA — only when a Square URL is set */}
         {bookExternal && (
           <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'center' }}>
-            <a href={bookHref} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', background: 'var(--vg-gold)', color: 'var(--vg-on-gold)', fontFamily: 'var(--vg-font-body)', fontWeight: 500, fontSize: 12.5, letterSpacing: 'var(--vg-tracking-wide)', textTransform: 'uppercase', padding: '0.95rem 2.2rem', borderRadius: 'var(--vg-radius)', textDecoration: 'none', border: '1px solid var(--vg-gold)' }}>
+            <a className="vg-btn vg-focus" href={bookHref} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', background: 'var(--vg-espresso)', color: 'var(--vg-on-espresso)', fontFamily: 'var(--vg-font-body)', fontWeight: 500, fontSize: 12.5, letterSpacing: 'var(--vg-tracking-wide)', textTransform: 'uppercase', padding: '0.95rem 2.2rem', borderRadius: 'var(--vg-radius)', textDecoration: 'none', border: '1px solid var(--vg-espresso)' }}>
               Book Online
             </a>
           </div>
