@@ -151,6 +151,35 @@ const SHELL_THEMES: Record<string, ShellVars> = {
     '--font-heading':          "var(--font-bangers), 'Bangers', cursive",
     '--font-body':             "var(--font-open-sans), 'Open Sans', sans-serif",
   },
+  // vita-glow — one-off medical-aesthetics shell (S-VG-1). Fixed cream/gold/ink
+  // editorial palette. These --color-* values are the base map that shared inner
+  // pages (service-area/faq/legal) read; the real color authority is the
+  // hardcoded --vg-* token block injected in layout.tsx (see the vita-glow guard
+  // in computeShellCssVars + VitaGlowFonts VITA_GLOW_TOKENS). A tenant's
+  // branding.primary_color is bypassed — the palette never re-derives.
+  'vita-glow': {
+    '--color-primary':         '#C9A227',  // = --vg-gold
+    '--color-primary-dark':    '#A8871D',  // darkened gold
+    '--color-primary-light':   '#F2EDE4',  // = --vg-cream-deep
+    '--color-accent':          '#C9A227',  // = --vg-gold
+    '--color-text-on-primary': '#3D3733',  // = --vg-ink (ink reads on gold)
+    '--color-bg-hero':         '#FAF7F2',  // = --vg-cream
+    '--color-bg-hero-end':     '#F2EDE4',  // = --vg-cream-deep
+    '--color-bg-section':      '#FAF7F2',  // = --vg-cream
+    '--color-bg-cta':          '#3D3733',  // = --vg-ink (dark CTA band)
+    '--color-nav-bg':          '#FAF7F2',  // = --vg-cream
+    '--color-nav-text':        '#3D3733',  // = --vg-ink
+    '--color-footer-bg':       '#3D3733',  // = --vg-ink
+    '--color-footer-text':     '#FAF7F2',  // = --vg-cream
+    '--color-btn-bg':          '#C9A227',  // = --vg-gold
+    '--color-btn-text':        '#3D3733',  // = --vg-ink
+    '--color-heading':         '#3D3733',  // = --vg-ink
+    '--color-body-text':       '#3D3733',  // = --vg-ink
+    '--color-text-muted':      '#7A736E',  // = --vg-grey
+    '--color-border':          'rgba(201,162,39,0.35)',  // gold hairline
+    '--font-heading':          "var(--font-cormorant), 'Cormorant Garamond', serif",
+    '--font-body':             "var(--font-jost), 'Jost', sans-serif",
+  },
 };
 
 
@@ -280,6 +309,20 @@ export function computeShellCssVars(
     vars['--color-accent']   = '#F26B0F';
     vars['--color-btn-bg']   = '#F26B0F';
     vars['--color-btn-text'] = readableTextOn('#F26B0F');
+    return vars;
+  }
+
+  // vita-glow — the shell's SOLE color authority is the hardcoded --vg-* token
+  // block injected in layout.tsx (fixed cream/gold/ink palette). A tenant's
+  // branding.primary_color must NOT re-derive the --color-* surfaces via the
+  // preset/custom path below. Pin primary/accent to the canonical gold, keep the
+  // ink-on-gold button text, and return the base map unchanged. Mirrors the
+  // bold-local / dang-comic guards. Fires ONLY for template==='vita-glow'.
+  if (template === 'vita-glow') {
+    vars['--color-primary']  = '#C9A227';
+    vars['--color-accent']   = '#C9A227';
+    vars['--color-btn-bg']   = '#C9A227';
+    vars['--color-btn-text'] = '#3D3733';
     return vars;
   }
 

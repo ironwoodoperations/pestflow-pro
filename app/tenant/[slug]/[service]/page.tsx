@@ -10,7 +10,7 @@ export const revalidate = 300;
 export async function generateStaticParams() {
   return [];
 }
-import { getPageContent, getLocation, getAllLocations, getHeroMedia, getSeoMeta, getServiceFaqs } from '../_lib/queries';
+import { getPageContent, getLocation, getAllLocations, getHeroMedia, getSeoMeta, getServiceFaqs, getIntegrations } from '../_lib/queries';
 import { SERVICE_SLUGS } from '../_lib/serviceData';
 import { WhyChooseUs } from '../_components/sections/WhyChooseUs';
 import { Process } from '../_components/sections/Process';
@@ -23,6 +23,7 @@ import { ModernProPestPage } from '../_shells/modern-pro/ModernProPestPage';
 import { RusticRuggedPestPage } from '../_shells/rustic-rugged/RusticRuggedPestPage';
 import { MetroProPestPage } from '../_shells/metro-pro/MetroProPestPage';
 import { DangComicPestPage } from '../_shells/dang/DangComicPestPage';
+import { VitaGlowServicesPage } from '../_shells/vita-glow/VitaGlowServicesPage';
 import { DefaultPestPage } from '../_components/DefaultPestPage';
 
 type Params = { params: { slug: string; service: string } };
@@ -49,6 +50,27 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 export default async function ServicePage({ params }: Params) {
   const tenant = await resolveTenantBySlug(params.slug);
   if (!tenant) notFound();
+
+  // vita-glow shell (S-VG-1). Medical-aesthetics category pages (IV Infusions,
+  // Injectables & Aesthetics, Weight & Wellness) are content-driven by page slug
+  // and route here BEFORE the pest-specific SERVICE_SLUGS / location logic below,
+  // which does not apply to this vertical. Any slug without a page_content row
+  // 404s, so arbitrary URLs don't render empty pages.
+  if (tenant.template === 'vita-glow') {
+    const [vgContent, integrations] = await Promise.all([
+      getPageContent(tenant.id, params.service),
+      getIntegrations(tenant.id),
+    ]);
+    if (!vgContent) notFound();
+    return (
+      <VitaGlowServicesPage
+        tenant={tenant}
+        pageSlug={params.service}
+        content={vgContent}
+        bookingUrl={integrations.square_booking_url ?? null}
+      />
+    );
+  }
 
   // Service area page branch
   if (!SERVICE_SLUGS.has(params.service)) {

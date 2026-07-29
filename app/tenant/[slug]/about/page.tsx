@@ -9,7 +9,7 @@ export const revalidate = 300;
 export async function generateStaticParams() {
   return [];
 }
-import { getPageContent, getTeamMembers, getHeroMedia } from '../_lib/queries';
+import { getPageContent, getTeamMembers, getHeroMedia, getIntegrations } from '../_lib/queries';
 import { resolveHeroImage } from '../_lib/heroImage';
 import { CleanFriendlyAboutPage } from '../_shells/clean-friendly/CleanFriendlyAboutPage';
 import { BoldLocalAboutPage } from '../_shells/bold-local/BoldLocalAboutPage';
@@ -17,6 +17,7 @@ import { ModernProAboutPage } from '../_shells/modern-pro/ModernProAboutPage';
 import { RusticRuggedAboutPage } from '../_shells/rustic-rugged/RusticRuggedAboutPage';
 import { MetroProAboutPage } from '../_shells/metro-pro/MetroProAboutPage';
 import { DangComicAboutPage } from '../_shells/dang/DangComicAboutPage';
+import { VitaGlowAboutPage } from '../_shells/vita-glow/VitaGlowAboutPage';
 import { DefaultAboutPage } from '../_components/DefaultAboutPage';
 
 const FALLBACK_INTRO_PARAGRAPHS = [
@@ -169,6 +170,27 @@ export default async function AboutPage({ params }: Params) {
           businessName={businessName}
           licenseNumber={tenant.license_number || undefined}
           introParagraphs={introParagraphs}
+        />
+      </>
+    );
+  }
+
+  // vita-glow shell (S-VG-1). Editorial about page. Prose comes from
+  // page_content / team_members (passed in); nothing hardcoded. Emits aboutSchema
+  // like every about branch. Booking CTA config-driven via settings.integrations.
+  if (tenant.template === 'vita-glow') {
+    const integrations = await getIntegrations(tenant.id);
+    return (
+      <>
+        <JsonLdScript schema={aboutSchema} id="ld-about" />
+        <VitaGlowAboutPage
+          heroTitle={heroTitle}
+          heroSub={heroSub}
+          introParagraphs={introParagraphs}
+          team={teamTyped}
+          aboutImage={aboutImage}
+          businessName={businessName}
+          bookingUrl={integrations.square_booking_url ?? null}
         />
       </>
     );

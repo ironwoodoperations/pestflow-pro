@@ -13,6 +13,7 @@ import { ModernProContactPage } from '../_shells/modern-pro/ModernProContactPage
 import { RusticRuggedContactPage } from '../_shells/rustic-rugged/RusticRuggedContactPage';
 import { MetroProContactPage } from '../_shells/metro-pro/MetroProContactPage';
 import { DangComicContactPage } from '../_shells/dang/DangComicContactPage';
+import { VitaGlowContactPage } from '../_shells/vita-glow/VitaGlowContactPage';
 
 type Params = { params: { slug: string } };
 
@@ -52,6 +53,12 @@ export default async function ContactPage({ params }: Params) {
   if (tenant.template === 'rustic-rugged') return <RusticRuggedContactPage {...sharedFormProps} />;
   if (tenant.template === 'metro-pro') return <MetroProContactPage {...sharedFormProps} />;
   if (tenant.template === 'dang-comic') return <DangComicContactPage {...sharedFormProps} />;
+  // vita-glow shell (S-VG-1). Book-a-Consult page. Config-driven booking CTA
+  // (Square URL from settings.integrations, blank ships this route as the
+  // fallback). Copy comes from page_content via sharedFormProps hero fields.
+  if (tenant.template === 'vita-glow') {
+    return <VitaGlowContactPage {...sharedFormProps} bookingUrl={integrations.square_booking_url ?? null} />;
+  }
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
