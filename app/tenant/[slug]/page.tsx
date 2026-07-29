@@ -10,7 +10,7 @@ export const revalidate = 300;
 export async function generateStaticParams() {
   return [];
 }
-import { getPageContent, getTestimonials, getAllBlogPosts, getHeroMedia, getAllLocations, getSeoMeta } from './_lib/queries';
+import { getPageContent, getTestimonials, getAllBlogPosts, getHeroMedia, getAllLocations, getSeoMeta, getIntegrations } from './_lib/queries';
 import { resolveHeroImage } from './_lib/heroImage';
 import { MetroHero } from './_components/MetroHero';
 import { ServicesGrid } from './_components/sections/ServicesGrid';
@@ -52,6 +52,7 @@ import { RusticRuggedResComFac } from './_shells/rustic-rugged/RusticRuggedResCo
 import { RusticRuggedTestimonials } from './_shells/rustic-rugged/RusticRuggedTestimonials';
 import { RusticRuggedCtaBanner } from './_shells/rustic-rugged/RusticRuggedCtaBanner';
 import { DangComicHome } from './_shells/dang/DangComicHome';
+import { VitaGlowHome } from './_shells/vita-glow/VitaGlowHome';
 
 const MODERN_PRO_SERVICES = [
   { name: 'Pest Control', slug: 'pest-control' }, { name: 'Termite Control', slug: 'termite-control' },
@@ -209,6 +210,35 @@ export default async function TenantHome({ params }: Params) {
           serviceAreas={serviceAreas}
           testimonials={testimonials as DangTestimonial[]}
         />
+      </>
+    );
+  }
+
+  // vita-glow shell (S-VG-1). Content-driven medical-aesthetics home. Emits
+  // websiteSchema like every home branch. Services derive their names/hrefs from
+  // structural categories; blurbs/prices come from page_content when present
+  // (never hardcoded). Booking CTA config-driven via settings.integrations.
+  if (tenant.template === 'vita-glow') {
+    const integrations = await getIntegrations(tenant.id);
+    const bookingUrl = integrations.square_booking_url ?? null;
+    const VG_CATEGORIES = [
+      { name: 'IV Infusions', href: '/iv-infusions' },
+      { name: 'Injectables & Aesthetics', href: '/injectables' },
+      { name: 'Weight & Wellness', href: '/weight-wellness' },
+    ];
+    const rawServices = Array.isArray((content as { services?: unknown } | null)?.services)
+      ? ((content as { services: { name?: string; href?: string; blurb?: string; price?: string }[] }).services)
+      : [];
+    const services = VG_CATEGORIES.map((cat, i) => ({
+      name: rawServices[i]?.name || cat.name,
+      href: rawServices[i]?.href || cat.href,
+      blurb: rawServices[i]?.blurb,
+      price: rawServices[i]?.price,
+    }));
+    return (
+      <>
+        <JsonLdScript schema={websiteSchema} id="ld-website" />
+        <VitaGlowHome tenant={tenant} content={content} services={services} bookingUrl={bookingUrl} />
       </>
     );
   }

@@ -26,6 +26,9 @@ import { RusticRuggedFooter } from './_shells/rustic-rugged/RusticRuggedFooter';
 import { DangComicNavbar } from './_shells/dang/DangComicNavbar';
 import { DangComicFooter } from './_shells/dang/DangComicFooter';
 import { DANG_TOKENS, bangersFont, openSansFont } from './_shells/dang/DangComicFonts';
+import { VitaGlowNavbar } from './_shells/vita-glow/VitaGlowNavbar';
+import { VitaGlowFooter } from './_shells/vita-glow/VitaGlowFooter';
+import { VITA_GLOW_TOKENS, cormorantFont, jostFont } from './_shells/vita-glow/VitaGlowFonts';
 import { computeShellCssVars, shellCssVarsString } from '../../../shared/lib/shellCssVars';
 
 type Params = { params: { slug: string } };
@@ -100,6 +103,10 @@ export default async function TenantLayout({
   );
 
   const theme = tenant.template;
+
+  // vita-glow booking URL (brief §6) — Square link from settings.integrations,
+  // ships blank; navbar/footer fall back to the Book-a-Consult route when empty.
+  const bookingUrl = integrations.square_booking_url ?? null;
 
   const ga4IdRaw = integrations.ga4_measurement_id;
   const ga4Id = ga4IdRaw && /^G-[A-Z0-9]+$/i.test(ga4IdRaw) ? ga4IdRaw : null;
@@ -217,6 +224,32 @@ export default async function TenantLayout({
             <DangComicNavbar servicePages={servicePages} tenant={tenant} social={social} />
             <main id="main-content">{children}</main>
             <DangComicFooter tenant={tenant} social={social} />
+          </div>
+        </TenantProvider>
+      </>
+    );
+  }
+
+  // vita-glow shell (S-VG-1). One-off medical-aesthetics shell. Emits the same
+  // universal localBusiness org node + chrome as every other branch, injects the
+  // hardcoded --vg-* token block, and wraps the cream/gold navbar + ink footer.
+  // Booking CTA is config-driven (Square URL from settings.integrations, blank
+  // → /contact fallback). Unreachable until a tenant's branding.theme is
+  // 'vita-glow' (provisioned via MCP, out of scope for this PR).
+  if (theme === 'vita-glow') {
+    return (
+      <>
+        <JsonLdScript schema={localBusinessSchema} id="ld-local-business" />
+        <style dangerouslySetInnerHTML={{ __html: cssVars + `:root{${VITA_GLOW_TOKENS}}` }} />
+        {ga4Scripts}
+        <TenantProvider tenant={tenant}>
+          <div
+            className={`${cormorantFont.variable} ${jostFont.variable}`}
+            style={{ backgroundColor: 'var(--vg-surface)', color: 'var(--vg-text)', fontFamily: 'var(--vg-font-body)' }}
+          >
+            <VitaGlowNavbar tenant={tenant} bookingUrl={bookingUrl} />
+            <main id="main-content">{children}</main>
+            <VitaGlowFooter tenant={tenant} social={social} bookingUrl={bookingUrl} />
           </div>
         </TenantProvider>
       </>
