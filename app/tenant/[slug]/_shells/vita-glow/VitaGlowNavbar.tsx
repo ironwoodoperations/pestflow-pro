@@ -56,7 +56,7 @@ export function VitaGlowNavbar({ tenant, bookingUrl }: Props) {
   const Brand = (
     <Link href="/" aria-label={bizName} className="vg-focus" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', textDecoration: 'none' }}>
       {tenant.logo_url
-        ? <img src={tenant.logo_url} alt={bizName} style={{ height: 44, width: 'auto', display: 'block' }} />
+        ? <img src={tenant.logo_url} alt={bizName} style={{ height: 64, width: 'auto', display: 'block' }} />
         : <>
             <VitaGlowGlyph size={30} tone="gold" />
             <span style={{ fontFamily: 'var(--vg-font-display)', fontWeight: 400, fontSize: 24, letterSpacing: 'var(--vg-tracking-display)', color: 'var(--vg-espresso)' }}>{bizName}</span>
@@ -67,7 +67,7 @@ export function VitaGlowNavbar({ tenant, bookingUrl }: Props) {
   return (
     <header style={{ position: 'sticky', top: 0, zIndex: 50, background: 'var(--vg-cream)', borderBottom: scrolled ? '1px solid var(--vg-hairline)' : '1px solid transparent', transition: 'border-color 200ms ease' }}>
       <style>{VG_A11Y_CSS}</style>
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1.5rem' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1.5rem' }}>
         {Brand}
 
         <nav className="hidden md:flex" style={{ alignItems: 'center', gap: '2rem' }}>
