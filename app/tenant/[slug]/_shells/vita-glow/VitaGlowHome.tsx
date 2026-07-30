@@ -68,9 +68,9 @@ export function VitaGlowHome({ tenant, content, services, bookingUrl }: Props) {
           </div>
           <div className="vg-hero-right">
             <span className="vg-seam" style={{ ...eyebrow, color: 'var(--vg-taupe)', fontSize: 11 }}>Hydration + Aesthetics</span>
-            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
               {tenant.logo_url
-                ? <img src={tenant.logo_url} alt={bizName} style={{ width: 'min(600px,80%)', height: 'auto', display: 'block' }} />
+                ? <img src={tenant.logo_url} alt={bizName} style={{ width: 'min(900px,92%)', maxWidth: '92%', height: 'auto', display: 'block' }} />
                 : <VitaGlowGlyph size={260} tone="gold" />}
             </div>
           </div>
