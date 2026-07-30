@@ -151,31 +151,32 @@ const SHELL_THEMES: Record<string, ShellVars> = {
     '--font-heading':          "var(--font-bangers), 'Bangers', cursive",
     '--font-body':             "var(--font-open-sans), 'Open Sans', sans-serif",
   },
-  // vita-glow — one-off medical-aesthetics shell (S-VG-1). Fixed cream/gold/ink
-  // editorial palette. These --color-* values are the base map that shared inner
+  // vita-glow — one-off medical-aesthetics shell (S-VG-2 v3 palette). CREAM-LED:
+  // espresso brown is an ACCENT ONLY (ink, hairlines, one dark button) — never a
+  // large dark surface. These --color-* values are the base map that shared inner
   // pages (service-area/faq/legal) read; the real color authority is the
   // hardcoded --vg-* token block injected in layout.tsx (see the vita-glow guard
   // in computeShellCssVars + VitaGlowFonts VITA_GLOW_TOKENS). A tenant's
   // branding.primary_color is bypassed — the palette never re-derives.
   'vita-glow': {
-    '--color-primary':         '#C9A227',  // = --vg-gold
-    '--color-primary-dark':    '#A8871D',  // darkened gold
-    '--color-primary-light':   '#F2EDE4',  // = --vg-cream-deep
-    '--color-accent':          '#C9A227',  // = --vg-gold
-    '--color-text-on-primary': '#3D3733',  // = --vg-ink (ink reads on gold)
-    '--color-bg-hero':         '#FAF7F2',  // = --vg-cream
-    '--color-bg-hero-end':     '#F2EDE4',  // = --vg-cream-deep
-    '--color-bg-section':      '#FAF7F2',  // = --vg-cream
-    '--color-bg-cta':          '#3D3733',  // = --vg-ink (dark CTA band)
-    '--color-nav-bg':          '#FAF7F2',  // = --vg-cream
-    '--color-nav-text':        '#3D3733',  // = --vg-ink
-    '--color-footer-bg':       '#3D3733',  // = --vg-ink
-    '--color-footer-text':     '#FAF7F2',  // = --vg-cream
-    '--color-btn-bg':          '#C9A227',  // = --vg-gold
-    '--color-btn-text':        '#3D3733',  // = --vg-ink
-    '--color-heading':         '#3D3733',  // = --vg-ink
-    '--color-body-text':       '#3D3733',  // = --vg-ink
-    '--color-text-muted':      '#7A736E',  // = --vg-grey
+    '--color-primary':         '#3B2A21',  // = --vg-espresso (buttons / primary ink)
+    '--color-primary-dark':    '#2A1D16',  // = --vg-espresso-deep
+    '--color-primary-light':   '#EFE7D8',  // = --vg-cream-2
+    '--color-accent':          '#C9A227',  // = --vg-gold (highlight)
+    '--color-text-on-primary': '#F7F2E9',  // = --vg-cream (cream on espresso button)
+    '--color-bg-hero':         '#F7F2E9',  // = --vg-cream
+    '--color-bg-hero-end':     '#EFE7D8',  // = --vg-cream-2
+    '--color-bg-section':      '#F7F2E9',  // = --vg-cream
+    '--color-bg-cta':          '#EFE7D8',  // = --vg-cream-2 (light CTA — no dark panel)
+    '--color-nav-bg':          '#F7F2E9',  // = --vg-cream
+    '--color-nav-text':        '#3B2A21',  // = --vg-espresso
+    '--color-footer-bg':       '#EFE7D8',  // = --vg-cream-2 (light footer — no dark panel)
+    '--color-footer-text':     '#3B2A21',  // = --vg-espresso
+    '--color-btn-bg':          '#3B2A21',  // = --vg-espresso (single solid button)
+    '--color-btn-text':        '#F7F2E9',  // = --vg-cream
+    '--color-heading':         '#3B2A21',  // = --vg-espresso
+    '--color-body-text':       '#3B2A21',  // = --vg-espresso
+    '--color-text-muted':      '#9C8574',  // = --vg-taupe
     '--color-border':          'rgba(201,162,39,0.35)',  // gold hairline
     '--font-heading':          "var(--font-cormorant), 'Cormorant Garamond', serif",
     '--font-body':             "var(--font-jost), 'Jost', sans-serif",
@@ -319,10 +320,10 @@ export function computeShellCssVars(
   // ink-on-gold button text, and return the base map unchanged. Mirrors the
   // bold-local / dang-comic guards. Fires ONLY for template==='vita-glow'.
   if (template === 'vita-glow') {
-    vars['--color-primary']  = '#C9A227';
-    vars['--color-accent']   = '#C9A227';
-    vars['--color-btn-bg']   = '#C9A227';
-    vars['--color-btn-text'] = '#3D3733';
+    vars['--color-primary']  = '#3B2A21';  // espresso (accent-only)
+    vars['--color-accent']   = '#C9A227';  // gold highlight
+    vars['--color-btn-bg']   = '#3B2A21';  // single espresso button
+    vars['--color-btn-text'] = '#F7F2E9';  // cream
     return vars;
   }
 
