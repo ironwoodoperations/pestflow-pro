@@ -44,7 +44,9 @@ export function VitaGlowFooter({ tenant, social = {}, bookingUrl }: Props) {
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '4rem 1.5rem 2rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: '2.5rem' }}>
         <div style={{ minWidth: 200 }}>
           {tenant.logo_url
-            ? <img src={tenant.logo_url} alt={bizName} style={{ height: 52, width: 'auto', display: 'block' }} />
+            ? <span style={{ display: 'inline-flex', alignItems: 'center', background: '#E7DCC8', border: '1px solid var(--vg-hairline)', borderRadius: 10, padding: '8px 14px' }}>
+                <img src={tenant.logo_url} alt={bizName} style={{ height: 52, width: 'auto', display: 'block' }} />
+              </span>
             : <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                 <VitaGlowGlyph size={30} tone="gold" />
                 <span style={{ fontFamily: 'var(--vg-font-display)', fontWeight: 400, fontSize: 24, letterSpacing: 'var(--vg-tracking-display)', color: 'var(--vg-espresso)' }}>{bizName}</span>
@@ -80,12 +82,12 @@ export function VitaGlowFooter({ tenant, social = {}, bookingUrl }: Props) {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem 1.5rem' }}>
           {LEGAL.map((l) => <Link key={l.href} href={l.href} style={{ ...colLink, padding: 0, fontSize: 12.5, color: 'var(--vg-taupe)' }}>{l.label}</Link>)}
         </div>
-        <p style={{ fontFamily: 'var(--vg-font-body)', fontWeight: 300, fontSize: 12.5, color: 'var(--vg-taupe)' }}>© 2026 {bizName}</p>
+        <a href="/admin" style={{ fontFamily: 'var(--vg-font-body)', fontWeight: 300, fontSize: 12.5, color: 'var(--vg-taupe)', textDecoration: 'none' }}>© 2026 {bizName}</a>
       </div>
 
       <div style={{ textAlign: 'center', padding: '1rem', borderTop: '1px solid var(--vg-hairline)' }}>
         <a href="https://pestflowpro.ai" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--vg-gold)', fontWeight: 500, fontSize: 12.5, letterSpacing: '0.08em', textDecoration: 'none', fontFamily: 'var(--vg-font-body)' }}>
-          Powered by PestFlow Pro
+          Powered by Ironwood Operations Group
         </a>
       </div>
     </footer>
