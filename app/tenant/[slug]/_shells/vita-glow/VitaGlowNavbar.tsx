@@ -56,7 +56,9 @@ export function VitaGlowNavbar({ tenant, bookingUrl }: Props) {
   const Brand = (
     <Link href="/" aria-label={bizName} className="vg-focus" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', textDecoration: 'none' }}>
       {tenant.logo_url
-        ? <img src={tenant.logo_url} alt={bizName} style={{ height: 64, width: 'auto', display: 'block' }} />
+        ? <span style={{ display: 'inline-flex', alignItems: 'center', background: 'var(--vg-cream-2)', border: '1px solid var(--vg-hairline)', borderRadius: 10, padding: '5px 12px' }}>
+            <img src={tenant.logo_url} alt={bizName} style={{ height: 60, width: 'auto', display: 'block' }} />
+          </span>
         : <>
             <VitaGlowGlyph size={30} tone="gold" />
             <span style={{ fontFamily: 'var(--vg-font-display)', fontWeight: 400, fontSize: 24, letterSpacing: 'var(--vg-tracking-display)', color: 'var(--vg-espresso)' }}>{bizName}</span>
