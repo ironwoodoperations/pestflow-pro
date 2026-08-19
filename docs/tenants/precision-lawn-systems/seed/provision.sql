@@ -185,3 +185,21 @@ ON CONFLICT (tenant_id, page_slug) DO UPDATE
   SET meta_title = EXCLUDED.meta_title,
       meta_description = EXCLUDED.meta_description,
       user_edited = EXCLUDED.user_edited;
+
+-- ── page_content — home row (S-PLS-3b) ───────────────────────────────────────
+-- Added same-day after live review: with 0 page_content rows the modern-pro
+-- hero fell back to business_name, putting the legal name (with "Lawn") in a
+-- crawlable <h1> — §0.1 live on the open web. §2 vocabulary rule enforced
+-- here: "irrigation" in the H1 and the first 100 words. The render's own H1
+-- omits "irrigation"; the spec rule wins over render copy (see DECISIONS.md).
+WITH t AS (SELECT id FROM public.tenants WHERE slug = 'pls')
+INSERT INTO public.page_content (tenant_id, page_slug, hero_headline, title, subtitle, intro)
+SELECT t.id, 'home',
+ 'Irrigation, Drainage & Pump Systems for East Texas',
+ 'Irrigation, Drainage & Pump Systems',
+ 'We solve both sides of your water problem — getting water where you want it, and getting it away from where you don''t.',
+ 'We solve both sides of your water problem — getting water where you want it, and getting it away from where you don''t. Licensed East Texas irrigation contractor since 2017 — sprinkler system installation and repair, french drains and yard drainage, and lake, pond, and well pump systems, backed by a free 2-year warranty on every system installed.'
+FROM t
+ON CONFLICT (tenant_id, page_slug) DO UPDATE
+  SET hero_headline = EXCLUDED.hero_headline, title = EXCLUDED.title,
+      subtitle = EXCLUDED.subtitle, intro = EXCLUDED.intro;
