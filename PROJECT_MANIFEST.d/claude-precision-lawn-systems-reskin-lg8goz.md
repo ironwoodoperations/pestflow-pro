@@ -117,3 +117,16 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   - app/tenant/[slug]/page.tsx
   - app/tenant/[slug]/reviews/page.tsx
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-08-19 20:38 UTC
+- Branch: `claude/precision-lawn-systems-reskin-lg8goz`
+- Commit: `522305f` — task[5a]: conform to 5a spec — Testimonial shape, drop source line, DECISIONS rows
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.d/claude-precision-lawn-systems-reskin-lg8goz.md
+  - app/tenant/[slug]/_shells/modern-pro/ModernProTestimonials.tsx
+  - app/tenant/[slug]/page.tsx
+  - app/tenant/[slug]/reviews/page.tsx
+  - docs/tenants/precision-lawn-systems/DECISIONS.md
+- Next recommended action: Await Scott's merge of #251, then run the 8-tenant inverse-acceptance greps against production and post raw counts in the PR thread; append the data-pass seed record (10 pls faqs + about row) to seed/provision.sql. 5b blocked on merge + the two verbatim testimonials (§10).
