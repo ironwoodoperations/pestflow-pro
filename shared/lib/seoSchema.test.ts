@@ -4,6 +4,7 @@ import {
   generateLocalBusinessSchema,
   generateServiceSchema,
   generateBlogPostingSchema,
+  PEST_CONTROL_VOCABULARY,
 } from './seoSchema'
 
 // --- parseHours ---
@@ -151,6 +152,16 @@ describe('generateLocalBusinessSchema', () => {
     const vocab = { knowsAbout: ['Irrigation', 'Drainage'], serviceType: 'Irrigation' }
     const s = generateLocalBusinessSchema(biz, seo, cfg, social, 'https://acme.pestflowpro.com', vocab) as Record<string, unknown>
     expect(s.knowsAbout).toEqual(['Irrigation', 'Drainage'])
+  })
+
+  // S-PLS-2 hardening: the default vocabulary is shared by reference across all
+  // calls, so it must be deep-frozen — mutation attempts throw in strict mode
+  // rather than corrupting every subsequent call's output.
+  it('default vocabulary is deep-frozen', () => {
+    expect(Object.isFrozen(PEST_CONTROL_VOCABULARY)).toBe(true)
+    expect(Object.isFrozen(PEST_CONTROL_VOCABULARY.knowsAbout)).toBe(true)
+    const s = generateLocalBusinessSchema(biz, seo, cfg, social, 'https://acme.pestflowpro.com') as Record<string, unknown>
+    expect(() => { (s.knowsAbout as string[]).push('Corrupted') }).toThrow()
   })
 })
 

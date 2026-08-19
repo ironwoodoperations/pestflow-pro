@@ -206,6 +206,12 @@ const PALETTE_HERO: Record<string, {
   '#0d2137': { hero: '#060f1a', end: '#091525', cta: '#060f1a', nav: '#0D2137', navText: '#ffffff', footer: '#060f1a' },
   '#2d3748': { hero: '#1a2030', end: '#1e2838', cta: '#1a2030', nav: '#2D3748', navText: '#ffffff', footer: '#1a2030' },
   '#1b4332': { hero: '#0d2b1e', end: '#0a1f15', cta: '#0d2b1e', nav: '#1B4332', navText: '#ffffff', footer: '#0d2b1e' },
+  // Precision Lawn Systems (S-PLS-2) — hand-authored: #0E3B44 is already a hero
+  // surface, so the custom-path darkenHex crushes it to near-black. Curated here
+  // like every other preset. NOT in the PALETTES swatch picker. cta uses the
+  // render's --deeper, not --clay: --color-bg-cta backs five shared surfaces
+  // that put muted-white/accent text on it, and clay fails contrast there.
+  '#0e3b44': { hero: '#0E3B44', end: '#092A31', cta: '#092A31', nav: '#0E3B44', navText: '#ffffff', footer: '#092A31' },
 };
 
 function darkenHex(hex: string, factor: number): string {
