@@ -46,7 +46,7 @@ export default async function ReviewsPage({ params }: Params) {
         </div>
       </section>
 
-{/* S-PLS-7 / PR 5a: no aggregate-rating strip — no real aggregate data
+      {/* S-PLS-7 / PR 5a: no aggregate-rating strip — no real aggregate data
           source exists, and an invented one is a fabricated rating. */}
 
       {reviews.length > 0 && (

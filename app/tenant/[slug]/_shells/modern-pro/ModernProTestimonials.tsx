@@ -1,23 +1,17 @@
-// S-PLS-7 / PR 5a: DB-driven only. The previous hardcoded REVIEWS array was
-// three invented customers ("Sarah M.", "James R.", "Linda K.") rendered for
-// every modern-pro tenant with no testimonials rows — fabricated social proof.
-// Now: real rows or nothing. When the tenant has no testimonials, the section
-// does not render — no placeholder people, no invented ratings.
+// S-PLS-7 / PR 5a: DB rows or nothing. The previous hardcoded REVIEWS array
+// was three invented customers rendered for every modern-pro tenant — the
+// `detail` line ("Verified Customer" etc.) had no DB column behind it and is
+// dropped, not replaced.
 
-export interface ModernProTestimonial {
+export interface Testimonial {
   id: string;
   author_name: string;
   review_text: string;
-  rating?: number | null;
-  source?: string | null;
+  rating: number;
 }
 
-interface Props {
-  testimonials: ModernProTestimonial[];
-}
-
-export function ModernProTestimonials({ testimonials }: Props) {
-  if (!testimonials || testimonials.length === 0) return null;
+export function ModernProTestimonials({ testimonials }: { testimonials: Testimonial[] }) {
+  if (testimonials.length === 0) return null;
 
   return (
     <section style={{ background: 'var(--color-bg-cta)' }} className="py-16 px-6">
@@ -41,18 +35,13 @@ export function ModernProTestimonials({ testimonials }: Props) {
                 border: '1px solid rgba(255,255,255,0.15)',
               }}
             >
-              {typeof r.rating === 'number' && r.rating > 0 && (
-                <div className="text-lg mb-3" style={{ color: '#fbbf24' }}>
-                  {'★'.repeat(Math.min(r.rating, 5))}{'☆'.repeat(Math.max(0, 5 - r.rating))}
-                </div>
-              )}
+              <div className="text-lg mb-3" style={{ color: '#fbbf24' }}>
+                {'★'.repeat(r.rating) + '☆'.repeat(5 - r.rating)}
+              </div>
               <p className="text-sm italic leading-relaxed mb-4" style={{ color: '#ffffff' }}>
                 &ldquo;{r.review_text}&rdquo;
               </p>
               <p className="font-semibold" style={{ color: '#ffffff' }}>{r.author_name}</p>
-              {r.source && (
-                <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.7)' }}>{r.source}</p>
-              )}
             </div>
           ))}
         </div>

@@ -25,7 +25,7 @@ import { ModernProTrustBar } from './_shells/modern-pro/ModernProTrustBar';
 import { ModernProServicesGrid } from './_shells/modern-pro/ModernProServicesGrid';
 import { ModernProAboutStrip } from './_shells/modern-pro/ModernProAboutStrip';
 import { ModernProWhyChooseUs } from './_shells/modern-pro/ModernProWhyChooseUs';
-import { ModernProTestimonials, type ModernProTestimonial as MPTestimonial } from './_shells/modern-pro/ModernProTestimonials';
+import { ModernProTestimonials, type Testimonial } from './_shells/modern-pro/ModernProTestimonials';
 import { ModernProCtaBanner } from './_shells/modern-pro/ModernProCtaBanner';
 import { CleanFriendlyHero } from './_shells/clean-friendly/CleanFriendlyHero';
 import { CleanFriendlyHowItWorks } from './_shells/clean-friendly/CleanFriendlyHowItWorks';
@@ -115,7 +115,7 @@ export default async function TenantHome({ params }: Params) {
           imageUrl={aboutImage || undefined}
         />
         <ModernProWhyChooseUs businessName={tenant.business_name || tenant.name} />
-        <ModernProTestimonials testimonials={testimonials as MPTestimonial[]} />
+        <ModernProTestimonials testimonials={testimonials as Testimonial[]} />
         <ModernProCtaBanner phone={tenant.phone || ''} ctaText={tenant.cta_text || 'Get a Free Quote'} />
       </>
     );

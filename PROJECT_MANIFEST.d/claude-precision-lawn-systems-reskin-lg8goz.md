@@ -106,3 +106,14 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   - src/shells/_shared/serviceEntry.test.ts
   - src/shells/_shared/serviceEntry.ts
 - Next recommended action: PR #250 (vertical routing key) awaits Scott's merge. PR 5 proposal v2 delivered from rendered-output inventory: Tier 0 fabrications (reviews PLACEHOLDER_REVIEWS attributed to Google/FB/Yelp — live on pls AND apex-protect; stats strip 4.9/200+; ModernProTestimonials fake names; FAQ false licensure claim; about fake credentials), Tier 1 §0.1 items, Tier 2 canonical bug. Split: 5a kill-fabrications (needs Scott's blast-radius OK), data pass (FAQs/about rows + §10 testimonial wording sign-off), 5b vertical vocabulary, 5c hex+canonical. Awaiting Scott's green light per piece.
+
+---
+## Session — 2026-08-19 20:28 UTC
+- Branch: `claude/precision-lawn-systems-reskin-lg8goz`
+- Commit: `113cd79` — fix(reviews): remove fabricated reviews, ratings, and testimonials platform-wide (S-PLS-7 / PR 5a)
+- Author: Claude
+- Files changed:
+  - app/tenant/[slug]/_shells/modern-pro/ModernProTestimonials.tsx
+  - app/tenant/[slug]/page.tsx
+  - app/tenant/[slug]/reviews/page.tsx
+- Next recommended action: [Fill in next session: read this line, write what comes next]
