@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --deep:#0E3B44; --deeper:#092A31; --water:#2E9D8F; --clay:#B4653A;
+  --paper:#F2F4F1; --ink:#14211F; --muted:#5E6B68; --line:#DDE3DF;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{width:1440px;background:var(--paper);font-family:Archivo,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+.mono{font-family:'IBM Plex Mono',monospace}
+.wrap{max-width:1180px;margin:0 auto;padding:0 40px}
+
+/* top bar */
+.topbar{background:var(--deeper);color:#9FBDBC;font-size:12.5px;letter-spacing:.03em;padding:9px 0}
+.topbar .wrap{display:flex;justify-content:space-between;align-items:center}
+.topbar b{color:#fff;font-weight:500}
+
+/* nav */
+.nav{background:var(--deep);padding:18px 0;position:relative}
+.nav .wrap{display:flex;align-items:center;gap:38px}
+.logo{display:flex;align-items:center;gap:11px}
+.mark{width:34px;height:34px;border:2px solid var(--water);border-radius:5px;position:relative}
+.mark:before{content:"";position:absolute;inset:7px;border-left:2px solid var(--water);border-bottom:2px solid var(--water)}
+.logo .nm{color:#fff;font-weight:700;font-size:19px;letter-spacing:-.01em;line-height:1}
+.logo .sb{color:#7FBDB4;font-size:10px;letter-spacing:.16em;margin-top:3px}
+.nav a{color:#CFE0DD;text-decoration:none;font-size:14.5px;font-weight:500}
+.nav .links{display:flex;gap:26px;margin-left:14px}
+.callbtn{margin-left:auto;background:var(--water);color:#fff;padding:11px 20px;border-radius:5px;font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px}
+
+/* hero */
+.hero{background:var(--deep);position:relative;overflow:hidden;padding:66px 0 0}
+.zones{position:absolute;inset:0;opacity:.16;
+  background-image:linear-gradient(#4E8F92 1px,transparent 1px),linear-gradient(90deg,#4E8F92 1px,transparent 1px);
+  background-size:58px 58px}
+.arc{position:absolute;border:1px solid rgba(46,157,143,.5);border-radius:50%}
+.hero .wrap{position:relative;display:grid;grid-template-columns:1.05fr .95fr;gap:52px;align-items:center}
+.eyebrow{color:#6FC4B6;font-size:12px;letter-spacing:.19em;margin-bottom:20px}
+h1{color:#fff;font-size:60px;line-height:1.03;font-weight:800;letter-spacing:-.028em}
+h1 em{font-style:normal;color:#6FC4B6}
+.sub{color:#B9CFCC;font-size:18.5px;line-height:1.55;margin-top:20px;max-width:490px}
+.cta{display:flex;gap:13px;margin-top:32px}
+.b1{background:var(--water);color:#fff;padding:16px 28px;border-radius:6px;font-weight:700;font-size:16.5px}
+.b2{border:1.5px solid #4A7B7C;color:#DCE9E7;padding:16px 26px;border-radius:6px;font-weight:600;font-size:16.5px}
+.shot{height:392px;border-radius:9px;position:relative;overflow:hidden;
+  background:linear-gradient(168deg,#1D5B52 0%,#2E7A63 42%,#4B8547 70%,#6E8F42 100%)}
+.shot:after{content:"";position:absolute;left:-8%;right:-8%;bottom:34%;height:78px;transform:rotate(-4deg);
+  background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(0,0,0,.16))}
+.shot .cap{position:absolute;left:16px;bottom:14px;color:#fff;font-size:11px;letter-spacing:.09em;
+  background:rgba(9,42,49,.72);padding:6px 11px;border-radius:4px}
+/* spec strip */
+.spec{position:relative;margin-top:56px;border-top:1px solid rgba(255,255,255,.14);background:rgba(9,42,49,.6)}
+.spec .wrap{display:flex;justify-content:space-between;padding:17px 40px}
+.spec div{color:#8FC3BB;font-size:12.5px;letter-spacing:.11em}
+.spec b{color:#fff;font-weight:600}
+
+/* services */
+.sec{padding:74px 0}
+.kick{color:var(--water);font-size:12px;letter-spacing:.19em;margin-bottom:13px}
+h2{font-size:38px;font-weight:700;letter-spacing:-.022em;line-height:1.12}
+.lede{color:var(--muted);font-size:17px;margin-top:13px;max-width:600px;line-height:1.55}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:38px}
+.card{background:#fff;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.thumb{height:152px;position:relative}
+.t1{background:linear-gradient(150deg,#2C6E7E,#4FA08C)}
+.t2{background:linear-gradient(150deg,#3D6B52,#7A9A4C)}
+.t3{background:linear-gradient(150deg,#2A5F70,#5E9A86)}
+.thumb span{position:absolute;left:12px;top:12px;color:#fff;font-size:10.5px;letter-spacing:.1em;
+  background:rgba(0,0,0,.32);padding:5px 9px;border-radius:3px}
+.card .bd{padding:20px 21px 23px}
+.card h3{font-size:20px;font-weight:700;letter-spacing:-.01em}
+.card p{color:var(--muted);font-size:14.5px;line-height:1.6;margin-top:9px}
+.card .lk{color:var(--water);font-size:14px;font-weight:700;margin-top:15px;display:block}
+
+/* coverage */
+.cover{background:var(--deep);padding:60px 0}
+.cover h2{color:#fff}
+.cover .kick{color:#6FC4B6}
+.towns{display:flex;flex-wrap:wrap;gap:9px;margin-top:26px;max-width:900px}
+.chip{border:1px solid #3E6E70;color:#CFE3E0;font-size:13.5px;padding:8px 15px;border-radius:4px}
+.chip.on{background:var(--water);border-color:var(--water);color:#fff;font-weight:600}
+
+/* proof */
+.proof{display:grid;grid-template-columns:1.15fr .85fr;gap:44px;align-items:center}
+.quote{font-size:23px;line-height:1.5;font-weight:500;letter-spacing:-.012em}
+.who{color:var(--muted);font-size:14px;margin-top:16px;letter-spacing:.05em}
+.stars{color:#E0A32B;font-size:19px;letter-spacing:3px;margin-bottom:16px}
+.box{background:#fff;border:1px solid var(--line);border-left:4px solid var(--clay);border-radius:8px;padding:26px 27px}
+.box .n{font-size:44px;font-weight:800;color:var(--clay);letter-spacing:-.03em;line-height:1}
+.box h4{font-size:17px;font-weight:700;margin-top:9px}
+.box p{color:var(--muted);font-size:14.5px;line-height:1.6;margin-top:8px}
+
+/* cta band */
+.band{background:var(--clay);padding:44px 0}
+.band .wrap{display:flex;align-items:center;justify-content:space-between;gap:30px}
+.band h3{color:#fff;font-size:29px;font-weight:700;letter-spacing:-.018em;line-height:1.2}
+.band p{color:#F6E2D6;font-size:15.5px;margin-top:8px}
+.band .bt{background:#fff;color:var(--clay);padding:16px 30px;border-radius:6px;font-weight:800;font-size:17px;white-space:nowrap}
+</style></head><body>
+
+<div class="topbar"><div class="wrap">
+  <div class="mono">LICENSED TEXAS IRRIGATOR &nbsp;·&nbsp; <b>LI23001</b> &nbsp;·&nbsp; INSURED</div>
+  <div class="mono">SERVING TYLER, LONGVIEW &amp; THE LAKE COMMUNITIES</div>
+</div></div>
+
+<div class="nav"><div class="wrap">
+  <div class="logo"><div class="mark"></div><div><div class="nm">PRECISION</div><div class="sb mono">IRRIGATION &amp; DRAINAGE</div></div></div>
+  <div class="links"><a>Sprinklers</a><a>Drainage</a><a>Pump Systems</a><a>Sod &amp; Dirt Work</a><a>Projects</a><a>Service Area</a></div>
+  <div class="callbtn">903-747-7150</div>
+</div></div>
+
+<div class="hero">
+  <div class="zones"></div>
+  <div class="arc" style="width:560px;height:560px;left:-160px;top:-190px"></div>
+  <div class="arc" style="width:820px;height:820px;left:-290px;top:-320px"></div>
+  <div class="wrap">
+    <div>
+      <div class="eyebrow mono">EAST TEXAS · SINCE 2017</div>
+      <h1>Sprinkler systems,<br>drainage &amp; <em>pump systems</em></h1>
+      <div class="sub">We solve both sides of your water problem — getting water where you want it, and getting it away from where you don't.</div>
+      <div class="cta"><div class="b1">Get a free estimate</div><div class="b2">Call 903-747-7150</div></div>
+    </div>
+    <div class="shot"><div class="cap mono">DRAIN TO DAYLIGHT + NEW SOD — HOLLY LAKE RANCH</div></div>
+  </div>
+  <div class="spec"><div class="wrap">
+    <div class="mono">LICENSE <b>LI23001</b></div>
+    <div class="mono">WARRANTY <b>2 YEARS FREE</b></div>
+    <div class="mono">EST. <b>2017</b></div>
+    <div class="mono">COUNTIES <b>SMITH · WOOD · UPSHUR · GREGG · VAN ZANDT</b></div>
+  </div></div>
+</div>
+
+<div class="sec"><div class="wrap">
+  <div class="kick mono">WHAT WE DO</div>
+  <h2>One licensed crew for the whole water problem.</h2>
+  <div class="lede">Most companies around here put in sprinklers and stop there. We get water where you want it, get it away from where you don’t, and put the yard back when we’re done.</div>
+  <div class="grid">
+    <div class="card"><div class="thumb t1"><span class="mono">SPRINKLERS</span></div><div class="bd">
+      <h3>Sprinkler Systems</h3><p>New installs, repairs, zone additions, and smart controllers you can run from your phone. Backflow testing included.</p><span class="lk">Sprinkler installation &amp; repair →</span></div></div>
+    <div class="card"><div class="thumb t2"><span class="mono">DRAINAGE</span></div><div class="bd">
+      <h3>Drainage &amp; Erosion</h3><p>French drains, surface drains, and dry creek beds for yards that hold water or wash out every time it rains hard.</p><span class="lk">Fix standing water →</span></div></div>
+    <div class="card"><div class="thumb t3"><span class="mono">PUMPS &amp; SOD</span></div><div class="bd">
+      <h3>Pumps, Sod &amp; Dirt Work</h3><p>Lake, pond, and well-fed pump systems installed and repaired — plus grading, leveling, and fresh sod.</p><span class="lk">Pump systems &amp; dirt work →</span></div></div>
+  </div>
+</div></div>
+
+<div class="cover"><div class="wrap">
+  <div class="kick mono">SERVICE AREA</div>
+  <h2>Where we work</h2>
+  <div class="towns">
+    <div class="chip on">Tyler</div><div class="chip on">Longview</div><div class="chip">Lindale</div><div class="chip">Mineola</div>
+    <div class="chip">Quitman</div><div class="chip">Winnsboro</div><div class="chip">Big Sandy</div><div class="chip">Gilmer</div>
+    <div class="chip on">Hawkins</div><div class="chip">Holly Lake Ranch</div><div class="chip">Hideaway</div><div class="chip">Whitehouse</div>
+    <div class="chip">Bullard</div><div class="chip">Flint</div><div class="chip">Van</div><div class="chip">Grand Saline</div>
+    <div class="chip">Lake Fork</div><div class="chip">Lake Hawkins</div><div class="chip">Alba</div><div class="chip">Golden</div>
+  </div>
+</div></div>
+
+<div class="sec"><div class="wrap"><div class="proof">
+  <div>
+    <div class="stars">★★★★★</div>
+    <div class="quote">“He came out and looked over the system the builder put in and there were several things wrong. He fixed all of the issues. Now my system works great — and my water bill is a lot lower.”</div>
+    <div class="who mono">NANCY BENTLEY BOWEN — LINDALE, TX</div>
+  </div>
+  <div class="box">
+    <div class="n">2 years</div>
+    <h4>Free warranty on every system</h4>
+    <p>Most irrigation companies in East Texas warranty their work for six months. We cover yours for two full years, at no extra cost, in writing.</p>
+  </div>
+</div></div></div>
+
+<div class="band"><div class="wrap">
+  <div><h3>Standing water? Broken head? Pump quit?</h3><p>Free estimates, no pressure. Most calls scheduled within a week.</p></div>
+  <div class="bt">Request an estimate</div>
+</div></div>
+
+</body></html>
