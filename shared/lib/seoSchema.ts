@@ -73,12 +73,27 @@ export interface BlogPostInput {
   author_name?: string | null
 }
 
+// Vertical vocabulary for JSON-LD (S-PLS-1). Callers that pass nothing get the
+// historical pest-control values, so every existing tenant's emitted schema is
+// byte-identical to the pre-parameterization output. Non-pest tenants pass a
+// SchemaVocabulary resolved from their vertical.
+export interface SchemaVocabulary {
+  knowsAbout: string[]
+  serviceType: string
+}
+
+export const PEST_CONTROL_VOCABULARY: SchemaVocabulary = {
+  knowsAbout: ['Pest Control', 'Termite Treatment', 'Mosquito Control', 'Rodent Control', 'Bed Bug Treatment', 'Ant Control'],
+  serviceType: 'Pest Control',
+}
+
 export function generateLocalBusinessSchema(
   business: BusinessInfo,
   seo: SeoSettings,
   _schema: SchemaConfig,
   social: SocialLinks,
-  siteUrl: string
+  siteUrl: string,
+  vocabulary: SchemaVocabulary = PEST_CONTROL_VOCABULARY
 ): object {
   const sameAs = [social.facebook, social.google_business || social.google, social.instagram].filter(Boolean)
 
@@ -99,7 +114,7 @@ export function generateLocalBusinessSchema(
     })),
     priceRange: '$$',
     ...(seo.founded_year ? { foundingDate: seo.founded_year } : {}),
-    knowsAbout: ['Pest Control', 'Termite Treatment', 'Mosquito Control', 'Rodent Control', 'Bed Bug Treatment', 'Ant Control'],
+    knowsAbout: vocabulary.knowsAbout,
   }
 
   // PostalAddress: structured keys preferred, legacy string as fallback.
@@ -191,7 +206,8 @@ export function generateServiceSchema(
   serviceName: string,
   serviceDescription: string,
   serviceUrl: string,
-  siteUrl: string
+  siteUrl: string,
+  vocabulary: SchemaVocabulary = PEST_CONTROL_VOCABULARY
 ): object {
   return {
     '@context': 'https://schema.org',
@@ -200,7 +216,7 @@ export function generateServiceSchema(
     description: serviceDescription,
     url: serviceUrl,
     provider: { '@id': `${siteUrl}/#organization` },
-    serviceType: 'Pest Control',
+    serviceType: vocabulary.serviceType,
   }
 }
 

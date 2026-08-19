@@ -139,6 +139,19 @@ describe('generateLocalBusinessSchema', () => {
     const s = generateLocalBusinessSchema(biz, seo, cfg, social, 'https://acme.pestflowpro.com') as Record<string, unknown>
     expect(s.aggregateRating).toBeUndefined()
   })
+
+  // S-PLS-1: vocabulary defaults preserve the exact historical pest values —
+  // every caller that passes no vocabulary must emit byte-identical output.
+  it('defaults knowsAbout to the historical pest-control list', () => {
+    const s = generateLocalBusinessSchema(biz, seo, cfg, social, 'https://acme.pestflowpro.com') as Record<string, unknown>
+    expect(s.knowsAbout).toEqual(['Pest Control', 'Termite Treatment', 'Mosquito Control', 'Rodent Control', 'Bed Bug Treatment', 'Ant Control'])
+  })
+
+  it('uses a passed vocabulary for knowsAbout', () => {
+    const vocab = { knowsAbout: ['Irrigation', 'Drainage'], serviceType: 'Irrigation' }
+    const s = generateLocalBusinessSchema(biz, seo, cfg, social, 'https://acme.pestflowpro.com', vocab) as Record<string, unknown>
+    expect(s.knowsAbout).toEqual(['Irrigation', 'Drainage'])
+  })
 })
 
 // --- generateServiceSchema ---
@@ -149,6 +162,18 @@ describe('generateServiceSchema', () => {
     const provider = s.provider as Record<string, unknown>
     expect(provider['@id']).toBe('https://acme.pestflowpro.com/#organization')
     expect(provider['@type']).toBeUndefined()
+  })
+
+  // S-PLS-1: serviceType defaults to the historical value; overridable per vertical.
+  it('defaults serviceType to Pest Control', () => {
+    const s = generateServiceSchema('Ant Control', 'We kill ants', 'https://acme.pestflowpro.com/ant-control', 'https://acme.pestflowpro.com') as Record<string, unknown>
+    expect(s.serviceType).toBe('Pest Control')
+  })
+
+  it('uses a passed vocabulary for serviceType', () => {
+    const vocab = { knowsAbout: ['Irrigation', 'Drainage'], serviceType: 'Irrigation' }
+    const s = generateServiceSchema('Drainage', 'French drains', 'https://x.pestflowpro.ai/drainage', 'https://x.pestflowpro.ai', vocab) as Record<string, unknown>
+    expect(s.serviceType).toBe('Irrigation')
   })
 })
 
