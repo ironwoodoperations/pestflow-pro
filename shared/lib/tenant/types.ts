@@ -41,9 +41,15 @@ export type Tenant = {
   business_name: string | null;
   phone: string | null;
   email: string | null;
-  // Vertical source (S-PLS-5 / D1): settings.business_info.industry, consumed
-  // by resolveVertical(). Optional so hand-built Tenant literals compile
-  // unchanged; resolveSettings always sets it (null when absent).
+  // Vertical sources, consumed by resolveVertical() in priority order:
+  //  1. vertical (S-PLS-6) — explicit settings.business_info.vertical, raw from
+  //     JSONB; resolveVertical validates it strictly ('irrigation' | 'pest'
+  //     only). The routing key of record.
+  //  2. industry (S-PLS-5) — freeform prose (also the AI social prompt input);
+  //     substring fallback for tenants provisioned without the explicit key.
+  // Both optional so hand-built Tenant literals compile unchanged;
+  // resolveSettings always sets them (null when absent).
+  vertical?: string | null;
   industry?: string | null;
   address: string | null;
   hours: string | null;

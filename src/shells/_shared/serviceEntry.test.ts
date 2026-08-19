@@ -59,6 +59,19 @@ describe('vertical separation invariants', () => {
 });
 
 describe('resolveVertical', () => {
+  // S-PLS-6: the explicit key is the routing key of record.
+  it('explicit vertical wins over a contradicting industry string, both directions', () => {
+    expect(resolveVertical({ vertical: 'irrigation', industry: 'Pest Control' })).toBe('irrigation');
+    expect(resolveVertical({ vertical: 'pest', industry: 'irrigation and sprinkler...' })).toBe('pest');
+  });
+
+  it('invalid explicit values fall through to the substring fallback', () => {
+    expect(resolveVertical({ vertical: 'Irrigation', industry: 'Pest Control' })).toBe('pest');
+    expect(resolveVertical({ vertical: 'IRRIGATION', industry: 'irrigation work' })).toBe('irrigation');
+    expect(resolveVertical({ vertical: 'landscaping', industry: 'Pest Control' })).toBe('pest');
+    expect(resolveVertical({ vertical: null, industry: 'irrigation work' })).toBe('irrigation');
+  });
+
   it('the §7 industry string resolves to irrigation', () => {
     expect(resolveVertical({ industry: 'irrigation and sprinkler system installation and repair, yard drainage and french drains, lake and pond pump systems, sod and grading — East Texas' })).toBe('irrigation');
   });

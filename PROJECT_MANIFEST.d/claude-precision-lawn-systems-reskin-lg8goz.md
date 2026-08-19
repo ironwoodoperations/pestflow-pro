@@ -92,3 +92,17 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   - src/shells/_shared/serviceEntry.test.ts
   - src/shells/_shared/serviceEntry.ts
 - Next recommended action: PR #249 (D1 irrigation catalog + vertical routing) awaiting Scott's merge. After merge: live-verify /sprinkler-systems on pls (200 + irrigation copy) and apex-protect /ant-control unchanged, then draft the PR 5 proposal (modern-pro vocabulary/visual changes) — proposal only, propose-and-wait.
+
+---
+## Session — 2026-08-19 20:04 UTC
+- Branch: `claude/precision-lawn-systems-reskin-lg8goz`
+- Commit: `c7dbec6` — feat(precision): explicit vertical routing key with prose fallback (S-PLS-6)
+- Author: Claude
+- Files changed:
+  - docs/tenants/precision-lawn-systems/DECISIONS.md
+  - docs/tenants/precision-lawn-systems/seed/provision.sql
+  - shared/lib/tenant/resolve.ts
+  - shared/lib/tenant/types.ts
+  - src/shells/_shared/serviceEntry.test.ts
+  - src/shells/_shared/serviceEntry.ts
+- Next recommended action: PR #250 (vertical routing key) awaits Scott's merge. PR 5 proposal v2 delivered from rendered-output inventory: Tier 0 fabrications (reviews PLACEHOLDER_REVIEWS attributed to Google/FB/Yelp — live on pls AND apex-protect; stats strip 4.9/200+; ModernProTestimonials fake names; FAQ false licensure claim; about fake credentials), Tier 1 §0.1 items, Tier 2 canonical bug. Split: 5a kill-fabrications (needs Scott's blast-radius OK), data pass (FAQs/about rows + §10 testimonial wording sign-off), 5b vertical vocabulary, 5c hex+canonical. Awaiting Scott's green light per piece.
