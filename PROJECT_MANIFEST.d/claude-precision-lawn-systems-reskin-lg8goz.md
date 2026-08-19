@@ -130,3 +130,13 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   - app/tenant/[slug]/reviews/page.tsx
   - docs/tenants/precision-lawn-systems/DECISIONS.md
 - Next recommended action: Await Scott's merge of #251, then run the 8-tenant inverse-acceptance greps against production and post raw counts in the PR thread; append the data-pass seed record (10 pls faqs + about row) to seed/provision.sql. 5b blocked on merge + the two verbatim testimonials (§10).
+
+---
+## Session — 2026-08-19 20:56 UTC
+- Branch: `claude/precision-lawn-systems-reskin-lg8goz`
+- Commit: `8d7cdf9` — task[5a]: clamp star count — nullable unconstrained rating must not 500 the homepage
+- Author: Claude
+- Files changed:
+  - app/tenant/[slug]/_shells/modern-pro/ModernProTestimonials.tsx
+  - docs/tenants/precision-lawn-systems/DECISIONS.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
