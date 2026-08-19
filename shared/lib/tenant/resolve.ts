@@ -37,6 +37,7 @@ async function resolveSettings(tenantBase: { id: string; slug: string; subdomain
     business_name: business.name ?? null,
     phone: business.phone ?? null,
     email: business.email ?? null,
+    industry: business.industry ?? null,
     address: business.address ?? null,
     hours: business.hours ?? null,
     tagline: business.tagline ?? null,

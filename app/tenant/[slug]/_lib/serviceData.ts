@@ -1,3 +1,5 @@
+import { IRRIGATION_CONTENT_MAP } from '../../../../src/shells/_shared/irrigationContent'
+
 export type ServiceData = {
   heroTitle: string
   heroHighlight: string
@@ -279,3 +281,11 @@ export const SERVICE_DATA: Record<string, ServiceData> = {
 }
 
 export const SERVICE_SLUGS = new Set(Object.keys(SERVICE_DATA))
+
+// Irrigation-vertical router set (S-PLS-5 / D1). A UNION-by-vertical selection
+// alongside SERVICE_SLUGS — never a mutation of it and never an edit to any
+// SERVICE_DATA entry. [service]/page.tsx picks the ACTIVE set from the
+// tenant's vertical before the location-page fallback, so irrigation slugs
+// resolve for irrigation tenants while every pest tenant routes exactly as
+// before.
+export const IRRIGATION_SERVICE_SLUGS = new Set(Object.keys(IRRIGATION_CONTENT_MAP))

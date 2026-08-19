@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { Tenant } from '../../../../../shared/lib/tenant/types';
-import { PEST_CONTENT_MAP } from '../../../../../src/shells/_shared/pestContent';
+import { getServiceEntry, resolveVertical } from '../../../../../src/shells/_shared/serviceEntry';
 import { formatPhone } from '../../../../../shared/lib/formatPhone';
 
 type PageContent = { title?: string; subtitle?: string; intro?: string; hero_headline?: string } | null;
@@ -21,7 +21,10 @@ const STEPS = [
 ];
 
 export function ModernProPestPage({ tenant, pestSlug, content = null }: Props) {
-  const pest = PEST_CONTENT_MAP[pestSlug];
+  // S-PLS-5 / D1 plumbing: vertical-aware accessor in place of the direct map
+  // read. For pest tenants getServiceEntry('pest', slug) returns the SAME
+  // object from PEST_CONTENT_MAP — identical render, locked by tests.
+  const pest = getServiceEntry(resolveVertical(tenant), pestSlug);
   const phone = tenant.phone ?? '';
   const heroTitle = pickString(content?.hero_headline, content?.title, pest?.displayName) || 'Pest Control';
   const eyebrow = pickString(content?.subtitle) || `${pest?.displayName || 'Pest'} Protection`;

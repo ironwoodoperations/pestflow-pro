@@ -41,6 +41,10 @@ export type Tenant = {
   business_name: string | null;
   phone: string | null;
   email: string | null;
+  // Vertical source (S-PLS-5 / D1): settings.business_info.industry, consumed
+  // by resolveVertical(). Optional so hand-built Tenant literals compile
+  // unchanged; resolveSettings always sets it (null when absent).
+  industry?: string | null;
   address: string | null;
   hours: string | null;
   tagline: string | null;

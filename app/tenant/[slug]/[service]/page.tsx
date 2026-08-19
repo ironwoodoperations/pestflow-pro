@@ -11,7 +11,8 @@ export async function generateStaticParams() {
   return [];
 }
 import { getPageContent, getLocation, getAllLocations, getHeroMedia, getSeoMeta, getServiceFaqs, getIntegrations } from '../_lib/queries';
-import { SERVICE_SLUGS } from '../_lib/serviceData';
+import { SERVICE_SLUGS, IRRIGATION_SERVICE_SLUGS } from '../_lib/serviceData';
+import { resolveVertical } from '../../../../src/shells/_shared/serviceEntry';
 import { WhyChooseUs } from '../_components/sections/WhyChooseUs';
 import { Process } from '../_components/sections/Process';
 import { CtaBanner } from '../_components/sections/CtaBanner';
@@ -72,8 +73,17 @@ export default async function ServicePage({ params }: Params) {
     );
   }
 
+  // Vertical-resolved ACTIVE slug set (S-PLS-5 / D1), selected BEFORE the
+  // location-page fallback. A union selection by vertical — SERVICE_SLUGS is
+  // never mutated: pest tenants (industry lacks "irrigation") get the exact
+  // historical set and route as before; irrigation tenants get the four
+  // irrigation slugs so /sprinkler-systems etc. no longer fall through to the
+  // location branch and 404.
+  const vertical = resolveVertical(tenant);
+  const activeServiceSlugs = vertical === 'irrigation' ? IRRIGATION_SERVICE_SLUGS : SERVICE_SLUGS;
+
   // Service area page branch
-  if (!SERVICE_SLUGS.has(params.service)) {
+  if (!activeServiceSlugs.has(params.service)) {
     const [serviceAreaData, allLocs] = await Promise.all([
       getLocation(tenant.id, params.service),
       getAllLocations(tenant.id),
