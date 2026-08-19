@@ -10,14 +10,21 @@ import { IRRIGATION_CONTENT_MAP } from './irrigationContent';
 export type Vertical = 'pest' | 'irrigation';
 
 /**
- * Derive the tenant's vertical from settings.business_info.industry (carried
- * on the resolved Tenant). The §7 industry string for irrigation tenants
- * leads with "irrigation"; every pest tenant carries "Pest Control"; absent
- * or unrecognized values default to 'pest' — the historical behavior.
- * (Vita Glow never reaches vertical-dispatched code: its template branches
- * fire earlier in layout/page/[service].)
+ * Resolve the tenant's vertical (S-PLS-6 hardening).
+ *
+ * 1. EXPLICIT KEY WINS: settings.business_info.vertical, validated strictly —
+ *    only the exact strings 'irrigation' | 'pest' engage ('Irrigation', junk,
+ *    absent → fall through). A routing key must not depend on prose.
+ * 2. FALLBACK (kept deliberately, do not remove): the industry substring.
+ *    settings.business_info.industry is the AI social prompt input — freeform
+ *    prose meant to be edited — so it is the safety net for tenants
+ *    provisioned without the explicit key, not the primary switch. Rewriting
+ *    the prose can no longer silently 404 an explicit-keyed tenant's services.
+ * Absent both → 'pest', the historical behavior. (Vita Glow never reaches
+ * vertical-dispatched code: its template branches fire earlier.)
  */
-export function resolveVertical(tenant: { industry?: string | null }): Vertical {
+export function resolveVertical(tenant: { vertical?: string | null; industry?: string | null }): Vertical {
+  if (tenant.vertical === 'irrigation' || tenant.vertical === 'pest') return tenant.vertical;
   return tenant.industry?.toLowerCase().includes('irrigation') ? 'irrigation' : 'pest';
 }
 

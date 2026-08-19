@@ -256,3 +256,15 @@ FROM t
 ON CONFLICT (tenant_id, page_slug) DO UPDATE
   SET meta_title = EXCLUDED.meta_title, meta_description = EXCLUDED.meta_description,
       user_edited = EXCLUDED.user_edited;
+
+-- ── business_info.vertical — explicit routing key (S-PLS-6) ──────────────────
+-- Decouples routing from the §7 industry PROSE (which is the AI social prompt
+-- input and meant to be edited). resolveVertical reads this key first,
+-- strictly validated ('irrigation' | 'pest'); the industry substring stays as
+-- the fallback for tenants provisioned without it. ISR note: this key has zero
+-- readers until the S-PLS-6 code deploys, and that deployment resets the ISR
+-- cache entirely — the deploy is the purge, no stale window exists.
+WITH t AS (SELECT id FROM public.tenants WHERE slug = 'pls')
+UPDATE public.settings s
+SET value = s.value || jsonb_build_object('vertical', 'irrigation')
+FROM t WHERE s.tenant_id = t.id AND s.key = 'business_info';
