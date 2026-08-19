@@ -78,14 +78,18 @@ export interface BlogPostInput {
 // byte-identical to the pre-parameterization output. Non-pest tenants pass a
 // SchemaVocabulary resolved from their vertical.
 export interface SchemaVocabulary {
-  knowsAbout: string[]
+  knowsAbout: readonly string[]
   serviceType: string
 }
 
-export const PEST_CONTROL_VOCABULARY: SchemaVocabulary = {
-  knowsAbout: ['Pest Control', 'Termite Treatment', 'Mosquito Control', 'Rodent Control', 'Bed Bug Treatment', 'Ant Control'],
+// Frozen (S-PLS-2 hardening): generateLocalBusinessSchema emits a REFERENCE to
+// knowsAbout, so without freeze any mutation of an emitted schema — or of this
+// exported const by an importer — would corrupt the default for every later
+// call process-wide. Freeze fails loudly in strict mode instead.
+export const PEST_CONTROL_VOCABULARY: SchemaVocabulary = Object.freeze({
+  knowsAbout: Object.freeze(['Pest Control', 'Termite Treatment', 'Mosquito Control', 'Rodent Control', 'Bed Bug Treatment', 'Ant Control']),
   serviceType: 'Pest Control',
-}
+})
 
 export function generateLocalBusinessSchema(
   business: BusinessInfo,

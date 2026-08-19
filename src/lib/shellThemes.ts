@@ -77,6 +77,11 @@ const PALETTE_HERO: Record<string, { hero: string; end: string; cta: string; nav
   '#0d2137': { hero: '#060f1a', end: '#091525', cta: '#060f1a', nav: '#0D2137', navText: '#ffffff', footer: '#060f1a' }, // Executive Navy
   '#2d3748': { hero: '#1a2030', end: '#1e2838', cta: '#1a2030', nav: '#2D3748', navText: '#ffffff', footer: '#1a2030' }, // Slate & Electric
   '#1b4332': { hero: '#0d2b1e', end: '#0a1f15', cta: '#0d2b1e', nav: '#1B4332', navText: '#ffffff', footer: '#0d2b1e' }, // Forest & White
+  // Precision Lawn Systems (S-PLS-2) — hand-authored: #0E3B44 is already a hero
+  // surface, so the custom-path darkenHex crushes it to near-black. NOT in the
+  // PALETTES swatch picker. cta = render --deeper, not --clay (contrast; see
+  // the twin in shared/lib/shellCssVars.ts). Keep both twins in sync.
+  '#0e3b44': { hero: '#0E3B44', end: '#092A31', cta: '#092A31', nav: '#0E3B44', navText: '#ffffff', footer: '#092A31' }, // Precision (deep teal)
 }
 
 export const THEME_CONFIGS: Record<string, Record<string, string>> = {
