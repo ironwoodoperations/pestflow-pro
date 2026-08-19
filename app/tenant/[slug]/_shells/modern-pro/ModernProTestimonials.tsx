@@ -26,7 +26,11 @@ export function ModernProTestimonials({ testimonials }: { testimonials: Testimon
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {testimonials.slice(0, 3).map((r) => (
+          {testimonials.slice(0, 3).map((r) => {
+            // rating is nullable (default 5) and the table has no CHECK
+            // constraint — an out-of-range value must not throw at render.
+            const stars = Math.max(0, Math.min(5, Math.round(Number(r.rating) || 0)));
+            return (
             <div
               key={r.id}
               className="rounded-2xl p-6"
@@ -36,14 +40,15 @@ export function ModernProTestimonials({ testimonials }: { testimonials: Testimon
               }}
             >
               <div className="text-lg mb-3" style={{ color: '#fbbf24' }}>
-                {'★'.repeat(r.rating) + '☆'.repeat(5 - r.rating)}
+                {'★'.repeat(stars) + '☆'.repeat(5 - stars)}
               </div>
               <p className="text-sm italic leading-relaxed mb-4" style={{ color: '#ffffff' }}>
                 &ldquo;{r.review_text}&rdquo;
               </p>
               <p className="font-semibold" style={{ color: '#ffffff' }}>{r.author_name}</p>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>
