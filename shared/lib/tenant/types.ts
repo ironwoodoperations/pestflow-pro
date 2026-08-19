@@ -53,4 +53,9 @@ export type Tenant = {
   // seo (from settings.seo JSONB)
   meta_title: string | null;
   meta_description: string | null;
+  // Pre-launch indexing gate (S-PLS-4). resolveSettings sets this from
+  // settings.seo.noindex via a strict `=== true` check — any other value
+  // (absent, "true", 1) resolves to false, so existing tenants are untouched.
+  // Optional so hand-built Tenant literals (tests, fixtures) compile unchanged.
+  noindex?: boolean;
 };

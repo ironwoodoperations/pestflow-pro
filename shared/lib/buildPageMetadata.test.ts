@@ -124,3 +124,31 @@ describe('buildPageMetadata — REGRESSION GATE: page WITHOUT a seo_meta row', (
     expect(m.alternates?.canonical).not.toContain('.pestflowpro.com');
   });
 });
+
+// S-PLS-4 — pre-launch noindex gate. The flag rides Tenant.noindex (set only by
+// resolveSettings' strict `seo.noindex === true` check); buildPageMetadata
+// re-validates with `=== true` so a poisoned value can never flip robots.
+describe('buildPageMetadata — noindex gate', () => {
+  const fallback = {
+    title: 'Urban Strike Pest Defense',
+    description: 'Urban Strike Pest Defense — professional pest control services',
+  };
+
+  it('flag absent: no robots key, output deep-equal to a pre-gate build', () => {
+    const m = buildPageMetadata(urbanStrike, { pathname: '/', seoMeta: null, fallback });
+    expect('robots' in m).toBe(false);
+    const explicitlyOff = buildPageMetadata({ ...urbanStrike, noindex: false }, { pathname: '/', seoMeta: null, fallback });
+    expect(explicitlyOff).toEqual(m);
+  });
+
+  it('noindex: true emits robots index:false follow:false', () => {
+    const m = buildPageMetadata({ ...urbanStrike, noindex: true }, { pathname: '/', seoMeta: null, fallback });
+    expect(m.robots).toEqual({ index: false, follow: false });
+  });
+
+  it('non-boolean truthy values do not engage the gate', () => {
+    const poisoned = { ...urbanStrike, noindex: 'true' as unknown as boolean };
+    const m = buildPageMetadata(poisoned, { pathname: '/', seoMeta: null, fallback });
+    expect('robots' in m).toBe(false);
+  });
+});

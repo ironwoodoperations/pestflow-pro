@@ -67,6 +67,10 @@ export function buildPageMetadata(
   return {
     title,
     description,
+    // Pre-launch indexing gate (S-PLS-4): tenant.noindex is true only when
+    // settings.seo.noindex === true (validated in resolveSettings). Absent or
+    // false, no robots key is emitted — output is byte-identical to before.
+    ...(tenant.noindex === true ? { robots: { index: false, follow: false } } : {}),
     metadataBase: new URL(siteUrl),
     alternates: { canonical: url },
     openGraph: {

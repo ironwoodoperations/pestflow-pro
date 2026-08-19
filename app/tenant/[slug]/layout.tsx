@@ -43,6 +43,13 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   return {
     title,
     description,
+    // Pre-launch indexing gate (S-PLS-4). Emitted at the LAYOUT so it inherits
+    // into every child route — pages never set `robots` (consult's static
+    // noindex points the same way), so this one key covers the whole tenant.
+    // tenant.noindex is true only when settings.seo.noindex === true
+    // (validated in resolveSettings); absent, the key is not emitted and the
+    // metadata object is unchanged for every existing tenant.
+    ...(tenant.noindex === true ? { robots: { index: false, follow: false } } : {}),
     icons: tenant.favicon_url
       ? { icon: [{ url: tenant.favicon_url }] }
       : undefined,

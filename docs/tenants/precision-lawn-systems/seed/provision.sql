@@ -203,3 +203,56 @@ FROM t
 ON CONFLICT (tenant_id, page_slug) DO UPDATE
   SET hero_headline = EXCLUDED.hero_headline, title = EXCLUDED.title,
       subtitle = EXCLUDED.subtitle, intro = EXCLUDED.intro;
+
+-- ── page_content — four service rows (S-PLS-4) ───────────────────────────────
+-- Kills the navbar pest fallback: getAllServicePages() excludes
+-- NON_SERVICE_SLUGS/CUSTOM_PAGE_SLUGS, and with only 'home' seeded it returned
+-- [], sending ModernProNavbar to DEFAULT_SERVICE_LINKS (12 pest links) on every
+-- page. These four rows feed the nav its titles. NOTE: until PR 4 lands the
+-- four links 404 at the SERVICE_SLUGS gate (slugs not in the pest set, no
+-- location row) — accepted pre-launch on a noindexed site.
+WITH t AS (SELECT id FROM public.tenants WHERE slug = 'pls')
+INSERT INTO public.page_content (tenant_id, page_slug, title, subtitle, intro)
+SELECT t.id, v.page_slug, v.title, v.subtitle, v.intro FROM t, (VALUES
+  ('sprinkler-systems',
+   'Sprinkler System Installation & Repair',
+   'Zone layout and head spacing done right — with a free 2-year warranty.',
+   'Dry patches between heads, a water bill that keeps climbing, zones that will not come on — sprinkler problems usually trace to layout, pressure, or worn parts. We design and install new systems with correct zone layout and head spacing, and we repair existing ones: leak diagnosis, head replacement, valve and controller troubleshooting, and seasonal tune-ups. Licensed TX irrigator LI23001, with a free 2-year warranty on every system installed.'),
+  ('drainage',
+   'Drainage & Erosion Control',
+   'French drains, surface drains, and grading that move water away for good.',
+   'Water standing in the yard days after rain, soil washing out after storms, water running toward the foundation — drainage problems do not fix themselves. We trench, lay gravel and sock pipe, and backfill french drains; set surface drains and catch basins; and regrade so runoff moves away from the house. Serving East Texas since 2017.'),
+  ('pump-systems',
+   'Pump Systems for Lake, Pond & Well',
+   'Sized, installed, and maintained for reliable pressure at every zone.',
+   'A pump that will not prime, pressure that fades at the far zones, a pump that runs constantly — pump problems come down to sizing, intake, or wear. We size, install, and repair pump systems for lake, pond, and well irrigation, matching the pump and intake to the zones they feed. Licensed and insured, BBB A+.'),
+  ('sod-dirt-work',
+   'Sod Installation & Dirt Work',
+   'Grading, low-spot repair, and site prep that drains the way it should.',
+   'Bare ground after a project, low spots holding water, a yard that will not drain because of grade — we handle the dirt work first, then the sod. Grading and site prep, low-spot repair, and sod installation that establishes properly. Free estimates across East Texas.')
+) AS v(page_slug, title, subtitle, intro)
+ON CONFLICT (tenant_id, page_slug) DO UPDATE
+  SET title = EXCLUDED.title, subtitle = EXCLUDED.subtitle, intro = EXCLUDED.intro;
+
+-- ── seo settings amendment + blog seo_meta row (S-PLS-4) ─────────────────────
+-- seo.meta_title: six routes (about, contact, faq, quote, reviews,
+-- service-area) have no generateMetadata of their own and inherit the LAYOUT
+-- title, which was `tenant.meta_title || businessName` — i.e. the legal name
+-- ("Lawn") in a <title>. Setting meta_title fixes all six at the data layer.
+-- seo.noindex: engages the S-PLS-4 pre-launch robots gate (layout +
+-- buildPageMetadata; strict `=== true`).
+WITH t AS (SELECT id FROM public.tenants WHERE slug = 'pls')
+UPDATE public.settings s
+SET value = s.value
+  || jsonb_build_object('meta_title', 'East Texas Irrigation, Drainage & Pump Systems')
+  || jsonb_build_object('noindex', true)
+FROM t WHERE s.tenant_id = t.id AND s.key = 'seo';
+
+WITH t AS (SELECT id FROM public.tenants WHERE slug = 'pls')
+INSERT INTO public.seo_meta (tenant_id, page_slug, meta_title, meta_description, user_edited)
+SELECT t.id, 'blog', 'Irrigation & Drainage Tips | East Texas',
+  'Guides and answers on sprinkler systems, yard drainage, and pump systems for East Texas properties.', true
+FROM t
+ON CONFLICT (tenant_id, page_slug) DO UPDATE
+  SET meta_title = EXCLUDED.meta_title, meta_description = EXCLUDED.meta_description,
+      user_edited = EXCLUDED.user_edited;
