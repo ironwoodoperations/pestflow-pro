@@ -35,3 +35,13 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   - docs/tenants/precision-lawn-systems/DECISIONS.md
   - docs/tenants/precision-lawn-systems/seed/provision.sql
 - Next recommended action: PR #247 open — rebase onto squashed main (mergeable_state was dirty), then S-PLS-3b: page_content home row record + DECISIONS rows (render/spec town delta, §6.1 gates address JSON-LD) + noindex proposal to Scott. Then PR 4 (D1 irrigation plumbing).
+
+---
+## Session — 2026-08-19 18:51 UTC
+- Branch: `claude/precision-lawn-systems-reskin-lg8goz`
+- Commit: `37b8f0d` — docs(precision): S-PLS-3b — home-row seed record + decision rows
+- Author: Claude
+- Files changed:
+  - docs/tenants/precision-lawn-systems/DECISIONS.md
+  - docs/tenants/precision-lawn-systems/seed/provision.sql
+- Next recommended action: #247 rebased clean (head 37b8f0d), awaiting Scott's merge + his pick on the noindex proposal (middleware NOINDEX_TENANT_SLUGS header vs settings.seo.noindex flag — recommended: middleware). pls hero verified live with irrigation H1. After merge: PR 4 — D1 irrigation plumbing (irrigationContent.ts, IRRIGATION_SERVICE_SLUGS, getServiceEntry, vertical resolution in [service]/page.tsx before the location fallback).
