@@ -48,6 +48,9 @@ async function resolveSettings(tenantBase: { id: string; slug: string; subdomain
 
     meta_title: seo.meta_title ?? null,
     meta_description: seo.meta_description ?? null,
+    // Validator gate: only the literal boolean true engages the noindex —
+    // untrusted JSONB strings/numbers ("true", 1) must not flip robots.
+    noindex: seo.noindex === true,
   };
 }
 

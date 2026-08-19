@@ -45,3 +45,18 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   - docs/tenants/precision-lawn-systems/DECISIONS.md
   - docs/tenants/precision-lawn-systems/seed/provision.sql
 - Next recommended action: #247 rebased clean (head 37b8f0d), awaiting Scott's merge + his pick on the noindex proposal (middleware NOINDEX_TENANT_SLUGS header vs settings.seo.noindex flag — recommended: middleware). pls hero verified live with irrigation H1. After merge: PR 4 — D1 irrigation plumbing (irrigationContent.ts, IRRIGATION_SERVICE_SLUGS, getServiceEntry, vertical resolution in [service]/page.tsx before the location fallback).
+
+---
+## Session — 2026-08-19 19:14 UTC
+- Branch: `claude/precision-lawn-systems-reskin-lg8goz`
+- Commit: `6345384` — feat(seo): per-tenant pre-launch noindex gate + Precision data-layer fixes (S-PLS-4)
+- Author: Claude
+- Files changed:
+  - app/tenant/[slug]/layout.tsx
+  - docs/tenants/precision-lawn-systems/DECISIONS.md
+  - docs/tenants/precision-lawn-systems/seed/provision.sql
+  - shared/lib/buildPageMetadata.test.ts
+  - shared/lib/buildPageMetadata.ts
+  - shared/lib/tenant/resolve.ts
+  - shared/lib/tenant/types.ts
+- Next recommended action: PR #248 (noindex gate) awaiting Scott's merge — rebase onto post-#247 main first. After merge: verify robots gate on prod (pls has it, apex-protect doesn't), then PR 4 (D1 irrigation plumbing).
