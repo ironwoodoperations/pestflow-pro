@@ -76,3 +76,19 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   - shared/lib/tenant/resolve.ts
   - shared/lib/tenant/types.ts
 - Next recommended action: PR #248 clean at 0f1454b, awaiting Scott's merge. After merge: verify robots gate on prod (pls noindex present, apex-protect absent), report, then PR 4 (D1 irrigation plumbing). Before any branch reset, confirm origin/main contains the latest squash.
+
+---
+## Session — 2026-08-19 19:28 UTC
+- Branch: `claude/precision-lawn-systems-reskin-lg8goz`
+- Commit: `34a2548` — feat(precision): irrigation service catalog + vertical-aware routing (S-PLS-5 / D1)
+- Author: Claude
+- Files changed:
+  - app/tenant/[slug]/[service]/page.tsx
+  - app/tenant/[slug]/_lib/serviceData.ts
+  - app/tenant/[slug]/_shells/modern-pro/ModernProPestPage.tsx
+  - shared/lib/tenant/resolve.ts
+  - shared/lib/tenant/types.ts
+  - src/shells/_shared/irrigationContent.ts
+  - src/shells/_shared/serviceEntry.test.ts
+  - src/shells/_shared/serviceEntry.ts
+- Next recommended action: PR #249 (D1 irrigation catalog + vertical routing) awaiting Scott's merge. After merge: live-verify /sprinkler-systems on pls (200 + irrigation copy) and apex-protect /ant-control unchanged, then draft the PR 5 proposal (modern-pro vocabulary/visual changes) — proposal only, propose-and-wait.
