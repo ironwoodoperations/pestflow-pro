@@ -21,6 +21,17 @@ before any code was written.
 | §9 Schema | "Wire the AggregateRating field, leave it null" | Nothing to wire — `generateLocalBusinessSchema` ignores its `_schema` param entirely and never emits `aggregateRating`. Simply never call `generateRatingSchema`. The real §0.1 exposure was the hardcoded `knowsAbout` pest list and `serviceType: 'Pest Control'` shipping on every tenant — fixed in PR #245 (`SchemaVocabulary` param, pest defaults, byte-identical for existing callers; default deep-frozen in the follow-up hardening). |
 | §11 CI | Source-level checks implied | Greps for "pest" (and "lawn" outside legal name / domain / footer copyright) must run against **rendered HTML** of Precision's pages — the strings live in shared components and DB fallbacks a source grep cannot see. Scope the "lawn" check to rendered output and `src/`, or `docs/tenants/precision-lawn-systems/` flags permanently. `format-detection: telephone=no` confirmed absent repo-wide today, so that check is not a no-op. |
 | §13 Redirects | `/photo-gallery/` → `/projects` | Phase One: `/photo-gallery/` → `/` (a 301 into a 404 is worse than none). Repoint to `/projects` in Phase Two when the page exists. All other §13 redirects ship as specified. |
+| §14 DoD (added row) | — | **Meta-description fallback (BLOCKER-2):** `layout.tsx`, `page.tsx`, and `[service]/page.tsx` all fall back to `${businessName} — professional pest control services` when no `seo_meta` row / `settings.seo.meta_description` exists — a §0.1 violation the moment any Precision page ships without its row. DoD: **every page has a `seo_meta` row AND `settings.seo.meta_description` is set**, so the fallback can never fire. The fallback itself is not removed — other tenants may rely on it. Seeded in S-PLS-3: `seo.meta_description` + 19 `seo_meta` rows (all Phase One pages incl. legal). |
+| Tenant slug | — (docs path uses `precision-lawn-systems`) | **`pls`** (slug and subdomain). A slug is public — it lands in every URL and canonical tag — and §0.1 permits "lawn" only in the legal entity name, the domain, and the footer copyright; a slug is none of those. The docs directory keeps the long name (internal, unindexed). Site: `https://pls.pestflowpro.ai`. Legal name still renders per §1 in `business_info.name` and the footer copyright. |
+| §6.1 (constraint interaction) | Base "Hawkins, TX 75765" is a verified fact | The `business_info_structured_shape` CHECK requires the four structured address keys (`street_address`/`address_locality`/`address_region`/`postal_code`) as an all-or-nothing set. With the street unresolved (§6.1), locality/region/postal are also left unset — no partial address, no `PostalAddress` in JSON-LD, until §6.1 is settled. |
+| Session-prompt town count | "20 towns + 5 counties" | The spec names **19** towns (5 Phase One + 10 deferred + 4 lake communities). All 19 + the 5 §9 counties are seeded in `seo.service_areas` (24 entries). No 20th town invented — if one is missing from the spec, name it and it gets appended. |
+
+## DNS cutover note (account record — §13, do not solve now)
+
+Precision is `render_model='standard'`, so unlike Dang its `pls.pestflowpro.ai`
+subdomain renders publicly and is indexable. Once the real domain is live, the
+subdomain becomes a duplicate of it — decide **canonical vs noindex** for the
+subdomain at cutover time.
 
 ## Standing verification results (Step Zero)
 
