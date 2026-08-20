@@ -13,32 +13,40 @@ import { generateFAQSchema } from '../../../../shared/lib/seoSchema';
 import { getServerSupabaseForISR } from '../../../../shared/lib/supabase/server';
 import { formatPhone } from '../../../../shared/lib/formatPhone';
 import { resolveHeroImage } from '../_lib/heroImage';
+import { FaqBrowser, type FaqCategory } from './FaqBrowser';
 
-const FAQ_FALLBACK = [
-  {
-    title: 'General',
-    faqs: [
-      { q: 'What pests do you treat?', a: 'We treat all common pests including mosquitoes, spiders, ants, wasps, cockroaches, fleas, ticks, rodents, scorpions, bed bugs, and termites.' },
-      { q: 'Are you licensed and insured?', a: 'Yes. We are fully licensed, bonded, and insured. All technicians hold current pest control licenses.' },
-      { q: 'Do you offer free estimates?', a: 'Yes. We provide free inspections and estimates for all pest control services.' },
-    ],
-  },
-  {
-    title: 'Treatments',
-    faqs: [
-      { q: 'Are your treatments safe for kids and pets?', a: 'Yes. All products are EPA-approved and applied by licensed technicians. Treatments are safe once dry, typically within 30–60 minutes.' },
-      { q: 'How long do treatments take?', a: 'Most treatments take 45–90 minutes depending on the size of your home and the type of pest being treated.' },
-      { q: 'How soon will I see results?', a: 'Many pests are eliminated within 24–48 hours. Some treatments take 1–2 weeks to fully eliminate a colony.' },
-    ],
-  },
-  {
-    title: 'Pricing',
-    faqs: [
-      { q: 'Do you offer service plans?', a: 'Yes. We offer monthly, quarterly, and annual plans that include scheduled treatments plus free re-treatments if pests return.' },
-      { q: 'Do you offer a guarantee?', a: 'Yes. All services are backed by our satisfaction guarantee. If pests return between scheduled treatments, we will retreat at no additional cost.' },
-    ],
-  },
-];
+// 5b-faq: DB rows or nothing. The previous hardcoded FAQ_FALLBACK rendered
+// unconditionally for every tenant (the DB rows fed only the JSON-LD), so
+// every tenant showed the same pest answers — including licensure claims —
+// regardless of its own data.
+
+type FaqRow = { question: string; answer: string; category: string | null; sort_order: number };
+
+function slugify(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+// Categories keep their FIRST-APPEARANCE order in the sort_order sequence —
+// sort_order encodes the intended category order; never sort names.
+function groupByCategory(rows: FaqRow[]): FaqCategory[] {
+  const categories: FaqCategory[] = [];
+  const byName = new Map<string, FaqCategory>();
+  const slugCounts = new Map<string, number>();
+  for (const row of rows) {
+    const name = row.category || 'General';
+    let cat = byName.get(name);
+    if (!cat) {
+      const base = slugify(name);
+      const n = (slugCounts.get(base) ?? 0) + 1;
+      slugCounts.set(base, n);
+      cat = { name, slug: n === 1 ? base : `${base}-${n}`, items: [] };
+      byName.set(name, cat);
+      categories.push(cat);
+    }
+    cat.items.push({ question: row.question, answer: row.answer });
+  }
+  return categories;
+}
 
 type Params = { params: { slug: string } };
 
@@ -50,9 +58,10 @@ export default async function FaqPage({ params }: Params) {
   const [content, heroMedia, faqsRes] = await Promise.all([
     getPageContent(tenant.id, 'faq'),
     getHeroMedia(tenant.id),
-    supabase.from('faqs').select('question, answer').eq('tenant_id', tenant.id).order('sort_order', { ascending: true }),
+    supabase.from('faqs').select('question, answer, category, sort_order').eq('tenant_id', tenant.id).order('sort_order', { ascending: true }),
   ]);
-  const faqs = (faqsRes.data ?? []) as { question: string; answer: string }[];
+  const faqs = (faqsRes.data ?? []) as FaqRow[];
+  const categories = groupByCategory(faqs);
 
   const c = content as { title?: string; subtitle?: string } | null;
   const heroTitle = c?.title    || 'Frequently Asked Questions';
@@ -80,23 +89,9 @@ export default async function FaqPage({ params }: Params) {
         </div>
       </section>
 
-      <section className="py-16" style={{ backgroundColor: 'var(--color-bg-section)' }}>
-        <div className="max-w-4xl mx-auto px-4">
-          {FAQ_FALLBACK.map(cat => (
-            <div key={cat.title} className="mb-12">
-              <h2 className="text-2xl font-bold mb-6" style={{ color: 'var(--color-primary)' }}>{cat.title}</h2>
-              <div className="space-y-6">
-                {cat.faqs.map((faq, i) => (
-                  <div key={i}>
-                    <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--color-heading, #1a1a1a)' }}>{faq.q}</h3>
-                    <p className={isBoldLocal ? undefined : 'text-gray-600'} style={isBoldLocal ? { color: 'var(--color-body-text)' } : undefined}>{faq.a}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      {faqs.length > 0 && (
+        <FaqBrowser categories={categories} isBoldLocal={isBoldLocal} />
+      )}
 
       {isCF ? (
         <section style={{ backgroundColor: 'var(--cf-bg-cream)', borderTop: '1px solid var(--cf-divider)', padding: '4rem 1rem', textAlign: 'center' }}>
