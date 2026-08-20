@@ -140,3 +140,14 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   - app/tenant/[slug]/_shells/modern-pro/ModernProTestimonials.tsx
   - docs/tenants/precision-lawn-systems/DECISIONS.md
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-08-20 14:04 UTC
+- Branch: `claude/precision-lawn-systems-reskin-lg8goz`
+- Commit: `5e9a9bf` — feat(faq): DB-driven FAQ browser with sticky category nav, scrollspy, and accordion (5b-faq)
+- Author: Claude
+- Files changed:
+  - app/tenant/[slug]/faq/FaqBrowser.tsx
+  - app/tenant/[slug]/faq/page.tsx
+  - docs/tenants/precision-lawn-systems/DECISIONS.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
