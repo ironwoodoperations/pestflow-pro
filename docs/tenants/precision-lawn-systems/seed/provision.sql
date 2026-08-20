@@ -268,3 +268,52 @@ WITH t AS (SELECT id FROM public.tenants WHERE slug = 'pls')
 UPDATE public.settings s
 SET value = s.value || jsonb_build_object('vertical', 'irrigation')
 FROM t WHERE s.tenant_id = t.id AND s.key = 'business_info';
+
+-- ── S-PLS-7 data pass: irrigation faqs + about page_content ──────────────────
+-- Applied to prod via MCP 2026-08-19 (result: {page_slug:"about", faqs_inserted:10}).
+-- Kills T0-4 (FAQ false pest-licensure claim) and T0-5 (about fabricated
+-- credentials) at the data layer. NOTE (found during verification, logged in
+-- DECISIONS.md): faq/page.tsx feeds these rows ONLY to the JSON-LD FAQPage
+-- schema — the visible body renders the hardcoded pest FAQ_FALLBACK until the
+-- 5b-faq PR ships the DB-driven browser. Testimonials are deliberately ABSENT
+-- from this pass: §10 verbatim quotes for Larry Kellam and Jay D. Wilson are
+-- blocked on Scott pulling them off the client's current site (§0.2 — never
+-- reconstruct or paraphrase a customer's words).
+-- ISR note: /api/revalidate requires a tenant-admin auth user + tenant_users
+-- membership, which pls deliberately does not have — the revalidate=300
+-- self-heal is the purge mechanism of record for this tenant's DB edits.
+-- Both pages were verified live within the window (about intro + FAQ JSON-LD).
+WITH t AS (SELECT id FROM public.tenants WHERE slug = 'pls')
+INSERT INTO public.faqs (tenant_id, category, question, answer, sort_order)
+SELECT t.id, v.category, v.question, v.answer, v.sort_order FROM t, (VALUES
+  ('General', 'Are you licensed and insured?',
+   'Yes. We are a licensed and insured irrigation contractor — Texas Irrigator License LI23001 — serving East Texas since 2017.', 1),
+  ('General', 'Do you offer free estimates?',
+   'Yes. Estimates are free for sprinkler, drainage, pump, and sod work anywhere in our East Texas service area.', 2),
+  ('General', 'What warranty do you offer?',
+   'Every system we install carries a free 2-year warranty. Most companies in this market warranty six months.', 3),
+  ('Sprinkler Systems', 'Why does my water bill keep climbing?',
+   'A climbing bill with no change in use usually means a leak or a zone running unseen. We isolate the system zone by zone, find the problem, and fix it.', 10),
+  ('Sprinkler Systems', 'Can you repair a system you did not install?',
+   'Yes. We diagnose and repair existing systems — heads, nozzles, valves, controllers, and wiring — whoever installed them.', 11),
+  ('Sprinkler Systems', 'Why are there dry patches between my sprinkler heads?',
+   'Dry patches usually mean head spacing or nozzle selection is wrong for the zone''s pressure. Coverage is a layout problem first, not a watering-schedule problem.', 12),
+  ('Drainage', 'Will a french drain really stop water standing in my yard?',
+   'When it is built to grade with washed gravel and sock-wrapped pipe, yes — water moves to daylight or a catch basin instead of sitting in the soil. Most standing-water problems are grade and routing problems.', 20),
+  ('Drainage', 'Water runs toward my foundation when it rains. Can that be fixed?',
+   'Yes — usually with a combination of regrading and surface or french drains that intercept the water and carry it away from the house.', 21),
+  ('Pump Systems', 'Can I irrigate from my lake or pond?',
+   'Yes. We size and install pump systems for lake, pond, and well irrigation, matching the pump and intake to the zones they feed so pressure holds at the last head.', 30),
+  ('Sod & Dirt Work', 'Do you fix low spots that hold water?',
+   'Yes. We cut and fill to correct the grade, compact in lifts so it holds, and finish so water sheds where it should — then lay sod over prepared ground.', 40)
+) AS v(category, question, answer, sort_order)
+WHERE NOT EXISTS (SELECT 1 FROM public.faqs f WHERE f.tenant_id = t.id);
+
+WITH t AS (SELECT id FROM public.tenants WHERE slug = 'pls')
+INSERT INTO public.page_content (tenant_id, page_slug, title, subtitle, intro)
+SELECT t.id, 'about', 'About Us',
+  'Licensed East Texas irrigation contractor — serving the region since 2017.',
+  E'We are a licensed East Texas irrigation contractor, serving homeowners since 2017. Sprinkler systems, yard drainage, pump systems, and sod — we solve both sides of your water problem: getting water where you want it, and getting it away from where you don''t.\n\nEvery system we install carries a free 2-year warranty — most companies in this market warranty six months. That guarantee exists because of how the work is done: zones sized to real pressure and flow, drains trenched to grade with washed gravel and sock-wrapped pipe, pumps matched to the zones they feed.\n\nWe hold Texas Irrigator License LI23001, we are licensed and insured, and we are BBB A+ accredited. Owned and operated by Dathan Johnson.'
+FROM t
+ON CONFLICT (tenant_id, page_slug) DO UPDATE
+  SET title = EXCLUDED.title, subtitle = EXCLUDED.subtitle, intro = EXCLUDED.intro;
