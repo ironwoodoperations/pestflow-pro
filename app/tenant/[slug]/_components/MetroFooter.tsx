@@ -89,7 +89,7 @@ export function MetroFooter({ tenant, social = {} }: Props) {
             <span>·</span>
             <Link href="/accessibility" className="hover:text-white/60 transition">Accessibility</Link>
           </div>
-          <a href="https://pestflowpro.com" target="_blank" rel="noopener noreferrer" className="text-orange-400 hover:text-orange-300 transition">Powered by PestFlow Pro</a>
+          <span style={{ color: 'var(--color-primary)' }}>Powered by HomeFlow Pro</span>
         </div>
       </div>
     </footer>

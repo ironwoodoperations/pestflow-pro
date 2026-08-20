@@ -92,9 +92,9 @@ export function CleanFriendlyFooter({ tenant, social = {} }: Props) {
           <span style={{ color: 'var(--cf-ink-muted)', fontSize: 12 }}>·</span>
           <Link href="/accessibility" style={{ ...FOOT_LINK, fontSize: 12, marginBottom: 0 }}>Accessibility</Link>
         </div>
-        <a href="https://pestflowpro.com" target="_blank" rel="noopener noreferrer" style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", fontSize: 11, color: '#E07B20', textDecoration: 'none', fontWeight: 500 }}>
-          Powered by PestFlow Pro
-        </a>
+        <span style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", fontSize: 11, color: '#E07B20', fontWeight: 500 }}>
+          Powered by HomeFlow Pro
+        </span>
       </div>
     </footer>
   );

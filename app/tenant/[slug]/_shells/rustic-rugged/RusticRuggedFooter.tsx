@@ -77,7 +77,7 @@ export function RusticRuggedFooter({ tenant, social }: Props) {
             <span>·</span>
             <Link href="/accessibility" className="hover:text-gray-400 transition">Accessibility</Link>
           </div>
-          <a href="https://pestflowpro.com" target="_blank" rel="noopener noreferrer" className="transition hover:opacity-80" style={{ color: 'var(--color-primary)' }}>Powered by PestFlow Pro</a>
+          <span style={{ color: 'var(--color-primary)' }}>Powered by HomeFlow Pro</span>
         </div>
       </div>
     </footer>

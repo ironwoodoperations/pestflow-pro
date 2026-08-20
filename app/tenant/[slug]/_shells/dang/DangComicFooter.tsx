@@ -79,9 +79,9 @@ export function DangComicFooter({ tenant, social = {} }: Props) {
       </div>
 
       <div style={{ textAlign: 'center', padding: '0.75rem', borderTop: '2px solid var(--dang-ink)' }}>
-        <a href="https://pestflowpro.ai" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--dang-orange)', fontWeight: 700, fontSize: 13, textDecoration: 'none', fontFamily: 'var(--dang-font-body)' }}>
-          Powered by PestFlow Pro
-        </a>
+        <span style={{ color: 'var(--dang-orange)', fontWeight: 700, fontSize: 13, fontFamily: 'var(--dang-font-body)' }}>
+          Powered by HomeFlow Pro
+        </span>
       </div>
     </footer>
   );
