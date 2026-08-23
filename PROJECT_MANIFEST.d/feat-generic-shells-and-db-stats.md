@@ -29,3 +29,13 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   - src/shells/_shared/verticalCopy.ts
   - src/shells/_shared/verticalCopyPresets.test.ts
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-08-23 17:54 UTC
+- Branch: `feat/generic-shells-and-db-stats`
+- Commit: `28a2c19` — fix(vertical): withdraw the same-day claim from the irrigation preset
+- Author: Claude
+- Files changed:
+  - src/shells/_shared/verticalCopy.ts
+  - src/shells/_shared/verticalCopyPresets.test.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
