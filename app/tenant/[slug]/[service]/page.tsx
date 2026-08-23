@@ -10,7 +10,8 @@ export const revalidate = 300;
 export async function generateStaticParams() {
   return [];
 }
-import { getPageContent, getLocation, getAllLocations, getHeroMedia, getSeoMeta, getServiceFaqs, getIntegrations } from '../_lib/queries';
+import { getPageContent, getLocation, getAllLocations, getHeroMedia, getSeoMeta, getServiceFaqs, getIntegrations, getAboutSettings } from '../_lib/queries';
+import { resolveAboutStats } from '../_lib/aboutStats';
 import { SERVICE_SLUGS, IRRIGATION_SERVICE_SLUGS } from '../_lib/serviceData';
 import { resolveVertical } from '../../../../src/shells/_shared/serviceEntry';
 import { getVerticalCopy, withCity } from '../../../../src/shells/_shared/verticalCopy';
@@ -200,7 +201,18 @@ export default async function ServicePage({ params }: Params) {
     return <CleanFriendlyPestPage tenant={tenant} pestSlug={params.service} content={content} />;
   }
   if (tenant.template === 'bold-local') {
-    return <BoldLocalPestPage tenant={tenant} pestSlug={params.service} content={content} />;
+    // PR F: this shell's stat banner used to be hardcoded ('100% Guarantee',
+    // '15+ Years on the job'). The guarantee was a claim and is deleted; the
+    // years figure now comes from settings.about through the same resolver the
+    // about page uses. This is the one shell whose stats are NOT on the
+    // about-page caller path, so the read happens here — scoped to this branch
+    // so no other template pays for a query it does not render.
+    const boldLocalStats = resolveAboutStats(
+      (await getAboutSettings(tenant.id)).stats,
+      tenant.founded_year ? String(tenant.founded_year) : undefined,
+      new Date().getFullYear(),
+    );
+    return <BoldLocalPestPage tenant={tenant} pestSlug={params.service} content={content} stats={boldLocalStats} />;
   }
   if (tenant.template === 'modern-pro') {
     return <ModernProPestPage tenant={tenant} pestSlug={params.service} content={content} />;

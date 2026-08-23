@@ -1,11 +1,14 @@
 import Link from 'next/link';
 import type { Tenant } from '../../../../../shared/lib/tenant/types';
+import type { ResolvedStat } from '../../_lib/aboutStats';
 import { PEST_CONTENT_MAP } from '../../../../../src/shells/_shared/pestContent';
 import { PestIcon } from '../../../../../src/shells/_shared/PestIcon';
 import { formatPhone } from '../../../../../shared/lib/formatPhone';
 
 type PageContent = { title?: string; subtitle?: string; intro?: string; hero_headline?: string } | null;
-interface Props { tenant: Tenant; pestSlug: string; content?: PageContent }
+interface Props {
+  /** PR F: resolved from settings.about. Empty = render no stat banner at all. */
+  stats?: ResolvedStat[]; tenant: Tenant; pestSlug: string; content?: PageContent }
 
 const pickString = (...vals: Array<string | undefined | null>): string | undefined => {
   for (const v of vals) {
@@ -31,15 +34,13 @@ const HEAD_STYLE: React.CSSProperties = {
   lineHeight: 'var(--bl-line-height-tight)',
 };
 
-// PR E: the '24/7 / Dispatch' tile is gone — a round-the-clock availability
-// claim shown on every bold-local service page. The grid derives its column
-// count from this array so removing a tile does not leave a gap.
-const STATS = [
-  { num: '100%', label: 'Guarantee' },
-  { num: '15+', label: 'Years on the job' },
-];
+// PR E removed the '24/7 / Dispatch' tile. PR F removes the rest of the array:
+// '100% Guarantee' is a CLAIM, not a statistic — it does not move to
+// settings.about, it is deleted, same treatment as the 24/7 tile. '15+ Years on
+// the job' was a fabricated trading history and now comes from settings.about
+// through the same contract every other shell uses.
 
-export function BoldLocalPestPage({ tenant, pestSlug, content = null }: Props) {
+export function BoldLocalPestPage({ tenant, pestSlug, content = null, stats = [] }: Props) {
   const pest = PEST_CONTENT_MAP[pestSlug];
   const phone = tenant.phone ?? '';
   const bizName = tenant.business_name || tenant.name;
@@ -152,17 +153,19 @@ export function BoldLocalPestPage({ tenant, pestSlug, content = null }: Props) {
         </div>
       </section>
 
-      {/* Stats banner */}
+      {/* Stats banner — PR F: absent entirely when the tenant has no stats. */}
+      {stats.length > 0 && (
       <section style={{ backgroundColor: 'var(--bl-surface-2)', borderTop: '2px solid var(--bl-accent)', borderBottom: '2px solid var(--bl-accent)', padding: 'var(--bl-space-xl) 1rem' }}>
-        <div className="max-w-5xl mx-auto" style={{ display: 'grid', gridTemplateColumns: `repeat(${STATS.length},1fr)`, gap: 'var(--bl-space-md)' }}>
-          {STATS.map((s) => (
+        <div className="max-w-5xl mx-auto" style={{ display: 'grid', gridTemplateColumns: `repeat(${stats.length},1fr)`, gap: 'var(--bl-space-md)' }}>
+          {stats.map((s) => (
             <div key={s.label} style={{ textAlign: 'center' }}>
-              <div style={{ ...HEAD_STYLE, fontSize: 'clamp(28px,4.5vw,48px)', color: 'var(--bl-accent)' }}>{s.num}</div>
+              <div style={{ ...HEAD_STYLE, fontSize: 'clamp(28px,4.5vw,48px)', color: 'var(--bl-accent)' }}>{s.value}</div>
               <div style={{ fontFamily: 'var(--bl-font-body)', fontSize: 11, fontWeight: 600, letterSpacing: 'var(--bl-letter-spacing-wide)', textTransform: 'uppercase', color: 'var(--bl-text-muted)', marginTop: 4 }}>{s.label}</div>
             </div>
           ))}
         </div>
       </section>
+      )}
 
       {/* CTA bar */}
       <section style={{ backgroundColor: 'var(--bl-accent)', padding: 'var(--bl-space-xl) 1rem', textAlign: 'center' }}>

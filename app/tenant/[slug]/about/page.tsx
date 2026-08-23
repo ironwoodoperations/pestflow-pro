@@ -63,9 +63,11 @@ export default async function AboutPage({ params }: Params) {
   const aboutSchema = generateAboutSchema(aboutBizInfo, aboutSeoInfo, siteUrl);
   const businessName = tenant.business_name || tenant.name;
   const foundedYear = tenant.founded_year ? String(tenant.founded_year) : undefined;
-  // WS7: modern-pro's stat tiles come from settings.about. Resolved here (the
-  // server component that already holds founded_year) so the shell stays a
-  // pure renderer. No stats configured -> empty array -> no block rendered.
+  // WS7 / PR F: about-page stat tiles come from settings.about. Resolved here
+  // (the server component that already holds founded_year) so every shell stays
+  // a pure renderer. modern-pro has used this since PR B; clean-friendly,
+  // bold-local and the Default shell join it in PR F. No stats configured ->
+  // empty array -> no block rendered, and there is deliberately no fallback.
   const aboutStats = resolveAboutStats(aboutSettings.stats, foundedYear, new Date().getFullYear());
   const teamTyped = team as TeamMember[];
 
@@ -74,6 +76,7 @@ export default async function AboutPage({ params }: Params) {
       <>
         <JsonLdScript schema={aboutSchema} id="ld-about" />
         <CleanFriendlyAboutPage
+          stats={aboutStats}
           heroTitle={heroTitle}
           heroSub={heroSub}
           heroImageUrl={heroImageUrl}
@@ -92,6 +95,7 @@ export default async function AboutPage({ params }: Params) {
       <>
         <JsonLdScript schema={aboutSchema} id="ld-about" />
         <BoldLocalAboutPage
+          stats={aboutStats}
           heroTitle={heroTitle}
           heroSub={heroSub}
           heroImageUrl={heroImageUrl}
@@ -210,6 +214,7 @@ export default async function AboutPage({ params }: Params) {
 
   return (
     <DefaultAboutPage
+      stats={aboutStats}
       heroTitle={heroTitle}
       heroSub={heroSub}
       heroImageUrl={heroImageUrl}

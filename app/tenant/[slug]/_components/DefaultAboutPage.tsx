@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import { Shield, Eye, Award, Star, Home, Heart } from 'lucide-react';
+import { Shield, Eye, Award } from 'lucide-react';
 import { JsonLdScript } from './JsonLdScripts';
+import type { ResolvedStat } from '../_lib/aboutStats';
 
 interface TeamMember { id: string; name: string; title?: string; bio?: string; photo_url?: string }
 
@@ -13,6 +14,8 @@ interface Props {
   introParagraphs: string[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   aboutSchema: any;
+  /** PR F: resolved from settings.about. Empty = render no stat block at all. */
+  stats?: ResolvedStat[];
 }
 
 const VALUES = [
@@ -27,13 +30,14 @@ const VALUES = [
 
 const CERTS = ['NPMA Member', 'TPCA Certified', 'BBB Accredited', 'TDA Licensed', 'EPA Certified', 'WDI Inspector'];
 
-const STATS = [
-  { num: '15+',      label: 'Years Experience',       Icon: Star  },
-  { num: '4,200+',   label: 'Homes Protected',        Icon: Home  },
-  { num: '98%',      label: 'Customer Satisfaction',  Icon: Heart },
-];
+// PR F: the hardcoded stat tiles are gone. '4,200+ Homes Protected' and
+// '98% Customer Satisfaction' were invented figures about a customer base that
+// does not exist, and '15+ Years Experience' invented a trading history for
+// every tenant on this shell. They now come from settings.about via the same
+// contract modern-pro has used since PR B. No stats configured means NO block;
+// there is deliberately no fallback tile.
 
-export function DefaultAboutPage({ heroTitle, heroSub, heroImageUrl, aboutImage, team, introParagraphs, aboutSchema }: Props) {
+export function DefaultAboutPage({ heroTitle, heroSub, heroImageUrl, aboutImage, team, introParagraphs, aboutSchema, stats = [] }: Props) {
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
       <JsonLdScript schema={aboutSchema} id="ld-about" />
@@ -71,19 +75,25 @@ export function DefaultAboutPage({ heroTitle, heroSub, heroImageUrl, aboutImage,
         </div>
       </section>
 
-      <section className="py-12" style={{ background: 'linear-gradient(135deg, var(--color-bg-hero, #0a1628) 0%, var(--color-bg-hero-end, var(--color-primary)) 100%)' }}>
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="grid grid-cols-3 gap-6 text-center">
-            {STATS.map(({ num, label, Icon }) => (
-              <div key={label}>
-                <Icon className="w-6 h-6 mx-auto mb-2" style={{ color: 'var(--color-accent)' }} />
-                <div className="text-3xl font-bold text-white">{num}</div>
-                <div className="text-sm mt-1 text-white/60">{label}</div>
-              </div>
-            ))}
+      {stats.length > 0 && (
+        <section className="py-12" style={{ background: 'linear-gradient(135deg, var(--color-bg-hero, #0a1628) 0%, var(--color-bg-hero-end, var(--color-primary)) 100%)' }}>
+          <div className="max-w-6xl mx-auto px-4">
+            {/* Columns derive from the tile count. #269 flattened this to a bare
+                grid-cols-3, which lost the mobile breakpoint and is cramped at
+                375px; with a variable number of tiles a fixed rule is wrong in
+                both directions. auto-fit keeps one row on desktop and wraps on
+                a phone whether there are one tile or four. */}
+            <div className="grid gap-6 text-center" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))' }}>
+              {stats.map((s) => (
+                <div key={s.label}>
+                  <div className="text-3xl font-bold text-white">{s.value}</div>
+                  <div className="text-sm mt-1 text-white/60">{s.label}</div>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       <section className="py-16" style={{ backgroundColor: 'var(--color-bg-section)' }}>
         <div className="max-w-6xl mx-auto px-4">

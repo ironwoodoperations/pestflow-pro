@@ -8,7 +8,9 @@ const REASONS = [
   // customer base that does not exist, wrapped around a capacity promise.
   // Not softened into a vaguer version of itself: there is nothing true here
   // to keep, so the reason renders not at all.
-  { num: '03', heading: 'Flat pricing, no surprises', body: 'You get a number upfront. No bait-and-switch add-ons, no "environmental fees" in the fine print.' },
+  // PR F: renumbered 03 -> 02. These numerals are ordinal labels, not facts;
+  // after #269 deleted reason 02 the list read 01, 03.
+  { num: '02', heading: 'Flat pricing, no surprises', body: 'You get a number upfront. No bait-and-switch add-ons, no "environmental fees" in the fine print.' },
 ];
 
 export function BoldLocalWhyUs({ businessName }: Props) {
