@@ -9,6 +9,7 @@ import PageHelpBanner from './PageHelpBanner'
 import ContentPageForm from './ContentPageForm'
 import FaqTab from './FaqTab'
 import { callAi } from '../../lib/ai/callAi'
+import { buildContentPrompt } from './contentPrompt'
 
 const STANDARD_SLUGS = [
   'home', 'about',
@@ -124,15 +125,7 @@ export default function ContentTab() {
   }
   const isPestPage = PEST_SLUGS.includes(selectedSlug)
 
-  function buildPrompt(): string {
-    const biz = businessName || 'a professional pest control company'
-    const city = businessCity || 'Tyler'
-    if (isPestPage) {
-      const pest = selectedSlug.replace(/-/g, ' ').replace(/\bcontrol\b/, '').trim()
-      return `You are a marketing copywriter for ${biz}, a pest control company based in ${city}, TX serving East Texas.\n\nWrite SEO-optimized copy for the "${pest} control" service page.\n\nRequirements:\n- Title: Include the pest name + location (60 chars max)\n- Subtitle: Urgency-driven, mention local area (100 chars max)\n- Intro: 2-3 paragraphs (300-400 words) covering:\n  • Signs of ${pest} infestation in East Texas homes\n  • ${biz}'s treatment approach (EPA-approved, family-safe)\n  • Why local expertise matters for ${pest} in this climate\n  • Call-to-action: free inspection, satisfaction guarantee\n  • Mention specific cities: ${city}, Longview, Jacksonville\n\nRespond ONLY with a JSON object, no markdown:\n{"title": "...", "subtitle": "...", "intro": "..."}`
-    }
-    return `You are a copywriter for ${biz}, a pest control company in ${city}, TX (East Texas).\nWrite marketing copy for the "${selectedSlug}" page.\n\nRespond ONLY with a JSON object, no markdown, no explanation:\n{\n  "title": "Page title (60 chars max)",\n  "subtitle": "Compelling subtitle (100 chars max)",\n  "intro": "2-3 paragraph intro (300-400 words). Mention East Texas, local expertise, EPA-approved treatments, satisfaction guarantee. Reference ${city} and surrounding cities. Be specific, not generic."\n}\n\nPage: ${selectedSlug}\nBusiness: ${biz} — professional pest control serving East Texas.`
-  }
+  const prompt = () => buildContentPrompt({ slug: selectedSlug, businessName, businessCity, isServicePage: isPestPage })
 
   async function generateAI() {
     setAiLoading(true)
@@ -140,7 +133,7 @@ export default function ContentTab() {
       const data = await callAi('content_page', {
         tenant_id: tenantId,
         max_tokens: 1000,
-        messages: [{ role: 'user', content: buildPrompt() }],
+        messages: [{ role: 'user', content: prompt() }],
       })
       const text = data.content?.map((i: { text?: string }) => i.text || '').join('') || ''
       const clean = text.replace(/```json?\n?/g, '').replace(/```/g, '').trim()

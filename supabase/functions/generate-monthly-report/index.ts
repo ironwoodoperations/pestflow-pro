@@ -15,6 +15,15 @@
 // site-wide findings rather than invent a single page. Deterministic detection,
 // renderReport, and auth are UNCHANGED.
 //
+// S283: the narration persona and trade nouns are now keyed on
+// settings.business_info.vertical — the cron enqueues a job for EVERY tenant,
+// so a non-pest tenant was receiving a report narrated for "a pest-control
+// business owner". The prompt moved to ./narrationPrompt.ts so it can be
+// asserted as a string (this file's https: imports are unloadable by vitest).
+// An absent or unrecognised vertical resolves to trade-neutral copy, NEVER to
+// pest. PLATFORM RULES, deterministic detection, renderReport and auth are
+// again UNCHANGED.
+//
 // Invoked server-to-server by the report-queue worker cron (pg_net) — NOT by a
 // browser. Auth (verify_jwt:false): apikey header == GENERATE_MONTHLY_REPORT_INTERNAL_SECRET
 // (constant-time, mirrors process-campaign-job / notify-new-lead). Runs as
@@ -32,6 +41,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { timingSafeEqual } from 'node:crypto'
 import { buildEnvelope, signEnvelope } from '../_shared/delegationEnvelope.ts'
+import { buildNarrationSystemPrompt } from './narrationPrompt.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
@@ -254,12 +264,18 @@ serve(async (req) => {
 
     console.log(`[generate-monthly-report] tenant:${tenantId} period:${period} findings:${findings.length} rules:[${ransRules.join(' | ')}]`)
 
-    // ── 3+4. NARRATE (one ai-proxy/internal call; fall back to templates) ──────
-    const narrations = await narrate(findings, tenantId)
-
-    // business name (same read path the app uses: settings.business_info.name)
+    // business info (same read path the app uses: settings.business_info).
+    // S283: this read now happens BEFORE narrate() because the narration
+    // persona is keyed on .vertical — one row, two consumers, no second query.
     const { data: bizRow } = await svc.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle()
-    const businessName = ((bizRow?.value as { name?: unknown } | null)?.name as string) || 'Your Business'
+    const bizInfo = bizRow?.value as { name?: unknown; vertical?: unknown } | null
+    const businessName = (bizInfo?.name as string) || 'Your Business'
+    // Absent / null / unrecognised -> trade-neutral copy. NEVER pest: this
+    // function runs for every tenant, and one live tenant is deliberately NULL.
+    const vertical = typeof bizInfo?.vertical === 'string' ? bizInfo.vertical : null
+
+    // ── 3+4. NARRATE (one ai-proxy/internal call; fall back to templates) ──────
+    const narrations = await narrate(findings, tenantId, vertical)
 
     // categories that RAN (so the template can affirm healthy ones)
     const ranCategories: Category[] = ['meta', 'content', 'keyword']
@@ -311,21 +327,16 @@ serve(async (req) => {
 
 // ── ai-proxy/internal narration. Batches all findings in one prompt. ANY failure
 //    (incl. the Pro-tier 403) returns {} → caller uses templated problem text. ──
-async function narrate(findings: Finding[], tenantId: string): Promise<Record<string, string>> {
+async function narrate(findings: Finding[], tenantId: string, vertical: string | null): Promise<Record<string, string>> {
   if (findings.length === 0) return {}
   try {
     const env = buildEnvelope({
       purpose: 'monthly_report_narration', caller: 'generate-monthly-report',
       acting_tenant: tenantId, acting_user: null, resource: {}, ttl_seconds: 300,
     })
-    const system =
-      'You write a monthly website report for a pest-control business owner with no SEO background.\n\n' +
-      'PLATFORM RULES (highest priority — never violate, even if it means a fix step must be more general):\n' +
-      '- The owner\'s website lives entirely on the PestFlow Pro platform. Every change they make happens inside the PestFlow Pro admin dashboard. Assume PestFlow Pro is the only system they ever log into to work on their website.\n' +
-      '- NEVER name, suggest, or reference any other tool, plugin, CMS, platform, or software — not by name and not generically. This includes (but is not limited to) WordPress, Wix, Squarespace, Webflow, Yoast, Rank Math, Google Search Console, Google Business Profile settings, "your SEO plugin," "your CMS," "your website builder," or any external analytics or SEO tool. The owner does not use them and has no access to them.\n' +
-      '- For a finding about ONE specific page, direct the owner to SEO -> Pages in PestFlow Pro and edit that page (e.g. "In PestFlow Pro, go to SEO -> Pages and edit the title and description for this page"). For a finding that is clearly site-wide (such as duplicate titles across pages, page-2 search rankings, or site speed), describe what to adjust in PestFlow Pro in general terms — do NOT pretend there is a single page to click, and do NOT invent menus, tabs, or settings that aren\'t obviously implied.\n' +
-      '- If you don\'t know the exact button or tab name, describe the action in simple generic terms inside PestFlow Pro (e.g. "edit the page\'s description field") rather than guessing a specific control or mentioning any outside tool.\n\n' +
-      'TASK: Rephrase each finding into friendly, encouraging plain-English guidance, following the platform rules above: (1) what is going on, (2) why it matters for getting more pest-control phone calls, and (3) the step to fix it inside PestFlow Pro. DO NOT invent findings, numbers, or pages that are not in the input. Keep each to 2–4 short sentences. Return ONLY a JSON object keyed by the finding id, where each value is the guidance string. No markdown.'
+    // S283: vertical-aware persona + trade nouns. PLATFORM RULES inside are
+    // byte-identical to S261-report-fix and are NOT parameterised by vertical.
+    const system = buildNarrationSystemPrompt(vertical)
     const input = findings.map((f) => ({ id: f.id, category: f.category, severity: f.severity, page: f.page_name, problem: f.problem, metric: f.metric ?? null }))
     const res = await fetch(AI_PROXY_INTERNAL_URL, {
       method: 'POST',
