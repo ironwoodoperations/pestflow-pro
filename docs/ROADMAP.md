@@ -1,6 +1,24 @@
 # PestFlow Pro — Roadmap
 
-*State as of S277 (dang-pfp Phase 2 PR 4 shipped). Update at end of each session; retire the versioned pestflow-pro-todo-vNNN.html snapshots.*
+*State as of S279 (vertical architecture shipped — PRs #264, #265). Update at end of each session; retire the versioned pestflow-pro-todo-vNNN.html snapshots.*
+
+---
+
+## Vertical architecture (S279 — NEW)
+
+The public shells are **no longer pest-specific**. Copy resolves `vertical preset (code) → tenant DB override → render`, so one set of shells serves any trade.
+
+- **`shared/lib/verticals.ts` is the bottom layer** — `VERTICALS` (pest, irrigation, lawn, pool, hvac, roof, trailer), `Vertical`, `isVertical`, `resolveVertical`. It lives in `shared/lib` and not `src/shells` because **`shared/` must never import `src/`**; the reverse direction would close a cycle. A test scans `shared/lib` for any `src/` import and fails if one appears.
+- `src/shells/_shared/serviceEntry.ts` re-exports the registry, so its consumers were unchanged.
+- `src/shells/_shared/verticalCopy.ts` — 15 copy slots, `getVerticalCopy` is Partial + throw.
+- `shared/lib/seoSchema.ts` — frozen vocabularies + `getSchemaVocabulary`, same shape. JSON-LD `knowsAbout` now resolves per vertical (pest tenants byte-identical; pls emits irrigation terms).
+- **Adding a vertical:** one line in `VERTICALS`, then presets in `verticalCopy.ts` and `seoSchema.ts`. TypeScript flags every consumer that must change.
+
+**Two rules govern preset content.** (a) A preset holds only what is true of the whole TRADE — tenant facts (warranty terms, licence numbers, region, ratings, scheduling promises) belong in the DB. (b) Never fabricate: the about stat block's invented figures are gone, `settings.about` drives it, and no stats configured renders **no block** rather than a fallback tile.
+
+**Fail-loud has a cost.** `getVerticalCopy` and `getSchemaVocabulary` both throw from `layout.tsx`, so a tenant set to a copyless vertical 500s the entire site — triggerable by a JSONB edit with no deploy. Chosen deliberately over serving pest copy to a pool company. **A CHECK constraint on `business_info.vertical` is the planned guard and is NOT yet applied.**
+
+Detail: `docs/handoffs/pestflow-pro-handoff-S279-vertical-architecture.md`.
 
 ---
 
@@ -109,7 +127,8 @@ Production-ready, **idle capacity**. Active leads out — **Capture, Blue Duck, 
 
 - **Production health monitoring (HIGH PRIORITY, new S272)** — add an automated uptime/health check so a broken deploy is caught by alerting, not a customer call. Minimum viable: a cron curling `urban-strike.pestflowpro.ai` (and pestflowpro.ai) for "Site Not Found" / non-200; scope a real check. The S272 outage went undetected until Claire reported a login failure.
 - Tops onboarding shell decision — prospect meeting this week; onboarding mechanism verified via provision-tenant v97 read; standard render_model=standard path is clear for a customer who accepts an existing shell+palette
-- Remi warm transfer — configure VAPI assistant with transfer tool and transferPlan; voice-intake transfer branch already built; pure VAPI-dashboard work
+- **Remi voice stack — VAPI/Retell status TBD (S279 reconciliation).** Confirmed from the repo and the deployed function list: **both** handlers exist and are ACTIVE. `voice-intake` (VAPI; `X-Vapi-Secret` header auth, nested `{ message: { type, call } }` events, `processed_webhook_events` idempotency) is at **v10, last updated 2026-06-02**. `voice-intake-retell` (Retell; HMAC-SHA256 `x-retell-signature`, flat `{ event, call }` payloads, `leads.retell_call_id` UNIQUE upsert idempotency) is at **v1, created 2026-08-10**. Both deploy `--no-verify-jwt` and neither notifies directly — both rely on the `on_lead_insert` trigger → `notify-new-lead` (**v63, verify_jwt false**) for owner email + SMS.
+  **TBD, not confirmable from the repo:** which provider the live Remi number actually points at, and whether VAPI is being retired. That is provider-dashboard state. The older warm-transfer task ("configure VAPI assistant with transfer tool and transferPlan; the `voice-intake` transfer branch is already built") is therefore **parked pending that decision** — if Remi has moved to Retell, the transfer work needs re-scoping against `voice-intake-retell`, which has no transfer branch.
 
 ---
 
