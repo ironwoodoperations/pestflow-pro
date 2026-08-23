@@ -45,6 +45,22 @@ jobs:
           fi
           echo "ai-proxy guard passed: no direct api.anthropic.com / VITE_ANTHROPIC in src/ or supabase/functions/ (excluding ai-proxy)"
 
+      # S284 — the vitest suite, which until now had never gated a single PR.
+      # 535 tests ran exactly once, locally, on the machine that wrote them.
+      # Among them is the assertion that generate-monthly-report's PLATFORM_RULES
+      # block is byte-identical to the S261 anti-hallucination hardening that
+      # stops the report narrator inventing WordPress, Yoast and Rank Math — one
+      # reflow of that string used to break it with CI still reporting green.
+      #
+      # `vitest run` is the non-watch form; no --passWithNoTests or any other
+      # flag that could turn a real failure into a pass. The eight Deno tests
+      # that made a bare `npx vitest run` exit 1 are excluded in vitest.config.ts
+      # (they call Deno.test and import https:// URLs, so vitest could never load
+      # them); supabase/functions/_shared/auth/ is covered for real by the
+      # auth-isolation-test job below.
+      - name: Unit tests (vitest)
+        run: npx vitest run
+
   # S273 — TENANT-ISOLATION GATE (Principle 7). Spins up a real local Supabase stack
   # and runs the Deno cross-tenant isolation test against requireTenantUser — the SSOT
   # auth boundary all 18 tenant-context edge functions funnel through. This is the first
