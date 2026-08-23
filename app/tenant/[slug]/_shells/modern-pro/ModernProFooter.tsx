@@ -63,7 +63,12 @@ export function ModernProFooter({ tenant, social = {} }: Props) {
       </div>
       <div className="bg-black/10 py-4">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-2 text-sm text-gray-500">
-          <span>&copy; {new Date().getFullYear()} {name}. All rights reserved.</span>
+          {/* Discreet way into this tenant's OWN admin. Plain <a>, not <Link>:
+              /admin is not an App Router route — middleware rewrites it to the
+              Vite SPA (/_admin/index.html), so the navigation is a document load
+              either way. Matches VitaGlowFooter, which links its copyright the
+              same way. Relative href so each tenant lands on its own admin. */}
+          <a href="/admin" className="hover:text-gray-400 transition">&copy; {new Date().getFullYear()} {name}. All rights reserved.</a>
           <div className="flex items-center gap-3 text-xs text-gray-600">
             <Link href="/privacy" className="hover:text-gray-400 transition">Privacy Policy</Link>
             <span>·</span>
