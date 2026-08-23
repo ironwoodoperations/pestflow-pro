@@ -9,9 +9,9 @@ const STEPS = [{ num: 1, label: 'Contact Info' }, { num: 2, label: 'Service Info
 interface FormState { firstName: string; lastName: string; email: string; phone: string; service: string; address: string; notes: string }
 const INITIAL: FormState = { firstName: '', lastName: '', email: '', phone: '', service: '', address: '', notes: '' };
 
-interface Props { tenantId: string; businessName: string; businessPhone: string; ownerSmsNumber: string; shellTemplate?: string; serviceOptions: string[] }
+interface Props { tenantId: string; businessName: string; businessPhone: string; ownerSmsNumber: string; shellTemplate?: string; serviceOptions: string[]; heroTitle: string }
 
-export function QuoteForm({ tenantId, businessName, businessPhone, ownerSmsNumber, shellTemplate, serviceOptions }: Props) {
+export function QuoteForm({ tenantId, businessName, businessPhone, ownerSmsNumber, shellTemplate, serviceOptions, heroTitle }: Props) {
   const isCF = shellTemplate === 'clean-friendly';
   // DB-driven; never render a blank dropdown.
   const options = serviceOptions.length > 0 ? serviceOptions : ['General Inquiry'];
@@ -89,7 +89,7 @@ export function QuoteForm({ tenantId, businessName, businessPhone, ownerSmsNumbe
   return (
     <div className="max-w-2xl mx-auto px-4">
       <div className="text-center mb-10">
-        <h1 className="text-3xl md:text-4xl font-bold mb-2" style={{ color: 'var(--color-heading, #1a1a1a)' }}>Schedule a Free Inspection</h1>
+        <h1 className="text-3xl md:text-4xl font-bold mb-2" style={{ color: 'var(--color-heading, #1a1a1a)' }}>{heroTitle}</h1>
         <p className="text-gray-500">Complete the form below and we&apos;ll get back to you fast.</p>
       </div>
 

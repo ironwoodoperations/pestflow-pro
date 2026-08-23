@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { formatPhone } from '../../../../../shared/lib/formatPhone';
+import type { ResolvedStat } from '../../_lib/aboutStats';
 
 interface TeamMember { id: string; name: string; title?: string; bio?: string; photo_url?: string }
 
@@ -9,10 +10,11 @@ interface Props {
   heroImageUrl: string | null;
   aboutImage: string;
   team: TeamMember[];
-  foundedYear?: string;
   businessName: string;
   introParagraphs?: string[];
   phone?: string;
+  /** WS7: resolved from settings.about. Empty = render no stat block at all. */
+  stats?: ResolvedStat[];
 }
 
 const FALLBACK = [
@@ -20,9 +22,8 @@ const FALLBACK = [
   'A licensed team operating to enterprise quality standards, with same-day response and a 100% guarantee.',
 ];
 
-export function ModernProAboutPage({ heroTitle, heroSub, heroImageUrl, aboutImage, team, foundedYear, businessName, introParagraphs, phone = '' }: Props) {
+export function ModernProAboutPage({ heroTitle, heroSub, heroImageUrl, aboutImage, team, businessName, introParagraphs, phone = '', stats = [] }: Props) {
   const paragraphs = introParagraphs && introParagraphs.length > 0 ? introParagraphs : FALLBACK;
-  const yearsInBiz = foundedYear ? new Date().getFullYear() - Number(foundedYear) : null;
 
   return (
     <div style={{ backgroundColor: '#0B1220', color: '#E5E7EB', fontFamily: 'Inter, sans-serif' }}>
@@ -35,22 +36,22 @@ export function ModernProAboutPage({ heroTitle, heroSub, heroImageUrl, aboutImag
         </div>
       </section>
 
-      {/* Stats blocks */}
-      <section style={{ borderBottom: '1px solid rgba(63,184,175,0.15)', padding: '2.5rem 1rem' }}>
-        <div className="max-w-6xl mx-auto" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: '1.5rem' }}>
-          {[
-            yearsInBiz ? { num: `${yearsInBiz}+`, label: 'Years operating' } : { num: '15+', label: 'Years operating' },
-            { num: '5,000+', label: 'Properties protected' },
-            { num: '100%', label: 'Guarantee' },
-            { num: '24/7', label: 'Response window' },
-          ].map((s) => (
-            <div key={s.label} style={{ textAlign: 'center', padding: '1.5rem', border: '1px solid rgba(63,184,175,0.2)', borderRadius: 8, backgroundColor: 'rgba(27,42,78,0.4)' }}>
-              <div style={{ fontSize: 'clamp(28px,3.5vw,40px)', fontWeight: 700, color: '#3FB8AF', lineHeight: 1 }}>{s.num}</div>
-              <div style={{ fontSize: 12, fontWeight: 500, color: '#94A3B8', marginTop: '0.5rem', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{s.label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* Stats blocks — DB-driven (settings.about). WS7: the four hardcoded
+          tiles are gone, two of which were fabricated and one of which invented
+          fifteen years for any tenant with no founded_year. No stats configured
+          means NO block; there is deliberately no fallback tile. */}
+      {stats.length > 0 && (
+        <section style={{ borderBottom: '1px solid rgba(63,184,175,0.15)', padding: '2.5rem 1rem' }}>
+          <div className="max-w-6xl mx-auto" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: '1.5rem' }}>
+            {stats.map((s) => (
+              <div key={s.label} style={{ textAlign: 'center', padding: '1.5rem', border: '1px solid rgba(63,184,175,0.2)', borderRadius: 8, backgroundColor: 'rgba(27,42,78,0.4)' }}>
+                <div style={{ fontSize: 'clamp(28px,3.5vw,40px)', fontWeight: 700, color: '#3FB8AF', lineHeight: 1 }}>{s.value}</div>
+                <div style={{ fontSize: 12, fontWeight: 500, color: '#94A3B8', marginTop: '0.5rem', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Story */}
       <section style={{ padding: '4rem 1rem' }}>

@@ -7,6 +7,8 @@ export async function generateStaticParams() {
   return [];
 }
 import { getIntegrations, getAllServicePages } from '../_lib/queries';
+import { resolveVertical } from '../../../../src/shells/_shared/serviceEntry';
+import { getVerticalCopy } from '../../../../src/shells/_shared/verticalCopy';
 import { QuoteForm } from '../_components/forms/QuoteForm';
 
 type Params = { params: { slug: string } };
@@ -38,6 +40,7 @@ export default async function QuotePage({ params }: Params) {
         ownerSmsNumber={integrations.owner_sms_number ?? ''}
         shellTemplate={tenant.template ?? undefined}
         serviceOptions={serviceOptions}
+        heroTitle={getVerticalCopy(resolveVertical(tenant)).quoteHeroTitle}
       />
     </div>
   );

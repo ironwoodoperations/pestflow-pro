@@ -1,4 +1,9 @@
-const FEATURES = [
+import type { Feature } from '../../../../../src/shells/_shared/verticalCopy';
+
+// PR B: copy is a prop. The DEFAULT is the exact pest array this component used
+// to own, so any caller that does not pass `features` renders byte-identically
+// to before — that is what keeps the homepage's non-modern-pro branch stable.
+const DEFAULT_FEATURES: Feature[] = [
   { title: 'Custom Treatment Plans', desc: 'Every property is different. We tailor our approach to your specific pest pressures and property layout.' },
   { title: 'Family & Pet-Friendly Products', desc: 'EPA-approved, low-impact formulations that are safe for your children and pets when applied correctly.' },
   { title: 'Unlimited Callbacks', desc: 'If pests return between scheduled services, we come back at no additional cost — guaranteed.' },
@@ -6,8 +11,7 @@ const FEATURES = [
   { title: 'Local Experts', desc: 'We know the local pest pressures in your area and have treated thousands of properties just like yours.' },
   { title: 'You Come First', desc: 'Our technicians take time to explain treatments, answer questions, and ensure your complete satisfaction.' },
 ];
-
-export function WhyChooseUs({ businessName, isBoldLocal = false }: { businessName: string; isBoldLocal?: boolean }) {
+export function WhyChooseUs({ businessName, isBoldLocal = false, features = DEFAULT_FEATURES }: { businessName: string; isBoldLocal?: boolean; features?: Feature[] }) {
   // S267: on bold-local the brand band would be a bright amber block (white
   // text ≈ 2.1:1, a pre-existing AA failure surfaced by the dark conversion).
   // Render it on the charcoal CTA surface there instead; every other theme
@@ -21,7 +25,7 @@ export function WhyChooseUs({ businessName, isBoldLocal = false }: { businessNam
           <h2 className="text-3xl md:text-4xl font-bold text-white">Why Choose {businessName || 'Us'}?</h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {FEATURES.map((f) => (
+          {features.map((f) => (
             <div key={f.title} className="flex gap-4 p-5 rounded-xl bg-white/10 backdrop-blur-sm">
               <div className="flex-shrink-0 mt-0.5">
                 <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--color-accent)' }}>

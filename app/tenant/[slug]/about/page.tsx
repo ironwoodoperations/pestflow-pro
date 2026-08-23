@@ -9,7 +9,8 @@ export const revalidate = 300;
 export async function generateStaticParams() {
   return [];
 }
-import { getPageContent, getTeamMembers, getHeroMedia, getIntegrations } from '../_lib/queries';
+import { getPageContent, getTeamMembers, getHeroMedia, getIntegrations, getAboutSettings } from '../_lib/queries';
+import { resolveAboutStats } from '../_lib/aboutStats';
 import { resolveHeroImage } from '../_lib/heroImage';
 import { CleanFriendlyAboutPage } from '../_shells/clean-friendly/CleanFriendlyAboutPage';
 import { BoldLocalAboutPage } from '../_shells/bold-local/BoldLocalAboutPage';
@@ -34,10 +35,11 @@ export default async function AboutPage({ params }: Params) {
   const tenant = await resolveTenantBySlug(params.slug);
   if (!tenant) notFound();
 
-  const [content, team, heroMedia] = await Promise.all([
+  const [content, team, heroMedia, aboutSettings] = await Promise.all([
     getPageContent(tenant.id, 'about'),
     getTeamMembers(tenant.id),
     getHeroMedia(tenant.id),
+      getAboutSettings(tenant.id),
   ]);
 
   const c = content as { title?: string; subtitle?: string; intro?: string; image_1_url?: string; image_urls?: string[] } | null;
@@ -55,6 +57,10 @@ export default async function AboutPage({ params }: Params) {
   const aboutSchema = generateAboutSchema(aboutBizInfo, aboutSeoInfo, siteUrl);
   const businessName = tenant.business_name || tenant.name;
   const foundedYear = tenant.founded_year ? String(tenant.founded_year) : undefined;
+  // WS7: modern-pro's stat tiles come from settings.about. Resolved here (the
+  // server component that already holds founded_year) so the shell stays a
+  // pure renderer. No stats configured -> empty array -> no block rendered.
+  const aboutStats = resolveAboutStats(aboutSettings.stats, foundedYear, new Date().getFullYear());
   const teamTyped = team as TeamMember[];
 
   if (tenant.template === 'clean-friendly') {
@@ -104,7 +110,7 @@ export default async function AboutPage({ params }: Params) {
           heroImageUrl={heroImageUrl}
           aboutImage={aboutImage}
           team={teamTyped}
-          foundedYear={foundedYear}
+          stats={aboutStats}
           businessName={businessName}
           introParagraphs={introParagraphs}
           phone={tenant.phone ?? ''}

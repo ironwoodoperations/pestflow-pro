@@ -199,6 +199,31 @@ export const getIntegrations = cache(
   }
 );
 
+export interface AboutStat { value: string; label: string }
+
+// PR B / WS7 — settings.about. Shape:
+//   { "stats": [ { "value": "auto:years_operating", "label": "Years operating" } ] }
+// Null-safe like its neighbours: a missing key, a missing stats array, or a
+// read error all yield []. The CALLER decides what an empty list renders as,
+// and the answer is "nothing" — there is no fallback tile anywhere.
+export const getAboutSettings = cache(
+  async (tenantId: string): Promise<{ stats: AboutStat[] }> => {
+    const supabase = getServerSupabaseForISR();
+    const { data, error } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('tenant_id', tenantId)
+      .eq('key', 'about')
+      .maybeSingle();
+    if (error) {
+      console.error('[getAboutSettings] error', { tenantId, code: error.code, message: error.message });
+      return { stats: [] };
+    }
+    const raw = (data?.value ?? {}) as { stats?: unknown };
+    return { stats: Array.isArray(raw.stats) ? (raw.stats as AboutStat[]) : [] };
+  }
+);
+
 export const getSeoSettings = cache(
   async (tenantId: string): Promise<{ meta_description?: string; service_areas?: string[]; certifications?: string[]; founded_year?: string; owner_name?: string }> => {
     const supabase = getServerSupabaseForISR();
