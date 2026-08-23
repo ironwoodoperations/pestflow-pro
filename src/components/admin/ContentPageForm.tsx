@@ -6,11 +6,13 @@ import { toast } from 'sonner'
 
 interface ContentForm { title: string; subtitle: string; intro: string; video_url: string; image_url: string; pageHeroImageUrl: string; image1Url: string; image2Url: string; image3Url: string }
 
-const PAGES_WITH_IMAGES = new Set([
-  'home','about','pest-control','termite-control','termite-inspections',
-  'roach-control','ant-control','spider-control','scorpion-control','mosquito-control',
-  'bed-bug-control','flea-tick-control','rodent-control','wasp-hornet-control',
-])
+// S285 — a FIFTH hardcoded pest slug array, not counted in the S282 inventory
+// or the S285 brief (both said four). It gates the image-picker section, so
+// every one of pls's service pages rendered with NO image picker at all: none
+// of sprinkler-systems, drainage, pump-systems, sod-dirt-work or retaining-walls
+// was in the set. Now: the two platform pages that carry images, plus whatever
+// the tenant's vertical calls a service page.
+const PLATFORM_PAGES_WITH_IMAGES = new Set(['home', 'about'])
 
 const IMAGE_COL = ['image_1_url', 'image_2_url', 'image_3_url'] as const
 
@@ -18,7 +20,10 @@ interface Props {
   selectedSlug: string
   form: ContentForm
   loading: boolean; saving: boolean; aiLoading: boolean; reverting: boolean
-  isPestPage: boolean
+  /** S285 — renamed from the pest-only flag. True for the vertical's service pages. */
+  isServicePage: boolean
+  /** What this trade's service is called, e.g. "irrigation service". */
+  serviceLabel: string
   heroHeadline?: string
   onHeroHeadlineChange?: (val: string) => void
   applyHeroToAllPages?: boolean
@@ -174,7 +179,7 @@ function HeroImageUpload({ slug, onUpdate, masterOverride = false }: { slug: str
 
 const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-400'
 
-export default function ContentPageForm({ selectedSlug, form, loading, saving, aiLoading, reverting, isPestPage, heroHeadline, onHeroHeadlineChange, applyHeroToAllPages, updateField, onSave, onGenerateAI, onRevert, onImageUpdate }: Props) {
+export default function ContentPageForm({ selectedSlug, form, loading, saving, aiLoading, reverting, isServicePage, serviceLabel, heroHeadline, onHeroHeadlineChange, applyHeroToAllPages, updateField, onSave, onGenerateAI, onRevert, onImageUpdate }: Props) {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
       <h3 className="text-base font-semibold text-gray-900 mb-1">Editing: <span className="text-emerald-600">{selectedSlug}</span></h3>
@@ -208,7 +213,7 @@ export default function ContentPageForm({ selectedSlug, form, loading, saving, a
             <input type="text" value={form.video_url} onChange={e => updateField('video_url', e.target.value)} placeholder="https://youtube.com/..." className={inputClass} />
           </div>
 
-          {PAGES_WITH_IMAGES.has(selectedSlug) && (
+          {(PLATFORM_PAGES_WITH_IMAGES.has(selectedSlug) || isServicePage) && (
             <div className="space-y-4 border-t border-gray-100 pt-4">
               <HeroImageUpload slug={selectedSlug} onUpdate={url => onImageUpdate?.('pageHeroImageUrl', url)} masterOverride={applyHeroToAllPages} />
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider pt-2">Additional Images</p>
@@ -222,8 +227,8 @@ export default function ContentPageForm({ selectedSlug, form, loading, saving, a
             <button onClick={onSave} disabled={saving} className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
               {saving ? 'Saving...' : 'Save Content'}
             </button>
-            <button onClick={onGenerateAI} disabled={aiLoading} title={isPestPage ? 'Generate SEO-optimized pest service copy' : 'Generate page copy with AI'} className="flex items-center gap-1.5 border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-40">
-              <Sparkles size={14} /> {aiLoading ? 'Generating...' : isPestPage ? 'AI Write (Pest SEO)' : 'AI Write'}
+            <button onClick={onGenerateAI} disabled={aiLoading} title={isServicePage ? `Generate SEO-optimized ${serviceLabel} copy` : 'Generate page copy with AI'} className="flex items-center gap-1.5 border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-40">
+              <Sparkles size={14} /> {aiLoading ? 'Generating...' : isServicePage ? 'AI Write (SEO)' : 'AI Write'}
             </button>
             <button onClick={onRevert} disabled={reverting} className="flex items-center gap-1.5 border border-gray-300 text-gray-500 hover:text-red-600 hover:bg-red-50 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-40">
               <RotateCcw size={14} /> {reverting ? 'Reverting...' : 'Revert to Original'}

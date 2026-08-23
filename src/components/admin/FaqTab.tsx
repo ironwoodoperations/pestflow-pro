@@ -5,7 +5,8 @@ import { useTenant } from '../../context/TenantBootProvider'
 import { triggerRevalidate } from '../../lib/revalidate'
 import PageHelpBanner from './PageHelpBanner'
 import ConfirmDeleteModal from '../shared/ConfirmDeleteModal'
-import FaqItemForm, { FAQ_CATEGORIES, type FaqFormData } from './FaqItemForm'
+import FaqItemForm, { type FaqFormData } from './FaqItemForm'
+import { useAdminPreset } from '../../hooks/useAdminPreset'
 
 interface FaqItem {
   id: string
@@ -18,6 +19,8 @@ interface FaqItem {
 
 export default function FaqTab() {
   const { id: tenantId } = useTenant()
+  // S285 — FAQ categories come from the tenant's vertical, not from a pest list.
+  const { preset } = useAdminPreset()
   const [items, setItems] = useState<FaqItem[]>([])
   const [loading, setLoading] = useState(true)
   const [adding, setAdding] = useState(false)
@@ -82,14 +85,17 @@ export default function FaqTab() {
     if (s.session?.access_token && tenantId) await triggerRevalidate({ type: 'faq', tenantId }, s.session.access_token)
   }
 
-  const grouped = FAQ_CATEGORIES.reduce((acc, cat) => {
+  const grouped = preset.faqCategories.reduce((acc, cat) => {
     const catItems = items.filter(i => i.category === cat)
     if (catItems.length > 0) acc[cat] = catItems
     return acc
   }, {} as Record<string, FaqItem[]>)
 
-  // Also catch any items with categories not in the preset list
-  const otherCats = [...new Set(items.map(i => i.category))].filter(c => !FAQ_CATEGORIES.includes(c))
+  // Also catch any items with categories not in the preset list. PRESERVED from
+  // main and now load-bearing for two cases, not one: a category outside the
+  // vertical's preset, AND every category during the first paint, while the
+  // vertical is still resolving and the preset is NEUTRAL.
+  const otherCats = [...new Set(items.map(i => i.category))].filter(c => !preset.faqCategories.includes(c))
   otherCats.forEach(cat => { grouped[cat] = items.filter(i => i.category === cat) })
 
   if (loading) return <div className="p-6 text-gray-400">Loading...</div>
@@ -112,6 +118,8 @@ export default function FaqTab() {
           <div className="border border-emerald-200 rounded-lg p-4 bg-emerald-50">
             <h4 className="font-medium text-gray-800 text-sm mb-3">New FAQ Item</h4>
             <FaqItemForm
+              categories={preset.faqCategories}
+              questionPlaceholder={preset.placeholders.faqQuestion}
               onSave={handleAdd}
               onCancel={() => setAdding(false)}
               saving={saving}
@@ -135,6 +143,8 @@ export default function FaqTab() {
                 <div key={item.id} className="border border-gray-200 rounded-lg p-3">
                   {editId === item.id ? (
                     <FaqItemForm
+                      categories={preset.faqCategories}
+                      questionPlaceholder={preset.placeholders.faqQuestion}
                       initial={{ question: item.question, answer: item.answer, category: item.category, sort_order: String(item.sort_order) }}
                       onSave={form => handleSaveEdit(item.id, form)}
                       onCancel={() => setEditId(null)}

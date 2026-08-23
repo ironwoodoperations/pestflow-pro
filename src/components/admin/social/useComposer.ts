@@ -58,6 +58,10 @@ export function useComposer(
   const [aiError, setAiError] = useState('')
   const [businessName, setBusinessName] = useState('Your Business')
   const [industry, setIndustry] = useState('Pest Control')
+  // S285 — the CHECK-constrained field, read from the same row as industry.
+  // ComposerTemplates prefers it because industry is free text that rarely
+  // matches a template key.
+  const [vertical, setVertical] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [editingPostId, setEditingPostId] = useState<string | null>(null)
   const [uploadState, setUploadState] = useState<UploadState>('idle')
@@ -76,6 +80,7 @@ export function useComposer(
     ]).then(([bizRes, countRes]) => {
       if (bizRes.data?.value?.name) setBusinessName(bizRes.data.value.name)
       if (bizRes.data?.value?.industry) setIndustry(bizRes.data.value.industry)
+      setVertical(typeof bizRes.data?.value?.vertical === 'string' ? bizRes.data.value.vertical : null)
       setAiDailyCount(countRes.count || 0)
       setLoading(false)
     })
@@ -233,7 +238,7 @@ export function useComposer(
     form, setForm, aiTopic, setAiTopic, aiCaptions, aiLoading, aiError,
     aiDailyCount, aiDailyLimit, postsPerGeneration, schedulingDayCap,
     publishing, saving,
-    businessName, industry, loading, editingPostId, smartSchedule,
+    businessName, industry, vertical, loading, editingPostId, smartSchedule,
     smartLoading, captionRef, charLimit, tier,
     uploadState, uploadNotice, previewUrl,
     generateCaptions, getSmartSchedule,

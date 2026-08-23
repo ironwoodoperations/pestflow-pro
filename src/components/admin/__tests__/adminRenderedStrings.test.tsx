@@ -25,11 +25,16 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import FaqItemForm, { FAQ_CATEGORIES } from '../FaqItemForm';
+import FaqItemForm from '../FaqItemForm';
+import { ADMIN_PRESETS, NEUTRAL_ADMIN_PRESET } from '../../../lib/adminVerticalPreset';
 import PageHelpBanner from '../PageHelpBanner';
 import DemoBanner from '../DemoBanner';
 import RemiAddonStrip from '../RemiAddonStrip';
 import ComposerTemplates from '../social/ComposerTemplates';
+import { resolveTemplateKey, INDUSTRY_TEMPLATES } from '../social/composerTemplateSets';
+
+// pls's REAL stored settings.business_info.industry — free text, 154 chars.
+const PLS_REAL_INDUSTRY = 'irrigation and sprinkler system installation and repair, yard drainage and french drains, lake and pond pump systems, sod and grading — East Texas';
 import ComposerPlatformSelector from '../social/ComposerPlatformSelector';
 import LeadFunnel from '../reports/LeadFunnel';
 import ShellSelector from '../client-setup/components/ShellSelector';
@@ -96,13 +101,28 @@ const faqDefault = render('FaqItemForm.default',
 const faqPestEdit = render('FaqItemForm.edit-pest-category',
   createElement(FaqItemForm, {
     initial: { question: 'Q', answer: 'A', category: 'Rodents', sort_order: '0' },
+    categories: ADMIN_PRESETS.pest.faqCategories,
     onSave: noop, onCancel: noop, saving: false, label: 'Save',
   }));
 
-// The pls case: a category that exists in the DB but not in FAQ_CATEGORIES.
+// S285 — THE REGRESSION CASE. An irrigation tenant editing an irrigation FAQ.
+// Against main this render contained no 'Sprinkler Systems' option at all and no
+// `selected` attribute anywhere: the control painted blank and saving rewrote
+// the category to whichever pest species sorted first.
 const faqPlsEdit = render('FaqItemForm.edit-irrigation-category',
   createElement(FaqItemForm, {
     initial: { question: 'How often should I run my system?', answer: 'A', category: 'Sprinkler Systems', sort_order: '0' },
+    categories: ADMIN_PRESETS.irrigation.faqCategories,
+    onSave: noop, onCancel: noop, saving: false, label: 'Save',
+  }));
+
+// A category stored on a row but outside its vertical's preset — the parity case
+// for FaqTab's otherCats fallback. It must still be selectable, or opening the
+// edit form silently changes it.
+const faqOffPreset = render('FaqItemForm.edit-off-preset-category',
+  createElement(FaqItemForm, {
+    initial: { question: 'Q', answer: 'A', category: 'Retaining Walls', sort_order: '0' },
+    categories: ADMIN_PRESETS.irrigation.faqCategories,
     onSave: noop, onCancel: noop, saving: false, label: 'Save',
   }));
 
@@ -118,6 +138,20 @@ const tplHvac = render('ComposerTemplates.hvac',
   createElement(ComposerTemplates, { industry: 'HVAC', businessName: 'Acme', onSelectTopic: noop }));
 const tplIrrigation = render('ComposerTemplates.irrigation-unmapped',
   createElement(ComposerTemplates, { industry: 'Irrigation', businessName: 'Precision Lawn Systems', onSelectTopic: noop }));
+
+// S285 — the vertical-keyed renders. ComposerTemplates paints COLLAPSED, so the
+// template names are not in the markup; these assert the RESOLVED SET instead,
+// via the exported lookup, and the renders prove the component still mounts with
+// the new prop.
+render('ComposerTemplates.vertical-irrigation',
+  createElement(ComposerTemplates, {
+    industry: PLS_REAL_INDUSTRY, vertical: 'irrigation',
+    businessName: 'Precision Lawn Systems', onSelectTopic: noop,
+  }));
+render('ComposerTemplates.vertical-pest',
+  createElement(ComposerTemplates, {
+    industry: 'Pest Control', vertical: 'pest', businessName: 'Ironclad', onSelectTopic: noop,
+  }));
 
 render('ComposerPlatformSelector',
   createElement(ComposerPlatformSelector, { platform: 'facebook', connectedKeys: ['facebook'], industry: 'Irrigation', onSelect: noop }));
@@ -143,33 +177,46 @@ const obBrand = render('onboarding.StepBranding',
 // FAQ_CATEGORIES — the finding the brief asked to be verified, not assumed.
 // ---------------------------------------------------------------------------
 
-describe('FaqItemForm: the category select is a closed pest list', () => {
-  it('renders exactly the ten hardcoded options and no others', () => {
-    const options = [...faqDefault.matchAll(/<option[^>]*value="([^"]*)"/g)]
-      .map((m) => m[1].replace(/&amp;/g, '&'));   // React escapes '&' in attributes
-    expect(options).toEqual(FAQ_CATEGORIES);
-    expect(options).toHaveLength(10);
+describe('S285 — FaqItemForm renders the tenant\'s OWN categories', () => {
+  const optionsOf = (html: string) =>
+    [...html.matchAll(/<option[^>]*value="([^"]*)"/g)].map((m) => m[1].replace(/&amp;/g, '&'));
+
+  it('with no categories prop it falls back to NEUTRAL — never to pest', () => {
+    const options = optionsOf(faqDefault);
+    expect(options).toEqual(NEUTRAL_ADMIN_PRESET.faqCategories);
+    // The defect this replaces: main rendered ten options, nine of them pest species.
+    expect(options.join(' ')).not.toMatch(/ant|spider|wasp|scorpion|rodent|mosquito|flea|tick|roach|bed.?bug/i);
   });
 
-  it('nine of the ten options are pest species or pest-generic', () => {
-    expect(FAQ_CATEGORIES).toContain('Ants');
-    expect(FAQ_CATEGORIES).toContain('Wasps & Yellow Jackets');
-    expect(FAQ_CATEGORIES).toContain('Bed Bugs');
-    // 'General' is the only trade-neutral entry.
-    const neutral = FAQ_CATEGORIES.filter((c) => !/ant|spider|wasp|scorpion|rodent|mosquito|flea|tick|roach|bed.?bug/i.test(c));
-    expect(neutral).toEqual(['General']);
+  it('a pest tenant still gets exactly the ten categories its live rows are stored against', () => {
+    expect(optionsOf(faqPestEdit)).toEqual(ADMIN_PRESETS.pest.faqCategories);
+    expect(ADMIN_PRESETS.pest.faqCategories).toHaveLength(10);
   });
 
-  it('a pest category that IS in the list renders as the selected option', () => {
+  it('a pest category renders as the selected option', () => {
     expect(faqPestEdit).toMatch(/<option[^>]*selected[^>]*value="Rodents"|value="Rodents"[^>]*selected/);
   });
 
-  // The pls case. React sets select.value to a value with no matching <option>,
-  // so the browser reports selectedIndex -1 and the control paints EMPTY. The
-  // category is NOT in the option list and NOT marked selected anywhere.
-  it('an irrigation category present in the DB renders NO selected option — the control is blank', () => {
-    expect(faqPlsEdit).not.toContain('Sprinkler Systems');
-    expect(faqPlsEdit).not.toMatch(/selected/);
+  // THE REGRESSION TEST the brief asked for. Fails against main.
+  it('an irrigation category renders as a SELECTED option, not a blank control', () => {
+    expect(faqPlsEdit).toContain('Sprinkler Systems');
+    expect(faqPlsEdit).toMatch(/<option[^>]*selected[^>]*value="Sprinkler Systems"|value="Sprinkler Systems"[^>]*selected/);
+  });
+
+  it('an irrigation tenant is offered irrigation categories and no pest species', () => {
+    const options = optionsOf(faqPlsEdit);
+    expect(options).toEqual(ADMIN_PRESETS.irrigation.faqCategories);
+    expect(options.join(' ')).not.toMatch(/ant|spider|wasp|scorpion|rodent|mosquito|flea|tick|roach|bed.?bug/i);
+  });
+
+  it('a category outside the preset is appended and stays selected, so editing cannot silently change it', () => {
+    expect(optionsOf(faqOffPreset)).toEqual([...ADMIN_PRESETS.irrigation.faqCategories, 'Retaining Walls']);
+    expect(faqOffPreset).toMatch(/<option[^>]*selected[^>]*value="Retaining Walls"|value="Retaining Walls"[^>]*selected/);
+  });
+
+  it('the question placeholder follows the trade rather than naming pest treatments', () => {
+    expect(faqDefault).toContain(NEUTRAL_ADMIN_PRESET.placeholders.faqQuestion.replace(/'/g, '&#x27;'));
+    expect(faqDefault).not.toContain('treatments safe for pets');
   });
 
   it('the rest of the irrigation row still renders, so only the category is lost visually', () => {
@@ -223,8 +270,21 @@ describe('which admin components emit pest vocabulary in their OUTPUT', () => {
     expect(emitting.length).toBeGreaterThan(0);
   });
 
-  it('the FAQ form emits pest species names', () => {
-    expect(emitting.map((r) => r.name)).toContain('FaqItemForm.default');
+  // S285 — this assertion USED to read `toContain('FaqItemForm.default')`, and
+  // it passed, because the default render emitted nine pest species to every
+  // tenant. It is inverted rather than deleted: the discovery artefact is more
+  // useful as a standing guard that the default never regresses to pest than as
+  // a record of the state it was in.
+  it('the FAQ form no longer emits pest species by default', () => {
+    expect(emitting.map((r) => r.name)).not.toContain('FaqItemForm.default');
+  });
+
+  it('the FAQ form still emits pest species when the tenant IS a pest tenant', () => {
+    expect(emitting.map((r) => r.name)).toContain('FaqItemForm.edit-pest-category');
+  });
+
+  it('the irrigation FAQ render emits no pest vocabulary at all', () => {
+    expect(emitting.map((r) => r.name)).not.toContain('FaqItemForm.edit-irrigation-category');
   });
 
   it('the client-setup business step emits a pest example business name', () => {
@@ -279,5 +339,42 @@ describe('the dump itself', () => {
 
   it('unrelated components render unrelated markup', () => {
     expect(visibleText(funnel)).not.toEqual(visibleText(help));
+  });
+});
+
+
+// ---------------------------------------------------------------------------
+// S285 — ComposerTemplates now keys on `vertical`, with `industry` kept as a
+// fallback so 'hvac', 'plumbing' and 'roofing' (which have no vertical literal)
+// keep their template sets.
+// ---------------------------------------------------------------------------
+
+describe('ComposerTemplates lookup', () => {
+  it('prefers vertical over industry', () => {
+    expect(resolveTemplateKey('irrigation', PLS_REAL_INDUSTRY)).toBe('irrigation');
+    expect(resolveTemplateKey('pest', 'anything at all')).toBe('pest control');
+  });
+
+  it("falls through to 'generic' for pls's real industry string when vertical is absent — the state on main", () => {
+    expect(resolveTemplateKey(null, PLS_REAL_INDUSTRY)).toBe('generic');
+    expect(resolveTemplateKey(null, 'Medical Aesthetics')).toBe('generic');
+  });
+
+  it('keeps the industry path working for the three sets with no vertical literal', () => {
+    expect(resolveTemplateKey(null, 'HVAC')).toBe('hvac');
+    expect(resolveTemplateKey(null, 'Plumbing')).toBe('plumbing');
+    expect(resolveTemplateKey(undefined, 'Roofing')).toBe('roofing');
+  });
+
+  it('an unknown vertical does not resolve to pest', () => {
+    for (const v of [null, undefined, '', 'hvac', 'Pest', 'medical_aesthetics']) {
+      expect(resolveTemplateKey(v, '')).not.toBe('pest control');
+    }
+  });
+
+  it('the irrigation set exists and carries no pest vocabulary', () => {
+    const set = INDUSTRY_TEMPLATES['irrigation'];
+    expect(set).toBeDefined();
+    expect(JSON.stringify(set)).not.toMatch(/\b(pest|termite|spider|roach|mosquito|scorpion|bed ?bug|flea|rodent|wasp|hornet)\b/i);
   });
 });

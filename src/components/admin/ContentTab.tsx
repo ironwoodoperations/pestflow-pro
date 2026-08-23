@@ -10,15 +10,9 @@ import ContentPageForm from './ContentPageForm'
 import FaqTab from './FaqTab'
 import { callAi } from '../../lib/ai/callAi'
 import { buildContentPrompt } from './contentPrompt'
+import { useAdminPreset } from '../../hooks/useAdminPreset'
+import { standardPageSlugs, isServicePageSlug } from '../../lib/adminVerticalPreset'
 
-const STANDARD_SLUGS = [
-  'home', 'about',
-  'pest-control', 'termite-control', 'termite-inspections',
-  'spider-control', 'roach-control', 'ant-control', 'mosquito-control',
-  'scorpion-control', 'bed-bug-control', 'flea-tick-control', 'rodent-control',
-  'wasp-hornet-control',
-  'faq', 'contact',
-]
 
 const toSlug = (title: string) =>
   title.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
@@ -26,10 +20,13 @@ const toSlug = (title: string) =>
 interface ContentForm { title: string; subtitle: string; intro: string; video_url: string; image_url: string; pageHeroImageUrl: string; image1Url: string; image2Url: string; image3Url: string }
 const EMPTY_FORM: ContentForm = { title: '', subtitle: '', intro: '', video_url: '', image_url: '', pageHeroImageUrl: '', image1Url: '', image2Url: '', image3Url: '' }
 
-const PEST_SLUGS = ['spider-control', 'mosquito-control', 'ant-control', 'wasp-hornet-control', 'roach-control', 'flea-tick-control', 'rodent-control', 'scorpion-control', 'bed-bug-control', 'pest-control', 'termite-control', 'termite-inspections']
 
 export default function ContentTab() {
   const { id: tenantId } = useTenant()
+  // S285 — the page-slug lists now come from the tenant's vertical. Two of the
+  // four hardcoded pest slug arrays in the admin lived here and are gone.
+  const { preset, vertical } = useAdminPreset()
+  const standardSlugs = standardPageSlugs(vertical)
   const [selectedSlug, setSelectedSlug] = useState('home')
   const [form, setForm] = useState<ContentForm>(EMPTY_FORM)
   const [loading, setLoading] = useState(true)
@@ -54,7 +51,7 @@ export default function ContentTab() {
       .eq('tenant_id', tenantId)
       .then(({ data }) => {
         if (!data) return
-        const extras = data.map(r => r.page_slug).filter(s => !STANDARD_SLUGS.includes(s))
+        const extras = data.map(r => r.page_slug).filter(s => !standardSlugs.includes(s))
         setCustomSlugs(extras)
       })
   }, [tenantId])
@@ -104,7 +101,7 @@ export default function ContentTab() {
     if (!tenantId) return
     const slug = newPageForm.slug || toSlug(newPageForm.title)
     if (!slug) { toast.error('Enter a page title'); return }
-    if (STANDARD_SLUGS.includes(slug) || customSlugs.includes(slug)) {
+    if (standardSlugs.includes(slug) || customSlugs.includes(slug)) {
       toast.error('A page with that slug already exists'); return
     }
     setCreatingPage(true)
@@ -123,9 +120,14 @@ export default function ContentTab() {
     setCreatingPage(false)
     toast.success(`Page "/${slug}" created — add your content and save`)
   }
-  const isPestPage = PEST_SLUGS.includes(selectedSlug)
+  // S285 — this used to be a pest-slug membership test, so it was FALSE for
+  // every page of every non-pest tenant. It gates more than a label: it chooses
+  // which brief buildContentPrompt() builds, so the longer service-page brief
+  // was unreachable for all five of pls's service pages, which silently took
+  // the generic branch. Keying on the vertical's own slugs fixes both.
+  const isServicePage = isServicePageSlug(vertical, selectedSlug)
 
-  const prompt = () => buildContentPrompt({ slug: selectedSlug, businessName, businessCity, isServicePage: isPestPage })
+  const prompt = () => buildContentPrompt({ slug: selectedSlug, businessName, businessCity, isServicePage })
 
   async function generateAI() {
     setAiLoading(true)
@@ -203,7 +205,7 @@ export default function ContentTab() {
 
   return (
     <div>
-      <PageHelpBanner tab="content" title="📝 Content Editor" body="Pick a page from the left, then edit the Title, Subtitle, or Intro text. For pest pages, choose a photo from the auto-loaded image search. Hit Save — your website updates instantly." />
+      <PageHelpBanner tab="content" title="📝 Content Editor" body={`Pick a page from the left, then edit the Title, Subtitle, or Intro text. ${preset.placeholders.contentPhotoHint} Hit Save — your website updates instantly.`} />
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-1">
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -218,7 +220,7 @@ export default function ContentTab() {
               </button>
             </div>
             <div className="max-h-[600px] overflow-y-auto">
-              {STANDARD_SLUGS.map(slug => (
+              {standardSlugs.map(slug => (
                 <button key={slug} onClick={() => setSelectedSlug(slug)} className={`w-full text-left px-4 py-2.5 text-sm transition ${selectedSlug === slug ? 'bg-emerald-50 text-emerald-700 font-medium border-l-2 border-emerald-500' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 border-l-2 border-transparent'}`}>
                   {slug}
                 </button>
@@ -289,7 +291,7 @@ export default function ContentTab() {
           ) : (
             <ContentPageForm
               selectedSlug={selectedSlug} form={form} loading={loading} saving={saving}
-              aiLoading={aiLoading} reverting={reverting} isPestPage={isPestPage}
+              aiLoading={aiLoading} reverting={reverting} isServicePage={isServicePage} serviceLabel={preset.entityLabels.service}
               heroHeadline={heroHeadline} onHeroHeadlineChange={setHeroHeadline}
               applyHeroToAllPages={applyHeroToAllPages}
               updateField={updateField} onSave={handleSave} onGenerateAI={generateAI} onRevert={handleRevert}

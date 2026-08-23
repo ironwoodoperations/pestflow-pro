@@ -56,6 +56,7 @@ export default function LegacyComposer({ onClose, onPosted, connectedKeys }: Pro
 
         <ComposerTemplates
           industry={c.industry}
+          vertical={c.vertical}
           businessName={c.businessName}
           onSelectTopic={topic => {
             c.setAiTopic(topic)

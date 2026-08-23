@@ -3,18 +3,23 @@ import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../context/TenantBootProvider'
 import { callAi } from '../../../lib/ai/callAi'
+import { useAdminPreset } from '../../../hooks/useAdminPreset'
+import { standardPageSlugs } from '../../../lib/adminVerticalPreset'
 
-const PAGE_SLUGS = [
-  'home', 'spider-control', 'mosquito-control', 'ant-control', 'wasp-hornet-control',
-  'roach-control', 'flea-tick-control', 'rodent-control', 'scorpion-control', 'bed-bug-control',
-  'pest-control', 'termite-control', 'termite-inspections', 'about', 'faq', 'contact',
-  'quote', 'reviews', 'service-area', 'blog',
-]
+// S285 — the fourth hardcoded pest slug array. Unlike useSeoTab's, this one was
+// live: it populates the page <select> below, so an irrigation tenant was asked
+// to pick a page from a list of pest species and could not choose any page they
+// actually have. Service pages now come from the vertical preset; 'reviews',
+// 'service-area' and 'blog' are SEO-namespace pages with no page_content row and
+// stay here rather than becoming preset entries.
+const EXTRA_SEO_SLUGS = ['reviews', 'service-area', 'blog']
 
 const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-400'
 
 export default function SeoKeywordsTab() {
   const { id: tenantId } = useTenant()
+  const { preset, vertical } = useAdminPreset()
+  const pageSlugs = [...standardPageSlugs(vertical), ...EXTRA_SEO_SLUGS]
   const [page, setPage] = useState('home')
   const [topic, setTopic] = useState('')
   const [keywords, setKeywords] = useState<{ keyword: string; intent: string; difficulty: string; priority: string }[]>([])
@@ -59,12 +64,12 @@ export default function SeoKeywordsTab() {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">Page</label>
           <select value={page} onChange={e => setPage(e.target.value)} className={`${inputClass} bg-white`}>
-            {PAGE_SLUGS.map(s => <option key={s} value={s}>{s}</option>)}
+            {pageSlugs.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">Focus Topic</label>
-          <input value={topic} onChange={e => setTopic(e.target.value)} placeholder="e.g. spider control" className={inputClass} />
+          <input value={topic} onChange={e => setTopic(e.target.value)} placeholder={preset.placeholders.seoKeyword} className={inputClass} />
         </div>
         <div className="flex items-end">
           <button onClick={generate} disabled={loading} className="w-full bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
