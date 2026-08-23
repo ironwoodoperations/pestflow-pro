@@ -157,7 +157,7 @@ const VERTICAL_COPY: Partial<Record<Vertical, VerticalCopy>> = Object.freeze({
       { title: 'Designed for Your Property', desc: 'Zones sized to real pressure and flow, with head spacing set for even coverage — no guesswork, no dry patches.' },
       { title: 'Documented Work', desc: 'Pressure readings, zone coverage, and as-built maps you keep, so you know what is in the ground.' },
       { title: 'Licensed & Insured', desc: 'Licensed irrigation work, fully insured, and permitted where required.' },
-      { title: 'Fast & Reliable', desc: 'Same-day and next-day appointments available. We show up on time, every time.' },
+      { title: 'Clear Scheduling', desc: 'We give you a firm date, keep you posted if anything changes, and show up when we say we will.' },
       { title: 'Local Knowledge', desc: 'We know local soil, pressure, and drainage patterns, and have solved these problems on properties like yours.' },
       { title: 'You Come First', desc: 'Our crews explain the layout, answer questions, and walk the system with you before the job is called done.' },
     ]) as unknown as Feature[],

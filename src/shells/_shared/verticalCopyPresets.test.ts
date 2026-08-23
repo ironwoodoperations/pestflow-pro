@@ -77,15 +77,33 @@ describe('irrigation preset — trade-level only', () => {
     expect(serialized).not.toMatch(/LI23001|East Texas|2-year|two-year|BBB/i);
   });
 
+  it('makes NO CAPACITY OR OUTCOME PROMISE the client has not given us', () => {
+    // A preset may describe how a trade works; it may not commit a business to
+    // a response time or a guarantee. 'Same-day and next-day appointments
+    // available' shipped here in the original brief and was wrong for exactly
+    // that reason — it is the same class of fabrication WS7 strips from the
+    // about stats, and it contradicted the city FAQ, which was deliberately
+    // written to promise nothing. Conduct claims ("we show up when we say we
+    // will") are fine; capacity claims are not.
+    expect(serialized).not.toMatch(/same-day|next-day|24\/7|guarantee/i);
+  });
+
   it('§0.1: says nothing about "lawn" — irrigation is a separate vertical', () => {
     expect(serialized.toLowerCase()).not.toContain('lawn');
   });
 
-  it('makes no scheduling promise the client has not given us', () => {
+  it('makes no scheduling promise in the city FAQs either', () => {
     // The pest city-FAQ promises same-day scheduling; the irrigation FAQ must
     // not, because no such commitment exists.
     const faqs = JSON.stringify(getVerticalCopy('irrigation').cityFaqs);
     expect(faqs).not.toMatch(/same-day/i);
+  });
+
+  it('feature 4 is the corrected conduct claim, not the withdrawn capacity one', () => {
+    expect(getVerticalCopy('irrigation').whyChooseFeatures[3]).toEqual({
+      title: 'Clear Scheduling',
+      desc: 'We give you a firm date, keep you posted if anything changes, and show up when we say we will.',
+    });
   });
 
   it('has the same slot shape as pest — no missing or extra slots', () => {
