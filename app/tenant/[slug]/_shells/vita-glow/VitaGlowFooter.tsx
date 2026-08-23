@@ -86,9 +86,9 @@ export function VitaGlowFooter({ tenant, social = {}, bookingUrl }: Props) {
       </div>
 
       <div style={{ textAlign: 'center', padding: '1rem', borderTop: '1px solid var(--vg-hairline)' }}>
-        <a href="https://pestflowpro.ai" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--vg-gold)', fontWeight: 500, fontSize: 12.5, letterSpacing: '0.08em', textDecoration: 'none', fontFamily: 'var(--vg-font-body)' }}>
-          Powered by Ironwood Operations Group
-        </a>
+        <span style={{ color: 'var(--vg-gold)', fontWeight: 500, fontSize: 12.5, letterSpacing: '0.08em', fontFamily: 'var(--vg-font-body)' }}>
+          Powered by HomeFlow Pro
+        </span>
       </div>
     </footer>
   );

@@ -151,3 +151,18 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   - app/tenant/[slug]/faq/page.tsx
   - docs/tenants/precision-lawn-systems/DECISIONS.md
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-08-20 15:52 UTC
+- Branch: `claude/precision-lawn-systems-reskin-lg8goz`
+- Commit: `7823310` — fix(footer): attribute to HomeFlow Pro platform-wide, unlink dead domain
+- Author: Claude
+- Files changed:
+  - app/tenant/[slug]/_components/MetroFooter.tsx
+  - app/tenant/[slug]/_shells/bold-local/BoldLocalFooter.tsx
+  - app/tenant/[slug]/_shells/clean-friendly/CleanFriendlyFooter.tsx
+  - app/tenant/[slug]/_shells/dang/DangComicFooter.tsx
+  - app/tenant/[slug]/_shells/modern-pro/ModernProFooter.tsx
+  - app/tenant/[slug]/_shells/rustic-rugged/RusticRuggedFooter.tsx
+  - app/tenant/[slug]/_shells/vita-glow/VitaGlowFooter.tsx
+- Next recommended action: [Fill in next session: read this line, write what comes next]
