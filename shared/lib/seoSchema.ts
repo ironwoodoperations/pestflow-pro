@@ -1,5 +1,6 @@
 // JSON-LD schema generation library for PestFlow Pro tenant sites.
 // Pure functions: take settings objects, return schema-ready objects.
+import type { Vertical } from './verticals'
 import { parseHours, parseAddress } from './seoSchema.parsers'
 export type { OpeningHoursSpecification, PostalAddressComponents } from './seoSchema.parsers'
 export { parseHours, parseAddress }
@@ -103,6 +104,33 @@ export const IRRIGATION_VOCABULARY: SchemaVocabulary = Object.freeze({
   ]),
   serviceType: 'Irrigation',
 })
+
+// Vertical → vocabulary. Kept in this file, alongside the constants it returns:
+// splitting the table from the resolver is how the two drift.
+//
+// Partial + throw, mirroring getVerticalCopy, NOT a Record defaulting to pest.
+// Emitting pest knowsAbout for a pool company is the exact silent failure this
+// architecture exists to prevent, and a default branch would guarantee it.
+// This costs nothing in reachability: layout.tsx resolves copy and vocabulary
+// in the same request, so an unregistered vertical already fails on copy.
+const VOCABULARY_BY_VERTICAL: Partial<Record<Vertical, SchemaVocabulary>> = Object.freeze({
+  pest: PEST_CONTROL_VOCABULARY,
+  irrigation: IRRIGATION_VOCABULARY,
+  // lawn, pool, hvac, roof, trailer: registered keys, no vocabulary yet.
+  // Deliberately absent — add one before provisioning a tenant in that vertical.
+})
+
+export function getSchemaVocabulary(vertical: Vertical): SchemaVocabulary {
+  const vocabulary = VOCABULARY_BY_VERTICAL[vertical]
+  if (!vocabulary) {
+    throw new Error(
+      `[getSchemaVocabulary] no schema vocabulary registered for vertical "${vertical}". ` +
+        `It is a registered key but has no vocabulary yet — add one in ` +
+        `shared/lib/seoSchema.ts. Refusing to emit pest knowsAbout for it.`,
+    )
+  }
+  return vocabulary
+}
 
 export function generateLocalBusinessSchema(
   business: BusinessInfo,

@@ -6,6 +6,7 @@ import {
   generateBlogPostingSchema,
   PEST_CONTROL_VOCABULARY,
   IRRIGATION_VOCABULARY,
+  getSchemaVocabulary,
 } from './seoSchema'
 
 // --- parseHours ---
@@ -271,5 +272,34 @@ describe('PR A — schema vocabulary', () => {
     expect(gen(IRRIGATION_VOCABULARY).knowsAbout).toBe(IRRIGATION_VOCABULARY.knowsAbout)
     expect(() => { (gen().knowsAbout as string[]).push('Corrupted') }).toThrow()
     expect(gen().knowsAbout).toHaveLength(6)
+  })
+})
+
+describe('PR A — getSchemaVocabulary', () => {
+  it('resolves pest to the historical vocabulary', () => {
+    expect(getSchemaVocabulary('pest')).toBe(PEST_CONTROL_VOCABULARY)
+  })
+
+  it('resolves irrigation to the irrigation vocabulary', () => {
+    expect(getSchemaVocabulary('irrigation')).toBe(IRRIGATION_VOCABULARY)
+  })
+
+  it('THROWS for a registered vertical with no vocabulary — never emits pest for it', () => {
+    for (const v of ['lawn', 'pool', 'hvac', 'roof', 'trailer'] as const) {
+      expect(() => getSchemaVocabulary(v)).toThrow(new RegExp(v))
+    }
+  })
+
+  it('the layout wiring is byte-identical for pest: resolved vocabulary === no-arg default', () => {
+    // This is the invariant Dang depends on. layout.tsx now always passes a
+    // vocabulary; for a pest tenant that must produce the same schema the
+    // previous no-arg call produced.
+    const business = { name: 'B', phone: 'p', email: 'e', address: 'a' }
+    const seo = { meta_description: '', service_areas: [], certifications: [], founded_year: '', owner_name: '' }
+    const cfg = { aggregate_rating: { value: 0, count: 0 }, service_radius_miles: 0 }
+    const withResolved = generateLocalBusinessSchema(business, seo, cfg, {}, 'https://x.test', getSchemaVocabulary('pest'))
+    const withNothing = generateLocalBusinessSchema(business, seo, cfg, {}, 'https://x.test')
+    expect(withResolved).toEqual(withNothing)
+    expect(JSON.stringify(withResolved)).toBe(JSON.stringify(withNothing))
   })
 })
