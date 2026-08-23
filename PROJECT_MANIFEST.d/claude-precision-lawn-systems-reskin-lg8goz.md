@@ -199,3 +199,13 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
 - Files changed:
   - src/shells/_shared/irrigationContent.ts
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-08-23 15:14 UTC
+- Branch: `claude/precision-lawn-systems-reskin-lg8goz`
+- Commit: `6c72978` — feat(quote): form reads tenant services, drop hardcoded pest fields (S-PLS)
+- Author: Claude
+- Files changed:
+  - app/tenant/[slug]/_components/forms/QuoteForm.tsx
+  - app/tenant/[slug]/quote/page.tsx
+- Next recommended action: [Fill in next session: read this line, write what comes next]
