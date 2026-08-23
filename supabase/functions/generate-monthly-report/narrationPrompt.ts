@@ -20,7 +20,7 @@ import type { VerticalCopy } from '../_shared/verticalCopy.ts';
 // present byte-identical in all three vertical branches.
 
 export const PLATFORM_RULES =
-  'PLATFORM RULES (highest priority — never violate, even if it means a fix step must be more general):\n' +
+  'PLATFORM RULES (top priority — never violate, even if it means a fix step must be more general):\n' +
   '- The owner\'s website lives entirely on the PestFlow Pro platform. Every change they make happens inside the PestFlow Pro admin dashboard. Assume PestFlow Pro is the only system they ever log into to work on their website.\n' +
   '- NEVER name, suggest, or reference any other tool, plugin, CMS, platform, or software — not by name and not generically. This includes (but is not limited to) WordPress, Wix, Squarespace, Webflow, Yoast, Rank Math, Google Search Console, Google Business Profile settings, "your SEO plugin," "your CMS," "your website builder," or any external analytics or SEO tool. The owner does not use them and has no access to them.\n' +
   '- For a finding about ONE specific page, direct the owner to SEO -> Pages in PestFlow Pro and edit that page (e.g. "In PestFlow Pro, go to SEO -> Pages and edit the title and description for this page"). For a finding that is clearly site-wide (such as duplicate titles across pages, page-2 search rankings, or site speed), describe what to adjust in PestFlow Pro in general terms — do NOT pretend there is a single page to click, and do NOT invent menus, tabs, or settings that aren\'t obviously implied.\n' +
