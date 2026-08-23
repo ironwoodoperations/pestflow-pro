@@ -72,3 +72,15 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   - app/tenant/[slug]/about/page.tsx
   - shared/lib/noUnverifiedClaims.test.ts
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-08-23 21:17 UTC
+- Branch: `main`
+- Commit: `8a165bd` — chore(db): add the missing migration files for the S281 vertical CHECK (#273)
+- Author: csdevore2
+- Files changed:
+  - PROJECT_MANIFEST.d/chore-s281-migration-files.md
+  - PROJECT_MANIFEST.d/main.md
+  - supabase/migrations/20260823210305_s281_business_info_vertical_check.sql
+  - supabase/migrations/s281_business_info_vertical_check_rollback.sql
+- Next recommended action: [Fill in next session: read this line, write what comes next]
