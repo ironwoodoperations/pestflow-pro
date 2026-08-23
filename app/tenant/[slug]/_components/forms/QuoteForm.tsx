@@ -4,17 +4,17 @@ import { useState } from 'react';
 import { CheckCircle } from 'lucide-react';
 import { formatPhone } from '../../../../../shared/lib/formatPhone';
 
-const PEST_OPTIONS = ['Ants', 'Bed Bugs', 'Cockroaches', 'Fleas & Ticks', 'Mosquitoes', 'Rodents', 'Spiders', 'Termites', 'Wasps & Hornets', 'Other'];
-const SERVICE_OPTIONS = ['General Pest Control', 'Termite Inspection', 'Termite Treatment', 'Rodent Control', 'Mosquito Treatment', 'Bed Bug Treatment', 'One-Time Treatment', 'Recurring Service Plan'];
 const STEPS = [{ num: 1, label: 'Contact Info' }, { num: 2, label: 'Service Info' }, { num: 3, label: 'Confirmation' }];
 
-interface FormState { firstName: string; lastName: string; email: string; phone: string; service: string; address: string; pestConcern: string }
-const INITIAL: FormState = { firstName: '', lastName: '', email: '', phone: '', service: '', address: '', pestConcern: '' };
+interface FormState { firstName: string; lastName: string; email: string; phone: string; service: string; address: string; notes: string }
+const INITIAL: FormState = { firstName: '', lastName: '', email: '', phone: '', service: '', address: '', notes: '' };
 
-interface Props { tenantId: string; businessName: string; businessPhone: string; ownerSmsNumber: string; shellTemplate?: string }
+interface Props { tenantId: string; businessName: string; businessPhone: string; ownerSmsNumber: string; shellTemplate?: string; serviceOptions: string[] }
 
-export function QuoteForm({ tenantId, businessName, businessPhone, ownerSmsNumber, shellTemplate }: Props) {
+export function QuoteForm({ tenantId, businessName, businessPhone, ownerSmsNumber, shellTemplate, serviceOptions }: Props) {
   const isCF = shellTemplate === 'clean-friendly';
+  // DB-driven; never render a blank dropdown.
+  const options = serviceOptions.length > 0 ? serviceOptions : ['General Inquiry'];
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormState>(INITIAL);
   const [submitting, setSubmitting] = useState(false);
@@ -60,7 +60,7 @@ export function QuoteForm({ tenantId, businessName, businessPhone, ownerSmsNumbe
         email: form.email,
         phone: form.phone,
         services: [form.service].filter(Boolean),
-        message: [form.address && `Address: ${form.address}`, form.pestConcern && `Pest: ${form.pestConcern}`].filter(Boolean).join('\n'),
+        message: [form.address && `Address: ${form.address}`, form.notes && `Notes: ${form.notes}`].filter(Boolean).join('\n'),
         // QuoteForm has no smsConsent checkbox — fail closed on consent (TCPA).
         // Customer-ack SMS will not fire from this form until the checkbox is added.
         customer_sms_consent: false,
@@ -128,9 +128,9 @@ export function QuoteForm({ tenantId, businessName, businessPhone, ownerSmsNumbe
         {step === 2 && (
           <div className="space-y-4">
             <h2 className="text-lg font-bold mb-4" style={{ color: 'var(--color-heading, #1a1a1a)' }}>Service Information</h2>
-            <div><label className="text-xs font-medium text-gray-600 block mb-1">Service Type *</label><select className={inp} value={form.service} onChange={e => set('service', e.target.value)}><option value="">— Select a service —</option>{SERVICE_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
+            <div><label className="text-xs font-medium text-gray-600 block mb-1">Service Type *</label><select className={inp} value={form.service} onChange={e => set('service', e.target.value)}><option value="">— Select a service —</option>{options.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
             <div><label className="text-xs font-medium text-gray-600 block mb-1">Service Address *</label><input className={inp} value={form.address} onChange={e => set('address', e.target.value)} placeholder="123 Main St, City, State 12345" /></div>
-            <div><label className="text-xs font-medium text-gray-600 block mb-1">Pest Concern (optional)</label><select className={inp} value={form.pestConcern} onChange={e => set('pestConcern', e.target.value)}><option value="">— Select pest type —</option>{PEST_OPTIONS.map(p => <option key={p} value={p}>{p}</option>)}</select></div>
+            <div><label className="text-xs font-medium text-gray-600 block mb-1">Anything else we should know? (optional)</label><textarea className={inp} rows={3} value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Anything that helps us prepare for the visit." /></div>
           </div>
         )}
 
@@ -143,9 +143,9 @@ export function QuoteForm({ tenantId, businessName, businessPhone, ownerSmsNumbe
               <div className="flex justify-between"><span className="text-gray-500">Phone</span><span className="font-medium">{form.phone}</span></div>
               <div className="flex justify-between"><span className="text-gray-500">Service</span><span className="font-medium">{form.service || 'N/A'}</span></div>
               {form.address && <div className="flex justify-between"><span className="text-gray-500">Address</span><span className="font-medium">{form.address}</span></div>}
-              {form.pestConcern && <div className="flex justify-between"><span className="text-gray-500">Pest</span><span className="font-medium">{form.pestConcern}</span></div>}
+              {form.notes && <div className="flex justify-between"><span className="text-gray-500">Notes</span><span className="font-medium">{form.notes}</span></div>}
             </div>
-            <p className="text-xs text-gray-500 leading-relaxed">By submitting this form, you agree to be contacted about your pest control inquiry. We respect your privacy and will never share your information.</p>
+            <p className="text-xs text-gray-500 leading-relaxed">By submitting this form, you agree to be contacted about your inquiry. We respect your privacy and will never share your information.</p>
           </div>
         )}
 
