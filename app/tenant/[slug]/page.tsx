@@ -244,7 +244,7 @@ export default async function TenantHome({ params }: Params) {
         <BoldLocalAboutStrip businessName={tenant.business_name || tenant.name} intro={aboutIntro} photoUrl={photoUrl} />
         <BoldLocalTrustCards serviceAreas={serviceAreas} />
         <BoldLocalTestimonials testimonials={testimonials as BLTestimonial[]} />
-        <BoldLocalCtaBanner phone={tenant.phone || undefined} ctaText={tenant.cta_text || 'Get a free quote'} />
+        <BoldLocalCtaBanner phone={tenant.phone || undefined} ctaText={tenant.cta_text || 'Get a free quote'} strapline={homeCtaCopy.ctaStrapline} />
       </>
     );
   }
@@ -263,7 +263,7 @@ export default async function TenantHome({ params }: Params) {
         <CleanFriendlyCoverageChips serviceAreas={serviceAreas} />
         <CleanFriendlyTestimonials testimonials={testimonials as CFTestimonial[]} />
         <CleanFriendlyFaqStrip />
-        <CleanFriendlyCtaBanner phone={tenant.phone || undefined} ctaText={tenant.cta_text || 'Get a free quote'} />
+        <CleanFriendlyCtaBanner phone={tenant.phone || undefined} ctaText={tenant.cta_text || 'Get a free quote'} strapline={homeCtaCopy.ctaStrapline} />
       </>
     );
   }

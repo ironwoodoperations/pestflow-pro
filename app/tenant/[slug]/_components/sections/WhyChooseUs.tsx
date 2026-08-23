@@ -1,13 +1,16 @@
 import type { Feature } from '../../../../../src/shells/_shared/verticalCopy';
 
-// PR B: copy is a prop. The DEFAULT is the exact pest array this component used
-// to own, so any caller that does not pass `features` renders byte-identically
-// to before — that is what keeps the homepage's non-modern-pro branch stable.
+// PR B: copy is a prop. The DEFAULT mirrors the pest preset, so a caller that
+// does not pass `features` renders what a pest tenant gets — that is what keeps
+// the homepage's non-modern-pro branch stable.
+// PR D: entry 4 was 'Fast & Reliable — Same-day and next-day appointments
+// available.' That capacity promise is retired platform-wide; this default
+// tracks the pest preset, and sectionDefaults.test.ts asserts they match.
 const DEFAULT_FEATURES: Feature[] = [
   { title: 'Custom Treatment Plans', desc: 'Every property is different. We tailor our approach to your specific pest pressures and property layout.' },
   { title: 'Family & Pet-Friendly Products', desc: 'EPA-approved, low-impact formulations that are safe for your children and pets when applied correctly.' },
   { title: 'Unlimited Callbacks', desc: 'If pests return between scheduled services, we come back at no additional cost — guaranteed.' },
-  { title: 'Fast & Reliable', desc: 'Same-day and next-day appointments available. We show up on time, every time.' },
+  { title: 'Clear Scheduling', desc: 'We give you a firm appointment window, keep you posted if anything changes, and show up when we say we will.' },
   { title: 'Local Experts', desc: 'We know the local pest pressures in your area and have treated thousands of properties just like yours.' },
   { title: 'You Come First', desc: 'Our technicians take time to explain treatments, answer questions, and ensure your complete satisfaction.' },
 ];

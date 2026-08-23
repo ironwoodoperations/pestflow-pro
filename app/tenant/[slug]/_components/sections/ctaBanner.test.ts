@@ -11,13 +11,21 @@ import { getVerticalCopy } from '../../../../../src/shells/_shared/verticalCopy'
 const pest = getVerticalCopy('pest');
 const irrigation = getVerticalCopy('irrigation');
 
-describe('defaults are the exact former pest strings', () => {
+describe('defaults track the pest preset', () => {
   const html = renderToStaticMarkup(createElement(CtaBanner, { businessName: 'Acme Pest' }));
 
-  it('a caller passing no copy renders as before', () => {
+  // PR D: the strapline default WAS 'Same-day appointments available.' — that
+  // capacity promise is retired platform-wide, so the default now tracks the
+  // pest preset's conduct claim. Asserted against the preset rather than a
+  // literal so the two cannot drift apart again.
+  it('a caller passing no copy matches the pest preset', () => {
     expect(html).toContain('Acme Pest is ready to help.');
-    expect(html).toContain('Same-day appointments available.');
-    expect(html).toContain('Schedule Inspection');
+    expect(html).toContain(pest.ctaStrapline);
+    expect(html).toContain(pest.ctaPrimaryLabel);
+  });
+
+  it('the default carries no capacity or business-terms claim', () => {
+    expect(html).not.toMatch(/same-day|next-day|24\/7|no contracts/i);
   });
 });
 

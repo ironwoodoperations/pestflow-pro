@@ -1,12 +1,12 @@
 import Link from 'next/link';
 
-// PR C: copy is prop-driven per vertical. Previously line 13 rendered
-// "Same-day appointments available." UNCONDITIONALLY for every tenant — a
-// capacity promise no client had made — and line 17 hardcoded the pest CTA
-// label. Defaults are the exact former pest strings, so a caller that passes
-// nothing renders byte-identically to before.
+// PR C: copy is prop-driven per vertical. Previously this banner rendered a
+// hardcoded capacity promise for every tenant and hardcoded the pest CTA label.
+// PR D: that promise is retired platform-wide, so DEFAULT_STRAPLINE now tracks
+// the pest preset's conduct claim rather than the string it replaced. The
+// defaults exist so a caller that passes nothing still matches the pest preset.
 const DEFAULT_GENERIC_INTRO = 'Professional pest control, on your schedule.';
-const DEFAULT_STRAPLINE = 'Same-day appointments available.';
+const DEFAULT_STRAPLINE = 'Every visit starts with an inspection.';
 const DEFAULT_PRIMARY_LABEL = 'Schedule Inspection';
 
 interface Props {

@@ -121,16 +121,16 @@ const VERTICAL_COPY: Partial<Record<Vertical, VerticalCopy>> = Object.freeze({
     ]) as unknown as string[],
     locationPrimaryCta: 'Schedule Inspection',
     cityFaqs: Object.freeze([
-      { q: 'Do you service the {city} area?', a: 'Yes! We provide full pest control services throughout {city} and surrounding communities. Call us today for same-day scheduling.' },
+      { q: 'Do you service the {city} area?', a: 'Yes! We provide full pest control services throughout {city} and surrounding communities. Call us for scheduling.' },
       { q: 'What pests are most common in {city}?', a: 'Common pests in {city} include ants, roaches, rodents, mosquitoes, and spiders. Our local technicians are familiar with regional pest pressures and seasonal patterns.' },
-      { q: 'How quickly can you get to my home in {city}?', a: 'We offer same-day and next-day appointments for {city} residents. Call us to check current availability.' },
+      { q: 'How quickly can you get to my home in {city}?', a: 'Call us to check current availability for {city} and we will schedule an inspection.' },
       { q: 'Are your services available year-round in {city}?', a: 'Yes. Many pests remain active year-round in this area. We recommend quarterly service plans for continuous protection.' },
     ]) as unknown as CityFaq[],
     whyChooseFeatures: Object.freeze([
       { title: 'Custom Treatment Plans', desc: 'Every property is different. We tailor our approach to your specific pest pressures and property layout.' },
       { title: 'Family & Pet-Friendly Products', desc: 'EPA-approved, low-impact formulations that are safe for your children and pets when applied correctly.' },
       { title: 'Unlimited Callbacks', desc: 'If pests return between scheduled services, we come back at no additional cost — guaranteed.' },
-      { title: 'Fast & Reliable', desc: 'Same-day and next-day appointments available. We show up on time, every time.' },
+      { title: 'Clear Scheduling', desc: 'We give you a firm appointment window, keep you posted if anything changes, and show up when we say we will.' },
       { title: 'Local Experts', desc: 'We know the local pest pressures in your area and have treated thousands of properties just like yours.' },
       { title: 'You Come First', desc: 'Our technicians take time to explain treatments, answer questions, and ensure your complete satisfaction.' },
     ]) as unknown as Feature[],
@@ -163,7 +163,11 @@ const VERTICAL_COPY: Partial<Record<Vertical, VerticalCopy>> = Object.freeze({
     blogSubtitle: 'Tips, guides, and news from our pest control experts.',
     blogNewsletterCopy: 'Get pest control tips and seasonal alerts delivered to your inbox.',
     ctaGenericIntro: 'Professional pest control, on your schedule.',
-    ctaStrapline: 'Same-day appointments available.',
+    // PR D: was 'Same-day appointments available.' — a capacity promise no
+    // tenant had verified, hardcoded as a platform default. Replaced with a
+    // conduct claim grounded in this preset's own processSteps, whose first
+    // step is 'Inspection'. Describes how the work is done, not how fast.
+    ctaStrapline: 'Every visit starts with an inspection.',
     ctaPrimaryLabel: 'Schedule Inspection',
     blogCardFallbackImage: '/images/pests/pest_control.jpg',
     aboutImageFallback: '/images/pests/team.jpg',
