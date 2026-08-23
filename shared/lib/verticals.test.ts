@@ -14,7 +14,16 @@ const here = dirname(fileURLToPath(import.meta.url))
 function importSpecifiers(source: string): string[] {
   // Covers `import x from '…'`, `import type …`, `export … from '…'`, and
   // dynamic `import('…')`.
-  return [...source.matchAll(/(?:from|import)\s*\(?\s*['"]([^'"]+)['"]/g)].map((m) => m[1])
+  //
+  // exec loop rather than [...matchAll()]: CI runs bare `npx tsc --noEmit`
+  // against the ROOT tsconfig, which sets no `target` and so defaults to ES5,
+  // where spreading an iterator needs --downlevelIteration. This form needs no
+  // iteration protocol at all.
+  const pattern = /(?:from|import)\s*\(?\s*['"]([^'"]+)['"]/g
+  const specifiers: string[] = []
+  let match: RegExpExecArray | null
+  while ((match = pattern.exec(source)) !== null) specifiers.push(match[1])
+  return specifiers
 }
 
 describe('shared/lib must not depend on src/', () => {
