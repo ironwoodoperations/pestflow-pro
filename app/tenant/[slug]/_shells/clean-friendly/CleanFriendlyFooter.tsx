@@ -27,12 +27,14 @@ const FbIcon = () => <svg width={18} height={18} viewBox="0 0 24 24" fill="curre
 const IgIcon = () => <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor"/></svg>;
 
 interface Social { facebook?: string; instagram?: string; google?: string }
-interface Props { tenant: Tenant; social?: Social }
+interface Props { tenant: Tenant; social?: Social; showBlog?: boolean }
 
 const COL_HEAD: React.CSSProperties = { fontFamily: "var(--font-inter,'Inter',sans-serif)", fontWeight: 600, fontSize: 13, color: 'var(--cf-ink)', marginBottom: '0.75rem', display: 'block' };
 const FOOT_LINK: React.CSSProperties = { fontFamily: "var(--font-inter,'Inter',sans-serif)", fontWeight: 400, fontSize: 14, color: 'var(--cf-ink-secondary)', textDecoration: 'none', display: 'block', marginBottom: '0.4rem', lineHeight: 1.5 };
 
-export function CleanFriendlyFooter({ tenant, social = {} }: Props) {
+export function CleanFriendlyFooter({ tenant, social = {}, showBlog = true }: Props) {
+  // PR C: a tenant with no published posts does not advertise a Blog link.
+  const companyLinks = COMPANY_LINKS.filter((l) => showBlog || l.href !== '/blog');
   const name = tenant.business_name || tenant.name;
   const phone = tenant.phone ?? '';
   const year = new Date().getFullYear();
@@ -67,7 +69,7 @@ export function CleanFriendlyFooter({ tenant, social = {} }: Props) {
 
         <div>
           <span style={COL_HEAD}>Company</span>
-          {COMPANY_LINKS.map((l) => <Link key={l.href} href={l.href} style={FOOT_LINK}>{l.label}</Link>)}
+          {companyLinks.map((l) => <Link key={l.href} href={l.href} style={FOOT_LINK}>{l.label}</Link>)}
         </div>
 
         <div>

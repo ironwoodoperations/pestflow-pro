@@ -26,9 +26,11 @@ const DEFAULT_SERVICES = [
 ];
 
 interface ServiceLink { page_slug: string; title: string | null }
-interface Props { servicePages: ServiceLink[] }
+interface Props { servicePages: ServiceLink[]; showBlog?: boolean }
 
-export function CleanFriendlyNavbar({ servicePages }: Props) {
+export function CleanFriendlyNavbar({ servicePages, showBlog = true }: Props) {
+  // PR C: a tenant with no published posts does not advertise a Blog link.
+  const navLinks = NAV_LINKS.filter((l) => showBlog || l.href !== '/blog');
   const tenant = useTenant();
   const pathname = usePathname();
   const phone = tenant.phone ?? '';
@@ -83,7 +85,7 @@ export function CleanFriendlyNavbar({ servicePages }: Props) {
               </div>
             )}
           </div>
-          {NAV_LINKS.map((l) => <Link key={l.href} href={l.href} style={LINK}>{l.label}</Link>)}
+          {navLinks.map((l) => <Link key={l.href} href={l.href} style={LINK}>{l.label}</Link>)}
         </div>
 
         <div className="hidden lg:flex items-center gap-3">
@@ -108,7 +110,7 @@ export function CleanFriendlyNavbar({ servicePages }: Props) {
             <p style={{ fontFamily: "Georgia,'Source Serif Pro',serif", fontStyle: 'italic', fontSize: 11, color: 'var(--cf-ink-muted)', marginBottom: '0.25rem' }}>our services</p>
             {serviceLinks.map((l) => <Link key={l.href} href={l.href} onClick={() => setMobileOpen(false)} style={{ ...LINK, fontSize: 15, padding: '0.45rem 0', display: 'block' }}>{l.label}</Link>)}
             <div style={{ borderTop: '1px solid var(--cf-divider)', margin: '0.5rem 0' }} />
-            {NAV_LINKS.map((l) => <Link key={l.href} href={l.href} onClick={() => setMobileOpen(false)} style={{ ...LINK, fontSize: 15, padding: '0.45rem 0', display: 'block' }}>{l.label}</Link>)}
+            {navLinks.map((l) => <Link key={l.href} href={l.href} onClick={() => setMobileOpen(false)} style={{ ...LINK, fontSize: 15, padding: '0.45rem 0', display: 'block' }}>{l.label}</Link>)}
             <Link href="/quote" onClick={() => setMobileOpen(false)} style={{ display: 'block', textAlign: 'center', marginTop: '0.75rem', backgroundColor: 'var(--cf-ink)', color: 'var(--cf-surface)', fontFamily: "var(--font-inter,'Inter',sans-serif)", fontWeight: 500, fontSize: 15, padding: '0.75rem', borderRadius: 28, textDecoration: 'none' }}>
               {ctaText}
             </Link>

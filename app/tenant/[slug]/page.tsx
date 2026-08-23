@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { resolveVertical, type Vertical } from '../../../src/shells/_shared/serviceEntry';
+import { getVerticalCopy } from '../../../src/shells/_shared/verticalCopy';
 import { resolveTenantBySlug } from '../../../shared/lib/tenant/resolve';
 import { resolveSiteUrl } from '../../../shared/lib/resolveSiteUrl';
 import { buildPageMetadata } from '../../../shared/lib/buildPageMetadata';
@@ -137,7 +138,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     seoMeta,
     fallback: {
       title: businessName,
-      description: `${businessName} — professional pest control services`,
+      description: `${businessName} — ${getVerticalCopy(resolveVertical(tenant)).metadataFallbackDesc}`,
     },
   });
 }
@@ -145,6 +146,10 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 export default async function TenantHome({ params }: Params) {
   const tenant = await resolveTenantBySlug(params.slug);
   if (!tenant) return null;
+
+  // Resolved once for the whole component; the shared CtaBanner in the default
+  // branch at the bottom of this file is outside the modern-pro `homeCopy` scope.
+  const homeCtaCopy = getVerticalCopy(resolveVertical(tenant));
 
   const [content, testimonials, blogPosts, heroMedia] = await Promise.all([
     getPageContent(tenant.id, 'home'),
@@ -349,7 +354,7 @@ export default async function TenantHome({ params }: Params) {
       <Process />
       <FaqTabs />
       <Reviews testimonials={testimonials as { id: string; name: string; review_text: string; rating?: number }[]} />
-      <CtaBanner phone={tenant.phone} businessName={tenant.business_name || tenant.name} />
+      <CtaBanner phone={tenant.phone} businessName={tenant.business_name || tenant.name} genericIntro={homeCtaCopy.ctaGenericIntro} strapline={homeCtaCopy.ctaStrapline} primaryLabel={homeCtaCopy.ctaPrimaryLabel} />
       <BlogCarousel posts={blogPosts as { id: string; title: string; slug: string; published_at?: string; excerpt?: string }[]} />
     </>
   );

@@ -48,6 +48,20 @@ const PEST_EXPECTED = {
   serviceAreaStrapline: 'Professional pest control in your community and surrounding areas.',
   quoteHeroTitle: 'Schedule a Free Inspection',
   metadataFallbackDesc: 'professional pest control services',
+  // PR C — verbatim from the production files they were lifted out of:
+  //   blogHeading/blogSubtitle  blog/page.tsx:49-50
+  //   blogNewsletterCopy        blog/page.tsx:100
+  //   ctaGenericIntro/ctaStrapline/ctaPrimaryLabel  CtaBanner.tsx:13,17
+  //   blogCardFallbackImage     blog/page.tsx:80
+  //   aboutImageFallback        about/page.tsx:48
+  blogHeading: 'Pest Control Blog',
+  blogSubtitle: 'Tips, guides, and news from our pest control experts.',
+  blogNewsletterCopy: 'Get pest control tips and seasonal alerts delivered to your inbox.',
+  ctaGenericIntro: 'Professional pest control, on your schedule.',
+  ctaStrapline: 'Same-day appointments available.',
+  ctaPrimaryLabel: 'Schedule Inspection',
+  blogCardFallbackImage: '/images/pests/pest_control.jpg',
+  aboutImageFallback: '/images/pests/team.jpg',
 };
 
 describe('REGRESSION LOCK — pest preset is verbatim production copy', () => {
@@ -158,5 +172,76 @@ describe('registered-but-copyless verticals still fail loudly', () => {
       try { getVerticalCopy(v); return true; } catch { return false; }
     });
     expect(withCopy).toEqual(['pest', 'irrigation']);
+  });
+});
+
+// ── PR C ────────────────────────────────────────────────────────────────────
+describe('PR C — new slots exist for BOTH populated verticals', () => {
+  const NEW_COPY_SLOTS = [
+    'blogHeading', 'blogSubtitle', 'blogNewsletterCopy',
+    'ctaGenericIntro', 'ctaStrapline', 'ctaPrimaryLabel',
+  ] as const;
+
+  for (const v of ['pest', 'irrigation'] as const) {
+    it(`${v} defines every new copy slot as a non-empty string`, () => {
+      const c = getVerticalCopy(v) as unknown as Record<string, unknown>;
+      for (const slot of NEW_COPY_SLOTS) {
+        expect(typeof c[slot]).toBe('string');
+        expect((c[slot] as string).trim().length).toBeGreaterThan(0);
+      }
+    });
+
+    it(`${v} defines both image slots as a string or explicit null`, () => {
+      const c = getVerticalCopy(v);
+      for (const img of [c.blogCardFallbackImage, c.aboutImageFallback]) {
+        expect(img === null || typeof img === 'string').toBe(true);
+        if (typeof img === 'string') expect(img.startsWith('/images/')).toBe(true);
+      }
+    });
+  }
+});
+
+describe('PR C — irrigation values pass the existing guards', () => {
+  const newIrrigationCopy = JSON.stringify([
+    getVerticalCopy('irrigation').blogHeading,
+    getVerticalCopy('irrigation').blogSubtitle,
+    getVerticalCopy('irrigation').blogNewsletterCopy,
+    getVerticalCopy('irrigation').ctaGenericIntro,
+    getVerticalCopy('irrigation').ctaStrapline,
+    getVerticalCopy('irrigation').ctaPrimaryLabel,
+  ]);
+
+  it('makes no capacity or outcome promise', () => {
+    expect(newIrrigationCopy).not.toMatch(/same-day|next-day|24\/7|guarantee/i);
+  });
+
+  it('carries no tenant facts', () => {
+    expect(newIrrigationCopy).not.toMatch(/LI23001|East Texas|2-year|two-year|BBB/i);
+  });
+
+  it('carries no pest vocabulary', () => {
+    expect(newIrrigationCopy).not.toMatch(/pest|termite|mosquito|rodent|bed bug|ant control/i);
+  });
+
+  it('the CTA label is estimate-framed, consistent with quoteHeroTitle', () => {
+    expect(getVerticalCopy('irrigation').ctaPrimaryLabel).toMatch(/estimate/i);
+    expect(getVerticalCopy('irrigation').quoteHeroTitle).toMatch(/estimate/i);
+    expect(getVerticalCopy('irrigation').ctaPrimaryLabel).not.toBe('Schedule Inspection');
+  });
+});
+
+describe('PR C — irrigation image slots point at nothing rather than a missing or borrowed asset', () => {
+  it('are null: no irrigation team or generic photo exists in public/', () => {
+    expect(getVerticalCopy('irrigation').blogCardFallbackImage).toBeNull();
+    expect(getVerticalCopy('irrigation').aboutImageFallback).toBeNull();
+  });
+
+  it('never borrow the pest photography', () => {
+    // Stringify rather than toMatch: these are legitimately null today, and
+    // toMatch throws on null. This assertion must survive them becoming real
+    // irrigation paths later, and must still fail if either points at pests/.
+    const c = getVerticalCopy('irrigation');
+    expect(String(c.blogCardFallbackImage)).not.toContain('images/pests');
+    expect(String(c.aboutImageFallback)).not.toContain('images/pests');
   });
 });

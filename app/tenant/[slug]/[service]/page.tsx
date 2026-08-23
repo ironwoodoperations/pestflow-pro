@@ -185,7 +185,7 @@ export default async function ServicePage({ params }: Params) {
           </section>
         )}
 
-        <CtaBanner phone={phone} businessName={bizName} />
+        <CtaBanner phone={phone} businessName={bizName} genericIntro={copy.ctaGenericIntro} strapline={copy.ctaStrapline} primaryLabel={copy.ctaPrimaryLabel} />
       </div>
     );
   }

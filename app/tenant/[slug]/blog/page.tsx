@@ -11,12 +11,9 @@ export async function generateStaticParams() {
 }
 import { getAllBlogPosts, getPageContent, getHeroMedia, getSeoMeta } from '../_lib/queries';
 import { resolveHeroImage } from '../_lib/heroImage';
+import { resolveVertical } from '../../../../shared/lib/verticals';
+import { getVerticalCopy } from '../../../../src/shells/_shared/verticalCopy';
 
-const PLACEHOLDER_POSTS = [
-  { id: '1', title: '5 Signs You Have a Termite Problem', slug: '5-signs-termite-problem', excerpt: 'Learn the early warning signs of termite damage before it becomes costly.', published_at: '2026-03-15', intro_image: null },
-  { id: '2', title: 'How to Prevent Mosquitoes in Your Yard', slug: 'prevent-mosquitoes-yard', excerpt: 'Simple steps to reduce mosquito breeding grounds around your home.', published_at: '2026-03-10', intro_image: null },
-  { id: '3', title: 'Are Brown Recluse Spiders in Your Area?', slug: 'brown-recluse-spiders', excerpt: 'Yes — and they are more common than you think. Here is what you need to know.', published_at: '2026-03-05', intro_image: null },
-];
 
 type Params = { params: { slug: string } };
 
@@ -30,7 +27,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     seoMeta,
     fallback: {
       title: businessName,
-      description: `${businessName} — professional pest control services`,
+      description: `${businessName} — ${getVerticalCopy(resolveVertical(tenant)).metadataFallbackDesc}`,
     },
   });
 }
@@ -45,13 +42,18 @@ export default async function BlogPage({ params }: Params) {
     getHeroMedia(tenant.id),
   ]);
 
+  const copy = getVerticalCopy(resolveVertical(tenant));
   const c = content as { title?: string; subtitle?: string } | null;
-  const heroTitle = c?.title    || 'Pest Control Blog';
-  const heroSub   = c?.subtitle || 'Tips, guides, and news from our pest control experts.';
+  const heroTitle = c?.title    || copy.blogHeading;
+  const heroSub   = c?.subtitle || copy.blogSubtitle;
   const heroImageUrl = resolveHeroImage(content, heroMedia);
 
   type BlogPost = { id: string; title: string; slug: string; excerpt?: string | null; published_at?: string | null; intro_image?: string | null };
-  const posts: BlogPost[] = (rawPosts.length > 0 ? rawPosts : PLACEHOLDER_POSTS) as BlogPost[];
+  // PR C: the placeholder array is DELETED, not swapped for a per-vertical one.
+  // Three dated articles were being attributed to every tenant with an empty
+  // blog_posts table — invented content on a real client's site. A tenant with
+  // no posts now gets an honest empty state; nothing is fabricated to fill it.
+  const posts: BlogPost[] = rawPosts as BlogPost[];
 
   // S267: dark cards/inputs gated to bold-local; Dang and other light themes
   // keep their exact white cards + gray text.
@@ -72,16 +74,25 @@ export default async function BlogPage({ params }: Params) {
 
       <section className="py-16" style={{ backgroundColor: 'var(--color-bg-section)' }}>
         <div className="max-w-6xl mx-auto px-4">
+          {posts.length === 0 ? (
+            <p className={`text-center ${isBoldLocal ? '' : 'text-gray-600'}`} style={isBoldLocal ? { color: 'var(--color-body-text)' } : undefined}>
+              No posts published yet. Check back soon.
+            </p>
+          ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {posts.map(post => (
+            {posts.map(post => {
+              const cardImage = post.intro_image || copy.blogCardFallbackImage;
+              return (
               <Link key={post.id} href={`/blog/${post.slug}`} className={`rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition group ${isBoldLocal ? 'border-[#2A3038]' : 'bg-white border-gray-200'}`} style={isBoldLocal ? { backgroundColor: 'var(--color-bg-cta)' } : undefined}>
-                <div className="h-40 overflow-hidden" style={{ backgroundColor: 'var(--color-primary)' }}>
-                  <img
-                    src={post.intro_image || '/images/pests/pest_control.jpg'}
-                    alt={post.title}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+                {cardImage && (
+                  <div className="h-40 overflow-hidden" style={{ backgroundColor: 'var(--color-primary)' }}>
+                    <img
+                      src={cardImage}
+                      alt={post.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
                 <div className="p-5">
                   {post.published_at && <p className={`text-sm mb-2 ${isBoldLocal ? '' : 'text-gray-400'}`} style={isBoldLocal ? { color: '#9AA3AD' } : undefined}>{new Date(post.published_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>}
                   <h3 className="text-lg font-bold mb-2 group-hover:opacity-70 transition" style={{ color: 'var(--color-heading, #1a1a1a)' }}>{post.title}</h3>
@@ -89,15 +100,17 @@ export default async function BlogPage({ params }: Params) {
                   <span className="font-medium text-sm" style={{ color: 'var(--color-primary)' }}>Read More →</span>
                 </div>
               </Link>
-            ))}
+              );
+            })}
           </div>
+          )}
         </div>
       </section>
 
       <section className="py-16" style={{ backgroundColor: isBoldLocal ? 'var(--color-bg-cta)' : '#ffffff' }}>
         <div className="max-w-lg mx-auto px-4 text-center">
           <h2 className="text-2xl font-bold mb-4" style={{ color: 'var(--color-heading, #1a1a1a)' }}>Stay Updated</h2>
-          <p className={`mb-6 ${isBoldLocal ? '' : 'text-gray-600'}`} style={isBoldLocal ? { color: 'var(--color-body-text)' } : undefined}>Get pest control tips and seasonal alerts delivered to your inbox.</p>
+          <p className={`mb-6 ${isBoldLocal ? '' : 'text-gray-600'}`} style={isBoldLocal ? { color: 'var(--color-body-text)' } : undefined}>{copy.blogNewsletterCopy}</p>
           <div className="flex gap-2">
             <input
               type="email"

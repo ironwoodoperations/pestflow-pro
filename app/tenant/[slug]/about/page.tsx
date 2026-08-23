@@ -11,6 +11,8 @@ export async function generateStaticParams() {
 }
 import { getPageContent, getTeamMembers, getHeroMedia, getIntegrations, getAboutSettings } from '../_lib/queries';
 import { resolveAboutStats } from '../_lib/aboutStats';
+import { resolveVertical } from '../../../../shared/lib/verticals';
+import { getVerticalCopy } from '../../../../src/shells/_shared/verticalCopy';
 import { resolveHeroImage } from '../_lib/heroImage';
 import { CleanFriendlyAboutPage } from '../_shells/clean-friendly/CleanFriendlyAboutPage';
 import { BoldLocalAboutPage } from '../_shells/bold-local/BoldLocalAboutPage';
@@ -45,7 +47,11 @@ export default async function AboutPage({ params }: Params) {
   const c = content as { title?: string; subtitle?: string; intro?: string; image_1_url?: string; image_urls?: string[] } | null;
   const heroTitle  = c?.title    || 'About Us';
   const heroSub    = c?.subtitle || 'Family-owned. Science-backed.';
-  const aboutImage = c?.image_1_url || c?.image_urls?.[0] || '/images/pests/team.jpg';
+  // PR C: per-vertical, or nothing. The pest team photo was rendering on the
+  // irrigation site. Irrigation resolves to null — public/images/pls/ holds only
+  // the five service tiles, so there is no irrigation team photo to point at and
+  // borrowing the pest one is not an option.
+  const aboutImage = c?.image_1_url || c?.image_urls?.[0] || getVerticalCopy(resolveVertical(tenant)).aboutImageFallback || '';
   const heroImageUrl = resolveHeroImage(content, heroMedia);
   const introTrimmed = c?.intro?.trim();
   const introParagraphs = introTrimmed

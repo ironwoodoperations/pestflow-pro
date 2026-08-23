@@ -8,6 +8,8 @@ const GIcon  = () => <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentC
 interface Social { facebook?: string; google?: string }
 
 interface Props {
+  /** Accepted for a uniform layout call shape; this footer has no Blog link. */
+  showBlog?: boolean;
   tenant: Tenant;
   social: Social | null;
 }

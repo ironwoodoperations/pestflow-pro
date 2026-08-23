@@ -33,10 +33,13 @@ const DEFAULT_SERVICE_LINKS = [
 ];
 
 interface Props {
+  showBlog?: boolean;
   servicePages: ServiceLink[];
 }
 
-export function ModernProNavbar({ servicePages }: Props) {
+export function ModernProNavbar({ servicePages, showBlog = true }: Props) {
+  // PR C: a tenant with no published posts does not advertise a Blog link.
+  const navLinks = NAV_LINKS.filter((l) => showBlog || l.href !== '/blog');
   const tenant = useTenant();
   const pathname = usePathname();
   const logoUrl = tenant.logo_url ?? '';
@@ -116,7 +119,7 @@ export function ModernProNavbar({ servicePages }: Props) {
                 </div>
               )}
             </div>
-            {NAV_LINKS.map((link) => (
+            {navLinks.map((link) => (
               <Link key={link.href} href={link.href} className="text-sm font-medium text-gray-300 hover:text-[color:var(--color-primary)] transition">{link.label}</Link>
             ))}
             <Link href="/quote" style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }} className="font-bold rounded-lg px-5 py-2.5 transition">{ctaText}</Link>
@@ -136,7 +139,7 @@ export function ModernProNavbar({ servicePages }: Props) {
               <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)} className="block px-2 py-2 text-sm text-gray-300 hover:text-[color:var(--color-primary)] transition">{link.label}</Link>
             ))}
             <div className="border-t border-white/10 my-2" />
-            {NAV_LINKS.map((link) => (
+            {navLinks.map((link) => (
               <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)} className="block px-2 py-2 text-base font-medium text-gray-300 hover:text-[color:var(--color-primary)] transition">{link.label}</Link>
             ))}
             <Link href="/quote" onClick={() => setMobileOpen(false)} style={{ backgroundColor: 'var(--color-btn-bg)', color: 'var(--color-btn-text)' }} className="block text-center font-bold rounded-lg px-5 py-2.5 transition mt-3">{ctaText}</Link>

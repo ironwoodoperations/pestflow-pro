@@ -17,12 +17,12 @@ const FbIcon = () => <svg width={18} height={18} viewBox="0 0 24 24" fill="curre
 const IgIcon = () => <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor"/></svg>;
 
 interface Social { facebook?: string; instagram?: string; google?: string }
-interface Props { tenant: Tenant; social?: Social }
+interface Props { tenant: Tenant; social?: Social; showBlog?: boolean }
 
 const COL_HEAD = { fontFamily: "var(--font-inter,'Inter',sans-serif)", fontSize: 10, fontWeight: 600, letterSpacing: '0.13em', textTransform: 'uppercase', color: 'var(--bl-text-muted)', marginBottom: '0.75rem', display: 'block' } as React.CSSProperties;
 const FOOT_LINK = { fontFamily: "var(--font-inter,'Inter',sans-serif)", fontSize: 13, color: 'var(--bl-text-secondary)', textDecoration: 'none', display: 'block', marginBottom: '0.4rem', lineHeight: 1.5 } as React.CSSProperties;
 
-export function BoldLocalFooter({ tenant, social = {} }: Props) {
+export function BoldLocalFooter({ tenant, social = {}, showBlog = true }: Props) {
   const name = tenant.business_name || tenant.name;
   const phone = tenant.phone ?? '';
   const year = new Date().getFullYear();
@@ -53,7 +53,7 @@ export function BoldLocalFooter({ tenant, social = {} }: Props) {
 
         <div>
           <span style={COL_HEAD}>Company</span>
-          {[{ label: 'About Us', href: '/about' }, { label: 'Service Area', href: '/service-area' }, { label: 'Blog', href: '/blog' }, { label: 'Reviews', href: '/reviews' }, { label: 'FAQ', href: '/faq' }, { label: 'Contact', href: '/contact' }].map((l) => (
+          {[{ label: 'About Us', href: '/about' }, { label: 'Service Area', href: '/service-area' }, { label: 'Blog', href: '/blog' }, { label: 'Reviews', href: '/reviews' }, { label: 'FAQ', href: '/faq' }, { label: 'Contact', href: '/contact' }].filter((l) => showBlog || l.href !== '/blog').map((l) => (
             <Link key={l.href} href={l.href} style={FOOT_LINK}>{l.label}</Link>
           ))}
         </div>
