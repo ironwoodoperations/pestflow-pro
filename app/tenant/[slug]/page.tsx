@@ -10,7 +10,7 @@ export const revalidate = 300;
 export async function generateStaticParams() {
   return [];
 }
-import { getPageContent, getTestimonials, getAllBlogPosts, getHeroMedia, getAllLocations, getSeoMeta, getIntegrations } from './_lib/queries';
+import { getPageContent, getTestimonials, getAllBlogPosts, getHeroMedia, getAllLocations, getSeoMeta, getIntegrations, getAllServicePages } from './_lib/queries';
 import { resolveHeroImage } from './_lib/heroImage';
 import { MetroHero } from './_components/MetroHero';
 import { ServicesGrid } from './_components/sections/ServicesGrid';
@@ -54,14 +54,59 @@ import { RusticRuggedCtaBanner } from './_shells/rustic-rugged/RusticRuggedCtaBa
 import { DangComicHome } from './_shells/dang/DangComicHome';
 import { VitaGlowHome } from './_shells/vita-glow/VitaGlowHome';
 
-const MODERN_PRO_SERVICES = [
-  { name: 'Pest Control', slug: 'pest-control' }, { name: 'Termite Control', slug: 'termite-control' },
-  { name: 'Termite Inspections', slug: 'termite-inspections' }, { name: 'Mosquito Control', slug: 'mosquito-control' },
-  { name: 'Roach Control', slug: 'roach-control' }, { name: 'Ant Control', slug: 'ant-control' },
-  { name: 'Spider Control', slug: 'spider-control' }, { name: 'Scorpion Control', slug: 'scorpion-control' },
-  { name: 'Rodent Control', slug: 'rodent-control' }, { name: 'Flea & Tick Control', slug: 'flea-tick-control' },
-  { name: 'Bed Bug Control', slug: 'bed-bug-control' }, { name: 'Wasp & Hornet Control', slug: 'wasp-hornet-control' },
-];
+// 5b: per-tenant modern-pro homepage config. Service TILES always derive from
+// the tenant's own page_content service rows (getAllServicePages — the same
+// signal the navbar uses); this config only fixes tile ORDER + static images
+// where they exist, and sets section/CTA copy. No hardcoded service list
+// survives, and a tenant with no entry gets its own service pages rendered as
+// typographic cards with the trust/why/CTA sections unrendered — never
+// another tenant's copy.
+interface ModernProHomeCopy {
+  tiles?: { slug: string; image?: string }[];
+  gridEyebrow: string;
+  gridHeading: string;
+  gridSubheading?: string;
+  // sublabelFromLicense renders the tenant's real license_number column.
+  trustItems: { label: string; sublabel?: string; sublabelFromLicense?: boolean }[];
+  whyItems: { title: string; body: string }[];
+  ctaHeading?: string;
+  ctaSubheading?: string;
+}
+
+const MODERN_PRO_HOME_DEFAULT: ModernProHomeCopy = {
+  gridEyebrow: 'WHAT WE TREAT',
+  gridHeading: 'Our Pest Control Services',
+  gridSubheading: 'Professional treatments for every pest problem',
+  trustItems: [],
+  whyItems: [],
+};
+
+const MODERN_PRO_HOME: Record<string, ModernProHomeCopy> = {
+  pls: {
+    tiles: [
+      { slug: 'sprinkler-systems', image: '/images/pls/sprinkler-systems.jpg' },
+      { slug: 'drainage',          image: '/images/pls/drainage.jpg' },
+      { slug: 'pump-systems',      image: '/images/pls/pump-systems.jpg' },
+      { slug: 'sod-dirt-work',     image: '/images/pls/sod-dirt-work.jpg' },
+    ],
+    gridEyebrow: 'WHAT WE DO',
+    gridHeading: 'Irrigation, Drainage, Pumps & Sod',
+    gridSubheading: 'Licensed irrigation work across East Texas, documented on every job.',
+    trustItems: [
+      { label: 'TX Licensed Irrigator', sublabelFromLicense: true },
+      { label: 'Licensed since 2017' },
+      { label: 'Free 2-year warranty', sublabel: 'Most companies warranty six months' },
+      { label: '4.9 on Google', sublabel: '49 reviews' },
+    ],
+    whyItems: [
+      { title: 'Documented on every job', body: 'Static pressure, zone coverage, and as-built maps you keep. You see the test data before we backfill.' },
+      { title: 'One trade, done right', body: "Irrigation, drainage, pumps, and sod. We control water, we don't mow — every job moves water where it belongs." },
+      { title: 'Free 2-year warranty', body: 'In writing, on every system we install. Most companies in this market warranty six months.' },
+    ],
+    ctaHeading: "Standing water, dry zones, or a system that won't hold pressure?",
+    ctaSubheading: 'We diagnose on site, quote in writing, and put the test data in your hands before the first shovel goes in the ground.',
+  },
+};
 
 type Params = { params: { slug: string } };
 
@@ -96,16 +141,40 @@ export default async function TenantHome({ params }: Params) {
   const websiteSchema = generateWebsiteSchema(tenant.business_name ?? tenant.name, siteUrl);
 
   if (tenant.template === 'modern-pro') {
-    const aboutContent = await getPageContent(tenant.id, 'about');
+    const [aboutContent, servicePages] = await Promise.all([
+      getPageContent(tenant.id, 'about'),
+      getAllServicePages(tenant.id),
+    ]);
     const aboutIntro = (aboutContent as { intro?: string } | null)?.intro || '';
     const aboutImage = (aboutContent as { image_url?: string } | null)?.image_url || '';
+
+    const homeCopy = MODERN_PRO_HOME[tenant.slug] ?? MODERN_PRO_HOME_DEFAULT;
+    const pages = servicePages as { page_slug: string; title: string | null; image_url?: string | null }[];
+    const titleBySlug = new Map(pages.map((p) => [p.page_slug, p.title]));
+    // Tile names always come from the tenant's own page_content titles; the
+    // config (when present) only fixes order and supplies static images.
+    const serviceTiles = homeCopy.tiles
+      ? homeCopy.tiles
+          .filter((t) => titleBySlug.has(t.slug))
+          .map((t) => ({ slug: t.slug, image: t.image, name: titleBySlug.get(t.slug) || t.slug }))
+      : [...pages]
+          .sort((a, b) => a.page_slug.localeCompare(b.page_slug))
+          .map((p) => ({ name: p.title || p.page_slug, slug: p.page_slug, image: p.image_url || undefined }));
+    const trustItems = homeCopy.trustItems.map(({ sublabelFromLicense, ...it }) =>
+      sublabelFromLicense ? { ...it, sublabel: tenant.license_number || undefined } : it
+    );
 
     return (
       <>
         <JsonLdScript schema={websiteSchema} id="ld-website" />
         <ModernProHero tenant={tenant} content={content} heroMedia={heroMedia as Record<string, unknown> | null} heroImageUrl={heroImageUrl} />
-        <ModernProTrustBar />
-        <ModernProServicesGrid services={MODERN_PRO_SERVICES} />
+        <ModernProTrustBar items={trustItems} />
+        <ModernProServicesGrid
+          services={serviceTiles}
+          eyebrow={homeCopy.gridEyebrow}
+          heading={homeCopy.gridHeading}
+          subheading={homeCopy.gridSubheading}
+        />
         <ModernProAboutStrip
           businessName={tenant.business_name || tenant.name}
           intro={aboutIntro}
@@ -114,9 +183,16 @@ export default async function TenantHome({ params }: Params) {
           licenseNumber={tenant.license_number || undefined}
           imageUrl={aboutImage || undefined}
         />
-        <ModernProWhyChooseUs businessName={tenant.business_name || tenant.name} />
+        <ModernProWhyChooseUs businessName={tenant.business_name || tenant.name} items={homeCopy.whyItems} />
         <ModernProTestimonials testimonials={testimonials as Testimonial[]} />
-        <ModernProCtaBanner phone={tenant.phone || ''} ctaText={tenant.cta_text || 'Get a Free Quote'} />
+        {homeCopy.ctaHeading && homeCopy.ctaSubheading && (
+          <ModernProCtaBanner
+            heading={homeCopy.ctaHeading}
+            subheading={homeCopy.ctaSubheading}
+            phone={tenant.phone || ''}
+            ctaText={tenant.cta_text || 'Get a Free Quote'}
+          />
+        )}
       </>
     );
   }
