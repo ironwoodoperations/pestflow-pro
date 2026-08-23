@@ -1,13 +1,32 @@
-// Vertical copy presets (PR A). The registry half of
+// Vertical copy presets (PR A, expanded in PR B). The registry half of
 //   vertical preset (code) → tenant DB override → render
 // so one set of shells serves every vertical instead of one hardcoded trade.
 // Mirrors getServiceEntry's discipline: a single accessor, no shell reaches
 // into the map directly, and the pest values are the CURRENT production
 // strings copied verbatim so nothing rendered can move.
 //
-// Nothing imports this file yet except the schema-vocabulary layer — the
-// consumers (location hero, Process, service-area, metadata) land in PR B.
+// WHAT MAY LIVE IN A PRESET (read before adding a string):
+// A preset may contain ONLY what is true of the whole TRADE. A fact about a
+// particular business belongs in the DB, never here. Precision's 2-year
+// warranty, licence LI23001, "East Texas" and "BBB A+" are tenant facts and
+// are deliberately absent from the irrigation preset even though they appear
+// on that tenant's site. Capability claims are held to the same bar: the pest
+// city FAQ promises same-day scheduling, and the irrigation FAQs deliberately
+// do not, because no such commitment exists. Locked by tests.
 import type { Vertical } from './serviceEntry';
+
+/** Token substituted at render time in any slot documented as city-tokenized. */
+export const CITY_TOKEN = '{city}';
+
+/** Replace the {city} token in preset copy. Global — a slot may use it twice. */
+export function withCity(template: string, city: string): string {
+  return template.split(CITY_TOKEN).join(city);
+}
+
+export interface CityFaq { q: string; a: string }
+export interface Feature { title: string; desc: string }
+export interface ProcessStep { title: string; desc: string }
+export interface ServiceStep { num: string; title: string; desc: string }
 
 /**
  * Copy slots resolved per vertical.
@@ -15,15 +34,36 @@ import type { Vertical } from './serviceEntry';
  * Additive by design: a new slot is a new required field here plus a value in
  * each populated preset. TypeScript then flags every preset missing it, which
  * is the same completeness guarantee the Vertical registry gives consumers.
- * PR B adds the rest of the slots once the inventory pass is done.
  */
 export interface VerticalCopy {
   /** Appended to a city in location hero titles: `${city} ${locationHeroSuffix}`. */
   locationHeroSuffix: string;
+  /** Location hero subtitle used when the tenant has no business name. */
+  locationSubtitleGeneric: string;
+  /** Location H2 used when the tenant has no business name. */
+  locationH2Generic: string;
+  /** Location intro paragraphs, city-tokenized. Used only when the DB row has no intro. */
+  locationIntroFallback: string[];
+  /** Primary CTA on the location hero. */
+  locationPrimaryCta: string;
+  /** Location FAQ accordion. Both q and a are city-tokenized. */
+  cityFaqs: CityFaq[];
+  /** WhyChooseUs feature grid. */
+  whyChooseFeatures: Feature[];
   /** The Process section's h2. */
   processHeading: string;
+  /** Process section steps; the displayed number is the 1-based position. */
+  processSteps: ProcessStep[];
+  /** Verb phrase before the service name: `${serviceProcessVerb} ${service}`. */
+  serviceProcessVerb: string;
+  /** Heading over the "what we actually do" column on a service page. */
+  serviceSolutionLabel: string;
+  /** modern-pro service-page process block. */
+  serviceSteps: ServiceStep[];
   /** Service-area hero subtitle, used when the DB has no override. */
   serviceAreaStrapline: string;
+  /** Quote page h1. */
+  quoteHeroTitle: string;
   /** Metadata description tail: `${businessName} — ${metadataFallbackDesc}`. */
   metadataFallbackDesc: string;
 }
@@ -35,24 +75,112 @@ export interface VerticalCopy {
 // Partial, NOT Record: a vertical may be registered (routable, type-valid)
 // before anyone has written its copy. Registration and copy are separate facts.
 const VERTICAL_COPY: Partial<Record<Vertical, VerticalCopy>> = Object.freeze({
-  // VERBATIM from production — diffed character by character:
-  //   locationHeroSuffix   app/tenant/[slug]/[service]/page.tsx:95  `${city} Pest Control`
-  //   processHeading       app/tenant/[slug]/_components/sections/Process.tsx:15
-  //   serviceAreaStrapline app/tenant/[slug]/service-area/page.tsx:25
-  //   metadataFallbackDesc app/tenant/[slug]/layout.tsx:42
-  // Changing any of these moves live pest tenants. Don't.
+  // VERBATIM from production — every string below was diffed character by
+  // character against the source it came from. Changing any of them moves live
+  // pest tenants. Sources:
+  //   locationHeroSuffix       [service]/page.tsx:95   `${city} Pest Control`
+  //   locationSubtitleGeneric  [service]/page.tsx:118
+  //   locationH2Generic        [service]/page.tsx:145
+  //   locationIntroFallback    [service]/page.tsx:149-150
+  //   locationPrimaryCta       [service]/page.tsx:120
+  //   cityFaqs                 [service]/page.tsx:106-109
+  //   whyChooseFeatures        _components/sections/WhyChooseUs.tsx:1-8
+  //   processHeading/Steps     _components/sections/Process.tsx:1-7,15
+  //   serviceProcessVerb       _shells/modern-pro/ModernProPestPage.tsx:53
+  //   serviceSolutionLabel     _shells/modern-pro/ModernProPestPage.tsx:82
+  //   serviceSteps             _shells/modern-pro/ModernProPestPage.tsx:16-21
+  //   serviceAreaStrapline     service-area/page.tsx:25
+  //   quoteHeroTitle           _components/forms/QuoteForm.tsx:92
+  //   metadataFallbackDesc     layout.tsx:42
   pest: Object.freeze({
     locationHeroSuffix: 'Pest Control',
+    locationSubtitleGeneric: 'Professional pest control for',
+    locationH2Generic: 'Professional Pest Control',
+    locationIntroFallback: Object.freeze([
+      "Our licensed technicians provide comprehensive pest control services throughout {city}. Whether you're dealing with ants, roaches, rodents, termites, or mosquitoes, we have the solution.",
+      'We combine local knowledge with professional-grade treatments to deliver lasting results for {city} homeowners and businesses.',
+    ]) as unknown as string[],
+    locationPrimaryCta: 'Schedule Inspection',
+    cityFaqs: Object.freeze([
+      { q: 'Do you service the {city} area?', a: 'Yes! We provide full pest control services throughout {city} and surrounding communities. Call us today for same-day scheduling.' },
+      { q: 'What pests are most common in {city}?', a: 'Common pests in {city} include ants, roaches, rodents, mosquitoes, and spiders. Our local technicians are familiar with regional pest pressures and seasonal patterns.' },
+      { q: 'How quickly can you get to my home in {city}?', a: 'We offer same-day and next-day appointments for {city} residents. Call us to check current availability.' },
+      { q: 'Are your services available year-round in {city}?', a: 'Yes. Many pests remain active year-round in this area. We recommend quarterly service plans for continuous protection.' },
+    ]) as unknown as CityFaq[],
+    whyChooseFeatures: Object.freeze([
+      { title: 'Custom Treatment Plans', desc: 'Every property is different. We tailor our approach to your specific pest pressures and property layout.' },
+      { title: 'Family & Pet-Friendly Products', desc: 'EPA-approved, low-impact formulations that are safe for your children and pets when applied correctly.' },
+      { title: 'Unlimited Callbacks', desc: 'If pests return between scheduled services, we come back at no additional cost — guaranteed.' },
+      { title: 'Fast & Reliable', desc: 'Same-day and next-day appointments available. We show up on time, every time.' },
+      { title: 'Local Experts', desc: 'We know the local pest pressures in your area and have treated thousands of properties just like yours.' },
+      { title: 'You Come First', desc: 'Our technicians take time to explain treatments, answer questions, and ensure your complete satisfaction.' },
+    ]) as unknown as Feature[],
     processHeading: 'How Our Pest Control Process Works',
+    processSteps: Object.freeze([
+      { title: 'Inspection', desc: 'Thorough checks of all key entry points, harborage areas, and pest activity indicators.' },
+      { title: 'Identification', desc: 'Precise pest identification to develop targeted, pest-specific treatment strategies.' },
+      { title: 'Monitoring', desc: 'Installation of monitoring devices to track pest activity and treatment effectiveness.' },
+      { title: 'Implementation', desc: 'Targeted, safe applications using the right products at the right concentration levels.' },
+      { title: 'Evaluation', desc: 'Follow-up assessments to ensure lasting results and adjust strategies as needed.' },
+    ]) as unknown as ProcessStep[],
+    serviceProcessVerb: 'How we treat',
+    serviceSolutionLabel: 'Treatment',
+    serviceSteps: Object.freeze([
+      { num: '01', title: 'Inspect', desc: 'Comprehensive site assessment to identify entry points, harborage, and risk factors.' },
+      { num: '02', title: 'Engineer', desc: 'Treatment plan calibrated to species, severity, and structural conditions.' },
+      { num: '03', title: 'Execute', desc: 'Targeted application using IPM-compliant materials and documented procedures.' },
+      { num: '04', title: 'Verify', desc: 'Follow-up monitoring to confirm elimination and prevent recurrence.' },
+    ]) as unknown as ServiceStep[],
     serviceAreaStrapline: 'Professional pest control in your community and surrounding areas.',
+    quoteHeroTitle: 'Schedule a Free Inspection',
     metadataFallbackDesc: 'professional pest control services',
-  }),
+  }) as unknown as VerticalCopy,
+
+  // Trade-level only. No warranty term, no licence number, no region, no BBB
+  // rating, and no scheduling promise — those are tenant facts and live in the
+  // DB. Locked by tests asserting this preset matches none of them.
   irrigation: Object.freeze({
     locationHeroSuffix: 'Irrigation & Drainage',
+    locationSubtitleGeneric: 'Professional irrigation and drainage for',
+    locationH2Generic: 'Professional Irrigation & Drainage',
+    locationIntroFallback: Object.freeze([
+      'Our licensed crews install and repair sprinkler systems, build drainage that moves water away from your home, and size pump systems throughout {city}.',
+    ]) as unknown as string[],
+    locationPrimaryCta: 'Request a Quote',
+    cityFaqs: Object.freeze([
+      { q: 'Do you service the {city} area?', a: 'Yes. We install and repair sprinkler systems, drainage, and pump systems throughout {city} and the surrounding communities. Call us for scheduling.' },
+      { q: 'What are the most common irrigation problems in {city}?', a: 'Dry patches between heads, a climbing water bill from an unseen leak, zones that will not come on, and standing water after rain. Local soil and pressure conditions drive most of it.' },
+      { q: 'How quickly can you get to my property in {city}?', a: 'Call us to check current availability for {city} and we will schedule a site visit.' },
+      { q: 'Do you work year-round in {city}?', a: 'Yes. Repairs, drainage work, and system checks continue year-round, and we handle seasonal startup and winterization.' },
+    ]) as unknown as CityFaq[],
+    whyChooseFeatures: Object.freeze([
+      { title: 'Designed for Your Property', desc: 'Zones sized to real pressure and flow, with head spacing set for even coverage — no guesswork, no dry patches.' },
+      { title: 'Documented Work', desc: 'Pressure readings, zone coverage, and as-built maps you keep, so you know what is in the ground.' },
+      { title: 'Licensed & Insured', desc: 'Licensed irrigation work, fully insured, and permitted where required.' },
+      { title: 'Fast & Reliable', desc: 'Same-day and next-day appointments available. We show up on time, every time.' },
+      { title: 'Local Knowledge', desc: 'We know local soil, pressure, and drainage patterns, and have solved these problems on properties like yours.' },
+      { title: 'You Come First', desc: 'Our crews explain the layout, answer questions, and walk the system with you before the job is called done.' },
+    ]) as unknown as Feature[],
     processHeading: 'How Our Irrigation Process Works',
+    processSteps: Object.freeze([
+      { title: 'Assessment', desc: 'Site walk to check static pressure, flow, grade, and any existing zones or drainage.' },
+      { title: 'Design', desc: "Zone layout, head spacing, and pipe sizing matched to the property's pressure and coverage needs." },
+      { title: 'Installation', desc: 'Trenching, pipe, heads, valves, and controller set to plan, with depth and grade held throughout.' },
+      { title: 'Testing', desc: 'Every zone run and adjusted for head-to-head coverage, with pressure checked at the last head.' },
+      { title: 'Walkthrough', desc: 'We walk the system with you, hand over as-built maps, and set the schedule before we leave.' },
+    ]) as unknown as ProcessStep[],
+    serviceProcessVerb: 'How we approach',
+    serviceSolutionLabel: 'The Work',
+    serviceSteps: Object.freeze([
+      { num: '01', title: 'Inspect', desc: 'Site assessment: static pressure, flow rate, grade, and the condition of what is already in the ground.' },
+      { num: '02', title: 'Design', desc: 'A plan sized to the property — zones, head spacing, pipe runs, and drainage routes.' },
+      { num: '03', title: 'Install', desc: 'Work done to plan, at depth and to grade, with materials rated for the job.' },
+      { num: '04', title: 'Verify', desc: 'Every zone tested and adjusted, results documented, and the system walked with you.' },
+    ]) as unknown as ServiceStep[],
     serviceAreaStrapline: 'Professional irrigation and drainage in your community and surrounding areas.',
+    quoteHeroTitle: 'Request a Free Estimate',
     metadataFallbackDesc: 'professional irrigation and drainage services',
-  }),
+  }) as unknown as VerticalCopy,
   // lawn, pool, hvac, roof, trailer: registered in VERTICALS, deliberately
   // ABSENT here. No placeholder copy — a pool tenant silently rendering pest
   // copy is the exact failure this architecture exists to prevent, so the

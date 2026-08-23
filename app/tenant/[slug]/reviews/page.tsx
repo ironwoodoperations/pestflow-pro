@@ -59,7 +59,6 @@ export default async function ReviewsPage({ params }: Params) {
                 <p className="text-gray-700 mb-4 italic">&ldquo;{r.review_text}&rdquo;</p>
                 <div className="flex justify-between items-center">
                   <p className="font-bold" style={{ color: 'var(--color-heading, #1a1a1a)' }}>— {r.author_name}</p>
-                  {r.source && <span className="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded">{r.source}</span>}
                 </div>
               </div>
             ))}

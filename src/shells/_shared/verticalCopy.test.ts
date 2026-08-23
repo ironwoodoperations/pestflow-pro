@@ -12,7 +12,10 @@ describe('getVerticalCopy — pest is verbatim production copy', () => {
     //   _components/sections/Process.tsx:15
     //   service-area/page.tsx:25
     //   layout.tsx:42
-    expect(getVerticalCopy('pest')).toEqual({
+    // toMatchObject, not toEqual: PR B added eleven more slots. This assertion
+    // exists to lock the ORIGINAL four against drift, which a subset check does
+    // exactly; verticalCopyPresets.test.ts locks the full set.
+    expect(getVerticalCopy('pest')).toMatchObject({
       locationHeroSuffix: 'Pest Control',
       processHeading: 'How Our Pest Control Process Works',
       serviceAreaStrapline: 'Professional pest control in your community and surrounding areas.',
@@ -34,7 +37,7 @@ describe('getVerticalCopy — pest is verbatim production copy', () => {
 
 describe('getVerticalCopy — irrigation', () => {
   it('returns the irrigation preset', () => {
-    expect(getVerticalCopy('irrigation')).toEqual({
+    expect(getVerticalCopy('irrigation')).toMatchObject({
       locationHeroSuffix: 'Irrigation & Drainage',
       processHeading: 'How Our Irrigation Process Works',
       serviceAreaStrapline: 'Professional irrigation and drainage in your community and surrounding areas.',

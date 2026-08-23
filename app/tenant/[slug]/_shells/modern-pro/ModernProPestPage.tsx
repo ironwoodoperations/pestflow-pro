@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Tenant } from '../../../../../shared/lib/tenant/types';
 import { getServiceEntry, resolveVertical } from '../../../../../src/shells/_shared/serviceEntry';
+import { getVerticalCopy } from '../../../../../src/shells/_shared/verticalCopy';
 import { formatPhone } from '../../../../../shared/lib/formatPhone';
 
 type PageContent = { title?: string; subtitle?: string; intro?: string; hero_headline?: string } | null;
@@ -13,18 +14,14 @@ const pickString = (...vals: Array<string | undefined | null>): string | undefin
   return undefined;
 };
 
-const STEPS = [
-  { num: '01', title: 'Inspect', desc: 'Comprehensive site assessment to identify entry points, harborage, and risk factors.' },
-  { num: '02', title: 'Engineer', desc: 'Treatment plan calibrated to species, severity, and structural conditions.' },
-  { num: '03', title: 'Execute', desc: 'Targeted application using IPM-compliant materials and documented procedures.' },
-  { num: '04', title: 'Verify', desc: 'Follow-up monitoring to confirm elimination and prevent recurrence.' },
-];
 
 export function ModernProPestPage({ tenant, pestSlug, content = null }: Props) {
   // S-PLS-5 / D1 plumbing: vertical-aware accessor in place of the direct map
   // read. For pest tenants getServiceEntry('pest', slug) returns the SAME
   // object from PEST_CONTENT_MAP — identical render, locked by tests.
-  const pest = getServiceEntry(resolveVertical(tenant), pestSlug);
+  const vertical = resolveVertical(tenant);
+  const copy = getVerticalCopy(vertical);
+  const pest = getServiceEntry(vertical, pestSlug);
   const phone = tenant.phone ?? '';
   const heroTitle = pickString(content?.hero_headline, content?.title, pest?.displayName) || 'Pest Control';
   const eyebrow = pickString(content?.subtitle) || `${pest?.displayName || 'Pest'} Protection`;
@@ -50,9 +47,9 @@ export function ModernProPestPage({ tenant, pestSlug, content = null }: Props) {
       <section style={{ padding: '4rem 1rem' }}>
         <div className="max-w-6xl mx-auto">
           <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#3FB8AF', marginBottom: '0.5rem', textAlign: 'center' }}>Our Process</p>
-          <h2 style={{ fontSize: 'clamp(24px,3vw,36px)', fontWeight: 700, color: '#fff', textAlign: 'center', marginBottom: '2.5rem' }}>How we treat {pest?.displayName?.toLowerCase() || 'this'}</h2>
+          <h2 style={{ fontSize: 'clamp(24px,3vw,36px)', fontWeight: 700, color: '#fff', textAlign: 'center', marginBottom: '2.5rem' }}>{copy.serviceProcessVerb} {pest?.displayName?.toLowerCase() || 'this'}</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: '1.25rem' }}>
-            {STEPS.map((s) => (
+            {copy.serviceSteps.map((s) => (
               <div key={s.num} style={{ padding: '1.5rem', border: '1px solid rgba(63,184,175,0.2)', borderRadius: 8, backgroundColor: 'rgba(27,42,78,0.4)' }}>
                 <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, borderRadius: 999, backgroundColor: '#3FB8AF', color: '#0B1220', fontWeight: 700, fontSize: 14, marginBottom: '0.75rem' }}>{s.num}</div>
                 <h3 style={{ fontSize: 16, fontWeight: 600, color: '#fff', marginBottom: '0.5rem' }}>{s.title}</h3>
@@ -79,7 +76,7 @@ export function ModernProPestPage({ tenant, pestSlug, content = null }: Props) {
             )}
             {pest?.treatment && (
               <div>
-                <h3 style={{ fontSize: 18, fontWeight: 600, color: '#fff', marginBottom: '0.75rem', borderBottom: '1px solid #3FB8AF', paddingBottom: '0.5rem' }}>Treatment</h3>
+                <h3 style={{ fontSize: 18, fontWeight: 600, color: '#fff', marginBottom: '0.75rem', borderBottom: '1px solid #3FB8AF', paddingBottom: '0.5rem' }}>{copy.serviceSolutionLabel}</h3>
                 <p style={{ fontSize: 14, color: '#CBD5E1', lineHeight: 1.7 }}>{pest.treatment}</p>
               </div>
             )}

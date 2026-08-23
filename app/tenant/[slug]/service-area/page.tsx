@@ -1,5 +1,7 @@
 import { notFound } from 'next/navigation';
 import { resolveTenantBySlug } from '../../../../shared/lib/tenant/resolve';
+import { resolveVertical } from '../../../../src/shells/_shared/serviceEntry';
+import { getVerticalCopy } from '../../../../src/shells/_shared/verticalCopy';
 
 export const revalidate = 300;
 
@@ -22,7 +24,8 @@ export default async function ServiceAreaRoute({ params }: Params) {
 
   const c = content as { title?: string; subtitle?: string } | null;
   const heroTitle = c?.title    || 'Our Service Area';
-  const heroSub   = c?.subtitle || 'Professional pest control in your community and surrounding areas.';
+  // DB subtitle still wins; the preset only supplies the fallback.
+  const heroSub   = c?.subtitle || getVerticalCopy(resolveVertical(tenant)).serviceAreaStrapline;
 
   type LocItem = { slug: string; city: string; state?: string | null };
   const locations: LocItem[] = (rawLocs as LocItem[]) ?? [];
