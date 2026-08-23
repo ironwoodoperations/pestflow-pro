@@ -23,3 +23,34 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   - docs/ROADMAP.md
   - docs/handoffs/pestflow-pro-handoff-S268-shipped.md
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-08-23 19:52 UTC
+- Branch: `main`
+- Commit: `4a362ff` — fix(claims): repo-wide capacity-claim sweep + a guard that scans the whole render path (PR E) (#269)
+- Author: csdevore2
+- Files changed:
+  - PROJECT_MANIFEST.d/fix-capacity-claims-sweep.md
+  - app/tenant/[slug]/_components/DefaultAboutPage.tsx
+  - app/tenant/[slug]/_components/DefaultPestPage.tsx
+  - app/tenant/[slug]/_components/forms/ContactFormBoldLocal.tsx
+  - app/tenant/[slug]/_components/forms/QuoteForm.tsx
+  - app/tenant/[slug]/_components/retiredClaims.test.tsx
+  - app/tenant/[slug]/_components/sections/CtaBanner.tsx
+  - app/tenant/[slug]/_components/sections/WhyChooseUs.tsx
+  - app/tenant/[slug]/_components/sections/ctaBanner.test.ts
+  - app/tenant/[slug]/_lib/serviceData.ts
+  - app/tenant/[slug]/_shells/bold-local/BoldLocalAboutPage.tsx
+  - app/tenant/[slug]/_shells/bold-local/BoldLocalPestPage.tsx
+  - app/tenant/[slug]/_shells/bold-local/BoldLocalWhyUs.tsx
+  - app/tenant/[slug]/_shells/clean-friendly/CleanFriendlyAboutPage.tsx
+  - app/tenant/[slug]/_shells/clean-friendly/CleanFriendlyTrustBar.tsx
+  - app/tenant/[slug]/_shells/metro-pro/MetroProPestPage.tsx
+  - app/tenant/[slug]/_shells/modern-pro/ModernProAboutPage.tsx
+  - app/tenant/[slug]/_shells/rustic-rugged/RusticRuggedAboutPage.tsx
+  - shared/lib/noUnverifiedClaims.test.ts
+  - src/components/QuoteFormSteps.tsx
+  - src/shells/_shared/pestContent.ts
+  - src/shells/_shared/verticalCopy.ts
+  - src/shells/_shared/verticalCopyPresets.test.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
