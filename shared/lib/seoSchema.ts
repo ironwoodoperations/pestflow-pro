@@ -91,6 +91,19 @@ export const PEST_CONTROL_VOCABULARY: SchemaVocabulary = Object.freeze({
   serviceType: 'Pest Control',
 })
 
+// Irrigation vertical vocabulary (PR A). Frozen for the SAME reason
+// PEST_CONTROL_VOCABULARY is: generateLocalBusinessSchema emits knowsAbout BY
+// REFERENCE, so an unfrozen array can be mutated process-wide by any caller
+// holding an emitted schema. Freeze fails loudly in strict mode instead.
+export const IRRIGATION_VOCABULARY: SchemaVocabulary = Object.freeze({
+  knowsAbout: Object.freeze([
+    'Irrigation', 'Sprinkler System Installation', 'Sprinkler Repair',
+    'Drainage Systems', 'French Drains', 'Pond and Lake Pump Systems',
+    'Sod Installation', 'Grading',
+  ]),
+  serviceType: 'Irrigation',
+})
+
 export function generateLocalBusinessSchema(
   business: BusinessInfo,
   seo: SeoSettings,

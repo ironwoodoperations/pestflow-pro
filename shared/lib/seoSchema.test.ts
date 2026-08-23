@@ -5,6 +5,7 @@ import {
   generateServiceSchema,
   generateBlogPostingSchema,
   PEST_CONTROL_VOCABULARY,
+  IRRIGATION_VOCABULARY,
 } from './seoSchema'
 
 // --- parseHours ---
@@ -212,5 +213,63 @@ describe('generateBlogPostingSchema', () => {
     const s = generateBlogPostingSchema({ title: 'T', slug: 's' }, 'https://x.pestflowpro.com') as Record<string, unknown>
     expect(s.description).toBeUndefined()
     expect(s.author).toBeUndefined()
+  })
+})
+
+// --- PR A: vertical vocabulary wiring ---
+//
+// The invariant: every pest tenant's emitted JSON-LD must be byte-identical
+// before and after this PR. Dang is live and must not move.
+
+describe('PR A — schema vocabulary', () => {
+  const business = { name: 'B', phone: 'p', email: 'e', address: 'a' }
+  const seo = { meta_description: '', service_areas: [], certifications: [], founded_year: '', owner_name: '' }
+  const schemaCfg = { aggregate_rating: { value: 0, count: 0 }, service_radius_miles: 0 }
+  const gen = (vocab?: Parameters<typeof generateLocalBusinessSchema>[5]) =>
+    generateLocalBusinessSchema(business, seo, schemaCfg, {}, 'https://x.test', vocab) as Record<string, unknown>
+
+  it('REGRESSION LOCK: no vocabulary arg emits the exact historical 6-term pest list', () => {
+    expect(gen().knowsAbout).toEqual([
+      'Pest Control', 'Termite Treatment', 'Mosquito Control',
+      'Rodent Control', 'Bed Bug Treatment', 'Ant Control',
+    ])
+  })
+
+  it('explicit pest vocabulary deep-equals the no-arg output', () => {
+    // This is what proves passing a resolved vocabulary cannot move a pest
+    // tenant: for pest, passing it and passing nothing are the same schema.
+    expect(gen(PEST_CONTROL_VOCABULARY)).toEqual(gen())
+  })
+
+  it('irrigation emits the 8 irrigation terms', () => {
+    expect(gen(IRRIGATION_VOCABULARY).knowsAbout).toEqual([
+      'Irrigation', 'Sprinkler System Installation', 'Sprinkler Repair',
+      'Drainage Systems', 'French Drains', 'Pond and Lake Pump Systems',
+      'Sod Installation', 'Grading',
+    ])
+    expect(IRRIGATION_VOCABULARY.serviceType).toBe('Irrigation')
+  })
+
+  it('irrigation schema contains ZERO pest terms anywhere in the serialized output', () => {
+    expect(JSON.stringify(gen(IRRIGATION_VOCABULARY)))
+      .not.toMatch(/pest|termite|mosquito|rodent|bed bug|ant control/i)
+  })
+
+  it('every vocabulary is frozen and rejects mutation in strict mode', () => {
+    for (const vocab of [PEST_CONTROL_VOCABULARY, IRRIGATION_VOCABULARY]) {
+      expect(Object.isFrozen(vocab)).toBe(true)
+      expect(Object.isFrozen(vocab.knowsAbout)).toBe(true)
+      expect(() => { (vocab.knowsAbout as string[]).push('Corrupted') }).toThrow()
+      expect(() => { (vocab as { serviceType: string }).serviceType = 'Corrupted' }).toThrow()
+    }
+  })
+
+  it('knowsAbout is emitted BY REFERENCE — the reason freezing is load-bearing', () => {
+    // Documents the hazard: the emitted schema shares the frozen array, so
+    // without Object.freeze a caller mutating an emitted schema would corrupt
+    // the default for every later call process-wide.
+    expect(gen(IRRIGATION_VOCABULARY).knowsAbout).toBe(IRRIGATION_VOCABULARY.knowsAbout)
+    expect(() => { (gen().knowsAbout as string[]).push('Corrupted') }).toThrow()
+    expect(gen().knowsAbout).toHaveLength(6)
   })
 })
