@@ -18,11 +18,14 @@ const NAV_LINKS = [
 ];
 
 interface Props {
+  showBlog?: boolean;
   tenant: Tenant;
   social?: { facebook?: string; instagram?: string; youtube?: string };
 }
 
-export function MetroFooter({ tenant, social = {} }: Props) {
+export function MetroFooter({ tenant, social = {}, showBlog = true }: Props) {
+  // PR C: a tenant with no published posts does not advertise a Blog link.
+  const navLinks = NAV_LINKS.filter((l) => showBlog || l.href !== '/blog');
   const name = tenant.business_name || tenant.name;
   const license = tenant.license_number;
 
@@ -47,7 +50,7 @@ export function MetroFooter({ tenant, social = {} }: Props) {
           <div>
             <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--color-accent)' }}>Navigation</p>
             <ul className="space-y-2">
-              {NAV_LINKS.map((l) => (
+              {navLinks.map((l) => (
                 <li key={l.href}>
                   <Link href={l.href} className="text-sm text-white/60 hover:text-white transition">{l.label}</Link>
                 </li>

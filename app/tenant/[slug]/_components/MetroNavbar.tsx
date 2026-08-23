@@ -18,10 +18,13 @@ const NAV_LINKS = [
 interface ServiceLink { page_slug: string; title: string | null }
 
 interface Props {
+  showBlog?: boolean;
   servicePages: ServiceLink[];
 }
 
-export function MetroNavbar({ servicePages }: Props) {
+export function MetroNavbar({ servicePages, showBlog = true }: Props) {
+  // PR C: a tenant with no published posts does not advertise a Blog link.
+  const navLinks = NAV_LINKS.filter((l) => showBlog || l.href !== '/blog');
   const tenant = useTenant();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -124,7 +127,7 @@ export function MetroNavbar({ servicePages }: Props) {
                 </div>
               )}
             </div>
-            {NAV_LINKS.map((link) => (
+            {navLinks.map((link) => (
               <Link key={link.href} href={link.href} className="text-sm font-medium text-white/70 hover:text-white transition">{link.label}</Link>
             ))}
             <Link href="/quote" className="text-sm font-semibold px-5 py-2 text-white transition hover:opacity-90" style={{ backgroundColor: 'var(--color-accent)' }}>
@@ -152,7 +155,7 @@ export function MetroNavbar({ servicePages }: Props) {
               <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)} className="block px-2 py-2 text-sm text-white/70 hover:text-white transition">{link.label}</Link>
             ))}
             <div className="border-t border-white/10 my-2" />
-            {NAV_LINKS.map((link) => (
+            {navLinks.map((link) => (
               <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)} className="block px-2 py-2 text-sm font-medium text-white/80 hover:text-white">{link.label}</Link>
             ))}
             <Link href="/quote" onClick={() => setMobileOpen(false)} className="block text-center font-semibold px-5 py-2.5 text-white mt-3 transition hover:opacity-90" style={{ backgroundColor: 'var(--color-accent)' }}>

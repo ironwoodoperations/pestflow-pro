@@ -18,11 +18,14 @@ const QUICK_LINKS = [
 ];
 
 interface Props {
+  showBlog?: boolean;
   tenant: Tenant;
   social?: { facebook?: string; instagram?: string; google?: string; youtube?: string };
 }
 
-export function ModernProFooter({ tenant, social = {} }: Props) {
+export function ModernProFooter({ tenant, social = {}, showBlog = true }: Props) {
+  // PR C: a tenant with no published posts does not advertise a Blog link.
+  const quickLinks = QUICK_LINKS.filter((l) => showBlog || l.href !== '/blog');
   const name = tenant.business_name || tenant.name;
   const license = tenant.license_number;
 
@@ -47,7 +50,7 @@ export function ModernProFooter({ tenant, social = {} }: Props) {
           <div>
             <h3 className="text-lg mb-3 text-white font-semibold">Quick Links</h3>
             <ul className="space-y-2">
-              {QUICK_LINKS.map((link) => <li key={link.href + link.label}><Link href={link.href} className="hover:text-[color:var(--color-primary)] transition">{link.label}</Link></li>)}
+              {quickLinks.map((link) => <li key={link.href + link.label}><Link href={link.href} className="hover:text-[color:var(--color-primary)] transition">{link.label}</Link></li>)}
             </ul>
           </div>
           <div>

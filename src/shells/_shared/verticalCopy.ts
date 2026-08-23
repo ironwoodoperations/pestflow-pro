@@ -66,6 +66,25 @@ export interface VerticalCopy {
   quoteHeroTitle: string;
   /** Metadata description tail: `${businessName} — ${metadataFallbackDesc}`. */
   metadataFallbackDesc: string;
+  /** Blog index h1, used when the DB has no override. */
+  blogHeading: string;
+  /** Blog index hero subtitle, used when the DB has no override. */
+  blogSubtitle: string;
+  /** Newsletter block body on the blog index. */
+  blogNewsletterCopy: string;
+  /** CTA banner intro, ONLY for a tenant with no business name set. */
+  ctaGenericIntro: string;
+  /** CTA banner trailing sentence. Conduct claims only — never a capacity promise. */
+  ctaStrapline: string;
+  /** CTA banner primary button label. */
+  ctaPrimaryLabel: string;
+  /**
+   * Fallback image for a blog card with no intro_image, and for the about-page
+   * body image. NULL means RENDER NOTHING — never point these at an asset that
+   * does not exist in public/, and never borrow another vertical's photography.
+   */
+  blogCardFallbackImage: string | null;
+  aboutImageFallback: string | null;
 }
 
 // Frozen for the same reason PEST_CONTROL_VOCABULARY is: these objects are
@@ -134,6 +153,20 @@ const VERTICAL_COPY: Partial<Record<Vertical, VerticalCopy>> = Object.freeze({
     serviceAreaStrapline: 'Professional pest control in your community and surrounding areas.',
     quoteHeroTitle: 'Schedule a Free Inspection',
     metadataFallbackDesc: 'professional pest control services',
+    //   blogHeading/blogSubtitle   blog/page.tsx:49-50
+    //   blogNewsletterCopy         blog/page.tsx:100
+    //   ctaGenericIntro/ctaStrapline/ctaPrimaryLabel
+    //                              _components/sections/CtaBanner.tsx:13,17
+    //   blogCardFallbackImage      blog/page.tsx:80
+    //   aboutImageFallback         about/page.tsx:48
+    blogHeading: 'Pest Control Blog',
+    blogSubtitle: 'Tips, guides, and news from our pest control experts.',
+    blogNewsletterCopy: 'Get pest control tips and seasonal alerts delivered to your inbox.',
+    ctaGenericIntro: 'Professional pest control, on your schedule.',
+    ctaStrapline: 'Same-day appointments available.',
+    ctaPrimaryLabel: 'Schedule Inspection',
+    blogCardFallbackImage: '/images/pests/pest_control.jpg',
+    aboutImageFallback: '/images/pests/team.jpg',
   }) as unknown as VerticalCopy,
 
   // Trade-level only. No warranty term, no licence number, no region, no BBB
@@ -180,6 +213,18 @@ const VERTICAL_COPY: Partial<Record<Vertical, VerticalCopy>> = Object.freeze({
     serviceAreaStrapline: 'Professional irrigation and drainage in your community and surrounding areas.',
     quoteHeroTitle: 'Request a Free Estimate',
     metadataFallbackDesc: 'professional irrigation and drainage services',
+    blogHeading: 'Irrigation & Drainage Blog',
+    blogSubtitle: 'Guides and updates on sprinkler systems, drainage, and pump work.',
+    blogNewsletterCopy: 'Get seasonal irrigation and drainage tips delivered to your inbox.',
+    ctaGenericIntro: 'Professional irrigation and drainage, planned around your property.',
+    // Conduct, not capacity: describes how the work starts, promises no window.
+    ctaStrapline: 'Every job starts with a site walk.',
+    ctaPrimaryLabel: 'Request an Estimate',
+    // NULL, not a borrowed pest photo and not a path to a file that does not
+    // exist. public/images/pls/ holds only the five service tiles — there is no
+    // irrigation team or generic photo — so these render nothing until one exists.
+    blogCardFallbackImage: null,
+    aboutImageFallback: null,
   }) as unknown as VerticalCopy,
   // lawn, pool, hvac, roof, trailer: registered in VERTICALS, deliberately
   // ABSENT here. No placeholder copy — a pool tenant silently rendering pest

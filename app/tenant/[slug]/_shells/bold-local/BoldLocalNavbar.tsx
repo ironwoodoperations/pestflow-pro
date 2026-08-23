@@ -26,9 +26,11 @@ const DEFAULT_SERVICES = [
 ];
 
 interface ServiceLink { page_slug: string; title: string | null }
-interface Props { servicePages: ServiceLink[] }
+interface Props { servicePages: ServiceLink[]; showBlog?: boolean }
 
-export function BoldLocalNavbar({ servicePages }: Props) {
+export function BoldLocalNavbar({ servicePages, showBlog = true }: Props) {
+  // PR C: a tenant with no published posts does not advertise a Blog link.
+  const navLinks = NAV_LINKS.filter((l) => showBlog || l.href !== '/blog');
   const tenant = useTenant();
   const pathname = usePathname();
   const phone = tenant.phone ?? '';
@@ -83,7 +85,7 @@ export function BoldLocalNavbar({ servicePages }: Props) {
               </div>
             )}
           </div>
-          {NAV_LINKS.map((l) => <Link key={l.href} href={l.href} style={LINK_STYLE}>{l.label}</Link>)}
+          {navLinks.map((l) => <Link key={l.href} href={l.href} style={LINK_STYLE}>{l.label}</Link>)}
         </div>
 
         <div className="hidden lg:flex items-center gap-3">
@@ -105,7 +107,7 @@ export function BoldLocalNavbar({ servicePages }: Props) {
             <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.13em', textTransform: 'uppercase', color: 'var(--bl-text-muted)', marginBottom: '0.25rem' }}>Services</p>
             {serviceLinks.map((l) => <Link key={l.href} href={l.href} onClick={() => setMobileOpen(false)} style={{ ...LINK_STYLE, padding: '0.45rem 0', display: 'block' }}>{l.label}</Link>)}
             <div style={{ borderTop: '1px solid var(--bl-border)', margin: '0.5rem 0' }} />
-            {NAV_LINKS.map((l) => <Link key={l.href} href={l.href} onClick={() => setMobileOpen(false)} style={{ ...LINK_STYLE, padding: '0.45rem 0', display: 'block', fontSize: 15 }}>{l.label}</Link>)}
+            {navLinks.map((l) => <Link key={l.href} href={l.href} onClick={() => setMobileOpen(false)} style={{ ...LINK_STYLE, padding: '0.45rem 0', display: 'block', fontSize: 15 }}>{l.label}</Link>)}
             {phone && (
               <a href={`tel:${phone.replace(/\D/g, '')}`} onClick={() => setMobileOpen(false)} style={{ display: 'block', marginTop: '0.75rem', backgroundColor: 'var(--bl-accent)', color: '#0F1216', fontFamily: "var(--font-barlow,'Barlow Condensed','Oswald',sans-serif)", fontWeight: 700, fontSize: 15, padding: '0.75rem', textAlign: 'center', textDecoration: 'none', borderRadius: 0 }}>
                 {formatPhone(phone)}

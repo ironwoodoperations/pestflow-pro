@@ -34,10 +34,13 @@ const NAV_LINKS = [
 interface ServiceLink { page_slug: string; title: string | null }
 
 interface Props {
+  showBlog?: boolean;
   servicePages?: ServiceLink[];
 }
 
-export function RusticRuggedNavbar({ servicePages }: Props) {
+export function RusticRuggedNavbar({ servicePages, showBlog = true }: Props) {
+  // PR C: a tenant with no published posts does not advertise a Blog link.
+  const navLinks = NAV_LINKS.filter((l) => showBlog || l.href !== '/blog');
   const tenant = useTenant();
   const businessName = tenant.business_name || tenant.name;
   const logoUrl = tenant.logo_url || '';
@@ -105,7 +108,7 @@ export function RusticRuggedNavbar({ servicePages }: Props) {
                 </div>
               )}
             </div>
-            {NAV_LINKS.map(l => (
+            {navLinks.map(l => (
               <Link key={l.href} href={l.href} className="text-sm font-medium transition" style={{ color: '#1a1a1a' }}
                 onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-primary)')}
                 onMouseLeave={e => (e.currentTarget.style.color = '#1a1a1a')}>
@@ -130,7 +133,7 @@ export function RusticRuggedNavbar({ servicePages }: Props) {
             <p className="text-xs font-semibold text-gray-400 uppercase px-2 pb-1">Services</p>
             {serviceLinks.map(l => <Link key={l.href} href={l.href} onClick={() => setMobileOpen(false)} className="block px-2 py-2 text-sm font-medium" style={{ color: '#1a1a1a' }}>{l.label}</Link>)}
             <div className="border-t border-gray-100 my-2" />
-            {NAV_LINKS.map(l => <Link key={l.href} href={l.href} onClick={() => setMobileOpen(false)} className="block px-2 py-2 text-base font-medium" style={{ color: '#1a1a1a' }}>{l.label}</Link>)}
+            {navLinks.map(l => <Link key={l.href} href={l.href} onClick={() => setMobileOpen(false)} className="block px-2 py-2 text-base font-medium" style={{ color: '#1a1a1a' }}>{l.label}</Link>)}
             {phone && <a href={`tel:${phone.replace(/\D/g, '')}`} className="block px-2 py-2 text-base font-semibold" style={{ color: 'var(--color-primary)' }}>📞 {formatPhone(phone)}</a>}
             <Link href="/quote" onClick={() => setMobileOpen(false)} className="block text-center font-bold rounded px-5 py-2.5 text-white transition mt-3" style={{ backgroundColor: 'var(--color-primary)' }}>{ctaText}</Link>
           </div>

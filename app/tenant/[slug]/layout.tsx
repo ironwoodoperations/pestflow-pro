@@ -6,7 +6,7 @@ import Script from 'next/script';
 import { resolveTenantBySlug } from '../../../shared/lib/tenant/resolve';
 import { resolveSiteUrl } from '../../../shared/lib/resolveSiteUrl';
 import { tenantSeoMetadata } from '../../../shared/lib/tenantSeoMetadata';
-import { getAllServicePages, getSocialLinks, getSeoSettings, getBusinessInfo, getIntegrations } from './_lib/queries';
+import { getAllServicePages, getSocialLinks, getSeoSettings, getBusinessInfo, getIntegrations, getAllBlogPosts } from './_lib/queries';
 import { JsonLdScript } from './_components/JsonLdScripts';
 import { generateLocalBusinessSchema, getSchemaVocabulary, type BusinessInfo, type SeoSettings, type SocialLinks } from '../../../shared/lib/seoSchema';
 import { resolveVertical } from '../../../shared/lib/verticals';
@@ -71,13 +71,19 @@ export default async function TenantLayout({
   const tenant = await resolveTenantBySlug(params.slug);
   if (!tenant) notFound();
 
-  const [servicePages, social, seoRaw, businessInfoRaw, integrations] = await Promise.all([
+  const [servicePages, social, seoRaw, businessInfoRaw, integrations, blogPosts] = await Promise.all([
     getAllServicePages(tenant.id),
     getSocialLinks(tenant.id),
     getSeoSettings(tenant.id),
     getBusinessInfo(tenant.id),
     getIntegrations(tenant.id),
+    getAllBlogPosts(tenant.id),
   ]);
+
+  // PR C: a tenant with no published posts should not advertise a Blog link.
+  // The query is React-cache()d, so the blog page's own call in the same request
+  // is deduped rather than doubled.
+  const showBlog = blogPosts.length > 0;
 
   const siteUrl = resolveSiteUrl(tenant);
   const businessInfo: BusinessInfo = {
@@ -151,9 +157,9 @@ export default async function TenantLayout({
         <style dangerouslySetInnerHTML={{ __html: cssVars }} />
         {ga4Scripts}
         <TenantProvider tenant={tenant}>
-          <MetroNavbar servicePages={servicePages} />
+          <MetroNavbar servicePages={servicePages} showBlog={showBlog} />
           <main id="main-content">{children}</main>
-          <MetroFooter tenant={tenant} social={social} />
+          <MetroFooter tenant={tenant} social={social} showBlog={showBlog} />
         </TenantProvider>
       </>
     );
@@ -166,9 +172,9 @@ export default async function TenantLayout({
         <style dangerouslySetInnerHTML={{ __html: cssVars }} />
         {ga4Scripts}
         <TenantProvider tenant={tenant}>
-          <ModernProNavbar servicePages={servicePages} />
+          <ModernProNavbar servicePages={servicePages} showBlog={showBlog} />
           <main id="main-content">{children}</main>
-          <ModernProFooter tenant={tenant} social={social} />
+          <ModernProFooter tenant={tenant} social={social} showBlog={showBlog} />
         </TenantProvider>
       </>
     );
@@ -182,9 +188,9 @@ export default async function TenantLayout({
         {ga4Scripts}
         <TenantProvider tenant={tenant}>
           <div className={cfInterFont.variable} style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", backgroundColor: 'var(--cf-surface)', color: 'var(--cf-ink)' }}>
-            <CleanFriendlyNavbar servicePages={servicePages} />
+            <CleanFriendlyNavbar servicePages={servicePages} showBlog={showBlog} />
             <main id="main-content">{children}</main>
-            <CleanFriendlyFooter tenant={tenant} social={social} />
+            <CleanFriendlyFooter tenant={tenant} social={social} showBlog={showBlog} />
           </div>
         </TenantProvider>
       </>
@@ -199,9 +205,9 @@ export default async function TenantLayout({
         {ga4Scripts}
         <TenantProvider tenant={tenant}>
           <div className={`${barlowFont.variable} ${blInterFont.variable}`} style={{ fontFamily: "var(--font-inter,'Inter',sans-serif)", backgroundColor: 'var(--bl-surface)', color: 'var(--bl-text)' }}>
-            <BoldLocalNavbar servicePages={servicePages} />
+            <BoldLocalNavbar servicePages={servicePages} showBlog={showBlog} />
             <main id="main-content">{children}</main>
-            <BoldLocalFooter tenant={tenant} social={social} />
+            <BoldLocalFooter tenant={tenant} social={social} showBlog={showBlog} />
           </div>
         </TenantProvider>
       </>
@@ -215,9 +221,9 @@ export default async function TenantLayout({
         <style dangerouslySetInnerHTML={{ __html: cssVars }} />
         {ga4Scripts}
         <TenantProvider tenant={tenant}>
-          <RusticRuggedNavbar servicePages={servicePages} />
+          <RusticRuggedNavbar servicePages={servicePages} showBlog={showBlog} />
           <main id="main-content">{children}</main>
-          <RusticRuggedFooter tenant={tenant} social={social} />
+          <RusticRuggedFooter tenant={tenant} social={social} showBlog={showBlog} />
         </TenantProvider>
       </>
     );
@@ -284,9 +290,9 @@ export default async function TenantLayout({
       <style dangerouslySetInnerHTML={{ __html: cssVars }} />
       {ga4Scripts}
       <TenantProvider tenant={tenant}>
-        <ModernProNavbar servicePages={servicePages} />
+        <ModernProNavbar servicePages={servicePages} showBlog={showBlog} />
         <main id="main-content">{children}</main>
-        <ModernProFooter tenant={tenant} social={social} />
+        <ModernProFooter tenant={tenant} social={social} showBlog={showBlog} />
       </TenantProvider>
     </>
   );

@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation';
 import { resolveTenantBySlug } from '../../../../../shared/lib/tenant/resolve';
 import { resolveSiteUrl } from '../../../../../shared/lib/resolveSiteUrl';
 import { buildPageMetadata } from '../../../../../shared/lib/buildPageMetadata';
+import { resolveVertical } from '../../../../../shared/lib/verticals';
+import { getVerticalCopy } from '../../../../../src/shells/_shared/verticalCopy';
 
 export const revalidate = 300;
 
@@ -26,7 +28,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     seoMeta,
     fallback: {
       title: businessName,
-      description: `${businessName} — professional pest control services`,
+      description: `${businessName} — ${getVerticalCopy(resolveVertical(tenant)).metadataFallbackDesc}`,
     },
   });
 }
@@ -48,18 +50,23 @@ export default async function BlogPostPage({ params }: Params) {
   // S267: dark article body + closing band gated to bold-local. Other themes
   // keep `prose prose-gray` and white bands exactly — no Dang change.
   const isBoldLocal = tenant.template === 'bold-local';
+  const postImage = p.intro_image || getVerticalCopy(resolveVertical(tenant)).blogCardFallbackImage;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-section)' }}>
       <JsonLdScript schema={postSchema} id="ld-blog-post" />
 
-      <div className="w-full h-64 md:h-96 overflow-hidden" style={{ backgroundColor: 'var(--color-primary)' }}>
-        <img
-          src={(p.intro_image) || '/images/pests/pest_control.jpg'}
-          alt={p.title}
-          className="w-full h-full object-cover opacity-80"
-        />
-      </div>
+      {/* PR C: same defect as the blog index — a pest photo was the fallback for
+          every tenant. Per-vertical, or no banner at all. */}
+      {postImage && (
+        <div className="w-full h-64 md:h-96 overflow-hidden" style={{ backgroundColor: 'var(--color-primary)' }}>
+          <img
+            src={postImage}
+            alt={p.title}
+            className="w-full h-full object-cover opacity-80"
+          />
+        </div>
+      )}
 
       <article className="max-w-3xl mx-auto px-4 py-16">
         <Link href="/blog" className="font-medium hover:underline text-sm mb-6 block" style={{ color: 'var(--color-primary)' }}>← Back to Blog</Link>
