@@ -16,16 +16,16 @@ const PEST_EXPECTED = {
   ],
   locationPrimaryCta: 'Schedule Inspection',
   cityFaqs: [
-    { q: 'Do you service the {city} area?', a: 'Yes! We provide full pest control services throughout {city} and surrounding communities. Call us today for same-day scheduling.' },
+    { q: 'Do you service the {city} area?', a: 'Yes! We provide full pest control services throughout {city} and surrounding communities. Call us for scheduling.' },
     { q: 'What pests are most common in {city}?', a: 'Common pests in {city} include ants, roaches, rodents, mosquitoes, and spiders. Our local technicians are familiar with regional pest pressures and seasonal patterns.' },
-    { q: 'How quickly can you get to my home in {city}?', a: 'We offer same-day and next-day appointments for {city} residents. Call us to check current availability.' },
+    { q: 'How quickly can you get to my home in {city}?', a: 'Call us to check current availability for {city} and we will schedule an inspection.' },
     { q: 'Are your services available year-round in {city}?', a: 'Yes. Many pests remain active year-round in this area. We recommend quarterly service plans for continuous protection.' },
   ],
   whyChooseFeatures: [
     { title: 'Custom Treatment Plans', desc: 'Every property is different. We tailor our approach to your specific pest pressures and property layout.' },
     { title: 'Family & Pet-Friendly Products', desc: 'EPA-approved, low-impact formulations that are safe for your children and pets when applied correctly.' },
     { title: 'Unlimited Callbacks', desc: 'If pests return between scheduled services, we come back at no additional cost — guaranteed.' },
-    { title: 'Fast & Reliable', desc: 'Same-day and next-day appointments available. We show up on time, every time.' },
+    { title: 'Clear Scheduling', desc: 'We give you a firm appointment window, keep you posted if anything changes, and show up when we say we will.' },
     { title: 'Local Experts', desc: 'We know the local pest pressures in your area and have treated thousands of properties just like yours.' },
     { title: 'You Come First', desc: 'Our technicians take time to explain treatments, answer questions, and ensure your complete satisfaction.' },
   ],
@@ -48,6 +48,9 @@ const PEST_EXPECTED = {
   serviceAreaStrapline: 'Professional pest control in your community and surrounding areas.',
   quoteHeroTitle: 'Schedule a Free Inspection',
   metadataFallbackDesc: 'professional pest control services',
+  // NOTE (PR D): four pest values below are NO LONGER the pre-PR-D production
+  // strings — the capacity claims they carried were retired. Every other value
+  // here is still verbatim. See the PR D block at the foot of this file.
   // PR C — verbatim from the production files they were lifted out of:
   //   blogHeading/blogSubtitle  blog/page.tsx:49-50
   //   blogNewsletterCopy        blog/page.tsx:100
@@ -58,7 +61,7 @@ const PEST_EXPECTED = {
   blogSubtitle: 'Tips, guides, and news from our pest control experts.',
   blogNewsletterCopy: 'Get pest control tips and seasonal alerts delivered to your inbox.',
   ctaGenericIntro: 'Professional pest control, on your schedule.',
-  ctaStrapline: 'Same-day appointments available.',
+  ctaStrapline: 'Every visit starts with an inspection.',
   ctaPrimaryLabel: 'Schedule Inspection',
   blogCardFallbackImage: '/images/pests/pest_control.jpg',
   aboutImageFallback: '/images/pests/team.jpg',
@@ -91,15 +94,8 @@ describe('irrigation preset — trade-level only', () => {
     expect(serialized).not.toMatch(/LI23001|East Texas|2-year|two-year|BBB/i);
   });
 
-  it('makes NO CAPACITY OR OUTCOME PROMISE the client has not given us', () => {
-    // A preset may describe how a trade works; it may not commit a business to
-    // a response time or a guarantee. 'Same-day and next-day appointments
-    // available' shipped here in the original brief and was wrong for exactly
-    // that reason — it is the same class of fabrication WS7 strips from the
-    // about stats, and it contradicted the city FAQ, which was deliberately
-    // written to promise nothing. Conduct claims ("we show up when we say we
-    // will") are fine; capacity claims are not.
-    expect(serialized).not.toMatch(/same-day|next-day|24\/7|guarantee/i);
+  it('makes no GUARANTEE claim (irrigation-only guard — see the split below)', () => {
+    expect(serialized).not.toMatch(/guarantee/i);
   });
 
   it('§0.1: says nothing about "lawn" — irrigation is a separate vertical', () => {
@@ -243,5 +239,62 @@ describe('PR C — irrigation image slots point at nothing rather than a missing
     const c = getVerticalCopy('irrigation');
     expect(String(c.blogCardFallbackImage)).not.toContain('images/pests');
     expect(String(c.aboutImageFallback)).not.toContain('images/pests');
+  });
+});
+
+// ── PR D — the guard is SPLIT ───────────────────────────────────────────────
+//
+// CAPACITY terms apply to EVERY populated preset. A response-time promise
+// ("same-day", "next-day", "24/7") or a business-terms promise ("no contracts")
+// is never a trade fact and never a safe platform default, in any vertical.
+//
+// The GUARANTEE term stays irrigation-only: the live pest preset legitimately
+// contains "— guaranteed." in whyChooseFeatures (its Unlimited Callbacks
+// entry), so widening that term would fail on real, intended pest copy. The
+// capacity terms carry no such exception, which is why they can be — and now
+// are — enforced everywhere.
+const CAPACITY_GUARD = /same-day|next-day|24\/7|no contracts/i;
+
+describe('PR D — CAPACITY guard applies to EVERY populated preset', () => {
+  for (const v of ['pest', 'irrigation'] as const) {
+    it(`${v} makes no capacity or business-terms promise anywhere in the preset`, () => {
+      expect(JSON.stringify(getVerticalCopy(v))).not.toMatch(CAPACITY_GUARD);
+    });
+  }
+
+  it('the guard is not vacuous — it catches the literals being retired', () => {
+    expect(CAPACITY_GUARD.test('Same-day appointments available.')).toBe(true);
+    expect(CAPACITY_GUARD.test('Same-day and next-day appointments available. No contracts required.')).toBe(true);
+    expect(CAPACITY_GUARD.test('24/7 response')).toBe(true);
+  });
+
+  it('and it passes the replacements', () => {
+    expect(CAPACITY_GUARD.test(getVerticalCopy('pest').ctaStrapline)).toBe(false);
+    expect(CAPACITY_GUARD.test(getVerticalCopy('irrigation').ctaStrapline)).toBe(false);
+  });
+});
+
+describe('PR D — the GUARANTEE term stays irrigation-only, and here is why', () => {
+  it('irrigation has no guarantee claim', () => {
+    expect(JSON.stringify(getVerticalCopy('irrigation'))).not.toMatch(/guarantee/i);
+  });
+
+  it('pest legitimately does — documenting the exception rather than hiding it', () => {
+    // If this ever stops being true, the guarantee term can be widened to both.
+    expect(JSON.stringify(getVerticalCopy('pest'))).toMatch(/guaranteed/i);
+  });
+});
+
+describe('PR D — pest ctaStrapline is now a conduct claim', () => {
+  it('describes how the work is done, not how fast or on what terms', () => {
+    expect(getVerticalCopy('pest').ctaStrapline).toBe('Every visit starts with an inspection.');
+  });
+
+  it('is grounded in the pest process, whose first step is Inspection', () => {
+    expect(getVerticalCopy('pest').processSteps[0].title).toBe('Inspection');
+  });
+
+  it('both verticals now read as conduct, in the same register', () => {
+    expect(getVerticalCopy('irrigation').ctaStrapline).toBe('Every job starts with a site walk.');
   });
 });
