@@ -11,21 +11,40 @@ import { getVerticalCopy } from '../../../../../src/shells/_shared/verticalCopy'
 const pest = getVerticalCopy('pest');
 const irrigation = getVerticalCopy('irrigation');
 
-describe('defaults track the pest preset', () => {
-  const html = renderToStaticMarkup(createElement(CtaBanner, { businessName: 'Acme Pest' }));
+// PR E: there are no defaults left. DEFAULT_GENERIC_INTRO, DEFAULT_STRAPLINE
+// and DEFAULT_PRIMARY_LABEL were pest strings on a multi-vertical component,
+// unreachable once both callers passed explicit props — and a claim by accident
+// the moment one stopped. All three are optional with no default now, and every
+// render site is guarded.
+describe('no copy passed -> no claim rendered', () => {
+  const bare = renderToStaticMarkup(createElement(CtaBanner, {}));
+  const named = renderToStaticMarkup(createElement(CtaBanner, { businessName: 'Acme Pest' }));
 
-  // PR D: the strapline default WAS 'Same-day appointments available.' — that
-  // capacity promise is retired platform-wide, so the default now tracks the
-  // pest preset's conduct claim. Asserted against the preset rather than a
-  // literal so the two cannot drift apart again.
-  it('a caller passing no copy matches the pest preset', () => {
-    expect(html).toContain('Acme Pest is ready to help.');
-    expect(html).toContain(pest.ctaStrapline);
-    expect(html).toContain(pest.ctaPrimaryLabel);
+  it('renders no strapline, intro or CTA label from a default', () => {
+    for (const html of [bare, named]) {
+      expect(html).not.toContain(pest.ctaStrapline);
+      expect(html).not.toContain(pest.ctaGenericIntro);
+      expect(html).not.toContain(pest.ctaPrimaryLabel);
+    }
   });
 
-  it('the default carries no capacity or business-terms claim', () => {
-    expect(html).not.toMatch(/same-day|next-day|24\/7|no contracts/i);
+  it('renders no intro paragraph at all when there is nothing to put in it', () => {
+    expect(bare).not.toContain('text-white/70 text-lg mb-10');
+  });
+
+  it('still renders the business-name line, which is a tenant fact, not a claim', () => {
+    expect(named).toContain('Acme Pest is ready to help.');
+  });
+
+  it('keeps its chrome and its unlabelled CTA route', () => {
+    expect(bare).toContain('Get Started Today');
+    expect(bare).toContain('href="/quote"');
+  });
+
+  it('carries no capacity or business-terms claim', () => {
+    for (const html of [bare, named]) {
+      expect(html).not.toMatch(/same-day|next-day|24\/7|no contracts/i);
+    }
   });
 });
 

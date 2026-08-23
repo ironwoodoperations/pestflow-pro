@@ -74,10 +74,10 @@ export function MetroProPestPage({ tenant, pestSlug, content = null }: Props) {
         <div className="max-w-6xl mx-auto" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))' }}>
           {[
             { label: 'Coverage', value: 'Residential & Commercial' },
-            { label: 'Response', value: 'Same-day available' },
+            // PR E: the 'Response / Same-day available' cell is deleted.
             { label: 'Documentation', value: 'Service report each visit' },
-          ].map((cell, i) => (
-            <div key={cell.label} style={{ padding: '1.25rem', borderRight: i < 2 ? '1px solid rgba(20,184,166,0.15)' : 'none' }}>
+          ].map((cell, i, cells) => (
+            <div key={cell.label} style={{ padding: '1.25rem', borderRight: i < cells.length - 1 ? '1px solid rgba(20,184,166,0.15)' : 'none' }}>
               <p style={{ ...BODY, fontSize: 10, fontWeight: 600, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#14B8A6', marginBottom: '0.4rem' }}>{cell.label}</p>
               <p style={{ ...BODY, fontSize: 13, color: '#CBD5E1' }}>{cell.value}</p>
             </div>

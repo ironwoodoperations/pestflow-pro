@@ -20,9 +20,21 @@ import { fileURLToPath } from 'node:url';
 //
 // A claim about a specific BUSINESS does not move to the DB and does not get a
 // vertical-neutral rewrite: there is no tenant fact behind it. It is deleted.
+//
+// SCOPE: app/tenant/** and src/shells/** — the tenant public render path, and
+// nothing else. Structural, not an allowlist: there are no named exceptions to
+// argue about, and nothing to quietly grow. Admin and Ironwood copy is a
+// different vocabulary written for a different reader (Scott, or a client
+// looking at their own dashboard) and is NOT covered here — that is Phase 2
+// scope per S279, with its own preset file and its own guard.
+//
+// Deliberately NOT a pattern: /within \d+ hours/. It cannot tell treatment
+// efficacy ("effective within 24 hours" — a trade fact) from business turnaround
+// ("report delivered within 24 hours" — a tenant fact), and a guard that cries
+// wolf is a guard that gets allowlisted into uselessness.
 
-const CAPACITY_OR_TERMS = /same-day|next-day|24\/7|no contracts required/i;
-const FABRICATED_STAT = /most customers|thousands of (properties|customers)|within \d+ hours/i;
+const CAPACITY_OR_TERMS = /same-day|next-day|24\/7|no contracts/i;
+const FABRICATED_STAT = /most customers|thousands of (properties|customers|homes)|\d{1,3},\d{3}\+? (properties|customers)/i;
 
 const CLASSES = [
   { name: 'capacity / terms promise', pattern: CAPACITY_OR_TERMS },
@@ -30,7 +42,7 @@ const CLASSES = [
 ] as const;
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const SCAN_ROOTS = ['app', 'src'];
+const SCAN_ROOTS = [join('app', 'tenant'), join('src', 'shells')];
 const SKIP_DIRS = ['node_modules', '.next', 'dist', 'build', 'public', '.git'];
 
 function walk(dir: string, out: string[]): string[] {
@@ -128,6 +140,9 @@ describe('the guard is not vacuous', () => {
     '24/7 emergency response',
     'Most customers get an appointment within 24 hours of calling — often the same day.',
     'We have treated thousands of properties across the region.',
+    'We have treated thousands of homes just like yours.',
+    'No contracts. You hire us because we earn it.',
+    'Over 4,200+ properties protected since 2010.',
   ];
 
   for (const literal of CAUGHT) {
@@ -149,6 +164,19 @@ describe('the guard is not vacuous', () => {
       expect(FABRICATED_STAT.test(literal)).toBe(false);
     });
   }
+
+  // The dropped class, asserted so the decision is visible rather than implied
+  // by an absence. Treatment efficacy is a TRADE fact and stays; a business
+  // turnaround promise is a TENANT fact and was deleted by hand in this PR —
+  // the guard is deliberately not the thing that distinguishes them.
+  it('does NOT attempt to police "within N hours" — efficacy reads the same as turnaround', () => {
+    const efficacy = 'Safe for pets, effective within 24 hours.';
+    const turnaround = 'You receive a written WDI report within 48 hours.';
+    for (const literal of [efficacy, turnaround]) {
+      expect(CAPACITY_OR_TERMS.test(literal)).toBe(false);
+      expect(FABRICATED_STAT.test(literal)).toBe(false);
+    }
+  });
 });
 
 describe('the comment stripper is string-aware', () => {

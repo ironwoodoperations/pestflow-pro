@@ -79,7 +79,11 @@ export function QuoteForm({ tenantId, businessName, businessPhone, ownerSmsNumbe
         <div className="max-w-lg mx-auto px-4 text-center">
           <CheckCircle className="w-16 h-16 mx-auto mb-6" style={{ color: 'var(--color-primary)' }} />
           <h1 className="text-3xl font-bold mb-3" style={{ color: 'var(--color-heading, #1a1a1a)' }}>Thank You!</h1>
-          <p className="text-gray-600 text-lg mb-2">We&apos;ll be in touch within 24 hours.</p>
+          {/* PR E: "We'll be in touch within 24 hours." deleted — a response-time
+              promise on every tenant's quote confirmation, verified for none.
+              No replacement line: the "Thank You!" heading above already tells
+              the visitor the form went through, and anything about WHEN someone
+              gets back to them is a tenant fact this code does not have. */}
           {businessPhone && <p className="text-gray-500 text-sm">Need immediate help? Call <a href={`tel:${businessPhone.replace(/\D/g, '')}`} className="font-semibold hover:underline" style={{ color: 'var(--color-primary)' }}>{formatPhone(businessPhone)}</a></p>}
         </div>
       </div>

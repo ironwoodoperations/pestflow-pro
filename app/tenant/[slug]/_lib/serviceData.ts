@@ -155,20 +155,19 @@ export const SERVICE_DATA: Record<string, ServiceData> = {
 
   'termite-inspections': {
     heroTitle: 'Termite Inspections', heroHighlight: 'Termite Inspections',
-    heroSubtitle: 'WDI reports for home sales — fast turnaround.',
+    heroSubtitle: 'WDI reports for home sales.',
     introHeading: 'Certified Wood-Destroying Insect Inspections',
-    introP1: "Buying or selling a home? A Wood-Destroying Insect (WDI) inspection is required for most real estate transactions. Our licensed inspectors provide thorough, certified WDI reports with fast turnaround.",
+    introP1: "Buying or selling a home? A Wood-Destroying Insect (WDI) inspection is required for most real estate transactions. Our licensed inspectors provide thorough, certified WDI reports.",
     introP2: "Our inspections cover all wood-destroying insects including subterranean termites, drywood termites, carpenter ants, and wood-boring beetles — plus wood-destroying fungi and moisture conditions.",
     steps: [
-      { title: 'Schedule', desc: 'Book your inspection online or by phone. Flexible scheduling including next-day appointments.' },
+      { title: 'Schedule', desc: 'Book your inspection online or by phone.' },
       { title: 'Inspect', desc: 'Licensed inspector performs thorough inspection of the entire structure per TPCL standards.' },
       { title: 'Report', desc: 'Official WDI report prepared with detailed findings, photos, and recommendations.' },
-      { title: 'Deliver', desc: 'Report delivered within 24 hours — electronically or in print for your title company.' },
+      { title: 'Deliver', desc: 'Report delivered electronically or in print for your title company.' },
     ],
     faqs: [
       { q: 'Is a WDI inspection required for home sales?', a: 'Most lenders (especially VA and FHA) require a WDI inspection. It is strongly recommended for all home purchases.' },
       { q: 'How long does the inspection take?', a: 'A typical WDI inspection takes 45–90 minutes depending on the size and accessibility of the home.' },
-      { q: 'How quickly will I get the report?', a: 'Reports are delivered within 24 hours. Rush delivery (same day) is available for urgent real estate closings.' },
       { q: 'What happens if termites are found?', a: 'The report will detail findings and recommend treatment. We can provide an estimate and begin treatment quickly to avoid delaying the sale.' },
       { q: 'Do you offer annual inspection plans?', a: 'Yes. Annual termite inspection plans for homeowners who want ongoing monitoring and peace of mind.' },
     ],
@@ -230,7 +229,6 @@ export const SERVICE_DATA: Record<string, ServiceData> = {
     ],
     faqs: [
       { q: 'Is it safe to remove a wasp nest myself?', a: 'We strongly recommend professional removal. Wasps can sting multiple times and may swarm. Allergic reactions can be life-threatening.' },
-      { q: 'How quickly can you remove a wasp nest?', a: 'We offer same-day emergency service. Most jobs are completed in under an hour.' },
       { q: 'Will the wasps come back after treatment?', a: 'Our residual treatments prevent re-nesting at the same location. We also treat common nesting sites around your property.' },
       { q: 'Do you remove nests inside walls?', a: 'Yes. We can treat and remove nests inside wall voids, attics, and other hard-to-reach areas.' },
       { q: 'Are your treatments safe for my family?', a: 'Yes. We advise staying indoors during treatment and for 30 minutes after.' },

@@ -131,7 +131,7 @@ const VERTICAL_COPY: Partial<Record<Vertical, VerticalCopy>> = Object.freeze({
       { title: 'Family & Pet-Friendly Products', desc: 'EPA-approved, low-impact formulations that are safe for your children and pets when applied correctly.' },
       { title: 'Unlimited Callbacks', desc: 'If pests return between scheduled services, we come back at no additional cost — guaranteed.' },
       { title: 'Clear Scheduling', desc: 'We give you a firm appointment window, keep you posted if anything changes, and show up when we say we will.' },
-      { title: 'Local Experts', desc: 'We know the local pest pressures in your area and have treated thousands of properties just like yours.' },
+      { title: 'Local Experts', desc: 'We know the local pest pressures in your area.' },
       { title: 'You Come First', desc: 'Our technicians take time to explain treatments, answer questions, and ensure your complete satisfaction.' },
     ]) as unknown as Feature[],
     processHeading: 'How Our Pest Control Process Works',

@@ -1,13 +1,14 @@
 import Link from 'next/link';
 
-// PR C: copy is prop-driven per vertical. Previously this banner rendered a
-// hardcoded capacity promise for every tenant and hardcoded the pest CTA label.
-// PR D: that promise is retired platform-wide, so DEFAULT_STRAPLINE now tracks
-// the pest preset's conduct claim rather than the string it replaced. The
-// defaults exist so a caller that passes nothing still matches the pest preset.
-const DEFAULT_GENERIC_INTRO = 'Professional pest control, on your schedule.';
-const DEFAULT_STRAPLINE = 'Every visit starts with an inspection.';
-const DEFAULT_PRIMARY_LABEL = 'Schedule Inspection';
+// PR C made this banner's copy prop-driven per vertical; PR D retired the
+// capacity promise it used to hardcode.
+//
+// PR E removes the three pest defaults that were left behind —
+// DEFAULT_GENERIC_INTRO, DEFAULT_STRAPLINE, DEFAULT_PRIMARY_LABEL. Both callers
+// now pass explicit props, so they were unreachable; and a pest default on a
+// multi-vertical component is a claim by accident the moment a caller forgets.
+// Same treatment as the two shell banners: optional, no default, every render
+// site guarded. Nothing true to say -> render nothing.
 
 interface Props {
   phone?: string | null;
@@ -17,26 +18,25 @@ interface Props {
   primaryLabel?: string;
 }
 
-export function CtaBanner({
-  phone,
-  businessName,
-  genericIntro = DEFAULT_GENERIC_INTRO,
-  strapline = DEFAULT_STRAPLINE,
-  primaryLabel = DEFAULT_PRIMARY_LABEL,
-}: Props) {
+export function CtaBanner({ phone, businessName, genericIntro, strapline, primaryLabel }: Props) {
+  const intro = businessName ? `${businessName} is ready to help.` : genericIntro;
+  // Joined rather than interpolated so a missing half cannot leave a stray
+  // space, and an empty line renders no paragraph at all.
+  const introLine = [intro, strapline].filter(Boolean).join(' ');
+
   return (
     <section className="py-20 relative overflow-hidden" style={{ backgroundColor: 'var(--color-bg-cta)' }}>
       <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(45deg, white 25%, transparent 25%), linear-gradient(-45deg, white 25%, transparent 25%)', backgroundSize: '8px 8px' }} />
       <div className="relative max-w-3xl mx-auto px-4 text-center">
         <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: 'var(--color-accent)' }}>Ready to Get Started?</p>
         <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">Get Started Today</h2>
-        <p className="text-white/70 text-lg mb-10">
-          {businessName ? `${businessName} is ready to help.` : genericIntro} {strapline}
-        </p>
+        {introLine && <p className="text-white/70 text-lg mb-10">{introLine}</p>}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link href="/quote" className="font-semibold px-8 py-3.5 rounded-lg text-white transition hover:opacity-90" style={{ backgroundColor: 'var(--color-primary)' }}>
-            {primaryLabel}
-          </Link>
+          {primaryLabel && (
+            <Link href="/quote" className="font-semibold px-8 py-3.5 rounded-lg text-white transition hover:opacity-90" style={{ backgroundColor: 'var(--color-primary)' }}>
+              {primaryLabel}
+            </Link>
+          )}
           {phone && (
             <a href={`tel:${phone.replace(/\D/g, '')}`} className="font-semibold px-8 py-3.5 rounded-lg transition hover:bg-white/20" style={{ border: '2px solid rgba(255,255,255,0.4)', color: '#ffffff' }}>
               Call Now

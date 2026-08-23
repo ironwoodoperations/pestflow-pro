@@ -2,7 +2,12 @@ interface Props { businessName: string; intro?: string }
 
 const REASONS = [
   { num: '01', heading: 'No callbacks, no excuses', body: 'When we say the problem is gone, it\'s gone. We re-treat at no charge if pests come back between scheduled visits.' },
-  { num: '02', heading: 'Same-day and next-day service', body: 'We staff for urgency. Most customers get an appointment within 24 hours of calling — often the same day.' },
+  // PR E: reason 02 deleted outright — 'Same-day and next-day service' with
+  // "We staff for urgency. Most customers get an appointment within 24 hours
+  // of calling — often the same day." "Most customers" is a statistic about a
+  // customer base that does not exist, wrapped around a capacity promise.
+  // Not softened into a vaguer version of itself: there is nothing true here
+  // to keep, so the reason renders not at all.
   { num: '03', heading: 'Flat pricing, no surprises', body: 'You get a number upfront. No bait-and-switch add-ons, no "environmental fees" in the fine print.' },
 ];
 

@@ -123,7 +123,7 @@ export function DefaultPestPage({ tenant, pestSlug, content, heroMedia }: Props)
       <section className="py-16" style={{ backgroundColor: 'var(--color-bg-cta, #0a1628)' }}>
         <div className="max-w-3xl mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Get Started Today</h2>
-          <p className="text-white/70 mb-8">{bizName ? `${bizName} is ready to help with your ${svc.heroHighlight.toLowerCase()} problem.` : 'Our team is ready to help.'} Same-day appointments available.</p>
+          <p className="text-white/70 mb-8">{bizName ? `${bizName} is ready to help with your ${svc.heroHighlight.toLowerCase()} problem.` : 'Our team is ready to help.'}</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/quote" className="font-semibold px-8 py-3.5 rounded-lg text-white transition hover:opacity-90" style={{ backgroundColor: 'var(--color-primary)' }}>Schedule Inspection</Link>
             {phone && <a href={`tel:${phone.replace(/\D/g, '')}`} className="font-semibold px-8 py-3.5 rounded-lg transition hover:bg-white/20 text-white" style={{ border: '2px solid rgba(255,255,255,0.4)' }}>Call Now</a>}

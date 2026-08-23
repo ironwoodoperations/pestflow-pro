@@ -19,7 +19,7 @@ interface Props {
 
 const FALLBACK = [
   'Engineered for measurable outcomes — every protocol benchmarked, every visit documented.',
-  'A licensed team operating to enterprise quality standards, with same-day response and a 100% guarantee.',
+  'A licensed team operating to enterprise quality standards.',
 ];
 
 export function ModernProAboutPage({ heroTitle, heroSub, heroImageUrl, aboutImage, team, businessName, introParagraphs, phone = '', stats = [] }: Props) {
