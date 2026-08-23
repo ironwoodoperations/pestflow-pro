@@ -84,3 +84,13 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   - supabase/migrations/20260823210305_s281_business_info_vertical_check.sql
   - supabase/migrations/s281_business_info_vertical_check_rollback.sql
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-08-23 21:31 UTC
+- Branch: `main`
+- Commit: `8642a3d` — docs: S281 handoff — DB sweep, the seed, and the guard's own blind spot (#275)
+- Author: csdevore2
+- Files changed:
+  - PROJECT_MANIFEST.d/docs-handoff-s281.md
+  - docs/handoffs/pestflow-pro-handoff-S281-db-sweep-and-guard.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
