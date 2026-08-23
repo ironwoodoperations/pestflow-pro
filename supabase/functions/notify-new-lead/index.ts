@@ -148,13 +148,13 @@ export async function handler(req: Request): Promise<Response> {
   </td></tr>
   <tr><td style="background:#f9fafb;padding:20px 32px;border-top:1px solid #e5e7eb;font-size:12px;color:#888;text-align:center">
     ${businessAddress ? `${businessAddress}<br>` : ''}
-    Powered by <a href="https://pestflowpro.com" style="color:#888">PestFlow Pro</a>
+    Powered by HomeFlow Pro
   </td></tr>
 </table>
 </td></tr></table>
 </body></html>`
 
-      const autoReplyText = `Hi ${firstName},\n\nThank you for contacting ${businessName}! We received your request and will be in touch within 1 business day.\n\nYour submitted information:\n- Name: ${lead.name}\n- Phone: ${lead.phone || '—'}\n${lead.services?.length ? `- Services: ${services}\n` : ''}\n${businessPhone ? `If you need immediate assistance, call us: ${businessPhone}\n\n` : ''}We look forward to speaking with you!\n\n${businessName}${businessAddress ? '\n' + businessAddress : ''}\n\n---\nPowered by PestFlow Pro — https://pestflowpro.com`
+      const autoReplyText = `Hi ${firstName},\n\nThank you for contacting ${businessName}! We received your request and will be in touch within 1 business day.\n\nYour submitted information:\n- Name: ${lead.name}\n- Phone: ${lead.phone || '—'}\n${lead.services?.length ? `- Services: ${services}\n` : ''}\n${businessPhone ? `If you need immediate assistance, call us: ${businessPhone}\n\n` : ''}We look forward to speaking with you!\n\n${businessName}${businessAddress ? '\n' + businessAddress : ''}\n\n---\nPowered by HomeFlow Pro`
 
       try {
         await sendEmail({
@@ -205,7 +205,7 @@ export async function handler(req: Request): Promise<Response> {
         <td style="padding:8px">${timestamp}</td></tr>
   </table>
   <p style="margin-top:32px;color:#888;font-size:12px">
-    Powered by <a href="https://pestflowpro.com" style="color:#888">PestFlow Pro</a>
+    Powered by HomeFlow Pro
   </p>
 </div>`,
         })
