@@ -54,3 +54,21 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   - src/shells/_shared/verticalCopy.ts
   - src/shells/_shared/verticalCopyPresets.test.ts
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-08-23 20:51 UTC
+- Branch: `main`
+- Commit: `0971ee1` — fix(about): DB-drive the remaining fabricated stat tiles + close the guard gap (PR F) (#272)
+- Author: csdevore2
+- Files changed:
+  - PROJECT_MANIFEST.d/fix-about-stats-db-driven.md
+  - app/tenant/[slug]/[service]/page.tsx
+  - app/tenant/[slug]/_components/DefaultAboutPage.tsx
+  - app/tenant/[slug]/_components/aboutStatsShells.test.tsx
+  - app/tenant/[slug]/_shells/bold-local/BoldLocalAboutPage.tsx
+  - app/tenant/[slug]/_shells/bold-local/BoldLocalPestPage.tsx
+  - app/tenant/[slug]/_shells/bold-local/BoldLocalWhyUs.tsx
+  - app/tenant/[slug]/_shells/clean-friendly/CleanFriendlyAboutPage.tsx
+  - app/tenant/[slug]/about/page.tsx
+  - shared/lib/noUnverifiedClaims.test.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
