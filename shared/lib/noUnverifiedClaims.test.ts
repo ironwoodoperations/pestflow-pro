@@ -36,9 +36,34 @@ import { fileURLToPath } from 'node:url';
 const CAPACITY_OR_TERMS = /same-day|next-day|24\/7|no contracts/i;
 const FABRICATED_STAT = /most customers|thousands of (properties|customers|homes)|\d{1,3},\d{3}\+? (properties|customers)/i;
 
+// PR F closes the gap that hid four live tiles from PR E's scan. FABRICATED_STAT
+// needs the number and its noun ADJACENT ("4,200+ properties"), but a stat tile
+// splits them across two object fields on one line:
+//
+//   { num: '4,200+', label: 'Customers' }
+//   { num: '15+',    label: 'Years on the job' }
+//
+// so nothing matched, and BoldLocalAboutPage kept rendering invented customer
+// and treatment counts through the whole sweep. This pattern matches the SHAPE
+// instead: a quoted count-like literal in one field, any label in the next.
+//
+// The number must LOOK like a statistic: a thousands separator (4,200+), a
+// trailing plus (15+, 500+), or a percentage (98%). A bare small integer is
+// excluded on purpose — `{ num: '01', label: 'Step one' }` is an ordinal, not a
+// claim, and a pattern that flags it is the kind that gets suppressed the first
+// time it cries wolf. Every literal PR F removes carries one of the three
+// markers, so nothing real is lost by requiring them.
+//
+// It does NOT judge the label: a label is just a word, and judging it is what
+// would make this unreliable. A genuine tenant figure lives in settings.about
+// and never appears as a source literal, so a literal of this shape inside a
+// component is hardcoded by definition.
+const HARDCODED_STAT_PAIR = /['"`]\s*(?:\d{1,3}(?:,\d{3})+\+?|\d+\s*[+%])\s*['"`]\s*,\s*label\s*:/i;
+
 const CLASSES = [
   { name: 'capacity / terms promise', pattern: CAPACITY_OR_TERMS },
   { name: 'fabricated statistic', pattern: FABRICATED_STAT },
+  { name: 'hardcoded stat tile (number/label field pair)', pattern: HARDCODED_STAT_PAIR },
 ] as const;
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -162,6 +187,42 @@ describe('the guard is not vacuous', () => {
     it(`does not fire on: ${literal.slice(0, 48)}…`, () => {
       expect(CAPACITY_OR_TERMS.test(literal)).toBe(false);
       expect(FABRICATED_STAT.test(literal)).toBe(false);
+    });
+  }
+
+  // PR F — the field-pair class, proven against the exact literals this PR
+  // removed. Without these the new pattern could silently rot into a no-op.
+  const STAT_PAIRS_REMOVED = [
+    "{ num: '4,200+', label: 'Customers' },",
+    "{ num: '12,000+', label: 'Treatments' },",
+    "{ num: '15+', label: 'Years' },",
+    "{ num: '15+',      label: 'Years Experience',       Icon: Star  },",
+    "{ num: '4,200+',   label: 'Homes Protected',        Icon: Home  },",
+    "{ num: '98%',      label: 'Customer Satisfaction',  Icon: Heart },",
+    "{ num: '100%', label: 'Guarantee' },",
+    "{ num: '15+', label: 'Years on the job' },",
+  ];
+
+  for (const literal of STAT_PAIRS_REMOVED) {
+    it(`catches the removed stat tile: ${literal.slice(0, 40)}…`, () => {
+      expect(HARDCODED_STAT_PAIR.test(literal)).toBe(true);
+    });
+  }
+
+  const STAT_PAIRS_ALLOWED = [
+    // The replacements this PR ships — all DB-driven, none a literal.
+    '{ num: s.value, label: s.label }',
+    '{ value: s.value, label: entry.label }',
+    "{ num: licenseNumber, label: 'License #' }",
+    // Ordinals are not statistics.
+    "{ num: '01', label: 'Step one' },",
+    "{ num: '02', label: 'Inspect' },",
+    "{ num: '4', label: 'Steps' },",
+  ];
+
+  for (const literal of STAT_PAIRS_ALLOWED) {
+    it(`does not fire on: ${literal.slice(0, 40)}…`, () => {
+      expect(HARDCODED_STAT_PAIR.test(literal)).toBe(false);
     });
   }
 

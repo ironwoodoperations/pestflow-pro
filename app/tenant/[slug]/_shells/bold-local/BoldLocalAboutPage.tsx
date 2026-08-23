@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import type { ResolvedStat } from '../../_lib/aboutStats';
 
 interface TeamMember { id: string; name: string; title?: string; bio?: string; photo_url?: string }
 
@@ -12,6 +13,8 @@ interface Props {
   businessName: string;
   licenseNumber?: string;
   introParagraphs?: string[];
+  /** PR F: resolved from settings.about. Empty = render no stat tiles. */
+  stats?: ResolvedStat[];
 }
 
 const EYEBROW: React.CSSProperties = {
@@ -40,8 +43,20 @@ const BELIEFS = [
   // bold-local tenant. One belief survives, and it keeps its number.
 ];
 
-export function BoldLocalAboutPage({ heroTitle, heroSub, heroImageUrl, aboutImage, team, foundedYear, businessName, licenseNumber, introParagraphs }: Props) {
+export function BoldLocalAboutPage({ heroTitle, heroSub, heroImageUrl, aboutImage, team, foundedYear, businessName, licenseNumber, introParagraphs, stats = [] }: Props) {
   const since = foundedYear ? `Since ${foundedYear}` : 'Established';
+
+  // PR F: the strip used to be four hardcoded cells. '4,200+ Customers' and
+  // '12,000+ Treatments' were invented; the Years cell invented '15+' whenever
+  // founded_year was absent — the same defect PR B removed from modern-pro;
+  // and the License # cell rendered the word 'Licensed' for a tenant with no
+  // licence number, asserting licensure the code cannot know. Statistics now
+  // come from settings.about. The licence is a tenant fact already on this
+  // component, so it stays a prop, and renders only when it is really there.
+  const STRIP_CELLS: Array<{ num: string; label: string }> = [
+    ...stats.map((s) => ({ num: s.value, label: s.label })),
+    ...(licenseNumber ? [{ num: licenseNumber, label: 'License #' }] : []),
+  ];
   const paragraphs = introParagraphs && introParagraphs.length > 0
     ? introParagraphs
     : [
@@ -66,21 +81,18 @@ export function BoldLocalAboutPage({ heroTitle, heroSub, heroImageUrl, aboutImag
       </section>
 
       {/* Stats strip */}
+      {STRIP_CELLS.length > 0 && (
       <section style={{ backgroundColor: 'var(--bl-surface-2)' }}>
-        <div className="max-w-6xl mx-auto" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)' }}>
-          {[
-            { num: foundedYear ? new Date().getFullYear() - Number(foundedYear) + '+' : '15+', label: 'Years' },
-            { num: '4,200+', label: 'Customers' },
-            { num: '12,000+', label: 'Treatments' },
-            { num: licenseNumber || 'Licensed', label: 'License #' },
-          ].map((c, i) => (
-            <div key={c.label} style={{ padding: 'var(--bl-space-md)', textAlign: 'center', borderRight: i < 3 ? '1px solid var(--bl-border)' : 'none' }}>
+        <div className="max-w-6xl mx-auto" style={{ display: 'grid', gridTemplateColumns: `repeat(${STRIP_CELLS.length},1fr)` }}>
+          {STRIP_CELLS.map((c, i) => (
+            <div key={c.label} style={{ padding: 'var(--bl-space-md)', textAlign: 'center', borderRight: i < STRIP_CELLS.length - 1 ? '1px solid var(--bl-border)' : 'none' }}>
               <span style={{ display: 'block', ...HEAD, fontSize: 'clamp(20px,3vw,28px)', color: 'var(--bl-accent)' }}>{c.num}</span>
               <span style={{ display: 'block', fontFamily: 'var(--bl-font-body)', fontSize: 10, fontWeight: 600, letterSpacing: 'var(--bl-letter-spacing-wide)', textTransform: 'uppercase', color: 'var(--bl-text-muted)', marginTop: 4 }}>{c.label}</span>
             </div>
           ))}
         </div>
       </section>
+      )}
 
       {/* Manifesto / founder */}
       <section style={{ padding: 'var(--bl-space-2xl) 1rem' }}>
@@ -107,14 +119,19 @@ export function BoldLocalAboutPage({ heroTitle, heroSub, heroImageUrl, aboutImag
         </div>
       </section>
 
-      {/* What we believe */}
+      {/* What we believe — PR F: an empty BELIEFS list renders no section at
+          all rather than a heading over a void. */}
+      {BELIEFS.length > 0 && (
       <section style={{ backgroundColor: 'var(--bl-surface-2)', borderTop: '2px solid var(--bl-accent)', borderBottom: '2px solid var(--bl-accent)', padding: 'var(--bl-space-2xl) 1rem' }}>
         <div className="max-w-6xl mx-auto">
           <p style={{ ...EYEBROW, marginBottom: 'var(--bl-space-sm)', textAlign: 'center' }}>The code we run by</p>
           <h2 style={{ ...HEAD, fontSize: 'clamp(28px,4vw,44px)', textAlign: 'center', marginBottom: 'var(--bl-space-xl)' }}>What we believe</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 0, border: '1px solid var(--bl-border-strong)' }}>
             {BELIEFS.map((b, i) => (
-              <div key={b.num} style={{ padding: 'var(--bl-space-lg)', borderRight: '1px solid var(--bl-border-strong)', borderBottom: i < BELIEFS.length - 1 ? '1px solid var(--bl-border-strong)' : 'none' }}>
+              // PR F: borderRight was unconditional, so the single surviving
+              // card doubled its border against the container's. Both edges now
+              // derive from position in the list.
+              <div key={b.num} style={{ padding: 'var(--bl-space-lg)', borderRight: i < BELIEFS.length - 1 ? '1px solid var(--bl-border-strong)' : 'none', borderBottom: i < BELIEFS.length - 1 ? '1px solid var(--bl-border-strong)' : 'none' }}>
                 <div style={{ ...HEAD, fontSize: 28, color: 'var(--bl-accent)', marginBottom: 'var(--bl-space-sm)' }}>{b.num}</div>
                 <h3 style={{ ...HEAD, fontSize: 20, marginBottom: 'var(--bl-space-sm)' }}>{b.title}</h3>
                 <p style={{ fontFamily: 'var(--bl-font-body)', fontSize: 14, color: 'var(--bl-text-secondary)', lineHeight: 'var(--bl-line-height-loose)' }}>{b.desc}</p>
@@ -123,6 +140,7 @@ export function BoldLocalAboutPage({ heroTitle, heroSub, heroImageUrl, aboutImag
           </div>
         </div>
       </section>
+      )}
 
       {/* Team */}
       {team.length > 0 && (

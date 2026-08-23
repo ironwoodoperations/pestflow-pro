@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Star, Home, Heart } from 'lucide-react';
+import type { ResolvedStat } from '../../_lib/aboutStats';
 
 interface TeamMember { id: string; name: string; title?: string; bio?: string; photo_url?: string }
 
@@ -12,6 +12,8 @@ interface Props {
   foundedYear?: string;
   businessName: string;
   introParagraphs?: string[];
+  /** PR F: resolved from settings.about. Empty = render no stat block at all. */
+  stats?: ResolvedStat[];
 }
 
 const SERIF: React.CSSProperties = { fontFamily: 'var(--cf-font-display)', fontStyle: 'italic' };
@@ -23,7 +25,7 @@ const VALUES = [
   { title: 'Honest pricing', desc: 'You get the quote before we treat. No hidden fees, ever.' },
 ];
 
-export function CleanFriendlyAboutPage({ heroTitle, heroSub, heroImageUrl, aboutImage, team, foundedYear, businessName, introParagraphs }: Props) {
+export function CleanFriendlyAboutPage({ stats = [], heroTitle, heroSub, heroImageUrl, aboutImage, team, foundedYear, businessName, introParagraphs }: Props) {
   const sinceLine = foundedYear ? `since ${foundedYear}` : 'family-owned';
   const paragraphs = introParagraphs && introParagraphs.length > 0
     ? introParagraphs
@@ -92,28 +94,30 @@ export function CleanFriendlyAboutPage({ heroTitle, heroSub, heroImageUrl, about
         </div>
       </section>
 
-      {/* Soft milestone strip */}
+      {/* Soft milestone strip — PR F: DB-driven, and absent entirely when the
+          tenant has configured no stats. The three tiles that used to live here
+          ('15+ Years experience', '4,200+ Homes protected', '98% Customer
+          satisfaction') were invented for every tenant on this shell. */}
+      {stats.length > 0 && (
       <section style={{ backgroundColor: 'var(--cf-bg-sky)', padding: 'var(--cf-space-xl) 1rem' }}>
         <div className="max-w-5xl mx-auto">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 'var(--cf-space-md)' }}>
-            <style>{`@media(min-width:640px){.cf-stats{grid-template-columns:repeat(3,1fr) !important}}`}</style>
-            <div className="cf-stats" style={{ display: 'contents' }} />
-            {[
-              { num: '15+', label: 'Years experience', Icon: Star, color: 'var(--cf-sky)' },
-              { num: '4,200+', label: 'Homes protected', Icon: Home, color: 'var(--cf-mint)' },
-              { num: '98%', label: 'Customer satisfaction', Icon: Heart, color: 'var(--cf-sky)' },
-              // PR E: the 'Same-day / Service available' tile is deleted — an
-  // availability promise presented as a statistic.
-            ].map(({ num, label, Icon, color }) => (
-              <div key={label} style={{ textAlign: 'center' }}>
-                <Icon className="w-5 h-5 mx-auto mb-2" style={{ color }} />
-                <div style={{ ...BODY, fontSize: 'clamp(20px,2.6vw,28px)', fontWeight: 500, color: 'var(--cf-ink)', lineHeight: 'var(--cf-line-height-tight)' }}>{num}</div>
-                <div style={{ ...SERIF, fontSize: 12, color: 'var(--cf-ink-secondary)', marginTop: 4 }}>{label}</div>
+          {/* PR F: the phantom .cf-stats div is gone. The media query targeted a
+              class that sat on an EMPTY display:contents SIBLING inside the grid,
+              never on the grid container itself, so it has never applied and the
+              strip was 2-up at every width — confirmed in production HTML. The
+              container is now responsive directly and derives from the tile
+              count, so it is correct for one tile or four. */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))', gap: 'var(--cf-space-md)' }}>
+            {stats.map((s) => (
+              <div key={s.label} style={{ textAlign: 'center' }}>
+                <div style={{ ...BODY, fontSize: 'clamp(20px,2.6vw,28px)', fontWeight: 500, color: 'var(--cf-ink)', lineHeight: 'var(--cf-line-height-tight)' }}>{s.value}</div>
+                <div style={{ ...SERIF, fontSize: 12, color: 'var(--cf-ink-secondary)', marginTop: 4 }}>{s.label}</div>
               </div>
             ))}
           </div>
         </div>
       </section>
+      )}
 
       {/* Team */}
       {team.length > 0 && (
