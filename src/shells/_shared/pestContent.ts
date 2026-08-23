@@ -166,10 +166,10 @@ export const PEST_CONTENT_MAP: Record<string, PestEntry> = {
       'Annual warranty renewal required by previous treatment',
       'New construction with no prior inspection history',
     ],
-    treatment: 'A licensed technician inspects the foundation, crawl space, attic, and visible wood framing for active termites, prior damage, and conducive conditions. You receive a written WDI (Wood Destroying Insect) report within 48 hours.',
+    treatment: 'A licensed technician inspects the foundation, crawl space, attic, and visible wood framing for active termites, prior damage, and conducive conditions. You receive a written WDI (Wood Destroying Insect) report.',
     cta: 'Scheduling a real estate inspection? Call today.',
     metaTitle: 'Termite Inspections & WDI Reports',
-    metaDescription: 'Licensed termite inspections with written WDI reports within 48 hours. Real estate transactions and annual renewals.',
+    metaDescription: 'Licensed termite inspections with written WDI reports. Real estate transactions and annual renewals.',
   },
   'wasp-hornet-control': {
     slug: 'wasp-hornet-control',
@@ -185,7 +185,7 @@ export const PEST_CONTENT_MAP: Record<string, PestEntry> = {
     treatment: 'We treat the nest directly with a residual knockdown product, then physically remove the nest once activity ceases. Nests in walls or attics get special attention to prevent honey/larvae from attracting secondary pests.',
     cta: 'Do not try to knock down a large nest yourself — call us.',
     metaTitle: 'Wasp & Hornet Nest Removal',
-    metaDescription: 'Professional wasp and hornet nest removal. Safe, same-day service for accessible nests. Call before attempting DIY.',
+    metaDescription: 'Professional wasp and hornet nest removal. Safe removal for accessible nests. Call before attempting DIY.',
   },
   'pest-control': {
     slug: 'pest-control',

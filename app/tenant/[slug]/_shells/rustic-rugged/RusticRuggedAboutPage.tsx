@@ -85,7 +85,7 @@ export function RusticRuggedAboutPage({ heroTitle, heroSub, aboutImage, team, fo
       {/* CTA */}
       <section style={{ padding: '3.5rem 1rem', textAlign: 'center', backgroundColor: '#2D4A2B' }}>
         <h2 style={{ ...SERIF, fontSize: 'clamp(28px,3.5vw,42px)', fontWeight: 600, color: '#F5F0E5', marginBottom: '1rem' }}>Ready when you are</h2>
-        <p style={{ ...BODY, fontSize: 16, color: '#D4CDB8', marginBottom: '1.5rem' }}>Get a free quote — same-day service available.</p>
+        <p style={{ ...BODY, fontSize: 16, color: '#D4CDB8', marginBottom: '1.5rem' }}>Get a free quote.</p>
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '0.75rem' }}>
           <Link href="/quote" style={{ ...BODY, display: 'inline-block', backgroundColor: '#B85C38', color: '#F5F0E5', fontWeight: 600, fontSize: 15, padding: '0.85rem 2rem', borderRadius: 999, textDecoration: 'none' }}>Get Your Quote</Link>
           {phone && <a href={`tel:${phone.replace(/\D/g,'')}`} style={{ ...BODY, display: 'inline-block', border: '2px solid #F5F0E5', color: '#F5F0E5', fontWeight: 500, fontSize: 15, padding: '0.85rem 2rem', borderRadius: 999, textDecoration: 'none' }}>Call {formatPhone(phone)}</a>}

@@ -26,7 +26,11 @@ const PEST_EXPECTED = {
     { title: 'Family & Pet-Friendly Products', desc: 'EPA-approved, low-impact formulations that are safe for your children and pets when applied correctly.' },
     { title: 'Unlimited Callbacks', desc: 'If pests return between scheduled services, we come back at no additional cost — guaranteed.' },
     { title: 'Clear Scheduling', desc: 'We give you a firm appointment window, keep you posted if anything changes, and show up when we say we will.' },
-    { title: 'Local Experts', desc: 'We know the local pest pressures in your area and have treated thousands of properties just like yours.' },
+    // PR E: was '…in your area and have treated thousands of properties just
+    // like yours.' The trailing clause is a fabricated statistic about a
+    // customer base that does not exist — deleted, not softened. The rest of
+    // the value is a trade fact and stays verbatim.
+    { title: 'Local Experts', desc: 'We know the local pest pressures in your area.' },
     { title: 'You Come First', desc: 'Our technicians take time to explain treatments, answer questions, and ensure your complete satisfaction.' },
   ],
   processHeading: 'How Our Pest Control Process Works',

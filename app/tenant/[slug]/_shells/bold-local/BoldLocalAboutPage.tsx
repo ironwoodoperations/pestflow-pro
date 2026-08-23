@@ -34,8 +34,10 @@ const HEAD: React.CSSProperties = {
 
 const BELIEFS = [
   { num: '01', title: 'Local first', desc: 'Born here. Operate here. Every dollar stays in this community.' },
-  { num: '02', title: 'No contracts', desc: 'You hire us because we earn it, not because you signed a 24-month deal.' },
-  { num: '03', title: 'Show up fast', desc: 'Same-day strikes. We dispatch within an hour of your call.' },
+  // PR E: 'No contracts' (a contract-terms promise) and 'Show up fast'
+  // ("Same-day strikes. We dispatch within an hour of your call.") both
+  // deleted. Neither is a trade fact; both were made on behalf of every
+  // bold-local tenant. One belief survives, and it keeps its number.
 ];
 
 export function BoldLocalAboutPage({ heroTitle, heroSub, heroImageUrl, aboutImage, team, foundedYear, businessName, licenseNumber, introParagraphs }: Props) {

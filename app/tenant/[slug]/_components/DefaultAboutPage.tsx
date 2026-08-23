@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Shield, Eye, Award, Zap, Star, Home, Heart, Bug } from 'lucide-react';
+import { Shield, Eye, Award, Star, Home, Heart } from 'lucide-react';
 import { JsonLdScript } from './JsonLdScripts';
 
 interface TeamMember { id: string; name: string; title?: string; bio?: string; photo_url?: string }
@@ -19,7 +19,10 @@ const VALUES = [
   { Icon: Shield, title: 'Science-Backed Solutions', desc: 'Every treatment plan is based on Integrated Pest Management (IPM) principles. We target the root cause, not just the symptoms.' },
   { Icon: Eye,    title: 'Transparent Pricing',      desc: 'We quote before we treat. No hidden fees, no upselling, no surprise invoices.' },
   { Icon: Award,  title: '30-Day Guarantee',         desc: "If pests return within 30 days of treatment, we come back and retreat at no additional cost." },
-  { Icon: Zap,    title: 'Same-Day Response',        desc: "Call before noon and we'll be at your property the same day. Your family's safety shouldn't wait." },
+  // PR E: the 'Same-Day Response' value ("Call before noon and we'll be at your
+  // property the same day") was a dispatch-window promise made on behalf of
+  // every tenant using this shell. Deleted, not softened — there is no tenant
+  // fact behind it to move to the DB.
 ];
 
 const CERTS = ['NPMA Member', 'TPCA Certified', 'BBB Accredited', 'TDA Licensed', 'EPA Certified', 'WDI Inspector'];
@@ -28,7 +31,6 @@ const STATS = [
   { num: '15+',      label: 'Years Experience',       Icon: Star  },
   { num: '4,200+',   label: 'Homes Protected',        Icon: Home  },
   { num: '98%',      label: 'Customer Satisfaction',  Icon: Heart },
-  { num: 'Same-Day', label: 'Service Available',      Icon: Bug   },
 ];
 
 export function DefaultAboutPage({ heroTitle, heroSub, heroImageUrl, aboutImage, team, introParagraphs, aboutSchema }: Props) {
@@ -71,7 +73,7 @@ export function DefaultAboutPage({ heroTitle, heroSub, heroImageUrl, aboutImage,
 
       <section className="py-12" style={{ background: 'linear-gradient(135deg, var(--color-bg-hero, #0a1628) 0%, var(--color-bg-hero-end, var(--color-primary)) 100%)' }}>
         <div className="max-w-6xl mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+          <div className="grid grid-cols-3 gap-6 text-center">
             {STATS.map(({ num, label, Icon }) => (
               <div key={label}>
                 <Icon className="w-6 h-6 mx-auto mb-2" style={{ color: 'var(--color-accent)' }} />
@@ -137,7 +139,7 @@ export function DefaultAboutPage({ heroTitle, heroSub, heroImageUrl, aboutImage,
       <section className="py-16" style={{ backgroundColor: 'var(--color-bg-cta, #0a1628)' }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h2 className="text-4xl md:text-5xl font-bold mb-4 text-white">Ready to Be Pest-Free?</h2>
-          <p className="text-lg mb-8 text-white/75">Get your free quote today — same-day service available.</p>
+          <p className="text-lg mb-8 text-white/75">Get your free quote today.</p>
           <Link href="/quote" className="inline-block font-bold rounded-lg px-10 py-4 text-lg transition hover:opacity-90" style={{ backgroundColor: 'var(--color-accent)', color: '#fff' }}>
             Get a Free Quote
           </Link>

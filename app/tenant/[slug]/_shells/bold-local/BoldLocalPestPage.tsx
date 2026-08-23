@@ -31,12 +31,28 @@ const HEAD_STYLE: React.CSSProperties = {
   lineHeight: 'var(--bl-line-height-tight)',
 };
 
+// PR E: the '24/7 / Dispatch' tile is gone — a round-the-clock availability
+// claim shown on every bold-local service page. The grid derives its column
+// count from this array so removing a tile does not leave a gap.
+const STATS = [
+  { num: '100%', label: 'Guarantee' },
+  { num: '15+', label: 'Years on the job' },
+];
+
 export function BoldLocalPestPage({ tenant, pestSlug, content = null }: Props) {
   const pest = PEST_CONTENT_MAP[pestSlug];
   const phone = tenant.phone ?? '';
   const bizName = tenant.business_name || tenant.name;
   const license = tenant.license_number?.trim() || 'Licensed';
   const founded = tenant.founded_year ? `Since ${tenant.founded_year}` : 'Established';
+
+  // PR E: the third cell was { label: 'Response', value: 'Same-Day' } — a
+  // dispatch promise hardcoded for every tenant on this shell. Deleted; the
+  // strip now sizes itself to whatever cells are real.
+  const PLATE_CELLS = [
+    { label: 'License #', value: license },
+    { label: 'Coverage', value: founded },
+  ];
 
   const heroTitle = pickString(content?.hero_headline, content?.title, pest?.displayName) || 'Pest Control';
   const eyebrow = pickString(content?.subtitle) || `${pest?.displayName || 'Pest'} / Strike-Ready`;
@@ -85,13 +101,9 @@ export function BoldLocalPestPage({ tenant, pestSlug, content = null }: Props) {
 
       {/* License-plate strip */}
       <section style={{ backgroundColor: 'var(--bl-surface-2)', borderTop: '1px solid rgba(245,166,35,0.25)', borderBottom: '1px solid rgba(245,166,35,0.25)' }}>
-        <div className="max-w-6xl mx-auto" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)' }}>
-          {[
-            { label: 'License #', value: license },
-            { label: 'Coverage', value: founded },
-            { label: 'Response', value: 'Same-Day' },
-          ].map((cell, i) => (
-            <div key={cell.label} style={{ padding: 'var(--bl-space-md) var(--bl-space-md)', textAlign: 'center', borderRight: i < 2 ? '1px solid var(--bl-border)' : 'none' }}>
+        <div className="max-w-6xl mx-auto" style={{ display: 'grid', gridTemplateColumns: `repeat(${PLATE_CELLS.length},1fr)` }}>
+          {PLATE_CELLS.map((cell, i) => (
+            <div key={cell.label} style={{ padding: 'var(--bl-space-md) var(--bl-space-md)', textAlign: 'center', borderRight: i < PLATE_CELLS.length - 1 ? '1px solid var(--bl-border)' : 'none' }}>
               <span style={{ display: 'block', fontFamily: 'var(--bl-font-body)', fontSize: 10, fontWeight: 600, letterSpacing: 'var(--bl-letter-spacing-wide)', textTransform: 'uppercase', color: 'var(--bl-text-muted)', marginBottom: 4 }}>{cell.label}</span>
               <span style={{ display: 'block', fontFamily: 'var(--bl-font-display)', fontSize: 18, fontWeight: 700, color: 'var(--bl-accent)' }}>{cell.value}</span>
             </div>
@@ -131,7 +143,7 @@ export function BoldLocalPestPage({ tenant, pestSlug, content = null }: Props) {
                 </p>
                 {bizName && (
                   <p style={{ fontFamily: 'var(--bl-font-body)', fontSize: 14, color: 'var(--bl-text-muted)', lineHeight: 'var(--bl-line-height-loose)', marginTop: 'var(--bl-space-md)' }}>
-                    {bizName} crews are licensed, insured, and dispatched same-day. We don&apos;t play around with infestations.
+                    {bizName} crews are licensed and insured. We don&apos;t play around with infestations.
                   </p>
                 )}
               </div>
@@ -142,12 +154,8 @@ export function BoldLocalPestPage({ tenant, pestSlug, content = null }: Props) {
 
       {/* Stats banner */}
       <section style={{ backgroundColor: 'var(--bl-surface-2)', borderTop: '2px solid var(--bl-accent)', borderBottom: '2px solid var(--bl-accent)', padding: 'var(--bl-space-xl) 1rem' }}>
-        <div className="max-w-5xl mx-auto" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 'var(--bl-space-md)' }}>
-          {[
-            { num: '24/7', label: 'Dispatch' },
-            { num: '100%', label: 'Guarantee' },
-            { num: '15+', label: 'Years on the job' },
-          ].map((s) => (
+        <div className="max-w-5xl mx-auto" style={{ display: 'grid', gridTemplateColumns: `repeat(${STATS.length},1fr)`, gap: 'var(--bl-space-md)' }}>
+          {STATS.map((s) => (
             <div key={s.label} style={{ textAlign: 'center' }}>
               <div style={{ ...HEAD_STYLE, fontSize: 'clamp(28px,4.5vw,48px)', color: 'var(--bl-accent)' }}>{s.num}</div>
               <div style={{ fontFamily: 'var(--bl-font-body)', fontSize: 11, fontWeight: 600, letterSpacing: 'var(--bl-letter-spacing-wide)', textTransform: 'uppercase', color: 'var(--bl-text-muted)', marginTop: 4 }}>{s.label}</div>

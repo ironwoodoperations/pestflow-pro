@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Star, Home, Heart, Bug } from 'lucide-react';
+import { Star, Home, Heart } from 'lucide-react';
 
 interface TeamMember { id: string; name: string; title?: string; bio?: string; photo_url?: string }
 
@@ -96,13 +96,14 @@ export function CleanFriendlyAboutPage({ heroTitle, heroSub, heroImageUrl, about
       <section style={{ backgroundColor: 'var(--cf-bg-sky)', padding: 'var(--cf-space-xl) 1rem' }}>
         <div className="max-w-5xl mx-auto">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 'var(--cf-space-md)' }}>
-            <style>{`@media(min-width:640px){.cf-stats{grid-template-columns:repeat(4,1fr) !important}}`}</style>
+            <style>{`@media(min-width:640px){.cf-stats{grid-template-columns:repeat(3,1fr) !important}}`}</style>
             <div className="cf-stats" style={{ display: 'contents' }} />
             {[
               { num: '15+', label: 'Years experience', Icon: Star, color: 'var(--cf-sky)' },
               { num: '4,200+', label: 'Homes protected', Icon: Home, color: 'var(--cf-mint)' },
               { num: '98%', label: 'Customer satisfaction', Icon: Heart, color: 'var(--cf-sky)' },
-              { num: 'Same-day', label: 'Service available', Icon: Bug, color: 'var(--cf-mint)' },
+              // PR E: the 'Same-day / Service available' tile is deleted — an
+  // availability promise presented as a statistic.
             ].map(({ num, label, Icon, color }) => (
               <div key={label} style={{ textAlign: 'center' }}>
                 <Icon className="w-5 h-5 mx-auto mb-2" style={{ color }} />
@@ -145,7 +146,7 @@ export function CleanFriendlyAboutPage({ heroTitle, heroSub, heroImageUrl, about
         <div className="max-w-xl mx-auto">
           <p style={{ ...SERIF, fontSize: 14, color: 'var(--cf-ink-secondary)', marginBottom: 'var(--cf-space-sm)' }}>ready when you are</p>
           <h2 style={{ ...BODY, fontSize: 'clamp(22px,3vw,32px)', fontWeight: 500, color: 'var(--cf-ink)', marginBottom: 'var(--cf-space-sm)', lineHeight: 'var(--cf-line-height-tight)' }}>Ready to be pest-free?</h2>
-          <p style={{ ...BODY, fontSize: 16, color: 'var(--cf-ink-secondary)', marginBottom: 'var(--cf-space-lg)', lineHeight: 'var(--cf-line-height-loose)' }}>Get your free quote today — same-day service available.</p>
+          <p style={{ ...BODY, fontSize: 16, color: 'var(--cf-ink-secondary)', marginBottom: 'var(--cf-space-lg)', lineHeight: 'var(--cf-line-height-loose)' }}>Get your free quote today.</p>
           <Link href="/quote" style={{ display: 'inline-block', backgroundColor: 'var(--cf-ink)', color: 'var(--cf-surface)', ...BODY, fontWeight: 500, fontSize: 16, padding: '0.85rem 2rem', borderRadius: 'var(--cf-radius-pill)', textDecoration: 'none' }}>
             Get a free quote
           </Link>

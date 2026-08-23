@@ -89,10 +89,11 @@ export function ContactFormBoldLocal({ bizName, phone, email, address, hours, fa
             {address && <li style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}><MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--bl-accent)' }} /><span style={SOCIAL_LINK}>{address}</span></li>}
             {hours   && <li style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}><Clock  className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--bl-accent)' }} /><span style={SOCIAL_LINK}>{hours}</span></li>}
           </ul>
-          <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--bl-border)' }}>
-            <p style={{ fontFamily: 'var(--bl-font-body)', fontSize: 10, fontWeight: 600, letterSpacing: 'var(--bl-letter-spacing-wide)', textTransform: 'uppercase', color: 'var(--bl-text-muted)', marginBottom: '0.5rem' }}>Coverage</p>
-            <p style={{ fontFamily: 'var(--bl-font-display)', fontWeight: 700, fontSize: 16, color: 'var(--bl-accent)' }}>SAME-DAY DISPATCH AVAILABLE</p>
-          </div>
+          {/* PR E: the "Coverage / SAME-DAY DISPATCH AVAILABLE" block is gone.
+              It was a dispatch promise on every bold-local contact form, made
+              for tenants who never claimed it. The whole block goes, not just
+              the words — a "Coverage" heading with nothing under it is worse
+              than no block at all. */}
           {(facebook || instagram || google) && (
             <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--bl-border)' }}>
               <p style={{ fontFamily: 'var(--bl-font-body)', fontSize: 10, fontWeight: 600, letterSpacing: 'var(--bl-letter-spacing-wide)', textTransform: 'uppercase', color: 'var(--bl-text-muted)', marginBottom: '0.5rem' }}>Follow us</p>
