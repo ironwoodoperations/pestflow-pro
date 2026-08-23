@@ -55,6 +55,22 @@ export const IRRIGATION_CONTENT_MAP: Record<string, PestEntry> = {
     metaTitle: 'Lake, Pond & Well Pump Systems | East Texas',
     metaDescription: 'Pump systems for lake, pond, and well irrigation — sizing, installation, and repair for reliable pressure at every zone. Licensed and insured, BBB A+.',
   },
+  'retaining-walls': {
+    slug: 'retaining-walls',
+    displayName: 'Retaining Walls & Hardscape',
+    pluralNoun: 'retaining walls',
+    blurb: 'A slope that keeps washing out, a wall that is bowing or leaning, a bed or driveway edge that will not stay put — most failed walls in East Texas fail for one reason: they were stacked without drainage behind them, so water builds up and pushes them over.',
+    signs: [
+      'A slope or bed that keeps washing out',
+      'An existing wall bowing, leaning, or cracking',
+      'Yard that falls away too fast to use',
+      'Driveway or bed edge that will not stay put',
+    ],
+    treatment: 'We build segmental block and natural stone walls the way they are meant to go in: engineered base, compacted backfill, gravel and perforated drain pipe behind the face, and geogrid tied back into the hill where the height calls for it. Because we are a drainage contractor first, the water is handled before the first course is set, not patched afterward. The wall terraces the ground, opens up usable yard, and stays where we put it. We handle the dirt work around it too — grading, steps, walkways, and bed edging. Serving East Texas since 2017.',
+    cta: 'A wall built on drainage holds the grade. Get it done right.',
+    metaTitle: 'Retaining Walls & Hardscape | East Texas',
+    metaDescription: 'Segmental block and natural stone retaining walls built on proper drainage — engineered base, gravel and drain pipe behind the face, geogrid where the height needs it. Serving East Texas since 2017.',
+  },
   'sod-dirt-work': {
     slug: 'sod-dirt-work',
     displayName: 'Sod Installation & Dirt Work',
