@@ -79,7 +79,13 @@ interface ModernProTenantHome {
   copy?: Partial<ModernProHomeCopy>;
 }
 
-const MODERN_PRO_VERTICAL: Record<Vertical, ModernProHomeCopy> = {
+// PR A opened `Vertical` from a closed 'pest' | 'irrigation' union to the
+// registry, so this map is no longer total over it. `pest` stays REQUIRED —
+// it is the guaranteed default and the reason every existing tenant's copy
+// cannot move — while the registered-but-copyless verticals are optional
+// until PR B moves this map into the verticalCopy preset registry. No live
+// tenant resolves to one of them (only pls sets business_info.vertical).
+const MODERN_PRO_VERTICAL: Partial<Record<Vertical, ModernProHomeCopy>> & { pest: ModernProHomeCopy } = {
   pest: {
     gridEyebrow: 'WHAT WE TREAT',
     gridHeading: 'Our Pest Control Services',
@@ -161,7 +167,7 @@ export default async function TenantHome({ params }: Params) {
 
     const tenantHome = MODERN_PRO_TENANT[tenant.slug];
     const homeCopy: ModernProHomeCopy = {
-      ...MODERN_PRO_VERTICAL[resolveVertical(tenant)],
+      ...(MODERN_PRO_VERTICAL[resolveVertical(tenant)] ?? MODERN_PRO_VERTICAL.pest),
       ...(tenantHome?.copy ?? {}),
     };
     const pages = servicePages as { page_slug: string; title: string | null; image_url?: string | null }[];

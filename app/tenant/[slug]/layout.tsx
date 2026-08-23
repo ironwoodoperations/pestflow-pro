@@ -8,7 +8,9 @@ import { resolveSiteUrl } from '../../../shared/lib/resolveSiteUrl';
 import { tenantSeoMetadata } from '../../../shared/lib/tenantSeoMetadata';
 import { getAllServicePages, getSocialLinks, getSeoSettings, getBusinessInfo, getIntegrations } from './_lib/queries';
 import { JsonLdScript } from './_components/JsonLdScripts';
-import { generateLocalBusinessSchema, type BusinessInfo, type SeoSettings, type SocialLinks } from '../../../shared/lib/seoSchema';
+import { generateLocalBusinessSchema, getSchemaVocabulary, type BusinessInfo, type SeoSettings, type SocialLinks } from '../../../shared/lib/seoSchema';
+import { resolveVertical } from '../../../shared/lib/verticals';
+import { getVerticalCopy } from '../../../src/shells/_shared/verticalCopy';
 import { mapBusinessInfoJsonb } from '../../../shared/lib/seoSchema.jsonb';
 import { TenantProvider } from './TenantProvider';
 import { MetroNavbar } from './_components/MetroNavbar';
@@ -38,8 +40,13 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   if (!tenant) return {};
   const businessName = tenant.business_name || tenant.name;
   const title = tenant.meta_title || businessName;
+  // generateMetadata resolves the tenant independently of TenantLayout (Next
+  // calls them separately), so the vertical is resolved here too rather than
+  // shared. For pest tenants getVerticalCopy returns the identical string this
+  // line used to hardcode — em dash and spacing unchanged.
   const description =
-    tenant.meta_description || `${businessName} — professional pest control services`;
+    tenant.meta_description ||
+    `${businessName} — ${getVerticalCopy(resolveVertical(tenant)).metadataFallbackDesc}`;
   return {
     title,
     description,
@@ -97,12 +104,16 @@ export default async function TenantLayout({
     instagram: social.instagram,
     google: social.google,
   };
+  // JSON-LD vocabulary resolves per vertical. Pest tenants pass
+  // PEST_CONTROL_VOCABULARY, which is byte-identical to the previous no-arg
+  // default — locked by a test asserting the two schemas deep-equal.
   const localBusinessSchema = generateLocalBusinessSchema(
     businessInfo,
     seoForSchema,
     { aggregate_rating: { value: 0, count: 0 }, service_radius_miles: 0 },
     socialLinks,
     siteUrl,
+    getSchemaVocabulary(resolveVertical(tenant)),
   );
 
   const cssVars = shellCssVarsString(
