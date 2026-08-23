@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { resolveVertical, type Vertical } from '../../../src/shells/_shared/serviceEntry';
 import { resolveTenantBySlug } from '../../../shared/lib/tenant/resolve';
 import { resolveSiteUrl } from '../../../shared/lib/resolveSiteUrl';
 import { buildPageMetadata } from '../../../shared/lib/buildPageMetadata';
@@ -54,15 +55,15 @@ import { RusticRuggedCtaBanner } from './_shells/rustic-rugged/RusticRuggedCtaBa
 import { DangComicHome } from './_shells/dang/DangComicHome';
 import { VitaGlowHome } from './_shells/vita-glow/VitaGlowHome';
 
-// 5b: per-tenant modern-pro homepage config. Service TILES always derive from
-// the tenant's own page_content service rows (getAllServicePages — the same
-// signal the navbar uses); this config only fixes tile ORDER + static images
-// where they exist, and sets section/CTA copy. No hardcoded service list
-// survives, and a tenant with no entry gets its own service pages rendered as
-// typographic cards with the trust/why/CTA sections unrendered — never
-// another tenant's copy.
+// 5b+: modern-pro homepage config. Service TILES always derive from the
+// tenant's own page_content service rows (getAllServicePages — the same
+// signal the navbar uses). Section/CTA copy resolves per-VERTICAL
+// (business_info.vertical via resolveVertical, strictly validated) so future
+// irrigation tenants inherit the preset instead of being hand-configured;
+// a per-tenant entry carries only what is genuinely tenant-specific: the
+// tile order + static images, and optional copy overrides. Resolution:
+// per-tenant override → vertical preset → 'pest' (resolveVertical's default).
 interface ModernProHomeCopy {
-  tiles?: { slug: string; image?: string }[];
   gridEyebrow: string;
   gridHeading: string;
   gridSubheading?: string;
@@ -73,22 +74,20 @@ interface ModernProHomeCopy {
   ctaSubheading?: string;
 }
 
-const MODERN_PRO_HOME_DEFAULT: ModernProHomeCopy = {
-  gridEyebrow: 'WHAT WE TREAT',
-  gridHeading: 'Our Pest Control Services',
-  gridSubheading: 'Professional treatments for every pest problem',
-  trustItems: [],
-  whyItems: [],
-};
+interface ModernProTenantHome {
+  tiles?: { slug: string; image?: string }[];
+  copy?: Partial<ModernProHomeCopy>;
+}
 
-const MODERN_PRO_HOME: Record<string, ModernProHomeCopy> = {
-  pls: {
-    tiles: [
-      { slug: 'sprinkler-systems', image: '/images/pls/sprinkler-systems.jpg' },
-      { slug: 'drainage',          image: '/images/pls/drainage.jpg' },
-      { slug: 'pump-systems',      image: '/images/pls/pump-systems.jpg' },
-      { slug: 'sod-dirt-work',     image: '/images/pls/sod-dirt-work.jpg' },
-    ],
+const MODERN_PRO_VERTICAL: Record<Vertical, ModernProHomeCopy> = {
+  pest: {
+    gridEyebrow: 'WHAT WE TREAT',
+    gridHeading: 'Our Pest Control Services',
+    gridSubheading: 'Professional treatments for every pest problem',
+    trustItems: [],
+    whyItems: [],
+  },
+  irrigation: {
     gridEyebrow: 'WHAT WE DO',
     gridHeading: 'Irrigation, Drainage, Pumps & Sod',
     gridSubheading: 'Licensed irrigation work across East Texas, documented on every job.',
@@ -105,6 +104,18 @@ const MODERN_PRO_HOME: Record<string, ModernProHomeCopy> = {
     ],
     ctaHeading: "Standing water, dry zones, or a system that won't hold pressure?",
     ctaSubheading: 'We diagnose on site, quote in writing, and put the test data in your hands before the first shovel goes in the ground.',
+  },
+};
+
+const MODERN_PRO_TENANT: Record<string, ModernProTenantHome> = {
+  pls: {
+    tiles: [
+      { slug: 'sprinkler-systems', image: '/images/pls/sprinkler-systems.jpg' },
+      { slug: 'drainage',          image: '/images/pls/drainage.jpg' },
+      { slug: 'pump-systems',      image: '/images/pls/pump-systems.jpg' },
+      { slug: 'retaining-walls',   image: '/images/pls/retaining-walls.jpg' },
+      { slug: 'sod-dirt-work',     image: '/images/pls/sod-dirt-work.jpg' },
+    ],
   },
 };
 
@@ -148,13 +159,17 @@ export default async function TenantHome({ params }: Params) {
     const aboutIntro = (aboutContent as { intro?: string } | null)?.intro || '';
     const aboutImage = (aboutContent as { image_url?: string } | null)?.image_url || '';
 
-    const homeCopy = MODERN_PRO_HOME[tenant.slug] ?? MODERN_PRO_HOME_DEFAULT;
+    const tenantHome = MODERN_PRO_TENANT[tenant.slug];
+    const homeCopy: ModernProHomeCopy = {
+      ...MODERN_PRO_VERTICAL[resolveVertical(tenant)],
+      ...(tenantHome?.copy ?? {}),
+    };
     const pages = servicePages as { page_slug: string; title: string | null; image_url?: string | null }[];
     const titleBySlug = new Map(pages.map((p) => [p.page_slug, p.title]));
     // Tile names always come from the tenant's own page_content titles; the
     // config (when present) only fixes order and supplies static images.
-    const serviceTiles = homeCopy.tiles
-      ? homeCopy.tiles
+    const serviceTiles = tenantHome?.tiles
+      ? tenantHome.tiles
           .filter((t) => titleBySlug.has(t.slug))
           .map((t) => ({ slug: t.slug, image: t.image, name: titleBySlug.get(t.slug) || t.slug }))
       : [...pages]
