@@ -122,6 +122,29 @@ export const getAllServicePages = cache(
   }
 );
 
+// S293C — the pointer to the tenant's generated service-area map image.
+//
+// A POINTER, not a derived URL. The render path must be able to tell that no
+// image exists so it can render nothing, and a URL derived from a content hash
+// cannot be known to be absent without fetching it. Written by the generator
+// when a service-area city is saved; read here with no network beyond Supabase.
+export const getServiceAreaMap = cache(
+  async (tenantId: string) => {
+    const supabase = getServerSupabaseForISR();
+    const { data, error } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('tenant_id', tenantId)
+      .eq('key', 'service_area_map')
+      .maybeSingle();
+    if (error) {
+      console.error('[getServiceAreaMap] error', { tenantId, code: error.code, message: error.message });
+      return null;
+    }
+    return (data?.value ?? null) as { url?: unknown; revision?: unknown; width?: unknown; height?: unknown } | null;
+  }
+);
+
 export const getSocialLinks = cache(
   async (tenantId: string) => {
     const supabase = getServerSupabaseForISR();
