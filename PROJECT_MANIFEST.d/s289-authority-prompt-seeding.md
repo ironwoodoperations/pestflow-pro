@@ -38,3 +38,16 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
       are safe to drop only once VAPI is decommissioned AND `voice-intake` is
       undeployed — so the key cleanup is downstream of the provider decision, not
       independent of it.
+
+---
+## Session — 2026-08-24 02:38 UTC
+- Branch: `s289-authority-prompt-seeding`
+- Commit: `6748912` — chore(s289): drop the now-unused totalJobs — lint back to the 223 baseline
+- Author: Claude
+- Files changed:
+  - scripts/generate-authority-backfill.ts
+- Next recommended action: PR #284 is green on `6748912` and awaiting Scott's manual
+  review + merge. After merge: apply `docs/audits/s289-authority-prompt-backfill.sql`
+  via MCP (3 inserts, 21 prompts, demo tenants excluded), then **S290 — de-pest
+  provisioning**, which is the live rule (b) fabrication path and is ordered ahead of
+  S291 (Claude as a third AI Authority engine) by S291's own brief.
