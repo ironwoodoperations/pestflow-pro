@@ -137,8 +137,47 @@ every write failed. The symptoms looked like unrelated bugs:
 > **There are TWO PARALLEL BINDING MECHANISMS.** `provision-tenant` populates both — but `pls` predates
 > that, so **any tenant created outside `provision-tenant` may be half-bound.**
 
-Worth an actual check across all nine tenants. Not an assumption in either direction.
-`tenant_role_binding_drift` is the audit view built for exactly this.
+#### `tenant_role_binding_drift` DOES NOT COVER THIS — occurrence NINE
+
+An earlier draft of this document said the view was "built for exactly this." **It was wrong, and it is
+wrong in precisely the way the rest of this handoff is about.**
+
+The view scans **`profiles` → `tenant_users`**: a profile row with no membership. PLS's failure was the
+**mirror image** — `tenant_users` present, `profiles` **missing**. The view returns **0 rows** for that
+shape and always would have. Citing it points the next session at a guard that **structurally cannot
+see the defect**.
+
+That makes it **occurrence nine**, committed *inside the document that catalogues the other eight*.
+Which is the strongest available argument that knowing about this failure mode does not, on its own,
+prevent it. The check has to be run, not reasoned about.
+
+**The actual check is the reverse direction:**
+
+```sql
+select t.slug, tu.role, u.email
+from tenant_users tu
+join tenants t on t.id = tu.tenant_id
+left join auth.users u on u.id = tu.user_id
+where not exists (select 1 from profiles p where p.id = tu.user_id);
+```
+
+#### RUN — two rows remain half-bound, both Scott's own accounts
+
+Not a recommendation. The audit was executed:
+
+| tenant | role | account |
+|---|---|---|
+| `dang` | `user` | scottdevore2@gmail.com |
+| `vita-glow` | `admin` | scott@homeflowpro.ai |
+
+**No client account is affected.**
+
+**Vita Glow's is the TENANT ADMIN.** If that project unparks, it will present exactly PLS's symptoms —
+empty reads, RLS violations on write, and the same misleading appearance of unrelated bugs.
+
+Both were left un-inserted **deliberately**: dang's is a secondary `user`-role account, and Vita Glow is
+parked. Fix Vita Glow's *before* the project restarts, not after someone spends an hour debugging
+"Locations is empty".
 
 ### PLS tier — write BOTH columns, and know which one gates
 
@@ -159,7 +198,7 @@ Note the interaction with the S289 finding below: `ai_authority_dispatch` reads
 ## VAPI is decommissioned — a decision carried across seven sessions, now closed
 
 Since S279 this handoff series has carried *"which provider does the live Remi number ring?"* as **a
-decision only Scott can make**, blocking warm-transfer work and leaving two ACTIVE handlers on one
+decision only Scott can make**, leaving two ACTIVE handlers on one
 number.
 
 **Done, and executed:**
@@ -177,13 +216,21 @@ That is worth keeping as a reasoning lesson, not just an outcome. The session re
 as unresolvable-from-here, and it *was* — but "unresolvable from here" meant the answer lived in a
 provider dashboard, not that the answer was risky.
 
-**Still unwritten:** `voice-intake-retell` has **no transfer branch at all**. Warm transfer is a fresh
-build, not a parked one. S289's VAPI-key report is now moot — the keys are gone and so is their only
-reader.
+**Warm transfer is LIVE.** Tested working on the live number tonight, with
+`settings.voice_receptionist` carrying `transfer_number` **+19038710550** and
+`owner_first_ring_seconds` **12**.
+
+> **Retell performs the transfer through AGENT CONFIGURATION, not the webhook.** `voice-intake-retell`
+> has no transfer branch **because it does not need one.** An earlier draft read the missing branch as a
+> missing feature and concluded "warm transfer is a fresh build" — which would have sent someone to
+> rebuild a working feature. Absence of code is not absence of capability when the capability lives in
+> a provider's dashboard.
+
+S289's VAPI-key report is now moot — the keys are gone, and so is their only reader.
 
 ---
 
-## THE DURABLE LESSON — eighth occurrence, and it now has a stricter form
+## THE DURABLE LESSON — NINTH occurrence, and it now has a stricter form
 
 > **A guard's scope quietly stops matching its claim.** A green guard with the wrong scope reads as
 > proof and is not.
@@ -199,10 +246,13 @@ The running tally:
    scanned*, while four rows carrying that number sat in two tables it never looked at
 7. S287's stat-pair guard — tested per line, so one Prettier reflow silenced it
 8. S289's city assertion — an alternation, green on output covering two of five cities
+9. **This document's own first draft** — it cited `tenant_role_binding_drift` as the audit view for the
+   PLS half-binding, when that view scans the opposite direction and returns 0 rows for that shape
+   (corrected above)
 
 ### The stricter form: a guard that CANNOT FAIL is not evidence
 
-Three of the eight are this sharper thing — not mis-scoped, but **incapable of failing**:
+Three of the nine are this sharper thing — not mis-scoped, but **incapable of failing**:
 
 | | what happened |
 |---|---|
