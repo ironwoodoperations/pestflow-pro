@@ -6,6 +6,7 @@ import { usePublishPost } from './usePublishPost'
 import { AI_DAILY_LIMITS, POSTS_PER_GENERATION, SCHEDULING_DAY_CAP } from './socialLimits'
 import { resizeImage } from './lib/resizeImage'
 import { callAi } from '../../../lib/ai/callAi'
+import { buildCaptionPrompt, buildSmartSchedulePrompt } from './captionPrompt'
 
 export type UploadState = 'idle' | 'uploading' | 'success' | 'error'
 
@@ -62,6 +63,10 @@ export function useComposer(
   // ComposerTemplates prefers it because industry is free text that rarely
   // matches a template key.
   const [vertical, setVertical] = useState<string | null>(null)
+  // S287 — derived from business_info.address, the same way ContentTab does it.
+  // The caption prompt used to hardcode "in East Texas" for every tenant; the
+  // region now comes from the tenant's own row or is omitted entirely.
+  const [businessCity, setBusinessCity] = useState('')
   const [loading, setLoading] = useState(true)
   const [editingPostId, setEditingPostId] = useState<string | null>(null)
   const [uploadState, setUploadState] = useState<UploadState>('idle')
@@ -81,6 +86,10 @@ export function useComposer(
       if (bizRes.data?.value?.name) setBusinessName(bizRes.data.value.name)
       if (bizRes.data?.value?.industry) setIndustry(bizRes.data.value.industry)
       setVertical(typeof bizRes.data?.value?.vertical === 'string' ? bizRes.data.value.vertical : null)
+      if (bizRes.data?.value?.address) {
+        const m = String(bizRes.data.value.address).match(/,\s*([^,]+),?\s*[A-Z]{2}/)
+        if (m) setBusinessCity(m[1].trim())
+      }
       setAiDailyCount(countRes.count || 0)
       setLoading(false)
     })
@@ -177,7 +186,9 @@ export function useComposer(
     if (aiDailyLimit !== Infinity && aiDailyCount >= aiDailyLimit) return
     setAiLoading(true); setAiError(''); setAiCaptions([])
     const count = postsPerGeneration
-    const prompt = `You are a social media expert for a ${industry.toLowerCase()} company called ${businessName} in East Texas. Generate exactly ${count} different Facebook/Instagram captions for a post about: "${aiTopic}".\n\nRules:\n- Each caption must be engaging and friendly, not salesy\n- Include relevant emojis\n- End each with 3-5 relevant hashtags\n- Keep each under 200 words\n- Separate captions with "---CAPTION---"\n\nReturn ONLY the ${count} captions separated by "---CAPTION---". No JSON, no preamble.`
+    const prompt = buildCaptionPrompt({
+      businessName, vertical, city: businessCity, topic: aiTopic, count,
+    })
     try {
       const data = await callAi('composer_captions', {
         tenant_id: tenantId,
@@ -193,7 +204,7 @@ export function useComposer(
       setAiError(err instanceof Error ? err.message : 'Failed to generate captions.')
     }
     setAiLoading(false)
-  }, [aiTopic, industry, businessName, aiDailyLimit, aiDailyCount, postsPerGeneration, onCaptionGenerated])
+  }, [aiTopic, vertical, businessCity, businessName, aiDailyLimit, aiDailyCount, postsPerGeneration, onCaptionGenerated])
 
   async function getSmartSchedule() {
     // s248 — pre-emptive tier gate (Grow/2): open the upgrade prompt and fire
@@ -202,7 +213,10 @@ export function useComposer(
     if (tier < 2) { onUpgradeRequired?.(); return }
     setSmartLoading(true); setSmartSchedule(null)
     const now = new Date()
-    const prompt = `You are a social media scheduling expert. A ${industry.toLowerCase()} business wants to post on ${form.platform}. Recommend the single best day and time to post this week. Today is ${now.toLocaleDateString('en-US', { weekday: 'long' })}, ${now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}.\n\nReturn ONLY a JSON object, no preamble, no backticks:\n{"scheduled_for": "YYYY-MM-DDTHH:mm:00", "reasoning": "One sentence."}\n\nMust be future datetime within 7 days. Use 24-hour time.`
+    // S287 — same free-text `industry` interpolation as the caption prompt, one
+    // function below it. Fixing one and leaving the other would have left pls's
+    // 146-character string reaching a model from the next line down.
+    const prompt = buildSmartSchedulePrompt({ vertical, platform: form.platform, now })
     try {
       const data = await callAi('composer_schedule', {
         tenant_id: tenantId,
