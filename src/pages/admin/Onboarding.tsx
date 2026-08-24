@@ -4,6 +4,7 @@ import { Check } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../context/TenantBootProvider'
 import { syncServiceAreasJsonb } from '../../lib/service-areas/syncJsonbFromTable'
+import { resolveBusinessInfoValue } from '../../lib/businessInfoMerge'
 import type { FormData } from '../../components/admin/onboarding/types'
 import { INITIAL_FORM } from '../../components/admin/onboarding/types'
 import StepWelcome from '../../components/admin/onboarding/StepWelcome'
@@ -67,34 +68,98 @@ export default function Onboarding() {
   const handleLaunch = async () => {
     if (!tenantId || saving) return
     setSaving(true)
+
+    // S292 — the nine fields this wizard collects. Everything else in the row
+    // survives untouched via mergeBusinessInfo.
+    //
+    // The old comment here claimed "10 structured address/geo/hours keys
+    // deliberately omitted … CHECK constraint atomicity rules accept the
+    // zero-present state." Omitting them from the OVERLAY is indeed correct.
+    // The bug was that the write was a whole REPLACEMENT, so omission meant
+    // DELETION — of fourteen keys, not ten, and including founded_year (present
+    // on all nine tenants, and what settings.about's auto:years_operating
+    // resolves from) and after_hours_phone (a real contact number, on six).
+    const businessInfoOverlay = {
+      name: form.businessName,
+      phone: form.phone,
+      email: form.email,
+      address: form.address,
+      hours: form.hours,
+      tagline: form.tagline,
+      license: form.license,
+      industry: form.industry,
+      ...(form.vertical ? { vertical: form.vertical } : {}),
+    }
+
+    // READ AT SAVE TIME. Deliberately NOT built on the useEffect preload above:
+    // if the launch fires before that read resolves, a snapshot-based merge has
+    // an empty base and silently becomes a whole replacement again.
+    const mergedBusinessInfo = await resolveBusinessInfoValue(
+      async () => {
+        const { data } = await supabase.from('settings').select('value')
+          .eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle()
+        return data?.value ?? null
+      },
+      businessInfoOverlay,
+    )
+
     const settingsRows = [
-      // S168.3.2: 10 structured address/geo/hours keys deliberately omitted.
-      // These are admin-only fields, filled post-provision via BusinessInfoSection.
-      // CHECK constraint atomicity rules accept the zero-present state.
-      { tenant_id: tenantId, key: 'business_info', value: { name: form.businessName, phone: form.phone, email: form.email, address: form.address, hours: form.hours, tagline: form.tagline, license: form.license, industry: form.industry, ...(form.vertical ? { vertical: form.vertical } : {}) } },
+      { tenant_id: tenantId, key: 'business_info', value: mergedBusinessInfo },
       { tenant_id: tenantId, key: 'branding', value: { logo_url: form.logoUrl, favicon_url: '', primary_color: form.primaryColor, accent_color: form.accentColor, theme: form.template } },
       { tenant_id: tenantId, key: 'social_links', value: { facebook: form.facebook, instagram: form.instagram, google: form.google, youtube: form.youtube } },
       { tenant_id: tenantId, key: 'onboarding_complete', value: { complete: true } },
       { tenant_id: tenantId, key: 'legal_acceptance', value: { accepted: true, timestamp: new Date().toISOString(), plan: 'starter', terms_version: '2026-04' } },
     ]
     for (const row of settingsRows) {
-      await supabase.from('settings').upsert(row, { onConflict: 'tenant_id,key' })
+      // S292 — surface the error rather than swallowing it. This loop is what
+      // writes business_info, and a CHECK violation (23514) here previously
+      // failed invisibly: the launch appeared to succeed and the row was
+      // untouched. Control flow is unchanged; the failure is just no longer silent.
+      const { error } = await supabase.from('settings').upsert(row, { onConflict: 'tenant_id,key' })
+      if (error) console.error(`[onboarding] settings upsert failed (${row.key}):`, error.message)
     }
     const locationRows = form.locations.filter(l => l.city && l.slug).map(l => ({ tenant_id: tenantId, city: l.city, slug: l.slug, is_live: false }))
     if (locationRows.length > 0) {
       await supabase.from('service_areas').upsert(locationRows, { onConflict: 'tenant_id,slug' })
       await syncServiceAreasJsonb(supabase, tenantId)
     }
-    // Bridge to Ironwood CRM — upsert prospect so it appears in pipeline
-    await supabase.from('prospects').upsert({
+    // Bridge to Ironwood CRM — upsert prospect so it appears in pipeline.
+    //
+    // S292 — THE SAME DEFECT, IN THE SAME FUNCTION. This wrote prospects
+    // .business_info as a whole replacement too. It is not a mirror of the
+    // settings row: live prospect rows carry owner_name, founded_year and
+    // num_technicians that the wizard never collects, and
+    // ProspectDetail.Provisioning.tsx feeds this object into provisioning — so
+    // blanking it degrades a re-provision, not just a CRM display.
+    //
+    // Fixed here rather than reported. Leaving one of two identical writes is
+    // exactly how this bug survived S290.
+    const mergedProspectBusinessInfo = await resolveBusinessInfoValue(
+      async () => {
+        const { data } = await supabase.from('prospects').select('business_info')
+          .eq('tenant_id', tenantId).maybeSingle()
+        return data?.business_info ?? null
+      },
+      businessInfoOverlay,
+    )
+    //
+    // NOTE — this write is RLS-gated to the OPERATOR tenant
+    // (`ironwood_admin_prospects_write`: current_tenant_id() = the operator id).
+    // From a real client's onboarding session it is DENIED and, until now,
+    // ignored without a trace. The merge above makes it correct when it does run
+    // — an operator walking the wizard — and the error log below makes the
+    // denial visible instead of silent. Widening that policy is a tenant-isolation
+    // decision, not a bug fix, so it is reported rather than changed here.
+    const { error: prospectErr } = await supabase.from('prospects').upsert({
       status: 'onboarding',
       company_name: form.businessName || '',
       phone: form.phone || null,
       email: form.email || null,
       tenant_id: tenantId,
-      business_info: { name: form.businessName, phone: form.phone, email: form.email, address: form.address, hours: form.hours, tagline: form.tagline, industry: form.industry, license: form.license, ...(form.vertical ? { vertical: form.vertical } : {}) },
+      business_info: mergedProspectBusinessInfo,
       branding: { logo_url: form.logoUrl, primary_color: form.primaryColor, accent_color: form.accentColor, template: form.template },
     }, { onConflict: 'tenant_id' })
+    if (prospectErr) console.warn('[onboarding] prospects upsert skipped:', prospectErr.message)
     navigate('/admin/dashboard')
   }
 

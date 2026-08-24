@@ -230,7 +230,7 @@ S289's VAPI-key report is now moot — the keys are gone, and so is their only r
 
 ---
 
-## THE DURABLE LESSON — NINTH occurrence, and it now has a stricter form
+## THE DURABLE LESSON — TENTH occurrence, and it now has a stricter form
 
 > **A guard's scope quietly stops matching its claim.** A green guard with the wrong scope reads as
 > proof and is not.
@@ -249,10 +249,14 @@ The running tally:
 9. **This document's own first draft** — it cited `tenant_role_binding_drift` as the audit view for the
    PLS half-binding, when that view scans the opposite direction and returns 0 rows for that shape
    (corrected above)
+10. **This document's S292 key count** — "twelve", and before that "seven", both taken from a
+    two-tenant sample and reported as the universe. It is **fourteen**, established by a union query
+    across all nine. **Committed by the reviewer, not the author** — recorded that way deliberately,
+    because a tally that only catches one party stops being a check and becomes a defence
 
 ### The stricter form: a guard that CANNOT FAIL is not evidence
 
-Three of the nine are this sharper thing — not mis-scoped, but **incapable of failing**:
+Three of the ten are this sharper thing — not mis-scoped, but **incapable of failing**:
 
 | | what happened |
 |---|---|
@@ -300,28 +304,57 @@ pattern still fires.
 
 ## Open / pending (carried to next)
 
-### S292 — NEXT. `handleLaunch` drops TWELVE `business_info` keys
+### S292 — `handleLaunch` drops FOURTEEN `business_info` keys — **SHIPPED, see below**
 
-`Onboarding.tsx` writes `business_info` as a **whole replacement value**. S290 preloaded `vertical` so
-that one survives. The rest still go. **Verified against live data — twelve, not the seven reported
-mid-session:**
+> **CORRECTION. This section said TWELVE. It is FOURTEEN.** And before that it said seven. The count
+> moved twice because it was taken by reading a couple of tenants and reporting the result as the
+> universe. **That is occurrence TEN**, recorded in the tally above — and it was committed by the
+> reviewer, not by the author, which is the point of keeping the tally at all: nobody is exempt, and
+> the failure mode does not care who is reasoning.
+>
+> The correct method is to ask the database for the union across every row, not to sample:
+>
+> ```sql
+> select k, count(*) from settings s, lateral jsonb_object_keys(s.value) k
+> where s.key = 'business_info' group by k;
+> ```
+>
+> **23 distinct keys across all nine tenants. The wizard writes 9. Fourteen were destroyed.**
+
+`Onboarding.tsx` `handleLaunch` wrote `business_info` as a **whole replacement value**. S290 preloaded
+`vertical` so that one survived; the other fourteen did not:
 
 ```
 address_country   address_locality  address_region   street_address
 postal_code       latitude          longitude        geocode_source
 timezone          founded_year      certifications   num_technicians
+after_hours_phone hours_structured        <- the two both earlier counts missed
 ```
 
-- **`founded_year` is what `settings.about`'s `auto:years_operating` resolves from.** It is how PLS's
-  "9+ years" renders on the public site.
-- **`certifications` and `num_technicians` are tenant claims** the S281 architecture deliberately put in
+- **`founded_year`** — on **all nine** tenants. What `settings.about`'s `auto:years_operating` resolves
+  from; it is how pls's "9+ years" renders on the public site.
+- **`timezone`** — on **all nine**.
+- **`after_hours_phone`** — on **six**. A real contact number.
+- **`hours_structured`** — on **six**. The per-day opening hours array.
+- `certifications` and `num_technicians` are tenant claims the S281 architecture deliberately put in
   the DB rather than in a preset.
-- The in-code comment justifying the omission covers the **nine** address/geo/timezone keys and **does
-  not cover those three**.
 
-> **THE FIX IS MERGE, NOT ENUMERATE.** Read the current `business_info`, spread it, overlay the form
-> fields. That kills the class rather than the twelve instances — and removes the need to maintain a
-> list of which keys are safe to drop, a list that was already wrong the moment `vertical` was added.
+> **THE FIX IS MERGE, NOT ENUMERATE.** `src/lib/businessInfoMerge.ts` reads the current value, spreads
+> it, and overlays only what the wizard collects. **It contains no list of the fourteen** — a literal
+> list has been wrong twice already and would be wrong again the next time any path adds a key. A test
+> pins that by merging a key the module has never heard of.
+
+Two further things the fix had to respect, both read from the live constraints rather than inferred:
+`business_info_structured_shape` (the address quad is 0-or-4, lat/lng are both-or-neither,
+`hours_structured` requires `timezone`) — so a **partial** overlay of any group is refused rather than
+written, because half a group 23514s the entire upsert; and `business_info_no_year_founded`, which
+matters because `provision-tenant` reads `wbi.founded_year || wbi.year_founded` and a naive
+whole-form spread could reintroduce it.
+
+**The same defect was in the same function twice.** `handleLaunch` also replaced
+`prospects.business_info`, which live rows carry `owner_name`, `founded_year` and `num_technicians` in
+and which `ProspectDetail.Provisioning.tsx` feeds back into provisioning. Fixed in the same PR —
+leaving one of two identical writes is how this survived S290 in the first place.
 
 ### S291 — unblocked
 
