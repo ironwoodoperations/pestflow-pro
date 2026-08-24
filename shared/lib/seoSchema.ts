@@ -81,7 +81,37 @@ export interface BlogPostInput {
 export interface SchemaVocabulary {
   knowsAbout: readonly string[]
   serviceType: string
+  /**
+   * The @type array for LocalBusiness. Optional; defaults to the historical
+   * ['LocalBusiness', 'HomeAndConstructionBusiness'] pair so every existing
+   * tenant is byte-identical.
+   *
+   * It is a SLOT, not decoration. @type is a claim about what kind of business
+   * this is, exactly as knowsAbout is a claim about what it does — and the two
+   * must move together. Today both registered verticals genuinely are
+   * home-and-construction trades. The moment a vertical that is NOT (medical
+   * aesthetics is the live candidate — see vita-glow) gets a vocabulary, its
+   * entry sets this and the type follows the trade instead of silently
+   * asserting construction.
+   */
+  businessType?: readonly string[]
 }
+
+/** The @type used when a vocabulary does not override it. */
+export const DEFAULT_BUSINESS_TYPE: readonly string[] = Object.freeze([
+  'LocalBusiness', 'HomeAndConstructionBusiness',
+])
+
+/**
+ * The @type for a tenant whose trade is NOT recorded.
+ *
+ * 'LocalBusiness' alone, deliberately. 'HomeAndConstructionBusiness' is a
+ * SUBTYPE claim — asserting it for an unrecorded trade is the same class of
+ * fabrication as emitting pest knowsAbout, and it is currently asserted in
+ * production for a medical-aesthetics business. LocalBusiness is the documented
+ * top type for this rich result and is true of every tenant on the platform.
+ */
+export const NEUTRAL_BUSINESS_TYPE: readonly string[] = Object.freeze(['LocalBusiness'])
 
 // Frozen (S-PLS-2 hardening): generateLocalBusinessSchema emits a REFERENCE to
 // knowsAbout, so without freeze any mutation of an emitted schema — or of this
@@ -120,6 +150,41 @@ const VOCABULARY_BY_VERTICAL: Partial<Record<Vertical, SchemaVocabulary>> = Obje
   // Deliberately absent — add one before provisioning a tenant in that vertical.
 })
 
+/**
+ * Resolve a vocabulary from a RAW, possibly-absent vertical. NULL means
+ * "trade not recorded", and null is a legitimate, expected answer.
+ *
+ * WHY THIS EXISTS, and why it does NOT call resolveVertical:
+ *
+ * resolveVertical ends `: 'pest'` — absent both keys, it returns pest, which is
+ * the documented historical behaviour and correct for ROUTING (a pest tenant
+ * provisioned before the key existed must still route). But for CLAIMS it is a
+ * fabrication: layout.tsx calls getSchemaVocabulary(resolveVertical(tenant)),
+ * so a tenant with vertical NULL gets PEST_CONTROL_VOCABULARY. That is live —
+ * vita-glow.pestflowpro.ai, a medical-aesthetics business, emits
+ * knowsAbout: Pest Control, Termite Treatment, Mosquito Control, Rodent
+ * Control, Bed Bug Treatment, Ant Control. It is indexable; that tenant has no
+ * noindex.
+ *
+ * The industry substring fallback is also deliberately not used here. It exists
+ * so prose can rescue a tenant with no explicit key; for a schema claim, prose
+ * is exactly the wrong evidence. Since S290 provisioning always records the
+ * key, so the only tenants reaching null are the ones that genuinely have no
+ * recorded trade — which is the case that must emit nothing.
+ *
+ * Unregistered-but-valid keys (lawn, pool, hvac, roof, trailer) also return
+ * null rather than throwing, because a missing vocabulary must degrade to
+ * "claim nothing" at render time, not take a live site down. getSchemaVocabulary
+ * keeps throwing for callers that have already decided a trade is required.
+ */
+export function resolveSchemaVocabulary(
+  vertical: string | null | undefined,
+): SchemaVocabulary | null {
+  if (typeof vertical !== 'string') return null
+  const vocabulary = (VOCABULARY_BY_VERTICAL as Record<string, SchemaVocabulary | undefined>)[vertical]
+  return vocabulary ?? null
+}
+
 export function getSchemaVocabulary(vertical: Vertical): SchemaVocabulary {
   const vocabulary = VOCABULARY_BY_VERTICAL[vertical]
   if (!vocabulary) {
@@ -138,14 +203,20 @@ export function generateLocalBusinessSchema(
   _schema: SchemaConfig,
   social: SocialLinks,
   siteUrl: string,
-  vocabulary: SchemaVocabulary = PEST_CONTROL_VOCABULARY
+  // NULL means "trade not recorded" — knowsAbout is omitted and @type narrows.
+  // The DEFAULT stays pest so no-arg callers (the Vite SEOHead) are unchanged;
+  // null must be passed deliberately, which is what resolveSchemaVocabulary
+  // returns.
+  vocabulary: SchemaVocabulary | null = PEST_CONTROL_VOCABULARY
 ): object {
   const sameAs = [social.facebook, social.google_business || social.google, social.instagram].filter(Boolean)
 
   const result: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@id': `${siteUrl}/#organization`,
-    '@type': ['LocalBusiness', 'HomeAndConstructionBusiness'],
+    '@type': vocabulary
+      ? (vocabulary.businessType ?? DEFAULT_BUSINESS_TYPE)
+      : NEUTRAL_BUSINESS_TYPE,
     name: business.name,
     telephone: business.phone,
     email: business.email,
@@ -159,7 +230,17 @@ export function generateLocalBusinessSchema(
     })),
     priceRange: '$$',
     ...(seo.founded_year ? { foundingDate: seo.founded_year } : {}),
-    knowsAbout: vocabulary.knowsAbout,
+    // OMITTED, not genericised, when the trade is unrecorded.
+    //
+    // Google's structured-data guidelines require markup to describe content
+    // visible on the page and forbid marking up "irrelevant or misleading
+    // content". knowsAbout is a claim of topical expertise; a generic stand-in
+    // ("Home Services") would be a claim we cannot substantiate against any
+    // visible page content, which is the schema equivalent of the fabricated
+    // copy this arc has spent nine PRs removing. It is also not a Google rich-
+    // result input for LocalBusiness — it is read by AI crawlers and knowledge
+    // graphs — so omitting it costs no rich result and removes a false signal.
+    ...(vocabulary ? { knowsAbout: vocabulary.knowsAbout } : {}),
   }
 
   // PostalAddress: structured keys preferred, legacy string as fallback.
@@ -252,7 +333,7 @@ export function generateServiceSchema(
   serviceDescription: string,
   serviceUrl: string,
   siteUrl: string,
-  vocabulary: SchemaVocabulary = PEST_CONTROL_VOCABULARY
+  vocabulary: SchemaVocabulary | null = PEST_CONTROL_VOCABULARY
 ): object {
   return {
     '@context': 'https://schema.org',
@@ -261,7 +342,11 @@ export function generateServiceSchema(
     description: serviceDescription,
     url: serviceUrl,
     provider: { '@id': `${siteUrl}/#organization` },
-    serviceType: vocabulary.serviceType,
+    // Same rule as knowsAbout: serviceType names a trade, so an unrecorded
+    // trade emits no serviceType rather than a guessed one. The Service node
+    // still carries name, description and provider, all of which come from the
+    // tenant's own page.
+    ...(vocabulary ? { serviceType: vocabulary.serviceType } : {}),
   }
 }
 

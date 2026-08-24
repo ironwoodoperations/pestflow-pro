@@ -241,6 +241,28 @@ const VERTICAL_COPY: Partial<Record<Vertical, VerticalCopy>> = Object.freeze({
  * than falling back to pest, so a vertical that reaches render without copy is
  * a caught bug and never a wrong-trade page served to a real customer.
  */
+/**
+ * Resolve copy from a RAW, possibly-absent vertical. NULL means "trade not
+ * recorded" and is a legitimate answer, not an error.
+ *
+ * The mirror of resolveSchemaVocabulary, and it exists for the same live defect:
+ * layout.tsx's generateMetadata builds its description fallback from
+ * getVerticalCopy(resolveVertical(tenant)), and resolveVertical ends `: 'pest'`.
+ * vita-glow has vertical NULL and NO seo.meta_description, so that fallback
+ * FIRES and its indexable <meta name="description"> reads "…professional pest
+ * control services" for a medical-aesthetics business.
+ *
+ * This does NOT add a neutral copy preset. VerticalCopy has 21 slots and
+ * inventing trade-neutral prose for all of them is a separate piece of work.
+ * A caller that gets null omits the copy rather than substituting any — which
+ * is the correct handling for the one slot that is currently reachable.
+ */
+export function resolveVerticalCopy(vertical: string | null | undefined): VerticalCopy | null {
+  if (typeof vertical !== 'string') return null;
+  const copy = (VERTICAL_COPY as Record<string, VerticalCopy | undefined>)[vertical];
+  return copy ?? null;
+}
+
 export function getVerticalCopy(vertical: Vertical): VerticalCopy {
   const copy = VERTICAL_COPY[vertical];
   if (!copy) {

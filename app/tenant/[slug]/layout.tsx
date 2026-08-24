@@ -8,9 +8,8 @@ import { resolveSiteUrl } from '../../../shared/lib/resolveSiteUrl';
 import { tenantSeoMetadata } from '../../../shared/lib/tenantSeoMetadata';
 import { getAllServicePages, getSocialLinks, getSeoSettings, getBusinessInfo, getIntegrations, getAllBlogPosts } from './_lib/queries';
 import { JsonLdScript } from './_components/JsonLdScripts';
-import { generateLocalBusinessSchema, getSchemaVocabulary, type BusinessInfo, type SeoSettings, type SocialLinks } from '../../../shared/lib/seoSchema';
-import { resolveVertical } from '../../../shared/lib/verticals';
-import { getVerticalCopy } from '../../../src/shells/_shared/verticalCopy';
+import { generateLocalBusinessSchema, resolveSchemaVocabulary, type BusinessInfo, type SeoSettings, type SocialLinks } from '../../../shared/lib/seoSchema';
+import { resolveVerticalCopy } from '../../../src/shells/_shared/verticalCopy';
 import { mapBusinessInfoJsonb } from '../../../shared/lib/seoSchema.jsonb';
 import { TenantProvider } from './TenantProvider';
 import { MetroNavbar } from './_components/MetroNavbar';
@@ -44,9 +43,23 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   // calls them separately), so the vertical is resolved here too rather than
   // shared. For pest tenants getVerticalCopy returns the identical string this
   // line used to hardcode — em dash and spacing unchanged.
+  // S293 — the trade tail is appended ONLY when the trade is recorded.
+  //
+  // This line used to read getVerticalCopy(resolveVertical(tenant)), and
+  // resolveVertical ends `: 'pest'` when neither the explicit key nor the
+  // industry substring matches. vita-glow has vertical NULL and no
+  // seo.meta_description, so the fallback fires and its INDEXABLE meta
+  // description has been advertising "professional pest control services" for a
+  // medical-aesthetics business.
+  //
+  // The in-code comment claiming vita-glow "never reaches vertical-dispatched
+  // code: its template branches fire earlier" is true of the page BODIES — it
+  // has its own shell — and false here. layout.tsx sits ABOVE shell selection
+  // and runs for every tenant whatever their theme.
+  const verticalCopy = resolveVerticalCopy(tenant.vertical);
   const description =
     tenant.meta_description ||
-    `${businessName} — ${getVerticalCopy(resolveVertical(tenant)).metadataFallbackDesc}`;
+    (verticalCopy ? `${businessName} — ${verticalCopy.metadataFallbackDesc}` : businessName);
   return {
     title,
     description,
@@ -119,7 +132,11 @@ export default async function TenantLayout({
     { aggregate_rating: { value: 0, count: 0 }, service_radius_miles: 0 },
     socialLinks,
     siteUrl,
-    getSchemaVocabulary(resolveVertical(tenant)),
+    // Resolved from the EXPLICIT vertical, not from resolveVertical's
+    // pest-defaulting output. Byte-identical for all eight tenants that have a
+    // recorded vertical; vita-glow (NULL) now emits no knowsAbout and types as
+    // LocalBusiness rather than HomeAndConstructionBusiness.
+    resolveSchemaVocabulary(tenant.vertical),
   );
 
   const cssVars = shellCssVarsString(

@@ -7,6 +7,9 @@ import {
   PEST_CONTROL_VOCABULARY,
   IRRIGATION_VOCABULARY,
   getSchemaVocabulary,
+  resolveSchemaVocabulary,
+  DEFAULT_BUSINESS_TYPE,
+  NEUTRAL_BUSINESS_TYPE,
 } from './seoSchema'
 
 // --- parseHours ---
@@ -301,5 +304,132 @@ describe('PR A — getSchemaVocabulary', () => {
     const withNothing = generateLocalBusinessSchema(business, seo, cfg, {}, 'https://x.test')
     expect(withResolved).toEqual(withNothing)
     expect(JSON.stringify(withResolved)).toBe(JSON.stringify(withNothing))
+  })
+})
+
+// ── S293 PR A — an UNRECORDED vertical claims nothing ────────────────────────
+//
+// Verified in production before this change:
+//   pls.pestflowpro.ai       knowsAbout: Irrigation, Sprinkler System
+//                            Installation, … — CORRECT
+//   vita-glow.pestflowpro.ai knowsAbout: Pest Control, Termite Treatment,
+//                            Mosquito Control, Rodent Control, Bed Bug
+//                            Treatment, Ant Control — WRONG
+//
+// The resolver was never broken. resolveVertical ends `: 'pest'`, so a NULL
+// vertical resolved to pest and getSchemaVocabulary faithfully returned the
+// pest vocabulary for it.
+
+describe('S293 — resolveSchemaVocabulary keys on the EXPLICIT vertical only', () => {
+  it('resolves the two registered verticals to their own vocabularies', () => {
+    expect(resolveSchemaVocabulary('pest')).toBe(PEST_CONTROL_VOCABULARY)
+    expect(resolveSchemaVocabulary('irrigation')).toBe(IRRIGATION_VOCABULARY)
+  })
+
+  it('returns NULL for an unrecorded vertical — vita-glow, live', () => {
+    for (const v of [null, undefined, '', '   ']) {
+      expect(resolveSchemaVocabulary(v as string | null | undefined), `for ${JSON.stringify(v)}`).toBeNull()
+    }
+  })
+
+  it('returns NULL for a registered vertical with no vocabulary, rather than throwing', () => {
+    // Differs from getSchemaVocabulary DELIBERATELY: a render path must degrade
+    // to claiming nothing, not take a live site down.
+    for (const v of ['lawn', 'pool', 'hvac', 'roof', 'trailer']) {
+      expect(resolveSchemaVocabulary(v), `for ${v}`).toBeNull()
+      expect(() => getSchemaVocabulary(v as never)).toThrow()
+    }
+  })
+
+  it('returns NULL for junk and for near-misses the CHECK constraint rejects', () => {
+    for (const v of ['Pest', 'PEST', 'pest-control', 'Medical Aesthetics', 'hvac ']) {
+      expect(resolveSchemaVocabulary(v), `for ${v}`).toBeNull()
+    }
+  })
+
+  it('does NOT consult industry prose — the fallback resolveVertical uses', () => {
+    // resolveVertical('') with industry 'irrigation and drainage' returns
+    // 'irrigation'. A schema claim must not be decided by editable prose.
+    expect(resolveSchemaVocabulary('irrigation and sprinkler system installation')).toBeNull()
+    expect(resolveSchemaVocabulary('Medical Aesthetics')).toBeNull()
+  })
+})
+
+describe('S293 — the emitted schema for an unrecorded vertical', () => {
+  const business = { name: 'Vita Glow Wellness', phone: 'p', email: 'e', address: 'a' }
+  const seo = { meta_description: '', service_areas: [], certifications: [], founded_year: '', owner_name: '' }
+  const cfg = { aggregate_rating: { value: 0, count: 0 }, service_radius_miles: 0 }
+  const neutral = generateLocalBusinessSchema(business, seo, cfg, {}, 'https://x.test', null) as Record<string, unknown>
+
+  it('OMITS knowsAbout entirely — no key, not an empty array', () => {
+    expect(Object.prototype.hasOwnProperty.call(neutral, 'knowsAbout')).toBe(false)
+  })
+
+  it('carries ZERO pest vocabulary anywhere in the serialized output', () => {
+    expect(JSON.stringify(neutral))
+      .not.toMatch(/\bpest\b|\btermite\b|\bmosquito\b|\brodent\b|bed ?bug|\bant control\b|\bexterminator\b/i)
+  })
+
+  it('carries no OTHER trade either — not irrigation, not a generic stand-in', () => {
+    const json = JSON.stringify(neutral)
+    expect(json).not.toMatch(/\birrigation\b|\bsprinkler\b|\bdrainage\b/i)
+    expect(json).not.toMatch(/home services|general services/i)
+  })
+
+  it('types as LocalBusiness ALONE — HomeAndConstructionBusiness is a subtype CLAIM', () => {
+    expect(neutral['@type']).toEqual(['LocalBusiness'])
+    expect(neutral['@type']).not.toContain('HomeAndConstructionBusiness')
+  })
+
+  it('still emits everything that comes from the tenant\'s own record', () => {
+    // The point is not a stripped-down node. Name, phone, email, url and @id are
+    // tenant facts and must survive — only the CLAIMS are dropped.
+    expect(neutral.name).toBe('Vita Glow Wellness')
+    expect(neutral.telephone).toBe('p')
+    expect(neutral.email).toBe('e')
+    expect(neutral.url).toBe('https://x.test')
+    expect(neutral['@id']).toBe('https://x.test/#organization')
+    expect(Object.keys(neutral).length).toBeGreaterThan(8)
+  })
+
+  it('Service schema omits serviceType for an unrecorded trade', () => {
+    const svc = generateServiceSchema('Injectables', 'd', 'https://x.test/injectables', 'https://x.test', null) as Record<string, unknown>
+    expect(Object.prototype.hasOwnProperty.call(svc, 'serviceType')).toBe(false)
+    expect(svc.name).toBe('Injectables')
+    expect(svc.provider).toEqual({ '@id': 'https://x.test/#organization' })
+    expect(JSON.stringify(svc)).not.toMatch(/pest/i)
+  })
+})
+
+describe('S293 — recorded verticals stay BYTE-IDENTICAL', () => {
+  const business = { name: 'B', phone: 'p', email: 'e', address: 'a' }
+  const seo = { meta_description: '', service_areas: [], certifications: [], founded_year: '', owner_name: '' }
+  const cfg = { aggregate_rating: { value: 0, count: 0 }, service_radius_miles: 0 }
+  const gen = (vocab?: Parameters<typeof generateLocalBusinessSchema>[5]) =>
+    generateLocalBusinessSchema(business, seo, cfg, {}, 'https://x.test', vocab)
+
+  it('THE LOCK: pest via the new resolver === the historical no-arg output, byte for byte', () => {
+    expect(JSON.stringify(gen(resolveSchemaVocabulary('pest')))).toBe(JSON.stringify(gen()))
+  })
+
+  it('pest keeps the two-element @type it has always emitted', () => {
+    expect((gen() as Record<string, unknown>)['@type']).toEqual(['LocalBusiness', 'HomeAndConstructionBusiness'])
+    expect(DEFAULT_BUSINESS_TYPE).toEqual(['LocalBusiness', 'HomeAndConstructionBusiness'])
+  })
+
+  it('irrigation via the new resolver === via getSchemaVocabulary', () => {
+    expect(JSON.stringify(gen(resolveSchemaVocabulary('irrigation'))))
+      .toBe(JSON.stringify(gen(getSchemaVocabulary('irrigation'))))
+  })
+
+  it('a vocabulary MAY override @type — the slot a non-construction trade needs', () => {
+    const medical = { knowsAbout: Object.freeze(['Injectables']), serviceType: 'Medical Aesthetics', businessType: Object.freeze(['LocalBusiness', 'HealthAndBeautyBusiness']) }
+    expect((gen(medical) as Record<string, unknown>)['@type']).toEqual(['LocalBusiness', 'HealthAndBeautyBusiness'])
+  })
+
+  it('the neutral and default type constants are frozen and distinct', () => {
+    expect(Object.isFrozen(NEUTRAL_BUSINESS_TYPE)).toBe(true)
+    expect(Object.isFrozen(DEFAULT_BUSINESS_TYPE)).toBe(true)
+    expect(NEUTRAL_BUSINESS_TYPE).not.toEqual(DEFAULT_BUSINESS_TYPE)
   })
 })
