@@ -23,6 +23,10 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { generateAuthorityPrompts, isDemoTenant, isOperatorTenant } from '../_shared/authorityPrompts.ts'
+import {
+  validateVertical, buildPageContentRows, buildSeoSettings, buildPageSeoMeta,
+  buildServiceAreaHeroTitle, buildServiceAreaSeo, SEED_PLATFORM_SLUGS,
+} from '../_shared/provisioningSeed.ts'
 import { timingSafeEqual } from 'node:crypto'
 import { normalizeAll, buildJsonbProjection } from '../_shared/service-areas.ts'
 
@@ -127,7 +131,16 @@ interface RequestBody {
   admin_password?: string
   prospect_id?: string
   onboarding_session_id?: string
-  business_info: { name: string; phone: string; email: string; address: string; tagline: string; industry: string }
+  business_info: {
+    name: string; phone: string; email: string; address: string; tagline: string; industry: string
+    /**
+     * S290 — the TRADE, and the only field anything can key on. `industry` is
+     * free text from an onboarding input (pls's live value is a 154-character
+     * paragraph), which is why no preset has ever been able to look at it.
+     * 'pest' | 'irrigation' | omitted. See settings_business_info_vertical_valid.
+     */
+    vertical?: string
+  }
   branding: { logo_url: string; primary_color: string; template: string }
   customization?: {
     hero_headline?: string
@@ -217,6 +230,27 @@ export async function handler(req: Request): Promise<Response> {
     const entitlement = _entToNum(
       wsub.tier ?? subscription?.tier ?? wsub.plan_name ?? subscription?.plan_name ?? body.plan,
     )
+
+    // S290 — RESOLVE THE VERTICAL ONCE, HERE, before a single row is seeded.
+    //
+    // One source: the wizard (where a human picks it from a selector) or the
+    // request body. Deliberately NOT intake_data — that overlay runs after
+    // page_content is already written, so honouring a vertical there would seed
+    // one trade's pages and record another's name.
+    //
+    // FAIL LOUDLY. settings_business_info_vertical_valid takes the two literals
+    // or NULL; anything else is rejected with 23514 inside a settings upsert
+    // that logs the error and carries on, leaving a tenant provisioned with no
+    // vertical and no one aware. A 400 here is the whole point.
+    const _verticalCheck = validateVertical(wbi.vertical ?? (bi as { vertical?: unknown })?.vertical)
+    if (_verticalCheck.error) {
+      console.error('[provision-tenant] REJECTED —', _verticalCheck.error)
+      return new Response(JSON.stringify({ success: false, error: _verticalCheck.error }), {
+        status: 400, headers: { 'Content-Type': 'application/json', ...CORS },
+      })
+    }
+    const resolvedVertical = _verticalCheck.vertical
+    console.log(`[provision-tenant] vertical: ${resolvedVertical ?? 'NOT RECORDED (neutral seed)'}`)
 
     // Resolve slug
     const resolvedSlug = (wd?.slug || slug || bi.name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20)).trim()
@@ -455,7 +489,12 @@ export async function handler(req: Request): Promise<Response> {
         address:         wbi.address         || bi.address || '',
         hours:           wbi.hours           || '',
         tagline:         wbi.tagline         || bi.tagline || '',
-        industry:          wbi.industry                    || 'Pest Control',
+        // Free text, and it stays free text — but it no longer DEFAULTS to a
+        // trade. An unrecorded industry is '', not 'Pest Control'.
+        industry:          wbi.industry                    || '',
+        // Omitted entirely when not recorded, so the row matches the existing
+        // tenants whose vertical is a real NULL rather than a JSON null.
+        ...(resolvedVertical ? { vertical: resolvedVertical } : {}),
         license:           wbi.license                    || '',
         certifications:    wbi.certifications             || '',
         founded_year:      wbi.founded_year || wbi.year_founded || '',
@@ -521,51 +560,30 @@ export async function handler(req: Request): Promise<Response> {
       if (error) console.error(`Failed to upsert ${row.key}:`, error.message)
     }
 
-    // Step 4: Seed page_content rows for the new tenant
+    // Step 4: Seed page_content rows — FROM THE VERTICAL, not from a pest block.
+    //
+    // This used to write a home title of "{name} — Professional Pest Control"
+    // and twelve pest service pages for every tenant on the platform, plus
+    // subtitles asserting things nobody had said: "Licensed & insured
+    // professionals", "Locally owned and operated", "Fast, effective results",
+    // "Comprehensive pest management solutions". All deleted, not reworded —
+    // see supabase/functions/_shared/provisioningSeed.ts.
+    //
+    // An unrecorded vertical seeds the five platform pages and NO service
+    // pages. That is the correct output, and it is what makes an unknown trade
+    // yield nothing rather than yield pest.
     const businessName = wbi.name || bi?.name || resolvedSlug
     const heroHeadline = wcu.hero_headline || bodyCustomization?.hero_headline || businessName
-    const heroHeadlineMap: Record<string, string> = {
-      'home':                `${heroHeadline}`,
-      'about':               `About ${businessName}`,
-      'pest-control':        `${businessName} — Pest Control Services`,
-      'termite-control':     `Termite Control`,
-      'termite-inspections': `Termite Inspections`,
-      'roach-control':       `Roach Control`,
-      'ant-control':         `Ant Control`,
-      'mosquito-control':    `Mosquito Control`,
-      'bed-bug-control':     `Bed Bug Treatment`,
-      'flea-tick-control':   `Flea & Tick Control`,
-      'rodent-control':      `Rodent Control`,
-      'scorpion-control':    `Scorpion Control`,
-      'spider-control':      `Spider Control`,
-      'wasp-hornet-control': `Wasp & Hornet Removal`,
-      'contact':             `Contact ${businessName}`,
-      'faq':                 `Frequently Asked Questions`,
-      'quote':               `Get a Free Quote`,
-    }
-    const pageContentRows = [
-      { tenant_id: tenantId, page_slug: 'home',                title: `${businessName} — Professional Pest Control`,  subtitle: 'Licensed & insured professionals. Fast, effective results.', intro: '', hero_headline: heroHeadlineMap['home'] },
-      { tenant_id: tenantId, page_slug: 'about',               title: `About ${businessName}`, subtitle: 'Locally owned and operated.', intro: '', hero_headline: heroHeadlineMap['about'] },
-      { tenant_id: tenantId, page_slug: 'pest-control',        title: 'Pest Control Services', subtitle: 'Comprehensive pest management solutions.', intro: '', hero_headline: heroHeadlineMap['pest-control'] },
-      { tenant_id: tenantId, page_slug: 'termite-control',     title: 'Termite Control', subtitle: 'Protect your home from termite damage.', intro: '', hero_headline: heroHeadlineMap['termite-control'] },
-      { tenant_id: tenantId, page_slug: 'termite-inspections', title: 'Termite Inspections', subtitle: 'Thorough inspections by certified professionals.', intro: '', hero_headline: heroHeadlineMap['termite-inspections'] },
-      { tenant_id: tenantId, page_slug: 'roach-control',       title: 'Roach Control', subtitle: 'Fast, effective cockroach elimination.', intro: '', hero_headline: heroHeadlineMap['roach-control'] },
-      { tenant_id: tenantId, page_slug: 'ant-control',         title: 'Ant Control', subtitle: 'Stop ants before they take over.', intro: '', hero_headline: heroHeadlineMap['ant-control'] },
-      { tenant_id: tenantId, page_slug: 'mosquito-control',    title: 'Mosquito Control', subtitle: 'Enjoy your yard again.', intro: '', hero_headline: heroHeadlineMap['mosquito-control'] },
-      { tenant_id: tenantId, page_slug: 'bed-bug-control',     title: 'Bed Bug Treatment', subtitle: 'Sleep easy again — bed bugs eliminated.', intro: '', hero_headline: heroHeadlineMap['bed-bug-control'] },
-      { tenant_id: tenantId, page_slug: 'flea-tick-control',   title: 'Flea & Tick Control', subtitle: 'Protect your family and pets.', intro: '', hero_headline: heroHeadlineMap['flea-tick-control'] },
-      { tenant_id: tenantId, page_slug: 'rodent-control',      title: 'Rodent Control', subtitle: 'Exclusion and elimination, done right.', intro: '', hero_headline: heroHeadlineMap['rodent-control'] },
-      { tenant_id: tenantId, page_slug: 'scorpion-control',    title: 'Scorpion Control', subtitle: 'Safe, effective scorpion treatments.', intro: '', hero_headline: heroHeadlineMap['scorpion-control'] },
-      { tenant_id: tenantId, page_slug: 'spider-control',      title: 'Spider Control', subtitle: 'Fast, effective spider elimination.', intro: '', hero_headline: heroHeadlineMap['spider-control'] },
-      { tenant_id: tenantId, page_slug: 'wasp-hornet-control', title: 'Wasp & Hornet Control', subtitle: 'Safe removal of nests — we handle the dangerous work.', intro: '', hero_headline: heroHeadlineMap['wasp-hornet-control'] },
-      { tenant_id: tenantId, page_slug: 'contact',             title: 'Contact Us', subtitle: "We're here to help.", intro: '', hero_headline: heroHeadlineMap['contact'] },
-      { tenant_id: tenantId, page_slug: 'faq',                 title: 'Frequently Asked Questions', subtitle: 'Answers to common questions.', intro: '', hero_headline: heroHeadlineMap['faq'] },
-      { tenant_id: tenantId, page_slug: 'quote',               title: 'Get a Free Quote', subtitle: 'Fast response, honest pricing.', intro: '', hero_headline: heroHeadlineMap['quote'] },
-    ]
+    const pageContentRows = buildPageContentRows({
+      vertical: resolvedVertical,
+      businessName,
+      heroHeadline,
+    }).map((row) => ({ tenant_id: tenantId, ...row }))
     for (const row of pageContentRows) {
       const { error: pcErr } = await supabase.from('page_content').upsert(row, { onConflict: 'tenant_id,page_slug' })
       if (pcErr) console.error(`Failed to upsert page_content ${row.page_slug}:`, pcErr.message)
     }
+    console.log(`[provision-tenant] page_content seeded: ${pageContentRows.length} rows (vertical: ${resolvedVertical ?? 'none'})`)
 
     // Step 5: Overlay page_content with real scraped data (if available on the prospect)
     if (prospect_id) {
@@ -707,40 +725,43 @@ export async function handler(req: Request): Promise<Response> {
 
         // 9b: Seed SEO settings key — service_areas written as [] placeholder;
         // will be overwritten by the projection step (9f) after table rows are seeded.
-        const serviceArea = [city, state].filter(Boolean).join(', ')
-        // Strip trailing period(s) — taglines often end with '.', and the literal
-        // '.' that follows in the template would produce '..' (S196 CityShield bug).
-        const taglineTrimmed = (ib.tagline ?? '').replace(/\.+$/, '')
-        const metaDesc = ib.tagline
-          ? `${bizForSeo} — ${taglineTrimmed}. Serving ${serviceArea || 'your area'}.`
-          : `Professional pest control services by ${bizForSeo}. Serving ${serviceArea || 'your area'} and surrounding areas.`
+        //
+        // The old fallback read "Professional pest control services by X.
+        // Serving {area} and surrounding areas." — a trade nobody recorded and
+        // a coverage claim nobody made. Both are now derived or omitted.
+        const seoSeed = buildSeoSettings({
+          vertical: resolvedVertical,
+          businessName: bizForSeo,
+          city, state,
+          tagline: ib.tagline ?? '',
+        })
         await supabase.from('settings').upsert(
           { tenant_id: tenantId, key: 'seo', value: {
-            meta_description: metaDesc,
+            meta_description: seoSeed.meta_description,
             service_areas: [],
-            focus_keyword: city ? `pest control ${city.toLowerCase()}` : 'pest control',
+            focus_keyword: seoSeed.focus_keyword,
           }},
           { onConflict: 'tenant_id,key' }
         )
 
-        // 9b-seo: Per-page SEO meta on page_content rows
-        if (city) {
-          const phone9 = ib.phone || ''
-          const pageSeoMap: Record<string, { meta_title: string; meta_description: string }> = {
-            'home':           { meta_title: `${bizForSeo} | Pest Control in ${city}${state ? ', ' + state : ''}`, meta_description: `${bizForSeo} offers professional pest control in ${city}. Licensed technicians, fast response, guaranteed results. Call for a free quote.` },
-            'about':          { meta_title: `About ${bizForSeo} | Local Pest Control`,               meta_description: `Learn about ${bizForSeo}, your local pest control experts in ${city}${state ? ', ' + state : ''}. Family-owned, fully licensed and insured.` },
-            'pest-control':   { meta_title: `Pest Control Services | ${bizForSeo}`,                  meta_description: `Comprehensive pest control services in ${city}. Ants, roaches, spiders, and more. Fast, effective, guaranteed.` },
-            'termite-control':{ meta_title: `Termite Control & Treatment | ${bizForSeo}`,            meta_description: `Professional termite control in ${city}. Protect your home from costly termite damage. Free inspections available.` },
-            'rodent-control': { meta_title: `Rodent Control | ${bizForSeo}`,                        meta_description: `Get rid of mice and rats in ${city}. Humane and effective rodent removal by ${bizForSeo}.` },
-            'mosquito-control':{ meta_title: `Mosquito Treatment | ${bizForSeo}`,                   meta_description: `Mosquito control services in ${city}. Enjoy your yard again. Call ${bizForSeo} for a free quote.` },
-            'contact':        { meta_title: `Contact ${bizForSeo} | ${city} Pest Control`,          meta_description: `Contact ${bizForSeo} for pest control in ${city}${state ? ', ' + state : ''}. ${phone9 ? 'Call ' + phone9 + ' or r' : 'R'}equest a free quote online.` },
-          }
-          for (const [pageSlug, seo] of Object.entries(pageSeoMap)) {
-            await supabase.from('page_content').update({ meta_title: seo.meta_title, meta_description: seo.meta_description })
-              .eq('tenant_id', tenantId).eq('page_slug', pageSlug)
-          }
-          console.log('[provision-tenant] per-page SEO meta seeded')
+        // 9b-seo: Per-page SEO meta on page_content rows.
+        //
+        // Every string this used to write asserted something invented:
+        // "Licensed technicians, fast response, guaranteed results. Call for a
+        // free quote.", "Family-owned, fully licensed and insured.", "Fast,
+        // effective, guaranteed.", "Free inspections available." Gone.
+        const pageSeoMap = buildPageSeoMeta({
+          vertical: resolvedVertical,
+          businessName: bizForSeo,
+          city, state,
+          phone: ib.phone || '',
+        })
+        for (const pageSlug of Object.keys(pageSeoMap)) {
+          const seo = pageSeoMap[pageSlug]
+          await supabase.from('page_content').update({ meta_title: seo.meta_title, meta_description: seo.meta_description })
+            .eq('tenant_id', tenantId).eq('page_slug', pageSlug)
         }
+        console.log(`[provision-tenant] per-page SEO meta seeded: ${Object.keys(pageSeoMap).length} pages`)
 
         // 9c: Seed service_areas from normalized prospect.service_areas (is_live=true),
         // then supplement with zip-prefix nearby cities (is_live=false).
@@ -757,7 +778,7 @@ export async function handler(req: Request): Promise<Response> {
             city:       norm.city,
             slug:       norm.slug,
             state:      norm.state,
-            hero_title: `${norm.city} Pest Control`,
+            hero_title: buildServiceAreaHeroTitle(resolvedVertical, norm.city),
             is_live:    true,
           }, { onConflict: 'tenant_id,slug' })
           if (saErr) console.error(`[provision-tenant] service_areas upsert failed (${norm.city}):`, saErr.message)
@@ -790,19 +811,25 @@ export async function handler(req: Request): Promise<Response> {
             : [city]
           const allZipCities = citiesForArea.includes(city) ? citiesForArea : [city, ...citiesForArea]
 
+          // Draft cities carried the worst of it: "Professional pest control
+          // services in {c}. Licensed, insured, and locally trusted." — a trade,
+          // a licence, insurance and a reputation, for a city the tenant has not
+          // even confirmed they serve. All three now come from the vertical, and
+          // an unrecorded vertical yields the city name alone.
           for (const c of allZipCities) {
             const cSlug = c.toLowerCase().replace(/[^a-z0-9]+/g, '-') + (state ? '-' + state.toLowerCase() : '-tx')
-            const cMeta = c === city ? metaDesc : `Professional pest control services in ${c}${state ? ', ' + state : ''}. Licensed, insured, and locally trusted.`
+            const cState = (state || 'TX').toUpperCase()
+            const cSeo = buildServiceAreaSeo(resolvedVertical, c, cState, bizForSeo)
             await supabase.from('service_areas').upsert({
               tenant_id:        tenantId,
               city:             c,
               slug:             cSlug,
-              state:            (state || 'TX').toUpperCase(),
-              hero_title:       `${c} Pest Control`,
+              state:            cState,
+              hero_title:       buildServiceAreaHeroTitle(resolvedVertical, c),
               is_live:          false,
-              meta_title:       `${c} Pest Control | ${bizForSeo}`,
-              meta_description: cMeta,
-              focus_keyword:    `${c.toLowerCase()} pest control`,
+              meta_title:       cSeo.meta_title,
+              meta_description: cSeo.meta_description,
+              focus_keyword:    cSeo.focus_keyword,
             }, { onConflict: 'tenant_id,slug', ignoreDuplicates: true })
           }
           console.log(`[provision-tenant] zip-prefix draft cities seeded: ${allZipCities.length} (zip prefix: ${zipPrefix || 'none'})`)
@@ -832,15 +859,18 @@ export async function handler(req: Request): Promise<Response> {
         // ai_authority_prompts had rows for ONE tenant. Nothing ever created
         // them, so every other tenant's AI Authority ran and produced nothing.
         //
-        // GATED ON A RECORDED VERTICAL, and that gate is load-bearing rather
-        // than defensive. This function does not write settings.business_info
-        // .vertical at all, and it seeds PEST page_content for every tenant
-        // regardless of trade (see 'Professional Pest Control' above). Deriving
-        // service phrases from those rows would hand an irrigation tenant a set
-        // of pest search queries — the exact defect S283/S285/S286 removed
-        // everywhere else. So until provisioning records a vertical and seeds
-        // the right pages, this seeds the branded query only, which is grounded
-        // in the tenant's own name and true of anyone.
+        // UN-GATED IN S290. This was written behind `if (vertical)` because
+        // provisioning could not be trusted to know the trade: it wrote no
+        // vertical at all and seeded pest page_content for everyone, so
+        // deriving service phrases from those rows would have handed an
+        // irrigation tenant a set of pest search queries. Both halves are now
+        // fixed above — the vertical is recorded at Step 3 and page_content is
+        // seeded from it — so the derivation is sound and the branch is live
+        // rather than permanently false.
+        //
+        // The vertical check REMAINS, and still does real work: an unrecorded
+        // vertical seeds no service pages, so there is nothing to derive from
+        // and the branded query is the whole correct output.
         //
         // Failure here NEVER fails provisioning: a tenant without prompts is the
         // status quo for all nine existing tenants.
@@ -900,9 +930,11 @@ export async function handler(req: Request): Promise<Response> {
           if (vertical) {
             const { data: pcRows } = await supabase.from('page_content')
               .select('page_slug').eq('tenant_id', tenantId)
-            const PLATFORM = ['home', 'about', 'faq', 'contact', 'quote', 'privacy', 'terms', 'accessibility', 'sms-terms', 'blog', 'reviews', 'service-area']
+            // SEED_PLATFORM_SLUGS, not a fourth local copy of the same list.
+            // Step 4 seeds from that module, so what counts as a service page
+            // here cannot drift from what was actually written.
             serviceSlugs = (pcRows ?? []).map((r: { page_slug: string }) => r.page_slug)
-              .filter((sl: string) => PLATFORM.indexOf(sl) === -1)
+              .filter((sl: string) => SEED_PLATFORM_SLUGS.indexOf(sl) === -1)
           }
 
           // LIVE ROWS ONLY, and in a stable order.
@@ -944,7 +976,18 @@ export async function handler(req: Request): Promise<Response> {
           console.error('[provision-tenant] ai_authority_prompts seed threw (non-fatal):', (e as Error)?.message)
         }
 
-        // 9d: Seed 3 starter blog posts
+        // 9d: Seed 3 starter blog posts — PEST ONLY.
+        //
+        // The fifth pest block in this function, and the one that cannot be
+        // fixed by a preset: these are authored articles, not labels. "Top 5
+        // Signs You Have a Pest Problem" published under a pool company's byline
+        // is the same defect as the pest page titles, but writing irrigation
+        // equivalents means writing content, which is a brief of its own.
+        //
+        // So they are gated on the trade they are actually about. A tenant of
+        // any other vertical gets NO starter posts, which is the honest state —
+        // an empty blog, not someone else's blog. Reported in the PR.
+        if (resolvedVertical === 'pest') {
         const postNow = new Date().toISOString()
         const day7ago = new Date(Date.now() - 7  * 86400000).toISOString()
         const day14ago= new Date(Date.now() - 14 * 86400000).toISOString()
@@ -966,7 +1009,10 @@ export async function handler(req: Request): Promise<Response> {
           const { error: blogErr } = await supabase.from('blog_posts').upsert(post, { onConflict: 'tenant_id,slug' })
           if (blogErr) console.error(`[provision-tenant] blog_posts upsert failed (${post.slug}):`, blogErr.message)
         }
-        console.log('[provision-tenant] 3 starter blog posts seeded')
+        console.log('[provision-tenant] 3 starter blog posts seeded (pest)')
+        } else {
+          console.log(`[provision-tenant] starter blog posts skipped — no articles exist for vertical '${resolvedVertical ?? 'unrecorded'}'`)
+        }
 
         // 9e: Advance prospect stage to it_in_progress
         await supabase.from('prospects').update({ pipeline_stage: 'it_in_progress' }).eq('id', prospect_id)

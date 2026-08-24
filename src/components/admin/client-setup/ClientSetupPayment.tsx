@@ -3,6 +3,7 @@ import { Copy, Check, AlertCircle } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { type ClientSetupForm } from './types'
 import { IMPLEMENTATION_PACKAGES } from '../../../lib/pricingConfig'
+import { ADMIN_VERTICAL_LABELS } from '../../../lib/adminVerticalPreset'
 
 const PLAN_LABELS: Record<string, string> = {
   starter: 'Starter — $149/mo',
@@ -60,7 +61,14 @@ export default function ClientSetupPayment({ form }: Props) {
           address:         form.address,
           hours:           form.hours,
           tagline:         form.tagline,
-          industry:        'Pest Control',
+          // S290 — the trade the operator picked, and the ONLY field anything
+          // keys on. provision-tenant validates it against
+          // settings_business_info_vertical_valid and 400s on a bad value.
+          ...(form.vertical ? { vertical: form.vertical } : {}),
+          // Free text, mirrored from the selector for readability. It is NOT
+          // what any preset reads — that is `vertical` above. Hardcoding
+          // 'Pest Control' here is what put pest content on every new site.
+          industry:        form.vertical ? ADMIN_VERTICAL_LABELS[form.vertical] : '',
           license:         '',
           certifications:  '',
           founded_year:    '',

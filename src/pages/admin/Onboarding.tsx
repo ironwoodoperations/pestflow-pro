@@ -33,7 +33,15 @@ export default function Onboarding() {
   useEffect(() => {
     if (!tenantId) return
     supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle()
-      .then(({ data }) => { if (data?.value?.name) setBusinessName(data.value.name) })
+      .then(({ data }) => {
+        if (data?.value?.name) setBusinessName(data.value.name)
+        // S290 — PRELOAD THE RECORDED VERTICAL. handleLaunch below writes
+        // business_info as a whole replacement value, so without this the client
+        // finishing onboarding would blank the vertical that provisioning had
+        // just recorded, and every preset would silently fall back to neutral.
+        const v = data?.value?.vertical
+        if (v === 'pest' || v === 'irrigation') setForm(prev => ({ ...prev, vertical: v }))
+      })
   }, [tenantId])
 
   const totalSteps = STEPS.length
@@ -63,7 +71,7 @@ export default function Onboarding() {
       // S168.3.2: 10 structured address/geo/hours keys deliberately omitted.
       // These are admin-only fields, filled post-provision via BusinessInfoSection.
       // CHECK constraint atomicity rules accept the zero-present state.
-      { tenant_id: tenantId, key: 'business_info', value: { name: form.businessName, phone: form.phone, email: form.email, address: form.address, hours: form.hours, tagline: form.tagline, license: form.license, industry: form.industry } },
+      { tenant_id: tenantId, key: 'business_info', value: { name: form.businessName, phone: form.phone, email: form.email, address: form.address, hours: form.hours, tagline: form.tagline, license: form.license, industry: form.industry, ...(form.vertical ? { vertical: form.vertical } : {}) } },
       { tenant_id: tenantId, key: 'branding', value: { logo_url: form.logoUrl, favicon_url: '', primary_color: form.primaryColor, accent_color: form.accentColor, theme: form.template } },
       { tenant_id: tenantId, key: 'social_links', value: { facebook: form.facebook, instagram: form.instagram, google: form.google, youtube: form.youtube } },
       { tenant_id: tenantId, key: 'onboarding_complete', value: { complete: true } },
@@ -84,7 +92,7 @@ export default function Onboarding() {
       phone: form.phone || null,
       email: form.email || null,
       tenant_id: tenantId,
-      business_info: { name: form.businessName, phone: form.phone, email: form.email, address: form.address, hours: form.hours, tagline: form.tagline, industry: form.industry, license: form.license },
+      business_info: { name: form.businessName, phone: form.phone, email: form.email, address: form.address, hours: form.hours, tagline: form.tagline, industry: form.industry, license: form.license, ...(form.vertical ? { vertical: form.vertical } : {}) },
       branding: { logo_url: form.logoUrl, primary_color: form.primaryColor, accent_color: form.accentColor, template: form.template },
     }, { onConflict: 'tenant_id' })
     navigate('/admin/dashboard')

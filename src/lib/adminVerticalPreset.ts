@@ -169,6 +169,34 @@ export const NEUTRAL_ADMIN_PRESET: AdminLabelPreset = {
   },
 };
 
+// ── The selector (S290) ─────────────────────────────────────────────────────
+//
+// provision-tenant now RECORDS the vertical, which means a human has to supply
+// it. These are the options both wizards render.
+//
+// A SELECT, NOT A TEXT BOX. `industry` is already free text and that is exactly
+// why nothing can key on it: pls's stored value is a 154-character service
+// description and vita-glow's is "Medical Aesthetics". Neither would ever match
+// a lookup key, and a typed 'Pest Control' is rejected by
+// settings_business_info_vertical_valid with 23514.
+//
+// The empty option is REAL, not a prompt to be dismissed. "Not listed" is the
+// correct answer for vita-glow and for the next tenant whose trade has no
+// preset, and it seeds trade-neutral rather than pest. Widening this list means
+// widening the CHECK constraint in the same change.
+export const ADMIN_VERTICAL_LABELS: Record<AdminVertical, string> = {
+  pest: 'Pest Control',
+  irrigation: 'Irrigation & Sprinklers',
+};
+
+export interface VerticalOption { value: AdminVertical | ''; label: string }
+
+export const VERTICAL_OPTIONS: VerticalOption[] = [
+  { value: '', label: 'Not listed / other — seeds no service pages' },
+  { value: 'pest', label: ADMIN_VERTICAL_LABELS.pest },
+  { value: 'irrigation', label: ADMIN_VERTICAL_LABELS.irrigation },
+];
+
 /** True only for a vertical this module has a preset for. */
 export function isAdminVertical(vertical: string | null | undefined): vertical is AdminVertical {
   return typeof vertical === 'string' && Object.prototype.hasOwnProperty.call(ADMIN_PRESETS, vertical);
