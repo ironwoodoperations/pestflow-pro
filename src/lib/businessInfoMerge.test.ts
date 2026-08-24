@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   mergeBusinessInfo, resolveBusinessInfoValue, checkBusinessInfoShape,
+  readOrThrow, prepareBusinessInfoWrites,
   ADDRESS_QUAD, LAT_LNG, FORBIDDEN_KEYS,
 } from './businessInfoMerge.ts';
 
@@ -314,5 +315,99 @@ describe('checkBusinessInfoShape mirrors the live constraints and can fail', () 
     expect(checkBusinessInfoShape(EXISTING)).toEqual([]);
     expect(checkBusinessInfoShape({ name: 'X' })).toEqual([]);
     expect(checkBusinessInfoShape({})).toEqual([]);
+  });
+});
+
+// ── THE READ-FAILURE PATH ───────────────────────────────────────────────────
+//
+// The bug this PR removes had a second entrance. A reader that destructures only
+// `data` returns null on ANY failure — transient network, RLS denial, 500 — and
+// mergeBusinessInfo(null, overlay) yields overlay-only. That is a whole
+// replacement, reached silently through the error path.
+//
+// mergeBusinessInfo cannot tell the two apart and must not try: null genuinely
+// means "no row yet" for a first-time tenant. Only the reader knows, and the
+// original reader was discarding the one field that carried the answer.
+describe('a failed read refuses to write rather than degrading to the overlay', () => {
+  const OK = <T,>(data: T) => async () => ({ data, error: null });
+  const FAIL = (message: string) => async () => ({ data: null, error: { message } });
+
+  it('readOrThrow throws on a query error instead of returning null', async () => {
+    await expect(readOrThrow('settings.business_info', FAIL('TypeError: Failed to fetch')))
+      .rejects.toThrow(/read failed, refusing to write/);
+  });
+
+  it('the thrown message names the table and carries the cause', async () => {
+    await expect(readOrThrow('prospects.business_info', FAIL('permission denied for table prospects')))
+      .rejects.toThrow(/prospects\.business_info.*permission denied for table prospects/);
+  });
+
+  it('an EMPTY result is NOT an error — a first-time tenant has no row', async () => {
+    await expect(readOrThrow('settings.business_info', OK(null))).resolves.toBeNull();
+    expect(mergeBusinessInfo(null, OVERLAY)).toEqual(OVERLAY);
+  });
+
+  it('a successful read is passed straight through', async () => {
+    await expect(readOrThrow('settings.business_info', OK({ value: EXISTING })))
+      .resolves.toEqual({ value: EXISTING });
+  });
+
+  // The assertion the brief asks for: the reader rejects, and NO upsert happens.
+  it('THE UPSERT IS NOT CALLED when the settings read fails', async () => {
+    const upsert = vi.fn();
+    const launch = async () => {
+      const merged = await prepareBusinessInfoWrites({
+        overlay: OVERLAY,
+        readSettingsBusinessInfo: () => readOrThrow('settings.business_info', FAIL('503')),
+        readProspectBusinessInfo: async () => EXISTING,
+      });
+      upsert(merged.settings);
+      upsert(merged.prospect);
+    };
+    await expect(launch()).rejects.toThrow(/refusing to write/);
+    expect(upsert, 'a write happened after a failed read').not.toHaveBeenCalled();
+  });
+
+  it('THE UPSERT IS NOT CALLED when the PROSPECT read fails either', async () => {
+    const upsert = vi.fn();
+    const launch = async () => {
+      const merged = await prepareBusinessInfoWrites({
+        overlay: OVERLAY,
+        readSettingsBusinessInfo: async () => EXISTING,
+        readProspectBusinessInfo: () => readOrThrow('prospects.business_info', FAIL('503')),
+      });
+      upsert(merged.settings);
+    };
+    await expect(launch()).rejects.toThrow(/refusing to write/);
+    // Both reads gate ALL writes, so a late failure still leaves nothing written
+    // rather than a half-applied launch.
+    expect(upsert).not.toHaveBeenCalled();
+  });
+
+  // Vacuity guard: the two tests above would pass against a broken helper if the
+  // spy were never wired. This proves the same harness DOES call upsert when the
+  // reads succeed — so "not called" means something.
+  it('the same harness DOES write when both reads succeed', async () => {
+    const upsert = vi.fn();
+    const merged = await prepareBusinessInfoWrites({
+      overlay: OVERLAY,
+      readSettingsBusinessInfo: async () => EXISTING,
+      readProspectBusinessInfo: async () => EXISTING,
+    });
+    upsert(merged.settings);
+    expect(upsert).toHaveBeenCalledTimes(1);
+    expect(Object.keys(merged.settings).length).toBe(23);
+    expect(Object.keys(merged.prospect).length).toBe(23);
+  });
+
+  it('the discarded-error reader is what recreated the bug — shown, not asserted', async () => {
+    // The rejected shape: `error` thrown away.
+    const oldReader = async () => {
+      const { data } = await FAIL('503')();
+      return (data as { value?: unknown } | null)?.value ?? null;
+    };
+    const merged = mergeBusinessInfo(await oldReader(), OVERLAY);
+    expect(Object.keys(merged)).toEqual(Object.keys(OVERLAY));  // fourteen keys gone
+    expect(Object.keys(merged).length).toBe(9);
   });
 });

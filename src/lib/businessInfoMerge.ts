@@ -223,3 +223,61 @@ export async function resolveBusinessInfoValue(
   const existing = await readExisting();
   return mergeBusinessInfo(existing, overlay);
 }
+
+/** The shape every supabase-js single-row read returns. */
+export interface ReadResult<T> {
+  data: T | null;
+  error: { message: string } | null;
+}
+
+/**
+ * Read a value, THROWING on a query error rather than degrading to null.
+ *
+ * WHY THIS EXISTS — the error path recreated the exact bug this module removes.
+ * A reader that destructures only `data` and discards `error` returns null on a
+ * transient network failure, an RLS denial or a 500. mergeBusinessInfo(null, …)
+ * then yields overlay-only, which is a WHOLE REPLACEMENT, arrived at silently
+ * through the failure path.
+ *
+ * mergeBusinessInfo cannot tell the two apart, and should not try. Treating null
+ * as "no row yet" is CORRECT — a first-time tenant genuinely has none. Only the
+ * reader knows whether it got an empty result or an error, so only the reader
+ * can make this distinction, and it was throwing that information away.
+ *
+ * A launch that stops with an error is recoverable. A launch that silently
+ * destroys fourteen keys is not. Same trade already made inside this module for
+ * partial groups: refuse the write rather than corrupt the row.
+ */
+export async function readOrThrow<T>(
+  label: string,
+  query: () => Promise<ReadResult<T>>,
+): Promise<T | null> {
+  const { data, error } = await query();
+  if (error) {
+    throw new Error(
+      `${label}: read failed, refusing to write (a merge built on a failed read is a whole replacement) — ${error.message}`,
+    );
+  }
+  return data;
+}
+
+/**
+ * Both merged values, resolved BEFORE any write happens.
+ *
+ * The single await gate is the point. Every upsert in handleLaunch is textually
+ * after this call, so a reader that throws aborts the launch with nothing
+ * written — rather than leaving the settings row updated and the prospect row
+ * stale, which is what a per-write read would do.
+ */
+export async function prepareBusinessInfoWrites(deps: {
+  readSettingsBusinessInfo: () => Promise<unknown>;
+  readProspectBusinessInfo: () => Promise<unknown>;
+  overlay: Record<string, unknown>;
+}): Promise<{ settings: Record<string, unknown>; prospect: Record<string, unknown> }> {
+  const settingsExisting = await deps.readSettingsBusinessInfo();
+  const prospectExisting = await deps.readProspectBusinessInfo();
+  return {
+    settings: mergeBusinessInfo(settingsExisting, deps.overlay),
+    prospect: mergeBusinessInfo(prospectExisting, deps.overlay),
+  };
+}
