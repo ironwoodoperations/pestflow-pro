@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { INDUSTRY_TEMPLATES, resolveTemplateKey } from './composerTemplateSets'
+import { INDUSTRY_TEMPLATES, resolveTemplateKey, fillTemplate } from './composerTemplateSets'
 
 interface Props {
   industry: string
@@ -18,6 +18,9 @@ interface Props {
 
 export default function ComposerTemplates({ industry, vertical, businessName, onSelectTopic }: Props) {
   const [open, setOpen] = useState(false)
+  // S286 — the owner's own offer wording, per template. Nothing is pre-filled:
+  // a template that needs this stays unusable until the owner types it.
+  const [offers, setOffers] = useState<Record<string, string>>({})
   // vertical -> industry -> generic. The industry path is DELIBERATELY KEPT:
   // 'hvac', 'plumbing' and 'roofing' have template sets but no vertical literal
   // (the constraint permits only 'pest' and 'irrigation'), so removing it would
@@ -39,8 +42,26 @@ export default function ComposerTemplates({ industry, vertical, businessName, on
                 <span className="text-sm font-medium text-gray-900">{t.name}</span>
               </div>
               <p className="text-xs text-gray-500 mb-2">{t.description}</p>
-              <button onClick={() => { onSelectTopic(t.topicPrompt.replace(/\{businessName\}/g, businessName)); setOpen(false) }}
-                className="text-xs font-medium text-emerald-600 hover:text-emerald-700">Use →</button>
+              {t.ownerInput && (
+                <div className="mb-2">
+                  <label className="block text-[11px] font-medium text-gray-600 mb-1">{t.ownerInput.label}</label>
+                  <input
+                    value={offers[t.id] ?? ''}
+                    onChange={e => setOffers(prev => ({ ...prev, [t.id]: e.target.value }))}
+                    placeholder={t.ownerInput.placeholder}
+                    className="w-full border border-gray-300 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+              )}
+              <button
+                disabled={fillTemplate(t, businessName, offers[t.id] ?? '') === null}
+                title={fillTemplate(t, businessName, offers[t.id] ?? '') === null ? 'Add your offer first' : undefined}
+                onClick={() => {
+                  const topic = fillTemplate(t, businessName, offers[t.id] ?? '')
+                  if (topic === null) return
+                  onSelectTopic(topic); setOpen(false)
+                }}
+                className="text-xs font-medium text-emerald-600 hover:text-emerald-700 disabled:text-gray-300 disabled:cursor-not-allowed">Use →</button>
             </div>
           ))}
         </div>
