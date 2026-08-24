@@ -3,6 +3,8 @@ import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../context/TenantBootProvider'
 import { callAi } from '../../../lib/ai/callAi'
+import { buildKeywordsPrompt } from './seoPrompts'
+import { useBusinessFacts } from './useBusinessFacts'
 import { useAdminPreset } from '../../../hooks/useAdminPreset'
 import { standardPageSlugs } from '../../../lib/adminVerticalPreset'
 
@@ -19,6 +21,7 @@ const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm
 export default function SeoKeywordsTab() {
   const { id: tenantId } = useTenant()
   const { preset, vertical } = useAdminPreset()
+  const facts = useBusinessFacts()
   const pageSlugs = [...standardPageSlugs(vertical), ...EXTRA_SEO_SLUGS]
   const [page, setPage] = useState('home')
   const [topic, setTopic] = useState('')
@@ -35,7 +38,9 @@ export default function SeoKeywordsTab() {
       const data = await callAi('seo_keywords', {
         tenant_id: tenantId,
         max_tokens: 1000,
-        messages: [{ role: 'user', content: `You are an SEO expert for a pest control company in East Texas.\nGenerate 10 keyword suggestions for the page: "${page}"\nFocus topic: "${topic}"\nBusiness: local pest control serving Tyler TX and surrounding East Texas cities.\n\nRespond ONLY with a JSON array, no markdown, no explanation:\n[\n  { "keyword": "spider control tyler tx", "intent": "transactional", "difficulty": "low", "priority": "high" },\n  ...\n]\n\nIntent options: transactional | informational | local\nDifficulty options: low | medium | high\nPriority options: high | medium | low` }],
+        messages: [{ role: 'user', content: buildKeywordsPrompt({
+          vertical, page, topic, businessName: facts.businessName, city: facts.city,
+        }) }],
       })
       const text = data.content?.map((i: { text?: string }) => i.text || '').join('') || ''
       const clean = text.replace(/```json|```/g, '').trim()

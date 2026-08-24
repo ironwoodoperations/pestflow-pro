@@ -6,6 +6,8 @@ import { triggerRevalidate } from '../../lib/revalidate'
 import { usePlan } from '../../context/PlanContext'
 import { autoGenBlogSeo } from '../../lib/ai/generateBlogSeo'
 import { generateBlogDraft } from '../../lib/ai/generateBlogDraft'
+import { cityFromBusinessInfo } from '../../lib/businessCity'
+import { useAdminPreset } from '../../hooks/useAdminPreset'
 import ImageLibraryPicker from './social/ImageLibraryPicker'
 
 interface Post {
@@ -39,6 +41,7 @@ const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm
 
 export default function BlogPostEditor({ editing, initialPost, tenantId, onSave, onCancel }: Props) {
   const { canAccess } = usePlan()
+  const { vertical } = useAdminPreset()
   const canAiDraft = canAccess(3)
 
   const [form, setForm] = useState<PostForm>({
@@ -82,7 +85,13 @@ export default function BlogPostEditor({ editing, initialPost, tenantId, onSave,
         tone: draft.tone,
         word_count: draft.wordCount,
         business_name: biz.name || '',
-        business_city: biz.address || biz.city || '',
+        // S293 — was `biz.address || biz.city`: the whole postal address,
+        // handed to a prompt that says "mention the city naturally".
+        business_city: cityFromBusinessInfo(biz),
+        // …and the trade, so a pest tenant still gets pest copy and an
+        // unrecorded one gets none. Without this the prompt names no trade for
+        // anybody, which is the opposite mistake.
+        vertical,
         tenant_id: tenantId,
       })
       setForm(p => ({ ...p, title: result.title, slug: result.slug, excerpt: result.excerpt, content: result.content }))

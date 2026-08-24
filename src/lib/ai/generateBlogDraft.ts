@@ -1,4 +1,5 @@
 import { callAi } from './callAi'
+import { buildBlogDraftSystemPrompt } from './blogDraftPrompt'
 
 export interface BlogDraftInput {
   topic: string
@@ -6,6 +7,8 @@ export interface BlogDraftInput {
   word_count: number
   business_name: string
   business_city?: string
+  /** settings.business_info.vertical. NULL/absent => the prompt names no trade. */
+  vertical?: string | null
   tenant_id: string
 }
 
@@ -31,7 +34,11 @@ export async function generateBlogDraft(input: BlogDraftInput): Promise<BlogDraf
   const json = await callAi('blog_draft', {
       tenant_id: input.tenant_id,
       max_tokens: 3500,
-      system: `You are a content writer for a local pest control business. Write helpful, locally relevant, SEO-friendly blog posts. Output JSON ONLY (no markdown, no preamble) with title, slug (kebab-case), excerpt (1-2 sentences), content (clean HTML using h2/h3/p/ul/strong tags, no inline styles, no images). Target word_count ± 10%. Tone: ${input.tone}. Include the city naturally if provided.`,
+      system: buildBlogDraftSystemPrompt({
+        vertical: input.vertical,
+        tone: input.tone,
+        city: input.business_city,
+      }),
       messages: [{ role: 'user', content: userPrompt }],
   })
   const raw = json.content?.[0]?.text || '{}'

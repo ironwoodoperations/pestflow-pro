@@ -8,6 +8,8 @@ import { triggerRevalidate } from '../../lib/revalidate'
 import { syncServiceAreasJsonb } from '../../lib/service-areas/syncJsonbFromTable'
 import PageHelpBanner from './PageHelpBanner'
 import ConfirmDeleteModal from '../shared/ConfirmDeleteModal'
+import { buildServiceAreaHeroTitle } from '../../../supabase/functions/_shared/provisioningSeed'
+import { useAdminPreset } from '../../hooks/useAdminPreset'
 
 interface ServiceArea {
   id: string; city: string; slug: string; hero_title: string; intro: string
@@ -33,6 +35,7 @@ const LOCATION_CAPS: Record<number, number> = { 1: 3, 2: 5, 3: 10, 4: Infinity }
 
 export default function LocationsTab() {
   const { id: tenantId } = useTenant()
+  const { vertical } = useAdminPreset()
   const { tier } = usePlan()
   const [serviceAreas, setServiceAreas] = useState<ServiceArea[]>([])
   const [loading, setLoading] = useState(true)
@@ -73,7 +76,12 @@ export default function LocationsTab() {
   async function handleSave() {
     if (!tenantId || !form.city.trim()) { toast.error('City name is required.'); return }
     const slug = form.slug || toSlug(form.city)
-    const hero_title = form.hero_title || `${form.city} Pest Control`
+    // S293 — WRITTEN TO service_areas.hero_title and rendered on the public
+    // location page. It hardcoded "${city} Pest Control" for every tenant, so
+    // an irrigation tenant adding Hawkins got "Hawkins Pest Control" published.
+    // buildServiceAreaHeroTitle is S290's — already the tested source for this
+    // exact string, and it yields the city ALONE when the trade is unrecorded.
+    const hero_title = form.hero_title || buildServiceAreaHeroTitle(vertical, form.city)
     setSaving(true)
     const seoFields = { meta_title: form.meta_title || null, meta_description: form.meta_description || null, focus_keyword: form.focus_keyword || null }
     let writeOk = false
