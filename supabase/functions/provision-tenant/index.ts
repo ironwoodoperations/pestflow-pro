@@ -22,6 +22,7 @@
 // Deploy: supabase functions deploy provision-tenant --project-ref biezzykcgzkrwdgqpsar --no-verify-jwt
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { generateAuthorityPrompts } from '../_shared/authorityPrompts.ts'
 import { timingSafeEqual } from 'node:crypto'
 import { normalizeAll, buildJsonbProjection } from '../_shared/service-areas.ts'
 
@@ -826,6 +827,65 @@ export async function handler(req: Request): Promise<Response> {
           })
         }
         console.log(`[provision-tenant] seo.service_areas JSONB updated: ${saProjection.length} cities`)
+
+        // ── 9g: AI Authority prompts (S289) ──────────────────────────────────
+        // ai_authority_prompts had rows for ONE tenant. Nothing ever created
+        // them, so every other tenant's AI Authority ran and produced nothing.
+        //
+        // GATED ON A RECORDED VERTICAL, and that gate is load-bearing rather
+        // than defensive. This function does not write settings.business_info
+        // .vertical at all, and it seeds PEST page_content for every tenant
+        // regardless of trade (see 'Professional Pest Control' above). Deriving
+        // service phrases from those rows would hand an irrigation tenant a set
+        // of pest search queries — the exact defect S283/S285/S286 removed
+        // everywhere else. So until provisioning records a vertical and seeds
+        // the right pages, this seeds the branded query only, which is grounded
+        // in the tenant's own name and true of anyone.
+        //
+        // Failure here NEVER fails provisioning: a tenant without prompts is the
+        // status quo for all nine existing tenants.
+        try {
+          const { data: biForPrompts } = await supabase.from('settings').select('value')
+            .eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle()
+          const biVal = (biForPrompts?.value ?? {}) as Record<string, unknown>
+          const vertical = typeof biVal.vertical === 'string' ? biVal.vertical : null
+          const addr = typeof biVal.address === 'string' ? biVal.address : ''
+          const cityMatch = addr.match(/,\s*([^,]+),?\s*([A-Z]{2})\b/)
+
+          // Service slugs come from the tenant's OWN page_content rows, not from
+          // a hardcoded list — but only once a vertical says those rows are the
+          // right ones. Empty vertical => empty slugs => branded query only.
+          let serviceSlugs: string[] = []
+          if (vertical) {
+            const { data: pcRows } = await supabase.from('page_content')
+              .select('page_slug').eq('tenant_id', tenantId)
+            const PLATFORM = ['home', 'about', 'faq', 'contact', 'quote', 'privacy', 'terms', 'accessibility', 'sms-terms', 'blog', 'reviews', 'service-area']
+            serviceSlugs = (pcRows ?? []).map((r: { page_slug: string }) => r.page_slug)
+              .filter((sl: string) => PLATFORM.indexOf(sl) === -1)
+          }
+
+          const { data: saForPrompts } = await supabase.from('service_areas')
+            .select('city, state').eq('tenant_id', tenantId)
+
+          const prompts = generateAuthorityPrompts({
+            businessName: businessName || '',
+            city: cityMatch ? cityMatch[1].trim() : '',
+            state: cityMatch ? cityMatch[2].trim() : '',
+            serviceAreas: (saForPrompts ?? []) as Array<{ city: string; state: string | null }>,
+            serviceSlugs,
+          })
+
+          if (prompts.length > 0) {
+            const { error: apErr } = await supabase.from('ai_authority_prompts')
+              .insert(prompts.map((prompt_text) => ({ tenant_id: tenantId, prompt_text, active: true })))
+            if (apErr) console.error('[provision-tenant] ai_authority_prompts seed failed (non-fatal):', apErr.message)
+            else console.log(`[provision-tenant] ai_authority_prompts seeded: ${prompts.length} (vertical: ${vertical ?? 'unrecorded'})`)
+          } else {
+            console.log('[provision-tenant] ai_authority_prompts: nothing to seed (no name, no vertical, no locations)')
+          }
+        } catch (e) {
+          console.error('[provision-tenant] ai_authority_prompts seed threw (non-fatal):', (e as Error)?.message)
+        }
 
         // 9d: Seed 3 starter blog posts
         const postNow = new Date().toISOString()
