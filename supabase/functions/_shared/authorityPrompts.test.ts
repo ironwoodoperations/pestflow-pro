@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateAuthorityPrompts, DEFAULT_MAX_PROMPTS, isDemoTenant } from './authorityPrompts.ts';
+import { generateAuthorityPrompts, DEFAULT_MAX_PROMPTS, isDemoTenant, isOperatorTenant } from './authorityPrompts.ts';
 
 // S289 — every fixture below is REAL production data, read from the live DB, not
 // invented for the test. That matters twice over: the generator is shaped on
@@ -111,9 +111,24 @@ describe('pls — irrigation, no pest vocabulary anywhere', () => {
     expect(joined).toMatch(/drainage/);
   });
 
-  it('asks in the cities pls actually serves', () => {
+  // THIS TEST USED TO BE AN ALTERNATION — /Hawkins|Lindale|Longview|Tyler|Holly Lake Ranch/ —
+  // which passes when ANY ONE city appears. It was green while the output covered
+  // only Hawkins and Holly Lake Ranch and never mentioned Tyler or Longview,
+  // pls's largest markets. The name claimed coverage; the assertion checked
+  // presence. Every city is now required by name, individually.
+  it('asks in EVERY city pls actually serves — not merely one of them', () => {
     const joined = out.join(' | ');
-    expect(joined).toMatch(/Hawkins TX|Lindale TX|Longview TX|Tyler TX|Holly Lake Ranch TX/);
+    for (const city of ['Hawkins TX', 'Holly Lake Ranch TX', 'Lindale TX', 'Longview TX', 'Tyler TX']) {
+      expect(joined, `missing service area: ${city}`).toContain(city);
+    }
+  });
+
+  it('spends the budget breadth-first: no service repeats before every city is covered', () => {
+    // Five services x five locations is twenty-five pairs for ten slots. The
+    // first location sweep must finish before the second service starts.
+    const service = out.slice(1, 6);
+    expect(service.every((p) => p.includes('sprinkler systems'))).toBe(true);
+    expect(out[6]).toContain('drainage');
   });
 });
 
@@ -286,5 +301,43 @@ describe('demo tenants are excluded — and NULL is not a demo', () => {
     for (const v of ['true', 1, 'yes', {}]) {
       expect(isDemoTenant({ active: v }), JSON.stringify(v)).toBe(false);
     }
+  });
+});
+
+describe('the operator tenant is not a client — and is not identified by slug or UUID', () => {
+  const OP = '9215b06b-3eb5-49a1-a16e-7ff214bf6783';
+
+  it('flags the tenant that operator_tenant_id() names', () => {
+    expect(isOperatorTenant(OP, OP)).toBe(true);
+  });
+
+  it('does not flag a client tenant', () => {
+    expect(isOperatorTenant('1abd6f30-0bb0-4424-97aa-4e6d0a74c4cd', OP)).toBe(false);
+  });
+
+  it('tolerates the casing and padding a uuid can arrive in', () => {
+    expect(isOperatorTenant('  ' + OP.toUpperCase() + ' ', OP)).toBe(true);
+  });
+
+  // An unresolved operator id must not silently make every tenant "not the
+  // operator" at the call site. The predicate answers false, and the caller is
+  // required to treat an unresolved id as a skip — provision-tenant branches on
+  // the error BEFORE consulting this.
+  it('answers false when the operator id is unknown, rather than guessing', () => {
+    expect(isOperatorTenant(OP, null)).toBe(false);
+    expect(isOperatorTenant(OP, '')).toBe(false);
+    expect(isOperatorTenant(OP, undefined)).toBe(false);
+  });
+
+  it('answers false when the tenant id is missing', () => {
+    expect(isOperatorTenant('', OP)).toBe(false);
+    expect(isOperatorTenant(null, OP)).toBe(false);
+  });
+
+  // The operator tenant is NOT a demo — that is the whole point of a second
+  // gate. If demo exclusion alone were enough, the backfill would have seeded it.
+  it('is not caught by the demo predicate: pestflow-pro has demo_mode.active = false', () => {
+    expect(isDemoTenant({ active: false, seeded_at: '' })).toBe(false);
+    expect(isOperatorTenant(OP, OP)).toBe(true);
   });
 });

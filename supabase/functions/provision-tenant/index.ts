@@ -22,7 +22,7 @@
 // Deploy: supabase functions deploy provision-tenant --project-ref biezzykcgzkrwdgqpsar --no-verify-jwt
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { generateAuthorityPrompts, isDemoTenant } from '../_shared/authorityPrompts.ts'
+import { generateAuthorityPrompts, isDemoTenant, isOperatorTenant } from '../_shared/authorityPrompts.ts'
 import { timingSafeEqual } from 'node:crypto'
 import { normalizeAll, buildJsonbProjection } from '../_shared/service-areas.ts'
 
@@ -858,8 +858,32 @@ export async function handler(req: Request): Promise<Response> {
           const { data: demoRow } = await supabase.from('settings').select('value')
             .eq('tenant_id', tenantId).eq('key', 'demo_mode').maybeSingle()
           const isDemo = isDemoTenant(demoRow?.value)
-          if (isDemo) {
+
+          // OPERATOR GATE. This function is reachable with an existing
+          // body.tenant_id (Step 1's else-branch updates rather than creates),
+          // so re-provisioning the operator tenant is a real path, not a
+          // hypothetical one. The operator tenant is the PestFlow Pro product
+          // itself; its page_content is pest demo scaffolding, so seeding from
+          // it would have the platform tracking whether a SaaS product is the
+          // best pest control company in Tyler.
+          //
+          // The id is NOT hardcoded here. public.operator_tenant_id() (S273) is
+          // the platform's single declared answer, already gating
+          // provisioning_status RLS; deferring to it means a future change of
+          // operator tenant is a one-place change and this follows.
+          const { data: opId, error: opErr } = await supabase.rpc('operator_tenant_id')
+          const operatorTenantId = typeof opId === 'string' ? opId : null
+          const isOperator = isOperatorTenant(tenantId, operatorTenantId)
+
+          if (opErr || !operatorTenantId) {
+            // Unknown operator => cannot prove this tenant is not it. Skipping
+            // leaves the tenant in the state it is already in (no prompts);
+            // seeding anyway could write trade queries for the product itself.
+            console.error('[provision-tenant] ai_authority_prompts: SKIPPED — operator_tenant_id() unresolved:', opErr?.message ?? 'null')
+          } else if (isDemo) {
             console.log('[provision-tenant] ai_authority_prompts: skipped (demo tenant)')
+          } else if (isOperator) {
+            console.log('[provision-tenant] ai_authority_prompts: skipped (operator tenant)')
           } else {
 
           const { data: biForPrompts } = await supabase.from('settings').select('value')
@@ -881,8 +905,22 @@ export async function handler(req: Request): Promise<Response> {
               .filter((sl: string) => PLATFORM.indexOf(sl) === -1)
           }
 
+          // LIVE ROWS ONLY, and in a stable order.
+          //
+          // is_live: 9c-zip above seeds up to seven DRAFT cities (is_live=false)
+          // guessed from the zip prefix — a Tyler tenant gets Longview,
+          // Jacksonville, Lindale, Bullard and Whitehouse whether or not it
+          // works there. They exist so the client has pages ready to activate
+          // after the reveal call; they are not confirmed service areas, and
+          // paying live engines to track a tenant's ranking in a city it may
+          // not serve is the same defect as drawing the wrong cities for pls.
+          //
+          // order: PostgREST returns rows in no guaranteed order without one, so
+          // without this the generator's determinism (which the tests pin) would
+          // hold for its inputs while the inputs themselves varied per run.
           const { data: saForPrompts } = await supabase.from('service_areas')
-            .select('city, state').eq('tenant_id', tenantId)
+            .select('city, state').eq('tenant_id', tenantId).eq('is_live', true)
+            .order('city', { ascending: true })
 
           const prompts = generateAuthorityPrompts({
             businessName: businessName || '',
@@ -901,7 +939,7 @@ export async function handler(req: Request): Promise<Response> {
             console.log('[provision-tenant] ai_authority_prompts: nothing to seed (no name, no vertical, no locations)')
           }
 
-          } // end !isDemo
+          } // end gates: operator resolved, not demo, not operator
         } catch (e) {
           console.error('[provision-tenant] ai_authority_prompts seed threw (non-fatal):', (e as Error)?.message)
         }
