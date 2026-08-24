@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getVerticalCopy } from './verticalCopy';
+import { getVerticalCopy, resolveVerticalCopy } from './verticalCopy';
 import { VERTICALS } from './serviceEntry';
 
 // PR A — the preset registry. Pest values are the CURRENT production strings;
@@ -96,3 +96,41 @@ describe('registry / copy coverage is deliberate, not accidental', () => {
     expect(withCopy).toEqual(['pest', 'irrigation']);
   });
 });
+
+// ── S293 PR A ────────────────────────────────────────────────────────────────
+//
+// This block lives HERE, not in shared/lib/seoSchema.test.ts where it was first
+// written, because verticals.test.ts caught the import: shared/lib must never
+// depend on src/. The guard was right and the test moved rather than the guard
+// being relaxed — a test file is a real dependency edge.
+describe('S293 — the metadata description tail, same defect, same layout', () => {
+  // layout.tsx generateMetadata built its fallback from
+  // getVerticalCopy(resolveVertical(tenant)). vita-glow has vertical NULL and
+  // NO seo.meta_description, so the fallback FIRES and the indexable meta
+  // description read "…professional pest control services".
+  it('recorded verticals still resolve their own copy', () => {
+    expect(resolveVerticalCopy('pest')?.metadataFallbackDesc).toBe('professional pest control services')
+    expect(resolveVerticalCopy('irrigation')?.metadataFallbackDesc).toBe('professional irrigation and drainage services')
+  })
+
+  it('an unrecorded vertical resolves to NULL, so the caller omits the tail', () => {
+    for (const v of [null, undefined, '', 'Medical Aesthetics', 'lawn']) {
+      expect(resolveVerticalCopy(v as string | null | undefined), `for ${JSON.stringify(v)}`).toBeNull()
+    }
+  })
+
+  // The assembled string, not just the helper. A helper-only assertion passes
+  // while the string reaching the page is still wrong — settled practice here.
+  it('THE ASSEMBLED DESCRIPTION names no trade when none is recorded', () => {
+    const build = (vertical: string | null, businessName: string, stored?: string) => {
+      const copy = resolveVerticalCopy(vertical)
+      return stored || (copy ? `${businessName} — ${copy.metadataFallbackDesc}` : businessName)
+    }
+    expect(build(null, 'Vita Glow Wellness')).toBe('Vita Glow Wellness')
+    expect(build(null, 'Vita Glow Wellness')).not.toMatch(/pest/i)
+    expect(build('pest', 'Dang Pest Control')).toBe('Dang Pest Control — professional pest control services')
+    expect(build('irrigation', 'PLS')).toBe('PLS — professional irrigation and drainage services')
+    // a stored description always wins, for every vertical
+    expect(build(null, 'Vita Glow Wellness', 'Real copy.')).toBe('Real copy.')
+  })
+})
