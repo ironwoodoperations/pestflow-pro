@@ -58,7 +58,35 @@ const FABRICATED_STAT = /most customers|thousands of (properties|customers|homes
 // would make this unreliable. A genuine tenant figure lives in settings.about
 // and never appears as a source literal, so a literal of this shape inside a
 // component is hardcoded by definition.
-const HARDCODED_STAT_PAIR = /['"`]\s*(?:\d{1,3}(?:,\d{3})+\+?|\d+\s*[+%])\s*['"`]\s*,\s*label\s*:/i;
+// S287 — REBUILT. The version above shipped with two holes the S281 handoff
+// named and the next six PRs relied on anyway:
+//
+//   PER-LINE. `\s*` matches newlines, but the scan applied the pattern one line
+//   at a time, so the multi-line form of this exact shape passed untouched. The
+//   scan now runs over the whole file text (see scanText) and derives the line
+//   number from the match offset.
+//
+//   ONE LITERAL KEY. It required the sibling key to be spelled `label`, so
+//   `title`, `name`, and the two keys in reverse order all sailed through.
+//
+// Composed from parts rather than written as one literal, because the number
+// rule and the key rule are separate ideas and the alternation is long enough
+// that a single inline regex stops being reviewable.
+const STAT_NUM = String.raw`(?:\d{1,3}(?:,\d{3})+\+?|\d+\s*[+%])`;
+
+// The sibling that turns a number into a STAT TILE. Deliberately a closed list:
+// an open one (`\w+`) would match every `{ '100%', height: ... }` in a style
+// object. Extend it when a real tile uses a new key, not pre-emptively.
+const TILE_KEY = String.raw`(?:label|title|name|caption|heading)`;
+
+// Two orders, because a stat tile is a stat tile either way round:
+//   A  { num: '4,200+', label: 'Customers' }   number first
+//   B  { label: 'Customers', num: '4,200+' }   key first
+const HARDCODED_STAT_PAIR = new RegExp(
+  `['"\`]\\s*${STAT_NUM}\\s*['"\`]\\s*,\\s*${TILE_KEY}\\s*:`
+  + `|${TILE_KEY}\\s*:\\s*['"\`][^'"\`]*['"\`]\\s*,\\s*[A-Za-z_$][\\w$]*\\s*:\\s*['"\`]\\s*${STAT_NUM}\\s*['"\`]`,
+  'i',
+);
 
 const CLASSES = [
   { name: 'capacity / terms promise', pattern: CAPACITY_OR_TERMS },
@@ -127,6 +155,62 @@ export function stripComments(src: string): string {
   return out;
 }
 
+
+// S287 — the scan, factored out so the tests exercise the SAME code path the
+// file walk uses. Until this PR the walk applied each pattern line by line, and
+// this helper reproduces that exactly; the fix below changes both at once.
+export function scanText(pattern: RegExp, body: string): boolean {
+  return findOffenders(pattern, body).length > 0;
+}
+
+/**
+ * Every match of `pattern` in `body`, as {line, text} — scanning the WHOLE text.
+ *
+ * The per-line loop this replaces was the entire bug: a pattern whose `\s*`
+ * happily spans newlines was only ever shown one line at a time. Line numbers
+ * now come from the match OFFSET, so reporting is unchanged while matching is
+ * no longer bounded by where someone happened to press Enter.
+ */
+export function findOffenders(pattern: RegExp, body: string): Array<{ line: number; text: string }> {
+  const src = stripComments(body);
+  const re = new RegExp(pattern.source, pattern.flags.indexOf('g') === -1 ? pattern.flags + 'g' : pattern.flags);
+  const out: Array<{ line: number; text: string }> = [];
+  let m: RegExpExecArray | null = re.exec(src);
+  while (m !== null) {
+    const line = src.slice(0, m.index).split('\n').length;
+    // Report the whole match, newlines flattened, so a multi-line hit is legible
+    // in one row of output.
+    out.push({ line, text: m[0].replace(/\s+/g, ' ').trim().slice(0, 160) });
+    if (m.index === re.lastIndex) re.lastIndex += 1;   // zero-width safety
+    m = re.exec(src);
+  }
+  return out;
+}
+
+/**
+ * The whole scan: files in, `path:line  text` out.
+ *
+ * `read` is injectable for ONE reason. The repo currently has zero offenders,
+ * so the scan passes whether or not it actually inspects anything — deleting
+ * its body was, until this seam existed, undetectable by its own test. That is
+ * the vacuity trap this arc keeps re-learning: a guard that cannot fail is not
+ * evidence. Injecting a reader lets a test hand the walk a known-bad file and
+ * assert it reports the right path and line, with no fixture on disk.
+ */
+export function scanFiles(
+  files: string[],
+  pattern: RegExp,
+  read: (file: string) => string = (file) => readFileSync(file, 'utf8'),
+): string[] {
+  const out: string[] = [];
+  for (const file of files) {
+    for (const hit of findOffenders(pattern, read(file))) {
+      out.push(`${relative(REPO_ROOT, file).split(sep).join('/')}:${hit.line}  ${hit.text}`);
+    }
+  }
+  return out;
+}
+
 const FILES: string[] = SCAN_ROOTS.reduce<string[]>(
   (acc, root) => walk(join(REPO_ROOT, root), acc),
   [],
@@ -141,15 +225,8 @@ describe('repo-wide guard: no unverified claims in source', () => {
     it(`no file contains a ${name}`, () => {
       const offenders: string[] = [];
 
-      for (const file of FILES) {
-        const body = stripComments(readFileSync(file, 'utf8'));
-        const lines = body.split('\n');
-        for (let n = 0; n < lines.length; n += 1) {
-          if (pattern.test(lines[n])) {
-            offenders.push(`${relative(REPO_ROOT, file).split(sep).join('/')}:${n + 1}  ${lines[n].trim().slice(0, 160)}`);
-          }
-        }
-      }
+      const offendersFound = scanFiles(FILES, pattern);
+      offenders.push(...offendersFound);
 
       expect(offenders, `\n${offenders.join('\n')}\n`).toEqual([]);
     });
@@ -257,5 +334,116 @@ describe('the comment stripper is string-aware', () => {
   it('keeps a claim that lives inside a string containing an apostrophe escape', () => {
     const src = `const s = 'it\\'s same-day';`;
     expect(stripComments(src)).toMatch(/same-day/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// S287 — THE GUARD'S OWN BLIND SPOT.
+//
+// The S281 handoff named this precisely and told the next session to fix it.
+// Six PRs later it was still here, and every claim sweep since has leaned on a
+// guard with a known hole. These four cases are that hole, reproduced.
+//
+//   1. MULTI-LINE. `\s` in the pattern matches newlines perfectly well — it is
+//      the per-LINE loop that defeats it. One Prettier reflow of a stat tile and
+//      the guard goes silent on the exact shape it exists to catch.
+//   2-4. SIBLING KEY. The pattern required the next key to be literally `label`.
+//      `title`, `name`, and the two keys in reverse order all sailed through.
+// ---------------------------------------------------------------------------
+
+describe('S287 — the stat-pair guard catches every form of its own shape', () => {
+  const VARIANTS: Array<[string, string]> = [
+    ['multi-line, the exact shape PR F removed', `
+      {
+        num: '4,200+',
+        label: 'Customers',
+      },
+    `],
+    ['sibling key is `title`', `{ num: '4,200+', title: 'Customers' },`],
+    ['sibling key is `name`', `{ num: '12,000+', name: 'Treatments' },`],
+    ['keys reversed', `{ label: 'Customers', num: '4,200+' },`],
+    ['multi-line AND reversed AND `title`', `
+      {
+        title: 'Homes Protected',
+        count: '4,200+',
+      },
+    `],
+  ];
+
+  for (const [name, src] of VARIANTS) {
+    it(`catches: ${name}`, () => {
+      expect(scanText(HARDCODED_STAT_PAIR, src)).toBe(true);
+    });
+  }
+});
+
+describe('S287 — and does NOT fire on ordinary multi-line objects', () => {
+  const ALLOWED: Array<[string, string]> = [
+    ['an ordinal step tile', `
+      {
+        num: '01',
+        label: 'Step one',
+      },
+    `],
+    ['a DB-driven tile with no literal', `
+      {
+        num: s.value,
+        label: s.label,
+      },
+    `],
+    ['an unquoted numeric config field', `
+      {
+        maxTokens: 1000,
+        label: 'Promotion',
+      },
+    `],
+    ['a plain small integer in quotes', `{ num: '4', label: 'Steps' },`],
+    ['a label with a number in its TEXT, not its value slot', `
+      {
+        label: '4,200+ served',
+      },
+    `],
+  ];
+
+  for (const [name, src] of ALLOWED) {
+    it(`does not fire on: ${name}`, () => {
+      expect(scanText(HARDCODED_STAT_PAIR, src)).toBe(false);
+    });
+  }
+});
+
+describe('S287 — the SCAN itself is not vacuous', () => {
+  // The repo has zero offenders, so "no file contains X" passes even if the walk
+  // inspects nothing at all. These hand it a known-bad file and check it reports.
+  const PLANTED = `
+const STRIP = [
+  {
+    num: '4,200+',
+    label: 'Customers',
+  },
+];
+`;
+
+  it('reports a planted multi-line offender, with path and line', () => {
+    const hits = scanFiles([join(REPO_ROOT, 'app', 'tenant', 'Planted.tsx')], HARDCODED_STAT_PAIR, () => PLANTED);
+    expect(hits).toHaveLength(1);
+    expect(hits[0]).toContain('app/tenant/Planted.tsx:');
+    expect(hits[0]).toContain('4,200+');
+  });
+
+  it('derives the line number from the match offset, not from the loop index', () => {
+    const hits = scanFiles([join(REPO_ROOT, 'app', 'tenant', 'Planted.tsx')], HARDCODED_STAT_PAIR, () => PLANTED);
+    // The quoted number sits on line 4 of PLANTED (leading newline, const, {, num).
+    expect(hits[0]).toMatch(/Planted\.tsx:4\b/);
+  });
+
+  it('reports nothing for a clean file', () => {
+    expect(scanFiles([join(REPO_ROOT, 'app', 'tenant', 'Clean.tsx')], HARDCODED_STAT_PAIR,
+      () => "const S = [{ num: s.value, label: s.label }];")).toEqual([]);
+  });
+
+  it('the real walk is wired to this function — FILES is non-empty and readable', () => {
+    expect(FILES.length).toBeGreaterThan(100);
+    expect(scanFiles(FILES.slice(0, 3), /THIS_STRING_APPEARS_NOWHERE_XYZZY/)).toEqual([]);
   });
 });
