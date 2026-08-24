@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { formatPhone } from '../../../../shared/lib/formatPhone';
+import { ServiceAreaMap } from './ServiceAreaMap';
+import type { ServiceAreaRow, StoredServiceAreaMap } from '../../../../shared/lib/serviceAreaMap';
 
-type Location = { city: string; state?: string | null; slug: string };
+type Location = { city: string; state?: string | null; slug: string } & ServiceAreaRow;
 
 interface Props {
   heroTitle: string;
@@ -9,6 +11,8 @@ interface Props {
   locations: Location[];
   phone: string;
   businessName: string;
+  /** settings.service_area_map, or null when no image has been generated. */
+  storedMap?: StoredServiceAreaMap | null;
 }
 
 const PinIcon = () => (
@@ -23,7 +27,7 @@ function locationLabel(loc: Location) {
   return state ? `${loc.city}, ${state}` : loc.city;
 }
 
-export function ServiceAreaPage({ heroTitle, heroSub, locations, phone, businessName }: Props) {
+export function ServiceAreaPage({ heroTitle, heroSub, locations, phone, businessName, storedMap = null }: Props) {
   return (
     <div style={{ backgroundColor: 'var(--color-bg-section)' }}>
       {/* Hero */}
@@ -41,22 +45,11 @@ export function ServiceAreaPage({ heroTitle, heroSub, locations, phone, business
         </div>
       </section>
 
-      {/* Map */}
-      <section className="py-12 px-6" style={{ backgroundColor: 'var(--color-bg-section)' }}>
-        <div className="max-w-5xl mx-auto">
-          <div
-            className="rounded-xl overflow-hidden border"
-            style={{ borderColor: 'color-mix(in srgb, var(--color-heading) 12%, transparent)', backgroundColor: 'color-mix(in srgb, var(--color-bg-section) 92%, var(--color-heading) 8%)' }}
-          >
-            <img
-              src="/demo-coverage-map.svg"
-              alt={`${businessName} service area`}
-              loading="lazy"
-              style={{ display: 'block', width: '100%', height: 'auto' }}
-            />
-          </div>
-        </div>
-      </section>
+      {/* Map. S293C — was a hardcoded /demo-coverage-map.svg: an abstract blob
+          with dashed lines, shown to EVERY tenant as their coverage area. It
+          depicted a territory none of them has. It renders their own cities
+          now, or nothing at all. */}
+      <ServiceAreaMap areas={locations} stored={storedMap} businessName={businessName} />
 
       {/* City card grid */}
       <section className="pb-16 px-6" style={{ backgroundColor: 'var(--color-bg-section)' }}>

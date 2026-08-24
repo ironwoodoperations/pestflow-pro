@@ -6,6 +6,7 @@ import { useTenant } from '../../context/TenantBootProvider'
 import { usePlan } from '../../context/PlanContext'
 import { triggerRevalidate } from '../../lib/revalidate'
 import { syncServiceAreasJsonb } from '../../lib/service-areas/syncJsonbFromTable'
+import { refreshServiceAreaMap, refreshMessage } from '../../lib/service-areas/refreshServiceAreaMap'
 import PageHelpBanner from './PageHelpBanner'
 import ConfirmDeleteModal from '../shared/ConfirmDeleteModal'
 import { buildServiceAreaHeroTitle } from '../../../supabase/functions/_shared/provisioningSeed'
@@ -73,6 +74,16 @@ export default function LocationsTab() {
     setEditingId(loc.id); setModalOpen(true)
   }
 
+  // S293C — the city set changed, so the stored map image no longer depicts it.
+  // Called from ALL THREE mutation paths (save, delete, toggle live); a path
+  // that skipped it would leave a map whose revision no longer matches, and the
+  // page would then render no map at all until the next save.
+  async function regenerateMap() {
+    const result = await refreshServiceAreaMap(supabase, tenantId)
+    const message = refreshMessage(result)
+    if (message) toast[result.ok ? 'warning' : 'error'](message)
+  }
+
   async function handleSave() {
     if (!tenantId || !form.city.trim()) { toast.error('City name is required.'); return }
     const slug = form.slug || toSlug(form.city)
@@ -98,6 +109,7 @@ export default function LocationsTab() {
     if (writeOk) {
       const syncErr = await syncServiceAreasJsonb(supabase, tenantId)
       if (syncErr) toast.error(`JSONB sync failed: ${syncErr}`)
+      await regenerateMap()
       const { data: s } = await supabase.auth.getSession()
       if (s.session?.access_token && tenantId) await triggerRevalidate({ type: 'locations', tenantId }, s.session.access_token)
     }
@@ -112,6 +124,7 @@ export default function LocationsTab() {
     const syncErr = await syncServiceAreasJsonb(supabase, tenantId!)
     if (syncErr) toast.error(`JSONB sync failed: ${syncErr}`)
     fetchServiceAreas()
+    await regenerateMap()
     const { data: s } = await supabase.auth.getSession()
     if (s.session?.access_token && tenantId) await triggerRevalidate({ type: 'locations', tenantId }, s.session.access_token)
   }
@@ -122,6 +135,7 @@ export default function LocationsTab() {
     setServiceAreas(prev => prev.map(x => x.id === loc.id ? { ...x, is_live: !x.is_live } : x))
     const syncErr = await syncServiceAreasJsonb(supabase, tenantId!)
     if (syncErr) toast.error(`JSONB sync failed: ${syncErr}`)
+    await regenerateMap()
     const { data: s } = await supabase.auth.getSession()
     if (s.session?.access_token && tenantId) await triggerRevalidate({ type: 'locations', tenantId }, s.session.access_token)
   }
