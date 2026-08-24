@@ -31,10 +31,18 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   - src/hooks/useAdminPreset.ts
   - src/lib/__tests__/adminVerticalPreset.test.ts
   - src/lib/adminVerticalPreset.ts
-- Next recommended action: DEPLOY `generate-monthly-report` (S283, merged in #277
-  but NOT deployed — production still narrates every tenant as "a pest-control
-  business owner", and the monthly-report-dispatch cron fires on the 10th).
-  Deploy via MCP, then verify with `get_edge_function`; `verify_jwt: false` must
-  survive. After that: the ComposerTemplates fabricated-offer prompts — eleven
-  across five template sets in `src/components/admin/social/composerTemplateSets.ts`,
-  reported in full in PR #280, rule (b) class, deliberately out of S285's scope.
+- Next recommended action: the ComposerTemplates FABRICATED-OFFER prompts —
+  eleven across five template sets in
+  `src/components/admin/social/composerTemplateSets.ts`, rule (b), the THIRD
+  location after S280's public-site sweep and S283's ContentTab prompt. They do
+  not merely permit invented claims, they instruct them: free inspections,
+  limited-time discounts, free estimates. `rf8` is the sharpest — "recent storms
+  can cause hidden roof damage — get inspected" asserts a weather event actually
+  occurred. Reported in full with file:line in PR #280; deliberately out of
+  S285's scope because the flow is user-initiated rather than automatic.
+
+  NOTE for the record: generate-monthly-report (S283, #277) IS deployed —
+  version 11, ACTIVE, verify_jwt:false, confirmed via get_edge_function; the
+  live source carries buildNarrationSystemPrompt(vertical) and the neutral
+  fallback. Earlier session notes claiming it was merged-but-not-deployed were
+  wrong.

@@ -4,7 +4,7 @@ import { join, dirname, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   ADMIN_PRESETS, NEUTRAL_ADMIN_PRESET, PLATFORM_PAGE_SLUGS,
-  getAdminPreset, isAdminVertical, standardPageSlugs, isServicePageSlug,
+  getAdminPreset, isAdminVertical, standardPageSlugs, isServicePageSlug, partitionPageSlugs,
 } from '../adminVerticalPreset';
 
 // S285 — the admin label preset. Pure data plus four pure functions, so this is
@@ -235,5 +235,82 @@ describe('one source of truth for service slugs (admin surfaces)', () => {
     const body = readFileSync(join(REPO_ROOT, PRESET_REL), 'utf8');
     const total = body.split('\n').reduce((n, l) => n + (l.match(PEST_SLUG) || []).length, 0);
     expect(total).toBeGreaterThanOrEqual(10);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// S285 follow-up — the ContentTab sidebar race.
+//
+// page_content and the vertical lookup are two independent queries with no
+// ordering between them. ContentTab's slug effect has deps [tenantId], so it
+// runs ONCE; if it computed the standard/custom split at that moment and the
+// vertical had not landed yet, the split was made against NEUTRAL — whose
+// servicePageSlugs is [] — and never recomputed. Every service page ended up in
+// BOTH groups once the vertical arrived, rendering twice in the sidebar.
+//
+// The fix is to derive, so these assert the invariant across the whole
+// resolution sequence rather than at one instant.
+// ---------------------------------------------------------------------------
+
+describe('sidebar partition survives the vertical resolving late', () => {
+  // pls's real page_content rows: five service pages plus the platform pages
+  // it actually has.
+  const PLS_ROWS = [
+    'home', 'about', 'faq', 'quote', 'privacy', 'terms', 'accessibility', 'sms-terms',
+    'sprinkler-systems', 'drainage', 'pump-systems', 'sod-dirt-work', 'retaining-walls',
+  ];
+
+  // Every state ContentTab passes through: NEUTRAL while unresolved, then the
+  // real vertical.
+  const SEQUENCE: Array<string | null> = [null, 'irrigation'];
+
+  it('never puts a slug in both groups, at any point in the sequence', () => {
+    for (const vertical of SEQUENCE) {
+      const { standard, custom } = partitionPageSlugs(vertical, PLS_ROWS);
+      const both = standard.filter((s) => custom.indexOf(s) !== -1);
+      expect(both, `vertical=${String(vertical)} — rendered twice: ${both.join(', ')}`).toEqual([]);
+    }
+  });
+
+  it('renders every stored slug exactly once, in every state', () => {
+    for (const vertical of SEQUENCE) {
+      const { standard, custom } = partitionPageSlugs(vertical, PLS_ROWS);
+      for (const slug of PLS_ROWS) {
+        const n = standard.filter((s) => s === slug).length + custom.filter((s) => s === slug).length;
+        expect(n, `${slug} rendered ${n}x at vertical=${String(vertical)}`).toBe(1);
+      }
+    }
+  });
+
+  it('moves the service pages from custom to standard as the vertical lands', () => {
+    const before = partitionPageSlugs(null, PLS_ROWS);
+    const after = partitionPageSlugs('irrigation', PLS_ROWS);
+    // Unresolved: no vertical, so the service pages are custom — correct, and
+    // the reason a snapshot taken here is poison.
+    expect(before.custom).toEqual(ADMIN_PRESETS.irrigation.servicePageSlugs);
+    // Resolved: they are standard, and nothing is custom.
+    expect(after.custom).toEqual([]);
+    for (const slug of ADMIN_PRESETS.irrigation.servicePageSlugs) {
+      expect(after.standard).toContain(slug);
+    }
+  });
+
+  it('a legacy tenant-specific slug stays custom in both states', () => {
+    const rows = [...PLS_ROWS, 'wasp-control'];
+    for (const vertical of ['pest', 'irrigation', null]) {
+      expect(partitionPageSlugs(vertical, rows).custom).toContain('wasp-control');
+    }
+  });
+
+  // NOT VACUOUS. This models the shape main shipped — split once, at fetch time,
+  // against the still-unresolved preset — and shows it produces exactly the
+  // duplicates the assertions above forbid. Without this, those assertions
+  // would pass against a derivation that could never fail and prove nothing.
+  it('the OLD shape — snapshot the split while unresolved — does render duplicates', () => {
+    const snapshotCustom = partitionPageSlugs(null, PLS_ROWS).custom;   // taken early, then frozen
+    const laterStandard = partitionPageSlugs('irrigation', PLS_ROWS).standard;
+    const both = laterStandard.filter((s) => snapshotCustom.indexOf(s) !== -1);
+    expect(both).toEqual(ADMIN_PRESETS.irrigation.servicePageSlugs);
+    expect(both).toHaveLength(5);
   });
 });

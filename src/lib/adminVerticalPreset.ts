@@ -196,3 +196,20 @@ export function standardPageSlugs(vertical: string | null | undefined): string[]
 export function isServicePageSlug(vertical: string | null | undefined, slug: string): boolean {
   return getAdminPreset(vertical).servicePageSlugs.indexOf(slug) !== -1;
 }
+
+/**
+ * Split a tenant's stored page_content slugs into the sidebar's two groups.
+ *
+ * Exists because ContentTab must NOT snapshot this split. The page_content query
+ * and the vertical lookup race; deriving on every render keeps the two groups
+ * consistent with whatever the vertical currently is, so no slug can appear in
+ * both — which is what happened when the split was computed once, at fetch time,
+ * against a still-NEUTRAL preset.
+ */
+export function partitionPageSlugs(
+  vertical: string | null | undefined,
+  allSlugs: string[],
+): { standard: string[]; custom: string[] } {
+  const standard = standardPageSlugs(vertical);
+  return { standard, custom: allSlugs.filter((s) => standard.indexOf(s) === -1) };
+}

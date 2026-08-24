@@ -11,7 +11,7 @@ import FaqTab from './FaqTab'
 import { callAi } from '../../lib/ai/callAi'
 import { buildContentPrompt } from './contentPrompt'
 import { useAdminPreset } from '../../hooks/useAdminPreset'
-import { standardPageSlugs, isServicePageSlug } from '../../lib/adminVerticalPreset'
+import { partitionPageSlugs, isServicePageSlug } from '../../lib/adminVerticalPreset'
 
 
 const toSlug = (title: string) =>
@@ -26,7 +26,6 @@ export default function ContentTab() {
   // S285 — the page-slug lists now come from the tenant's vertical. Two of the
   // four hardcoded pest slug arrays in the admin lived here and are gone.
   const { preset, vertical } = useAdminPreset()
-  const standardSlugs = standardPageSlugs(vertical)
   const [selectedSlug, setSelectedSlug] = useState('home')
   const [form, setForm] = useState<ContentForm>(EMPTY_FORM)
   const [loading, setLoading] = useState(true)
@@ -36,13 +35,27 @@ export default function ContentTab() {
   const [businessCity, setBusinessCity] = useState('')
   const [reverting, setReverting] = useState(false)
   const [heroHeadline, setHeroHeadline] = useState('')
-  const [customSlugs, setCustomSlugs] = useState<string[]>([])
+  // Every page_slug in page_content, exactly as stored. NOT pre-filtered — see
+  // the effect below.
+  const [allSlugs, setAllSlugs] = useState<string[]>([])
   const [showNewPage, setShowNewPage] = useState(false)
   const [newPageForm, setNewPageForm] = useState({ title: '', slug: '' })
   const [creatingPage, setCreatingPage] = useState(false)
   const [applyHeroToAllPages, setApplyHeroToAllPages] = useState(false)
 
-  // Load custom (non-standard) page slugs from DB
+  // Load every page slug this tenant has. Stores the RAW list and derives the
+  // custom ones below, rather than filtering here.
+  //
+  // Filtering inside the effect was a race. The effect's deps are [tenantId],
+  // but the filter read standardSlugs, which changes when useAdminPreset
+  // resolves the vertical. Those two queries race, and when page_content won,
+  // standardSlugs was still NEUTRAL — servicePageSlugs: [] — so every service
+  // page was classified custom and the effect never re-ran to correct it. Once
+  // the vertical landed, each service page rendered TWICE in the sidebar: once
+  // as a standard page, once under "Custom Pages".
+  //
+  // Deriving fixes it without adding standardSlugs to the deps, which would
+  // re-issue the query on every vertical resolution for no new data.
   useEffect(() => {
     if (!tenantId) return
     supabase
@@ -51,10 +64,14 @@ export default function ContentTab() {
       .eq('tenant_id', tenantId)
       .then(({ data }) => {
         if (!data) return
-        const extras = data.map(r => r.page_slug).filter(s => !standardSlugs.includes(s))
-        setCustomSlugs(extras)
+        setAllSlugs(data.map(r => r.page_slug))
       })
   }, [tenantId])
+
+  // Derived on every render, so both groups are always consistent with whatever
+  // the vertical is RIGHT NOW. No slug can appear in both at any point in the
+  // resolution — asserted in adminVerticalPreset.test.ts.
+  const { standard: standardSlugs, custom: customSlugs } = partitionPageSlugs(vertical, allSlugs)
 
   // Load business info + customization + hero flag once
   useEffect(() => {
@@ -113,7 +130,7 @@ export default function ContentTab() {
       intro: '',
     })
     if (error) { toast.error(`Failed to create page: ${error.message}`); setCreatingPage(false); return }
-    setCustomSlugs(prev => [...prev, slug])
+    setAllSlugs(prev => [...prev, slug])
     setSelectedSlug(slug)
     setShowNewPage(false)
     setNewPageForm({ title: '', slug: '' })
