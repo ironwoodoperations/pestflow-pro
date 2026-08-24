@@ -22,6 +22,7 @@
 // Deploy: supabase functions deploy provision-tenant --project-ref biezzykcgzkrwdgqpsar --no-verify-jwt
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { generateAuthorityPrompts, isDemoTenant, isOperatorTenant } from '../_shared/authorityPrompts.ts'
 import { timingSafeEqual } from 'node:crypto'
 import { normalizeAll, buildJsonbProjection } from '../_shared/service-areas.ts'
 
@@ -826,6 +827,122 @@ export async function handler(req: Request): Promise<Response> {
           })
         }
         console.log(`[provision-tenant] seo.service_areas JSONB updated: ${saProjection.length} cities`)
+
+        // ── 9g: AI Authority prompts (S289) ──────────────────────────────────
+        // ai_authority_prompts had rows for ONE tenant. Nothing ever created
+        // them, so every other tenant's AI Authority ran and produced nothing.
+        //
+        // GATED ON A RECORDED VERTICAL, and that gate is load-bearing rather
+        // than defensive. This function does not write settings.business_info
+        // .vertical at all, and it seeds PEST page_content for every tenant
+        // regardless of trade (see 'Professional Pest Control' above). Deriving
+        // service phrases from those rows would hand an irrigation tenant a set
+        // of pest search queries — the exact defect S283/S285/S286 removed
+        // everywhere else. So until provisioning records a vertical and seeds
+        // the right pages, this seeds the branded query only, which is grounded
+        // in the tenant's own name and true of anyone.
+        //
+        // Failure here NEVER fails provisioning: a tenant without prompts is the
+        // status quo for all nine existing tenants.
+        try {
+          // DEMO TENANTS ARE SKIPPED. Five of the nine live tenants are invented
+          // businesses with no domain; AI Authority for them pays engines to
+          // search the live web for a company that does not exist, and writes
+          // confirmed-zero snapshot rows that would skew any cross-tenant
+          // average. Provisioning creates demo tenants too, so without this gate
+          // the next demo set recreates the problem.
+          //
+          // `!== true`, NOT `=== false`: one live tenant's demo_mode row has
+          // active = NULL. Testing for false would skip a REAL tenant silently —
+          // the same NULL trap as `vertical`.
+          const { data: demoRow } = await supabase.from('settings').select('value')
+            .eq('tenant_id', tenantId).eq('key', 'demo_mode').maybeSingle()
+          const isDemo = isDemoTenant(demoRow?.value)
+
+          // OPERATOR GATE. This function is reachable with an existing
+          // body.tenant_id (Step 1's else-branch updates rather than creates),
+          // so re-provisioning the operator tenant is a real path, not a
+          // hypothetical one. The operator tenant is the PestFlow Pro product
+          // itself; its page_content is pest demo scaffolding, so seeding from
+          // it would have the platform tracking whether a SaaS product is the
+          // best pest control company in Tyler.
+          //
+          // The id is NOT hardcoded here. public.operator_tenant_id() (S273) is
+          // the platform's single declared answer, already gating
+          // provisioning_status RLS; deferring to it means a future change of
+          // operator tenant is a one-place change and this follows.
+          const { data: opId, error: opErr } = await supabase.rpc('operator_tenant_id')
+          const operatorTenantId = typeof opId === 'string' ? opId : null
+          const isOperator = isOperatorTenant(tenantId, operatorTenantId)
+
+          if (opErr || !operatorTenantId) {
+            // Unknown operator => cannot prove this tenant is not it. Skipping
+            // leaves the tenant in the state it is already in (no prompts);
+            // seeding anyway could write trade queries for the product itself.
+            console.error('[provision-tenant] ai_authority_prompts: SKIPPED — operator_tenant_id() unresolved:', opErr?.message ?? 'null')
+          } else if (isDemo) {
+            console.log('[provision-tenant] ai_authority_prompts: skipped (demo tenant)')
+          } else if (isOperator) {
+            console.log('[provision-tenant] ai_authority_prompts: skipped (operator tenant)')
+          } else {
+
+          const { data: biForPrompts } = await supabase.from('settings').select('value')
+            .eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle()
+          const biVal = (biForPrompts?.value ?? {}) as Record<string, unknown>
+          const vertical = typeof biVal.vertical === 'string' ? biVal.vertical : null
+          const addr = typeof biVal.address === 'string' ? biVal.address : ''
+          const cityMatch = addr.match(/,\s*([^,]+),?\s*([A-Z]{2})\b/)
+
+          // Service slugs come from the tenant's OWN page_content rows, not from
+          // a hardcoded list — but only once a vertical says those rows are the
+          // right ones. Empty vertical => empty slugs => branded query only.
+          let serviceSlugs: string[] = []
+          if (vertical) {
+            const { data: pcRows } = await supabase.from('page_content')
+              .select('page_slug').eq('tenant_id', tenantId)
+            const PLATFORM = ['home', 'about', 'faq', 'contact', 'quote', 'privacy', 'terms', 'accessibility', 'sms-terms', 'blog', 'reviews', 'service-area']
+            serviceSlugs = (pcRows ?? []).map((r: { page_slug: string }) => r.page_slug)
+              .filter((sl: string) => PLATFORM.indexOf(sl) === -1)
+          }
+
+          // LIVE ROWS ONLY, and in a stable order.
+          //
+          // is_live: 9c-zip above seeds up to seven DRAFT cities (is_live=false)
+          // guessed from the zip prefix — a Tyler tenant gets Longview,
+          // Jacksonville, Lindale, Bullard and Whitehouse whether or not it
+          // works there. They exist so the client has pages ready to activate
+          // after the reveal call; they are not confirmed service areas, and
+          // paying live engines to track a tenant's ranking in a city it may
+          // not serve is the same defect as drawing the wrong cities for pls.
+          //
+          // order: PostgREST returns rows in no guaranteed order without one, so
+          // without this the generator's determinism (which the tests pin) would
+          // hold for its inputs while the inputs themselves varied per run.
+          const { data: saForPrompts } = await supabase.from('service_areas')
+            .select('city, state').eq('tenant_id', tenantId).eq('is_live', true)
+            .order('city', { ascending: true })
+
+          const prompts = generateAuthorityPrompts({
+            businessName: businessName || '',
+            city: cityMatch ? cityMatch[1].trim() : '',
+            state: cityMatch ? cityMatch[2].trim() : '',
+            serviceAreas: (saForPrompts ?? []) as Array<{ city: string; state: string | null }>,
+            serviceSlugs,
+          })
+
+          if (prompts.length > 0) {
+            const { error: apErr } = await supabase.from('ai_authority_prompts')
+              .insert(prompts.map((prompt_text) => ({ tenant_id: tenantId, prompt_text, active: true })))
+            if (apErr) console.error('[provision-tenant] ai_authority_prompts seed failed (non-fatal):', apErr.message)
+            else console.log(`[provision-tenant] ai_authority_prompts seeded: ${prompts.length} (vertical: ${vertical ?? 'unrecorded'})`)
+          } else {
+            console.log('[provision-tenant] ai_authority_prompts: nothing to seed (no name, no vertical, no locations)')
+          }
+
+          } // end gates: operator resolved, not demo, not operator
+        } catch (e) {
+          console.error('[provision-tenant] ai_authority_prompts seed threw (non-fatal):', (e as Error)?.message)
+        }
 
         // 9d: Seed 3 starter blog posts
         const postNow = new Date().toISOString()
