@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { PLATFORM_NAME } from '../../../shared/lib/platformBrand'
 import { useTenant } from '../../context/TenantBootProvider'
 
 interface LiveForm {
@@ -150,7 +151,7 @@ export default function OnboardingLive() {
 
       {/* Top bar */}
       <div className="flex items-center justify-between px-6 py-4">
-        <span className="font-oswald text-emerald-500 text-xl tracking-wide">PestFlow Pro</span>
+        <span className="font-oswald text-emerald-500 text-xl tracking-wide">{PLATFORM_NAME}</span>
         <span className="px-3 py-1 bg-gray-100 text-gray-500 text-sm font-medium rounded-full">{stepIdx + 1} of {total}</span>
       </div>
 

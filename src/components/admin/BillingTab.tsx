@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../context/TenantBootProvider'
+import { PLATFORM_NAME } from '../../../shared/lib/platformBrand'
 import { usePlan } from '../../context/PlanContext'
 import { tierInfo } from '../../lib/tierInfo'
 import PageHelpBanner from './PageHelpBanner'
@@ -149,7 +150,7 @@ export default function BillingTab() {
           </div>
           <div>
             <h2 className="text-base font-semibold text-gray-900">Current Plan</h2>
-            <p className="text-xs text-gray-500">Your active PestFlow Pro subscription</p>
+            <p className="text-xs text-gray-500">Your active {PLATFORM_NAME} subscription</p>
           </div>
         </div>
 

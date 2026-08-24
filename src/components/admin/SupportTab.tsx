@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { LifeBuoy, Plus, X } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../context/TenantBootProvider'
+import { PLATFORM_NAME } from '../../../shared/lib/platformBrand'
 import PageHelpBanner from './PageHelpBanner'
 
 interface Ticket {
@@ -84,7 +85,7 @@ export default function SupportTab() {
 
   return (
     <div>
-      <PageHelpBanner tab="support" title="🎟️ Support" body="Submit a request to the PestFlow Pro team. We'll respond within 1 business day." />
+      <PageHelpBanner tab="support" title="🎟️ Support" body={`Submit a request to the ${PLATFORM_NAME} team. We'll respond within 1 business day.`} />
 
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2 text-gray-600 text-sm">
@@ -101,7 +102,7 @@ export default function SupportTab() {
 
       {tickets.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 p-12 text-center text-gray-400 text-sm">
-          No support tickets yet. Use "New Ticket" to contact the PestFlow Pro team.
+          No support tickets yet. Use "New Ticket" to contact the {PLATFORM_NAME} team.
         </div>
       ) : (
         <div className="space-y-3">
@@ -124,7 +125,7 @@ export default function SupportTab() {
                   <p className="text-xs text-gray-500 mt-1 line-clamp-2">{t.body}</p>
                   {t.admin_reply && (
                     <div className="mt-3 bg-emerald-50 border border-emerald-200 rounded-lg p-3">
-                      <p className="text-xs font-semibold text-emerald-700 mb-1">PestFlow Pro replied:</p>
+                      <p className="text-xs font-semibold text-emerald-700 mb-1">{PLATFORM_NAME} replied:</p>
                       <p className="text-xs text-emerald-800">{t.admin_reply}</p>
                     </div>
                   )}

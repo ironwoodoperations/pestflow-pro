@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../context/TenantBootProvider'
+import { PLATFORM_NAME } from '../../../shared/lib/platformBrand'
 
 interface Branding {
   logo_url?: string
@@ -13,7 +14,12 @@ export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [businessName, setBusinessName] = useState('PestFlow Pro')
+  // '', not the platform's name. This renders as the tenant's OWN business
+  // name (the h1 below), so seeding it with the platform meant an irrigation
+  // client's login briefly announced them as a pest-control product. Renaming
+  // the seed would swap one wrong business name for another; the honest
+  // initial state is no name until get_business_name resolves.
+  const [businessName, setBusinessName] = useState('')
   const [branding, setBranding] = useState<Branding>({})
   const [resetMode, setResetMode] = useState(false)
   const [resetEmail, setResetEmail] = useState('')
@@ -156,10 +162,11 @@ export default function Login() {
         )}
       </div>
       <p className="mt-6 text-xs text-gray-500">
-        Powered by{' '}
-        <a href="https://pestflowpro.ai" target="_blank" rel="noopener noreferrer" className="text-orange-400 hover:text-orange-300">
-          PestFlow Pro
-        </a>
+        {/* Plain text, no link — same as the seven public shell footers. The
+            platform is HomeFlow Pro while the live marketing domain is still
+            the pest vertical's, and pointing one at the other is a brand/URL
+            mismatch. Domains are deliberately out of scope for S294. */}
+        Powered by <span className="text-orange-400">{PLATFORM_NAME}</span>
       </p>
     </div>
   )
