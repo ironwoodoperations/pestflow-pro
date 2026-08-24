@@ -46,3 +46,21 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   live source carries buildNarrationSystemPrompt(vertical) and the neutral
   fallback. Earlier session notes claiming it was merged-but-not-deployed were
   wrong.
+
+---
+## Session — 2026-08-24 00:05 UTC
+- Branch: `s285-admin-vertical-preset`
+- Commit: `9814e18` — S285 follow-up: fix the ContentTab sidebar race; correct the manifest
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.d/s285-admin-vertical-preset.md
+  - src/components/admin/ContentTab.tsx
+  - src/lib/__tests__/adminVerticalPreset.test.ts
+  - src/lib/adminVerticalPreset.ts
+- Next recommended action: unchanged from the entry above — the eleven
+  ComposerTemplates fabricated-offer prompts in
+  `src/components/admin/social/composerTemplateSets.ts` (rule (b), third
+  location; `rf8` asserts a weather event occurred). Reported with file:line in
+  PR #280, out of S285's scope because the flow is user-initiated.
+  Before that: PR #280 itself is green on 9814e18 and awaiting Scott's review —
+  nothing is blocked on code.
