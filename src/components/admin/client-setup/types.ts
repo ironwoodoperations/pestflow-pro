@@ -1,4 +1,5 @@
 import type { GeocodeSource, HoursEntry } from '../../../../shared/lib/businessInfoValidation'
+import type { AdminVertical } from '../../../lib/adminVerticalPreset'
 
 export interface ClientSetupForm {
   // Step 1 — Business Info
@@ -9,6 +10,9 @@ export interface ClientSetupForm {
   address: string
   hours: string
   tagline: string
+  // Step 1 — Trade (S290). '' means "not listed", which seeds trade-neutral
+  // content rather than pest. NOT `industry`, which stays free text.
+  vertical: AdminVertical | ''
   // Step 1 — Structured address (atomicity: all 4 present or all 4 absent)
   street_address?: string
   address_locality?: string
@@ -54,6 +58,7 @@ export const INITIAL_FORM: ClientSetupForm = {
   address: '',
   hours: '',
   tagline: '',
+  vertical: '',
   street_address: '',
   address_locality: '',
   address_region: '',

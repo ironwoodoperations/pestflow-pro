@@ -1,6 +1,9 @@
+import type { AdminVertical } from '../../../lib/adminVerticalPreset'
 export interface FormData {
   businessName: string; phone: string; email: string; address: string
   hours: string; tagline: string; license: string; industry: string
+  /** S290 — the trade. '' = not listed, which seeds trade-neutral. */
+  vertical: AdminVertical | ''
   logoUrl: string; primaryColor: string; accentColor: string
   template: 'bold-local' | 'clean-friendly' | 'modern-pro' | 'rustic-rugged'
   facebook: string; instagram: string; google: string; youtube: string
@@ -12,7 +15,7 @@ export interface FormData {
 
 export const INITIAL_FORM: FormData = {
   businessName: '', phone: '', email: '', address: '', hours: '',
-  tagline: '', license: '', industry: 'Pest Control',
+  tagline: '', license: '', industry: '', vertical: '',
   logoUrl: '', primaryColor: '#10b981', accentColor: '#f5c518', template: 'bold-local',
   facebook: '', instagram: '', google: '', youtube: '',
   locations: [{ city: '', slug: '' }],

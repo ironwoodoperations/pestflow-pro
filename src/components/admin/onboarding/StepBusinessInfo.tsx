@@ -1,6 +1,7 @@
 import { ArrowLeft } from 'lucide-react'
 import type { FormData } from './types'
 import { INPUT_CLASS } from './types'
+import { VERTICAL_OPTIONS } from '../../../lib/adminVerticalPreset'
 
 interface Props {
   form: FormData
@@ -49,9 +50,18 @@ export default function StepBusinessInfo({ form, updateField, onNext, onBack }: 
         </div>
       </div>
       <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Industry</label>
-        <input className={INPUT_CLASS} value={form.industry} onChange={e => updateField('industry', e.target.value)} placeholder="e.g. Pest Control, HVAC, Plumbing" />
-        <p className="text-xs text-gray-400 mt-1">This customizes AI captions and social media content for your industry.</p>
+        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Trade</label>
+        <select
+          className={INPUT_CLASS}
+          value={form.vertical}
+          onChange={e => updateField('vertical', e.target.value as typeof form.vertical)}
+        >
+          {VERTICAL_OPTIONS.map(o => <option key={o.value || 'none'} value={o.value}>{o.label}</option>)}
+        </select>
+        <p className="text-xs text-gray-400 mt-1">
+          This customizes your service pages, page titles and AI-written captions.
+          If your trade isn't listed, leave it as is — nothing will be invented for you.
+        </p>
       </div>
       <div className="flex justify-between pt-4">
         <button onClick={onBack} className="flex items-center gap-1.5 text-gray-500 hover:text-gray-700 transition text-sm"><ArrowLeft size={16} /> Back</button>

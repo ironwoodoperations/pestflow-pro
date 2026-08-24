@@ -1,5 +1,6 @@
 import type { ClientSetupForm } from '../types'
 import type { GeocodeSource, HoursEntry } from '../../../../../shared/lib/businessInfoValidation'
+import { VERTICAL_OPTIONS } from '../../../../lib/adminVerticalPreset'
 
 const IC = 'w-full border border-slate-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500'
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const
@@ -66,6 +67,17 @@ export default function Step1BusinessInfo({ form, setForm }: Props) {
               ? <span className="text-emerald-600">Your site will be at: <strong>{form.slug}.pestflowpro.ai</strong></span>
               : <span className="text-gray-400">Enter your company name above</span>
             }
+          </p>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Trade *</label>
+          <select value={form.vertical} onChange={f('vertical')} className={IC}>
+            {VERTICAL_OPTIONS.map(o => <option key={o.value || 'none'} value={o.value}>{o.label}</option>)}
+          </select>
+          <p className="text-xs text-gray-400 mt-1">
+            Decides which service pages, titles and SEO the new site is seeded with.
+            Leave it on "Not listed" if the trade isn't here — the site is then seeded
+            with the standard pages only, and no service pages are invented.
           </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
