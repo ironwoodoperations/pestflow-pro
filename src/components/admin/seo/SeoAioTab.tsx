@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../context/TenantBootProvider'
+import { useAdminPreset } from '../../../hooks/useAdminPreset'
+import { buildAioFallbackDescription } from './seoPrompts'
+import { useBusinessFacts } from './useBusinessFacts'
 
 interface TrackedKeyword {
   keyword: string
@@ -15,6 +18,8 @@ interface GroupedPage {
 
 export default function SeoAioTab() {
   const { id: tenantId } = useTenant()
+  const { vertical } = useAdminPreset()
+  const facts = useBusinessFacts()
   const [state, setState] = useState<{
     groups: GroupedPage[]
     loading: boolean
@@ -65,7 +70,15 @@ export default function SeoAioTab() {
     const missingKeywords = keywords.filter(kw => !existingDescWords.includes(kw.toLowerCase()))
     const newDesc = missingKeywords.length > 0 && currentDesc
       ? `${currentDesc} Keywords: ${missingKeywords.join(', ')}.`
-      : currentDesc || `${keywords.join(', ')} — professional pest control in East Texas.`
+      // S293 — this is a DATABASE WRITE, not a prompt. It lands in
+      // seo_meta.meta_description, which buildPageMetadata renders as the
+      // public <meta name="description">. It used to append "— professional
+      // pest control in East Texas." for every tenant, and "Sync All" walks
+      // every page in one click. vita-glow has ZERO seo_meta rows, so every
+      // page it syncs took this branch.
+      : currentDesc || buildAioFallbackDescription({
+        vertical, keywords, businessName: facts.businessName, city: facts.city,
+      })
 
     const { error } = await supabase.from('seo_meta').upsert({
       tenant_id: tenantId,
