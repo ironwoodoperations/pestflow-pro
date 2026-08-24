@@ -15,11 +15,17 @@ import type {
 // S260-3 — highest-severity wins when a page has multiple open findings.
 const SEVERITY_RANK: Record<FindingSeverity, number> = { high: 3, medium: 2, low: 1 }
 
-const PEST_SLUGS = [
-  'spider-control','ant-control','roach-control','termite-control',
-  'mosquito-control','flea-tick-control','wasp-hornet-control','bed-bug-control',
-  'scorpion-control','rodent-control','pest-control','termite-inspections',
-]
+// S285 — the third of four hardcoded pest slug arrays used to sit here. It was
+// DEAD: the classifier read
+//     PEST_SLUGS.includes(x) ? 'pest' : STATIC_SLUGS.includes(x) ? 'static' : 'pest'
+// whose first and last branches are the same value, so the array never changed
+// a single row's type. Removed rather than re-pointed at the preset — wiring a
+// value nothing reads would look like a fix without being one. Behaviour is
+// byte-for-byte identical; see the PR body for the row-type naming follow-up.
+//
+// STATIC_SLUGS stays local and unchanged: it is this tab's own seo_meta page
+// set, which includes 'reviews' and 'service-area' — pages that exist in the SEO
+// namespace but not in page_content, so they are not preset entries.
 const STATIC_SLUGS = ['home','about','contact','quote','faq','reviews','service-area']
 
 export function useSeoTab() {
@@ -121,7 +127,7 @@ export function useSeoTab() {
         if (seen.has(row.page_slug)) continue
         seen.add(row.page_slug)
         const label = row.page_slug.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
-        const type = PEST_SLUGS.includes(row.page_slug) ? 'pest' as const : STATIC_SLUGS.includes(row.page_slug) ? 'static' as const : 'pest' as const
+        const type = STATIC_SLUGS.includes(row.page_slug) ? 'static' as const : 'pest' as const
         built.push(makeRow(row.page_slug, label, row.page_slug === 'home' ? '/' : `/${row.page_slug}`, type, true))
       }
       for (const slug of STATIC_SLUGS) {

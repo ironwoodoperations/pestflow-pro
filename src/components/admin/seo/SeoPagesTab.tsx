@@ -1,3 +1,4 @@
+import { useAdminPreset } from '../../../hooks/useAdminPreset'
 import React, { useState } from 'react'
 import { usePlan } from '../../../context/PlanContext'
 import type { SeoPageRow, SeoStats, EditorForm } from './seoTypes'
@@ -43,6 +44,8 @@ export default function SeoPagesTab({
   editorSaving, aiGenerating, aiGeneratedSlug, fixChain,
   onOpenEditor, onCloseEditor, onEditorChange, onSaveMeta, onAiGenerate
 }: Props) {
+  // S285 — the filter option said "Pest Pages" to every tenant, pest or not.
+  const { preset } = useAdminPreset()
   const { canAccess } = usePlan()
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('all')
@@ -97,7 +100,7 @@ export default function SeoPagesTab({
           placeholder="Search pages…" className={`${inputCls} flex-1 min-w-40`} />
         <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} className={`${inputCls} bg-white`}>
           <option value="all">All Types</option>
-          <option value="pest">Pest Pages</option>
+          <option value="pest">{preset.entityLabels.servicePages}</option>
           <option value="service_area">Service Area Pages</option>
           <option value="blog">Blog Posts</option>
           <option value="static">Static Pages</option>
