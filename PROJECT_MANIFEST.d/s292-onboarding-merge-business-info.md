@@ -26,3 +26,24 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   S291 (Claude as a third AI Authority engine, unblocked), the S289 backfill
   (unapplied, Claude.ai's to run), and the vacuity audit of existing scan-style
   guards.
+
+---
+## Session — 2026-08-24 13:00 UTC
+- Branch: `s292-onboarding-merge-business-info`
+- Commit: `4c0020f` — S292 follow-up: a failed read refuses to write, instead of degrading to the overlay
+- Author: Claude
+- Files changed:
+  - src/lib/businessInfoMerge.test.ts
+  - src/lib/businessInfoMerge.ts
+  - src/pages/admin/Onboarding.tsx
+- Next recommended action: PR #287 awaits Scott's review — CI green, draft, no
+  auto-merge. The follow-up closed the read-failure entrance to the same bug:
+  readOrThrow captures `error` and throws, both reads are hoisted ahead of every
+  write, and handleLaunch gained the try/catch/finally + launchError alert it did
+  NOT previously have (the brief said it did; it did not, so a throw would have
+  left `saving` stuck true and the button dead). One user-visible change worth
+  Scott's eye: a launch can now STOP where it previously always appeared to
+  succeed. After merge: S291 (Claude as a third AI Authority engine, unblocked),
+  the S289 backfill (still unapplied, Claude.ai's to run via MCP), Vita Glow's
+  missing profiles row (tenant ADMIN, deliberately left while parked), and the
+  vacuity audit of existing scan-style guards.
