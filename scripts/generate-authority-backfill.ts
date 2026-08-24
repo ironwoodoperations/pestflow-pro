@@ -79,7 +79,7 @@ console.log(`Excluded ${EXCLUDED.length} demo tenants: ${EXCLUDED.map((t) => t.s
 console.log(`Real tenants: ${REAL.map((t) => t.slug).join(', ')}\n`);
 
 const lines = [];
-let totalJobs = 0, totalPrompts = 0, totalUsdNow = 0, totalUsdClaude = 0;
+let totalPrompts = 0, totalUsdNow = 0, totalUsdClaude = 0;
 const summary = [];
 for (const t of REAL) {
   const prompts = generateAuthorityPrompts({
@@ -92,7 +92,6 @@ for (const t of REAL) {
   const usdNow = prompts.length * now.reduce((a, e) => a + ENGINE[e].usd, 0);
   const usdClaude = prompts.length * withClaude.reduce((a, e) => a + ENGINE[e].usd, 0);
   if (!t.alreadySeeded) totalPrompts += prompts.length;
-  totalJobs += jobs;
   totalUsdNow += usdNow; totalUsdClaude += usdClaude;
   summary.push({ slug: t.slug, vertical: t.vertical ?? 'NULL', tier: t.tier,
     enabledEngines: now.length, prompts: prompts.length, callsPerMonth: jobs,
