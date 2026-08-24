@@ -48,6 +48,28 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   - scripts/generate-authority-backfill.ts
 - Next recommended action: PR #284 is green on `6748912` and awaiting Scott's manual
   review + merge. After merge: apply `docs/audits/s289-authority-prompt-backfill.sql`
-  via MCP (3 inserts, 21 prompts, demo tenants excluded), then **S290 — de-pest
+  via MCP (SUPERSEDED by follow-up 2 below: now 2 inserts / 11 prompts, demo AND
+  operator tenants excluded), then **S290 — de-pest
   provisioning**, which is the live rule (b) fabrication path and is ordered ahead of
   S291 (Claude as a third AI Authority engine) by S291's own brief.
+
+---
+## Session — 2026-08-24 03:00 UTC
+- Branch: `s289-authority-prompt-seeding`
+- Commit: `9830902` — S289 follow-up 2: exclude the operator tenant, and cover every service area
+- Author: Claude
+- Files changed:
+  - docs/audits/s289-authority-prompt-backfill.sql
+  - scripts/generate-authority-backfill.ts
+  - supabase/functions/_shared/authorityPrompts.test.ts
+  - supabase/functions/_shared/authorityPrompts.ts
+  - supabase/functions/provision-tenant/index.ts
+- Next recommended action: PR #284 is green on `9830902` and awaiting Scott's manual
+  review + merge. After merge: apply `docs/audits/s289-authority-prompt-backfill.sql`
+  via MCP — **2 inserts, 11 prompts** (pls + vita-glow; $1.05/mo today, $1.25 once
+  `claude_web` is enabled). Then **S290 — de-pest provisioning**, the live rule (b)
+  fabrication path, ordered ahead of S291 by S291's own brief.
+- Carried findings (reported in #284, not fixed): `ai_authority_dispatch` resolves tier
+  from `settings.subscription.tier` rather than the S262-latched `tenants.entitlement`
+  (they disagree for pls: 3 vs 2), and it excludes neither demo nor operator tenants —
+  today only the absence of prompts keeps them off the paid engines.
