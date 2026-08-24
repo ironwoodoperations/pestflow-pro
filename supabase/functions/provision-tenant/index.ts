@@ -22,7 +22,7 @@
 // Deploy: supabase functions deploy provision-tenant --project-ref biezzykcgzkrwdgqpsar --no-verify-jwt
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { generateAuthorityPrompts } from '../_shared/authorityPrompts.ts'
+import { generateAuthorityPrompts, isDemoTenant } from '../_shared/authorityPrompts.ts'
 import { timingSafeEqual } from 'node:crypto'
 import { normalizeAll, buildJsonbProjection } from '../_shared/service-areas.ts'
 
@@ -845,6 +845,23 @@ export async function handler(req: Request): Promise<Response> {
         // Failure here NEVER fails provisioning: a tenant without prompts is the
         // status quo for all nine existing tenants.
         try {
+          // DEMO TENANTS ARE SKIPPED. Five of the nine live tenants are invented
+          // businesses with no domain; AI Authority for them pays engines to
+          // search the live web for a company that does not exist, and writes
+          // confirmed-zero snapshot rows that would skew any cross-tenant
+          // average. Provisioning creates demo tenants too, so without this gate
+          // the next demo set recreates the problem.
+          //
+          // `!== true`, NOT `=== false`: one live tenant's demo_mode row has
+          // active = NULL. Testing for false would skip a REAL tenant silently —
+          // the same NULL trap as `vertical`.
+          const { data: demoRow } = await supabase.from('settings').select('value')
+            .eq('tenant_id', tenantId).eq('key', 'demo_mode').maybeSingle()
+          const isDemo = isDemoTenant(demoRow?.value)
+          if (isDemo) {
+            console.log('[provision-tenant] ai_authority_prompts: skipped (demo tenant)')
+          } else {
+
           const { data: biForPrompts } = await supabase.from('settings').select('value')
             .eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle()
           const biVal = (biForPrompts?.value ?? {}) as Record<string, unknown>
@@ -883,6 +900,8 @@ export async function handler(req: Request): Promise<Response> {
           } else {
             console.log('[provision-tenant] ai_authority_prompts: nothing to seed (no name, no vertical, no locations)')
           }
+
+          } // end !isDemo
         } catch (e) {
           console.error('[provision-tenant] ai_authority_prompts seed threw (non-fatal):', (e as Error)?.message)
         }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateAuthorityPrompts, DEFAULT_MAX_PROMPTS } from './authorityPrompts.ts';
+import { generateAuthorityPrompts, DEFAULT_MAX_PROMPTS, isDemoTenant } from './authorityPrompts.ts';
 
 // S289 — every fixture below is REAL production data, read from the live DB, not
 // invented for the test. That matters twice over: the generator is shaped on
@@ -258,5 +258,33 @@ describe('coverage and deduplication', () => {
       businessName: 'Acme', city: '', state: '', serviceAreas: [], serviceSlugs: [], max: 5,
     });
     expect(out).toEqual(['Acme reviews']);
+  });
+});
+
+describe('demo tenants are excluded — and NULL is not a demo', () => {
+  it('flags a real demo tenant', () => {
+    // apex-protect, coastal-pest, heartland-pest, metro-pest-concierge,
+    // urban-strike — all stored as { active: true }.
+    expect(isDemoTenant({ active: true })).toBe(true);
+  });
+
+  it('does NOT flag a tenant whose demo_mode is explicitly false', () => {
+    // dang, pestflow-pro, pls.
+    expect(isDemoTenant({ active: false })).toBe(false);
+  });
+
+  // THE ONE THAT MATTERS. vita-glow's demo_mode row has active = NULL. A
+  // `!== false` test would call it a demo and silently skip a real tenant.
+  it('does NOT flag a NULL active — vita-glow is real', () => {
+    expect(isDemoTenant({ active: null })).toBe(false);
+    expect(isDemoTenant({})).toBe(false);
+    expect(isDemoTenant(null)).toBe(false);
+    expect(isDemoTenant(undefined)).toBe(false);
+  });
+
+  it('does not treat a truthy non-true value as a demo', () => {
+    for (const v of ['true', 1, 'yes', {}]) {
+      expect(isDemoTenant({ active: v }), JSON.stringify(v)).toBe(false);
+    }
   });
 });

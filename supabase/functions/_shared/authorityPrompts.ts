@@ -168,3 +168,20 @@ export function generateAuthorityPrompts(input: AuthorityPromptInputs): string[]
 
   return out;
 }
+
+/**
+ * True only for a tenant explicitly flagged as a demo.
+ *
+ * `=== true`, never `!== false`. One live tenant's settings.demo_mode row has
+ * `active: NULL`, and a NULL-blind test would classify that REAL tenant as a
+ * demo and silently skip it — the same NULL trap that made `vertical` a
+ * three-state field rather than a boolean.
+ *
+ * Demo tenants are invented businesses with no domain. Running AI Authority for
+ * one pays live engines to search the web for a company that does not exist and
+ * writes confirmed-zero snapshots that would skew any cross-tenant average.
+ */
+export function isDemoTenant(demoModeValue: unknown): boolean {
+  if (!demoModeValue || typeof demoModeValue !== 'object') return false;
+  return (demoModeValue as { active?: unknown }).active === true;
+}
