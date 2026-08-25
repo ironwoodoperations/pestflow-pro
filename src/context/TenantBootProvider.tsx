@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useLayoutEffect, type ReactNode } from 'react'
 import { supabase } from '../lib/supabase'
+import { PLATFORM_NAME } from '../../shared/lib/platformBrand'
 import { applyTheme } from '../lib/shellThemes'
 import TenantBootSkeleton from './TenantBootSkeleton'
 import { prefetchAllPageContent } from '../hooks/usePageContent'
@@ -59,7 +60,7 @@ function TenantNotFound({ message }: { message: string }) {
       <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>Site Not Found</h1>
       <p style={{ maxWidth: '40ch', color: '#555', margin: 0 }}>{message}</p>
       <a href="https://pestflowpro.ai" style={{ color: '#f97316', textDecoration: 'underline' }}>
-        ← Go to PestFlow Pro
+        ← Go to {PLATFORM_NAME}
       </a>
     </div>
   )
@@ -90,7 +91,7 @@ export function TenantBootProvider({ children }: { children: ReactNode }) {
         setBootState({
           status: 'error',
           reason: 'not_found',
-          message: `No PestFlow Pro tenant found for hostname '${hostname}'. If you typed the URL, double-check the subdomain.`,
+          message: `No ${PLATFORM_NAME} tenant found for hostname '${hostname}'. If you typed the URL, double-check the subdomain.`,
         })
         return
       }

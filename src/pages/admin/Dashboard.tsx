@@ -2,6 +2,7 @@ import { useState, useEffect, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../context/TenantBootProvider'
+import { PLATFORM_NAME } from '../../../shared/lib/platformBrand'
 import { PreviewModeContext } from '../../hooks/usePreviewMode'
 import { usePlan } from '../../hooks/usePlan'
 import {
@@ -61,7 +62,7 @@ const TAB_SUBTITLES: Record<string, string> = {
   crm: 'Track leads and customer relationships',
   team: 'Manage your team members shown on your website',
   billing: 'Your current plan and payment history',
-  support: 'Submit support requests to the PestFlow Pro team',
+  support: `Submit support requests to the ${PLATFORM_NAME} team`,
   settings: 'Configure your business settings',
 }
 
@@ -121,7 +122,7 @@ export default function Dashboard() {
       <div className="flex flex-1">
       <aside className="w-64 flex-shrink-0 flex flex-col" style={{ background: '#1a1f2e', '--brand-primary': primaryColor, '--brand-accent': accentColor } as React.CSSProperties}>
         <div className="px-6 py-5" style={{ background: '#141922' }}>
-          <h1 className="font-oswald text-xl text-white tracking-wide">PestFlow Pro</h1>
+          <h1 className="font-oswald text-xl text-white tracking-wide">{PLATFORM_NAME}</h1>
           <p className="text-xs uppercase tracking-widest mt-0.5" style={{ color: '#94a3b8' }}>Operations Platform</p>
           {logoUrl && (
             <img src={logoUrl} alt="logo" style={{ maxHeight: '40px', maxWidth: '120px', objectFit: 'contain', marginTop: '8px' }} />

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Lock } from 'lucide-react'
 import { usePlan } from '../../context/PlanContext'
+import { PLATFORM_NAME } from '../../../shared/lib/platformBrand'
 
 interface Props {
   minTier: number
@@ -23,7 +24,7 @@ export function FeatureGate({ minTier, featureName, children, fallback }: Props)
         }
         <p className="text-sm text-gray-500 mb-4">Available on Growth and above. Contact us to unlock.</p>
         <a
-          href="mailto:support@pestflowpro.ai?subject=Upgrade Request - PestFlow Pro"
+          href={`mailto:support@pestflowpro.ai?subject=Upgrade Request - ${PLATFORM_NAME}`}
           className="inline-block px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors"
         >
           Upgrade to Growth →

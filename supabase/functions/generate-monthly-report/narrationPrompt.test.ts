@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { buildNarrationSystemPrompt, PLATFORM_RULES, NO_TRADE_RULE } from './narrationPrompt.ts';
 import { getVerticalCopy, isKnownVertical, NEUTRAL_COPY, VERTICAL_COPY } from '../_shared/verticalCopy.ts';
+import { PLATFORM_NAME, RETIRED_PLATFORM_NAME } from '../../../shared/lib/platformBrand.ts';
 
 // S283 — the monthly report is the URGENT case. The monthly-report-dispatch cron
 // enqueues a report_jobs row for EVERY row in public.tenants, unfiltered, so on
@@ -18,23 +19,96 @@ import { getVerticalCopy, isKnownVertical, NEUTRAL_COPY, VERTICAL_COPY } from '.
 // block exists to stop the model inventing WordPress, Yoast, Rank Math and
 // Google Search Console (S261-report-fix); a persona change must not be allowed
 // to drop or soften it.
+//
+// ── S294: THIS CONSTANT WAS CHANGED ON PURPOSE ─────────────────────────────
+// The platform's NAME changed — PestFlow Pro is the pest vertical's brand,
+// HomeFlow Pro is the platform — so this transcription was updated in the same
+// commit as the module. That is the one edit this guard cannot make for itself:
+// transcribed-independently means a deliberate rename must be applied to both
+// sides by hand, and saying so here is what keeps it distinguishable from the
+// guard quietly drifting.
+//
+// WHAT DID NOT CHANGE, and is asserted separately below: every external tool
+// this block bans is still banned, in the same words and the same order. The
+// only edit is the name of the platform the owner is directed INTO.
+// Still transcribed rather than interpolated from PLATFORM_NAME: importing the
+// constant here would make the two sides agree with each other by construction,
+// which is precisely the failure this guard exists to prevent.
 const PLATFORM_RULES_ON_MAIN =
   'PLATFORM RULES (highest priority — never violate, even if it means a fix step must be more general):\n' +
-  '- The owner\'s website lives entirely on the PestFlow Pro platform. Every change they make happens inside the PestFlow Pro admin dashboard. Assume PestFlow Pro is the only system they ever log into to work on their website.\n' +
+  '- The owner\'s website lives entirely on the HomeFlow Pro platform. Every change they make happens inside the HomeFlow Pro admin dashboard. Assume HomeFlow Pro is the only system they ever log into to work on their website.\n' +
   '- NEVER name, suggest, or reference any other tool, plugin, CMS, platform, or software — not by name and not generically. This includes (but is not limited to) WordPress, Wix, Squarespace, Webflow, Yoast, Rank Math, Google Search Console, Google Business Profile settings, "your SEO plugin," "your CMS," "your website builder," or any external analytics or SEO tool. The owner does not use them and has no access to them.\n' +
-  '- For a finding about ONE specific page, direct the owner to SEO -> Pages in PestFlow Pro and edit that page (e.g. "In PestFlow Pro, go to SEO -> Pages and edit the title and description for this page"). For a finding that is clearly site-wide (such as duplicate titles across pages, page-2 search rankings, or site speed), describe what to adjust in PestFlow Pro in general terms — do NOT pretend there is a single page to click, and do NOT invent menus, tabs, or settings that aren\'t obviously implied.\n' +
-  '- If you don\'t know the exact button or tab name, describe the action in simple generic terms inside PestFlow Pro (e.g. "edit the page\'s description field") rather than guessing a specific control or mentioning any outside tool.\n\n';
+  '- For a finding about ONE specific page, direct the owner to SEO -> Pages in HomeFlow Pro and edit that page (e.g. "In HomeFlow Pro, go to SEO -> Pages and edit the title and description for this page"). For a finding that is clearly site-wide (such as duplicate titles across pages, page-2 search rankings, or site speed), describe what to adjust in HomeFlow Pro in general terms — do NOT pretend there is a single page to click, and do NOT invent menus, tabs, or settings that aren\'t obviously implied.\n' +
+  '- If you don\'t know the exact button or tab name, describe the action in simple generic terms inside HomeFlow Pro (e.g. "edit the page\'s description field") rather than guessing a specific control or mentioning any outside tool.\n\n';
 
 // Any of these in a prompt sent to a non-pest tenant is the bug this PR fixes.
 const PEST_VOCABULARY = /pest|exterminat|termite|rodent|roach|bed bug|infestation/i;
 
-// 'PestFlow Pro' is the PLATFORM's name. It appears in every prompt by design
-// and says nothing about the tenant's trade, but it contains the substring
-// 'Pest' — so a naive /pest/i check reports the neutral prompt as pest-flavoured
-// and the guard becomes noise. (S282's admin classifier shipped this exact
-// over-match against the same product name; it is an easy one to repeat.)
-// Masked rather than dropped so the surrounding text still lines up.
-const maskProductName = (s: string) => s.split('PestFlow Pro').join('<<PLATFORM>>');
+// The platform's name appears in every prompt by design and says nothing about
+// the tenant's trade. It USED to be 'PestFlow Pro', which contains the
+// substring 'Pest' — so a naive /pest/i check reported the neutral prompt as
+// pest-flavoured and the guard became noise. (S282's admin classifier shipped
+// that exact over-match against this same product name.)
+//
+// S294 RETIRES THAT HAZARD: 'HomeFlow Pro' contains no trade vocabulary, so the
+// mask is now a no-op. A no-op helper is a guard that cannot fail, so it is
+// replaced by the invariant it was standing in for — one that still can.
+// Kept as a mask (not deleted) so the surrounding text still lines up if the
+// name ever regains a trade word.
+const maskProductName = (s: string) => s.split(PLATFORM_NAME).join('<<PLATFORM>>');
+
+// S294 — the tools this block exists to ban. Transcribed here so "the purpose
+// did not change" is an ASSERTION rather than a claim in a commit message.
+const BANNED_TOOLS = [
+  'WordPress', 'Wix', 'Squarespace', 'Webflow', 'Yoast', 'Rank Math',
+  'Google Search Console', 'Google Business Profile settings',
+  'your SEO plugin', 'your CMS', 'your website builder',
+];
+
+describe('S294 — the platform is named once, and it names no trade', () => {
+  it('the platform name carries no trade vocabulary — the substring hazard is retired, not forgotten', () => {
+    // The old name contained 'Pest', which is why maskProductName exists at
+    // all. If a future rename reintroduces a trade word, this fails and the
+    // masking question comes back with it.
+    expect(PLATFORM_NAME).not.toMatch(PEST_VOCABULARY);
+    expect(RETIRED_PLATFORM_NAME, 'the retired name is the one that had the hazard').toMatch(PEST_VOCABULARY);
+    expect(PLATFORM_NAME).not.toBe(RETIRED_PLATFORM_NAME);
+  });
+
+  it('the assembled prompt names the platform and NEVER the retired name', () => {
+    for (const vertical of ['pest', 'irrigation', null, undefined, 'hvac'] as const) {
+      const prompt = buildNarrationSystemPrompt(vertical);
+      expect(prompt, `vertical=${String(vertical)}`).toContain(PLATFORM_NAME);
+      expect(prompt, `retired name reached vertical=${String(vertical)}`).not.toContain(RETIRED_PLATFORM_NAME);
+    }
+  });
+
+  it('every place the old name stood now carries the new one — eight of them', () => {
+    // Seven inside PLATFORM_RULES, one in the TASK line. The brief said six;
+    // the file said eight. Counted, not sampled.
+    const prompt = buildNarrationSystemPrompt('pest');
+    expect(prompt.split(PLATFORM_NAME).length - 1).toBe(8);
+    expect(PLATFORM_RULES.split(PLATFORM_NAME).length - 1).toBe(7);
+  });
+
+  it('THE PURPOSE IS UNCHANGED — every banned tool is still banned, in order', () => {
+    // The one assertion that makes the rename safe. A rewrite that quietly
+    // dropped a tool while changing the name would pass every other test here.
+    for (const tool of BANNED_TOOLS) {
+      expect(PLATFORM_RULES, `${tool} is no longer banned`).toContain(tool);
+    }
+    const positions = BANNED_TOOLS.map((t) => PLATFORM_RULES.indexOf(t));
+    expect(positions, 'the ban list was reordered').toEqual([...positions].sort((a, b) => a - b));
+    expect(PLATFORM_RULES).toContain('NEVER name, suggest, or reference any other tool');
+  });
+
+  it('the banned-tool list is real — it is not an empty array passing vacuously', () => {
+    expect(BANNED_TOOLS.length).toBeGreaterThan(8);
+    expect(BANNED_TOOLS.every((t) => PLATFORM_RULES.includes(t))).toBe(true);
+    // …and a tool NOT in the block is not silently reported as present.
+    expect(PLATFORM_RULES).not.toContain('Shopify');
+  });
+});
 
 describe('PLATFORM RULES survive the persona change', () => {
   it('the module\'s block is byte-identical to main', () => {

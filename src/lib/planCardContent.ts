@@ -1,4 +1,5 @@
 // Locked plan/pricing card content for the concierge plan menu.
+import { PLATFORM_NAME } from '../../shared/lib/platformBrand'
 //
 // Single source of truth shared by the Dashboard plan section and the Billing
 // tab so the two surfaces stay byte-identical (same prices, taglines, feature
@@ -105,6 +106,6 @@ export const PLAN_CHANGE_PHONE = '(430) 367-5601'
 
 /** Builds the "Contact us to switch" mailto for a given tier name. */
 export function planChangeMailto(tierName: string): string {
-  const subject = `PestFlow Pro — plan change to ${tierName}`
+  const subject = `${PLATFORM_NAME} — plan change to ${tierName}`
   return `mailto:sales@pestflowpro.ai?subject=${encodeURIComponent(subject)}`
 }

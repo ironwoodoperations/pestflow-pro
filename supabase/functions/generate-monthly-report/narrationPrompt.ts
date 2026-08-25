@@ -1,5 +1,6 @@
 import { getVerticalCopy, isKnownVertical } from '../_shared/verticalCopy.ts';
 import type { VerticalCopy } from '../_shared/verticalCopy.ts';
+import { PLATFORM_NAME } from '../../../shared/lib/platformBrand.ts';
 
 // S283 — the narration system prompt, extracted from index.ts so it can be
 // asserted as an ASSEMBLED STRING.
@@ -18,13 +19,21 @@ import type { VerticalCopy } from '../_shared/verticalCopy.ts';
 // failure mode has nothing to do with what trade the tenant is in. A persona
 // change must not be allowed to drop or reword it, so the tests assert it is
 // present byte-identical in all three vertical branches.
+//
+// S294 — the PLATFORM's NAME in this block changed, DELIBERATELY, and the
+// test's expected constant was updated in the same commit. It named the pest
+// vertical seven times inside PLATFORM_RULES (and once more in TASK), so an
+// irrigation owner's report told him repeatedly to make changes inside a
+// pest-control product. The block's PURPOSE is unchanged: every external tool
+// it bans is still banned, in the same words, in the same order. Nothing about
+// this is the guard drifting — it is the guard being re-pointed on purpose.
 
 export const PLATFORM_RULES =
   'PLATFORM RULES (highest priority — never violate, even if it means a fix step must be more general):\n' +
-  '- The owner\'s website lives entirely on the PestFlow Pro platform. Every change they make happens inside the PestFlow Pro admin dashboard. Assume PestFlow Pro is the only system they ever log into to work on their website.\n' +
+  '- The owner\'s website lives entirely on the ' + PLATFORM_NAME + ' platform. Every change they make happens inside the ' + PLATFORM_NAME + ' admin dashboard. Assume ' + PLATFORM_NAME + ' is the only system they ever log into to work on their website.\n' +
   '- NEVER name, suggest, or reference any other tool, plugin, CMS, platform, or software — not by name and not generically. This includes (but is not limited to) WordPress, Wix, Squarespace, Webflow, Yoast, Rank Math, Google Search Console, Google Business Profile settings, "your SEO plugin," "your CMS," "your website builder," or any external analytics or SEO tool. The owner does not use them and has no access to them.\n' +
-  '- For a finding about ONE specific page, direct the owner to SEO -> Pages in PestFlow Pro and edit that page (e.g. "In PestFlow Pro, go to SEO -> Pages and edit the title and description for this page"). For a finding that is clearly site-wide (such as duplicate titles across pages, page-2 search rankings, or site speed), describe what to adjust in PestFlow Pro in general terms — do NOT pretend there is a single page to click, and do NOT invent menus, tabs, or settings that aren\'t obviously implied.\n' +
-  '- If you don\'t know the exact button or tab name, describe the action in simple generic terms inside PestFlow Pro (e.g. "edit the page\'s description field") rather than guessing a specific control or mentioning any outside tool.\n\n';
+  '- For a finding about ONE specific page, direct the owner to SEO -> Pages in ' + PLATFORM_NAME + ' and edit that page (e.g. "In ' + PLATFORM_NAME + ', go to SEO -> Pages and edit the title and description for this page"). For a finding that is clearly site-wide (such as duplicate titles across pages, page-2 search rankings, or site speed), describe what to adjust in ' + PLATFORM_NAME + ' in general terms — do NOT pretend there is a single page to click, and do NOT invent menus, tabs, or settings that aren\'t obviously implied.\n' +
+  '- If you don\'t know the exact button or tab name, describe the action in simple generic terms inside ' + PLATFORM_NAME + ' (e.g. "edit the page\'s description field") rather than guessing a specific control or mentioning any outside tool.\n\n';
 
 // Said only when the vertical is NOT recorded. Without it the model fills the
 // silence: asked to write for "a business owner" about a website full of
@@ -49,6 +58,6 @@ export function buildNarrationSystemPrompt(vertical: string | null | undefined):
 
 function TASK(copy: VerticalCopy): string {
   return (
-  'TASK: Rephrase each finding into friendly, encouraging plain-English guidance, following the platform rules above: (1) what is going on, (2) why it matters for getting more ' + copy.callNoun + ', and (3) the step to fix it inside PestFlow Pro. DO NOT invent findings, numbers, or pages that are not in the input. Keep each to 2–4 short sentences. Return ONLY a JSON object keyed by the finding id, where each value is the guidance string. No markdown.'
+  'TASK: Rephrase each finding into friendly, encouraging plain-English guidance, following the platform rules above: (1) what is going on, (2) why it matters for getting more ' + copy.callNoun + ', and (3) the step to fix it inside ' + PLATFORM_NAME + '. DO NOT invent findings, numbers, or pages that are not in the input. Keep each to 2–4 short sentences. Return ONLY a JSON object keyed by the finding id, where each value is the guidance string. No markdown.'
   );
 }

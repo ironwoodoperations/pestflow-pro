@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Check } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import { PLATFORM_NAME } from '../../../shared/lib/platformBrand'
 import { useTenant } from '../../context/TenantBootProvider'
 import { syncServiceAreasJsonb } from '../../lib/service-areas/syncJsonbFromTable'
 import { prepareBusinessInfoWrites, readOrThrow } from '../../lib/businessInfoMerge'
@@ -210,7 +211,7 @@ export default function Onboarding() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6">
-        <h1 className="font-oswald text-3xl text-emerald-500 text-center mb-8 tracking-wide">PestFlow Pro</h1>
+        <h1 className="font-oswald text-3xl text-emerald-500 text-center mb-8 tracking-wide">{PLATFORM_NAME}</h1>
 
         {step === 1 && <StepWelcome businessName={businessName || 'Your New Website'} onNext={() => setStep(2)} />}
         {step === 2 && <StepBusinessInfo form={form} updateField={updateField} onNext={() => setStep(3)} onBack={() => setStep(1)} />}

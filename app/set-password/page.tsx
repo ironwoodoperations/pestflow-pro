@@ -1,4 +1,5 @@
 'use client'
+import { PLATFORM_NAME } from '../../shared/lib/platformBrand'
 
 // S273 PR #2c — set-password page in the Next.js public-site app, served at the TOP LEVEL
 // (app/set-password) so it does NOT inherit app/tenant/[slug]/layout.tsx. That tenant layout
@@ -123,7 +124,7 @@ export default function SetPasswordPage() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '1rem', background: 'linear-gradient(135deg, #0a0f1e 0%, #1a1f2e 100%)' }}>
       <div style={{ width: '100%', maxWidth: 420, background: '#fff', borderRadius: 16, boxShadow: '0 20px 50px rgba(0,0,0,0.3)', padding: 32 }}>
-        <h1 style={{ fontFamily: 'Oswald, system-ui, sans-serif', fontSize: 28, textAlign: 'center', margin: '0 0 4px', color: '#10b981', letterSpacing: '0.02em' }}>PestFlow Pro</h1>
+        <h1 style={{ fontFamily: 'Oswald, system-ui, sans-serif', fontSize: 28, textAlign: 'center', margin: '0 0 4px', color: '#10b981', letterSpacing: '0.02em' }}>{PLATFORM_NAME}</h1>
         <p style={{ color: '#6b7280', fontSize: 14, textAlign: 'center', margin: '0 0 28px' }}>{heading}</p>
 
         {phase === 'verifying' && (
@@ -170,7 +171,10 @@ export default function SetPasswordPage() {
         )}
       </div>
       <p style={{ marginTop: 24, fontSize: 12, color: '#6b7280' }}>
-        Powered by <a href="https://pestflowpro.ai" target="_blank" rel="noopener noreferrer" style={{ color: '#fb923c', textDecoration: 'none' }}>PestFlow Pro</a>
+        {/* Plain text, not a link: the platform is HomeFlow Pro while the live
+            marketing domain is still the pest vertical's. Domains are out of
+            scope for S294, so the mismatch is avoided rather than created. */}
+        Powered by <span style={{ color: '#fb923c' }}>{PLATFORM_NAME}</span>
       </p>
     </div>
   )
