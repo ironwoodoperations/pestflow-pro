@@ -7,60 +7,97 @@ Investigation record: `INVESTIGATION_s296-email-sender.md` (PR #295, merged `8c8
 
 ---
 
-## Gate reconciliation — 2 of my 5 covered, 3 not
+## Gate reconciliation — all five now closed
 
-The gate was run against Scott's own prompts, not the five questions in this document. Coverage is
-judged against **the returned synthesis** (CHANGE 1–3, WARM-UP, REPLY-TO), not against raw validator
-transcripts, which I have not seen. Where the synthesis is silent I record *not covered* rather than
-inferring coverage.
+Run by Scott. Two answered by the returned synthesis, **one answered by DNS he resolved himself**,
+one settled from specification, and **one decided as a judgement call and recorded as such rather
+than dressed up as a validated fact.**
 
-| # | question | verdict |
+| # | question | outcome |
 |---|---|---|
-| 1 | Rollback mechanism — runtime env var vs deploy-time constant; per-invocation hazard | **COVERED** — CHANGE 2, and it corrects me |
-| 2 | Cross-domain `Reply-To` — DMARC alignment / independent spam scoring | **COVERED** — REPLY-TO, and it corrects me |
-| 3 | Mixed-domain staging — does one recipient seeing two `From` domains score worse than a clean switch | **NOT COVERED** |
-| 4 | Beyond "verified" — is a DMARC record separately required, and at what `p=` | **NOT COVERED** |
-| 5 | The `via` construction — DMARC compatibility; duplication of Gmail's own "via" annotation | **NOT COVERED** |
+| 1 | Rollback mechanism | **ANSWERED** — CHANGE 2; corrects me |
+| 2 | Cross-domain `Reply-To` | **ANSWERED** — REPLY-TO; corrects me |
+| 3 | Mixed-domain staging | **NOT answered by the gate — DECIDED by Scott.** Proceed staged |
+| 4 | DMARC beyond "verified" | **ANSWERED BY DNS**, not by the validators |
+| 5 | The `via` construction | **SETTLED FROM SPEC** — no re-run needed |
 
-### Q3 — still open, and it is still the one that can overturn the order
+### Q3 — a decision, not a finding
 
-Nothing in the synthesis addresses the per-recipient hazard: a tenant admin who receives credentials
-from one domain and a reveal-ready from another *during the transition*.
+The gate did not answer it. Scott decided it directly: **proceed staged**, because the recipient sets
+barely overlap — a tenant receives credentials and resets; a tenant's *customer* receives lead mail —
+and the overlap window is days.
 
-The nearest adjacent material is WARM-UP's published ramp (150/day day 1 → 2,000/day day 7). That
-describes a volume ramp **on the new domain**; it does not say whether the two-domain overlap period is
-neutral or harmful. A ramp schedule presumes staging is fine. It does not establish it.
+**Recorded as his judgement call, not as a validated fact.** If a staged cutover later shows a
+deliverability cost, this is the assumption to re-examine first, and it should be findable as an
+assumption rather than misremembered as something a validator confirmed.
 
-I am not treating "the gate returned a ramp schedule" as "the gate approved mixed-domain staging."
-That inference is exactly the shape this document is supposed to refuse.
+### Q4 — answered by the DNS, and the answer was the one that needed acting on
 
-### Q4 — not covered, and CHANGE 1 makes it *more* load-bearing, not less
+Resolved facts (Scott ran the lookups; I have no resolver — see below):
 
-No DMARC requirement and no `p=` value came back. CHANGE 1 introduces a subdomain, and subdomains do
-not have independent DMARC policy by default: **`mail.homeflowpro.ai` inherits the apex's DMARC policy
-unless the apex publishes an `sp=` tag or the subdomain publishes its own `_dmarc` record.**
+| domain | DMARC | MX | notes |
+|---|---|---|---|
+| `homeflowpro.ai` | `v=DMARC1; p=quarantine; adkim=r; aspf=r; rua=mailto:dmarc_rua@onsecureserver.net` | **Google Workspace** | Resend DKIM selector present; `send.homeflowpro.ai` exists with its own SPF (Return-Path) |
+| `pestflow.ai` | `v=DMARC1; p=none` | **NONE** | DKIM present |
+| `mail.homeflowpro.ai` | — | — | **does not exist yet** |
 
-That matters here for the same reason CHANGE 1 exists. The apex is Scott's human mail domain. If the
-subdomain's policy has to be managed by editing the apex's DMARC record, then DMARC becomes a shared
-control surface between transactional mail and his personal mail — reintroducing, at the policy layer,
-precisely the coupling CHANGE 1 removes at the reputation layer.
+**No `sp=` on the apex, so subdomains inherit `p`.** `mail.homeflowpro.ai` would inherit
+`p=quarantine` from the moment it exists. It needs its own `_dmarc.mail.homeflowpro.ai`, its own
+Resend verification, its own DKIM and its own Return-Path subdomain — **budget it as a full second
+domain setup, not a DNS line item.**
 
-**The clean form is a `_dmarc.mail.homeflowpro.ai` record of its own**, so the subdomain's policy can
-be tightened or loosened without touching the apex. Whether it should start at `p=none` and at what
-point it moves is the unanswered half of Q4 and should go back through the gate with CHANGE 1's
-subdomain in the prompt, since the original question presumed apex sending.
+The apex having **Google Workspace MX** also confirms CHANGE 1's Reply-To split from the other side:
+`pestflow.ai` has **no MX at all**, so a reply to today's `From` has nowhere to land. Moving `From`
+to the subdomain while `Reply-To` stays on the apex is the first arrangement in this migration where
+a reply actually reaches a mailbox.
 
-### Q5 — not covered; half of it I can answer from the spec, half I cannot
+### Q5 — settled from specification
 
-DMARC evaluates the **domain** of the `From` header. The display name is free text and has no
-alignment interaction, so `{businessName} via HomeFlow Pro <support@…>` cannot break DMARC. That half
-is settled by the specification, not by the gate.
+Gmail's own "via" annotation appears when the `From` domain differs from the DKIM `d=` /
+Return-Path domain. Ours will align, so Gmail adds nothing and there is no doubled "via". The literal
+`via HomeFlow Pro` is display-name free text and cannot affect alignment. **No re-run needed.**
 
-The unanswered half is Gmail's automatic annotation. Gmail appends its own "via" when the `From`
-domain differs from the authenticating domain; with CHANGE 1, DKIM signs on `mail.homeflowpro.ai` and
-the `From` is on `mail.homeflowpro.ai`, so it should be aligned and no annotation should appear —
-**but that is my reasoning from how the annotation is triggered, not a gate answer, and the failure
-mode if I am wrong is a visibly doubled "via" on tenant-branded mail.** Worth one line in a re-run.
+---
+
+## ⚠️ FIRST-CLASS RISK — the cutover is a POLICY ESCALATION
+
+Found in the DNS, and missed by both validators and by both of us until the records were read.
+
+| | today | after cutover |
+|---|---|---|
+| domain | `pestflow.ai` | `mail.homeflowpro.ai` (inheriting the apex) |
+| DMARC policy | **`p=none`** | **`p=quarantine`** |
+| an alignment failure is… | **delivered** | **sent to spam** |
+
+This is not the same migration with a new name on it. **Today a misconfiguration still lands in the
+inbox; after cutover the identical misconfiguration lands in spam.** The safety margin that has been
+quietly absorbing any SPF/DKIM imperfection on `pestflow.ai` does not exist on the destination.
+
+It sharpens two things already in this document:
+- **Stage 4 (credentials, invite, password reset) is where this bites**, because a quarantined
+  password reset is a lockout rather than a delay.
+- **It is the strongest argument for CHANGE 3's webhooks landing first.** Under `p=none` an
+  authentication problem is survivable and largely invisible; under `p=quarantine` it is neither, and
+  `email.delivery_delayed` / `email.bounced` become the only way to see it.
+
+**A deliberate `p=none` on `_dmarc.mail.homeflowpro.ai` during the staged period is worth
+considering** — it makes the subdomain's policy an explicit choice rather than an inherited one, and
+it can be tightened to match the apex once delivery history exists. A proposal, not a decision.
+
+## ⚠️ BLOCKER before stage 0 — the DMARC reports go to GoDaddy, not to Scott
+
+`rua=mailto:dmarc_rua@onsecureserver.net`. **Scott receives no DMARC aggregate reports for the domain
+he is migrating onto.**
+
+Without a `rua` he controls, the migration is unobservable *at the authentication layer* — and
+CHANGE 3's Resend webhooks do not close this gap. They report what Resend did with a message;
+aggregate reports say what **receivers** did with the authentication, including for mail Resend never
+sent. Under `p=quarantine` that is the difference between knowing why mail is being quarantined and
+guessing.
+
+**Adding his own `rua` is a five-minute DNS edit and it must happen BEFORE stage 0.** It is also the
+cheapest action available here: it changes no code, sends no mail, and starts accumulating the
+baseline that makes the cutover legible.
 
 ---
 
@@ -255,37 +292,36 @@ secret's value.
 
 ---
 
-## Verification I could not perform from this session
+## DNS — RESOLVED by Scott; what I could not do, and why that mattered
 
-**No DNS resolver is available here.** `dig` is not installed and DNS-over-HTTPS is blocked by the
-proxy (`CONNECT tunnel failed, 403`).
+**No DNS resolver is available in this session.** `dig` is not installed and DNS-over-HTTPS is
+proxy-blocked (`CONNECT tunnel failed, 403`). Scott ran the lookups; the facts are in Q4 above.
 
-My first probe returned empty output for every domain including `pestflow.ai`, which is actively
-sending — that emptiness was the *missing binary*, not a missing record. Recorded because reading it
-as "no DMARC record exists" is precisely the vacuous-evidence failure this project keeps hitting: a
-probe that cannot succeed returns nothing, and nothing reads like a finding.
+Kept as a record because of *how* the probe failed: my first attempt returned empty output for every
+domain **including `pestflow.ai`, which is actively sending.** That emptiness was the missing binary,
+not a missing record. Reading it as "no DMARC record exists" would have produced a confident and
+completely wrong finding — and it would have concluded the opposite of the truth, since the real
+records are exactly what surfaced both the policy escalation and the misdirected `rua`.
 
-**So the DMARC state of both domains is unverified here.** Before cutover, confirm on a machine with a
-resolver:
+A probe that cannot succeed returns nothing, and nothing reads like a clean result.
 
-```
-dig +short TXT _dmarc.homeflowpro.ai
-dig +short TXT _dmarc.mail.homeflowpro.ai
-dig +short TXT _dmarc.pestflow.ai
-dig +short MX  homeflowpro.ai
-```
-
-Resend's domain state is likewise unverified from here (no credentials in this session); the
+Resend's domain state remains unverified from here (no credentials in this session); the
 2026-08-25 09:16 verification is taken as given.
 
 ---
 
 ## Status
 
-Gate run; three changes incorporated. **No code written, no address changed.** Open:
+Gate closed on all five questions; three changes incorporated. **No code written, no address
+changed.** `email_events` migration **APPROVED**. Remaining, in order:
 
-1. **Q3, Q4, Q5 were not covered** by the returned synthesis. Q3 can still overturn the staged order;
-   Q4 now carries CHANGE 1's subdomain-policy question, which the original prompt did not contain.
-2. **The `email_events` migration** needs approval before stage 0 can be implemented, since CHANGE 3
-   puts webhooks before cutover.
-3. **DNS for `mail.homeflowpro.ai`** — new records and Resend verification, ahead of any cutover.
+1. **Add a `rua` Scott controls** to `_dmarc.homeflowpro.ai` — five-minute DNS edit, **before stage
+   0**, or the migration is unobservable at the authentication layer regardless of webhooks.
+2. **Stand up `mail.homeflowpro.ai` as a full domain setup** — its own `_dmarc`, its own Resend
+   verification, its own DKIM, its own Return-Path subdomain. It inherits `p=quarantine` otherwise.
+3. **Implement stage 0**, in this order: `email_events` migration + `resend-webhook` → set
+   `MAIL_SENDING_DOMAIN=pestflow.ai` → deploy the fail-closed helper. The CHANGE 2 sequencing is
+   load-bearing; reversing the last two steps stops all mail.
+
+Carried assumption, deliberately visible: **Q3 (staged vs clean switch) is Scott's judgement call,
+not a validated finding.** Re-examine it first if delivery degrades.
