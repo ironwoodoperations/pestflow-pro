@@ -21,3 +21,30 @@ export function cityFromBusinessInfo(biz: unknown): string {
   const match = addr.match(/,\s*([^,]+?),?\s*[A-Z]{2}\b/)
   return match ? match[1].trim() : ''
 }
+
+/**
+ * S298 — the tenant's city for a PROMPT, preferring the structured field.
+ *
+ * `business_info.address_locality` is what the settings form writes under the
+ * label "City" (BusinessInfoSection), and it is populated and correct for 8 of
+ * the 9 live tenants. cityFromBusinessInfo above does not read it: it checks a
+ * `city` key that exists on NO tenant, then regex-parses the free-text address.
+ * That parse returns the right answer for all current data, so it is left
+ * exactly as it is — five other callers depend on it and widening it widens the
+ * blast radius. This reads the authoritative field first and keeps that parse as
+ * the fallback for any tenant whose address_locality was never filled in.
+ *
+ * Returns '' when no city can be read. '' means OMIT THE CLAUSE — there is no
+ * default city, because a guessed city is a claim about where the business works.
+ *
+ * Lives here, exported and tested, rather than inline at the call site. An
+ * unexported helper inside a behaviour file is exactly what hid the fix-chain's
+ * pest prompts from S293 PR B.
+ */
+export function localityFromBusinessInfo(biz: unknown): string {
+  const v = (biz ?? {}) as { address_locality?: unknown }
+  if (typeof v.address_locality === 'string' && v.address_locality.trim()) {
+    return v.address_locality.trim()
+  }
+  return cityFromBusinessInfo(biz)
+}

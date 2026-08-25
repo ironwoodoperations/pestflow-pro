@@ -2,7 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import {
   buildSeoMetadataPrompt, buildKeywordsPrompt, buildAioFallbackDescription,
+  buildFixFieldPrompt,
 } from './seoPrompts.ts';
+import { FIX_FIELDS } from './seoTypes.ts';
+import { localityFromBusinessInfo } from '../../../lib/businessCity.ts';
 import { buildBlogDraftSystemPrompt } from '../../../lib/ai/blogDraftPrompt.ts';
 
 // S293 PR B — ASSEMBLED STRINGS, not helpers.
@@ -31,6 +34,20 @@ const NEUTRAL_PAGE = {
   services: [] as string[],
 };
 
+/**
+ * S298 — the fix-chain's assembled strings, both halves of all four fields.
+ *
+ * The page label is a TENANT FACT and is deliberately trade-free here, for the
+ * same reason NEUTRAL_PAGE is: if the label said "Sprinkler Systems", a trade
+ * word in the output would prove nothing about where it came from.
+ */
+function fixPrompts(vertical: string | null, city: string, businessName: string): string[] {
+  return FIX_FIELDS.flatMap((fixField) => {
+    const { system, user } = buildFixFieldPrompt({ fixField, vertical, businessName, city, pageLabel: 'Home' });
+    return [system, user];
+  });
+}
+
 /** Every assembled string a vertical produces, for one set of tenant facts. */
 function allPrompts(vertical: string | null, city: string, businessName: string): string[] {
   const meta = buildSeoMetadataPrompt({ vertical, businessName, city, ...NEUTRAL_PAGE });
@@ -40,6 +57,7 @@ function allPrompts(vertical: string | null, city: string, businessName: string)
     buildKeywordsPrompt({ vertical, page: 'home', topic: 'watering', businessName, city }),
     buildAioFallbackDescription({ vertical, keywords: NEUTRAL_KEYWORDS, businessName, city }),
     buildBlogDraftSystemPrompt({ vertical, tone: 'informative', city }),
+    ...fixPrompts(vertical, city, businessName),
   ];
 }
 
@@ -53,7 +71,12 @@ describe('the corpus is real (the guards cannot pass vacuously)', () => {
   it('every builder returns a non-trivial string for every vertical', () => {
     for (const v of ['pest', 'irrigation', null]) {
       const corpus = allPrompts(v, 'Hawkins', 'Precision Lawn Systems LLC');
-      expect(corpus.length).toBe(5);
+      // S298 — the count is DERIVED from FIX_FIELDS, and FIX_FIELDS is asserted
+      // to have four entries below. Emptying the list would otherwise shrink the
+      // corpus silently and every loop in this file would iterate less while
+      // still passing green. That vacuity has landed here three times.
+      expect(FIX_FIELDS).toHaveLength(4);
+      expect(corpus.length).toBe(5 + FIX_FIELDS.length * 2);
       for (const s of corpus) {
         expect(typeof s, `${v}: not a string`).toBe('string');
       }
@@ -62,6 +85,19 @@ describe('the corpus is real (the guards cannot pass vacuously)', () => {
       // AIO description is one sentence. One floor for all three would be
       // satisfied by any of them alone.
       const [metaSystem, metaUser, keywords, aio, blog] = corpus;
+      // Floors for the fix-chain strings too, so an empty or stub builder is
+      // not silently admitted to the corpus the guards below iterate. Separate
+      // floors per kind, for the reason stated above: the system prompts carry
+      // the ban list and are substantial, while the user block is a three-line
+      // fact list plus one instruction. A single floor covering both would be
+      // satisfied by the system strings alone and would never see a gutted user
+      // block.
+      const fix = corpus.slice(5);
+      fix.forEach((s, i) => {
+        const isSystem = i % 2 === 0;
+        expect(s.length, `${v}: fix ${isSystem ? 'system' : 'user'} too short: ${JSON.stringify(s)}`)
+          .toBeGreaterThan(isSystem ? 500 : 60);
+      });
       expect(metaSystem.length, `${v}: metadata system`).toBeGreaterThan(400);
       expect(metaUser.length, `${v}: metadata user`).toBeGreaterThan(40);
       expect(keywords.length, `${v}: keywords`).toBeGreaterThan(400);
@@ -170,6 +206,122 @@ describe('a recorded vertical names its OWN trade', () => {
       .toBe('sprinkler repair — Irrigation services from PLS in Hawkins.');
     expect(buildAioFallbackDescription({ vertical: null, keywords: ['sprinkler repair'], businessName: 'PLS', city: 'Hawkins' }))
       .toBe('sprinkler repair — from PLS in Hawkins.');
+  });
+});
+
+describe('S298 — the fix-chain\'s ASSEMBLED system string, all four fields x three verticals', () => {
+  // The output of these four is not a suggestion an operator reviews. It is
+  // persisted by apply-finding-fix to page_content.intro / seo_meta.* and pushed
+  // to the LIVE PUBLIC PAGE by triggerRevalidate. All four hardcoded pest.
+
+  /** The list is asserted here too: an emptied FIX_FIELDS runs zero cases below. */
+  it('covers every fix_field there is — a shrunken list fails instead of iterating nothing', () => {
+    expect(FIX_FIELDS).toHaveLength(4);
+    expect([...FIX_FIELDS].sort()).toEqual(
+      ['focus_keyword', 'intro', 'meta_description', 'meta_title'],
+    );
+  });
+
+  const systemFor = (fixField: typeof FIX_FIELDS[number], vertical: string | null) =>
+    buildFixFieldPrompt({ fixField, vertical, businessName: 'Acme', city: 'Hawkins', pageLabel: 'Home' }).system;
+
+  for (const fixField of FIX_FIELDS) {
+    it(`${fixField}: pest names the pest trade`, () => {
+      expect(systemFor(fixField, 'pest')).toMatch(/\bpest control\b/i);
+    });
+
+    it(`${fixField}: irrigation names irrigation and NO pest`, () => {
+      const system = systemFor(fixField, 'irrigation');
+      expect(system).toMatch(/\birrigation\b/i);
+      expect(system, 'pest leaked into an irrigation tenant\'s live copy').not.toMatch(PEST_VOCAB);
+    });
+
+    it(`${fixField}: an unrecorded vertical names NO trade — and says so`, () => {
+      const system = systemFor(fixField, null);
+      expect(system).not.toMatch(PEST_VOCAB);
+      expect(system).not.toMatch(IRRIGATION_VOCAB);
+      // Not a generic stand-in either.
+      expect(system).not.toMatch(/home services|local service business|general services/i);
+      // The absence is STATED, following narrationPrompt's NO_TRADE_RULE: with
+      // the page label in the user block, silence is filled rather than left.
+      expect(system).toMatch(/trade is not recorded/i);
+      expect(system).toMatch(/Do NOT name, guess, or imply any specific/i);
+    });
+
+    it(`${fixField}: carries the ban list — these four write to the live site and had none`, () => {
+      for (const v of ['pest', 'irrigation', null]) {
+        expect(systemFor(fixField, v)).toContain('DO NOT INVENT ANYTHING');
+      }
+    });
+
+    it(`${fixField}: the no-trade rule is DROPPED when the trade IS recorded`, () => {
+      expect(systemFor(fixField, 'pest')).not.toMatch(/trade is not recorded/i);
+      expect(systemFor(fixField, 'irrigation')).not.toMatch(/trade is not recorded/i);
+    });
+  }
+});
+
+describe('S298 — the city slot, against the shape the database actually has', () => {
+  /** pls's REAL business_info: no `city` key, a structured locality, a street address. */
+  const PLS_BUSINESS_INFO = {
+    name: 'Precision Lawn Systems LLC',
+    address: '805 W Broadway St, Big Sandy, TX 75755',
+    address_locality: 'Big Sandy',
+    address_region: 'TX',
+  };
+
+  it('the fixture has NO `city` key — which is why the old code always took the address branch', () => {
+    expect('city' in PLS_BUSINESS_INFO).toBe(false);
+  });
+
+  it('resolves the structured locality, not the street address', () => {
+    expect(localityFromBusinessInfo(PLS_BUSINESS_INFO)).toBe('Big Sandy');
+  });
+
+  it('falls back to the parsed address when address_locality was never filled in', () => {
+    const { name, address, address_region } = PLS_BUSINESS_INFO;
+    expect(localityFromBusinessInfo({ name, address, address_region })).toBe('Big Sandy');
+  });
+
+  it('returns \'\' rather than a placeholder when there is nothing to read', () => {
+    expect(localityFromBusinessInfo({ name: 'Vita Glow Wellness', address: '' })).toBe('');
+    expect(localityFromBusinessInfo({})).toBe('');
+    expect(localityFromBusinessInfo(null)).toBe('');
+  });
+
+  it('a street address NEVER reaches the model under a "City:" label', () => {
+    const city = localityFromBusinessInfo(PLS_BUSINESS_INFO);
+    for (const fixField of FIX_FIELDS) {
+      const { user } = buildFixFieldPrompt({
+        fixField, vertical: 'irrigation', businessName: PLS_BUSINESS_INFO.name, city, pageLabel: 'Home',
+      });
+      expect(user).toContain('City: Big Sandy');
+      expect(user, 'the postal address reached the City slot').not.toContain('805 W Broadway');
+      expect(user).not.toMatch(/City:.*TX 75755/);
+    }
+  });
+
+  it('with no city: the clause is OMITTED and meta_title stops demanding one', () => {
+    for (const fixField of FIX_FIELDS) {
+      const { user } = buildFixFieldPrompt({
+        fixField, vertical: null, businessName: 'Vita Glow Wellness', city: '', pageLabel: 'Home',
+      });
+      expect(user, 'an empty City: label reached the model').not.toMatch(/City:/);
+      expect(user, 'a placeholder locality was substituted').not.toMatch(/your area/i);
+    }
+    // Instructing the model to include a city it has not been given is
+    // instructing it to invent one.
+    const withCity = buildFixFieldPrompt({ fixField: 'meta_title', vertical: null, businessName: 'X', city: 'Hawkins', pageLabel: 'Home' });
+    const without = buildFixFieldPrompt({ fixField: 'meta_title', vertical: null, businessName: 'X', city: '', pageLabel: 'Home' });
+    expect(withCity.user).toContain('Include the city and the main keyword');
+    expect(without.user).toContain('Include the main keyword');
+    expect(without.user).not.toContain('the city');
+  });
+
+  it('an absent business name is OMITTED, not replaced with a stand-in', () => {
+    const { user } = buildFixFieldPrompt({ fixField: 'intro', vertical: 'pest', businessName: '', city: 'Tyler', pageLabel: 'Home' });
+    expect(user).not.toMatch(/Business:/);
+    expect(user, 'the S294 absent-data rule: omit, never substitute').not.toMatch(/this company/i);
   });
 });
 

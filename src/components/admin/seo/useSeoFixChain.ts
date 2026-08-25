@@ -4,29 +4,23 @@ import { FunctionsHttpError } from '@supabase/supabase-js'
 import { supabase } from '../../../lib/supabase'
 import { triggerRevalidate } from '../../../lib/revalidate'
 import { callAi } from '../../../lib/ai/callAi'
-import type { FixField, PageFinding, SeoPageRow } from './seoTypes'
+import { localityFromBusinessInfo } from '../../../lib/businessCity'
+import { useAdminPreset } from '../../../hooks/useAdminPreset'
+import { buildFixFieldPrompt } from './seoPrompts'
+import type { PageFinding, SeoPageRow } from './seoTypes'
 
 // S263 — Report Fix-Chain client logic: per-finding Generate (Pro) + Apply (Pro) and
 // Elite Fix-all. ALL gates are enforced server-side by apply-finding-fix / ai-proxy;
 // this hook is the cosmetic driver. SEAM 1: every apply AWAITS the edge 200, THEN
 // calls triggerRevalidate sequentially (never before, never fire-and-forget).
+//
+// S298 — the four generation prompts have MOVED to seoPrompts.ts. They lived
+// here, inline, in an unexported `buildPrompt`, and all four hardcoded the pest
+// trade; S293 PR B de-pested every other prompt in this directory and could not
+// see this one. The prompt does not live in a behaviour file any more, so the
+// assembled string is testable and the next sweep can find it.
 
 type Status = 'applied' | 'conflict' | 'error'
-
-// Per-fix_field generation prompt. Plain text out (no JSON) — trimmed + de-quoted.
-function buildPrompt(fixField: FixField, business: string, city: string, pageLabel: string) {
-  const ctx = `Business: ${business}. City: ${city}. Page: ${pageLabel}.`
-  switch (fixField) {
-    case 'intro':
-      return { system: 'You write concise, trustworthy website copy for pest-control companies. Output PLAIN TEXT only — no markdown, no quotes, no preamble.', user: `${ctx}\nWrite a 2–4 sentence intro paragraph for this page describing the service in a warm, local, professional tone.` }
-    case 'meta_title':
-      return { system: 'You are an SEO specialist for pest-control websites. Output PLAIN TEXT only — no quotes, no markdown, just the title.', user: `${ctx}\nWrite an SEO meta title of 50–60 characters. Include the city and the main keyword.` }
-    case 'meta_description':
-      return { system: 'You are an SEO specialist for pest-control websites. Output PLAIN TEXT only — no quotes, no markdown, just the description.', user: `${ctx}\nWrite an SEO meta description of 70–160 characters with a clear call to action.` }
-    case 'focus_keyword':
-      return { system: 'You are an SEO specialist for pest-control websites. Output PLAIN TEXT only — just the phrase, no quotes.', user: `${ctx}\nGive a single 2–4 word focus keyword phrase this page should rank for.` }
-  }
-}
 
 const clean = (t: string) => t.replace(/```[a-z]*|```/gi, '').replace(/^["'\s]+|["'\s]+$/g, '').trim()
 
@@ -41,6 +35,8 @@ async function edgeError(error: unknown): Promise<{ status: number; reason: stri
 }
 
 export function useSeoFixChain(tenantId: string, pages: SeoPageRow[], reload: () => Promise<void> | void) {
+  // The same source SeoKeywordsTab, SeoAioTab and BlogPostEditor read.
+  const { vertical } = useAdminPreset()
   const [generatingId, setGeneratingId] = useState<string | null>(null)
   const [applyingId, setApplyingId] = useState<string | null>(null)
   const [fixAllRunning, setFixAllRunning] = useState(false)
@@ -55,8 +51,14 @@ export function useSeoFixChain(tenantId: string, pages: SeoPageRow[], reload: ()
     setGeneratingId(finding.id)
     try {
       const bizRes = await supabase.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle()
-      const biz = (bizRes.data?.value ?? {}) as { name?: string; address?: string; city?: string }
-      const { system, user } = buildPrompt(finding.fixField, biz.name || 'this company', biz.city || biz.address || 'your area', pageLabel)
+      const biz = (bizRes.data?.value ?? {}) as { name?: string }
+      // S298 — `business_info.city` does not exist on ANY of the nine tenants, so
+      // the old `biz.city || biz.address` always fell through to the whole postal
+      // address under a "City:" label. '' means OMIT the clause, never substitute.
+      const city = localityFromBusinessInfo(bizRes.data?.value)
+      const { system, user } = buildFixFieldPrompt({
+        fixField: finding.fixField, vertical, businessName: biz.name || '', city, pageLabel,
+      })
       const json = await callAi('seo_fix', { tenant_id: tenantId, max_tokens: 400, system, messages: [{ role: 'user', content: user }] })
       const text = clean(json.content?.[0]?.text || '')
       if (!text) { toast.error('AI returned an empty fix. Try again.'); return }
