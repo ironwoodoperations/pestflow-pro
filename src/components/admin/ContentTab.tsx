@@ -11,7 +11,7 @@ import FaqTab from './FaqTab'
 import { callAi } from '../../lib/ai/callAi'
 import { buildContentPrompt } from './contentPrompt'
 import { useAdminPreset } from '../../hooks/useAdminPreset'
-import { partitionPageSlugs, isServicePageSlug } from '../../lib/adminVerticalPreset'
+import { partitionPageSlugs, isServicePageSlug, isAdminVertical } from '../../lib/adminVerticalPreset'
 
 
 const toSlug = (title: string) =>
@@ -143,6 +143,14 @@ export default function ContentTab() {
   // was unreachable for all five of pls's service pages, which silently took
   // the generic branch. Keying on the vertical's own slugs fixes both.
   const isServicePage = isServicePageSlug(vertical, selectedSlug)
+
+  // S297 — the Hero Headline example. Built from the preset's service noun where
+  // the vertical is recorded, and EMPTY otherwise: NEUTRAL's entityLabels.service
+  // is the bare word 'service', so interpolating it unconditionally would ship an
+  // invented neutral example to exactly the tenants the rule protects.
+  const heroHeadlinePlaceholder = isAdminVertical(vertical)
+    ? `e.g. Professional ${preset.entityLabels.service} you can trust`
+    : ''
 
   const prompt = () => buildContentPrompt({ slug: selectedSlug, businessName, businessCity, isServicePage })
 
@@ -309,6 +317,7 @@ export default function ContentTab() {
             <ContentPageForm
               selectedSlug={selectedSlug} form={form} loading={loading} saving={saving}
               aiLoading={aiLoading} reverting={reverting} isServicePage={isServicePage} serviceLabel={preset.entityLabels.service}
+              heroHeadlinePlaceholder={heroHeadlinePlaceholder}
               heroHeadline={heroHeadline} onHeroHeadlineChange={setHeroHeadline}
               applyHeroToAllPages={applyHeroToAllPages}
               updateField={updateField} onSave={handleSave} onGenerateAI={generateAI} onRevert={handleRevert}

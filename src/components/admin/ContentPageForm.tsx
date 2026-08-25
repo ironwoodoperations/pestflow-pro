@@ -24,6 +24,13 @@ interface Props {
   isServicePage: boolean
   /** What this trade's service is called, e.g. "irrigation service". */
   serviceLabel: string
+  /**
+   * S297 — the Hero Headline example, built by ContentTab from the resolved
+   * vertical. Was hardcoded "e.g. Professional Pest Control You Can Trust" for
+   * every tenant. EMPTY when the vertical is unrecorded: the preset has no hero
+   * noun to take, and an invented neutral example is what the rule forbids.
+   */
+  heroHeadlinePlaceholder?: string
   heroHeadline?: string
   onHeroHeadlineChange?: (val: string) => void
   applyHeroToAllPages?: boolean
@@ -179,7 +186,7 @@ function HeroImageUpload({ slug, onUpdate, masterOverride = false }: { slug: str
 
 const inputClass = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-400'
 
-export default function ContentPageForm({ selectedSlug, form, loading, saving, aiLoading, reverting, isServicePage, serviceLabel, heroHeadline, onHeroHeadlineChange, applyHeroToAllPages, updateField, onSave, onGenerateAI, onRevert, onImageUpdate }: Props) {
+export default function ContentPageForm({ selectedSlug, form, loading, saving, aiLoading, reverting, isServicePage, serviceLabel, heroHeadlinePlaceholder = '', heroHeadline, onHeroHeadlineChange, applyHeroToAllPages, updateField, onSave, onGenerateAI, onRevert, onImageUpdate }: Props) {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
       <h3 className="text-base font-semibold text-gray-900 mb-1">Editing: <span className="text-emerald-600">{selectedSlug}</span></h3>
@@ -189,7 +196,7 @@ export default function ContentPageForm({ selectedSlug, form, loading, saving, a
           {selectedSlug === 'home' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Hero Headline</label>
-              <input type="text" value={heroHeadline || ''} onChange={e => onHeroHeadlineChange?.(e.target.value)} placeholder="e.g. Professional Pest Control You Can Trust" className={inputClass} />
+              <input type="text" value={heroHeadline || ''} onChange={e => onHeroHeadlineChange?.(e.target.value)} placeholder={heroHeadlinePlaceholder} className={inputClass} />
               <p className="text-xs text-gray-400 mt-1">This is the large text shown in the hero section of your homepage.</p>
             </div>
           )}

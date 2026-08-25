@@ -175,6 +175,7 @@ export default function SeoPagesTab({
                         aiGenerating={aiGenerating === page.slug}
                         aiGenerated={aiGeneratedSlug === page.slug}
                         fixChain={fixChain}
+                        keywordExample={preset.placeholders.seoKeyword}
                         onChange={onEditorChange} onSave={() => onSaveMeta(page.slug)}
                         onCancel={onCloseEditor} onAiGenerate={() => onAiGenerate(page.slug)}
                       />

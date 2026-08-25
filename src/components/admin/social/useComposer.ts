@@ -37,6 +37,14 @@ const ACCEPTED_IMAGE_EXT = ['jpg', 'jpeg', 'png', 'gif', 'webp']
 const VIDEO_WARN_BYTES = 200 * 1024 * 1024        // 200 MB — warn, don't block
 const VIDEO_MAX_BYTES = 5 * 1024 * 1024 * 1024    // 5 GB — Zernio platform max, reject
 
+// S297 — EXPORTED so the guard can assert the value rather than grep the source.
+// This was 'Pest Control'. The load effect below only overwrites it when the
+// stored business_info.industry is TRUTHY, so an irrigation tenant with an empty
+// stored industry kept the pest default for the whole session. Empty falls
+// through to the 'generic' template set, and `vertical` — the CHECK-constrained
+// field read from the same row — is what the composer actually keys on.
+export const INITIAL_COMPOSER_INDUSTRY = ''
+
 export function useComposer(
   onPosted?: () => void,
   onCaptionGenerated?: () => void,
@@ -58,7 +66,7 @@ export function useComposer(
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState('')
   const [businessName, setBusinessName] = useState('Your Business')
-  const [industry, setIndustry] = useState('Pest Control')
+  const [industry, setIndustry] = useState(INITIAL_COMPOSER_INDUSTRY)
   // S285 — the CHECK-constrained field, read from the same row as industry.
   // ComposerTemplates prefers it because industry is free text that rarely
   // matches a template key.

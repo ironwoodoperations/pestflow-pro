@@ -36,12 +36,15 @@ export default function Step3Domain({ form, setForm }: Props) {
         ) : (
           <>
             <div>
+              {/* S297 — the example was the demo tenant's own pest slug
+                  ("ironclad-pest.com"). It now follows the slug the operator
+                  typed in Step 1, and is empty until they type one. */}
               <label className="block text-sm font-medium text-gray-700 mb-1">Current domain</label>
               <input
                 value={form.domain}
                 onChange={e => setForm({ domain: e.target.value })}
                 className={INPUT}
-                placeholder="e.g. ironclad-pest.com"
+                placeholder={form.slug ? `e.g. ${form.slug}.com` : ''}
                 type="text"
               />
             </div>

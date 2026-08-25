@@ -11,6 +11,7 @@ import PageHelpBanner from './PageHelpBanner'
 import ConfirmDeleteModal from '../shared/ConfirmDeleteModal'
 import { buildServiceAreaHeroTitle } from '../../../supabase/functions/_shared/provisioningSeed'
 import { useAdminPreset } from '../../hooks/useAdminPreset'
+import { ADMIN_VERTICAL_LABELS, isAdminVertical } from '../../lib/adminVerticalPreset'
 
 interface ServiceArea {
   id: string; city: string; slug: string; hero_title: string; intro: string
@@ -37,6 +38,12 @@ const LOCATION_CAPS: Record<number, number> = { 1: 3, 2: 5, 3: 10, 4: Infinity }
 export default function LocationsTab() {
   const { id: tenantId } = useTenant()
   const { vertical } = useAdminPreset()
+  // S297 — the three location placeholders below were BUILT at render time
+  // (`${form.city} Pest Control`), so no source grep for a literal found them.
+  // The trade noun now comes from the recorded vertical; an unrecorded one gets
+  // an empty placeholder rather than a trade it may not be in. The hardcoded
+  // ", TX" / " tx" go with them — a region is a tenant fact, not a trade fact.
+  const tradeLabel = isAdminVertical(vertical) ? ADMIN_VERTICAL_LABELS[vertical] : ''
   const { tier } = usePlan()
   const [serviceAreas, setServiceAreas] = useState<ServiceArea[]>([])
   const [loading, setLoading] = useState(true)
@@ -227,7 +234,7 @@ export default function LocationsTab() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Hero Title</label>
-                <input value={form.hero_title} onChange={e => setForm(p => ({ ...p, hero_title: e.target.value }))} placeholder={`${form.city || 'City'} Pest Control`} className={inputClass} />
+                <input value={form.hero_title} onChange={e => setForm(p => ({ ...p, hero_title: e.target.value }))} placeholder={tradeLabel ? `${form.city || 'City'} ${tradeLabel}` : ''} className={inputClass} />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Intro Text</label>
@@ -235,7 +242,7 @@ export default function LocationsTab() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Meta Title</label>
-                <input value={form.meta_title} onChange={e => setForm(p => ({ ...p, meta_title: e.target.value }))} placeholder={`Pest Control in ${form.city || 'City'}, TX | Your Business`} className={inputClass} />
+                <input value={form.meta_title} onChange={e => setForm(p => ({ ...p, meta_title: e.target.value }))} placeholder={tradeLabel ? `${tradeLabel} in ${form.city || 'City'} | Your Business` : ''} className={inputClass} />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Meta Description</label>
@@ -243,7 +250,7 @@ export default function LocationsTab() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Focus Keyword</label>
-                <input value={form.focus_keyword} onChange={e => setForm(p => ({ ...p, focus_keyword: e.target.value }))} placeholder={`pest control ${form.city ? form.city.toLowerCase() : 'city'} tx`} className={inputClass} />
+                <input value={form.focus_keyword} onChange={e => setForm(p => ({ ...p, focus_keyword: e.target.value }))} placeholder={tradeLabel ? `${tradeLabel.toLowerCase()} ${form.city ? form.city.toLowerCase() : 'city'}` : ''} className={inputClass} />
               </div>
               <label className="flex items-center gap-2 text-sm text-gray-700">
                 <input type="checkbox" checked={form.is_live} onChange={e => setForm(p => ({ ...p, is_live: e.target.checked }))} className="rounded border-gray-300 text-emerald-500 focus:ring-emerald-500" />

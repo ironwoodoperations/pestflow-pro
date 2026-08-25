@@ -149,12 +149,12 @@ export default function NewCampaignModal({ onClose, onCreated, connectedKeys }: 
           <div>
             <label className="text-xs font-medium text-gray-700 block mb-1">Campaign Title *</label>
             <input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
-              placeholder="e.g. Spring Termite Season" className={inputCls} />
+              placeholder="" className={inputCls} />
           </div>
           <div>
             <label className="text-xs font-medium text-gray-700 block mb-1">Campaign Topic *</label>
             <textarea value={form.topic} onChange={e => setForm(p => ({ ...p, topic: e.target.value }))}
-              rows={2} placeholder="e.g. Promote spring termite inspections and treatment deals" className={inputCls} />
+              rows={2} placeholder="" className={inputCls} />
           </div>
           <div>
             <label className="text-xs font-medium text-gray-700 block mb-1">Tone</label>

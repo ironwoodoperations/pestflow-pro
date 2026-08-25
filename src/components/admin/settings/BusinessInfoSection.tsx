@@ -4,15 +4,7 @@ import { supabase } from '../../../lib/supabase'
 import { useTenant } from '../../../context/TenantBootProvider'
 import { triggerRevalidate } from '../../../lib/revalidate'
 import { validateBusinessInfo, type GeocodeSource, type HoursEntry } from '../../../../shared/lib/businessInfoValidation'
-
-interface BusinessInfoForm {
-  name: string; phone: string; email: string; address: string; hours: string
-  tagline: string; license: string; after_hours_phone: string; founded_year: string; industry: string
-  street_address: string; address_locality: string; address_region: string
-  postal_code: string; address_country: string
-  latitude: number | ''; longitude: number | ''
-  geocode_source: GeocodeSource | ''; timezone: string; hours_structured: HoursEntry[]
-}
+import { INITIAL_BUSINESS_INFO_FORM, industryFromStored, type BusinessInfoForm } from './businessInfoDefaults'
 
 const IC = 'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-400'
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const
@@ -45,12 +37,7 @@ export default function BusinessInfoSection() {
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [form, setForm] = useState<BusinessInfoForm>({
-    name: '', phone: '', email: '', address: '', hours: '', tagline: '', license: '',
-    after_hours_phone: '', founded_year: '', industry: 'Pest Control',
-    street_address: '', address_locality: '', address_region: '', postal_code: '', address_country: '',
-    latitude: '', longitude: '', geocode_source: '', timezone: '', hours_structured: [],
-  })
+  const [form, setForm] = useState<BusinessInfoForm>(INITIAL_BUSINESS_INFO_FORM)
   const extraDbFields = useRef<Record<string, unknown>>({})
 
   useEffect(() => {
@@ -64,7 +51,7 @@ export default function BusinessInfoSection() {
             address: String(v.address || ''), hours: String(v.hours || ''),
             tagline: String(v.tagline || ''), license: String(v.license || ''),
             after_hours_phone: String(v.after_hours_phone || ''), founded_year: String(v.founded_year || ''),
-            industry: String(v.industry || 'Pest Control'),
+            industry: industryFromStored(v),
             street_address: String(v.street_address || ''), address_locality: String(v.address_locality || ''),
             address_region: String(v.address_region || ''), postal_code: String(v.postal_code || ''),
             address_country: String(v.address_country || ''),
@@ -117,16 +104,20 @@ export default function BusinessInfoSection() {
   if (loading) return <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"><p className="text-gray-400">Loading...</p></div>
 
   const fields: { label: string; key: keyof BusinessInfoForm; type?: string; placeholder?: string }[] = [
-    { label: 'Business Name', key: 'name', placeholder: 'Acme Pest Control' },
+    // S297 — the placeholders below used to name a trade (and a region) to every
+    // tenant. This form has no vertical in scope — it edits business_info, which
+    // is where the vertical is STORED — so there is no preset noun to take and
+    // they render nothing rather than a substituted or invented trade.
+    { label: 'Business Name', key: 'name', placeholder: '' },
     { label: 'Phone Number', key: 'phone', placeholder: '(903) 555-0100' },
-    { label: 'Email Address', key: 'email', type: 'email', placeholder: 'info@acmepest.com' },
+    { label: 'Email Address', key: 'email', type: 'email', placeholder: '' },
     { label: 'Street Address (legacy)', key: 'address', placeholder: '123 Main St, Tyler, TX 75701' },
     { label: 'Business Hours (legacy)', key: 'hours', placeholder: 'Mon-Fri 8am-6pm, Sat 9am-2pm' },
     { label: 'Tagline', key: 'tagline', placeholder: 'Fast. Effective. Guaranteed.' },
-    { label: 'License Number', key: 'license', placeholder: 'TPCL #12345' },
+    { label: 'License Number', key: 'license', placeholder: '' },
     { label: 'After-Hours Phone', key: 'after_hours_phone', placeholder: '(903) 555-0199' },
     { label: 'Year Founded', key: 'founded_year', placeholder: '2010' },
-    { label: 'Industry / Business Type', key: 'industry', placeholder: 'Pest Control, HVAC...' },
+    { label: 'Industry / Business Type', key: 'industry', placeholder: '' },
   ]
   const addrFields: { key: 'street_address' | 'address_locality' | 'address_region' | 'postal_code' | 'address_country'; label: string; placeholder: string }[] = [
     { key: 'street_address', label: 'Street Address', placeholder: '123 Main St' },
