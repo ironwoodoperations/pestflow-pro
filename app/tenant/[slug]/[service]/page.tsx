@@ -12,6 +12,7 @@ export async function generateStaticParams() {
 }
 import { getPageContent, getLocation, getAllLocations, getHeroMedia, getSeoMeta, getServiceFaqs, getIntegrations, getAboutSettings } from '../_lib/queries';
 import { resolveAboutStats } from '../_lib/aboutStats';
+import { resolveHeroImage } from '../_lib/heroImage';
 import { SERVICE_SLUGS, IRRIGATION_SERVICE_SLUGS } from '../_lib/serviceData';
 import { resolveVertical } from '../../../../src/shells/_shared/serviceEntry';
 import { getVerticalCopy, withCity } from '../../../../src/shells/_shared/verticalCopy';
@@ -215,7 +216,14 @@ export default async function ServicePage({ params }: Params) {
     return <BoldLocalPestPage tenant={tenant} pestSlug={params.service} content={content} stats={boldLocalStats} />;
   }
   if (tenant.template === 'modern-pro') {
-    return <ModernProPestPage tenant={tenant} pestSlug={params.service} content={content} />;
+    // S295 — resolve AT THE ROUTE, which is what every other tenant route
+    // already does (home, about, blog, contact, faq, reviews). This route was
+    // the sole exception: it fetched heroMedia above and handed it to
+    // DefaultPestPage alone, and DefaultPestPage is the only service-page
+    // component that calls resolveHeroImage() — so on a themed tenant no hero
+    // resolved at all, whatever the database held.
+    const heroImageUrl = resolveHeroImage(content, heroMedia);
+    return <ModernProPestPage tenant={tenant} pestSlug={params.service} content={content} heroImageUrl={heroImageUrl} />;
   }
   if (tenant.template === 'rustic-rugged') {
     return <RusticRuggedPestPage tenant={tenant} pestSlug={params.service} content={content} />;

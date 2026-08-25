@@ -5,7 +5,17 @@ import { getVerticalCopy } from '../../../../../src/shells/_shared/verticalCopy'
 import { formatPhone } from '../../../../../shared/lib/formatPhone';
 
 type PageContent = { title?: string; subtitle?: string; intro?: string; hero_headline?: string } | null;
-interface Props { tenant: Tenant; pestSlug: string; content?: PageContent }
+interface Props {
+  tenant: Tenant;
+  pestSlug: string;
+  content?: PageContent;
+  /**
+   * S295 — resolved by the ROUTE via resolveHeroImage(content, heroMedia), the
+   * same way every other tenant route does it. null means the tenant has no
+   * hero image of any kind, and the hero keeps the gradient it has always had.
+   */
+  heroImageUrl?: string | null;
+}
 
 const pickString = (...vals: Array<string | undefined | null>): string | undefined => {
   for (const v of vals) {
@@ -15,7 +25,7 @@ const pickString = (...vals: Array<string | undefined | null>): string | undefin
 };
 
 
-export function ModernProPestPage({ tenant, pestSlug, content = null }: Props) {
+export function ModernProPestPage({ tenant, pestSlug, content = null, heroImageUrl = null }: Props) {
   // S-PLS-5 / D1 plumbing: vertical-aware accessor in place of the direct map
   // read. For pest tenants getServiceEntry('pest', slug) returns the SAME
   // object from PEST_CONTENT_MAP — identical render, locked by tests.
@@ -28,11 +38,24 @@ export function ModernProPestPage({ tenant, pestSlug, content = null }: Props) {
   const blurb = pickString(content?.intro, pest?.blurb)
     || `Engineered ${pest?.displayName?.toLowerCase() || 'pest'} elimination — measurable outcomes, documented protocols.`;
 
+  // S295 — the same treatment DefaultPestPage has always used: the image as a
+  // cover background under a 55% scrim, so white heading text keeps its
+  // contrast over an arbitrary photograph.
+  //
+  // The keys below are spread in their ORIGINAL order, and position/z-index are
+  // added ONLY on the image path. React serialises a style object in insertion
+  // order, so with heroImageUrl === null this renders the exact string it
+  // rendered before S295 — asserted byte-for-byte in the tests.
+  const heroBase = { padding: '5rem 1rem 3rem', borderBottom: '1px solid rgba(63,184,175,0.2)' };
+
   return (
     <div style={{ backgroundColor: '#0B1220', color: '#E5E7EB', fontFamily: 'Inter, sans-serif' }}>
       {/* Hero */}
-      <section style={{ padding: '5rem 1rem 3rem', borderBottom: '1px solid rgba(63,184,175,0.2)', background: 'linear-gradient(135deg,#1B2A4E,#0B1220)' }}>
-        <div className="max-w-5xl mx-auto" style={{ textAlign: 'center' }}>
+      <section style={heroImageUrl
+        ? { ...heroBase, position: 'relative', backgroundImage: `url(${heroImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+        : { ...heroBase, background: 'linear-gradient(135deg,#1B2A4E,#0B1220)' }}>
+        {heroImageUrl && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 0, pointerEvents: 'none' }} />}
+        <div className="max-w-5xl mx-auto" style={heroImageUrl ? { textAlign: 'center', position: 'relative', zIndex: 1 } : { textAlign: 'center' }}>
           <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#3FB8AF', marginBottom: '0.75rem' }}>{eyebrow}</p>
           <h1 style={{ fontSize: 'clamp(36px,5vw,56px)', fontWeight: 700, color: '#fff', marginBottom: '1rem', lineHeight: 1.15 }}>{heroTitle}</h1>
           <p style={{ fontSize: 17, color: '#94A3B8', lineHeight: 1.6, maxWidth: '60ch', margin: '0 auto 2rem' }}>{blurb}</p>
