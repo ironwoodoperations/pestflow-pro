@@ -42,3 +42,32 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   to `pestflow.ai` BEFORE the fail-closed code deploys — deploying it against an unset
   secret stops all mail. Withdrawn this session: the "phishing-shaped header" argument
   and the warming-volume rationale.
+
+---
+## Session — 2026-08-25 16:08 UTC
+- Branch: `s296-stage0-brief`
+- Commit: `678b397` — docs(S296): gate closed — DNS resolved, policy escalation is a first-class risk
+- Author: Claude
+- Files changed:
+  - STAGE0_s296-sending-domain.md
+- Next recommended action: Gate now CLOSED on all five questions and the `email_events`
+  migration is APPROVED — but stage 0 is STILL not implementable, and the two things
+  blocking it came out of DNS Scott resolved, not out of the validators. IN ORDER:
+  (1) add a `rua` Scott controls to `_dmarc.homeflowpro.ai` — today it points at GoDaddy
+  (`dmarc_rua@onsecureserver.net`), so he receives NO aggregate reports for the domain he
+  is migrating onto; Resend webhooks do NOT close that gap, because they report what
+  Resend did with a message while aggregate reports say what RECEIVERS did with the
+  authentication. (2) stand up `mail.homeflowpro.ai` as a FULL second domain setup — own
+  `_dmarc`, own Resend verification, own DKIM, own Return-Path subdomain — because there
+  is no `sp=` on the apex, so it inherits `p=quarantine`. (3) only then implement stage 0,
+  in this order: `email_events` + `resend-webhook` FIRST, then set
+  `MAIL_SENDING_DOMAIN=pestflow.ai`, THEN deploy the fail-closed helper.
+  THE FIRST-CLASS RISK, do not lose it: the cutover is a DMARC POLICY ESCALATION.
+  `pestflow.ai` is `p=none`, so an alignment failure is DELIVERED today; `homeflowpro.ai`
+  is `p=quarantine`, so the identical failure goes to SPAM. The margin that has been
+  absorbing SPF/DKIM imperfection does not exist on the destination — which is why stage 4
+  (credentials, invite, password reset) is where it bites, and why webhooks must land
+  first. CARRIED ASSUMPTION, deliberately visible: Q3 (staged vs one clean switch) is
+  Scott's JUDGEMENT CALL, not a validated finding. Re-examine it first if delivery
+  degrades. Also open: S298 investigation PR #298 awaiting approval to write
+  `fix/s298-seo-fix-chain-vertical`.
