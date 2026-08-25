@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useTenant } from '../../context/TenantBootProvider'
 import { PLATFORM_NAME } from '../../../shared/lib/platformBrand'
+import { TAB_SUBTITLES } from './dashboardTabCopy'
 import { PreviewModeContext } from '../../hooks/usePreviewMode'
 import { usePlan } from '../../hooks/usePlan'
 import {
@@ -48,23 +49,6 @@ const TABS = [
 ] as const
 
 type TabKey = (typeof TABS)[number]['key']
-
-const TAB_SUBTITLES: Record<string, string> = {
-  dashboard: 'Overview of your pest control business',
-  content: 'Manage page content across your website',
-  seo: 'Optimize your search engine rankings',
-  blog: 'Create and manage blog posts',
-  media: 'Upload and organize photos for posts',
-  social: 'Schedule and manage social media',
-  testimonials: 'Manage customer reviews and testimonials',
-  locations: 'Manage service area locations',
-  analytics: 'Business analytics and reports',
-  crm: 'Track leads and customer relationships',
-  team: 'Manage your team members shown on your website',
-  billing: 'Your current plan and payment history',
-  support: `Submit support requests to the ${PLATFORM_NAME} team`,
-  settings: 'Configure your business settings',
-}
 
 export default function Dashboard() {
   // S259b — one-way URL→state, read ONCE via a lazy initializer (no router

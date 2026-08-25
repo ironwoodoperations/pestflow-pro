@@ -440,6 +440,7 @@ import ContentPageForm from '../ContentPageForm';
 import { getAdminPreset, ADMIN_VERTICAL_LABELS, isAdminVertical } from '../../../lib/adminVerticalPreset';
 import { INITIAL_BUSINESS_INFO_FORM, industryFromStored } from '../settings/businessInfoDefaults';
 import { INITIAL_COMPOSER_INDUSTRY } from '../social/useComposer';
+import { TAB_SUBTITLES } from '../../../pages/admin/dashboardTabCopy';
 import type { SeoPageRow, EditorForm } from '../seo/seoTypes';
 import type { SeoFixChain } from '../seo/useSeoFixChain';
 
@@ -708,6 +709,43 @@ describe('S297 — the five defects, at the boundary each one lives on', () => {
       createElement(Step1BusinessInfo, { form: CS_INITIAL_FORM, setForm: noop } as never));
     expect(html).not.toContain('East Texas&#x27;s Most Trusted Pest Control');
     expect(html).not.toContain('Most Trusted');
+  });
+});
+
+describe('S297 — the admin dashboard tab subtitles', () => {
+  // The one addition Scott called before merge, and the correction that came with
+  // it: I had filed this report-only on the grounds that it is COPY rather than a
+  // placeholder. The taxonomy was right and the call was wrong — `dashboard` is
+  // the DEFAULT tab, so this string is the first line every tenant reads on every
+  // login, and the other thirteen subtitles were already trade-neutral. The
+  // outlier was the leak, not the design.
+  //
+  // Asserted over the WHOLE MAP rather than the one entry, so a pest subtitle
+  // added to any future tab goes red too. Dashboard.tsx itself is not rendered
+  // here: it pulls a lazy-loaded tab graph and the router, which is why the map
+  // moved to its own module.
+
+  it('the map is real and covers every tab — it cannot pass by being empty', () => {
+    expect(Object.keys(TAB_SUBTITLES)).toHaveLength(14);
+    expect(TAB_SUBTITLES.dashboard).toBe('Overview of your business');
+    for (const [tab, text] of Object.entries(TAB_SUBTITLES)) {
+      expect(text.length, `${tab} has no subtitle`).toBeGreaterThan(10);
+    }
+  });
+
+  it('no tab subtitle names a trade', () => {
+    for (const [tab, text] of Object.entries(TAB_SUBTITLES)) {
+      const hit = stripPlatformIdentity(text).match(PEST_VOCAB_STRICT);
+      expect(hit === null, `TAB_SUBTITLES.${tab} leaked "${hit?.[0]}" — "${text}"`).toBe(true);
+    }
+  });
+
+  it('the subtitle is trade-neutral by construction, not by lookup', () => {
+    // It takes no vertical, so it cannot go blank while useAdminPreset's effect
+    // is in flight — the failure mode an empty-when-unrecorded placeholder
+    // accepts, and which a page header should not.
+    expect(TAB_SUBTITLES.dashboard).not.toBe('');
+    expect(PEST_VOCAB_STRICT.test(TAB_SUBTITLES.dashboard)).toBe(false);
   });
 });
 
