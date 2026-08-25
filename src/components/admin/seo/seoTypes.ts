@@ -3,7 +3,15 @@ export type SeoTabId = 'overview' | 'pages' | 'keywords' | 'aio' | 'connect'
 export type FindingSeverity = 'high' | 'medium' | 'low'
 
 // S263 — the closed set of columns a one-click apply can target.
-export type FixField = 'intro' | 'meta_title' | 'meta_description' | 'focus_keyword'
+//
+// S298 — the RUNTIME array is the source and the type is derived from it. A bare
+// union type is erased at compile time, so a guard cannot enumerate it: the
+// fix-field prompts could not be iterated, and were never asserted. Adding a
+// field here extends the type, and the switch in buildFixFieldPrompt stops
+// compiling until it is handled.
+export const FIX_FIELDS = ['intro', 'meta_title', 'meta_description', 'focus_keyword'] as const
+
+export type FixField = (typeof FIX_FIELDS)[number]
 
 // Session A — a single open monthly-report finding scoped to a page, carrying the
 // plain-English `problem` text so the inline editor can surface what was flagged.
