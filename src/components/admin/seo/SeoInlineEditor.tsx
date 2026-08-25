@@ -11,8 +11,9 @@ function CharCount({ value, max }: { value: string; max: number }) {
   return <span className={`text-xs ${color}`}>{len}/{max}</span>
 }
 
-// Session A — turn the bare counter into plain-English coaching for a pest-control
-// owner with no SEO background. NEVER names external tools (consistent with S261).
+// Session A — turn the bare counter into plain-English coaching for an owner with
+// no SEO background. NEVER names external tools (consistent with S261).
+// S297 — was "for a pest-control owner"; a comment, but the same assumption.
 // Returns null when the field is empty (the placeholder + findings list already
 // cover that) so we don't nag a blank field.
 type Guidance = { text: string; tone: 'ok' | 'warn' }
@@ -140,13 +141,24 @@ interface Props {
   aiGenerating: boolean
   aiGenerated: boolean
   fixChain: SeoFixChain
+  /**
+   * S297 — the vertical's keyword example, from
+   * `useAdminPreset().preset.placeholders.seoKeyword`. A PROP rather than a hook
+   * call so this component stays renderable without TenantBootProvider (useTenant
+   * throws outside it), which is what lets the S297 guard render it at all.
+   *
+   * Was two hardcoded copies of "pest control Tyler TX" — a trade AND a city,
+   * shown to every tenant. The preset resolves to 'e.g. your main service' for an
+   * unrecorded vertical, so nothing here names a trade we have not recorded.
+   */
+  keywordExample: string
   onChange: (field: keyof EditorForm, value: string) => void
   onSave: () => void
   onCancel: () => void
   onAiGenerate: () => void
 }
 
-export default function SeoInlineEditor({ page, form, saving, aiGenerating, aiGenerated, fixChain, onChange, onSave, onCancel, onAiGenerate }: Props) {
+export default function SeoInlineEditor({ page, form, saving, aiGenerating, aiGenerated, fixChain, keywordExample, onChange, onSave, onCancel, onAiGenerate }: Props) {
   const cls = 'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm'
   return (
     <div className="bg-blue-50 border-t border-b border-blue-200 p-5 space-y-3">
@@ -187,8 +199,11 @@ export default function SeoInlineEditor({ page, form, saving, aiGenerating, aiGe
       </div>
       <div>
         <label className="text-xs font-medium text-gray-700 block mb-0.5">Focus Keyword</label>
-        <FieldHelp>The one search term you most want this page to show up for (e.g. "pest control Tyler TX").</FieldHelp>
-        <input value={form.focus_keyword} onChange={e => onChange('focus_keyword', e.target.value)} className={cls} placeholder="e.g. pest control Tyler TX" />
+        <FieldHelp>
+          The one search term you most want this page to show up for
+          {keywordExample ? ` (${keywordExample}).` : '.'}
+        </FieldHelp>
+        <input value={form.focus_keyword} onChange={e => onChange('focus_keyword', e.target.value)} className={cls} placeholder={keywordExample} />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>

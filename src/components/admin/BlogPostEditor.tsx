@@ -176,7 +176,7 @@ export default function BlogPostEditor({ editing, initialPost, tenantId, onSave,
                   rows={2}
                   value={draft.topic}
                   onChange={e => setDraft(p => ({ ...p, topic: e.target.value }))}
-                  placeholder="What should this post be about? e.g. 'Why fall is the worst season for rodent invasions in East Texas'"
+                  placeholder="What should this post be about?"
                   className={`${inputClass} resize-none`}
                   disabled={draft.generating}
                 />

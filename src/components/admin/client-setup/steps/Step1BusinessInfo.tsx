@@ -1,6 +1,6 @@
 import type { ClientSetupForm } from '../types'
 import type { GeocodeSource, HoursEntry } from '../../../../../shared/lib/businessInfoValidation'
-import { VERTICAL_OPTIONS } from '../../../../lib/adminVerticalPreset'
+import { VERTICAL_OPTIONS, ADMIN_VERTICAL_LABELS } from '../../../../lib/adminVerticalPreset'
 
 const IC = 'w-full border border-slate-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500'
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const
@@ -40,6 +40,18 @@ export default function Step1BusinessInfo({ form, setForm }: Props) {
   const f = (field: keyof ClientSetupForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm({ [field]: e.target.value })
 
+  // S297 — the example placeholders follow the Trade selector below, which is the
+  // only place the operator states what this business does. Until they pick one,
+  // form.vertical is '' ("Not listed") and every example renders EMPTY.
+  //
+  // Derived from ADMIN_VERTICAL_LABELS and the vertical literal — no new example
+  // copy is invented here, and nothing substitutes one trade for another. The
+  // tagline has no counterpart in the preset at all, so it stays empty for every
+  // vertical rather than acquiring one.
+  const tradeLabel = form.vertical ? ADMIN_VERTICAL_LABELS[form.vertical] : ''
+  const namePlaceholder = tradeLabel ? `Acme ${tradeLabel}` : ''
+  const slugPlaceholder = form.vertical ? `acme-${form.vertical}` : ''
+
   function handleBizName(e: React.ChangeEvent<HTMLInputElement>) {
     const name = e.target.value
     setForm({ biz_name: name, slug: toSlug(name) })
@@ -57,11 +69,11 @@ export default function Step1BusinessInfo({ form, setForm }: Props) {
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Company Name *</label>
-          <input value={form.biz_name} onChange={handleBizName} required className={IC} placeholder="Acme Pest Solutions" />
+          <input value={form.biz_name} onChange={handleBizName} required className={IC} placeholder={namePlaceholder} />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Site Slug *</label>
-          <input value={form.slug} onChange={handleSlug} required className={IC} placeholder="ironclad-pest" maxLength={40} />
+          <input value={form.slug} onChange={handleSlug} required className={IC} placeholder={slugPlaceholder} maxLength={40} />
           <p className="text-xs mt-1">
             {form.slug
               ? <span className="text-emerald-600">Your site will be at: <strong>{form.slug}.pestflowpro.ai</strong></span>
@@ -100,7 +112,7 @@ export default function Step1BusinessInfo({ form, setForm }: Props) {
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Tagline</label>
-          <input value={form.tagline} onChange={f('tagline')} className={IC} placeholder="East Texas's Most Trusted Pest Control" />
+          <input value={form.tagline} onChange={f('tagline')} className={IC} placeholder="" />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Admin Password *</label>

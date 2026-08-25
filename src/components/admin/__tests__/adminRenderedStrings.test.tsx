@@ -19,6 +19,23 @@ vi.mock('../../../lib/supabase', () => ({
   },
 }));
 
+// S297 — the SECOND module-boundary mock, added for the same reason as the first
+// and under the same restraint: it stubs a CONTEXT, never a component.
+//
+// useTenant() throws outside TenantBootProvider, and ContentPageForm mounts
+// HeroImageUpload/PageImageUpload for the 'home' slug — which is the only slug
+// that renders the Hero Headline field, i.e. the exact surface S297 defect #4
+// lives on. Without this the guard would have to render a slug that hides the
+// field and then claim to have covered it. The tenant returned here carries no
+// vertical: useAdminPreset resolves that in an effect, and renderToStaticMarkup
+// runs no effects, which is why every guarded component takes its vertical as a
+// PROP rather than reading the hook.
+vi.mock('../../../context/TenantBootProvider', async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useTenant: () => ({ id: 'test-tenant', slug: 'test', name: 'Test', theme: 'modern-pro',
+    primary_color: '#000', accent_color: '#000', logo_url: '', cta_text: '' }),
+}));
+
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createElement } from 'react';
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -287,12 +304,17 @@ describe('which admin components emit pest vocabulary in their OUTPUT', () => {
     expect(emitting.map((r) => r.name)).not.toContain('FaqItemForm.edit-irrigation-category');
   });
 
-  it('the client-setup business step emits a pest example business name', () => {
-    expect(visibleText(cs1) + cs1).toMatch(/Acme Pest Solutions|ironclad-pest/);
+  // S297 — INVERTED, not deleted, exactly as the FaqItemForm.default assertion
+  // above was in S285. Both recorded a leak that has now been fixed, and both are
+  // more useful standing guard against its return than as a record of it.
+  // CS_INITIAL_FORM/OB_INITIAL_FORM carry vertical: '' — an operator who has not
+  // yet picked a trade — so these are the "unrecorded" case.
+  it('the client-setup business step no longer emits a pest example business name', () => {
+    expect(visibleText(cs1) + cs1).not.toMatch(/Acme Pest Solutions|ironclad-pest/);
   });
 
-  it('the onboarding business step emits pest example copy', () => {
-    expect(obBiz).toMatch(/Apex Pest Solutions|Your local pest experts/);
+  it('the onboarding business step no longer emits pest example copy', () => {
+    expect(obBiz).not.toMatch(/Apex Pest Solutions|Your local pest experts|TPCL/);
   });
 
   it('records the clean set too, so the split is visible', () => {
@@ -306,9 +328,14 @@ describe('which admin components emit pest vocabulary in their OUTPUT', () => {
 // ---------------------------------------------------------------------------
 
 describe('hardcoded region reaches rendered output', () => {
-  it('the client-setup tagline placeholder names East Texas', () => {
+  // S297 — inverted. This one named BOTH a trade and a region in a single string.
+  // The region hardcoding below it is untouched and still recorded as a finding:
+  // an address example is a different class from a trade claim, and S297 is
+  // vocabulary only.
+  it('the client-setup tagline placeholder no longer names East Texas or a trade', () => {
     // React escapes the apostrophe in an attribute value.
-    expect(cs1).toContain('East Texas&#x27;s Most Trusted Pest Control');
+    expect(cs1).not.toContain('East Texas&#x27;s Most Trusted Pest Control');
+    expect(cs1).not.toContain('Most Trusted');
   });
 
   it('address placeholders hardcode Tyler, TX', () => {
@@ -376,5 +403,369 @@ describe('ComposerTemplates lookup', () => {
     const set = INDUSTRY_TEMPLATES['irrigation'];
     expect(set).toBeDefined();
     expect(JSON.stringify(set)).not.toMatch(/\b(pest|termite|spider|roach|mosquito|scorpion|bed ?bug|flea|rodent|wasp|hornet)\b/i);
+  });
+});
+
+
+// ===========================================================================
+// S297 — THE GUARD.
+//
+// Everything above this line is S282/S285 DISCOVERY: it records what the admin
+// renders. This block is the first part of the file that ASSERTS what it must
+// never render — no admin string may name a trade for a tenant whose vertical is
+// irrigation or unrecorded.
+//
+// WHY THE COMPONENTS BELOW TAKE THE VERTICAL AS A PROP.
+// renderToStaticMarkup does not run effects, and `useAdminPreset` resolves the
+// vertical in one. A component that reads the hook internally therefore renders
+// as NEUTRAL here no matter what the tenant is, so an irrigation case run
+// through it would pass vacuously. S297 moved the vertical dependency of every
+// component it touched out to the prop boundary, which is exactly where this
+// guard binds. The consequence is a REAL LIMIT, stated rather than papered over:
+//
+//   - BusinessInfoSection and LocationsTab load their data in an effect and
+//     paint a "Loading..." stub until it resolves. renderToStaticMarkup runs no
+//     effects, and this project has neither jsdom nor @testing-library/react to
+//     mount them with, so rendering them here would assert the loading state and
+//     nothing else. BusinessInfoSection's two defects are asserted as VALUES
+//     (INITIAL_BUSINESS_INFO_FORM / industryFromStored) — real assertions on the
+//     objects the component uses, not a grep. LocationsTab's three placeholders
+//     are covered only by the preset-derivation assertion at the end of this
+//     block; mounting it needs a DOM and is the follow-up S297 leaves open.
+//   - useComposer is a hook, so its default is asserted the same way.
+// ===========================================================================
+
+import SeoInlineEditor from '../seo/SeoInlineEditor';
+import ContentPageForm from '../ContentPageForm';
+import { getAdminPreset, ADMIN_VERTICAL_LABELS, isAdminVertical } from '../../../lib/adminVerticalPreset';
+import { INITIAL_BUSINESS_INFO_FORM, industryFromStored } from '../settings/businessInfoDefaults';
+import { INITIAL_COMPOSER_INDUSTRY } from '../social/useComposer';
+import { TAB_SUBTITLES } from '../../../pages/admin/dashboardTabCopy';
+import type { SeoPageRow, EditorForm } from '../seo/seoTypes';
+import type { SeoFixChain } from '../seo/useSeoFixChain';
+
+// Word boundaries throughout, matching the precedent set in seo/seoPrompts.test.ts:
+// a bare /pest/ matches "PestFlow Pro" and has already produced a false positive
+// in this codebase. TPCL is here deliberately — it is "Texas Pest Control
+// Licence", pest vocabulary wearing an acronym, and it was a live placeholder in
+// two admin forms before S297.
+const PEST_VOCAB_STRICT =
+  /\b(pest|pests|termite|termites|spider|spiders|roach|roaches|mosquito|mosquitoes|scorpion|scorpions|bed ?bugs?|flea|fleas|tick|ticks|rodent|rodents|wasp|wasps|hornet|hornets|exterminator|TPCL)\b/i;
+
+/**
+ * Remove PLATFORM IDENTITY before matching. The product is named HomeFlow Pro
+ * since S294, but its DOMAIN is still pestflowpro.ai and the admin renders it —
+ * Step 1 of the client-setup wizard shows "<slug>.pestflowpro.ai" live. That is a
+ * URL, not a claim about the tenant's trade, and a guard that flagged it would be
+ * turned off within a week.
+ *
+ * This is the repair to the two `.replace(/PestFlow Pro/gi, '')` strips at :266-267,
+ * which went partly inert after S294 in TWO ways that were never the same bug:
+ *   1. the domain `pestflowpro.ai` was never covered by them at all, and
+ *   2. `visibleText()` strips TAGS, so the marketing shells'
+ *      `Pest<span>Flow</span> Pro` reaches the matcher as "Pest Flow Pro" — which
+ *      /PestFlow Pro/ does not match either.
+ * Both forms are handled here. Those two call sites are left as they are: they
+ * feed the S282 discovery artefact, and rewriting them would restate that
+ * artefact rather than guard anything.
+ */
+export function stripPlatformIdentity(s: string): string {
+  return s
+    .replace(/pestflowpro\.(ai|com)/gi, ' ')
+    .replace(/support@pestflow\.ai/gi, ' ')
+    .replace(/pestflow-pro/gi, ' ')
+    .replace(/pest\s*flow\s*pro/gi, ' ');
+}
+
+/**
+ * Remove the TRADE SELECTOR'S OWN OPTIONS before matching.
+ *
+ * Both provisioning wizards render VERTICAL_OPTIONS — the menu the operator picks
+ * the trade FROM. "Pest Control" appearing there is not a claim about this
+ * tenant; it is the option that makes pest selectable at all, and a guard that
+ * flagged it could only be satisfied by deleting pest as a choosable vertical.
+ *
+ * Keyed on the option's VALUE, which is the CHECK-constrained vertical literal,
+ * so exactly two elements in the admin match. Deliberately NOT a text-level strip
+ * of the string "Pest Control": that would also blank a leaking placeholder like
+ * "Acme Pest Control" and quietly gut the guard. Proven narrow below.
+ */
+export function stripVerticalSelector(html: string): string {
+  return html.replace(/<option[^>]*value="(?:pest|irrigation)"[^>]*>[\s\S]*?<\/option>/gi, ' ');
+}
+
+const scrub = (html: string) => {
+  const stripped = stripVerticalSelector(html);
+  return stripPlatformIdentity(visibleText(stripped) + ' ' + stripped);
+};
+
+// ── Fixtures. Deliberately trade-free, so a hit means the COMPONENT put it there.
+const SEO_PAGE: SeoPageRow = {
+  slug: 'home', label: 'Home', url: '/', type: 'static', isLive: true, hasMeta: true,
+  metaTitle: '', metaDescription: '', focusKeyword: '', ogTitle: '', ogDescription: '',
+  userEdited: false,
+};
+const SEO_FORM: EditorForm = {
+  meta_title: '', meta_description: '', focus_keyword: '', og_title: '', og_description: '',
+} as EditorForm;
+const FIX_CHAIN = {
+  generating: null, applying: null, generated: {},
+  onGenerate: noop, onApply: noop, onDismiss: noop,
+} as unknown as SeoFixChain;
+const CONTENT_FORM = {
+  title: '', subtitle: '', intro: '', video_url: '', image_url: '',
+  pageHeroImageUrl: '', image1Url: '', image2Url: '', image3Url: '',
+};
+
+/** The hero-headline example exactly as ContentTab builds it. */
+function heroPlaceholderFor(vertical: string | null): string {
+  return isAdminVertical(vertical)
+    ? `e.g. Professional ${getAdminPreset(vertical).entityLabels.service} you can trust`
+    : '';
+}
+
+/**
+ * Every guarded render, for BOTH non-pest tenants: 'irrigation' (recorded, has a
+ * preset) and null (unrecorded — the live tenant that is deliberately NULL).
+ *
+ * ContentPageForm renders the 'home' slug specifically: it is the only slug that
+ * renders the Hero Headline field, which is where defect #4 lives. That needs the
+ * TenantBootProvider mock at the top of this file — see the note there.
+ */
+const NON_PEST_VERTICALS: Array<'irrigation' | null> = ['irrigation', null];
+
+const GUARDED: Array<{ name: string; el: React.ReactElement }> = NON_PEST_VERTICALS.flatMap((v) => {
+  const tag = v ?? 'unrecorded';
+  const preset = getAdminPreset(v);
+  const tradeForm = { ...CS_INITIAL_FORM, vertical: v === 'irrigation' ? 'irrigation' : '' };
+  const obTradeForm = { ...OB_INITIAL_FORM, vertical: v === 'irrigation' ? 'irrigation' : '' };
+  return [
+    { name: `SeoInlineEditor.${tag}`, el: createElement(SeoInlineEditor, {
+        page: SEO_PAGE, form: SEO_FORM, saving: false, aiGenerating: false, aiGenerated: false,
+        fixChain: FIX_CHAIN, keywordExample: preset.placeholders.seoKeyword,
+        onChange: noop, onSave: noop, onCancel: noop, onAiGenerate: noop,
+      }) },
+    { name: `ContentPageForm.${tag}`, el: createElement(ContentPageForm, {
+        selectedSlug: 'home', form: CONTENT_FORM, loading: false, saving: false,
+        aiLoading: false, reverting: false, isServicePage: false,
+        serviceLabel: preset.entityLabels.service,
+        heroHeadlinePlaceholder: heroPlaceholderFor(v),
+        updateField: noop, onSave: noop, onGenerateAI: noop, onRevert: noop,
+      } as never) },
+    { name: `client-setup.Step1BusinessInfo.${tag}`, el:
+        createElement(Step1BusinessInfo, { form: tradeForm, setForm: noop } as never) },
+    { name: `client-setup.Step3Domain.${tag}`, el:
+        createElement(Step3Domain, { form: tradeForm, setForm: noop } as never) },
+    { name: `onboarding.StepBusinessInfo.${tag}`, el:
+        createElement(StepBusinessInfo, { form: obTradeForm, updateField: noop, onNext: noop, onBack: noop } as never) },
+    { name: `FaqItemForm.${tag}`, el: createElement(FaqItemForm, {
+        categories: preset.faqCategories, onSave: noop, onCancel: noop, saving: false, label: 'Add FAQ',
+      }) },
+  ];
+});
+
+const GUARDED_RENDERS = GUARDED.map(({ name, el }) => ({ name, html: renderToStaticMarkup(el) }));
+
+describe('S297 — the guard cannot pass vacuously', () => {
+  // MUTATION 2 of the brief: emptying the component list must go red. It does,
+  // here, explicitly — not as a side effect of a for-loop over nothing.
+  it('the guarded set is non-empty and covers both non-pest verticals', () => {
+    expect(GUARDED_RENDERS.length).toBe(12);
+    expect(GUARDED_RENDERS.length).toBeGreaterThanOrEqual(12);
+    for (const tag of ['irrigation', 'unrecorded']) {
+      expect(GUARDED_RENDERS.filter((r) => r.name.endsWith(`.${tag}`))).toHaveLength(6);
+    }
+  });
+
+  it('every guarded component produced real markup', () => {
+    for (const { name, html } of GUARDED_RENDERS) {
+      expect(html.length, `${name} produced no markup`).toBeGreaterThan(80);
+    }
+  });
+
+  // MUTATION 1 of the brief: a sixth leaking placeholder must go red. Rather than
+  // describing that, the leak is BUILT and run through the identical pipeline, so
+  // the proof stays in the suite instead of in a commit message.
+  it('the matcher catches a leaking placeholder pushed through the same pipeline', () => {
+    const leaks = [
+      createElement('input', { placeholder: 'e.g. pest control Tyler TX' }),
+      createElement('input', { placeholder: 'Acme Pest Solutions' }),
+      createElement('input', { placeholder: 'TPCL-12345' }),
+      createElement('p', {}, 'Overview of your pest control business'),
+      createElement('input', { placeholder: 'e.g. Spring Termite Season' }),
+      createElement('input', { placeholder: 'Your local pest experts' }),
+    ];
+    for (const el of leaks) {
+      expect(PEST_VOCAB_STRICT.test(scrub(renderToStaticMarkup(el)))).toBe(true);
+    }
+  });
+
+  it('every alternative in the matcher is live — one probe per branch', () => {
+    const probes = ['pest control', 'termite letter', 'spider control', 'roach gel',
+      'mosquito misting', 'scorpion sting', 'bed bug heat', 'bedbug heat', 'flea dip',
+      'tick season', 'rodent exclusion', 'wasp nest', 'hornet nest', 'exterminator visit',
+      'TPCL-12345', 'Pests everywhere'];
+    for (const p of probes) {
+      expect(PEST_VOCAB_STRICT.test(p), `matcher is dead for "${p}"`).toBe(true);
+    }
+  });
+
+  it('the trade-selector strip removes ONLY the option elements, not the words in them', () => {
+    const sel = '<select><option value="">Not listed</option>'
+      + '<option value="pest">Pest Control</option>'
+      + '<option value="irrigation">Irrigation &amp; Sprinklers</option></select>';
+    expect(PEST_VOCAB_STRICT.test(scrub(sel))).toBe(false);
+    // The same words ANYWHERE else still trip the guard — including in a
+    // placeholder on the very same select, and in a third option.
+    expect(PEST_VOCAB_STRICT.test(scrub(sel + '<input placeholder="Acme Pest Control" />'))).toBe(true);
+    expect(PEST_VOCAB_STRICT.test(scrub(sel.replace('</select>', '<option value="x">Pest Control</option></select>')))).toBe(true);
+    expect(PEST_VOCAB_STRICT.test(scrub('<p>Overview of your pest control business</p>'))).toBe(true);
+  });
+
+  it('the platform strip covers the domain and the tag-split brand, and strips nothing else', () => {
+    // The forms the pre-S297 `.replace(/PestFlow Pro/gi, '')` strips missed.
+    expect(PEST_VOCAB_STRICT.test(stripPlatformIdentity('acme.pestflowpro.ai'))).toBe(false);
+    expect(PEST_VOCAB_STRICT.test(stripPlatformIdentity('Pest Flow Pro'))).toBe(false);
+    expect(PEST_VOCAB_STRICT.test(stripPlatformIdentity('support@pestflow.ai'))).toBe(false);
+    expect(PEST_VOCAB_STRICT.test(stripPlatformIdentity('slug === pestflow-pro'))).toBe(false);
+    // …and it is not a blanket /pest/ delete: real vocabulary still gets through.
+    expect(PEST_VOCAB_STRICT.test(stripPlatformIdentity('pest control in Tyler'))).toBe(true);
+    expect(PEST_VOCAB_STRICT.test(stripPlatformIdentity('Acme Pest Solutions'))).toBe(true);
+  });
+});
+
+describe('S297 — no admin string names a trade for an irrigation or unrecorded tenant', () => {
+  it.each(GUARDED_RENDERS.map((r) => [r.name, r.html] as const))(
+    '%s emits no pest vocabulary',
+    (name, html) => {
+      const text = scrub(html);
+      const hit = text.match(PEST_VOCAB_STRICT);
+      expect(hit === null, `${name} leaked "${hit?.[0]}" — in: …${
+        hit ? text.slice(Math.max(0, (hit.index ?? 0) - 60), (hit.index ?? 0) + 60) : ''
+      }…`).toBe(true);
+    },
+  );
+
+  // The pest tenant is the control: the same components, keyed to pest, SHOULD
+  // still say pest. A guard that passed by deleting every example everywhere
+  // would be indistinguishable from one that resolves the trade correctly.
+  it('a PEST tenant still gets its trade back — the guard is not a blanket delete', () => {
+    const pest = getAdminPreset('pest');
+    const seo = renderToStaticMarkup(createElement(SeoInlineEditor, {
+      page: SEO_PAGE, form: SEO_FORM, saving: false, aiGenerating: false, aiGenerated: false,
+      fixChain: FIX_CHAIN, keywordExample: pest.placeholders.seoKeyword,
+      onChange: noop, onSave: noop, onCancel: noop, onAiGenerate: noop,
+    }));
+    expect(PEST_VOCAB_STRICT.test(scrub(seo))).toBe(true);
+
+    const step1 = renderToStaticMarkup(createElement(Step1BusinessInfo, {
+      form: { ...CS_INITIAL_FORM, vertical: 'pest' }, setForm: noop,
+    } as never));
+    expect(step1).toContain('Acme Pest Control');
+  });
+});
+
+describe('S297 — the five defects, at the boundary each one lives on', () => {
+  it('1. the Focus Keyword help AND placeholder both follow the preset', () => {
+    for (const v of NON_PEST_VERTICALS) {
+      const html = renderToStaticMarkup(createElement(SeoInlineEditor, {
+        page: SEO_PAGE, form: SEO_FORM, saving: false, aiGenerating: false, aiGenerated: false,
+        fixChain: FIX_CHAIN, keywordExample: getAdminPreset(v).placeholders.seoKeyword,
+        onChange: noop, onSave: noop, onCancel: noop, onAiGenerate: noop,
+      }));
+      // Two strings, one field — the brief's framing. Neither may survive.
+      expect(html).not.toContain('pest control Tyler TX');
+      expect(html).toContain(getAdminPreset(v).placeholders.seoKeyword);
+    }
+  });
+
+  it('2. the industry default is empty in BOTH places, and empty stored stays empty', () => {
+    expect(INITIAL_BUSINESS_INFO_FORM.industry).toBe('');
+    // The worse of the two: a stored row with no industry must not acquire one.
+    expect(industryFromStored({ name: 'Precision Lawn Systems' })).toBe('');
+    expect(industryFromStored({ industry: '' })).toBe('');
+    expect(industryFromStored(null)).toBe('');
+    // …while a real stored value is still returned untouched.
+    expect(industryFromStored({ industry: PLS_REAL_INDUSTRY })).toBe(PLS_REAL_INDUSTRY);
+    expect(PEST_VOCAB_STRICT.test(INITIAL_BUSINESS_INFO_FORM.industry)).toBe(false);
+  });
+
+  it('3. the composer industry default names no trade', () => {
+    expect(INITIAL_COMPOSER_INDUSTRY).toBe('');
+    expect(PEST_VOCAB_STRICT.test(INITIAL_COMPOSER_INDUSTRY)).toBe(false);
+  });
+
+  it('4. the Hero Headline example follows the vertical, and is EMPTY when unrecorded', () => {
+    expect(heroPlaceholderFor(null)).toBe('');
+    expect(heroPlaceholderFor('medical_aesthetics')).toBe('');
+    expect(heroPlaceholderFor('irrigation')).toBe('e.g. Professional irrigation service you can trust');
+    expect(PEST_VOCAB_STRICT.test(heroPlaceholderFor('irrigation'))).toBe(false);
+    // Recorded pest still gets a pest example — see the control test above.
+    expect(PEST_VOCAB_STRICT.test(heroPlaceholderFor('pest'))).toBe(true);
+  });
+
+  it('5. the client-setup tagline names neither a trade nor a region', () => {
+    const html = renderToStaticMarkup(
+      createElement(Step1BusinessInfo, { form: CS_INITIAL_FORM, setForm: noop } as never));
+    expect(html).not.toContain('East Texas&#x27;s Most Trusted Pest Control');
+    expect(html).not.toContain('Most Trusted');
+  });
+});
+
+describe('S297 — the admin dashboard tab subtitles', () => {
+  // The one addition Scott called before merge, and the correction that came with
+  // it: I had filed this report-only on the grounds that it is COPY rather than a
+  // placeholder. The taxonomy was right and the call was wrong — `dashboard` is
+  // the DEFAULT tab, so this string is the first line every tenant reads on every
+  // login, and the other thirteen subtitles were already trade-neutral. The
+  // outlier was the leak, not the design.
+  //
+  // Asserted over the WHOLE MAP rather than the one entry, so a pest subtitle
+  // added to any future tab goes red too. Dashboard.tsx itself is not rendered
+  // here: it pulls a lazy-loaded tab graph and the router, which is why the map
+  // moved to its own module.
+
+  it('the map is real and covers every tab — it cannot pass by being empty', () => {
+    expect(Object.keys(TAB_SUBTITLES)).toHaveLength(14);
+    expect(TAB_SUBTITLES.dashboard).toBe('Overview of your business');
+    for (const [tab, text] of Object.entries(TAB_SUBTITLES)) {
+      expect(text.length, `${tab} has no subtitle`).toBeGreaterThan(10);
+    }
+  });
+
+  it('no tab subtitle names a trade', () => {
+    for (const [tab, text] of Object.entries(TAB_SUBTITLES)) {
+      const hit = stripPlatformIdentity(text).match(PEST_VOCAB_STRICT);
+      expect(hit === null, `TAB_SUBTITLES.${tab} leaked "${hit?.[0]}" — "${text}"`).toBe(true);
+    }
+  });
+
+  it('the subtitle is trade-neutral by construction, not by lookup', () => {
+    // It takes no vertical, so it cannot go blank while useAdminPreset's effect
+    // is in flight — the failure mode an empty-when-unrecorded placeholder
+    // accepts, and which a page header should not.
+    expect(TAB_SUBTITLES.dashboard).not.toBe('');
+    expect(PEST_VOCAB_STRICT.test(TAB_SUBTITLES.dashboard)).toBe(false);
+  });
+});
+
+describe('S297 — LocationsTab, whose placeholders are BUILT at render time', () => {
+  // LocationsTab calls useTenant() and cannot be mounted without a DOM, so this
+  // asserts the derivation it now performs rather than its markup. Stated as a
+  // partial check, not as coverage of the component.
+  const tradeLabelFor = (v: string | null) => (isAdminVertical(v) ? ADMIN_VERTICAL_LABELS[v] : '');
+
+  it('an unrecorded vertical yields no trade label, so all three placeholders are empty', () => {
+    for (const v of [null, '', 'medical_aesthetics', 'Pest']) {
+      expect(tradeLabelFor(v)).toBe('');
+    }
+  });
+
+  it('irrigation yields an irrigation label and no pest vocabulary', () => {
+    const label = tradeLabelFor('irrigation');
+    expect(label).toBe('Irrigation & Sprinklers');
+    for (const built of [`Tyler ${label}`, `${label} in Tyler | Your Business`, `${label.toLowerCase()} tyler`]) {
+      expect(PEST_VOCAB_STRICT.test(built)).toBe(false);
+    }
   });
 });

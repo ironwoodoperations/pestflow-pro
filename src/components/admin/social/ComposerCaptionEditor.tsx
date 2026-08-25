@@ -42,7 +42,7 @@ export default function ComposerCaptionEditor({
         <h3 className="text-base font-semibold text-gray-900 mb-3">AI Caption Generator</h3>
         <div className="flex gap-2 mb-4">
           <input value={aiTopic} onChange={e => onAiTopicChange(e.target.value)}
-            placeholder="e.g. mosquito season tips" className={`flex-1 ${inputClass}`}
+            placeholder="" className={`flex-1 ${inputClass}`}
             onKeyDown={e => { if (e.key === 'Enter' && !atLimit) onGenerate() }} />
           <button onClick={onGenerate} disabled={aiLoading || atLimit}
             className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 whitespace-nowrap flex items-center gap-2">

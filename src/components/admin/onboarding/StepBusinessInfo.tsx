@@ -1,7 +1,7 @@
 import { ArrowLeft } from 'lucide-react'
 import type { FormData } from './types'
 import { INPUT_CLASS } from './types'
-import { VERTICAL_OPTIONS } from '../../../lib/adminVerticalPreset'
+import { VERTICAL_OPTIONS, ADMIN_VERTICAL_LABELS } from '../../../lib/adminVerticalPreset'
 
 interface Props {
   form: FormData
@@ -11,6 +11,10 @@ interface Props {
 }
 
 export default function StepBusinessInfo({ form, updateField, onNext, onBack }: Props) {
+  // S297 — same rule as client-setup Step1: examples follow the Trade selector
+  // below, and render empty until the operator picks one. The tagline and licence
+  // have no counterpart in the preset, so they stay empty for every vertical.
+  const namePlaceholder = form.vertical ? `Acme ${ADMIN_VERTICAL_LABELS[form.vertical]}` : ''
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 space-y-5">
       <div>
@@ -19,7 +23,7 @@ export default function StepBusinessInfo({ form, updateField, onNext, onBack }: 
       </div>
       <div>
         <label className="block text-sm font-semibold text-gray-700 mb-1.5">Business Name *</label>
-        <input className={INPUT_CLASS} value={form.businessName} onChange={e => updateField('businessName', e.target.value)} placeholder="Apex Pest Solutions" />
+        <input className={INPUT_CLASS} value={form.businessName} onChange={e => updateField('businessName', e.target.value)} placeholder={namePlaceholder} />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
@@ -28,7 +32,7 @@ export default function StepBusinessInfo({ form, updateField, onNext, onBack }: 
         </div>
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-1.5">Email Address</label>
-          <input className={INPUT_CLASS} type="email" value={form.email} onChange={e => updateField('email', e.target.value)} placeholder="info@apexpest.com" />
+          <input className={INPUT_CLASS} type="email" value={form.email} onChange={e => updateField('email', e.target.value)} placeholder="" />
         </div>
       </div>
       <div>
@@ -42,11 +46,11 @@ export default function StepBusinessInfo({ form, updateField, onNext, onBack }: 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-1.5">Tagline</label>
-          <input className={INPUT_CLASS} value={form.tagline} onChange={e => updateField('tagline', e.target.value)} placeholder="Your local pest experts" />
+          <input className={INPUT_CLASS} value={form.tagline} onChange={e => updateField('tagline', e.target.value)} placeholder="" />
         </div>
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-1.5">License Number</label>
-          <input className={INPUT_CLASS} value={form.license} onChange={e => updateField('license', e.target.value)} placeholder="TPCL-12345" />
+          <input className={INPUT_CLASS} value={form.license} onChange={e => updateField('license', e.target.value)} placeholder="" />
         </div>
       </div>
       <div>
