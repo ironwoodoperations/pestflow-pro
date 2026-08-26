@@ -132,14 +132,22 @@ describe('the five surfaces name the SAME five services', () => {
   });
 });
 
-// ── The one KNOWN, DELIBERATE gap ───────────────────────────────────────────
+// ── The one KNOWN, DELIBERATE gap — STATE 2 of 3 ────────────────────────────
 //
 // Named in code rather than left to be rediscovered, and written so it RETIRES
-// ITSELF: the moment the content entry is written, these assertions fail and
-// force this block to be deleted.
-describe('KNOWN OPEN ITEM — the content entry is blocked on owner facts', () => {
-  it('IRRIGATION_CONTENT_MAP still holds retaining-walls and has no artificial-turf yet', () => {
-    expect(Object.keys(IRRIGATION_CONTENT_MAP)).toContain('retaining-walls');
+// ITSELF: each state's assertions fail the moment the next one is reached.
+//
+//   state 1 (S300)  map has retaining-walls, no artificial-turf   ← retired
+//   state 2 (S302)  map has NEITHER — the old page is gone, the   ← HERE
+//                   replacement copy is still pending owner facts
+//   state 3         map has artificial-turf → both assertions
+//                   below fail and this whole block gets deleted
+describe('KNOWN OPEN ITEM — the turf content entry is still blocked on owner facts', () => {
+  it('the map has retired retaining-walls and does not yet have artificial-turf', () => {
+    expect(
+      Object.keys(IRRIGATION_CONTENT_MAP),
+      'retaining-walls is back in the map — S302 removed it; the service is discontinued',
+    ).not.toContain('retaining-walls');
     expect(
       Object.keys(IRRIGATION_CONTENT_MAP),
       'artificial-turf entry now EXISTS — delete this whole describe block and the '
@@ -160,5 +168,13 @@ describe('KNOWN OPEN ITEM — the content entry is blocked on owner facts', () =
       .map((t) => t.slug)
       .filter((s) => !Object.prototype.hasOwnProperty.call(IRRIGATION_CONTENT_MAP, s));
     expect(unresolved, 'a tile other than the known-pending one has no content entry').toEqual(PENDING_ROUTE);
+  });
+
+  it('the four services that DO resolve are the ones with copy', () => {
+    // A floor, so removing an entry cannot quietly shrink the routable set to
+    // nothing while the assertions above still pass.
+    expect(Object.keys(IRRIGATION_CONTENT_MAP).sort()).toEqual(
+      ['drainage', 'pump-systems', 'sod-dirt-work', 'sprinkler-systems'],
+    );
   });
 });
