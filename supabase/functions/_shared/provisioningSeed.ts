@@ -94,7 +94,7 @@ export const VERTICAL_SEED: Record<SeedVertical, VerticalSeed> = {
       { slug: 'drainage', title: 'Drainage' },
       { slug: 'pump-systems', title: 'Pump Systems' },
       { slug: 'sod-dirt-work', title: 'Sod & Dirt Work' },
-      { slug: 'retaining-walls', title: 'Retaining Walls' },
+      { slug: 'artificial-turf', title: 'Artificial Turf' },
     ],
   },
 };

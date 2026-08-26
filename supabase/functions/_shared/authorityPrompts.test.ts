@@ -38,7 +38,7 @@ const PLS = {
     { city: 'Lindale', state: 'TX' }, { city: 'Longview', state: 'TX' },
     { city: 'Tyler', state: 'TX' },
   ],
-  serviceSlugs: ['sprinkler-systems', 'drainage', 'pump-systems', 'sod-dirt-work', 'retaining-walls'],
+  serviceSlugs: ['sprinkler-systems', 'drainage', 'pump-systems', 'sod-dirt-work', 'artificial-turf'],
 };
 
 // vita-glow, exactly as stored: vertical NULL, address NULL, zero service_areas.

@@ -201,7 +201,7 @@ describe('a recorded vertical seeds its own trade, and only its own', () => {
     const rows = buildPageContentRows({ vertical: 'irrigation', businessName: 'Precision Lawn Systems LLC' });
     expect(rows.map((r) => r.page_slug)).toEqual([
       'home', 'about',
-      'sprinkler-systems', 'drainage', 'pump-systems', 'sod-dirt-work', 'retaining-walls',
+      'sprinkler-systems', 'drainage', 'pump-systems', 'sod-dirt-work', 'artificial-turf',
       'contact', 'faq', 'quote',
     ]);
     const joined = rows.map((r) => r.title + ' ' + r.hero_headline).join(' | ');

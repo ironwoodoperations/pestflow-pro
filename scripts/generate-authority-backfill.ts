@@ -12,7 +12,7 @@ import { generateAuthorityPrompts } from '../supabase/functions/_shared/authorit
 const PEST = ['pest-control','termite-control','termite-inspections','spider-control','roach-control',
   'ant-control','mosquito-control','scorpion-control','bed-bug-control','flea-tick-control',
   'rodent-control','wasp-hornet-control'];
-const IRRIGATION = ['sprinkler-systems','drainage','pump-systems','sod-dirt-work','retaining-walls'];
+const IRRIGATION = ['sprinkler-systems','drainage','pump-systems','sod-dirt-work','artificial-turf'];
 const slugsFor = (v) => v === 'pest' ? PEST : v === 'irrigation' ? IRRIGATION : [];
 
 const sa = (s) => s.split(',').map((x) => {

@@ -80,7 +80,7 @@ describe('the irrigation preset carries no pest vocabulary', () => {
 
   it('matches the five live pls service pages', () => {
     expect(ADMIN_PRESETS.irrigation.servicePageSlugs).toEqual([
-      'sprinkler-systems', 'drainage', 'pump-systems', 'sod-dirt-work', 'retaining-walls',
+      'sprinkler-systems', 'drainage', 'pump-systems', 'sod-dirt-work', 'artificial-turf',
     ]);
   });
 
@@ -91,7 +91,7 @@ describe('the irrigation preset carries no pest vocabulary', () => {
   });
 
   // The brief's explicit warning. pls has FIVE service pages and FOUR
-  // categories — retaining-walls has none. A test asserting these lists were
+  // categories — artificial-turf has none. A test asserting these lists were
   // derivable from one another would force a wrong fix later.
   it('faqCategories and servicePageSlugs are NOT derivable from one another', () => {
     expect(ADMIN_PRESETS.irrigation.servicePageSlugs).toHaveLength(5);
@@ -257,7 +257,7 @@ describe('sidebar partition survives the vertical resolving late', () => {
   // it actually has.
   const PLS_ROWS = [
     'home', 'about', 'faq', 'quote', 'privacy', 'terms', 'accessibility', 'sms-terms',
-    'sprinkler-systems', 'drainage', 'pump-systems', 'sod-dirt-work', 'retaining-walls',
+    'sprinkler-systems', 'drainage', 'pump-systems', 'sod-dirt-work', 'artificial-turf',
   ];
 
   // Every state ContentTab passes through: NEUTRAL while unresolved, then the

@@ -120,7 +120,7 @@ const MODERN_PRO_TENANT: Record<string, ModernProTenantHome> = {
       { slug: 'sprinkler-systems', image: '/images/pls/sprinkler-systems.jpg' },
       { slug: 'drainage',          image: '/images/pls/drainage.jpg' },
       { slug: 'pump-systems',      image: '/images/pls/pump-systems.jpg' },
-      { slug: 'retaining-walls',   image: '/images/pls/retaining-walls.jpg' },
+      { slug: 'artificial-turf',   image: '/images/pls/artificial-turf.jpg' },
       { slug: 'sod-dirt-work',     image: '/images/pls/sod-dirt-work.jpg' },
     ],
   },
