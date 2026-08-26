@@ -175,6 +175,21 @@ Production-ready, **idle capacity**. Active leads out — **Capture, Blue Duck, 
 
 ## Next Up
 
+### pls — LAUNCH CHECKLIST (gates revenue, not polish)
+
+Three items stand between a finished site and a site that can earn. None is cosmetic.
+
+- [ ] **`settings.seo.noindex` is still `'true'` — pls is invisible to Google.** Everything this arc fixed about metadata, JSON-LD, service pages and the service-area map is being emitted to crawlers that are told not to look. Flipping this is the single highest-value action on the site.
+- [ ] **`tenants.custom_domain` is `NULL`** — serving on `pls.pestflowpro.ai`. Decide the domain and configure it. Doing this *after* de-noindexing means the indexed URLs are the ones being replaced.
+- [ ] **`notifications.lead_email` is unset** — blocked on §6.4 per `DECISIONS.md`. Until it is set, a submitted quote form has nowhere to go: the lead is captured but nobody is told.
+
+### pls — verified live state, 2026-08-26 (do not re-derive)
+
+- **`page_content` service rows: exactly four** — `drainage`, `pump-systems`, `sod-dirt-work`, `sprinkler-systems`. **No orphans in either direction:** every row has an `IRRIGATION_CONTENT_MAP` entry and every entry has a row.
+- **`tenant_redirects`: one row platform-wide** — pls `/retaining-walls` → `/`, 301, baked into `redirects-map.json` by #302's `prebuild`.
+- **Empty image slots:** master hero, faq hero. About `image_1` was filled 19:15. **No `page_content` row exists for `contact` at all.**
+- **S300 guard is at state 2 of 3** — `IRRIGATION_CONTENT_MAP` holds neither `retaining-walls` nor `artificial-turf`. Writing the turf entry fails the exception by design and forces its removal.
+
 - **Image uploads overwrite at a FIXED path, so replacements are invisible for an hour (HIGH, new S303 — live customer-facing).** `ContentPageForm.tsx:66` builds `${tenantId}/pages/${slug}/image-${index}.${ext}` and uploads with `upsert: true`; the hero uploader at `:136` does the same with `hero.${ext}`. The path is deterministic, so a replacement **overwrites in place and the stored URL never changes** — and neither uploader sets `cacheControl`, so Supabase's default `max-age=3600` applies.
 
   **Evidence, live, 2026-08-26:** pls uploaded two different photos to the about page's Image 1 slot. Both landed at `tenant-assets/<tenant>/pages/about/image-0.jpg`, created 19:14:28 and overwritten 19:15:43, same URL throughout. **The admin showed the OLD photo while the live page showed the NEW one** — the live page was right because Vercel re-fetched server-side, the admin was wrong because the browser had the URL cached. `hero.jpg` shows the same pattern (created 17:26:19, updated 17:37:26).
@@ -245,7 +260,11 @@ Production-ready, **idle capacity**. Active leads out — **Capture, Blue Duck, 
 - bold-local FAQ category label ("General") renders red on charcoal (prod, urban-strike) — a category-tag color outside the S267 `--color-*` conversion scope; harmonize with the bold-local palette (amber). Cosmetic, low priority, non-blocking.
 - bold-local service-page "OUR HIT PLAN" section-label renders dim against charcoal (prod, urban-strike) — check legibility / intended contrast (likely a muted eyebrow that needs a brighter token on the dark surface). Cosmetic, low priority, non-blocking.
 - **Deploy method, now a rule (S290).** Large edge functions deploy via the **Supabase CLI from the Codespace**, and **MCP verifies** with `get_edge_function`. `provision-tenant` is ~1,100 lines; hand-transcribing it into a tool call carries silent-corruption risk with no upside, while the CLI bundles from git byte-exact. Verification stays on the MCP side because that reads the *deployed* source rather than the local one.
-- **`generate-monthly-report` is DEPLOYED — v11, `verify_jwt:false`, verified.** Recorded again because earlier session reports claimed merged-but-not-deployed and were wrong. Do not re-propagate that claim.
+- **`generate-monthly-report` is DEPLOYED — v15, ACTIVE, `verify_jwt:false`, verified 2026-08-26 by reading the deployed bundle.** `shared/lib/platformBrand.ts` is IN the bundle; all eight sites resolve through `PLATFORM_NAME`; **zero occurrences of the retired name.** The only literal remaining anywhere in the bundle is `RETIRED_PLATFORM_NAME`, which is never rendered. **The 1 September cron is HANDLED — it will fire under the current name.**
+
+  **This claim has now been wrong three times, and it keeps coming back from the same place.** This line has said DEPLOYED since S286 and even carried "do not re-propagate". It was re-propagated anyway, because the false version lives in **append-only session logs** that nobody ever corrects: `PROJECT_MANIFEST.d/fix-s298-seo-fix-chain-vertical.md`, `chore-s284-vitest-in-ci.md` and `s283-generated-copy-vertical.md` all still assert merged-but-not-deployed. ROADMAP is perishable state and gets fixed; a session log is a dated record and does not — so **a false claim in `PROJECT_MANIFEST.d/` is immortal and outranks nothing, yet gets read first because it is recent.**
+
+  **The rule that follows:** *any deploy-state claim in a doc needs the version and the date it was verified at, or it is a guess with a timestamp.* Claude cannot see Supabase; "merged" is the last state it can observe, and the gap gets filled wrongly. Verify with `get_edge_function` or do not assert.
 - provision-tenant hardcodes pestflowpro.com in legal pages and liveUrl — should be .ai; low priority (still true at v99)
 - **Role helpers exist — reuse, do NOT re-derive:** `operator_tenant_id()` (operator identity), `get_my_tenant_role(tenant_id)` (customer-tenant role), and `list_tenant_members()` (admin-only member list, derives current tenant internally) — all `SECURITY DEFINER`.
 - **Demo-deauth wave (new, prereq for a strict binding FK).** Remove the shared `admin@demo.com` login printed on `pestflowpro.ai/demos/admin`; convert demo dashboards to no-session forced-read-only; THEN delete the `admin@demo.com` seed; THEN upgrade `tenant_role_binding_drift` from an audit view to a hard `profiles`↔`tenant_users` FK — that seed (operator-tenant binding, no membership) is the one row blocking a strict FK today. Real customer auth + `provision-tenant` are OUT of scope for this wave.
