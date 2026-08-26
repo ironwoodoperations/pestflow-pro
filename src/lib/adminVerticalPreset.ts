@@ -88,7 +88,7 @@ export const PLATFORM_PAGE_SLUGS: string[] = [
 //
 // faqCategories and servicePageSlugs are SEPARATE LISTS that merely overlap.
 // Do not derive one from the other: pls has five service pages but only four
-// FAQ categories — `retaining-walls` has no category — and the strings differ in
+// FAQ categories — `artificial-turf` has no category — and the strings differ in
 // form anyway ('sod-dirt-work' vs 'Sod & Dirt Work').
 
 export const ADMIN_PRESETS: Record<AdminVertical, AdminLabelPreset> = {
@@ -125,10 +125,16 @@ export const ADMIN_PRESETS: Record<AdminVertical, AdminLabelPreset> = {
     faqCategories: [
       'General', 'Sprinkler Systems', 'Drainage', 'Pump Systems', 'Sod & Dirt Work',
     ],
-    // pls's five live page_content service pages. `retaining-walls` is here even
+    // pls's five live page_content service pages. `artificial-turf` is here even
     // though it has no matching FAQ category — see the note above.
+    //
+    // S300 — artificial-turf REPLACED retaining-walls: the owner discontinued
+    // retaining walls and now installs turf. A per-customer service change in a
+    // SHARED vertical preset, tolerable only because pls is the sole irrigation
+    // tenant. The second irrigation tenant makes this wrong; the real fix is a
+    // tenant-level service list.
     servicePageSlugs: [
-      'sprinkler-systems', 'drainage', 'pump-systems', 'sod-dirt-work', 'retaining-walls',
+      'sprinkler-systems', 'drainage', 'pump-systems', 'sod-dirt-work', 'artificial-turf',
     ],
     placeholders: {
       faqQuestion: 'e.g. How often should I run my sprinklers?',
