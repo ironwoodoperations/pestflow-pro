@@ -18,3 +18,6 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   test file; (2) the seven per-function Deno `index.test.ts` files are run by nothing in CI at
   all — excluding them from vitest did not make them covered. Separately and time-boxed:
   `generate-monthly-report` is merged but NOT deployed, and the report cron fires on the 10th.
+
+> **CORRECTED 2026-08-26 — the claim above is FALSE.** `generate-monthly-report` is **DEPLOYED (v15, ACTIVE, `verify_jwt:false`)**, verified by reading the deployed bundle. Left in place rather than rewritten: this file is a dated record of what was believed at the time, and erasing it hides that the error propagated. See `docs/ROADMAP.md` for the authoritative deploy state.
+

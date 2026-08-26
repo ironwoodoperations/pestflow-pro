@@ -123,3 +123,13 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   - docs/audits/s282-rendered/onboarding.StepBusinessInfo.html
   - src/components/admin/__tests__/adminRenderedStrings.test.tsx
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-08-26 19:36 UTC
+- Branch: `main`
+- Commit: `6c45b18` — docs(S303) — ROADMAP: image uploads overwrite in place, plus three related items (#303)
+- Author: csdevore2
+- Files changed:
+  - PROJECT_MANIFEST.d/docs-s303-roadmap-image-upload-items.md
+  - docs/ROADMAP.md
+- Next recommended action: **pls launch checklist — flip `settings.seo.noindex` off first.** The site is finished and invisible: every metadata, JSON-LD and service-area fix from S293-S302 is being emitted to crawlers told not to look. Then decide `custom_domain` (after de-noindexing, so the indexed URLs are not the ones being replaced), then `notifications.lead_email` (blocked on §6.4). After that: S300's turf content entry needs five owner facts, and its `page_content` row must land AFTER the entry or the tile links to a 404. Deploy state is verified in `docs/ROADMAP.md` — `generate-monthly-report` IS deployed at v15; do not re-propagate the merged-but-undeployed claim from the older logs in this directory.
