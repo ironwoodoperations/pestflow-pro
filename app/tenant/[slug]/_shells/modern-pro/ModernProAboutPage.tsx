@@ -22,17 +22,45 @@ const FALLBACK = [
   'A licensed team operating to enterprise quality standards.',
 ];
 
+// S301 — the hero scrim, and the two text colours that depend on it.
+//
+// WAS rgba(11,18,32,0.85) — two stops at 0.85 over the page's own #0B1220, so an
+// uploaded photo rendered at ~15% and a correct upload was indistinguishable
+// from the plain gradient. Confirmed live on pls /about.
+//
+// The 0.85 was NOT arbitrary: this hero's palette is a teal eyebrow (#3FB8AF,
+// 12px) and a muted slate subtitle (#94A3B8, 18px), and both need a near-opaque
+// scrim to clear WCAG AA over a bright photo. Measured against sunlit turf, fresh
+// sod and a blown highlight — the light shots this tenant actually uploads, not a
+// dark one:
+//
+//   scrim            eyebrow            subtitle
+//   0.85 (was)       5.0-6.0:1 PASS     4.7-5.6:1 PASS   ← but the photo is invisible
+//   0.55             2.0-3.4:1 FAIL     1.9-3.2:1 FAIL
+//   0.60 + these     4.6-7.4:1 PASS     4.7-7.5:1 PASS
+//
+// So the scrim alone cannot be lowered: at any alpha a photo survives, the muted
+// palette fails. Lowering it and lifting the two muted colours is the pair that
+// satisfies both — the photo renders at 40% instead of 15%, and every element
+// still clears AA on the worst case.
+//
+// ONLY on the image path. With no hero image the colours are untouched and the
+// null render is byte-identical to the pre-S301 markup — asserted in the test.
+const HERO_SCRIM = 'rgba(0,0,0,0.6)';
+const EYEBROW_ON_PHOTO = '#A5F3EE';
+const SUBTITLE_ON_PHOTO = '#E2E8F0';
+
 export function ModernProAboutPage({ heroTitle, heroSub, heroImageUrl, aboutImage, team, businessName, introParagraphs, phone = '', stats = [] }: Props) {
   const paragraphs = introParagraphs && introParagraphs.length > 0 ? introParagraphs : FALLBACK;
 
   return (
     <div style={{ backgroundColor: '#0B1220', color: '#E5E7EB', fontFamily: 'Inter, sans-serif' }}>
       {/* Hero — minimal, tech */}
-      <section style={{ padding: '5rem 1rem 3rem', borderBottom: '1px solid rgba(63, 184, 175, 0.2)', backgroundImage: heroImageUrl ? `linear-gradient(rgba(11,18,32,0.85),rgba(11,18,32,0.85)),url(${heroImageUrl})` : 'linear-gradient(135deg,#1B2A4E,#0B1220)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <section style={{ padding: '5rem 1rem 3rem', borderBottom: '1px solid rgba(63, 184, 175, 0.2)', backgroundImage: heroImageUrl ? `linear-gradient(${HERO_SCRIM},${HERO_SCRIM}),url(${heroImageUrl})` : 'linear-gradient(135deg,#1B2A4E,#0B1220)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
         <div className="max-w-5xl mx-auto" style={{ textAlign: 'center' }}>
-          <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#3FB8AF', marginBottom: '0.75rem' }}>Our Mission</p>
+          <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: heroImageUrl ? EYEBROW_ON_PHOTO : '#3FB8AF', marginBottom: '0.75rem' }}>Our Mission</p>
           <h1 style={{ fontSize: 'clamp(36px,5vw,56px)', fontWeight: 700, color: '#fff', marginBottom: '1rem', lineHeight: 1.15 }}>{heroTitle}</h1>
-          <p style={{ fontSize: 18, color: '#94A3B8', lineHeight: 1.6, maxWidth: '60ch', margin: '0 auto' }}>{heroSub}</p>
+          <p style={{ fontSize: 18, color: heroImageUrl ? SUBTITLE_ON_PHOTO : '#94A3B8', lineHeight: 1.6, maxWidth: '60ch', margin: '0 auto' }}>{heroSub}</p>
         </div>
       </section>
 
