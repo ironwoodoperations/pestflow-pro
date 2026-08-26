@@ -1,7 +1,9 @@
 # S303 handoff — what this arc learned, not what it did
 
-Sessions S294 → S303. Eight PRs merged: #296, #298, #299, #300, #301, #302, #303,
-with S297 landing alongside.
+Sessions S294 → S303. **Twelve PRs merged, #292 through #303 contiguously** — the
+S294 platform rename, the S295 hero investigation and fix, the S296 mail-sender
+investigation and stage-0 design, S297's admin sweep, the S298 investigation and fix,
+S300's turf swap, S301 and S302's hero contrast, and S303's ROADMAP items.
 
 **Durable lessons only.** The narrative is in `PROJECT_MANIFEST.d/`; the perishable
 state is in `docs/ROADMAP.md`. Neither is repeated here.
@@ -67,23 +69,47 @@ filled wrongly. Verify with `get_edge_function`, or do not assert.
 
 ---
 
-## 1. The class that hit three times in one day, from three directions
+## 1. Two distinct classes, not one — they were nearly recorded as one
 
-**A value that saves correctly and renders nowhere.** Three independent instances,
-none of which shared code with another:
+The first draft of this handoff claimed **one** class hit three times: S295, S297 and
+S298, all "saves correctly, renders nowhere". **That was wrong, and the way it was
+wrong is the point.** S298 rendered perfectly — its defect was that it *wrote pest copy
+to a live irrigation site*, the opposite failure. S297 was placeholders naming the
+wrong trade, which render and get saved. Two of the three rows had to be strained to
+fit; one was written as "rendered, but the surface was never read", which is not a
+description of the defect but of the claim it was serving.
 
-| session | the value | why it never rendered |
+**Two real classes teach more than one false one. Do not merge them back for tidiness.**
+
+### (a) Saves correctly, renders nowhere
+
+| instance | the value | why it never reached the page |
 |---|---|---|
-| S295 | `page_hero_image_url` | the route resolved it for one of seven shells |
-| S297 | admin placeholders | rendered, but the surface was never read |
-| S298 | the SEO fix-chain's prompt | built inline, so nothing could reach it |
+| **S295** | `page_hero_image_url` | the route resolved it for one of seven shells |
+| **S303 item** | an uploaded photo | the bytes change, the **URL does not**, so the browser serves the old one |
 
-**Saving is not shipping.** In all three the database was perfect and the operator's
-action was correct; the product looked broken. That is the expensive failure mode,
-because the owner's next move is to do the correct thing *again*.
+Both leave the **database perfect and the product looking broken**. That is the
+expensive shape, because the owner's next move is to **do the correct thing again** —
+re-upload, re-save, re-check — and it fails identically. Saving is not shipping.
 
-The S303 image-upload item is the same class in a fourth form: the bytes change, the
-URL does not, and the browser shows the old photo for an hour.
+### (b) Wrong-trade vocabulary survived a sweep that reported completeness
+
+| instance | what still said pest |
+|---|---|
+| **S297** | admin placeholders and defaults |
+| **S298** | the fix-chain system prompt — which **wrote to the live site** |
+
+S293 PR B de-pested `seoPrompts.ts` and missed `useSeoFixChain.ts` **one directory
+away**, in the same feature, on the same afternoon.
+
+> **"Swept" is a claim about the sweep, not about the code.** A completed sweep reports
+> what it covered; it cannot report what it never looked at. This is the same shape as
+> the 138-file search result the ROADMAP already refuses to treat as a defect count —
+> and the same shape as §3 below, where the search tool itself returns false negatives.
+
+The two classes fail in opposite directions — (a) renders nothing when it should,
+(b) renders something it shouldn't — which is exactly why one description could not
+cover both without distorting one of them.
 
 ## 2. A guard written to catch a class shipped containing that class — twice
 
