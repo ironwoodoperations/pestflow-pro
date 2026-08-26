@@ -76,9 +76,16 @@ describe('the image path renders the hero the tenant actually stored', () => {
     expect(hero).not.toContain('linear-gradient(135deg,#1B2A4E,#0B1220)');
   });
 
-  it('lays a 55% scrim UNDER the text, matching DefaultPestPage', () => {
+  it('lays a 60% scrim UNDER the text', () => {
     // Without the scrim, white headings sit on an arbitrary photograph.
-    expect(hero).toContain('background:rgba(0,0,0,0.55)');
+    //
+    // S302 — this assertion pinned 0.55 when S295 wrote it, and it is failing
+    // here ON PURPOSE: the value moved to 0.6 so the muted palette clears AA on
+    // the bright turf and sod photography pls actually uploads. The scrim's
+    // STRUCTURE — absolutely positioned, under the text, inside a positioned
+    // section — is unchanged and is still asserted below, including the part
+    // that a mutation caught in S295.
+    expect(hero).toContain('background:rgba(0,0,0,0.6)');
     expect(hero).toContain('position:absolute');
     expect(hero).toContain('pointer-events:none');
     // The SECTION specifically must be positioned, or the absolute scrim
@@ -196,5 +203,70 @@ describe('every *PestPage branch of the service route receives a hero', () => {
   it('the route resolves the hero itself, as every other tenant route does', () => {
     expect(route).toContain("import { resolveHeroImage } from '../_lib/heroImage'");
     expect(route).toContain('resolveHeroImage(content, heroMedia)');
+  });
+});
+
+// ── S302 — the scrim, matched to the About hero ─────────────────────────────
+//
+// S295 shipped 0.55, which reads over dark pest photography. pls uploaded turf
+// and sod; at 0.55 this hero's muted palette failed AA on them. The treatment is
+// the one S301 landed on ModernProAboutPage, applied unchanged.
+describe('S302 — the image path shows the photo and keeps the text legible', () => {
+  const hero = heroSection(render(HERO));
+
+  it('scrims at 0.6, not the 0.55 that failed on bright photos', () => {
+    expect(hero).toContain('background:rgba(0,0,0,0.6)');
+    expect(hero, 'the 0.55 scrim survived').not.toContain('rgba(0,0,0,0.55)');
+  });
+
+  it('lifts the eyebrow and blurb to the SAME colours the About hero uses', () => {
+    // Same values as ModernProAboutPage, deliberately. Divergence here is what
+    // makes the next person re-derive the reasoning.
+    expect(hero).toContain('color:#A5F3EE');
+    expect(hero).toContain('color:#E2E8F0');
+    expect(hero).not.toContain('color:#94A3B8');
+  });
+
+  it('lifts the OUTLINED call button too — text and border', () => {
+    // The element the About hero does not have: #3FB8AF over the photo, failing
+    // exactly as the eyebrow did.
+    expect(hero).toContain('border:1px solid #A5F3EE');
+    expect(hero).not.toContain('border:1px solid #3FB8AF');
+  });
+
+  it('leaves the FILLED quote button alone — its contrast never used the scrim', () => {
+    // Teal background with #0B1220 text is self-contained whatever is behind it.
+    expect(hero).toContain('background-color:#3FB8AF');
+    expect(hero).toContain('color:#0B1220');
+  });
+
+  it('the h1 stays pure white — it never needed lifting', () => {
+    expect(hero).toContain('color:#fff');
+  });
+});
+
+describe('S302 — the null path is BYTE-IDENTICAL to the pre-S302 render', () => {
+  // Captured by RENDERING the component as it stood on main after #301 and
+  // before this change — not hand-written. A tenant with no hero image keeps the
+  // original teal eyebrow and slate blurb.
+  const NULL_HERO_BEFORE_S302 = "<section style=\"padding:5rem 1rem 3rem;border-bottom:1px solid rgba(63,184,175,0.2);background:linear-gradient(135deg,#1B2A4E,#0B1220)\"><div class=\"max-w-5xl mx-auto\" style=\"text-align:center\"><p style=\"font-size:12px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:#3FB8AF;margin-bottom:0.75rem\">Drainage &amp; Erosion Control Protection</p><h1 style=\"font-size:clamp(36px,5vw,56px);font-weight:700;color:#fff;margin-bottom:1rem;line-height:1.15\">Drainage</h1><p style=\"font-size:17px;color:#94A3B8;line-height:1.6;max-width:60ch;margin:0 auto 2rem\">Water standing in the yard days after rain, soil washing out after storms, water running toward the foundation \u2014 drainage problems do not fix themselves, and they get more expensive the longer the water sits.</p><div style=\"display:flex;flex-wrap:wrap;justify-content:center;gap:0.75rem\"><a style=\"display:inline-block;background-color:#3FB8AF;color:#0B1220;font-weight:600;font-size:15px;padding:0.85rem 2rem;border-radius:8px;text-decoration:none\" href=\"/quote\">Request a Quote</a><a href=\"tel:9035550100\" style=\"display:inline-block;border:1px solid #3FB8AF;color:#3FB8AF;font-weight:500;font-size:15px;padding:0.85rem 2rem;border-radius:8px;text-decoration:none\">Call (903) 555-0100</a></div></div></section>";
+
+  it('the recorded baseline is a real string — an empty one makes the compare vacuous', () => {
+    expect(NULL_HERO_BEFORE_S302.length).toBeGreaterThan(800);
+    expect(NULL_HERO_BEFORE_S302).toContain('color:#3FB8AF');
+    expect(NULL_HERO_BEFORE_S302).toContain('color:#94A3B8');
+    expect(NULL_HERO_BEFORE_S302).toContain('border:1px solid #3FB8AF');
+    expect(NULL_HERO_BEFORE_S302).not.toContain('rgba(0,0,0');
+  });
+
+  it('emits the original hero markup exactly, character for character', () => {
+    expect(heroSection(render(null))).toBe(NULL_HERO_BEFORE_S302);
+  });
+
+  it('carries none of the lifted colours when there is no image', () => {
+    const hero = heroSection(render(null));
+    expect(hero).not.toContain('#A5F3EE');
+    expect(hero).not.toContain('#E2E8F0');
+    expect(hero).not.toContain('rgba(0,0,0,0.6)');
   });
 });

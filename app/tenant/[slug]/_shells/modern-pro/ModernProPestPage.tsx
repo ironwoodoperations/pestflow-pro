@@ -25,6 +25,30 @@ const pickString = (...vals: Array<string | undefined | null>): string | undefin
 };
 
 
+// S302 — the hero scrim and the colours that depend on it. IDENTICAL to the
+// treatment landed on ModernProAboutPage in S301, deliberately: the two heroes
+// share a palette, and if they diverge the next person has to work out why.
+//
+// S295 shipped this hero at rgba(0,0,0,0.55), which reads well over the dark
+// pest photography it was built against. pls uploaded turf and sod — bright
+// shots — and at 0.55 the muted palette fails WCAG AA on them:
+//
+//                    0.55            0.60 + lifted
+//   eyebrow          1.96-3.35 FAIL  4.55-7.36 PASS
+//   blurb            1.85-3.16 FAIL  4.66-7.53 PASS
+//   h1 (white)       4.74-8.11 PASS  5.74-9.28 PASS
+//
+// ONE ELEMENT HERE THAT THE ABOUT HERO DOES NOT HAVE: the outlined "Call"
+// button is #3FB8AF text and border directly over the photo, so it measures
+// exactly what the eyebrow does and fails with it. It takes the same lift. The
+// FILLED "Request a Quote" button is untouched — it carries its own teal
+// background with #0B1220 text, so its contrast never depended on the scrim.
+//
+// Image path only. With no hero image every byte is what it was.
+const HERO_SCRIM = 'rgba(0,0,0,0.6)';
+const TEAL_ON_PHOTO = '#A5F3EE';
+const BLURB_ON_PHOTO = '#E2E8F0';
+
 export function ModernProPestPage({ tenant, pestSlug, content = null, heroImageUrl = null }: Props) {
   // S-PLS-5 / D1 plumbing: vertical-aware accessor in place of the direct map
   // read. For pest tenants getServiceEntry('pest', slug) returns the SAME
@@ -54,14 +78,14 @@ export function ModernProPestPage({ tenant, pestSlug, content = null, heroImageU
       <section style={heroImageUrl
         ? { ...heroBase, position: 'relative', backgroundImage: `url(${heroImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
         : { ...heroBase, background: 'linear-gradient(135deg,#1B2A4E,#0B1220)' }}>
-        {heroImageUrl && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 0, pointerEvents: 'none' }} />}
+        {heroImageUrl && <div style={{ position: 'absolute', inset: 0, background: HERO_SCRIM, zIndex: 0, pointerEvents: 'none' }} />}
         <div className="max-w-5xl mx-auto" style={heroImageUrl ? { textAlign: 'center', position: 'relative', zIndex: 1 } : { textAlign: 'center' }}>
-          <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#3FB8AF', marginBottom: '0.75rem' }}>{eyebrow}</p>
+          <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: heroImageUrl ? TEAL_ON_PHOTO : '#3FB8AF', marginBottom: '0.75rem' }}>{eyebrow}</p>
           <h1 style={{ fontSize: 'clamp(36px,5vw,56px)', fontWeight: 700, color: '#fff', marginBottom: '1rem', lineHeight: 1.15 }}>{heroTitle}</h1>
-          <p style={{ fontSize: 17, color: '#94A3B8', lineHeight: 1.6, maxWidth: '60ch', margin: '0 auto 2rem' }}>{blurb}</p>
+          <p style={{ fontSize: 17, color: heroImageUrl ? BLURB_ON_PHOTO : '#94A3B8', lineHeight: 1.6, maxWidth: '60ch', margin: '0 auto 2rem' }}>{blurb}</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '0.75rem' }}>
             <Link href="/quote" style={{ display: 'inline-block', backgroundColor: '#3FB8AF', color: '#0B1220', fontWeight: 600, fontSize: 15, padding: '0.85rem 2rem', borderRadius: 8, textDecoration: 'none' }}>Request a Quote</Link>
-            {phone && <a href={`tel:${phone.replace(/\D/g,'')}`} style={{ display: 'inline-block', border: '1px solid #3FB8AF', color: '#3FB8AF', fontWeight: 500, fontSize: 15, padding: '0.85rem 2rem', borderRadius: 8, textDecoration: 'none' }}>Call {formatPhone(phone)}</a>}
+            {phone && <a href={`tel:${phone.replace(/\D/g,'')}`} style={{ display: 'inline-block', border: `1px solid ${heroImageUrl ? TEAL_ON_PHOTO : '#3FB8AF'}`, color: heroImageUrl ? TEAL_ON_PHOTO : '#3FB8AF', fontWeight: 500, fontSize: 15, padding: '0.85rem 2rem', borderRadius: 8, textDecoration: 'none' }}>Call {formatPhone(phone)}</a>}
           </div>
         </div>
       </section>
