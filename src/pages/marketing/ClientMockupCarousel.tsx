@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { DEMO_TENANTS, publicDemoUrl } from '../../lib/demoTenants'
+import { tierInfo } from '../../lib/tierInfo'
 
 const F = { b: "'Plus Jakarta Sans', sans-serif" }
 
@@ -8,6 +9,9 @@ const TABS = DEMO_TENANTS.map((t) => ({
   url: `${t.slug}.pestflowpro.ai`,
   href: publicDemoUrl(t.slug),
   img: `/images/sites/${t.slug}-site.jpg`,
+  // Plan label comes from tierInfo() — never a literal. Same source the
+  // /demos cards and the in-dashboard Billing tab read from.
+  plan: tierInfo(t.tier).name,
 }))
 
 export default function ClientMockupCarousel() {
@@ -43,6 +47,9 @@ export default function ClientMockupCarousel() {
           ))}
           <div style={{ flex: 1, background: 'rgba(255,255,255,0.06)', borderRadius: 6, padding: '3px 12px', fontSize: 11, color: 'rgba(255,255,255,0.5)', fontFamily: 'monospace', marginLeft: 6 }}>
             {tab.url}
+          </div>
+          <div style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 4, padding: '2px 8px', fontSize: 9, color: 'rgba(255,255,255,0.75)', fontFamily: F.b, fontWeight: 600, flexShrink: 0, whiteSpace: 'nowrap' }}>
+            {tab.plan.toUpperCase()}
           </div>
           <div style={{ background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.35)', borderRadius: 4, padding: '2px 8px', fontSize: 9, color: '#22c55e', fontFamily: F.b, fontWeight: 600, flexShrink: 0 }}>
             DEMO

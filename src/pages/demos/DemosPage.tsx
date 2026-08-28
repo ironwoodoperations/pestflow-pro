@@ -17,7 +17,7 @@ export default function DemosPage() {
             See PestFlow Pro in the wild
           </h1>
           <p style={{ fontFamily: F.b, fontSize: 17, color: 'rgba(255,255,255,0.75)', lineHeight: 1.6, margin: 0 }}>
-            Five real demo sites, five distinct personalities. Pick the one that feels closest to your brand and click through — the entire site renders the way it would for your customers.
+            Five real demo sites, five distinct personalities — and five different plans. Pick the one that feels closest to your brand and click through: the entire site renders the way it would for your customers, on the plan shown on its card.
           </p>
         </div>
       </section>
