@@ -75,3 +75,29 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   `check_tenant_access` (shared primitive, seven consumers), and cron-apikey
   rotation (that key bypasses both `requireTenantUser` and the tier gate —
   flagged independently by both validator models).
+
+---
+## Session — 2026-08-28 19:49 UTC
+- Branch: `claude/demo-tier-badges-gating-1v74gr`
+- Commit: `f643775` — S305 — outscraper-reviews gates on tenants.entitlement, not settings.subscription (#306)
+- Author: csdevore2
+- Files changed:
+  - PROJECT_MANIFEST.d/claude-demo-tier-badges-gating-1v74gr.md
+  - QA_REPORT_S305.md
+  - REVIEW_S305_OUTSCRAPER_ENTITLEMENT_GATE.md
+  - supabase/functions/outscraper-reviews/index.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-08-28 20:13 UTC
+- Branch: `claude/demo-tier-badges-gating-1v74gr`
+- Commit: `916b74c` — S306 — FeatureGate names the plan it actually requires
+- Author: Claude
+- Files changed:
+  - QA_REPORT_S306.md
+  - REVIEW_S306_FEATUREGATE_TIER_COPY.md
+  - src/components/admin/social/ComposerScheduler.tsx
+  - src/components/admin/social/ConnectionsModal.tsx
+  - src/components/common/FeatureGate.tsx
+  - src/pages/admin/Dashboard.tsx
+- Next recommended action: [Fill in next session: read this line, write what comes next]
