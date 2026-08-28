@@ -101,3 +101,14 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   - src/components/common/FeatureGate.tsx
   - src/pages/admin/Dashboard.tsx
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-08-28 20:31 UTC
+- Branch: `claude/demo-tier-badges-gating-1v74gr`
+- Commit: `5679639` — docs(S305/S306) — session close: deploy truth, gate copy, seven follow-ups
+- Author: Claude
+- Files changed:
+  - docs/ROADMAP.md
+  - docs/handoffs/pestflow-pro-handoff-S305-entitlement-is-the-only-gate.md
+  - docs/handoffs/pestflow-pro-handoff-S306-gate-copy.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
