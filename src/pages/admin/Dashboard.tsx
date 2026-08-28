@@ -6,6 +6,7 @@ import { PLATFORM_NAME } from '../../../shared/lib/platformBrand'
 import { TAB_SUBTITLES } from './dashboardTabCopy'
 import { PreviewModeContext } from '../../hooks/usePreviewMode'
 import { usePlan } from '../../hooks/usePlan'
+import { tierInfo } from '../../lib/tierInfo'
 import {
   FileText, Search, BookOpen, Share2, Star,
   MapPin, BarChart3, Users, Settings, LogOut, ExternalLink, Eye, EyeOff,
@@ -129,7 +130,7 @@ export default function Dashboard() {
                 }>
                 <Icon size={20} aria-hidden="true" />
                 <span className="flex-1 text-left">{label}</span>
-                {locked && <span title="Upgrade to Growth to unlock"><Lock className="w-3.5 h-3.5 shrink-0" /></span>}
+                {locked && <span title={`Upgrade to ${tierInfo(gatedTabs[key]).name} to unlock`}><Lock className="w-3.5 h-3.5 shrink-0 text-amber-500" /></span>}
               </button>
             )
           })}
