@@ -53,17 +53,6 @@ function buildOutscraperQuery(integrations) {
   return null
 }
 
-function parseTier(raw) {
-  if (raw == null) return 1
-  if (typeof raw === 'number') return raw
-  const lower = String(raw).toLowerCase()
-  if (lower === '4' || lower === 'elite') return 4
-  if (lower === '3' || lower === 'pro') return 3
-  if (lower === '2' || lower === 'grow' || lower === 'growth') return 2
-  const asNum = parseInt(lower, 10)
-  return isNaN(asNum) ? 1 : asNum
-}
-
 async function updateOutscraperError(serviceClient, tenantId, currentIntegrations, errorMessage) {
   await serviceClient.from('settings').update({
     // S255: never round-trip Vault-managed secrets back into settings.integrations.
@@ -109,9 +98,19 @@ serve(async (req) => {
       throw e
     }
     if (mode === 'manual') {
-      const { data: subRow } = await serviceClient.from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'subscription').maybeSingle()
-      const tier = parseTier(subRow?.value?.tier)
-      if (tier < 4) return new Response(JSON.stringify({ error: 'Manual refresh requires Elite plan (tier 4)' }), { status: 403, headers: { 'Content-Type': 'application/json', ...corsHeaders } })
+      // S262 — access is tenants.entitlement, the single source of truth, read via
+      // the same SECURITY DEFINER RPC every other gated function uses
+      // (check_tenant_access, EXECUTE granted to service_role only).
+      //
+      // This replaced a read of settings.subscription.tier — the LAST gating use of
+      // that key anywhere. It is cosmetic metadata everywhere else, so it drifts:
+      // a stale-HIGH value there granted Elite access this function was never
+      // entitled to give, while the Refresh button (FeatureGate -> usePlan ->
+      // tenants.entitlement) had already been reading the correct value.
+      //
+      // Fail-closed: an RPC error is a DENIAL, never a fall-through to allowed.
+      const { data: allowed, error: gateErr } = await serviceClient.rpc('check_tenant_access', { p_tenant_id: tenantId, p_required_tier: 4 })
+      if (gateErr || allowed !== true) return new Response(JSON.stringify({ error: 'Manual refresh requires Elite plan (tier 4)' }), { status: 403, headers: { 'Content-Type': 'application/json', ...corsHeaders } })
     }
   }
 
