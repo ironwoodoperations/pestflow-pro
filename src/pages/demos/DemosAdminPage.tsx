@@ -17,7 +17,7 @@ export default function DemosAdminPage() {
             Behind the scenes
           </h1>
           <p style={{ fontFamily: F.b, fontSize: 17, color: 'rgba(255,255,255,0.75)', lineHeight: 1.6, margin: '0 0 18px' }}>
-            Each demo has a fully working admin dashboard. Hop in, edit content, swap branding, watch the public site update in real time.
+            Each demo has a fully working admin dashboard, and each one runs on a different plan. Hop in, edit content, swap branding, watch the public site update in real time — and see exactly what each plan does and does not include.
           </p>
           <p
             style={{
