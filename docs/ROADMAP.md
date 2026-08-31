@@ -281,14 +281,39 @@ Three items stand between a finished site and a site that can earn. None is cosm
    is `admin@demo.com` (`profiles → pestflow-pro`, no `tenant_users` row there).
    Every other user either has no `profiles` row or is admin on the tenant it names.
 
-   **THE LATENT PATH TO WATCH — demotion, not provisioning.** `invite-team-member`
-   upserts `tenant_users.role` but never clears `profiles.tenant_id`. Demote a
-   *provisioned* tenant admin to `user` through the Users tab and they keep
-   `profiles.tenant_id = T` while their role becomes `user` — at which point the
-   legacy policy silently restores full write on that tenant's `settings`
-   (including the `integrations` OAuth tokens) and `tenant_redirects`, with the role
-   gate bypassed. No such user exists today. This is reachable through ordinary
-   product use, needs no attacker, and neither validator model named it.
+   ### ⛔ HARD GATE — DO NOT DEMOTE A PROVISIONED TENANT ADMIN UNTIL B3 IS RESOLVED
+
+   **Do not demote a provisioned tenant admin to `user` or `manager` through the
+   Users tab while this item is open.**
+
+   `provision-tenant:428` writes a `profiles` row for tenant admins.
+   `invite-team-member` never clears it on a role change — it upserts
+   `tenant_users.role` and touches nothing else. So a demoted provisioned admin
+   keeps `profiles.tenant_id = T` while their `tenant_users.role` drops, and
+   `tenant_isolation_settings_auth` (`FOR ALL`, `tenant_id = current_tenant_id()`,
+   **no role test**) restores full write on that tenant's `settings` — including the
+   `integrations` OAuth tokens — with the role gate bypassed. `tenant_redirects`
+   behaves the same way through `tenant_isolation_redirects_write`.
+
+   Reachable through ordinary product use. It needs no attacker, and neither
+   validator model named it. **No user is in this state today.**
+
+   **Scope — who this can and cannot reach:**
+   - **Provisioned tenant admins** — at risk on demotion, because provisioning gave
+     them a `profiles` row.
+   - **`admin@demo.com`** — already in the bypassed state (`profiles → pestflow-pro`,
+     no `tenant_users` row there), and deliberately so; the demos render through it.
+   - **Invited members** — **cannot** be reached. `invite-team-member` never creates a
+     `profiles` row, so `current_tenant_id()` is NULL for them and the legacy policy
+     cannot fire, whatever their role.
+
+   The exposure is therefore bounded to **provisioned admins plus `admin@demo.com`**.
+
+   **Two viable fixes, both out of scope for S308:**
+   - **(a) STOPGAP** — clear `profiles.tenant_id` when `tenant_users.role` changes.
+     Use this only if a demotion is needed before (b) lands.
+   - **(b) THE REAL FIX** — complete the `current_tenant_id()` migration (#8), which
+     retires the legacy policy entirely and dissolves the whole class.
 
 3. **`settings` READ is still plain membership.** S308b closed write; a `user`-role
    member can still read the `integrations` OAuth tokens. Options: exclude
