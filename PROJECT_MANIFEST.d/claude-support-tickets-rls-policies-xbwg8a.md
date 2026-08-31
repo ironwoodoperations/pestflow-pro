@@ -20,7 +20,30 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   - src/lib/planCardContent.ts
   - src/pages/PaymentSuccess.tsx
   - src/pages/marketing/sections/MarketingWebsiteShowcase.tsx
-- Next recommended action: [Fill in next session: read this line, write what comes next]
+- What this was: follow-up decision on S308. `settings` had no role gate of its
+  own, so S308's plain `settings_member_all` handed scottdevore2@gmail.com
+  (role `user` on dang) write access to a paying client's settings, including
+  the `integrations` OAuth tokens. Split into member SELECT + role-gated write,
+  matching the six already-gated tables. Applied live as a separate migration
+  (the S308 file is already stamped). Re-proven: scottdevore2 SELECT 16 /
+  UPDATE 0; Kirk (admin) 16 / 16; admin@demo.com coastal 13 / 13, dang 0 / 0.
+- CORRECTION to the entry above: "Domain tab save is now unreachable" is no
+  longer true. `scott@homeflowpro.ai` now holds `pestflow-pro:admin` in
+  `tenant_users`, so the operator can reach that UI. QA_REPORT_S308.md §9 has
+  been updated to match.
+- Next recommended action: PR #310 is green and complete but is a DRAFT marked
+  DO NOT MERGE — the Wave 3 validator gate (Perplexity + Gemini,
+  conservative-wins) has NOT been run and is blocking; neither tool is reachable
+  from CC Web. Scott also still owes the five-demo browser render (the
+  acceptance criterion) and the end-to-end ticket file + email — the egress
+  proxy denies *.pestflowpro.ai and the Supabase functions host. Open question
+  left undecided: `settings_member_select` is plain membership, so a `user`-role
+  member can still READ the integrations tokens (write is closed). Options:
+  exclude `key = 'integrations'` from member SELECT, or role-gate SELECT too.
+  Known follow-up beyond this PR: current_tenant_id() still reads `profiles` for
+  ~70 policies across ~25 tables. Session-close ritual (docs/ROADMAP.md + a
+  handoff in docs/handoffs/) is still pending Scott's confirmation — do not
+  auto-commit it.
 
 ---
 ## Session — 2026-08-31 15:46 UTC
@@ -57,3 +80,16 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   Domain tab save is now unreachable (operator has no pestflow-pro membership);
   demo.pestflowpro.ai is a dead CTA (no tenant with slug `demo`). Known follow-up:
   current_tenant_id() still reads `profiles` for ~70 policies across ~25 tables.
+
+---
+## Session — 2026-08-31 16:12 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `df8f7af` — S308b — role-gate the settings membership write path
+- Author: Claude
+- Files changed:
+  - QA_REPORT_S308.md
+  - REVIEW_S308_OPERATOR_MEMBERSHIP_SPLIT.md
+  - supabase/migrations/20260831180000_s308b_settings_role_gate.sql
+  - supabase/migrations/s308_operator_membership_split_rollback.sql
+  - supabase/migrations/s308b_settings_role_gate_rollback.sql
+- Next recommended action: [Fill in next session: read this line, write what comes next]
