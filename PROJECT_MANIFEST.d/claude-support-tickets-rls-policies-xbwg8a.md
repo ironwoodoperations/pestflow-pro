@@ -57,7 +57,22 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   - supabase/functions/notify-support-ticket/index.ts
   - supabase/migrations/20260831170000_s308_operator_membership_split.sql
   - supabase/migrations/s308_operator_membership_split_rollback.sql
-- Next recommended action: [Fill in next session: read this line, write what comes next]
+- Validator gate: BOTH models APPROVE WITH CONDITIONS. B1/B5/D1/D2 done, B4 audited.
+  B2's cheap fix DISPROVEN — revoking EXECUTE from `authenticated` breaks RLS
+  (42501); grants restored and matrix re-verified. B3 FAILS on two tables:
+  `tenant_isolation_settings_auth` and `tenant_isolation_redirects_write` are
+  FOR ALL with no role test, so the admin/manager gate is bypassable by anyone
+  whose profiles.tenant_id matches — reported, NOT fixed, per instruction.
+- CAVEAT: both verdict texts are PLACEHOLDERS in REVIEW Appendices A and B. The
+  verbatim model output was never supplied to the session and was deliberately
+  not reconstructed from the conditions summary.
+- Next recommended action: Scott merges #310 and deploys. THEN, immediately:
+  `DELETE FROM public.operators WHERE user_id='5181b30a-265f-4a70-a323-bf6e3c53641b';`
+  — admin@pestflowpro.com was added as a TEMPORARY operator at 17:13Z and its
+  credentials are published on the marketing homepage, so until that row is gone
+  a public credential is a full Ironwood operator. Verify is_operator() is false
+  for it afterwards. Then paste the two verdicts into the REVIEW appendices, and
+  decide the two B3 legacy policies (ROADMAP S308 follow-up #2).
 
 ---
 ## Session — 2026-08-31 15:47 UTC
@@ -125,3 +140,19 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
       signInWithPassword-only so no passwordless session can reach it; whether
       admin@pestflowpro.com should remain an Ironwood login given its credentials
       are published on the marketing homepage.
+
+---
+## Session — 2026-08-31 18:13 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `55ef06a` — S308d/S308e — validator gate conditions, plus session close
+- Author: Claude
+- Files changed:
+  - QA_REPORT_S308.md
+  - REVIEW_S308_OPERATOR_MEMBERSHIP_SPLIT.md
+  - docs/ROADMAP.md
+  - docs/handoffs/pestflow-pro-handoff-S308-operator-membership-split.md
+  - supabase/migrations/20260831190000_s308d_b1_harden_definer.sql
+  - supabase/migrations/20260831200000_s308e_gate_d1_b5.sql
+  - supabase/migrations/s308d_b1_harden_definer_rollback.sql
+  - supabase/migrations/s308e_gate_d1_b5_rollback.sql
+- Next recommended action: [Fill in next session: read this line, write what comes next]
