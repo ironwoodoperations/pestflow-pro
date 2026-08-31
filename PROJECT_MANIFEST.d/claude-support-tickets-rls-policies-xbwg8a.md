@@ -218,3 +218,31 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   (admin@pestflowpro.com is a TEMPORARY operator whose credentials are published on
   the marketing homepage) and verifies is_operator() is false for it. Still
   unverified from CC Web: the five-demo browser render and the ticket email.
+
+---
+## Session — 2026-08-31 19:27 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `c765359` — S310 — docs corrections + artificial-turf content entry for pls
+- Author: Claude
+- Files changed:
+  - docs/ROADMAP.md
+  - docs/handoffs/pestflow-pro-handoff-S308-operator-membership-split.md
+  - src/lib/__tests__/irrigationServiceSurfaces.test.ts
+  - src/shells/_shared/irrigationContent.ts
+- Next recommended action: **PR #311 is open (draft) and awaits Scott's merge.** After
+  it merges AND Vercel reports READY on main, the `page_content` row for
+  `artificial-turf` is applied by Claude.ai — never before READY, or a live tile and
+  nav link point at a 404 (that fired on this exact slug on 2026-08-26). Separately,
+  **S309 Wave 1 is reported and gated on Scott's answer**: do not touch
+  invite-team-member until he replies, and note that `list_tenant_members()` shares
+  the same `profiles` defect via `current_tenant_id()`, so fixing only the edge
+  function leaves the Users tab half-broken.
+
+### CORRECTION to the entry above (dated 2026-08-31, S308)
+That entry says `admin@pestflowpro.com` **is** a TEMPORARY operator with published
+credentials. **That is no longer true.** The row was deleted; `public.operators` now
+holds ONE row (`scott@homeflowpro.ai`), verified live — `is_operator()` is false for
+`5181b30a-…` and true for `32b8fbf4-…`. The earlier line is left in place because
+this log is a dated record, but it must not be re-propagated: ROADMAP already notes
+that a false claim in `PROJECT_MANIFEST.d/` is immortal and gets read first because
+it is recent.

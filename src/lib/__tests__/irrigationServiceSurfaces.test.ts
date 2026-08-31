@@ -66,7 +66,7 @@ describe('the corpus is real (this guard cannot pass vacuously)', () => {
     expect(PRESET_SLUGS, 'admin preset').toHaveLength(5);
     expect(SEED_SLUGS, 'provisioning seed').toHaveLength(5);
     expect(backfillIrrigationSlugs(), 'backfill script').toHaveLength(5);
-    expect(Object.keys(IRRIGATION_CONTENT_MAP).length).toBeGreaterThanOrEqual(4);
+    expect(Object.keys(IRRIGATION_CONTENT_MAP), 'content map').toHaveLength(5);
   });
 
   it('the image-existence check can actually fail', () => {
@@ -100,6 +100,10 @@ describe('the five surfaces name the SAME five services', () => {
     expect(sorted(SEED_SLUGS), 'provisioning seed disagrees with the admin preset').toEqual(sorted(PRESET_SLUGS));
     expect(sorted(backfillIrrigationSlugs()), 'backfill script disagrees').toEqual(sorted(PRESET_SLUGS));
     expect(sorted(plsTiles().map((t) => t.slug)), 'home tiles disagree').toEqual(sorted(PRESET_SLUGS));
+    // S310: the content map joined this set when artificial-turf landed. Before
+    // that it was deliberately one short, guarded by a separate block that has
+    // now been deleted — so it is asserted HERE instead, not nowhere.
+    expect(sorted(Object.keys(IRRIGATION_CONTENT_MAP)), 'content map disagrees').toEqual(sorted(PRESET_SLUGS));
   });
 
   it('names artificial-turf, and no surface still names retaining-walls', () => {
@@ -132,49 +136,3 @@ describe('the five surfaces name the SAME five services', () => {
   });
 });
 
-// ── The one KNOWN, DELIBERATE gap — STATE 2 of 3 ────────────────────────────
-//
-// Named in code rather than left to be rediscovered, and written so it RETIRES
-// ITSELF: each state's assertions fail the moment the next one is reached.
-//
-//   state 1 (S300)  map has retaining-walls, no artificial-turf   ← retired
-//   state 2 (S302)  map has NEITHER — the old page is gone, the   ← HERE
-//                   replacement copy is still pending owner facts
-//   state 3         map has artificial-turf → both assertions
-//                   below fail and this whole block gets deleted
-describe('KNOWN OPEN ITEM — the turf content entry is still blocked on owner facts', () => {
-  it('the map has retired retaining-walls and does not yet have artificial-turf', () => {
-    expect(
-      Object.keys(IRRIGATION_CONTENT_MAP),
-      'retaining-walls is back in the map — S302 removed it; the service is discontinued',
-    ).not.toContain('retaining-walls');
-    expect(
-      Object.keys(IRRIGATION_CONTENT_MAP),
-      'artificial-turf entry now EXISTS — delete this whole describe block and the '
-      + 'PENDING_ROUTE exception below; the swap is complete',
-    ).not.toContain('artificial-turf');
-  });
-
-  it('artificial-turf is the ONLY tile whose route does not resolve yet', () => {
-    // The router's active slug set is derived from the content map
-    // (app/tenant/[slug]/_lib/serviceData.ts: IRRIGATION_SERVICE_SLUGS =
-    // new Set(Object.keys(IRRIGATION_CONTENT_MAP))), so a tile slug with no map
-    // entry 404s. The tile itself is filtered against page_content, so it does
-    // not render until the DB row exists — which is why the DB row must land
-    // AFTER the content entry, never before.
-    const PENDING_ROUTE = ['artificial-turf'];
-    expect(PENDING_ROUTE).toHaveLength(1);
-    const unresolved = plsTiles()
-      .map((t) => t.slug)
-      .filter((s) => !Object.prototype.hasOwnProperty.call(IRRIGATION_CONTENT_MAP, s));
-    expect(unresolved, 'a tile other than the known-pending one has no content entry').toEqual(PENDING_ROUTE);
-  });
-
-  it('the four services that DO resolve are the ones with copy', () => {
-    // A floor, so removing an entry cannot quietly shrink the routable set to
-    // nothing while the assertions above still pass.
-    expect(Object.keys(IRRIGATION_CONTENT_MAP).sort()).toEqual(
-      ['drainage', 'pump-systems', 'sod-dirt-work', 'sprinkler-systems'],
-    );
-  });
-});

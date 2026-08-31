@@ -138,6 +138,8 @@ tested and disproven); an RLS regression suite; a global RESTRICTIVE backstop.
   `*.pestflowpro.ai`. RLS-layer reads are proven for coastal-pest and apex-protect;
   the rendered pages are not.
 - **`notify-support-ticket` email delivery** to support@homeflowpro.ai.
-- **Both validator verdicts are placeholders** in `REVIEW_S308_OPERATOR_MEMBERSHIP_SPLIT.md`
-  Appendices A and B — the verbatim texts were never supplied to the session. They
-  must be pasted in before that document is a complete record.
+- ~~Both validator verdicts are placeholders~~ — **CORRECTED. They are recorded.**
+  Both were pasted verbatim into `REVIEW_S308_OPERATOR_MEMBERSHIP_SPLIT.md`
+  Appendices A and B in `5e01d0d`, byte-exact and verified by comparison against the
+  supplied text (27,103 bytes Perplexity, 6,929 bytes Gemini). The sentence above was
+  written before they arrived and was left standing when they landed.
