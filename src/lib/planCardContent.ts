@@ -107,5 +107,5 @@ export const PLAN_CHANGE_PHONE = '(430) 367-5601'
 /** Builds the "Contact us to switch" mailto for a given tier name. */
 export function planChangeMailto(tierName: string): string {
   const subject = `${PLATFORM_NAME} — plan change to ${tierName}`
-  return `mailto:sales@pestflowpro.ai?subject=${encodeURIComponent(subject)}`
+  return `mailto:sales@homeflowpro.ai?subject=${encodeURIComponent(subject)}`
 }

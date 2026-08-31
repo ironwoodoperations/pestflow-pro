@@ -22,7 +22,7 @@ export default function SocialUpgradeNudge({ planName, price, onNavigate }: Prop
         </button>
       ) : (
         <a
-          href="mailto:support@pestflow.ai?subject=Upgrade Request"
+          href="mailto:support@homeflowpro.ai?subject=Upgrade Request"
           className="inline-block px-5 py-2 bg-amber-500 text-white rounded-lg text-sm font-semibold hover:bg-amber-600 transition"
         >
           Upgrade Plan →

@@ -107,7 +107,7 @@ export default function UpgradeCards({ businessName = '' }: Props) {
                   )
                 ) : (
                   <a
-                    href={`mailto:support@pestflowpro.ai?subject=${encodeURIComponent(`Downgrade request${businessName ? ' — ' + businessName : ''}`)}`}
+                    href={`mailto:support@homeflowpro.ai?subject=${encodeURIComponent(`Downgrade request${businessName ? ' — ' + businessName : ''}`)}`}
                     className="text-center text-xs text-gray-400 hover:text-gray-600 transition"
                   >
                     To downgrade, contact us

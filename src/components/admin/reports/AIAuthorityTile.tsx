@@ -79,7 +79,7 @@ function LockedCard({ meta }: { meta: EngineMeta }) {
       <p className="text-sm font-semibold text-gray-700">Unlock your {meta.shortName} authority</p>
       <p className="text-xs text-gray-500 mt-1 mb-3">See how {meta.shortName} ranks you for buyer-intent searches.</p>
       <a
-        href="mailto:support@pestflowpro.ai?subject=Upgrade Request - AI Authority"
+        href="mailto:support@homeflowpro.ai?subject=Upgrade Request - AI Authority"
         className="inline-block px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-medium hover:bg-emerald-700 transition-colors"
       >
         Upgrade to {planLabel} →

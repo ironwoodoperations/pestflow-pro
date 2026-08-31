@@ -7,7 +7,7 @@ interface Props {
 }
 
 export default function LockedSectionCard({ title, bodyText, mailtoSubject }: Props) {
-  const href = `mailto:support@pestflowpro.ai?subject=${encodeURIComponent(mailtoSubject)}`
+  const href = `mailto:support@homeflowpro.ai?subject=${encodeURIComponent(mailtoSubject)}`
   return (
     <div className="rounded-xl border border-gray-200 bg-gray-50 p-10 text-center">
       <Lock className="w-8 h-8 text-amber-500 mx-auto mb-3" />
