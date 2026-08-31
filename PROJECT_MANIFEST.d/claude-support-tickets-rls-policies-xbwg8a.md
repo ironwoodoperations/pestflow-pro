@@ -107,7 +107,7 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   - supabase/migrations/20260831180000_s308b_settings_role_gate.sql
   - supabase/migrations/s308_operator_membership_split_rollback.sql
   - supabase/migrations/s308b_settings_role_gate_rollback.sql
-- Next recommended action: [Fill in next session: read this line, write what comes next]
+- Next recommended action: superseded — see the latest entry at the end of this file.
 
 ---
 ## Session — 2026-08-31 17:09 UTC
@@ -155,4 +155,38 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   - supabase/migrations/20260831200000_s308e_gate_d1_b5.sql
   - supabase/migrations/s308d_b1_harden_definer_rollback.sql
   - supabase/migrations/s308e_gate_d1_b5_rollback.sql
-- Next recommended action: [Fill in next session: read this line, write what comes next]
+- Next recommended action: superseded — see the latest entry at the end of this file.
+
+---
+## Session — 2026-08-31 18:29 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `4d8ac5f` — docs(S308): record B3 decision as blocked, with the provisioning answer
+- Author: Claude
+- Files changed:
+  - docs/ROADMAP.md
+- Validator verdicts are now RECORDED VERBATIM (commit `5e01d0d`): Appendices A and
+  B of REVIEW_S308_OPERATOR_MEMBERSHIP_SPLIT.md, byte-exact and verified by
+  comparing the embedded regions against source (27,103 and 6,929 bytes).
+- B3 DECIDED: leave `tenant_isolation_settings_auth` and
+  `tenant_isolation_redirects_write` UNCHANGED. Narrowing them breaks
+  admin@demo.com, which has profiles.tenant_id=pestflow-pro but no tenant_users row
+  there, so the five demo dashboards render through the legacy path. Recorded as
+  BLOCKED on the current_tenant_id() migration.
+- PROVISIONING ANSWER (verified): provision-tenant DOES still upsert a profiles row
+  (index.ts:428) — but only for the TENANT ADMIN, who is also given
+  tenant_users.role='admin', so the role gate passes anyway and nothing is escalated
+  at provisioning time. invite-team-member writes NO profiles row (index.ts:120-122),
+  so invited `user`/`manager` members cannot reach the legacy path at all. Exposure
+  is bounded to ONE existing row: admin@demo.com.
+- LATENT PATH, neither model named it: DEMOTION. invite-team-member upserts
+  tenant_users.role but never clears profiles.tenant_id, so demoting a provisioned
+  admin to `user` silently restores full write on that tenant's settings (including
+  integrations OAuth tokens) and tenant_redirects with the role gate bypassed. No
+  such user exists today; reachable through ordinary product use.
+- Next recommended action: Scott merges #310 and deploys. THEN IMMEDIATELY
+  `DELETE FROM public.operators WHERE user_id='5181b30a-265f-4a70-a323-bf6e3c53641b';`
+  — admin@pestflowpro.com is a TEMPORARY operator added 17:13Z and its credentials
+  are published on the marketing homepage, so until that row is gone a public
+  credential is a full Ironwood operator. Verify is_operator() is false for it after.
+  Then: the five-demo browser render and the ticket email remain unverified from CC
+  Web; ROADMAP has 14 S308 follow-ups.
