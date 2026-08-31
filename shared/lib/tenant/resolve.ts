@@ -1,6 +1,6 @@
 import { cache } from 'react';
 import { getServerSupabaseForISR } from '../supabase/server';
-import type { Tenant } from './types';
+import { normalizeLogoHeightPx, type Tenant } from './types';
 
 async function resolveSettings(tenantBase: { id: string; slug: string; subdomain: string | null; name: string }): Promise<Tenant> {
   const supabase = getServerSupabaseForISR();
@@ -33,6 +33,10 @@ async function resolveSettings(tenantBase: { id: string; slug: string; subdomain
     logo_url: branding.logo_url ?? null,
     favicon_url: branding.favicon_url ?? null,
     cta_text: branding.cta_text ?? null,
+    // S311 — resolved here, alongside logo_url, because useTenant() only ever
+    // exposes what this function builds. A field read straight from `branding`
+    // at render time would be undefined with nothing visibly broken.
+    logo_height_px: normalizeLogoHeightPx(branding.logo_height_px),
 
     business_name: business.name ?? null,
     phone: business.phone ?? null,

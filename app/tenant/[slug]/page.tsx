@@ -102,7 +102,17 @@ const MODERN_PRO_VERTICAL: Partial<Record<Vertical, ModernProHomeCopy>> & { pest
       { label: 'TX Licensed Irrigator', sublabelFromLicense: true },
       { label: 'Licensed since 2017' },
       { label: 'Free 2-year warranty', sublabel: 'Most companies warranty six months' },
-      { label: '4.9 on Google', sublabel: '49 reviews' },
+      // S311 — a '4.9 on Google' / '49 reviews' item was removed from this
+      // preset. Preset rule (a): a vertical preset holds only what is true of
+      // the whole TRADE. A star average and a review count are true of one
+      // tenant's listing on one day and of no other irrigation company, so any
+      // value here is a fabrication for the next irrigation tenant that
+      // inherits this preset. Both numbers were already wrong for pls (54
+      // testimonial rows, 50 of them source='google_outscraper'), which is how
+      // it was found. Deriving them per-tenant is possible without a new query
+      // — page.tsx already holds every row — but a count of LOCALLY SYNCED
+      // rows is not the count on the Google listing, so a derived figure would
+      // be a differently-wrong claim about a third party. See the PR body.
     ],
     whyItems: [
       { title: 'Documented on every job', body: 'Static pressure, zone coverage, and as-built maps you keep. You see the test data before we backfill.' },

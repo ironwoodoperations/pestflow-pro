@@ -5,7 +5,40 @@ export type TenantBranding = {
   accent_color?: string;
   template?: string;
   cta_text?: string;
+  // S311 — optional per-tenant nav logo height. Absent for every tenant today;
+  // absent MUST keep rendering at the historical 40px.
+  logo_height_px?: number | string;
 };
+
+// S311 — the modern-pro nav logo height.
+//
+// The logo was hardcoded at 40px in ModernProNavbar, shared by every tenant on
+// that shell (and by every tenant whose theme is unrecognized, since modern-pro
+// is layout.tsx's default branch). Tenants whose wordmark has different
+// proportions cannot all look right at one height.
+//
+// MAX is 64 because the nav row is Tailwind `h-16` — exactly 64px. A taller
+// logo overflows the bar rather than enlarging it. MIN is 16 because anything
+// smaller is unreadable at typical logo aspect ratios.
+export const LOGO_HEIGHT_DEFAULT_PX = 40;
+export const LOGO_HEIGHT_MIN_PX = 16;
+export const LOGO_HEIGHT_MAX_PX = 64;
+
+// settings.branding is untrusted JSONB written through the admin UI, so the
+// value can be a number, a numeric string ("32"), null, an empty string, or
+// nonsense. Anything that is not a finite number falls back to the 40px
+// default; a finite number is rounded and clamped into the range above.
+// Idempotent, so it is safe to apply both at resolve time and at render time.
+export function normalizeLogoHeightPx(raw: unknown): number {
+  const n =
+    typeof raw === 'number'
+      ? raw
+      : typeof raw === 'string' && raw.trim() !== ''
+        ? Number(raw.trim())
+        : NaN;
+  if (!Number.isFinite(n)) return LOGO_HEIGHT_DEFAULT_PX;
+  return Math.min(LOGO_HEIGHT_MAX_PX, Math.max(LOGO_HEIGHT_MIN_PX, Math.round(n)));
+}
 
 export type TenantBusinessInfo = {
   name?: string;
@@ -36,6 +69,11 @@ export type Tenant = {
   logo_url: string | null;
   favicon_url: string | null;
   cta_text: string | null;
+  // S311 — always set by resolveSettings (to LOGO_HEIGHT_DEFAULT_PX when the
+  // tenant has no branding.logo_height_px). Optional so hand-built Tenant
+  // literals in tests and fixtures compile unchanged; consumers normalize
+  // again at render, so an omitted value still renders at 40px.
+  logo_height_px?: number;
 
   // business_info (from settings.business_info JSONB)
   business_name: string | null;
