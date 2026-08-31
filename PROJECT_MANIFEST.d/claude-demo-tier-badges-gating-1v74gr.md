@@ -112,3 +112,21 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   - docs/handoffs/pestflow-pro-handoff-S305-entitlement-is-the-only-gate.md
   - docs/handoffs/pestflow-pro-handoff-S306-gate-copy.md
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-08-31 14:27 UTC
+- Branch: `claude/demo-tier-badges-gating-1v74gr`
+- Commit: `daf773c` — S307 — point every dead mailto at a real inbox; fix the broken homepage CTA
+- Author: Claude
+- Files changed:
+  - QA_REPORT_S307.md
+  - REVIEW_S307_MAILTO_AND_CTA.md
+  - src/components/admin/UpgradeCards.tsx
+  - src/components/admin/reports/AIAuthorityTile.tsx
+  - src/components/admin/social/ConnectionsModal.tsx
+  - src/components/admin/social/SocialUpgradeNudge.tsx
+  - src/components/common/LockedSectionCard.tsx
+  - src/lib/planCardContent.ts
+  - src/pages/PaymentSuccess.tsx
+  - src/pages/marketing/sections/MarketingWebsiteShowcase.tsx
+- Next recommended action: [Fill in next session: read this line, write what comes next]

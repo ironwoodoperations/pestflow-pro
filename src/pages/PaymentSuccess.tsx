@@ -208,7 +208,7 @@ export default function PaymentSuccess() {
               No charge was made. Try again or contact us if you need help.
             </p>
             <a
-              href="mailto:admin@pestflowpro.com"
+              href="mailto:billing@homeflowpro.ai"
               className="inline-block py-3 px-6 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition text-sm"
             >
               Contact us
