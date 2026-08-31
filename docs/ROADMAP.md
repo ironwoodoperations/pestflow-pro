@@ -184,7 +184,7 @@ Three items stand between a finished site and a site that can earn. None is cosm
 
 - [ ] **`settings.seo.noindex` is still `'true'` — pls is invisible to Google.** Everything this arc fixed about metadata, JSON-LD, service pages and the service-area map is being emitted to crawlers that are told not to look. Flipping this is the single highest-value action on the site.
 - [ ] **`tenants.custom_domain` is `NULL`** — serving on `pls.pestflowpro.ai`. Decide the domain and configure it. Doing this *after* de-noindexing means the indexed URLs are the ones being replaced.
-- [ ] **`notifications.lead_email` is unset** — blocked on §6.4 per `DECISIONS.md`. Until it is set, a submitted quote form has nowhere to go: the lead is captured but nobody is told.
+- [x] ~~**`notifications.lead_email` is unset**~~ — **CLOSED.** Verified live 2026-08-31: `settings.notifications.lead_email` = `precisionlawnsystems@yahoo.com` (`cc_email` empty). A submitted quote form now reaches the owner. The other two gates below remain OPEN.
 
 ### pls — verified live state, 2026-08-26 (do not re-derive)
 
@@ -229,19 +229,38 @@ Three items stand between a finished site and a site that can earn. None is cosm
 
 ## Open Follow-ups
 
-### S308 — operator/membership split (PR #310, validator gate PASSED, awaiting merge)
+### S309 — invite-team-member resolves caller tenant from `profiles` (HIGH)
 
-1. **REMOVE THE TEMPORARY OPERATOR ROW — do this immediately after deploy.**
-   `admin@pestflowpro.com` (`5181b30a-265f-4a70-a323-bf6e3c53641b`) was added to
-   `public.operators` at 2026-08-31 17:13Z, note *"TEMPORARY — S308 verification.
-   Remove once scott@homeflowpro.ai can reach /ironwood."* **That account's
-   credentials are published on the marketing homepage** (`MarketingCRM.tsx:93`),
-   so while the row exists a public credential is a full Ironwood operator —
-   blanket read+write on all 13 tables across every tenant, exactly the hole S308
-   closed. S308c satisfies the removal precondition **in the branch**; it becomes
-   true in production only once #310 is merged and deployed. Then:
-   `DELETE FROM public.operators WHERE user_id='5181b30a-265f-4a70-a323-bf6e3c53641b';`
-   and re-verify `is_operator()` is false for it.
+**Any tenant admin without a `profiles` row gets a 403 and cannot invite anyone.**
+`invite-team-member/index.ts:72` derives the caller's tenant with
+`service.from('profiles').select('tenant_id').eq('id', user.id)` and 403s when it is
+null. S273 moved membership truth to `tenant_users`; S308 made `tenant_users` the
+RLS membership source. This function never moved.
+
+**Three live accounts affected, one of them a paying client's admin:**
+`precisionlawnsystems@yahoo.com` (pls admin), `scott@homeflowpro.ai`,
+`scottdevore2@gmail.com`. The UI shows "Invitation failed."
+
+**The split that makes it invisible:** `provision-tenant:428` DOES write a `profiles`
+row for the tenant admin, so *provisioned* admins work. *Invited* admins never get
+one (`invite-team-member` writes only `tenant_users`), so they cannot themselves
+invite. Cross-reference S309 Wave 1.
+
+**`list_tenant_members()` has the same defect** and is the same UI surface: it
+derives the tenant via `current_tenant_id()` (profiles), so a profiles-less admin
+also sees an EMPTY team list. Fixing only the edge function leaves the Users tab
+half-broken — decide them together.
+
+### S308 — operator/membership split (PR #310 **MERGED** — main `05f526b`, deployed to production)
+
+1. ~~**REMOVE THE TEMPORARY OPERATOR ROW**~~ — **DONE.** The temporary
+   `admin@pestflowpro.com` row was deleted. Verified live 2026-08-31:
+   `public.operators` holds **ONE** row (`scott@homeflowpro.ai`), and by JWT-claim
+   impersonation `is_operator()` is **false** for
+   `5181b30a-265f-4a70-a323-bf6e3c53641b` and **true** for
+   `32b8fbf4-6378-49b2-b5b5-580d7a0c9a21`. The published marketing credential is no
+   longer an Ironwood operator.
+
 2. **B3 — `settings` and `tenant_redirects` role gates are BYPASSABLE. DECIDED:
    leave both legacy policies UNCHANGED; BLOCKED on the `current_tenant_id()`
    migration (#8).** `tenant_isolation_settings_auth` and
@@ -325,6 +344,13 @@ Three items stand between a finished site and a site that can earn. None is cosm
    boundary, so collapsing them changes the failure mode.
 5. **`IronwoodLogin` supports only `signInWithPassword`** — no magic-link or
    recovery session handling, so a passwordless session cannot reach that page.
+
+   **This — not the allowlist — is what actually blocked operator access on
+   2026-08-31.** S308c added `scott@homeflowpro.ai` to both client allowlists, and
+   that deploy was **necessary but NOT sufficient**: an account can be on both
+   allowlists, hold `pestflow-pro:admin` in `tenant_users`, and be the sole row in
+   `operators`, and still not reach `/ironwood` if it has no password to sign in
+   with. Record kept so the next reader does not re-diagnose the allowlist.
 6. **Decide whether `admin@pestflowpro.com` should remain an Ironwood login**, given
    its credentials are published on the marketing homepage.
 7. **`https://demo.pestflowpro.ai/admin` is a dead CTA** (`MarketingCRM.tsx:92`) —

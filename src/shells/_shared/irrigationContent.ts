@@ -61,11 +61,34 @@ export const IRRIGATION_CONTENT_MAP: Record<string, PestEntry> = {
   // was pending. /retaining-walls now 301s to / from tenant_redirects, so the
   // page has nothing left to serve.
   //
-  // 'artificial-turf' is NOT here yet: its blurb, signs, treatment, CTA and meta
-  // need facts from the owner that have not arrived, and its neighbours carry
-  // real specifics. Until it lands, IRRIGATION_SERVICE_SLUGS has four keys and
-  // /artificial-turf does not resolve — which is why the page_content row for it
-  // must not be created first. Tracked in irrigationServiceSurfaces.test.ts.
+  // S310 — 'artificial-turf' LANDS BELOW. Its copy is bounded to the scope the
+  // owner supplied verbatim: pet turf, golf/putting greens, residential yards;
+  // proper drainage and base materials; hardscape mortared edging where a proper
+  // install needs it. Nothing beyond that is asserted — no warranty, no free
+  // estimate, no turnaround, no pricing, no certifications (S286/S290 precedent),
+  // which is why this entry reads shorter than its neighbours. Do not "balance"
+  // it by inventing parity claims.
+  //
+  // The page_content row is NOT created in the same change. IRRIGATION_SERVICE_SLUGS
+  // derives from these keys, so a DB row for a slug the map does not serve puts a
+  // live tile and nav link in front of customers pointing at a 404 — that fired on
+  // this exact slug on 2026-08-26. Code first, row after Vercel reports READY.
+  'artificial-turf': {
+    slug: 'artificial-turf',
+    displayName: 'Artificial Turf',
+    pluralNoun: 'artificial turf',
+    blurb: 'Pet turf, golf and putting greens, and residential yards. Turf is only as good as what goes under it — the base and the drainage are what decide whether it stays flat and drains, or ripples and holds water.',
+    signs: [
+      'Pet area that will not drain or stay clean',
+      'Want a putting green at home',
+      'Yard area where grass will not fill in',
+      'Existing turf laid without a proper base',
+    ],
+    treatment: 'The base comes first: excavate, install and compact base material in lifts, and shape it so water moves instead of pooling. Drainage is built into that base, not added afterward. Turf is then laid to the finished grade, seamed, and secured at the perimeter. Where a proper install calls for it, we set mortared hardscape edging so the edges stay put rather than lifting.',
+    cta: 'Base and drainage first — that is what keeps turf flat.',
+    metaTitle: 'Artificial Turf | East Texas',
+    metaDescription: 'Artificial turf for pet areas, putting greens, and residential yards in East Texas — installed over a compacted base built to drain.',
+  },
   'sod-dirt-work': {
     slug: 'sod-dirt-work',
     displayName: 'Sod Installation & Dirt Work',
