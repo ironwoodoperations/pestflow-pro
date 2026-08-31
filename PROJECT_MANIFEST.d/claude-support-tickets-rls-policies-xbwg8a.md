@@ -190,3 +190,31 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   credential is a full Ironwood operator. Verify is_operator() is false for it after.
   Then: the five-demo browser render and the ticket email remain unverified from CC
   Web; ROADMAP has 14 S308 follow-ups.
+
+---
+## Session — 2026-08-31 18:37 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `e02d97e` — docs(S308): add a hard gate on B3 — do not demote a provisioned tenant admin
+- Author: Claude
+- Files changed:
+  - docs/ROADMAP.md
+- ROADMAP now carries an explicit HARD GATE on the B3 follow-up: DO NOT DEMOTE a
+  provisioned tenant admin to `user`/`manager` through the Users tab until B3 is
+  resolved. provision-tenant:428 writes a profiles row for tenant admins;
+  invite-team-member upserts tenant_users.role and never clears it, so a demoted
+  provisioned admin keeps profiles.tenant_id = T and tenant_isolation_settings_auth
+  (FOR ALL, no role test) restores full settings write — integrations OAuth tokens
+  included — with the role gate bypassed. Same for tenant_redirects.
+- Bounded: invited members can NEVER be reached (no profiles row → current_tenant_id()
+  is NULL for them, whatever their role). Exposure is provisioned admins plus
+  admin@demo.com, which is already in that state deliberately — the demos render
+  through it. No user is in the dangerous state today.
+- Fixes, both out of scope for S308: (a) stopgap — clear profiles.tenant_id when
+  tenant_users.role changes; (b) real fix — complete the current_tenant_id()
+  migration, retiring the legacy policy entirely.
+- Next recommended action: unchanged from the previous entry — Scott merges #310 and
+  deploys, THEN IMMEDIATELY
+  `DELETE FROM public.operators WHERE user_id='5181b30a-265f-4a70-a323-bf6e3c53641b';`
+  (admin@pestflowpro.com is a TEMPORARY operator whose credentials are published on
+  the marketing homepage) and verifies is_operator() is false for it. Still
+  unverified from CC Web: the five-demo browser render and the ticket email.
