@@ -41,7 +41,11 @@ export default function IronwoodOps() {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      const IRONWOOD_ALLOWED = ['admin@pestflowpro.com', 'murphygurl92@gmail.com']
+      // Second copy of the /ironwood/login allowlist (IronwoodLogin.tsx). Both must
+      // list an operator or they bounce between the two pages. Neither is the security
+      // boundary — that is RLS via public.is_operator() (S308). Collapsing the two
+      // copies is a follow-up; see the S308 notes.
+      const IRONWOOD_ALLOWED = ['admin@pestflowpro.com', 'murphygurl92@gmail.com', 'scott@homeflowpro.ai']
       if (!IRONWOOD_ALLOWED.includes(data.user?.email ?? '')) {
         navigate('/ironwood/login', { replace: true })
       } else {

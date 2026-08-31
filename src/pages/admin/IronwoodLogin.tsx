@@ -2,7 +2,11 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 
-const IRONWOOD_ALLOWED = ['admin@pestflowpro.com', 'murphygurl92@gmail.com']
+// Client-side UI gate for /ironwood, applied after signInWithPassword. This is NOT
+// the security boundary — that is RLS via public.is_operator() (S308), which reads
+// the `operators` table. Two independent lists is a known wart; collapsing them is a
+// separate session (see the S308 follow-ups) because it changes the failure mode.
+const IRONWOOD_ALLOWED = ['admin@pestflowpro.com', 'murphygurl92@gmail.com', 'scott@homeflowpro.ai']
 
 export default function IronwoodLogin() {
   const [form, setForm] = useState({ email: '', password: '' })

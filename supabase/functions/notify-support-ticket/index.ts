@@ -1,12 +1,19 @@
-// Edge Function: notify-support-ticket v16
+// Edge Function: notify-support-ticket v17
 // Called from SupportTab after a new ticket insert.
-// Sends email notification to itsupport@pestflowpro.com via Resend.
-// Gate: requireTenantAdmin — caller must be admin of the ticket's tenant.
+// Sends email notification to support@homeflowpro.ai via Resend.
+// Gate: requireTenantUser — caller must be a MEMBER of the ticket's tenant.
+//
+// S308: was requireTenantAdmin. RLS lets any tenant_users member file a ticket
+// (support_tickets.tenant_insert_own_tickets checks is_tenant_member), so an
+// admin-only notify gate meant a `user`-role member could insert a ticket that
+// emailed nobody — the same silent failure in a new place. The gate is still
+// resource-bound: tenant_id is derived from the ticket being acted on, so a
+// caller who belongs to tenant A cannot notify on tenant B's ticket.
 //
 // Deploy: supabase functions deploy notify-support-ticket --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { requireTenantAdmin, AuthError } from '../_shared/auth/requireTenantUser.ts'
+import { requireTenantUser, AuthError } from '../_shared/auth/requireTenantUser.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
@@ -38,9 +45,9 @@ Deno.serve(async (req: Request) => {
 
     if (ticketErr || !ticket) return json({ error: 'Ticket not found' }, 404)
 
-    // Gate: caller must be admin of this ticket's tenant
+    // Gate: caller must be a member of this ticket's tenant
     try {
-      await requireTenantAdmin(req, ticket.tenant_id)
+      await requireTenantUser(req, ticket.tenant_id)
     } catch (e) {
       if (e instanceof AuthError) return e.toResponse()
       throw e

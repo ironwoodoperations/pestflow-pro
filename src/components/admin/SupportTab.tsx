@@ -37,6 +37,7 @@ export default function SupportTab() {
   const [showModal, setShowModal] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [toast, setToast] = useState('')
+  const [submitError, setSubmitError] = useState('')
   const [form, setForm] = useState({ subject: '', body: '', priority: 'normal' })
 
   useEffect(() => {
@@ -52,33 +53,42 @@ export default function SupportTab() {
   const handleSubmit = async () => {
     if (!tenantId || !form.subject.trim() || !form.body.trim()) return
     setSubmitting(true)
+    setSubmitError('')
     const { data, error } = await supabase
       .from('support_tickets')
       .insert({ tenant_id: tenantId, subject: form.subject.trim(), body: form.body.trim(), priority: form.priority })
       .select('id, subject, body, priority, status, created_at, admin_reply')
       .single()
-    if (!error && data) {
-      setTickets(prev => [data as Ticket, ...prev])
-      setShowModal(false)
-      setForm({ subject: '', body: '', priority: 'normal' })
-      setToast('Ticket submitted — we\'ll be in touch shortly')
-      setTimeout(() => setToast(''), 4000)
-      // Notify support team (fire-and-forget — ticket is already inserted)
-      let { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
-        const { data: refreshData } = await supabase.auth.refreshSession()
-        session = refreshData.session
-      }
-      if (session) {
-        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-support-ticket`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({ ticketId: (data as Ticket).id }),
-        }).catch(() => {})
-      }
+    if (error || !data) {
+      // Before S308 this branch did not exist: an RLS rejection left the modal
+      // open with no message and no ticket, and the user had no way to tell.
+      console.error('[support] ticket insert failed:', error?.code, error?.message)
+      setSubmitError(
+        error?.code === '42501'
+          ? "You don't have permission to file a ticket for this account. Please contact support directly."
+          : `Could not submit your ticket${error?.message ? ` — ${error.message}` : ''}. Please try again.`,
+      )
+      setSubmitting(false)
+      return
+    }
+    setTickets(prev => [data as Ticket, ...prev])
+    setShowModal(false)
+    setForm({ subject: '', body: '', priority: 'normal' })
+    setToast('Ticket submitted — we\'ll be in touch shortly')
+    setTimeout(() => setToast(''), 4000)
+
+    // Notify support team (fire-and-forget — the ticket is already inserted)
+    let session = (await supabase.auth.getSession()).data.session
+    if (!session) session = (await supabase.auth.refreshSession()).data.session
+    if (session) {
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-support-ticket`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ ticketId: (data as Ticket).id }),
+      }).catch(() => {})
     }
     setSubmitting(false)
   }
@@ -93,7 +103,7 @@ export default function SupportTab() {
           <span>{tickets.length} ticket{tickets.length !== 1 ? 's' : ''}</span>
         </div>
         <button
-          onClick={() => setShowModal(true)}
+          onClick={() => { setSubmitError(''); setShowModal(true) }}
           className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition"
         >
           <Plus size={16} /> New Ticket
@@ -141,7 +151,7 @@ export default function SupportTab() {
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h2 className="font-bold text-gray-900">New Support Ticket</h2>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+              <button onClick={() => { setSubmitError(''); setShowModal(false) }} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
             </div>
             <div className="px-6 py-5 space-y-4">
               <div>
@@ -177,8 +187,13 @@ export default function SupportTab() {
                 </select>
               </div>
             </div>
+            {submitError && (
+              <div role="alert" className="mx-6 mb-1 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
+                {submitError}
+              </div>
+            )}
             <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
-              <button onClick={() => setShowModal(false)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Cancel</button>
+              <button onClick={() => { setSubmitError(''); setShowModal(false) }} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Cancel</button>
               <button
                 onClick={handleSubmit}
                 disabled={submitting || !form.subject.trim() || !form.body.trim()}
