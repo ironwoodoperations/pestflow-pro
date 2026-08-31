@@ -246,3 +246,12 @@ holds ONE row (`scott@homeflowpro.ai`), verified live — `is_operator()` is fal
 this log is a dated record, but it must not be re-propagated: ROADMAP already notes
 that a false claim in `PROJECT_MANIFEST.d/` is immortal and gets read first because
 it is recent.
+
+---
+## Session — 2026-08-31 19:36 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `1c2e7d9` — S309 Wave 2 — validator gate submission package (NO implementation)
+- Author: Claude
+- Files changed:
+  - REVIEW_S309_TENANT_SOURCE.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
