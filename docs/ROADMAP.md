@@ -242,14 +242,54 @@ Three items stand between a finished site and a site that can earn. None is cosm
    true in production only once #310 is merged and deployed. Then:
    `DELETE FROM public.operators WHERE user_id='5181b30a-265f-4a70-a323-bf6e3c53641b';`
    and re-verify `is_operator()` is false for it.
-2. **`settings` and `tenant_redirects` role gates are BYPASSABLE (B3, reported not
-   fixed).** `tenant_isolation_settings_auth` and `tenant_isolation_redirects_write`
-   are both `FOR ALL … USING/WITH CHECK (tenant_id = current_tenant_id())` with **no
-   role test**. Permissive policies OR together, so the admin/manager gate added by
-   S308b and S308e is bypassable by any user whose `profiles.tenant_id` matches.
-   Not exploitable today only because the sole `user`-role member has no `profiles`
-   row — a provisioning change could make it live. Narrowing these changes semantics
-   for existing users: Scott's call.
+2. **B3 — `settings` and `tenant_redirects` role gates are BYPASSABLE. DECIDED:
+   leave both legacy policies UNCHANGED; BLOCKED on the `current_tenant_id()`
+   migration (#8).** `tenant_isolation_settings_auth` and
+   `tenant_isolation_redirects_write` are both `FOR ALL … USING/WITH CHECK
+   (tenant_id = current_tenant_id())` with **no role test**. Permissive policies OR
+   together, so the admin/manager gate added by S308b and S308e is bypassable by
+   anyone whose `profiles.tenant_id` matches the row.
+
+   **Why they cannot simply be narrowed:** doing so breaks `admin@demo.com`, which
+   has `profiles.tenant_id = pestflow-pro` but **no `tenant_users` row for that
+   tenant**, so `get_my_tenant_role()` returns NULL there and the role-gated path
+   denies it. The five demo dashboards render through the legacy path. The two are
+   therefore load-bearing until `current_tenant_id()` moves to `tenant_users` —
+   which is why this is blocked on #8 rather than schedulable on its own.
+
+   **PROVISIONING ANSWER (verified 2026-08-31).** The question was whether every new
+   client is born with the bypass. **Partly — but not where it bites.**
+
+   - **`provision-tenant` DOES still write a `profiles` row**
+     (`supabase/functions/provision-tenant/index.ts:428` — `.from('profiles')
+     .upsert({ id, tenant_id, full_name }, { onConflict: 'id' })`). So Grandview and
+     every future client **will** get one. Deployed as v101; claim is from repo
+     source plus live corroboration below, not a byte-diff of the deployed bundle.
+   - **But it only writes one for the TENANT ADMIN**, who is simultaneously given
+     `tenant_users.role = 'admin'`. For that user the role gate passes anyway, so
+     the legacy path grants nothing extra. **No escalation at provisioning time.**
+   - **`invite-team-member` writes NO `profiles` row** — only `tenant_users`
+     (`index.ts:120-122`). Every invited member, including role `user` and
+     `manager`, is born WITHOUT one, so `current_tenant_id()` is NULL for them and
+     the legacy policy cannot fire.
+   - **Live corroboration:** `precisionlawnsystems@yahoo.com` is a pls **admin** with
+     **no `profiles` row** (invited), while `admin@ironwoodopsgrp.com` is a pls admin
+     **with** one (provisioned). The two paths behave exactly as the source reads.
+
+   **Current exposure: ONE row, and it is the known one.** Audited across all seven
+   users — the only account where the legacy path grants what the role gate denies
+   is `admin@demo.com` (`profiles → pestflow-pro`, no `tenant_users` row there).
+   Every other user either has no `profiles` row or is admin on the tenant it names.
+
+   **THE LATENT PATH TO WATCH — demotion, not provisioning.** `invite-team-member`
+   upserts `tenant_users.role` but never clears `profiles.tenant_id`. Demote a
+   *provisioned* tenant admin to `user` through the Users tab and they keep
+   `profiles.tenant_id = T` while their role becomes `user` — at which point the
+   legacy policy silently restores full write on that tenant's `settings`
+   (including the `integrations` OAuth tokens) and `tenant_redirects`, with the role
+   gate bypassed. No such user exists today. This is reachable through ordinary
+   product use, needs no attacker, and neither validator model named it.
+
 3. **`settings` READ is still plain membership.** S308b closed write; a `user`-role
    member can still read the `integrations` OAuth tokens. Options: exclude
    `key='integrations'` from `settings_member_select`, or role-gate SELECT too.
