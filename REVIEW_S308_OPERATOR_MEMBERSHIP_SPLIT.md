@@ -80,6 +80,23 @@ the narrower reading.
   `service_role_all_replies` untouched.
 - Ends with `NOTIFY pgrst, 'reload schema'`.
 
+### Database — `20260831180000_s308b_settings_role_gate.sql` (applied live)
+
+Scott's follow-up decision. `settings_member_all` → `settings_member_select`
+(plain membership) + `settings_member_write` (membership AND
+`get_my_tenant_role(...) = ANY (ARRAY['admin','manager'])`), matching the six
+role-gated tables. `settings` holds the `integrations` OAuth tokens, so the new
+membership path must not hand a `user`-role member write on a paying client's
+credentials. `tenant_isolation_settings_auth` is untouched, making the new path
+deliberately stricter than the legacy one. Own rollback file:
+`s308b_settings_role_gate_rollback.sql`; the S308 rollback also clears the new
+policy names.
+
+Re-proven: `scottdevore2@gmail.com` (role `user` on `dang`) SELECT 16 /
+**UPDATE 0**; Kirk (`admin`) SELECT 16 / **UPDATE 16**; `admin@demo.com` on
+coastal-pest 13 / 13 and on `dang` 0 / 0. Exactly one `user`-role row exists in
+`tenant_users`, so nothing legitimate breaks.
+
 **Rollback staged in the same commit:**
 `s308_operator_membership_split_rollback.sql` — restores all 13
 grants verbatim from their captured `pg_policies` definitions, restores the
@@ -121,14 +138,14 @@ warning that applying it reinstates the escalation.
 
 ## Open decisions for Scott
 
-1. **`settings` has no role gate**, so `scottdevore2@gmail.com` (role `user` on
-   `dang`) gains full write on the paying client's settings, including the
-   `integrations` tokens. Implemented as briefed; flagging because it is the
-   one place where the change grants something denied today. One policy swap to
-   role-gate it.
-2. **The Domain tab's save is now unreachable through the browser** — the sole
-   operator has no `pestflow-pro` membership, and `admin@pestflowpro.com` is no
-   longer an operator. See QA report §9.
+1. ~~`settings` has no role gate~~ — **resolved by S308b.** One thread remains:
+   `settings_member_select` is plain membership, so a `user`-role member can
+   still *read* the `integrations` OAuth tokens (verified readable). Write is
+   closed; read is not. Narrow options: exclude `key = 'integrations'` from
+   member SELECT, or role-gate SELECT too. Flagged, not decided.
+2. ~~The Domain tab's save is unreachable~~ — **resolved.**
+   `scott@homeflowpro.ai` now holds `pestflow-pro:admin` in `tenant_users`, so
+   the operator can reach that UI. See QA report §9.
 3. **`https://demo.pestflowpro.ai/admin` is a dead CTA** — no tenant has slug
    `demo`. Report-only, as instructed.
 4. **`current_tenant_id()` is still on `profiles`** for ~70 policies across ~25

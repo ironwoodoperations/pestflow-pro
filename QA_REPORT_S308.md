@@ -72,7 +72,7 @@ USING = WITH CHECK = (current_tenant_id() = '9215b06b…'::uuid)`.
 
 | table | `tenant_id`? | group | member policy added |
 |---|---|---|---|
-| settings | yes | (a) | `settings_member_all` (no role gate today) |
+| settings | yes | (a) | select + role-gated write (**S308b**, see §3c) |
 | page_content | yes | (a) | select + role-gated write |
 | blog_posts | yes | (a) | select + role-gated write |
 | seo_meta | yes | (a) | select + role-gated write |
@@ -125,6 +125,20 @@ write path today — its only authenticated-reachable policy is
 left in place. Member ALL would have granted INSERT/UPDATE/DELETE that are
 denied today. Operator-only write preserves current behaviour exactly. The
 table has **zero reads anywhere in `src/`**.
+
+### 3c. S308b — `settings` role-gated (Scott's follow-up decision)
+
+Applied as a separate migration rather than an edit to the already-stamped
+S308 file. `settings_member_all` dropped; replaced by `settings_member_select`
+(plain membership) + `settings_member_write` (membership AND
+`get_my_tenant_role(...) = ANY (ARRAY['admin','manager'])`), the same split as
+the six role-gated tables, with the array copied verbatim.
+
+`tenant_isolation_settings_auth` is **untouched**, so the new SSOT-sourced path
+is deliberately *stricter* than the legacy `current_tenant_id()` path rather
+than relaxing it. Nothing legitimate breaks: `user` is the only role below
+admin/manager, and exactly **one** such row exists in `tenant_users`
+(`scottdevore2@gmail.com @ dang`) — verified, not assumed.
 
 ---
 
@@ -186,21 +200,21 @@ failure.
 
 | user | blog | page | seo | areas | team | testim | settings | tenants row |
 |---|---|---|---|---|---|---|---|---|
-| **scottdevore2** (role `user`) | **0** | **0** | **0** | **0** | **0** | **0** | 16 † | — |
+| **scottdevore2** (role `user`) | **0** | **0** | **0** | **0** | **0** | **0** | **0** † | — |
 | **Kirk** (role `admin`) | 29 | — | — | — | — | 55 | 16 | **0** ‡ |
 | **admin@demo.com** | — | — | — | — | — | **0** | **0** | — |
 | admin@demo.com → *coastal* | — | 19 | — | — | — | — | 13 | — |
 
-**† Documented consequence, not a regression.** `settings` has **no role gate**
-today — `tenant_isolation_settings_auth` is plain `ALL` for any member — so
-mirroring its existing shape gives every member full access, `user` role
-included. `scottdevore2` therefore gains write on `dang.settings`, which
-includes `business_info`, `branding`, `subscription` and `integrations`
-(Facebook / Google Business tokens). This follows the brief's explicit
-instruction for `settings`. If you want `settings` role-gated like the other
-six, say so and it is one policy swap — I did not make that call unilaterally
-because it would change the table's established semantics for every tenant,
-not just this account.
+**† Closed by S308b.** `settings` had **no role gate** — `tenant_isolation_settings_auth` is plain `ALL` for any member — so S308 initially mirrored that shape and `scottdevore2` gained write on `dang.settings` (16 rows), which holds `business_info`, `branding`, `subscription` and `integrations` (Facebook / Google Business tokens). Scott's follow-up decision role-gates it. Re-proven after S308b:
+
+| user | role on dang | settings SELECT | settings UPDATE |
+|---|---|---|---|
+| scottdevore2@gmail.com | `user` | 16 | **0** |
+| Kirk admin@dangpestcontrol.com | `admin` | 16 | **16** |
+| admin@demo.com → coastal-pest | `admin` | 13 | **13** |
+| admin@demo.com → dang | none | 0 | **0** |
+
+**Read access is a separate question and is NOT closed.** `settings_member_select` is plain membership, matching the six other tables, so `scottdevore2` can still *read* `dang`'s `integrations` row — verified, 1 row readable — and could not read it at all before S308. For ordinary settings that is the intended repair; for stored OAuth tokens, read is nearly as sensitive as write. Two narrow options if you want it closed: exclude `key = 'integrations'` from `settings_member_select`, or role-gate SELECT too. Flagged, not decided — you specified the write split explicitly and this matches it.
 
 **‡ DEVIATION 1 working:** Kirk cannot touch his own `tenants` row → no
 self-service entitlement escalation.
@@ -238,6 +252,8 @@ tenant names rather than nulls.
 | `*_operator_all` policies | 13 | **13** |
 | `is_operator()` SECURITY DEFINER | true | **true** |
 | `is_tenant_member()` search_path | pinned | **`{search_path=public}`** |
+| `settings_member_all` remaining (post-S308b) | 0 | **0** |
+| `settings` role gate matches the six | yes | **`ARRAY['admin','manager']`** |
 
 ---
 
@@ -302,15 +318,17 @@ SELECT string_agg(slug,', ') FROM tenants WHERE slug ILIKE '%demo%';  -- NULL
 **There is no tenant with slug `demo`, and none resembling it.** Confirmed dead
 CTA, same class as the one fixed in S307. Not fixed here, as instructed.
 
-### Related, and worth a decision
+### Related — now resolved
 
 `DomainSection` (`SettingsTab.tsx:32`) renders only when
-`tenant.slug === 'pestflow-pro'`, and writes `tenants.custom_domain` /
-`subdomain`. That write now requires `is_operator()`. The sole operator,
-`scott@homeflowpro.ai`, has **no `tenant_users` row for `pestflow-pro`**, so it
-cannot reach that UI; `admin@pestflowpro.com` can reach the UI but is no longer
-an operator. **The Domain tab's save is therefore currently unreachable by
-anyone through the browser.** It was reachable before this PR (via the blanket
-grant). Two clean fixes, your call — add `scott@homeflowpro.ai` to
-`tenant_users` for `pestflow-pro`, or move the Domain tab to `/ironwood` where
-it belongs. I did not do either: both are outside this brief.
+`tenant.slug === 'pestflow-pro'` and writes `tenants.custom_domain` /
+`subdomain`, which now requires `is_operator()`. When this report was first
+written, `scott@homeflowpro.ai` had no `tenant_users` row for `pestflow-pro`,
+so the sole operator could not reach that UI and the Domain tab's save was
+unreachable by anyone.
+
+**Re-checked at S308b time: `scott@homeflowpro.ai` now holds
+`pestflow-pro:admin` in `tenant_users`** (alongside `vita-glow:admin`). The
+operator can therefore reach the pestflow-pro admin and the Domain tab save
+works. No action needed; recorded because the earlier version of this report
+said otherwise.

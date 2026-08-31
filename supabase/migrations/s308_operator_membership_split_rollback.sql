@@ -50,6 +50,10 @@ DROP POLICY IF EXISTS team_members_member_write    ON public.team_members;
 DROP POLICY IF EXISTS testimonials_member_select   ON public.testimonials;
 DROP POLICY IF EXISTS testimonials_member_write    ON public.testimonials;
 DROP POLICY IF EXISTS settings_member_all          ON public.settings;
+-- S308b replaced settings_member_all with the split pair; drop those too so a
+-- rollback from the current state leaves nothing behind.
+DROP POLICY IF EXISTS settings_member_select       ON public.settings;
+DROP POLICY IF EXISTS settings_member_write        ON public.settings;
 DROP POLICY IF EXISTS tenant_redirects_member_all  ON public.tenant_redirects;
 DROP POLICY IF EXISTS tenants_member_select        ON public.tenants;
 
