@@ -93,3 +93,35 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   - supabase/migrations/s308_operator_membership_split_rollback.sql
   - supabase/migrations/s308b_settings_role_gate_rollback.sql
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-08-31 17:09 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `07a6ae2` — S308c — add scott@homeflowpro.ai to the Ironwood allowlist (BOTH copies)
+- Author: Claude
+- Files changed:
+  - src/pages/IronwoodOps.tsx
+  - src/pages/admin/IronwoodLogin.tsx
+- Note: the brief said one line in IronwoodLogin.tsx. IronwoodOps.tsx:44 holds a
+  SECOND copy of the same array and redirects non-members back to /ironwood/login
+  on mount, so the one-line change alone would have produced a login -> bounce
+  loop. Both copies updated.
+- Next recommended action: PR #310 is blocked on Scott, not on code. In order:
+  (1) run the Wave 3 validator gate (Perplexity + Gemini, conservative-wins) and
+      paste both verdicts into REVIEW_S308_OPERATOR_MEMBERSHIP_SPLIT.md;
+  (2) run the acceptance test — all five demo admin dashboards still render as
+      admin@demo.com (heartland, coastal, apex, urban-strike, metro) — the egress
+      proxy blocks *.pestflowpro.ai from CC Web so it was never run;
+  (3) re-file the coastal-pest ticket end to end and confirm the email reaches
+      support@homeflowpro.ai;
+  (4) decide the `Auth isolation` CI fix — `supabase start -x edge-runtime`, in
+      its own PR (recommended) or this one. Three identical 502s, established as
+      not this PR's, one comment posted, single re-run spent;
+  (5) decide whether `settings` READ should be restricted — S308b closed write,
+      but a `user`-role member can still read the integrations OAuth tokens;
+  (6) session-close ritual: docs/ROADMAP.md + docs/handoffs/ entry, proposed and
+      NOT auto-committed. Follow-ups to carry: collapse the three operator-truth
+      sources (two client arrays + operators table) into one; IronwoodLogin is
+      signInWithPassword-only so no passwordless session can reach it; whether
+      admin@pestflowpro.com should remain an Ironwood login given its credentials
+      are published on the marketing homepage.
