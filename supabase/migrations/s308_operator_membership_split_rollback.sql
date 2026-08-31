@@ -1,5 +1,11 @@
 -- ROLLBACK for 20260831170000_s308_operator_membership_split.sql
 --
+-- Deliberately NOT timestamp-prefixed. The Supabase CLI reads the leading
+-- 14 digits as a migration version, so a timestamped rollback would (a) collide
+-- with the migration's own version and (b) be replayed straight after it on a
+-- fresh `db push`, undoing the change. Same convention as
+-- s281_business_info_vertical_check_rollback.sql. Apply by hand only.
+--
 -- NOTE: run inside a transaction. The Supabase migration runner wraps each
 -- file in one; if applying by hand with psql, wrap it yourself.
 --

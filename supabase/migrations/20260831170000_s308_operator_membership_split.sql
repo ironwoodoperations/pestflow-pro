@@ -30,7 +30,7 @@
 -- across ~25 tables, returns a scalar uuid, and cannot express membership in
 -- five tenants. Repointing it is a separate design session.
 --
--- Rollback: 20260831170000_s308_operator_membership_split_rollback.sql
+-- Rollback: s308_operator_membership_split_rollback.sql
 
 
 -- ---------------------------------------------------------------------------

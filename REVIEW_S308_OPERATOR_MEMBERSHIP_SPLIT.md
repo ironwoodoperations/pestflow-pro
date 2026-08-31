@@ -81,7 +81,7 @@ the narrower reading.
 - Ends with `NOTIFY pgrst, 'reload schema'`.
 
 **Rollback staged in the same commit:**
-`20260831170000_s308_operator_membership_split_rollback.sql` — restores all 13
+`s308_operator_membership_split_rollback.sql` — restores all 13
 grants verbatim from their captured `pg_policies` definitions, restores the
 pre-S308 ticket/reply policies, drops the helpers and the table. It carries a
 warning that applying it reinstates the escalation.

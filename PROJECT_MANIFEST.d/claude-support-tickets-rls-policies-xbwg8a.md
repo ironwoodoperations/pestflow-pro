@@ -21,3 +21,17 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   - src/pages/PaymentSuccess.tsx
   - src/pages/marketing/sections/MarketingWebsiteShowcase.tsx
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-08-31 15:46 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `d1fef2b` — S308 — split the accidental operator grant into a real operator check and a real membership check
+- Author: Claude
+- Files changed:
+  - QA_REPORT_S308.md
+  - REVIEW_S308_OPERATOR_MEMBERSHIP_SPLIT.md
+  - src/components/admin/SupportTab.tsx
+  - supabase/functions/notify-support-ticket/index.ts
+  - supabase/migrations/20260831170000_s308_operator_membership_split.sql
+  - supabase/migrations/s308_operator_membership_split_rollback.sql
+- Next recommended action: [Fill in next session: read this line, write what comes next]
