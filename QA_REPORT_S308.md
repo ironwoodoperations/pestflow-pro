@@ -247,11 +247,11 @@ tenant names rather than nulls.
 |---|---|---|
 | `ironwood_admin_*` policies remaining | 0 | **0** |
 | RESTRICTIVE policies in schema | 0 | **0** |
-| rows in `operators` | 1 | **1** (`scott@homeflowpro.ai`) |
+| rows in `operators` | 1 at S308 | **2 as of 17:13Z** — see §10 |
 | RLS policies **on** `operators` | 0 | **0** (definer-only reachability) |
 | `*_operator_all` policies | 13 | **13** |
 | `is_operator()` SECURITY DEFINER | true | **true** |
-| `is_tenant_member()` search_path | pinned | **`{search_path=public}`** |
+| `is_operator()` / `is_tenant_member()` search_path | empty (B1) | **`{search_path=""}`** both |
 | `settings_member_all` remaining (post-S308b) | 0 | **0** |
 | `settings` role gate matches the six | yes | **`ARRAY['admin','manager']`** |
 
@@ -332,3 +332,187 @@ unreachable by anyone.
 operator can therefore reach the pestflow-pro admin and the Domain tab save
 works. No action needed; recorded because the earlier version of this report
 said otherwise.
+
+---
+
+# 10. Validator-gate work (post-approval)
+
+Both models returned APPROVE WITH CONDITIONS. Disposition of every condition is
+in `REVIEW_S308_OPERATOR_MEMBERSHIP_SPLIT.md`. This section carries the evidence.
+
+## 10.1 A second operators row appeared during the session — NOT mine
+
+```sql
+SELECT o.user_id, u.email, o.note, o.created_at
+FROM public.operators o JOIN auth.users u ON u.id = o.user_id ORDER BY o.created_at;
+```
+
+| email | note | created_at |
+|---|---|---|
+| scott@homeflowpro.ai | scott@homeflowpro.ai — sole Ironwood operator (S308) | 2026-08-31 15:35:28Z |
+| **admin@pestflowpro.com** | **TEMPORARY — S308 verification. Remove once scott@homeflowpro.ai can reach /ironwood.** | **2026-08-31 17:13:05Z** |
+
+Added by Scott, deliberately, after S308 was applied. **Not touched.** It
+supersedes the S308 invariant "operators has exactly one row", which is why that
+row of §5 is corrected rather than left standing.
+
+**This is a live exposure while it lasts.** `admin@pestflowpro.com / pf123demo`
+is published on the marketing homepage (`MarketingCRM.tsx:93`), and that account
+now satisfies `is_operator()` — blanket read+write on all 13 tables across every
+tenant, which is precisely the hole S308 closed. Confirmed live: it reads
+`dang`'s settings (16 rows), all 9 tenants, all 6 prospects.
+
+**The removal precondition is met in this branch but NOT in production.** S308c
+adds `scott@homeflowpro.ai` to both client allowlists, so the note's condition —
+"once scott@homeflowpro.ai can reach /ironwood" — becomes true only once PR #310
+is merged **and deployed**. Sequencing:
+
+1. Merge and deploy PR #310.
+2. Confirm `scott@homeflowpro.ai` can sign in at `/ironwood` and the console loads.
+3. `DELETE FROM public.operators WHERE user_id = '5181b30a-265f-4a70-a323-bf6e3c53641b';`
+4. Re-verify `is_operator()` is false for `admin@pestflowpro.com`.
+
+Until step 3, the published demo credential is an Ironwood operator.
+
+## 10.2 B1 — definer hardening, before/after
+
+Applied `SET search_path = ''` with full qualification and the `auth.uid()`
+scalar subselect. Post-change function definitions confirmed from `pg_proc`;
+`proconfig` reads `{search_path=""}` for both.
+
+Behaviour-neutral: the seven-user matrix was captured post-B1 and every value
+matched the pre-B1 baseline in §4.
+
+## 10.3 B2 — the revoke test (cheap fix DISPROVEN)
+
+```
+REVOKE EXECUTE ON FUNCTION public.is_operator() FROM authenticated;
+REVOKE EXECUTE ON FUNCTION public.is_tenant_member(uuid) FROM authenticated;
+```
+
+Every subsequent query against a table carrying these policies:
+
+```
+ERROR:  42501: permission denied for function is_operator
+```
+
+RLS predicates evaluate as the querying role, so that role must hold EXECUTE on
+functions the predicate calls. Grants restored immediately.
+
+**Post-restore verification — every value matches the pre-revoke baseline:**
+
+| user | probe | baseline | after restore |
+|---|---|---|---|
+| admin@demo.com | coastal settings SELECT / UPDATE | 13 / 13 | **13 / 13** |
+| | coastal page_content | 19 | **19** |
+| | dang settings SELECT / UPDATE | 0 / 0 | **0 / 0** |
+| | tenants / prospects / tickets | 6 / 0 / 1 | **6 / 0 / 1** |
+| scottdevore2 | dang settings / blog SELECT | 16 / 29 | **16 / 29** |
+| | dang settings / blog UPDATE | 0 / 0 | **0 / 0** |
+| Kirk | dang settings SELECT / UPDATE | 16 / 16 | **16 / 16** |
+| | dang blog UPDATE | 29 | **29** |
+
+Also found: `anon` holds EXECUTE too (Supabase default privileges grant it at
+creation; `REVOKE ALL … FROM PUBLIC` does not remove a role-specific grant). Not
+changed — only an `authenticated` revoke test was authorised. Impact is nil for
+`anon`: `auth.uid()` is NULL, so both helpers return false.
+
+## 10.4 B3 — full policy enumeration (VERBATIM)
+
+Query used:
+
+```sql
+SELECT tablename, cmd, policyname, permissive, roles::text,
+       coalesce(qual,'—') AS using_expr, coalesce(with_check,'—') AS check_expr
+FROM pg_policies
+WHERE schemaname='public' AND tablename IN (...)
+  AND ('authenticated' = ANY(roles) OR 'public' = ANY(roles))
+ORDER BY tablename, cmd, policyname;
+```
+
+Shorthand below: `T` = `tenant_id = current_tenant_id()`,
+`R` = `get_my_tenant_role(tenant_id) = ANY (ARRAY['admin'::text, 'manager'::text])`,
+`M` = `is_tenant_member(tenant_id)`, `O` = `is_operator()`. All PERMISSIVE, all
+`{authenticated}`.
+
+### The six that PASS
+
+Identical shape on `blog_posts`, `page_content`, `seo_meta`, `service_areas`,
+`team_members`, `testimonials` (`testimonials` has no separate INSERT row in the
+listing; its writes are covered by `_insert`/`_update`/`_delete` and the two ALL
+policies exactly as the others):
+
+| cmd | policy | USING | WITH CHECK | write-capable? | gated? |
+|---|---|---|---|---|---|
+| SELECT | `<t>_member_select` | `M` | — | no | n/a |
+| SELECT | `<t>_select` | `T` | — | no | n/a |
+| INSERT | `<t>_insert` | — | `T AND R` | **yes** | ✅ tenant + role |
+| UPDATE | `<t>_update` | `T AND R` | `T AND R` | **yes** | ✅ tenant + role |
+| DELETE | `<t>_delete` | `T AND R` | — | **yes** | ✅ tenant + role |
+| ALL | `<t>_member_write` | `M AND R` | `M AND R` | **yes** | ✅ tenant + role |
+| ALL | `<t>_operator_all` | `O` | `O` | **yes** | operator-only, by design |
+
+**Every member write path on these six requires both a tenant match and the
+admin/manager role test.** Condition 5 satisfied here.
+
+### The two that FAIL
+
+**`settings`**
+
+| cmd | policy | USING | WITH CHECK | gated? |
+|---|---|---|---|---|
+| SELECT | `settings_member_select` | `M` | — | n/a |
+| ALL | `settings_member_write` | `M AND R` | `M AND R` | ✅ |
+| ALL | `settings_operator_all` | `O` | `O` | operator |
+| **ALL** | **`tenant_isolation_settings_auth`** | **`T`** | **`T`** | ❌ **NO ROLE TEST** |
+
+**`tenant_redirects`** (after D1)
+
+| cmd | policy | USING | WITH CHECK | gated? |
+|---|---|---|---|---|
+| SELECT | `tenant_redirects_member_select` | `M` | — | n/a |
+| SELECT | `tenant_isolation_redirects_read` | `T` | — | n/a |
+| ALL | `tenant_redirects_member_write` | `M AND R` | `M AND R` | ✅ |
+| ALL | `tenant_redirects_operator_all` | `O` | `O` | operator |
+| **ALL** | **`tenant_isolation_redirects_write`** | **`T`** | **`T`** | ❌ **NO ROLE TEST** |
+
+**Conclusion: the role gate on these two tables is bypassable.** Permissive
+policies OR together, so a user whose `profiles.tenant_id` matches gets the write
+from the legacy policy regardless of role. Not exploitable by any account that
+exists today only because the sole `user`-role member has no `profiles` row.
+**Reported, not fixed** — narrowing those policies changes semantics for existing
+users. Per the B3 instruction, work stopped here.
+
+## 10.5 B5 — ticket tenant lock, proven both ways
+
+Cross-tenant move, as the operator:
+
+```
+ERROR:  23514: support_tickets.tenant_id is immutable
+        (attempted 1611b16f-381b-4d4f-ba3a-fbde56ad425b -> 9215b06b-3eb5-49a1-a16e-7ff214bf6783)
+CONTEXT:  PL/pgSQL function public.support_tickets_lock_tenant() line 4 at RAISE
+```
+
+Legitimate status change, same operator, same ticket: **1 row updated.** The lock
+blocks reassignment without touching the operator workflow.
+
+## 10.6 D1 — `tenant_redirects` role gate
+
+`tenant_redirects_member_all` dropped; `_member_select` + `_member_write` created
+with the array copied verbatim. Confirmed in `pg_policies`.
+
+**Proof is structural, not data-driven, and that limit is stated deliberately:**
+`tenant_redirects` holds 1 row total and **0 rows for `dang`**, so a
+`scottdevore2` write probe would return 0 whether or not the gate works. The
+guarantee rests on the policy text above, not on a probe.
+
+## 10.7 End-to-end ticket test — partially confirmed
+
+A real ticket landed from the live app at **2026-08-31 17:25:43Z**,
+`tenant_id = coastal-pest`, subject "asfsaf" — filed by Scott, not by this
+session. **The insert path is confirmed working end to end through the browser**,
+which is the half of the acceptance test the RLS change owns.
+
+**Email delivery remains unverified from here** — the egress proxy blocks the
+Supabase functions host, so `notify-support-ticket` could not be invoked or
+observed. Scott confirms delivery to support@homeflowpro.ai.

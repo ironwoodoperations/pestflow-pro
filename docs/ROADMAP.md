@@ -229,6 +229,72 @@ Three items stand between a finished site and a site that can earn. None is cosm
 
 ## Open Follow-ups
 
+### S308 — operator/membership split (PR #310, validator gate PASSED, awaiting merge)
+
+1. **REMOVE THE TEMPORARY OPERATOR ROW — do this immediately after deploy.**
+   `admin@pestflowpro.com` (`5181b30a-265f-4a70-a323-bf6e3c53641b`) was added to
+   `public.operators` at 2026-08-31 17:13Z, note *"TEMPORARY — S308 verification.
+   Remove once scott@homeflowpro.ai can reach /ironwood."* **That account's
+   credentials are published on the marketing homepage** (`MarketingCRM.tsx:93`),
+   so while the row exists a public credential is a full Ironwood operator —
+   blanket read+write on all 13 tables across every tenant, exactly the hole S308
+   closed. S308c satisfies the removal precondition **in the branch**; it becomes
+   true in production only once #310 is merged and deployed. Then:
+   `DELETE FROM public.operators WHERE user_id='5181b30a-265f-4a70-a323-bf6e3c53641b';`
+   and re-verify `is_operator()` is false for it.
+2. **`settings` and `tenant_redirects` role gates are BYPASSABLE (B3, reported not
+   fixed).** `tenant_isolation_settings_auth` and `tenant_isolation_redirects_write`
+   are both `FOR ALL … USING/WITH CHECK (tenant_id = current_tenant_id())` with **no
+   role test**. Permissive policies OR together, so the admin/manager gate added by
+   S308b and S308e is bypassable by any user whose `profiles.tenant_id` matches.
+   Not exploitable today only because the sole `user`-role member has no `profiles`
+   row — a provisioning change could make it live. Narrowing these changes semantics
+   for existing users: Scott's call.
+3. **`settings` READ is still plain membership.** S308b closed write; a `user`-role
+   member can still read the `integrations` OAuth tokens. Options: exclude
+   `key='integrations'` from `settings_member_select`, or role-gate SELECT too.
+4. **Collapse the operator allowlist — THREE sources of truth today:**
+   `IronwoodLogin.tsx:5`, `IronwoodOps.tsx:44`, and `public.operators`. Both client
+   arrays must list an operator or they bounce between the two pages. One list, one
+   boundary — but note the arrays are UI gates and `is_operator()` is the security
+   boundary, so collapsing them changes the failure mode.
+5. **`IronwoodLogin` supports only `signInWithPassword`** — no magic-link or
+   recovery session handling, so a passwordless session cannot reach that page.
+6. **Decide whether `admin@pestflowpro.com` should remain an Ironwood login**, given
+   its credentials are published on the marketing homepage.
+7. **`https://demo.pestflowpro.ai/admin` is a dead CTA** (`MarketingCRM.tsx:92`) —
+   no tenant has slug `demo` (confirmed: 0 rows). Same class as the S307 fixes.
+8. **`current_tenant_id()` still reads `profiles`** — the membership source for ~70
+   policies across ~25 tables, none of which contain the string `profiles` (a text
+   sweep of `pg_policies` cannot find them). It returns a scalar uuid and cannot
+   express membership in five tenants, so repointing it needs its own design session.
+9. **One stale `profiles` row (B4, report only):** `admin@demo.com` points at
+   `pestflow-pro` while its `tenant_users` rows are the five demo tenants — legacy
+   access to a tenant the SSOT says it is not in. Residue of the original bug.
+10. **`supabase start -x edge-runtime` for the auth-isolation CI job.** That job needs
+    only Postgres + GoTrue, but boots the edge-runtime container, whose health check
+    502'd three times on 2026-08-31 (~16:12–16:20Z) and blocked CI before any test ran.
+    It recovered on its own; excluding the container removes the exposure.
+11. **`anon` holds EXECUTE on `is_operator()` / `is_tenant_member()`** — Supabase's
+    default privileges grant it at creation, and `REVOKE ALL … FROM PUBLIC` does not
+    remove a role-specific grant. Impact is nil (`auth.uid()` is NULL for anon, both
+    return false), but it is surface that need not exist.
+12. **Move `is_operator()` / `is_tenant_member()` to a non-exposed schema.** The cheap
+    fix was tested and **fails**: revoking EXECUTE from `authenticated` breaks RLS
+    entirely (`42501: permission denied for function is_operator`), because policy
+    predicates evaluate as the querying role. Severity is low — both helpers only ever
+    answer about `auth.uid()`, so they are not a cross-user oracle — but the schema
+    move is the real fix.
+13. **RLS regression test suite** (Gemini condition 7): every operation for
+    unauthenticated, demo, member, admin/manager, multi-tenant, no-profiles-row,
+    stale-profile, and operator. Today's evidence is a hand-run matrix, which does not
+    survive the next migration.
+14. **Global RESTRICTIVE tenant-isolation policy** (Perplexity, pre-existing). The
+    schema has **zero** RESTRICTIVE policies, so every permissive policy is purely
+    additive and a single over-broad one re-opens a table. A restrictive backstop
+    would make that structurally impossible.
+
+
 - **support mailto sweep — SIX addresses in `src`, inconsistent THREE ways, and two may route nowhere (S306).** `FeatureGate.tsx:40` is now correct (`support@homeflowpro.ai`). The rest are not: `UpgradeCards.tsx:110`, `reports/AIAuthorityTile.tsx:82` and `common/LockedSectionCard.tsx:10` use **`support@pestflowpro.ai`**; `social/SocialUpgradeNudge.tsx:25` and `social/ConnectionsModal.tsx:133` use a **BARE DOMAIN, `support@pestflow.ai`**. **The two bare-domain ones are the priority — confirm `pestflow.ai` even routes. If it does not, upgrade requests from those two surfaces are going nowhere, silently.** Two details found while inventorying, neither in the original list: there is a **seventh** occurrence at `ironwood/TrainingManual.tsx:517` (already `homeflowpro.ai`, correct), and **`support@pestflow.ai` is named inside `stripPlatformIdentity()` in `admin/__tests__/adminRenderedStrings.test.tsx:475`**, where it is stripped so the pest-vocabulary guard does not flag it — so this sweep touches a guard's strip list, not only components, and is not a pure find-and-replace.
 - **Four hardcoded tier names remain outside `tierInfo` — correct today, will lie on any threshold change (S306).** `BlogPostEditor.tsx:164`, `SocialTab.tsx:195`, `seo/SeoInlineEditor.tsx:107` (all "Pro"), and `ironwood/report/ReportNextSteps.tsx:65` ("Pro or Elite" — arguably genuine marketing prose rather than a gate label, decide before changing). Same latent class as the Dashboard tooltip that S306 fixed. **A fifth, `TestimonialsTab.tsx:326`, sits INSIDE the protected `fallback` of the gate at `:318`** — which is why the "zero hardcoded tier names" grep in the S306 brief was unachievable without violating that brief's own DO-NOT-TOUCH constraint. The check that does pass at zero: `grep -rn "Upgrade to Growth\|Growth and above" src`.
 - **`ReportsTab.tsx:79` is `minTier={1}` — a gate that can never fire (S306).** `PlanContext` fail-restricts to tier 1 for any unreadable or absent entitlement, so `canAccess(1)` is **always true** and the panel is unreachable in production. Dead code wearing a gate's clothes. Its copy is now correct if it ever did fire. **Left alone deliberately: whether Analytics should be gated at all is a product decision, not a cleanup.**
