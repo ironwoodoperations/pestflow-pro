@@ -274,3 +274,17 @@ it is recent.
   - PROJECT_MANIFEST.d/claude-support-tickets-rls-policies-xbwg8a.md
   - REVIEW_S309_TENANT_SOURCE.md
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-09-01 16:55 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `6f12fb6` — S309 Wave 3 — required tenant_id, hardened definers, nine-shape matrix
+- Author: Claude
+- Files changed:
+  - REVIEW_S309_TENANT_SOURCE.md
+  - src/components/admin/settings/UsersSection.tsx
+  - supabase/functions/invite-team-member/index.ts
+  - supabase/migrations/20260901170000_s309_required_tenant_id.sql
+  - supabase/migrations/s309_required_tenant_id_rollback.sql
+  - supabase/tests/s309_tenant_source_matrix.sql
+- Next recommended action: [Fill in next session: read this line, write what comes next]
