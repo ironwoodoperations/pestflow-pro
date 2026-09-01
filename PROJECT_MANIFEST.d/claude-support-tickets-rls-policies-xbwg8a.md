@@ -288,3 +288,14 @@ it is recent.
   - supabase/migrations/s309_required_tenant_id_rollback.sql
   - supabase/tests/s309_tenant_source_matrix.sql
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-09-01 17:17 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `20937c9` — S309 gate round 2 — APPROVE WITH CONDITIONS, both conditions resolved
+- Author: Claude
+- Files changed:
+  - REVIEW_S309_TENANT_SOURCE.md
+  - supabase/migrations/20260901170000_s309_required_tenant_id.sql
+  - supabase/tests/s309_tenant_source_matrix.sql
+- Next recommended action: [Fill in next session: read this line, write what comes next]
