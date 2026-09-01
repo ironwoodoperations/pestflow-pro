@@ -255,3 +255,12 @@ it is recent.
 - Files changed:
   - REVIEW_S309_TENANT_SOURCE.md
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-09-01 16:28 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `ca7d3cc` — S309 gate CLOSED — both verdicts REJECT, recorded verbatim + arbitration
+- Author: Claude
+- Files changed:
+  - REVIEW_S309_TENANT_SOURCE.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]

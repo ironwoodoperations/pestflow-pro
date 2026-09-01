@@ -304,20 +304,27 @@ substantive rejection of the two.
 
 ---
 
-# Appendix A — Perplexity verdict (VERBATIM)
+# Appendix A — Gemini verdict (VERBATIM)
 
 > **SUPPLIED 2026-09-01. VERDICT: REJECT.** Recorded byte-exact between the markers
 > below. NOT fenced — the verdict contains its own ```sql blocks, and wrapping it
 > in a fence would break them (the S308 lesson). Nothing is paraphrased, reordered or
 > truncated.
 >
-> ⚠️ **ATTRIBUTION UNVERIFIED.** Scott supplied both texts in one message as
-> "the gate for 312 from Perplexity and Gemini". They are recorded in that stated
-> order — this one first. Note that the OTHER verdict (Appendix B) carries inline
-> source citations, which is more characteristic of Perplexity output; if the two
-> were pasted in the opposite order, swap the headings. The CONTENT of each verdict
-> is byte-exact either way, and the arbitration outcome does not depend on which
-> model produced which text.
+> ✅ **ATTRIBUTION CONFIRMED BY SCOTT 2026-09-01: this appendix is GEMINI.**
+> Both texts arrived in one message as "the gate for 312 from Perplexity and
+> Gemini" and were first recorded in that stated order, which put Perplexity here.
+> That was wrong. The doc flagged the risk at the time — the OTHER verdict carries
+> inline source citations, which reads as Perplexity — and Scott confirmed the
+> reversal by re-sending this text labelled "This is Gemini".
+>
+> **Only the two appendix HEADINGS were changed.** Neither verdict body was moved,
+> re-split or re-pasted: Appendix A still holds the same 7,882 bytes it held on
+> first commit and Appendix B the same 22,288, both re-verified after the relabel.
+> The arbitration section above cites appendix LETTERS, never model names, so every
+> cross-reference in it remains correct and untouched. Appendix A is therefore
+> Gemini and Appendix B is Perplexity — the reverse of this document's original
+> placeholder order, which is left as-is rather than shuffling verdict text.
 
 <!-- BEGIN APPENDIX A VERDICT — BYTE-EXACT, DO NOT EDIT -->
 Here is an adversarial security review of the proposed changes, breaking down the systemic risks, answering your specific questions, and providing actionable conditions.
@@ -388,10 +395,17 @@ REJECT
 *(To convert to **APPROVE WITH CONDITIONS**, satisfy BLOCKING conditions F-01 and F-02: remove `pg_temp` from all `search_path` declarations, set `search_path TO 'pg_catalog', 'public'`, drop the `DEFAULT NULL` parameter fallback, and issue a schema cache reload upon deployment.)*
 <!-- END APPENDIX A VERDICT -->
 
-# Appendix B — Gemini verdict (VERBATIM)
+# Appendix B — Perplexity verdict (VERBATIM)
 
 > **SUPPLIED 2026-09-01. VERDICT: REJECT.** Same convention as Appendix A —
-> byte-exact between markers, not fenced. See the attribution caveat in Appendix A.
+> byte-exact between markers, not fenced.
+>
+> ✅ **ATTRIBUTION CONFIRMED BY SCOTT 2026-09-01: this appendix is PERPLEXITY.**
+> See the note in Appendix A for why the two headings were swapped after the
+> first commit. This is the verdict carrying inline source citations, and it is
+> the substantive rejection of the two — it finds NO concrete non-admin caller
+> who gains anything, and rejects on SECURITY DEFINER posture and unproven
+> end-to-end identity binding instead.
 
 <!-- BEGIN APPENDIX B VERDICT — BYTE-EXACT, DO NOT EDIT -->
 The proposed tenant-selection change is **not inherently weaker** than the current path, provided `get_my_tenant_role()` is truly complete, unspoofable authorization for the selected tenant and the edge function’s actual invite mutation is bound to that same verified tenant. However, the submitted function bodies contain pre-existing and potentially serious SECURITY DEFINER exposure risks that must be audited and corrected before approval.
