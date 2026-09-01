@@ -264,3 +264,13 @@ it is recent.
 - Files changed:
   - REVIEW_S309_TENANT_SOURCE.md
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-09-01 16:34 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `51e9e7a` — S309 gate — correct the verdict attribution (A is Gemini, B is Perplexity)
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.d/claude-support-tickets-rls-policies-xbwg8a.md
+  - REVIEW_S309_TENANT_SOURCE.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
