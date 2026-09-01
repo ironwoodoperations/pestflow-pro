@@ -2,12 +2,13 @@
 
 **Status: GATE RUN. Both models APPROVE WITH CONDITIONS. All conditions resolved.**
 
-⚠️ **The verdict TEXTS have not been pasted.** The conditions and the identification
-criteria were relayed in summary form; the raw output was not included. Appendices A and B
-stay placeholders rather than be reconstructed from that summary — the S309 precedent,
-where the round-2 slots stayed empty across two turns for exactly this reason. A
-reconstruction is indistinguishable from a transcript to a later reader, which is the
-entire value of a slot labelled VERBATIM.
+✅ **The verdict TEXTS are recorded verbatim in Appendices A and B.** They arrived after
+the conditions, and the appendices stayed empty in the interval rather than be
+reconstructed from the summary — the S309 precedent, where the round-2 slots also stayed
+empty across two turns. A reconstruction is indistinguishable from a transcript to a later
+reader, which is the entire value of a slot labelled VERBATIM. Byte counts and SHA-256
+checksums for both are recorded at the head of Appendix A, along with the attribution
+criteria, which were fixed **before** the texts were placed.
 
 ---
 
@@ -258,30 +259,220 @@ hit. Prose about a removed claim is not the claim.
 
 # Appendix A — Gemini verdict (VERBATIM)
 
-> ⚠️ **NOT YET SUPPLIED.** The conditions arrived in summary form; the raw text did not.
+> ✅ **SUPPLIED AND ATTRIBUTED.** Recorded verbatim below.
 >
-> **HOW TO CONFIRM THIS SLOT IS GEMINI** — checked BEFORE filling, never corrected after,
-> because S309 round 1 was filed with the two models reversed:
+> **ATTRIBUTION ASSERTED BEFORE FILLING, NOT AFTER** — S309 round 1 was filed with the two
+> models reversed, so the criteria below were fixed first and the texts were then matched
+> against them. All four hold:
 >
 > | | Appendix A — **GEMINI** | Appendix B — **PERPLEXITY** |
 > |---|---|---|
-> | citations | **none** | **inline**, to supabase and github |
-> | structure | numbered sections | prose |
-> | verdict | "Verdict" with **four numbered conditions** | a **single paragraph** |
+> | citations | **none** — 0 links, 0 occurrences of `http` | **inline** — 3 links: supabase, github, supabase |
+> | structure | numbered sections `1.`–`4.` | prose, `##` headings |
+> | verdict | `Verdict` → `VERDICT: APPROVE WITH CONDITIONS` + **four numbered conditions** | a **single bolded paragraph** |
 >
-> Paste unfenced between the markers — verdicts carry their own code fences — then
-> checksum both and record the byte counts.
+> **Appendix A byte count: 6845. SHA-256: `ddcf0a89251dff1c8ff766e8042c13e1ec9114c523bbb436b6490c8319b8d833`**
+> **Appendix B byte count: 14008. SHA-256: `9e921c94855a127062e7d39b4d0cb508d902a0d731a0102f07f46a853b13eafe`**
+>
+> Recorded unfenced between the markers — the verdicts carry their own code fences.
+> The one edit applied to either text: the labels Scott typed ahead of each (`perplexity`,
+> `Gemini`) were stripped, since they are his identification of the source, not the
+> models' words. Nothing inside either verdict was altered.
 
 <!-- BEGIN APPENDIX A VERDICT — BYTE-EXACT, DO NOT EDIT -->
-[PASTE GEMINI VERDICT VERBATIM — NOT YET SUPPLIED]
+Here is the assessment of the proposed logging change.
+
+Direct Assessment: What is Correct vs. What is Wrong
+Correct
+
+* Separation of Observability and Client Response: The core thesis—that anti-enumeration requires response uniformity, not server-side blindness—is correct. Modern edge environments can safely log internal failures without compromising user privacy or anti-enumeration guarantees if designed carefully.
+
+* Logging Discipline: Excluding bearer credentials (raw recovery tokens, constructed links) and full email addresses from logs prevents credential leakage via log sinks/aggregator tools.
+
+* Uniform 700ms Timing Floor & Response Payload: Enforcing a static response body and a tight time floor ensures the external HTTP interface remains consistent.
+
+* Initialization Safeguards: Setting an `outcome` variable to `'unset'` prevents unhandled execution branches from falsely reporting a successful result.
+
+Wrong / Risks Identified
+
+* Timing Leak Potential via Log-Write Latency Under High Load (Question 1): While a 700ms floor covers standard operational latency, synchronous I/O or stdout flushes under heavy log volume can exceed 700ms on failing paths if one execution path emits significantly more log lines or triggers heavy string operations (e.g., synchronous SHA-256 hashing) that another does not.
+
+* Credential/Data Leak via Supabase Auth Error Payloads (Question 3): Logging `generate_link_failed` status and raw error messages (`message`) poses a direct risk. Supabase/GoTrue error messages can reflect upstream service details, database messages, or sensitive payload reflections.
+
+* Log Ingestion Flooding / DoS via `invoked` Log Line (Question 4): Emitting an `invoked` line prior to basic input validation on a public, unauthenticated endpoint creates an asymmetric DoS vulnerability against log ingestion limits and log storage costs.
+
+Assessment of Specific Questions
+1. Leakage of Enumeration Signals to External Callers
+
+* Response Body & Size: Because the response literal and headers are identical across all execution paths, size-based enumeration is prevented.
+
+* Log-Write Latency & 700ms Floor:
+
+   * A 700ms floor is typically sufficient to mask small microsecond-level CPU differences. However, console writing in serverless/edge environments can become blocking under resource constraints or heavy stdout buffering.
+
+   * If a failed branch emits multiple log lines (e.g., `invoked`, `no_hashed_token`, `generate_link_failed`) while a fast-path branch emits fewer, the cumulative overhead during log flushes under load could cause the total processing time to exceed 700ms.
+
+   * Mitigation: Ensure the 700ms delay calculation measures total time spent right before sending the final response rather than using a static `setTimeout(700)`. Compute `remainingTime = Math.max(0, 700 - (Date.now() - startTime))` at the absolute end of the request lifecycle.
+
+2. Truncated SHA-256 Tag vs. Alternatives
+
+* Assessment: The truncated SHA-256 tag is not the ideal solution here.
+
+* Why: As noted in the comments, email addresses have low entropy. An attacker with log access and a rainbow table or list of target emails can easily match the truncated SHA-256 hash to reverse the target. Furthermore, logging an identifier derived directly from user input on unauthenticated requests allows attackers to pollute logs with predictable keys.
+
+* Better Alternative: Log a random per-request execution ID (`requestId` / `traceId`).
+
+   * Emitting a random UUID/ULID per request allows operators to group all log lines (`invoked`, `outcome`, errors) belonging to a single execution trace without logging any derivative of the user's input.
+
+   * If correlation across multiple requests from the same user is strictly necessary for debugging, prefer an ephemeral HMAC keyed with a daily/rotating server secret (`HMAC-SHA256(email, daily_secret)`) over a static SHA-256 tag.
+
+3. Sensitivity of Auth Provider Error Payloads (`generate_link_failed`)
+
+* Assessment: High Risk.
+
+* Why: Supabase Auth (GoTrue) or connected SMTP/email providers can include unpredictable details in error messages (e.g., internal database constraints, rate-limit state details, reflection of input params, or third-party API keys in misconfigured environments).
+
+* Mitigation: Sanitize or map error messages before writing to logs. Log the HTTP status code and a sanitized internal error code, or sanitize the message string to strip sensitive variables before output.
+
+4. Denial-of-Service / Log-Flooding Concerns for Unauthenticated `invoked` Log
+
+* Assessment: Moderate Risk.
+
+* Why: An unauthenticated public endpoint hit with a high-volume request flood will emit a log line for every single request, even invalid spam requests. This can lead to rapid log exhaustion, quota overages, or elevated log ingestion costs.
+
+* Mitigation:
+
+   1. Perform lightweight request sanity checks (e.g., HTTP method check, body size check) before emitting the `invoked` log line, OR
+
+   2. Implement IP-based / network-level rate limiting (e.g., via Cloudflare, Supabase platform rate limits, or API Gateway) upstream of edge function execution.
+
+Separate Finding (Comment Only)
+Issue: Domain resolution mismatch between client router and edge function (`apex` domain vs. `www` vs. custom domains).
+
+Recommendation: Fix both.
+
+1. Edge Function (Backend): Update the hostname-to-tenant resolver so that the apex domain maps to the primary tenant slug (matching client router logic) rather than returning `null`.
+
+2. Client Application (Frontend): Disable or hide the "Forgot password?" UI flow if tenant context cannot be definitively determined on the client side, preventing confusing user states where success UI is shown for non-actionable requests.
+
+Verdict
+VERDICT: APPROVE WITH CONDITIONS
+
+Conditions
+
+1. [BLOCKING] Sanitize Auth Error Logging: Do not log raw error messages (`message`) from `generate_link_failed` without sanitization or filtering to prevent unintentional leakage of internal credentials, database structure, or API secrets into log storage.
+
+2. [BLOCKING] Dynamic Timing Adjustment: Ensure the 700ms floor measures execution duration dynamically immediately prior to output (`Math.max(0, 700 - (Date.now() - start))`) to guarantee that logging overhead under high load does not breach the 700ms boundary and create a timing side-channel.
+
+3. [NON-BLOCKING] Replace SHA-256 Tag with Request Trace ID: Replace the truncated SHA-256 email hash with a random per-request UUID/trace ID (or an ephemeral server-secret HMAC) to avoid low-entropy offline dictionary attacks against log data.
+
+4. [NON-BLOCKING] Validate Method Before Logging `invoked`: Place basic validation (e.g., verifying `req.method === 'POST'`) ahead of emitting the unconditional `invoked` log line to reduce junk log volume during automated scans.
 <!-- END APPENDIX A VERDICT -->
 
 # Appendix B — Perplexity verdict (VERBATIM)
 
-> ⚠️ **NOT YET SUPPLIED.** Same convention as Appendix A, whose table gives the test for
-> confirming this slot is really Perplexity: **inline citations present** (supabase,
-> github), prose rather than numbered sections, and a **single-paragraph** verdict.
+> ✅ **SUPPLIED AND ATTRIBUTED.** Same convention as Appendix A, whose table carries the
+> attribution assertion for both slots and the byte counts and checksums for each.
 
 <!-- BEGIN APPENDIX B VERDICT — BYTE-EXACT, DO NOT EDIT -->
-[PASTE PERPLEXITY VERDICT VERBATIM — NOT YET SUPPLIED]
+The logging change fixes a real operational defect without inherently breaking the endpoint’s anti-enumeration response contract. The main caveats are that server-side logging is not free or magically constant-time under load, and raw auth-provider error messages should not be logged without sanitization.
+## What is correct
+- Keeping the endpoint unauthenticated is appropriate for a password-reset request flow, provided the public surface is otherwise protected with abuse controls. Returning the same `200 {"status":"ok"}` on all outcomes is the right response-level anti-enumeration behavior.
+- The principle behind the change is sound: **uniform client responses do not require uniform internal observability**. Operators need to distinguish:
+  - request never reached the function;
+  - hostname could not be mapped to a tenant;
+  - request input was invalid;
+  - recovery-link generation failed;
+  - the provider returned no usable token;
+  - email dispatch failed;
+  - an unexpected exception occurred.
+  Supabase Edge Functions are designed to expose invocation logs and metrics through the dashboard/log explorer, so emitting structured, stable event names is aligned with the platform’s observability model. [supabase](https://supabase.com/edge-functions)
+- An unconditional `invoked` event is valuable. It makes a missing log trail meaningful: either the request did not reach the deployed function or log delivery/querying is broken, rather than “the successful path simply emitted nothing.”
+- Initializing `outcome` to `unset` is a good defensive change. It makes fall-through/forgotten assignment visible rather than accidentally reporting a success-like state.
+- Stable prefixes and machine-readable reason codes are preferable to ad hoc prose. They support dashboards, alerts, counts by failure mode, and regression detection without requiring brittle string parsing.
+- Not logging the full email, raw request body, recovery token, or constructed recovery URL is correct. The token and link are bearer credentials and must never reach logs. Security logging guidance explicitly warns that logs themselves can become a sensitive data store and should avoid credentials and sensitive user data. [github](https://github.com/orgs/supabase/discussions/35585)
+- Fixing the helper so that a mail-provider rejection is actually observed is necessary. A “dispatched” result should mean the send call resolved, not that the recipient ultimately received the mail; that distinction is normal and should be reflected in operator expectations.
+## Enumeration and timing
+**Assessment:** the change is probably safe against ordinary remote enumeration, but the implementer’s timing argument is too absolute. It should be described as “does not introduce a meaningful new response distinction under normal conditions,” not “cannot leak.”
+### Response size
+If every code path produces exactly the same serialized status, headers, and body, the logs do not alter response size. Verify this literally in the test suite, including:
+- Method rejection paths.
+- CORS/preflight behavior, if the function handles it.
+- Exceptions raised while parsing request input.
+- Any gateway-generated error before the function can return its normal response.
+The application’s returned body can be uniform while an upstream/gateway failure is not. That is outside these logging changes, but it matters for the claim that *every* path is indistinguishable.
+### Number of log calls
+Different outcomes necessarily produce different line counts. For example:
+- An invalid email may emit `invoked` plus `invalid_email`.
+- A successful request may emit `invoked`, perhaps one correlation record, `send_dispatched`, and a final outcome.
+- A link-generation failure may emit `invoked`, `generate_link_failed`, and outcome.
+- An exception could produce `invoked` and `unhandled`.
+That variation is not visible directly to the caller. However, console writes are still runtime work. Under ordinary conditions, the difference of one or a few bounded log events should be far below a 700 ms floor and should not create a usable oracle.
+The weakness is **tail latency under saturation**:
+- Console/log ingestion may buffer asynchronously, but that is an implementation behavior, not a security guarantee.
+- If logging blocks, backpressures, serializes, samples differently, or competes for CPU/network resources under high log volume, paths with more logs may have a different probability of exceeding the 700 ms floor.
+- Once any path exceeds 700 ms, the floor no longer equalizes it. A determined attacker could attempt repeated measurements, especially while also creating load.
+This is best treated as a low-likelihood, defense-in-depth concern, not a reason to reject the change. The existing external work is already much more likely to dominate timing differences: tenant lookup, Supabase Auth `generateLink`, and the email provider call can each have outcome-dependent latency. Logging does not solve or uniquely create that fundamental issue.
+### Recommended hardening
+- Emit a fixed **small maximum** number of structured events per invocation, preferably with one terminal event. “Bounded” is good; “same upper bound with predictable event shape” is better.
+- Avoid synchronous or expensive log formatting: no stack serialization, deep object logging, large provider payloads, or JSON-stringifying arbitrary errors.
+- Put the timing floor around the entire handler from the earliest practical point to response completion, as appears intended.
+- Load-test invalid-email, unknown-email, known-email, provider-error, and tenant-failure paths at realistic and abusive concurrency. Compare p50/p95/p99 response timings, not just single-request timings.
+- Add upstream rate limiting/bot controls; these are needed for cost and log-volume protection regardless of whether timing measurements are feasible.
+## Email correlation tag
+A truncated SHA-256 tag is a reasonable choice **only if the operational need truly requires cross-request correlation for the same address**—for example, diagnosing “this account reports no reset mail” or identifying repeated targeted abuse without retaining the clear address.
+The implementation’s caveat is exactly right: a plain deterministic hash of an email is not anonymization. Emails have low entropy, and someone with log access plus a plausible candidate list can hash candidates and compare. Truncation lowers collision resistance and does not materially prevent candidate confirmation when the tag is sufficiently long for operational use.
+### Alternatives
+| Choice | Cross-request correlation | Privacy characteristics | Assessment |
+|---|---:|---|---|
+| Omit address-derived data | No | Best minimization | Best if operators do not need to connect repeated reset attempts for the same address |
+| Random request ID | Per-request only | Strong minimization | Useful for tracing one invocation across log lines, but cannot identify repeated activity for one account |
+| Truncated plain SHA-256 | Yes | Pseudonymous at best; vulnerable to offline confirmation | Acceptable only with the stated caveat, restricted log access, and a narrow retention policy |
+| Keyed HMAC of normalized email | Yes | Stronger against offline candidate matching without the secret | Preferred when stable correlation is required |
+My preferred design is:
+1. Generate a random `request_id` for every invocation.
+2. If cross-request email correlation is needed, log a **keyed HMAC-SHA-256** tag over a carefully normalized email value, truncated to a conservative length—for example, 96–128 bits.
+3. Keep the HMAC key in a secret manager and rotate it deliberately, understanding that rotation intentionally breaks historical correlation unless a version field is logged.
+4. Document retention, access restrictions, and the fact that even HMAC tags remain sensitive operational identifiers.
+A keyed HMAC is not an encryption scheme and does not eliminate all privacy concerns, but it prevents a person who merely has log access from confirming candidate emails unless they also have the key. If secret management complexity is not worth that benefit, omit the tag rather than treating a bare SHA-256 hash as private.
+## Provider error logging
+Logging `generate_link_failed` with raw `status` is generally reasonable. Logging raw `message` is the part I would change.
+Supabase’s guidance recommends using structured error properties such as `error.code` and `error.name`, rather than matching or relying on error-message text.  A provider error message can vary by version and may include: [supabase](https://supabase.com/docs/guides/auth/debugging/error-codes)
+- An echoed email address or other input.
+- A redirect URL, host, or request context.
+- Internal service details.
+- Policy or configuration information helpful to an attacker.
+- In the worst case, unexpected provider-side sensitive content.
+Even if current Supabase Auth errors do not expose tokens in this path, the logging boundary should not depend on undocumented future message contents.
+Use an allowlisted, structured log record instead, such as:
+```ts
+console.error("password-reset-request generate_link_failed", {
+  reason: "generate_link_failed",
+  status: error.status ?? null,
+  code: error.code ?? error.name ?? "unknown",
+});
+```
+If human-readable diagnostics are operationally necessary, either:
+- map known provider codes/statuses to your own fixed internal reason strings; or
+- sanitize and length-bound the message after explicitly removing emails, URLs, query strings, bearer-like values, and secrets.
+Do not log a raw error object either—many SDK error objects contain more than their displayed `message`.
+## Public log-flood risk
+Yes, unconditional `invoked` logging creates a real log-volume and cost/availability risk for a public unauthenticated endpoint. The endpoint was already publicly callable, but the change turns every garbage request into a persistent operational event. An attacker can send malformed bodies, invalid methods, missing origins, and syntactically invalid emails cheaply, producing at least one log entry each time.
+This is not an enumeration leak by itself. It is an abuse and observability-availability concern: excessive noise can increase ingestion/query cost, hide meaningful failures, trigger alert fatigue, and contribute to edge-function resource pressure.
+### Mitigations
+- Enforce rate limits before or at the edge, keyed by source IP and possibly tenant/host. Use conservative limits for malformed and invalid-email requests.
+- Add a WAF/CDN bot-control rule in front of the function where available. Reject obvious floods before they invoke the function.
+- Keep `invoked` records compact and structured; avoid full headers, bodies, arbitrary error objects, user agents, and large contextual data.
+- Use log sampling or aggregation for routine invalid traffic. For example, preserve exact logs for a bounded per-IP/tenant window, then emit periodic counters such as `invalid_email_sampled` rather than a record for every request.
+- Alert on aggregate rates—e.g., invalid input, no-slug, tenant-not-found, mail failures—rather than alerting per invocation.
+- Apply short retention to public-endpoint diagnostic logs and restrict access because even pseudonymous tags have privacy implications.
+One nuance: logging `invoked` before validation is still defensible if its main purpose is proving execution. The right mitigation is not necessarily to remove it; it is to make it cheap and protect the route upstream.
+## Separate resolver finding
+This should not drive the verdict on a logging-only change, but it is a genuine product defect. The correct remediation is **both**, with server-side alignment as the authoritative fix.
+- **Align the resolver with the router:** The edge function must resolve every host that the product presents as a valid tenant-facing host, including the apex if the router maps it to a tenant. Server behavior is the security and correctness boundary; a client rendering decision cannot reliably fix API behavior.
+- **Gate or configure the client button as defense in depth:** The client should not present a reset action for a host that cannot support reset delivery. That prevents a misleading “check your email” experience during configuration errors, rollouts, and future resolver drift.
+- **Centralize host-to-tenant configuration:** Ideally the router and Edge Function should use one canonical mapping or a generated/shared configuration artifact, with contract tests covering apex, `www`, every custom domain, unknown hosts, absent `Origin`, and `Referer` fallback behavior.
+- **Make host failures observable:** `no_slug`, `tenant_not_found`, and the final outcome should make apex/`www` misconfiguration obvious in monitoring. Do not include host values in logs unless they are known-safe and bounded; host headers are attacker-controlled input and can create log injection/noise issues if recorded raw.
+The adjacent failure modes you describe are particularly important because the UI tells users the reset was accepted while no mail is sent. Uniform external responses are correct for account privacy, but the tenant/domain routing configuration must be correct so valid users actually receive reset mail.
+**Verdict: APPROVE WITH CONDITIONS — BLOCKING: replace raw `generate_link_failed` message logging with an allowlisted code/status or a rigorously sanitized, length-bounded message; BLOCKING: add upstream rate limiting/WAF or equivalent abuse control plus a log-volume strategy for the unconditional `invoked` event; NON-BLOCKING: use a keyed HMAC rather than truncated plain SHA-256 if stable email-level correlation is required; NON-BLOCKING: load-test path timing at concurrency and document the 700 ms floor as risk reduction rather than a proof of timing indistinguishability; NON-BLOCKING: fix the apex/router-resolver mismatch server-side and gate the client UI as defense in depth.**
 <!-- END APPENDIX B VERDICT -->
