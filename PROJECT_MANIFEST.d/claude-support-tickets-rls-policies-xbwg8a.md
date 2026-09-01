@@ -299,3 +299,12 @@ it is recent.
   - supabase/migrations/20260901170000_s309_required_tenant_id.sql
   - supabase/tests/s309_tenant_source_matrix.sql
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-09-01 17:20 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `936248e` — S309 — record the round-2 verdict identification criteria in Appendices C and D
+- Author: Claude
+- Files changed:
+  - REVIEW_S309_TENANT_SOURCE.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
