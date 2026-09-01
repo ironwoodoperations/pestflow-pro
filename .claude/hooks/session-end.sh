@@ -1,7 +1,13 @@
 #!/bin/bash
-# IRONWOOD FRAMEWORK v3.1 — Stop hook
-# Runs at session end. Appends a session summary block to a PER-BRANCH log file
-# under PROJECT_MANIFEST.d/ — NOT to the single shared PROJECT_MANIFEST.md.
+# IRONWOOD FRAMEWORK v3.1 — Stop hook — NOW THE FALLBACK WRITER.
+# Appends a session summary block to a PER-BRANCH log file under PROJECT_MANIFEST.d/ —
+# NOT to the single shared PROJECT_MANIFEST.md.
+#
+# NOTE ON "session end": the Stop event fires at the end of every TURN, not once per
+# session. The dedup below is what kept that from producing an entry per turn.
+#
+# The primary writer is now .claude/hooks/manifest-entry.sh. This script only fires for
+# the paths that one skips. See the parent-sha check below.
 #
 # WHY (S261-3): the old hook appended every session block to the end of the one
 # shared PROJECT_MANIFEST.md. Two branches created independently therefore both
@@ -41,6 +47,26 @@ fi
 
 # Dedup: don't append the same commit SHA twice to this branch's file (hook re-runs)
 if [ -f "$LOG_FILE" ] && grep -q "Commit: \`$SHORT_SHA\`" "$LOG_FILE" 2>/dev/null; then
+  exit 0
+fi
+
+# THIS HOOK IS NOW THE FALLBACK, not the primary writer.
+# .claude/hooks/manifest-entry.sh (PreToolUse on `git commit`) normally writes the entry
+# BEFORE the commit and stages it, so it rides inside the commit it describes and costs
+# no extra commit or CI run. Such an entry records `Parent: <sha>` — the parent is
+# knowable in advance, the commit's own SHA is not.
+#
+# So: if an entry already exists for HEAD's parent, the PreToolUse hook handled this
+# commit. Appending here as well would produce a DUPLICATE and reinstate exactly the
+# uncommitted-file churn the other hook removes.
+#
+# This script still runs for every path manifest-entry.sh deliberately skips — --amend,
+# scoped commits with pathspecs, `git commit -a`, commits made outside a Bash tool call.
+# Those get logged LATE, which is the intended degradation: late beats absent, and both
+# beat a wrong record.
+PARENT_SHA=$(git rev-parse --short HEAD^ 2>/dev/null)
+if [ -n "$PARENT_SHA" ] && [ -f "$LOG_FILE" ] \
+   && grep -q "Parent: \`$PARENT_SHA\`" "$LOG_FILE" 2>/dev/null; then
   exit 0
 fi
 

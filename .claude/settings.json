@@ -62,6 +62,10 @@
           {
             "type": "command",
             "command": ".claude/hooks/require-pr.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/manifest-entry.sh"
           }
         ]
       },
