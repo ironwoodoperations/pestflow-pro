@@ -823,16 +823,14 @@ REJECT
 
 # Appendix C — Gemini verdict, round 2 (VERBATIM)
 
-> ⚠️ **NOT YET SUPPLIED.** The round-2 arbitration above arrived in summary form. The
-> raw verdict TEXTS have not yet been pasted, so these two slots stay empty.
+> **SUPPLIED 2026-09-01, pasted from the source. VERDICT: APPROVE WITH CONDITIONS.**
+> Byte-exact between the markers below, NOT fenced — the verdict contains its own code
+> fence. Byte counts recorded at the foot of this document.
 >
-> **Nothing here is reconstructed.** Paraphrasing a verdict into a slot labelled VERBATIM
-> would make the record worse than leaving it empty: a future reader cannot tell a
-> reconstruction from a transcript, and the whole value of this appendix is that they
-> never have to wonder. The texts must be pasted **from the source**, not relayed through
-> a summary — a copy of a copy is a re-transcription and defeats the convention.
+> The slots stayed empty across two turns rather than being filled from the summary,
+> because a reconstruction is indistinguishable from a transcript to a later reader.
 >
-> **HOW TO TELL THE TWO APART** (recorded so the round-1 attribution error cannot
+> **ATTRIBUTION CONFIRMED against the criteria below** (recorded so the round-1 attribution error cannot
 > recur — that round was first filed with the models reversed, and was corrected only
 > after the fact):
 >
@@ -851,16 +849,191 @@ REJECT
 > beside A's 7,882 B and B's 22,288 B.
 
 <!-- BEGIN APPENDIX C VERDICT — BYTE-EXACT, DO NOT EDIT -->
-[PASTE GEMINI ROUND-2 VERDICT VERBATIM — NOT YET SUPPLIED]
+Assessment of Changes
+1. Function Replacement (`DROP` vs. `CREATE OR REPLACE`)
+
+* Correct: `CREATE OR REPLACE` cannot change the signature of an existing function. Since `list_tenant_members()` is changing from zero arguments to taking `p_tenant_id uuid`, dropping it first inside the same transaction block is necessary.
+
+* Impact of Dependencies: If another database object (e.g., a View or RLS policy) depended on `list_tenant_members()`, PostgreSQL would throw a loud, immediate error blocking the `DROP FUNCTION` execution (e.g., `ERROR: cannot drop function list_tenant_members() because other objects depend on it`), rolling back the entire migration transaction. It will not fail silently.
+
+2. `search_path = ''` Security & Qualification
+
+* Correct: Both functions set `SET search_path = ''` to defend against schema-search-path hijacking in `SECURITY DEFINER` procedures.
+
+* Resolution Check: All referenced database objects are fully qualified (`public.tenant_users`, `auth.users`, `public.get_my_tenant_role`, `auth.uid()`). No unqualified references exist that would fail to resolve.
+
+3. NULL Branch Behavior in `list_tenant_members`
+
+* Correct: Returning zero rows (an empty set) on a `NULL` parameter is standard SQL set-returning behavior for a query function. Raising an exception would cause unhandled client RPC exceptions instead of an empty UI state. Furthermore, parameter validation is handled upstream at the Edge Function level.
+
+4. RPC Client Selection (`callerClient` vs. `serviceClient`)
+
+* Correct: Using `callerClient` passes the user's JWT down to Supabase/PostgREST, populating the `request.jwt.claims` session setting so `auth.uid()` resolves to the authenticated user's ID.
+
+* Security Risk: If `service` (service-role key) were used instead, `auth.uid()` would return `NULL` (or the service role context), causing `get_my_tenant_role()` to evaluate to `NULL` and fail closed (or misidentify the actor).
+
+5. Edge Function Input Validation (`UUID_RE`)
+
+* Value Added: Validating input formatting before hitting the database prevents unnecessary Postgres RPC network round-trips for malformed payloads and returns a clean, canonical `400 Bad Request` rather than a raw Supabase/PostgREST driver error.
+
+6. Deployment Order & Failure Window
+
+* Correct Order: Deploying the updated frontend bundle first is correct.
+
+* Failure Window Behavior:
+
+   * In the short window between the Frontend deployment and the DB/Edge Function migration, the new frontend code calling `list_tenant_members(p_tenant_id)` against the old database schema will throw a loud PostgREST error (`PGRST202`: `Could not find the function public.list_tenant_members(p_tenant_id) in the schema cache`).
+
+   * The Edge Function during this window will fail auth on line `callerClient.rpc('get_my_tenant_role', ...)` if `get_my_tenant_role` hasn't landed yet, properly failing closed with `403` or a `500` error.
+
+7. Additional Issues Identified
+
+* GRANT Permission Missing for `get_my_tenant_role` (BLOCKING):
+
+   * The migration revokes/grants permissions on `list_tenant_members`, but does NOT grant `EXECUTE` on `public.get_my_tenant_role` to `authenticated`.
+
+   * If default permissions on newly created functions in `public` have been revoked in your Supabase project (a recommended security baseline), `callerClient` will receive a `42501` permission denied error when calling `get_my_tenant_role`.
+
+* Missing Grant on `get_my_tenant_role` Script:
+
+SQL
+
+```
+GRANT EXECUTE ON FUNCTION public.get_my_tenant_role(uuid) TO authenticated, service_role;
+
+```
+
+* Implicit Cast on Email Field (NON-BLOCKING):
+
+   * In `list_tenant_members`, `u.email::text` is explicitly cast. `auth.users.email` is already `varchar` / `text`, so the explicit cast is harmless but redundant.
+
+APPROVE WITH CONDITIONS
+
+* [BLOCKING] Add `GRANT EXECUTE ON FUNCTION public.get_my_tenant_role(uuid) TO authenticated, service_role;` to the migration script to prevent potential `permission denied` RPC failures.
 <!-- END APPENDIX C VERDICT -->
 
 # Appendix D — Perplexity verdict, round 2 (VERBATIM)
 
-> ⚠️ **NOT YET SUPPLIED.** Same convention and same reason as Appendix C, whose table
-> gives the test for confirming this slot really is the Perplexity text: **inline
-> citations present**, and a **two-part** BLOCKING verdict covering dependency
-> verification as well as the EXECUTE permission.
+> **SUPPLIED 2026-09-01, pasted from the source. VERDICT: APPROVE WITH CONDITIONS.**
+> Same convention as Appendix C. **Attribution confirmed**: inline citations present
+> (aws.amazon, cybertec-postgresql, supabase, pentestly, docs.postgrest), and a
+> **two-part** BLOCKING verdict covering dependency verification as well as the EXECUTE
+> permission — both matching the Perplexity signature.
 
 <!-- BEGIN APPENDIX D VERDICT — BYTE-EXACT, DO NOT EDIT -->
-[PASTE PERPLEXITY ROUND-2 VERDICT VERBATIM — NOT YET SUPPLIED]
+The re-scoped implementation correctly moves tenant selection to an explicit client-supplied `tenant_id` and authorizes that tenant against `tenant_users`. The core authorization path is sound, but the migration contains a **blocking deployment/compatibility defect** unless you have verified there are no dependencies on the old zero-argument RPC and have planned its removal.
+## 1. Function replacement and dependencies
+`DROP FUNCTION IF EXISTS public.list_tenant_members();` followed by creation of `public.list_tenant_members(uuid)` is technically the correct way to change from a zero-argument signature to a one-argument signature. PostgreSQL identifies overloaded functions by name plus argument types/count; `CREATE OR REPLACE FUNCTION` cannot mutate that identity.
+However, the `DROP` is not harmless:
+- If another database object directly depends on `public.list_tenant_members()`—for example, a view, stored function, policy, trigger, or prepared SQL function dependency—plain `DROP FUNCTION` will fail with a dependency error.
+- Because the migration runs in a single transaction, that failure aborts the entire migration. The old zero-arg function remains; the new function is not created; no partial schema state is committed.
+- This is therefore **loud**, not silent. PostgreSQL prevents drops that would invalidate dependent objects unless `CASCADE` is explicitly used. Do **not** add `CASCADE` merely to make this migration pass: that could silently remove dependent objects as part of the transaction. [aws.amazon](https://aws.amazon.com/blogs/database/managing-object-dependencies-in-postgresql-removing-dependent-objects-part2/)
+What can still fail less visibly is an external caller not represented as a PostgreSQL dependency—for example, an old deployed frontend, a script, an integration, or manually issued RPC requests. Those callers will receive an RPC resolution error after the old function is dropped and PostgREST has refreshed its schema cache.
+The statement that the frontend is the only caller in the codebase is helpful but does not prove the absence of database-level dependencies or out-of-repository consumers. Before deploying, query the catalog or attempt this migration in staging against a production-like schema. This is a blocking precondition.
+## 2. Pinned `search_path`
+`SECURITY DEFINER SET search_path = ''` is correct and conservative. It eliminates path-based object-shadowing risks, which are particularly relevant to `SECURITY DEFINER` functions. [cybertec-postgresql](https://www.cybertec-postgresql.com/en/abusing-security-definer-functions/)
+All relation and function references needed by the bodies are qualified:
+| Reference | Status | Reason |
+|---|---|---|
+| `public.tenant_users` | Correct | Explicit schema qualification |
+| `auth.users` | Correct | Explicit schema qualification |
+| `auth.uid()` | Correct | Explicit schema qualification |
+| `public.get_my_tenant_role(...)` | Correct | Explicit schema qualification |
+| PL/pgSQL built-ins such as `return` / `return query` | Correct | Language keywords, not search-path-resolved objects |
+| `uuid`, `text` types | Correct in this context | Built-in types are resolved through PostgreSQL’s system catalog / bootstrap behavior and are valid in the function declaration |
+There is no unqualified application object left that would fail merely because `search_path` is empty.
+A minor hardening observation: some PostgreSQL security guidance pins a path such as `pg_catalog, pg_temp`; an empty path plus full qualification is at least as clear here because this function does not rely on unqualified database objects. The present implementation is valid.
+## 3. NULL `tenant_id` behavior
+Returning zero rows when `p_tenant_id IS NULL` is authorization-safe: it does not disclose membership data and it does not accidentally select a tenant. It also matches the natural semantics of a list RPC: “no usable tenant input” produces no list.
+But it is not the best failure mode for a now-required parameter.
+A missing or null tenant identifier is a caller defect, not an authorization result. Returning an empty array makes these materially different states indistinguishable:
+- The caller omitted or sent `null` for the tenant ID.
+- The caller is not an admin of the requested tenant.
+- The requested tenant has no members, though that should normally be impossible for a valid tenant.
+- An old bundle is still calling the obsolete RPC shape, depending on client/RPC routing behavior.
+The edge function already treats a missing or invalid tenant ID as a `400`, which is good. For symmetry and diagnosability, the RPC should raise a clear invalid-argument exception for null input, for example:
+```sql
+IF p_tenant_id IS NULL THEN
+  RAISE EXCEPTION 'tenant_id is required'
+    USING ERRCODE = '22004';
+END IF;
+```
+This is **non-blocking** because empty output is fail-closed and does not undermine tenant isolation. It is still worth changing because it makes deployment faults and client bugs observable rather than masquerading as an empty team.
+## 4. Caller JWT versus service role
+Using `callerClient` for:
+```ts
+callerClient.rpc('get_my_tenant_role', { p_tenant_id: tenantId })
+```
+is correct and essential.
+`SECURITY DEFINER` changes the SQL privileges used to execute the function—it does **not** magically preserve the end user’s identity if the request itself was authenticated as the service role. `auth.uid()` derives its identity from the request’s authenticated JWT context. Supabase Auth uses JWTs for authentication, so the caller client carries the end-user identity needed for `auth.uid()` to evaluate to that caller. [supabase](https://supabase.com/docs/guides/auth)
+Consequently:
+- With `callerClient`, `auth.uid()` resolves to the authenticated human caller.
+- `get_my_tenant_role(tenantId)` tests whether that specific caller has an `admin` row in `tenant_users` for the specific tenant ID.
+- The later `service` operations can safely bypass RLS only because the authorization decision happened first against the caller’s actual identity, and the already-authorized `tenantId` is retained as the sole tenant selector.
+Using the service client for `get_my_tenant_role` would be a vulnerability. The service-role JWT is not the requesting user’s JWT, so `auth.uid()` would resolve to the service context’s identity or otherwise not represent the human caller. The membership lookup could then be evaluated against the wrong principal; depending on the exact service JWT/`auth.uid()` behavior, it would either deny legitimate callers or, much worse, authorize based on a privileged/service-associated identity. User-initiated authorization must never be derived from a service-role client. [pentestly](https://www.pentestly.io/blog/supabase-security-best-practices-2025-guide)
+One caveat to verify in the actual edge function: the `callerClient` must be constructed with the request’s original `Authorization` header, not merely with an anon key. The prompt says it carries the caller JWT; if that is literally true, this portion is correct.
+## 5. Edge UUID validation
+The UUID regex adds useful defense-in-depth and better API behavior, even though it is not the primary SQL-injection defense.
+Bound RPC parameters already protect against SQL injection; the UUID-typed PostgreSQL parameter would also reject malformed values. The membership helper additionally authorizes the supplied tenant ID against `tenant_users`. Therefore, the regex is **not required for SQL safety or tenant isolation**.
+It still adds value by:
+- Returning an intentional `400` with a clear API error instead of letting an invalid UUID propagate as a database/RPC cast error.
+- Rejecting malformed client payloads before a round trip to the database.
+- Ensuring subsequent service-client calls only receive an identifier of the expected form.
+- Making the edge function’s contract explicit.
+The important security property remains the SQL-side membership check. Regex validation alone would never be sufficient, because a well-formed UUID can still belong to another tenant.
+## 6. Deployment order and observable window
+The proposed order—**frontend first, verify it is deployed, then database migration and edge-function deployment**—is the right compatibility order for a change that removes an existing RPC signature and replaces it with a required parameter.
+The reason is simple: before the migration, the old zero-argument RPC still exists. A new frontend that calls `list_tenant_members(tenant_id)` cannot successfully call it until the migration creates that signature. Therefore, the interval after frontend deployment but before migration has an observable failure:
+- The team-list RPC call from the new frontend fails because PostgREST cannot find a matching `public.list_tenant_members(p_tenant_id => uuid)` function.
+- In Supabase/PostgREST, this typically presents as an RPC function-resolution/schema-cache error, commonly a `PGRST202`-style “could not find the function … in the schema cache” response, rather than a normal empty-list response.
+- The invite edge function behavior depends on whether the edge deployment is also delayed. If the edge function remains old during this interval, it still relies on `profiles.tenant_id` and remains broken for admins without profile rows. If the new edge function is deployed before its database dependency, its `get_my_tenant_role` call fails until that helper exists.
+PostgREST caches function signatures, and the provided `NOTIFY pgrst, 'reload schema'` is the correct mechanism to refresh that cache after changing RPC signatures. [docs.postgrest](https://docs.postgrest.org/en/v10/schema_cache.html)
+The safest sequence is more precise than “frontend first”:
+1. Deploy frontend code that sends `tenant_id`, ideally with a temporary compatibility fallback or a user-facing retry/error state.
+2. Confirm the new static bundle is serving everywhere relevant, accounting for CDN/browser cache behavior.
+3. Deploy the migration, including `get_my_tenant_role`, replacement `list_tenant_members(uuid)`, grants, and schema reload notification.
+4. Confirm the new RPC resolves successfully.
+5. Deploy the new edge function, or deploy it immediately after the migration as one coordinated backend release.
+6. Smoke-test an admin who has a `tenant_users` membership but no `profiles` row.
+This still permits a short, expected failure period for the new frontend’s team list before the schema migration. If avoiding any user-visible failure is a requirement, the migration must be backward-compatible instead: create the one-arg overload while retaining the zero-arg function temporarily, deploy consumers, then remove the old overload in a later migration. But the stated design specifically removes the zero-arg function, so this is a rollout choice rather than a defect in the core authorization logic.
+## 7. Additional findings
+### Missing explicit grants for helper RPC
+`get_my_tenant_role` is called from the edge function using a caller-authenticated client. The migration grants `list_tenant_members(uuid)` to `authenticated, service_role`, but it does **not** explicitly grant `EXECUTE` on `get_my_tenant_role(uuid)` to `authenticated`.
+Whether this works depends on the database’s default function privileges. PostgreSQL commonly grants `EXECUTE` on newly created functions to `PUBLIC` by default. If that default remains in force, the edge call works, but the helper is also callable by roles you may not intend, including `anon`.
+That does not expose other users’ role data: it is constrained by `auth.uid()` and the caller-provided tenant ID. Still, explicit privileges are better and avoid relying on cluster defaults:
+```sql
+REVOKE ALL ON FUNCTION public.get_my_tenant_role(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_my_tenant_role(uuid)
+  TO authenticated, service_role;
+```
+This is **non-blocking** for correctness if default execute is available; it becomes operationally blocking if your environment has revoked default `PUBLIC` execute or uses nonstandard function privilege defaults. Verify this before deployment.
+### Explicitly qualify the helper contract
+`get_my_tenant_role` is intentionally exposed as an RPC because the edge function invokes it. That is acceptable. But it is a public-schema `SECURITY DEFINER` authorization primitive, so the explicit grant/revoke above should be treated as part of its API boundary, not optional cleanup.
+### Result ordering is unspecified
+`list_tenant_members` does not contain `ORDER BY`. This is not a security issue, but any frontend that assumes a stable display order can appear to reorder users across calls. If deterministic ordering matters, add an explicit order, e.g. `ORDER BY u.email, tu.user_id`. This is **non-blocking**.
+### Role semantics are appropriately strict
+The exact comparison `= 'admin'` is correct if `tenant_users.role` has only the intended role vocabulary and only admins may enumerate members/invite. It fails closed for null, unknown, or non-admin values. Ensure role values are constrained at the schema level—typically by an enum, check constraint, or foreign key—so the application’s authorization vocabulary cannot drift. This is **non-blocking** based on the provided change.
+### Service-client use must remain scoped
+The phrase “`tenantId` is then the only value used for the membership upsert and every subsequent lookup; `body.tenant_id` is never read again” is exactly the right pattern. Do not reconstruct the tenant from profile data, another body field, query parameters, or any service-client lookup later in the handler. The authorization decision must bind the subsequently privileged operations to the already-authorized immutable `tenantId`.
+**VERDICT: APPROVE WITH CONDITIONS — BLOCKING: verify/resolve all PostgreSQL dependencies and external consumers of `public.list_tenant_members()` before dropping it, and verify `authenticated` has explicit effective EXECUTE permission on `public.get_my_tenant_role(uuid)`; NON-BLOCKING: raise on null RPC input, explicitly revoke/grant helper execution, and add deterministic member ordering if the UI needs it.**
 <!-- END APPENDIX D VERDICT -->
+
+---
+
+## Verdict byte counts — the record
+
+Every appendix is recorded byte-exact between HTML comment markers, never inside a code
+fence (each verdict carries its own fences). Verified programmatically after every edit
+to this document, including the edits that only changed headings.
+
+| Appendix | Model | Round | Verdict | Bytes |
+|---|---|---|---|---|
+| A | Gemini | 1 | REJECT | **7,882** |
+| B | Perplexity | 1 | REJECT | **22,288** |
+| C | Gemini | 2 | APPROVE WITH CONDITIONS | **3,987** |
+| D | Perplexity | 2 | APPROVE WITH CONDITIONS | **14,190** |
+
+Round 1 was first filed with A and B reversed and corrected after the fact; round 2 was
+checked against the citation-style criteria BEFORE filling, and the check is asserted in
+the tooling that wrote it. The citation tell is reliable; the order of the delivering
+message is not.
