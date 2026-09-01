@@ -7,8 +7,22 @@
 // toggle silently reverts to ON after a deploy — re-check it stays OFF after every deploy.
 //
 // Anti-enumeration (validator M3): the response body is IDENTICAL on every path ({status:'ok'},
-// never any Supabase error text), all internal errors are swallowed, and total response time is
-// padded to a fixed minimum so a nonexistent-email fast path can't be timed as an oracle.
+// never any Supabase error text), and total response time is padded to a fixed minimum so a
+// nonexistent-email fast path can't be timed as an oracle.
+//
+// S313 — OBSERVABILITY. Errors used to be swallowed by three EMPTY catch blocks and a
+// runDetached() that did `p.catch(() => {})`, so tenant-not-found, generateLink failure and a
+// Resend rejection were indistinguishable from success TO US as well as to the caller. There
+// were zero function_logs entries, which is why nobody could answer whether "Forgot password?"
+// worked at all.
+//
+// THE CONFLATION THAT CAUSED IT: anti-enumeration requires the RESPONSE to be uniform. It does
+// not require the SERVER to be blind. Every branch below now logs a distinct reason code, and
+// NOTHING about the response changed — same bytes, same branches, same MIN_RESPONSE_MS floor.
+//
+// NEVER LOGGED, and this is the hard constraint: the email address in full, the hashed_token,
+// or the constructed link. The token and link are bearer credentials — anyone reading them can
+// take over the account.
 //
 // tenant is server-derived from the request Origin/Referer host — never from the body.
 //
@@ -30,13 +44,47 @@ const CORS = {
 }
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
+const LOG_PREFIX = '[password-reset-request]'
+
+// Correlates every line from ONE invocation while recording nothing about the caller.
+const newRid = (): string => crypto.randomUUID().slice(0, 8)
+
+// A stable tag for an address, so repeat attempts by the same person can be correlated
+// across invocations without the address itself appearing in the logs.
+//
+// THIS IS NOT A PRIVACY GUARANTEE AND MUST NOT BE TREATED AS ONE. Email addresses are
+// low-entropy and enumerable, so anyone holding BOTH log access and a candidate list can
+// confirm a guess by hashing it. Log access stays sensitive. What this buys is that a
+// casual reader of the logs does not see customer addresses, and that a leaked log line
+// is not itself a mailing list.
+async function emailTag(email: string): Promise<string> {
+  try {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(email))
+    return Array.from(new Uint8Array(buf)).slice(0, 4)
+      .map((b) => b.toString(16).padStart(2, '0')).join('')
+  } catch {
+    return 'unavailable'
+  }
+}
+
 // Run a promise without blocking the response, so total response time never depends on
 // email-send latency (a timing oracle). Uses EdgeRuntime.waitUntil to keep the worker alive
 // past the response when available; falls back to a fire-and-forget catch otherwise.
-function runDetached(p: Promise<unknown>): void {
-  const swallowed = p.catch(() => {})
+//
+// S313: the rejection is now LOGGED rather than discarded. It was the only signal that email
+// delivery had failed, and `p.catch(() => {})` threw it away. Still detached, so the response
+// timing is unchanged.
+//
+// CAVEAT: without EdgeRuntime.waitUntil the worker may be torn down before this catch runs, so
+// an absent send_failed line is not proof the send succeeded. The `send_dispatched` line below
+// is what proves the attempt was made.
+function runDetached(p: Promise<unknown>, rid: string, tag: string): void {
+  const logged = p.catch((e) => {
+    const msg = e instanceof Error ? e.message : String(e)
+    console.error(`${LOG_PREFIX} rid=${rid} tag=${tag} reason=send_failed detail=${msg}`)
+  })
   const er = (globalThis as { EdgeRuntime?: { waitUntil?: (p: Promise<unknown>) => void } }).EdgeRuntime
-  if (er?.waitUntil) er.waitUntil(swallowed)
+  if (er?.waitUntil) er.waitUntil(logged)
 }
 
 function validEmail(e: string): boolean {
@@ -62,6 +110,12 @@ function slugFromRequest(req: Request): string | null {
 
 export async function handler(req: Request): Promise<Response> {
   const started = Date.now()
+  const rid = newRid()
+  // Exactly one outcome line per invocation, logged just before returning. It starts as
+  // `unset` so a fall-through cannot quietly read as success — an outcome nobody assigned
+  // is itself the finding.
+  let outcome = 'unset'
+  let tag = 'none'
   const ok = async (): Promise<Response> => {
     const elapsed = Date.now() - started
     if (elapsed < MIN_RESPONSE_MS) await sleep(MIN_RESPONSE_MS - elapsed)
@@ -71,12 +125,21 @@ export async function handler(req: Request): Promise<Response> {
   }
 
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
-  if (req.method !== 'POST') return ok()
+  if (req.method !== 'POST') {
+    console.warn(`${LOG_PREFIX} rid=${rid} reason=bad_method method=${req.method}`)
+    return ok()
+  }
+
+  // Invocation is logged unconditionally, so an ABSENCE of logs is unambiguous: it means the
+  // function was never called, not that it ran and stayed quiet. Without this line the two
+  // are indistinguishable, which is exactly the state S313 is fixing.
+  console.log(`${LOG_PREFIX} rid=${rid} invoked`)
 
   try {
     const body = await req.json().catch(() => null)
     const email = (body?.email || '').trim().toLowerCase()
     const slug = slugFromRequest(req)
+    if (email) tag = await emailTag(email)
 
     if (validEmail(email) && slug) {
       const service = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -101,17 +164,53 @@ export async function handler(req: Request): Promise<Response> {
             const { subject, html, text } = recoveryEmail(businessName, link)
             // Detached: the response must not wait on Resend, or send latency leaks as a
             // timing oracle distinguishing existing vs nonexistent emails (M3).
-            runDetached(sendEmail({ to: email, subject, html, text, fromName: businessName }))
+            runDetached(sendEmail({ to: email, subject, html, text, fromName: businessName }), rid, tag)
+            // The send is detached, so this records only that the attempt was DISPATCHED.
+            // Delivery success is not knowable here; a send_failed line above is.
+            outcome = 'send_dispatched'
+          } else if (error) {
+            // The ordinary nonexistent-email case lands here too. It is a warn, not an error:
+            // expected, and the caller is told nothing either way.
+            console.warn(
+              `${LOG_PREFIX} rid=${rid} tag=${tag} reason=generate_link_failed ` +
+              `status=${(error as { status?: number }).status ?? 'none'} detail=${error.message}`,
+            )
+            outcome = 'generate_link_failed'
+          } else {
+            // generateLink reported success but returned no token. Nothing to send, and
+            // nothing previously distinguished this from a completed send.
+            console.error(`${LOG_PREFIX} rid=${rid} tag=${tag} reason=no_hashed_token`)
+            outcome = 'no_hashed_token'
           }
-        } catch (_e) {
-          // swallowed — never surfaced to the caller
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e)
+          console.error(`${LOG_PREFIX} rid=${rid} tag=${tag} reason=generate_link_threw detail=${msg}`)
+          outcome = 'generate_link_threw'
         }
+      } else {
+        // The slug parsed but names no tenant. On `www.pestflowpro.ai` this fires with
+        // slug=www — see the apex finding in the PR body.
+        console.warn(`${LOG_PREFIX} rid=${rid} tag=${tag} reason=tenant_not_found slug=${slug}`)
+        outcome = 'tenant_not_found'
       }
+    } else if (!slug) {
+      // slugFromRequest returned null: the apex, a custom domain, or no Origin/Referer.
+      // The function then does NOTHING and still answers 200 — structurally dead here.
+      console.warn(`${LOG_PREFIX} rid=${rid} tag=${tag} reason=no_slug`)
+      outcome = 'no_slug'
+    } else {
+      console.warn(`${LOG_PREFIX} rid=${rid} reason=invalid_email`)
+      outcome = 'invalid_email'
     }
-  } catch (_e) {
-    // swallowed — identical response on every path
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    console.error(`${LOG_PREFIX} rid=${rid} tag=${tag} reason=unhandled detail=${msg}`)
+    outcome = 'unhandled'
   }
 
+  // One line per invocation, always. Pairs with the `invoked` line above so a request that
+  // dies mid-flight is visible as an invocation with no outcome.
+  console.log(`${LOG_PREFIX} rid=${rid} outcome=${outcome} ms=${Date.now() - started}`)
   return ok()
 }
 
