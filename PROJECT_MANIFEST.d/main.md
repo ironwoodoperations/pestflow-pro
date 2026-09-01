@@ -133,3 +133,42 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   - PROJECT_MANIFEST.d/docs-s303-roadmap-image-upload-items.md
   - docs/ROADMAP.md
 - Next recommended action: **pls launch checklist — flip `settings.seo.noindex` off first.** The site is finished and invisible: every metadata, JSON-LD and service-area fix from S293-S302 is being emitted to crawlers told not to look. Then decide `custom_domain` (after de-noindexing, so the indexed URLs are not the ones being replaced), then `notifications.lead_email` (blocked on §6.4). After that: S300's turf content entry needs five owner facts, and its `page_content` row must land AFTER the entry or the tile links to a 404. Deploy state is verified in `docs/ROADMAP.md` — `generate-monthly-report` IS deployed at v15; do not re-propagate the merged-but-undeployed claim from the older logs in this directory.
+
+---
+## Session — 2026-09-01 15:45 UTC
+- Branch: `main`
+- Commit: `d879f3c` — S311 — deterministic modern-pro review selection + per-tenant nav logo height (#313)
+- Author: csdevore2
+- Files changed:
+  - PROJECT_MANIFEST.d/fix-s311-pls-homepage-review-selection-logo-height.md
+  - app/tenant/[slug]/_shells/modern-pro/ModernProNavbar.tsx
+  - app/tenant/[slug]/_shells/modern-pro/ModernProTestimonials.tsx
+  - app/tenant/[slug]/_shells/modern-pro/modernProTestimonialSelection.test.tsx
+  - app/tenant/[slug]/page.tsx
+  - shared/lib/tenant/resolve.ts
+  - shared/lib/tenant/types.ts
+- Next recommended action: **Two S311 close-ritual drafts are awaiting Scott's confirmation and
+  are NOT committed** — the `docs/ROADMAP.md` update and
+  `docs/handoffs/pestflow-pro-handoff-S311-shipped.md`. Commit both once he confirms; they carry
+  the follow-up list below.
+
+  **READ THIS BEFORE REASONING ABOUT ANY dang RENDER PATH: dang's public site is NOT served by
+  this repo.** `dang.pestflowpro.ai` returns 404. Kirk's live site is `dangpestcontrol.com`, served
+  from a SEPARATE STANDALONE REPO, and `tenants.custom_domain` for dang is
+  `admin.dangpestcontrol.com` (which does not resolve — NXDOMAIN). `ModernProTestimonials`, and
+  every other `app/tenant/[slug]/` shell, never renders for dang. This is easy to get wrong because
+  dang's `testimonials`, `page_content` and `settings` rows ARE here and reachable from the admin —
+  the data is here, the public render is not. It cost two wrong conclusions in one session.
+
+  Carried from S311: `getTestimonials()` still has no total order and four shells still consume it
+  (BoldLocal/CleanFriendly sort `featured` with a non-total comparator and no empty-text filter;
+  RusticRugged takes `[0]`); `RusticRuggedTestimonials.tsx:5` holds a hardcoded invented
+  testimonial; `'Licensed since 2017'` and `'Free 2-year warranty'` are tenant facts still sitting
+  in the irrigation preset; set pls `settings.branding.logo_height_px` to 32 once Vercel is READY
+  on main (S311 shipped the field and wrote no value). **DECISION PENDING, do not touch:** dang has
+  six `testimonials` rows with `source='Google'` and `google_review_id` NULL, initials-only names,
+  all six at clock time `15:01:36.775`, against 49 `google_outscraper` rows that all carry a real
+  ID. Also: the ROADMAP's "S300 guard is at state 2 of 3" line is STALE — S310 landed
+  `artificial-turf` in `IRRIGATION_CONTENT_MAP`, so the guard is at state 3 of 3 and closed; the
+  pending ROADMAP draft corrects it. PR #312 (S309 gate) is untouched and still blocked on the
+  Perplexity + Gemini verdicts.
