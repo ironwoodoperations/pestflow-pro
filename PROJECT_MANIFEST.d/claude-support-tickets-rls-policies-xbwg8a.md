@@ -308,3 +308,12 @@ it is recent.
 - Files changed:
   - REVIEW_S309_TENANT_SOURCE.md
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-09-01 17:26 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `f1d4e62` — S309 — round-2 verdicts recorded byte-exact in Appendices C and D
+- Author: Claude
+- Files changed:
+  - REVIEW_S309_TENANT_SOURCE.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
