@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../../../lib/supabase'
+import { useTenant } from '../../../context/TenantBootProvider'
 import type { Role } from '../../../lib/permissions'
 
 interface Member { user_id: string; email: string; role: string }
@@ -27,17 +28,24 @@ async function readFnError(error: unknown, fallback: string): Promise<string> {
 }
 
 export default function UsersSection() {
+  // S309 — the acting tenant now comes from the tenant the admin is actually looking
+  // at, not from the caller's profiles.tenant_id. The server re-verifies it with
+  // get_my_tenant_role(tenant_id) = 'admin', so naming a tenant grants nothing;
+  // what it fixes is an authorized admin with no profiles row, who previously saw an
+  // empty team list and got "Invitation failed." Every INVITED admin is in that state.
+  const { id: tenantId } = useTenant()
   const [members, setMembers] = useState<Member[]>([])
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState<{ email: string; role: Role }>({ email: '', role: 'user' })
   const [inviting, setInviting] = useState(false)
 
   const load = useCallback(async () => {
-    const { data, error } = await supabase.rpc('list_tenant_members')
+    setLoading(true)
+    const { data, error } = await supabase.rpc('list_tenant_members', { p_tenant_id: tenantId })
     if (error) toast.error(`Failed to load team: ${error.message}`)
     else setMembers((data || []) as Member[])
     setLoading(false)
-  }, [])
+  }, [tenantId])
 
   useEffect(() => { load() }, [load])
 
@@ -47,7 +55,7 @@ export default function UsersSection() {
     if (!email) return
     setInviting(true)
     const { data, error } = await supabase.functions.invoke('invite-team-member', {
-      body: { email, role: form.role },
+      body: { tenant_id: tenantId, email, role: form.role },
     })
     setInviting(false)
     if (error) { toast.error(await readFnError(error, 'Could not send the invitation.')); return }
@@ -58,7 +66,7 @@ export default function UsersSection() {
 
   async function handleResend(member: Member) {
     const { error } = await supabase.functions.invoke('invite-team-member', {
-      body: { email: member.email, role: member.role },
+      body: { tenant_id: tenantId, email: member.email, role: member.role },
     })
     if (error) toast.error(await readFnError(error, 'Could not resend the invitation.'))
     else toast.success('A fresh invitation link was sent.')

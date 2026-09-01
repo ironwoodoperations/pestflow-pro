@@ -223,7 +223,7 @@ raised conditions the database already meets.
 | 11 | Bind authorization to the mutation (one variable) | B | ⚠️ **OPEN — implementation discipline + test** |
 | 12 | Prove identity binding end-to-end with real JWTs | B | ⚠️ **OPEN — test matrix, six caller shapes** |
 | 13 | Audit invitation semantics (dedup scope, default role, acceptance re-check, audit fields) | B | ⚠️ **OPEN** |
-| 14 | Accept or remove the shared demo account's cross-tenant admin | B | 🔶 **NEEDS SCOTT — a policy decision, not code** |
+| 14 | Accept or remove the shared demo account's cross-tenant admin | B | ✅ **CLOSED — VERIFIED-EMPTY, not accepted-risk.** See below |
 | 15 | Rename `current_tenant_id()` → `legacy_profile_tenant_id()` | B | ⛔ **OUT OF SCOPE** by standing instruction — it is ROADMAP #8 and reaches ~70 policies across ~25 tables. Recorded, not actioned |
 
 **New, found during this verification and raised by neither model:**
@@ -232,6 +232,38 @@ raised conditions the database already meets.
 of them `anon` can call. Impact today is nil (`auth.uid()` is NULL without a JWT, so it
 returns NULL), but it is inconsistent with the other four and worth tightening when
 ROADMAP #8 is done.
+
+## Condition 14 — CLOSED as verified-empty, not accepted as a risk
+
+The finding was **correct in form and empty in fact.** It is recorded this way so a
+future reader does not reopen it as an outstanding privacy decision.
+
+The verdict reasoned that a shared credential holding `admin` in five tenants becomes
+"an aggregation point for five tenants' member directories" and that "every person with
+access to those shared credentials can enumerate those tenants' user email addresses."
+That is sound reasoning about a roster-listing RPC. It just does not describe this
+database.
+
+Verified live 2026-09-01 — each of the five demo tenants has **exactly one**
+`tenant_users` row, and it is `admin@demo.com` itself:
+
+| tenant | member rows | member emails | roles |
+|---|---|---|---|
+| apex-protect | 1 | `admin@demo.com` | admin |
+| coastal-pest | 1 | `admin@demo.com` | admin |
+| heartland-pest | 1 | `admin@demo.com` | admin |
+| metro-pest-concierge | 1 | `admin@demo.com` | admin |
+| urban-strike | 1 | `admin@demo.com` | admin |
+
+So after the change `admin@demo.com` sees five rosters each containing **only itself**.
+**No other party's email address is reachable through this RPC on any of the five.**
+There is no directory to aggregate. The disclosure noted in the Wave 2 submission —
+that the account goes from an empty Users list to a populated one — remains true and is
+still the correct behaviour; what it populates with is the account's own row.
+
+This closes on FACT, not on policy. It re-opens if and only if a second member is ever
+added to any demo tenant, at which point the verdict's reasoning applies in full and the
+question becomes a real one.
 
 ## Where the two verdicts contradict each other — F-01
 
@@ -301,6 +333,119 @@ substantive rejection of the two.
 6. **Condition 14 is Scott's** and gates nothing technical: is the shared
    `admin@demo.com` credential, published on `/demos/admin`, intended to expose five
    tenants' member email directories to whoever holds it?
+
+---
+
+# Wave 3 — implemented against the corrected conditions
+
+Scope was fixed by Scott and NOT exceeded. Items 1-5 and 7 are implemented; item 6 is a
+REPORT ONLY, below, because acting on it is scope growth.
+
+## What was built
+
+| # | Condition | Done |
+|---|---|---|
+| 1 | `p_tenant_id` REQUIRED — no default, no `current_tenant_id()` inside the function | ✅ migration |
+| 2 | `DROP FUNCTION public.list_tenant_members()` in the SAME transaction as the `(uuid)` create | ✅ migration |
+| 3 | `search_path = ''` + full qualification on BOTH helpers, proven behaviour-neutral | ✅ see proof below |
+| 4 | Authorization bound to the mutation through ONE variable | ✅ edge function |
+| 5 | Nine-shape test matrix | ✅ `supabase/tests/s309_tenant_source_matrix.sql` |
+| 6 | Invitation-semantics audit | 📋 **REPORTED ONLY — see below** |
+| 7 | `NOTIFY pgrst, 'reload schema'` | ✅ migration |
+
+## Condition 3 — behaviour-neutrality PROVEN, not asserted
+
+The S308 B1 method: capture the access matrix, change nothing in production, compare.
+
+`get_my_tenant_role` was rebuilt under a throwaway name
+(`public._s309_probe_role`) carrying the S309 body verbatim — `search_path = ''`, fully
+qualified — and both functions were evaluated over the **full cross product of every
+user and every tenant** under a simulated JWT.
+
+| | value |
+|---|---|
+| pairs evaluated | **63** (7 users x 9 tenants) |
+| mismatches (`old IS DISTINCT FROM new`) | **0** |
+| non-NULL results, old / new | **12 / 12** |
+| matrix md5, before | `f01541121cef8c385f19287b15278d72` |
+| matrix md5, new body | `f01541121cef8c385f19287b15278d72` — **identical** |
+
+The probe was dropped immediately (`0` functions matching `_s309%` remain). **The live
+`get_my_tenant_role` was never modified to run this test**, so the deploy order below is
+still intact and production carries no trace of the experiment.
+
+The 12 non-NULL pairs include a non-admin (`scottdevore2@gmail.com` is `user` on `dang`),
+a multi-tenant admin (`admin@demo.com`, five tenants) and a single-tenant admin — the
+shapes that matter are all exercised rather than being all-admin.
+
+## Condition 6 — invitation semantics, REPORTED NOT CHANGED
+
+Seven findings from reading `invite-team-member`. **Nothing here was altered.** Several
+are pre-existing and none is caused by the tenant-source change; they are the answer to
+"audit invitation semantics before trusting the admin gate."
+
+1. **Dedup scope is correct.** The upsert is `onConflict: 'tenant_id,user_id'`, backed by
+   the real `UNIQUE (tenant_id, user_id)` constraint. Re-inviting updates the role in
+   that tenant only. No cross-tenant collision. ✅
+2. **There is no default role, and admin is reachable in one step.** `role` is required
+   and validated against `['admin','manager','user']`, so nothing is silently granted —
+   but an admin can mint another **admin** in the same single call, with no second
+   authorization. Gemini's condition asked for a non-admin default unless a separately
+   authorized workflow grants admin. One compromised admin session can therefore create
+   a persistent second admin quietly.
+3. **An existing platform user is added with NO consent step.** If the email already
+   exists globally, the function resolves the user id (via a `magiclink` link that is
+   generated and never delivered) and **immediately upserts membership**. Any tenant
+   admin can attach any existing user to their tenant by knowing their email; that user
+   is simply told afterwards. Bounded — it grants access TO the inviter's tenant and
+   discloses nothing about the invitee's other tenants — but the invitee never agreed.
+4. **Membership is written BEFORE the invite is accepted.** For a new user the
+   `tenant_users` row exists the moment the invite is sent, whether or not they ever set
+   a password. There is no `status` / `invited_at` / `accepted_at` column, so the roster
+   cannot distinguish a pending invite from an active member, and an abandoned invite
+   leaves a permanent member row.
+5. **No audit trail whatsoever.** No actor, verified tenant, requested tenant, target
+   email, assigned role or correlation id is recorded anywhere. The only trace of a
+   failure is a `console.error`. Condition 13 asks for audit events; there is no table
+   for them.
+6. **The response is an account-existence oracle.** It returns `{status:'invited'}` for a
+   new email and `{status:'added'}` for one that already has a platform account. Any
+   authenticated tenant admin can enumerate which addresses have accounts, one call at a
+   time. (This is distinct from the anti-enumeration shape on the 403/404 paths, which is
+   intact and was not touched.)
+7. **"Resend" may not resend anything actionable.** `handleResend` re-invokes the same
+   endpoint; for an EXISTING user that takes branch 3 and sends an "added to your team"
+   email pointing at the login page, not a fresh set-password link. The button says
+   resend invitation.
+
+**Recommendation, for a separate brief:** 4 and 5 together are the ones worth doing first
+— a `status` column plus an audit row make 2, 3 and 6 observable rather than invisible.
+6 is a one-line change (return an identical status either way) but it changes a response
+shape the frontend switches on, so it is not a drive-by.
+
+## Deploy order — MANDATORY, not preferred
+
+A required parameter breaks the old frontend bundle the instant the migration lands.
+The migration in this PR is **written but NOT applied**; the probe above deliberately
+avoided touching the live function precisely so this ordering holds.
+
+1. Merge — Vercel builds the frontend that sends `tenant_id`.
+2. Wait for Vercel **READY**. Not "deployed", READY.
+3. **Then** Claude.ai applies the migration and deploys the edge function.
+4. Verify by re-reading the deployed function body and `pg_get_functiondef`, and by
+   running `supabase/tests/s309_tenant_source_matrix.sql`. **A version increment is not
+   evidence** (S305).
+
+## Note for the resubmission prompt
+
+The adversarial framing used on the first submission — "I want findings, not
+reassurance", "attack this argument" — should be dropped. It makes a null finding read
+as a failed assignment, so under conservative-wins the gate rejects nearly everything and
+stops carrying information. Ask for a straight verdict with reasoning instead.
+
+**Keep falsification question (a) exactly as written.** It is what exposed that Gemini's
+"structurally WEAKER" answer was supported by an example describing the *authorized*
+case — the single most useful output of the whole gate.
 
 ---
 
