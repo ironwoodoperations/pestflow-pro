@@ -246,3 +246,74 @@ holds ONE row (`scott@homeflowpro.ai`), verified live — `is_operator()` is fal
 this log is a dated record, but it must not be re-propagated: ROADMAP already notes
 that a false claim in `PROJECT_MANIFEST.d/` is immortal and gets read first because
 it is recent.
+
+---
+## Session — 2026-08-31 19:36 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `1c2e7d9` — S309 Wave 2 — validator gate submission package (NO implementation)
+- Author: Claude
+- Files changed:
+  - REVIEW_S309_TENANT_SOURCE.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-09-01 16:28 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `ca7d3cc` — S309 gate CLOSED — both verdicts REJECT, recorded verbatim + arbitration
+- Author: Claude
+- Files changed:
+  - REVIEW_S309_TENANT_SOURCE.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-09-01 16:34 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `51e9e7a` — S309 gate — correct the verdict attribution (A is Gemini, B is Perplexity)
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.d/claude-support-tickets-rls-policies-xbwg8a.md
+  - REVIEW_S309_TENANT_SOURCE.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-09-01 16:55 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `6f12fb6` — S309 Wave 3 — required tenant_id, hardened definers, nine-shape matrix
+- Author: Claude
+- Files changed:
+  - REVIEW_S309_TENANT_SOURCE.md
+  - src/components/admin/settings/UsersSection.tsx
+  - supabase/functions/invite-team-member/index.ts
+  - supabase/migrations/20260901170000_s309_required_tenant_id.sql
+  - supabase/migrations/s309_required_tenant_id_rollback.sql
+  - supabase/tests/s309_tenant_source_matrix.sql
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-09-01 17:17 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `20937c9` — S309 gate round 2 — APPROVE WITH CONDITIONS, both conditions resolved
+- Author: Claude
+- Files changed:
+  - REVIEW_S309_TENANT_SOURCE.md
+  - supabase/migrations/20260901170000_s309_required_tenant_id.sql
+  - supabase/tests/s309_tenant_source_matrix.sql
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-09-01 17:20 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `936248e` — S309 — record the round-2 verdict identification criteria in Appendices C and D
+- Author: Claude
+- Files changed:
+  - REVIEW_S309_TENANT_SOURCE.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-09-01 17:26 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `f1d4e62` — S309 — round-2 verdicts recorded byte-exact in Appendices C and D
+- Author: Claude
+- Files changed:
+  - REVIEW_S309_TENANT_SOURCE.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]

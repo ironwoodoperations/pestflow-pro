@@ -14,7 +14,18 @@
 //   (b) service: service-role key. generateLink REQUIRES the service role; a caller-JWT
 //       client would 403. Used solely for generateLink + the membership upsert + lookups.
 //
-// tenant_id is ALWAYS server-derived (the caller's profiles.tenant_id), never from the body.
+// tenant_id (S309): supplied by the CALLER in the body, then VERIFIED server-side.
+//   profiles.tenant_id was never the authorization step -- it supplied a CANDIDATE
+//   tenant, and get_my_tenant_role(...) = 'admin' against tenant_users is what
+//   authorizes. S273 retired profiles as membership truth and S308 replaced it as the
+//   RLS membership source; this consumer had not moved, so an admin with NO profiles
+//   row got a 403 and could not invite anyone. Every INVITED admin is in that state,
+//   because this very function writes only tenant_users.
+//   The caller may name any tenant; naming one they are not an admin of returns the
+//   same 403 it always did. Validator gate 2026-09-01: both models REJECTED the first
+//   spec; this is the re-scoped form. See REVIEW_S309_TENANT_SOURCE.md.
+//   ONE VARIABLE: the tenantId that is verified below is the same tenantId written to
+//   tenant_users and used for every lookup. The body field is read exactly once.
 //
 // Deploy: supabase functions deploy invite-team-member --project-ref biezzykcgzkrwdgqpsar
 
@@ -33,6 +44,9 @@ const CORS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 const ROLES = ['admin', 'manager', 'user'] as const
+// Shape gate for the caller-supplied tenant_id (S309). Rejecting a non-uuid here
+// keeps a malformed value a 400 rather than a 500 from Postgres.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', ...CORS } })
 
@@ -67,17 +81,23 @@ export async function handler(req: Request): Promise<Response> {
       auth: { persistSession: false, autoRefreshToken: false },
     })
 
-    // tenant_id SERVER-DERIVED from the caller's binding — never from the body
-    const { data: profile } = await service
-      .from('profiles').select('tenant_id').eq('id', user.id).maybeSingle()
-    const tenantId: string | null = profile?.tenant_id ?? null
-    if (!tenantId) return json({ error: 'Forbidden' }, 403)
+    const body = await req.json().catch(() => null)
 
-    // FRESH admin gate (re-read from DB via the caller; strict equality)
+    // tenant_id comes from the body and is REQUIRED. Read ONCE into a single
+    // variable; nothing below re-reads body.tenant_id. Shape-checked before use so a
+    // malformed value is a 400, not a database error.
+    const rawTenantId = body?.tenant_id
+    if (typeof rawTenantId !== 'string' || !UUID_RE.test(rawTenantId)) {
+      return json({ error: 'A valid tenant_id is required.' }, 400)
+    }
+    const tenantId: string = rawTenantId
+
+    // THE authorization step, unchanged: re-read fresh from the DB through the
+    // CALLER's client, strict equality. A caller naming a tenant they do not admin
+    // gets the same 403 as before. Never trusts a JWT claim (stale after demotion).
     const { data: callerRole } = await callerClient.rpc('get_my_tenant_role', { p_tenant_id: tenantId })
     if (callerRole !== 'admin') return json({ error: 'Forbidden' }, 403)
 
-    const body = await req.json().catch(() => null)
     const email = (body?.email || '').trim().toLowerCase()
     const role  = body?.role
     if (!validEmail(email))            return json({ error: 'A valid email is required.' }, 400)
