@@ -143,6 +143,21 @@ $fn$;
 -- guidance for SECURITY DEFINER). PUBLIC gets EXECUTE on a new function by default;
 -- revoke it, then grant only what actually calls this. `anon` is NOT granted — the
 -- pre-S309 function did not grant it either, so this preserves that posture.
+--
+-- ^^^ CORRECTION, 2026-09-01, appended rather than rewritten (dated-record convention).
+-- THE LINE ABOVE IS WRONG. `anon` WAS granted. Two facts compound:
+--   1. CREATE FUNCTION inherits Supabase's ALTER DEFAULT PRIVILEGES on schema public,
+--      which grant EXECUTE to anon, so the function was born with anon=X/postgres.
+--   2. REVOKE ALL ... FROM PUBLIC does NOT remove a role-specific grant — PUBLIC and
+--      anon are different grantees.
+-- So this REVOKE never touched anon, and the function landed contradicting this comment.
+-- get_my_tenant_role escaped it only because CREATE OR REPLACE preserves an existing ACL
+-- instead of re-applying default privileges — same block, different outcome, purely
+-- CREATE vs CREATE OR REPLACE.
+-- Nothing was exposed (auth.uid() is NULL for anon, so the strict = 'admin' fails
+-- closed). Fixed by 20260901180000_s309_revoke_anon_list_tenant_members.sql.
+-- THE LESSON: re-read proacl AFTER creating a function. Never assume a REVOKE FROM
+-- PUBLIC covered the role grants.
 REVOKE ALL ON FUNCTION public.list_tenant_members(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.list_tenant_members(uuid) TO authenticated, service_role;
 

@@ -1,0 +1,49 @@
+-- S309 follow-up — remove the anon EXECUTE grant that CREATE FUNCTION inherited.
+--
+-- THIS FILE IS THE REPO TRAIL FOR A MIGRATION ALREADY APPLIED VIA MCP.
+-- It was applied to production first and written down afterwards, which is the wrong
+-- order; the file exists so the repo and the database agree. Re-running it is a no-op.
+--
+-- WHY IT WAS NEEDED
+-- `20260901170000_s309_required_tenant_id.sql` creates `list_tenant_members(uuid)` and
+-- then does:
+--
+--     REVOKE ALL ON FUNCTION public.list_tenant_members(uuid) FROM PUBLIC;
+--     GRANT EXECUTE ON FUNCTION public.list_tenant_members(uuid) TO authenticated, service_role;
+--
+-- and its comment claims `anon` is not granted. That claim was WRONG, for two reasons
+-- that compound:
+--
+--   1. `CREATE FUNCTION` inherits Supabase's `ALTER DEFAULT PRIVILEGES` on schema
+--      `public`, which grant EXECUTE to `anon` (among others). The new function was
+--      therefore born with `anon=X/postgres` in its ACL.
+--   2. `REVOKE ALL ... FROM PUBLIC` does **NOT** remove a ROLE-SPECIFIC grant. PUBLIC
+--      and `anon` are different grantees. Revoking the former leaves the latter intact.
+--
+-- So the migration's own REVOKE did not do what its comment said, and
+-- `list_tenant_members(uuid)` landed with `anon` able to execute it — contradicting the
+-- file that created it.
+--
+-- `get_my_tenant_role(uuid)` escaped this ONLY because it is written as
+-- `CREATE OR REPLACE` over an existing function, and REPLACE preserves the existing ACL
+-- rather than re-applying default privileges. Same file, same block, different outcome,
+-- purely because of CREATE vs CREATE OR REPLACE.
+--
+-- NOTHING WAS EXPOSED. `list_tenant_members` gates on
+-- `get_my_tenant_role(p_tenant_id) = 'admin'`, and for an `anon` caller `auth.uid()` is
+-- NULL, so the role resolves NULL, the strict equality is false, and the function
+-- returns zero rows. The defect was that the ACL contradicted the migration that
+-- created it — a correctness and auditability problem, not a disclosure.
+--
+-- SAFE HERE, AND NOT A GENERAL PATTERN.
+-- Revoking `anon` from this function is safe because **zero RLS policies reference it**.
+-- Contrast `is_operator()` and `is_tenant_member(uuid)`, which DO grant `anon` on
+-- purpose: policies on public tenant surfaces evaluate them, and an RLS predicate
+-- evaluates AS THE QUERYING ROLE, so a role without EXECUTE cannot evaluate a policy
+-- that calls the function and every such policy fails closed. That is S308's B2, which
+-- was tested and disproved the "just revoke it" instinct. Do not copy this REVOKE onto
+-- a helper that appears in a policy without re-checking `pg_policies` first.
+
+REVOKE EXECUTE ON FUNCTION public.list_tenant_members(uuid) FROM anon;
+
+NOTIFY pgrst, 'reload schema';
