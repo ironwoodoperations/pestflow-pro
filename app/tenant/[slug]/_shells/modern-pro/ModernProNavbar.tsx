@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X, ChevronDown } from 'lucide-react';
 import { useTenant } from '../../TenantProvider';
+import { normalizeLogoHeightPx } from '../../../../../shared/lib/tenant/types';
 
 const NAV_LINKS = [
   { label: 'Locations', href: '/service-area' },
@@ -43,6 +44,10 @@ export function ModernProNavbar({ servicePages, showBlog = true }: Props) {
   const tenant = useTenant();
   const pathname = usePathname();
   const logoUrl = tenant.logo_url ?? '';
+  // S311 — per-tenant nav logo height. Normalized again here (the call is
+  // idempotent) so a hand-built Tenant literal that bypasses resolveSettings
+  // still renders at a sane height rather than `heightpx`.
+  const logoHeightPx = normalizeLogoHeightPx(tenant.logo_height_px);
   const ctaText = tenant.cta_text || 'Get a Free Quote';
   const businessName = tenant.business_name || tenant.name;
 
@@ -98,7 +103,7 @@ export function ModernProNavbar({ servicePages, showBlog = true }: Props) {
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-3 text-2xl tracking-wide">
             {logoUrl
-              ? <img src={logoUrl} alt={businessName} style={{ height: '40px', objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+              ? <img src={logoUrl} alt={businessName} style={{ height: `${logoHeightPx}px`, objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
               : <span style={{ color: 'var(--color-nav-text)', fontFamily: 'var(--font-heading)', fontWeight: 700 }}>{businessName}</span>
             }
           </Link>
