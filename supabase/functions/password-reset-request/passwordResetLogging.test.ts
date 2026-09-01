@@ -48,13 +48,42 @@ describe('the hard constraint: no bearer credential or address reaches a log lin
     expect(offenders).toEqual([])
   })
 
-  it('logs an email only as a salted-free SHA-256 tag, never in full', () => {
-    expect(SRC).toContain("crypto.subtle.digest('SHA-256'")
-    // The tag is truncated — a full digest is still a stable identifier but needlessly long.
-    expect(SRC).toMatch(/slice\(0,\s*4\)/)
-    // And the caveat is recorded, because "hashed" invites false confidence: email
-    // addresses are low-entropy, so a holder of logs plus a candidate list can confirm one.
-    expect(SRC).toContain('NOT A PRIVACY GUARANTEE')
+  it('emits NO hash or derivative of the address either — the tag was removed', () => {
+    // Gate round 1, non-blocking, taken from both models. An earlier revision logged a
+    // truncated SHA-256 of the address as a correlation key. Removing it deletes the
+    // privacy caveat rather than documenting it. A regression that reintroduces hashing
+    // fails here, and so does a keyed HMAC — a secret to manage for a need we do not have.
+    expect(CODE).not.toMatch(/crypto\.subtle\.digest/)
+    expect(CODE).not.toMatch(/emailTag/)
+    expect(CODE).not.toMatch(/\bHmac\b|importKey/)
+    expect(CODE).not.toMatch(/tag=\$\{/)
+  })
+
+  it('correlates with a random per-request id instead', () => {
+    expect(CODE).toMatch(/crypto\.randomUUID\(\)/)
+    expect(CODE).toMatch(/rid=\$\{rid\}/)
+  })
+
+  it('BLOCKING 1: generate_link_failed logs allowlisted fields ONLY', () => {
+    // The brief originally asked for error.message. That instruction was the defect. An SDK
+    // error object carries more than its displayed message, and a provider message is an
+    // unbounded upstream string that could contain the address or a URL.
+    const glLine = logCalls.find((c) => c.includes('generate_link_failed'))
+    expect(glLine).toBeDefined()
+    expect(glLine).toMatch(/status=/)
+    expect(glLine).toMatch(/code=/)
+    expect(glLine).not.toMatch(/\.message/)
+    expect(glLine).not.toMatch(/\$\{\s*error\s*\}/)
+    expect(glLine).not.toMatch(/detail=/)
+  })
+
+  it('never interpolates a raw error object into any log line', () => {
+    // `detail=${msg}` on the throw/unhandled paths is a String()/Error.message of OUR OWN
+    // catch, not a provider payload — those stay. What must never appear is the error
+    // object itself, whose shape is upstream-controlled.
+    for (const c of logCalls) {
+      expect(c).not.toMatch(/\$\{\s*(error|err|e)\s*\}/)
+    }
   })
 })
 
@@ -73,6 +102,13 @@ describe('every silent branch now has a distinct, stable reason code', () => {
     const unprefixed = logCalls.filter((c) => !c.includes('LOG_PREFIX'))
     expect(unprefixed).toEqual([])
     expect(SRC).toContain("const LOG_PREFIX = '[password-reset-request]'")
+  })
+
+  it('BLOCKING 3: a non-POST scanner produces NO log line at all', () => {
+    // Letting an unauthenticated scanner drive unbounded log writes is the amplification
+    // concern the gate raised. OPTIONS already returns before any logging; GET/HEAD must too.
+    expect(CODE).toMatch(/if \(req\.method !== 'POST'\) return ok\(\)/)
+    expect(CODE).not.toMatch(/reason=bad_method/)
   })
 
   it('logs invocation AND outcome, so an absence of logs is unambiguous', () => {
@@ -102,7 +138,25 @@ describe('the response contract S313 promised not to touch', () => {
     expect(SRC).toContain("status: 200, headers: { 'Content-Type': 'application/json', ...CORS },")
   })
 
-  it('keeps the 700ms floor that defeats the timing oracle', () => {
+  it('keeps the 700ms floor — risk reduction, NOT proof of indistinguishability', () => {
+    // Gate round 1, Perplexity's framing, adopted. Earlier wording in the source claimed a
+    // fast path "can't be timed as an oracle"; that overclaimed. The floor bounds the fast
+    // path from below; it does not demonstrate no residual distribution difference survives
+    // at p95/p99 under concurrency. This asserts the corrected language stays corrected.
+    expect(SRC).toContain('RISK REDUCTION, NOT PROOF OF TIMING INDISTINGUISHABILITY')
+    // The overclaim may appear EXACTLY ONCE — inside the correction that quotes it. A
+    // restoration would make it appear twice, or once without the retraction beside it.
+    // (A blanket `not.toMatch` fails on the correction's own quotation, which is how the
+    // first run of this file failed: prose about a removed claim is not the claim.)
+    const overclaim = SRC.match(/can't be timed as an oracle/g) ?? []
+    expect(overclaim).toHaveLength(1)
+    expect(SRC).toMatch(/can't be timed as an oracle"; that overclaimed/)
+    // The OTHER "timing oracle" mentions concern detached SEND latency and are still true:
+    // the send is detached, so its latency is not in the response path at all.
+    expect(SRC).toMatch(/email-send latency \(a timing oracle\)/)
+  })
+
+  it('computes the floor immediately before output (BLOCKING 2, unchanged from main)', () => {
     expect(SRC).toContain('const MIN_RESPONSE_MS           = 700')
     expect(SRC).toContain('if (elapsed < MIN_RESPONSE_MS) await sleep(MIN_RESPONSE_MS - elapsed)')
   })

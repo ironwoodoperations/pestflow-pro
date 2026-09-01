@@ -7,8 +7,14 @@
 // toggle silently reverts to ON after a deploy — re-check it stays OFF after every deploy.
 //
 // Anti-enumeration (validator M3): the response body is IDENTICAL on every path ({status:'ok'},
-// never any Supabase error text), and total response time is padded to a fixed minimum so a
-// nonexistent-email fast path can't be timed as an oracle.
+// never any Supabase error text), and total response time is padded to a fixed minimum.
+//
+// THE FLOOR IS RISK REDUCTION, NOT PROOF OF TIMING INDISTINGUISHABILITY. Earlier wording here
+// said a fast path "can't be timed as an oracle"; that overclaimed. A fixed floor bounds the
+// fast path from below, which removes the obvious signal — it does not demonstrate that no
+// residual distribution difference survives at p95/p99 under concurrency. Establishing that
+// needs a load test, which is deliberately not in this change's scope. Do not restore the
+// stronger claim without the measurement behind it.
 //
 // S313 — OBSERVABILITY. Errors used to be swallowed by three EMPTY catch blocks and a
 // runDetached() that did `p.catch(() => {})`, so tenant-not-found, generateLink failure and a
@@ -49,23 +55,15 @@ const LOG_PREFIX = '[password-reset-request]'
 // Correlates every line from ONE invocation while recording nothing about the caller.
 const newRid = (): string => crypto.randomUUID().slice(0, 8)
 
-// A stable tag for an address, so repeat attempts by the same person can be correlated
-// across invocations without the address itself appearing in the logs.
-//
-// THIS IS NOT A PRIVACY GUARANTEE AND MUST NOT BE TREATED AS ONE. Email addresses are
-// low-entropy and enumerable, so anyone holding BOTH log access and a candidate list can
-// confirm a guess by hashing it. Log access stays sensitive. What this buys is that a
-// casual reader of the logs does not see customer addresses, and that a leaked log line
-// is not itself a mailing list.
-async function emailTag(email: string): Promise<string> {
-  try {
-    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(email))
-    return Array.from(new Uint8Array(buf)).slice(0, 4)
-      .map((b) => b.toString(16).padStart(2, '0')).join('')
-  } catch {
-    return 'unavailable'
-  }
-}
+// GATE ROUND 1, non-blocking, taken from BOTH models: there is NO email tag. An earlier
+// revision logged a truncated SHA-256 of the address as a correlation key, with a comment
+// admitting it was not a privacy guarantee — addresses are low-entropy, so log access plus a
+// candidate list confirms a guess. Both models preferred removing it, and they are right:
+// this DELETES the caveat rather than documenting it. `rid` above is a random per-request id
+// and correlates lines within one invocation, which is all the correlation that is needed.
+// Cross-request correlation by address is not a requirement — with two live tenants, slug +
+// timestamp + outcome locates any request. Do NOT reintroduce a hash, and do NOT reach for a
+// keyed HMAC either: that is a secret to manage for a need we do not have.
 
 // Run a promise without blocking the response, so total response time never depends on
 // email-send latency (a timing oracle). Uses EdgeRuntime.waitUntil to keep the worker alive
@@ -78,10 +76,10 @@ async function emailTag(email: string): Promise<string> {
 // CAVEAT: without EdgeRuntime.waitUntil the worker may be torn down before this catch runs, so
 // an absent send_failed line is not proof the send succeeded. The `send_dispatched` line below
 // is what proves the attempt was made.
-function runDetached(p: Promise<unknown>, rid: string, tag: string): void {
+function runDetached(p: Promise<unknown>, rid: string): void {
   const logged = p.catch((e) => {
     const msg = e instanceof Error ? e.message : String(e)
-    console.error(`${LOG_PREFIX} rid=${rid} tag=${tag} reason=send_failed detail=${msg}`)
+    console.error(`${LOG_PREFIX} rid=${rid} reason=send_failed detail=${msg}`)
   })
   const er = (globalThis as { EdgeRuntime?: { waitUntil?: (p: Promise<unknown>) => void } }).EdgeRuntime
   if (er?.waitUntil) er.waitUntil(logged)
@@ -115,7 +113,6 @@ export async function handler(req: Request): Promise<Response> {
   // `unset` so a fall-through cannot quietly read as success — an outcome nobody assigned
   // is itself the finding.
   let outcome = 'unset'
-  let tag = 'none'
   const ok = async (): Promise<Response> => {
     const elapsed = Date.now() - started
     if (elapsed < MIN_RESPONSE_MS) await sleep(MIN_RESPONSE_MS - elapsed)
@@ -125,21 +122,22 @@ export async function handler(req: Request): Promise<Response> {
   }
 
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
-  if (req.method !== 'POST') {
-    console.warn(`${LOG_PREFIX} rid=${rid} reason=bad_method method=${req.method}`)
-    return ok()
-  }
+  // GATE ROUND 1, BLOCKING 3 (the in-scope half). Non-POST returns WITHOUT logging. A GET or
+  // HEAD on a public unauthenticated endpoint is a scanner, and letting a scanner drive
+  // unbounded log writes is the amplification concern the gate raised. Preflight (OPTIONS)
+  // already returns above without logging.
+  if (req.method !== 'POST') return ok()
 
-  // Invocation is logged unconditionally, so an ABSENCE of logs is unambiguous: it means the
-  // function was never called, not that it ran and stayed quiet. Without this line the two
-  // are indistinguishable, which is exactly the state S313 is fixing.
+  // Logged for every POST, so an ABSENCE of logs is unambiguous: it means the function was
+  // never called, not that it ran and stayed quiet. Deliberately placed AFTER the method
+  // check (scanners do not log) and BEFORE email validation (distinguishing junk input from
+  // real input is the point).
   console.log(`${LOG_PREFIX} rid=${rid} invoked`)
 
   try {
     const body = await req.json().catch(() => null)
     const email = (body?.email || '').trim().toLowerCase()
     const slug = slugFromRequest(req)
-    if (email) tag = await emailTag(email)
 
     if (validEmail(email) && slug) {
       const service = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -164,39 +162,51 @@ export async function handler(req: Request): Promise<Response> {
             const { subject, html, text } = recoveryEmail(businessName, link)
             // Detached: the response must not wait on Resend, or send latency leaks as a
             // timing oracle distinguishing existing vs nonexistent emails (M3).
-            runDetached(sendEmail({ to: email, subject, html, text, fromName: businessName }), rid, tag)
+            runDetached(sendEmail({ to: email, subject, html, text, fromName: businessName }), rid)
             // The send is detached, so this records only that the attempt was DISPATCHED.
             // Delivery success is not knowable here; a send_failed line above is.
             outcome = 'send_dispatched'
           } else if (error) {
-            // The ordinary nonexistent-email case lands here too. It is a warn, not an error:
-            // expected, and the caller is told nothing either way.
+            // GATE ROUND 1, BLOCKING 1, BOTH MODELS. The brief originally asked for
+            // error.message here; that instruction was the defect, and it was Scott's, not
+            // the models'. An SDK error object carries more than its displayed message, and a
+            // provider message is an unbounded upstream string that can contain the address,
+            // a URL, or anything a future SDK version decides to put there.
+            //
+            // ONLY ALLOWLISTED, STRUCTURED FIELDS ARE LOGGED. Never the raw message, never the
+            // error object. If a human-readable string is ever needed, map a KNOWN code to one
+            // of OUR OWN fixed internal strings — do not sanitize-and-pass-through, because
+            // that re-opens the same hole one upstream change later.
+            //
+            // The ordinary nonexistent-email case lands here too, so this is a warn, not an
+            // error: expected, and the caller is told nothing either way.
+            const e = error as { status?: number; code?: string; name?: string }
             console.warn(
-              `${LOG_PREFIX} rid=${rid} tag=${tag} reason=generate_link_failed ` +
-              `status=${(error as { status?: number }).status ?? 'none'} detail=${error.message}`,
+              `${LOG_PREFIX} rid=${rid} reason=generate_link_failed ` +
+              `status=${e.status ?? 'null'} code=${e.code ?? e.name ?? 'unknown'}`,
             )
             outcome = 'generate_link_failed'
           } else {
             // generateLink reported success but returned no token. Nothing to send, and
             // nothing previously distinguished this from a completed send.
-            console.error(`${LOG_PREFIX} rid=${rid} tag=${tag} reason=no_hashed_token`)
+            console.error(`${LOG_PREFIX} rid=${rid} reason=no_hashed_token`)
             outcome = 'no_hashed_token'
           }
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e)
-          console.error(`${LOG_PREFIX} rid=${rid} tag=${tag} reason=generate_link_threw detail=${msg}`)
+          console.error(`${LOG_PREFIX} rid=${rid} reason=generate_link_threw detail=${msg}`)
           outcome = 'generate_link_threw'
         }
       } else {
         // The slug parsed but names no tenant. On `www.pestflowpro.ai` this fires with
         // slug=www — see the apex finding in the PR body.
-        console.warn(`${LOG_PREFIX} rid=${rid} tag=${tag} reason=tenant_not_found slug=${slug}`)
+        console.warn(`${LOG_PREFIX} rid=${rid} reason=tenant_not_found slug=${slug}`)
         outcome = 'tenant_not_found'
       }
     } else if (!slug) {
       // slugFromRequest returned null: the apex, a custom domain, or no Origin/Referer.
       // The function then does NOTHING and still answers 200 — structurally dead here.
-      console.warn(`${LOG_PREFIX} rid=${rid} tag=${tag} reason=no_slug`)
+      console.warn(`${LOG_PREFIX} rid=${rid} reason=no_slug`)
       outcome = 'no_slug'
     } else {
       console.warn(`${LOG_PREFIX} rid=${rid} reason=invalid_email`)
@@ -204,7 +214,7 @@ export async function handler(req: Request): Promise<Response> {
     }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
-    console.error(`${LOG_PREFIX} rid=${rid} tag=${tag} reason=unhandled detail=${msg}`)
+    console.error(`${LOG_PREFIX} rid=${rid} reason=unhandled detail=${msg}`)
     outcome = 'unhandled'
   }
 
