@@ -823,16 +823,32 @@ REJECT
 
 # Appendix C — Gemini verdict, round 2 (VERBATIM)
 
-> ⚠️ **NOT YET SUPPLIED.** The round-2 arbitration above was provided by Scott in
-> summary form — the BLOCKING conditions, the accepted and declined non-blocking items,
-> and the APPROVE WITH CONDITIONS outcome — but the raw verdict TEXTS were not included
-> in that message.
+> ⚠️ **NOT YET SUPPLIED.** The round-2 arbitration above arrived in summary form. The
+> raw verdict TEXTS have not yet been pasted, so these two slots stay empty.
 >
-> **Nothing here is reconstructed from the summary.** Paraphrasing a verdict into a slot
-> labelled VERBATIM would make the record worse than leaving it empty, because a future
-> reader cannot tell a reconstruction from a transcript. Replace this block with the raw
-> Gemini output, unedited, using the same non-fenced marker convention as Appendices A
-> and B — the verdicts contain their own code fences, so they must not be wrapped in one.
+> **Nothing here is reconstructed.** Paraphrasing a verdict into a slot labelled VERBATIM
+> would make the record worse than leaving it empty: a future reader cannot tell a
+> reconstruction from a transcript, and the whole value of this appendix is that they
+> never have to wonder. The texts must be pasted **from the source**, not relayed through
+> a summary — a copy of a copy is a re-transcription and defeats the convention.
+>
+> **HOW TO TELL THE TWO APART** (recorded so the round-1 attribution error cannot
+> recur — that round was first filed with the models reversed, and was corrected only
+> after the fact):
+>
+> | | Appendix C — **GEMINI** | Appendix D — **PERPLEXITY** |
+> |---|---|---|
+> | source links | **none** | **inline citations** — aws.amazon, cybertec-postgresql, supabase, pentestly, docs.postgrest |
+> | structure | numbered sections, ends with a **"Findings Summary"** table | prose with cited claims |
+> | BLOCKING shape | **single** condition: the missing `GRANT EXECUTE` on `get_my_tenant_role(uuid)` | **two-part**: dependency verification **AND** the EXECUTE permission |
+>
+> The citation-style tell is the reliable signal; sentence order in the delivering
+> message is not, and that is exactly what went wrong in round 1.
+>
+> Paste the raw output unedited between the markers below, using the same **non-fenced**
+> convention as Appendices A and B — the verdicts contain their own code fences, so
+> wrapping them in one would break them. Then checksum both and record the byte counts
+> beside A's 7,882 B and B's 22,288 B.
 
 <!-- BEGIN APPENDIX C VERDICT — BYTE-EXACT, DO NOT EDIT -->
 [PASTE GEMINI ROUND-2 VERDICT VERBATIM — NOT YET SUPPLIED]
@@ -840,7 +856,10 @@ REJECT
 
 # Appendix D — Perplexity verdict, round 2 (VERBATIM)
 
-> ⚠️ **NOT YET SUPPLIED.** Same convention and same reason as Appendix C.
+> ⚠️ **NOT YET SUPPLIED.** Same convention and same reason as Appendix C, whose table
+> gives the test for confirming this slot really is the Perplexity text: **inline
+> citations present**, and a **two-part** BLOCKING verdict covering dependency
+> verification as well as the EXECUTE permission.
 
 <!-- BEGIN APPENDIX D VERDICT — BYTE-EXACT, DO NOT EDIT -->
 [PASTE PERPLEXITY ROUND-2 VERDICT VERBATIM — NOT YET SUPPLIED]
