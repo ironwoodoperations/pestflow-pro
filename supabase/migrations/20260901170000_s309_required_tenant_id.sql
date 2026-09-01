@@ -63,9 +63,37 @@ AS $fn$
     AND tu.tenant_id = p_tenant_id;
 $fn$;
 
+-- GATE ROUND 2, BLOCKING 1 (both models). This REPRODUCES THE LIVE ACL; it is NOT new
+-- hardening. Production today is already
+--     {postgres=X/postgres, authenticated=X/postgres, service_role=X/postgres}
+-- with PUBLIC absent and `authenticated` holding an EXPLICIT grant, so the 42501 both
+-- models predicted cannot occur here — CREATE OR REPLACE preserves an existing ACL.
+-- It is added for a reason neither model could see: on a FRESH database this file runs
+-- as a plain CREATE and would pick up the default PUBLIC EXECUTE. The migration must
+-- rebuild production, not diverge from it.
+--
+-- READ THIS BEFORE COPYING THE PATTERN: revoking from PUBLIC is safe. Revoking from
+-- `authenticated` is NOT, and S308's B2 proved it on this database — an RLS policy
+-- predicate evaluates AS THE QUERYING ROLE, so a role without EXECUTE cannot evaluate
+-- a policy that calls this helper, and every such policy fails closed. S308b's settings
+-- policies call get_my_tenant_role. DO NOT GENERALISE THIS REVOKE.
+REVOKE ALL ON FUNCTION public.get_my_tenant_role(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_my_tenant_role(uuid) TO authenticated, service_role;
+
 -- ── 2. Replace the zero-arg identity with a required-parameter one ───────────────
 -- DROP and CREATE must be in ONE transaction. apply_migration wraps this file in a
 -- transaction, so there is no window where neither function exists.
+--
+-- GATE ROUND 2, BLOCKING 2 (Perplexity): prove nothing depends on the zero-arg identity
+-- before dropping it. Verified live 2026-09-01 — ALL FIVE counts zero:
+--     pg_depend (excluding internal/pin) ... 0
+--     policies referencing ................. 0
+--     other functions referencing .......... 0
+--     views referencing .................... 0
+--     triggers referencing ................. 0
+-- and UsersSection.tsx is the only in-repo caller. NO CASCADE — a bare DROP is correct
+-- precisely BECAUSE the dependency set is empty; CASCADE would silently destroy
+-- whatever a future dependency turns out to be.
 DROP FUNCTION IF EXISTS public.list_tenant_members();
 
 CREATE FUNCTION public.list_tenant_members(p_tenant_id uuid)
@@ -76,10 +104,19 @@ SECURITY DEFINER
 SET search_path = ''
 AS $fn$
 begin
-  -- A required parameter can still arrive NULL over PostgREST; fail closed rather
-  -- than fall back to anything.
+  -- A required parameter can still arrive NULL over PostgREST. Both models agreed the
+  -- NULL path must fail closed; they differed on HOW, and both forms are fail-closed,
+  -- so this is a style choice rather than a conservative-wins conflict.
+  --
+  -- Taking Perplexity's RAISE over Gemini's empty return DELIBERATELY: an empty list is
+  -- indistinguishable from "you are not an admin" and from "an old bundle called this
+  -- without a tenant", and this project has repeatedly been burned by real faults that
+  -- present as innocuous empty state — the S309 bug itself showed up as an empty Users
+  -- tab. An error names the cause at the moment it happens. 22004 is
+  -- null_value_not_allowed; PostgREST surfaces it as a 400, matching the edge
+  -- function, which already 400s on exactly this condition.
   if p_tenant_id is null then
-    return;
+    raise exception 'tenant_id is required' using errcode = '22004';
   end if;
 
   -- THE authorization step, byte-unchanged from the pre-S309 body: strict equality,
@@ -91,7 +128,11 @@ begin
       select tu.user_id, u.email::text, tu.role
       from public.tenant_users AS tu
       join auth.users AS u on u.id = tu.user_id
-      where tu.tenant_id = p_tenant_id;
+      where tu.tenant_id = p_tenant_id
+      -- S311's lesson applied here: a query with no ORDER BY has no defined order, and
+      -- an unspecified order is a defect waiting to be observed. user_id breaks the tie
+      -- if two rows ever share an email, so the ordering is TOTAL.
+      order by u.email, tu.user_id;
   end if;
 
   return;   -- non-admin / no membership → zero rows

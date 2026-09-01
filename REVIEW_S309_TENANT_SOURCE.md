@@ -449,6 +449,114 @@ case — the single most useful output of the whole gate.
 
 ---
 
+# Gate round 2 — **APPROVE WITH CONDITIONS** from both, conditions resolved
+
+Both models returned APPROVE WITH CONDITIONS on the re-scoped Wave 3 implementation.
+Both BLOCKING conditions were verified against production and resolved in the migration.
+**No third gate round.**
+
+## BLOCKING 1 (both models) — explicit EXECUTE on `get_my_tenant_role(uuid)`
+
+Live ACL, re-confirmed 2026-09-01:
+
+```
+postgres=X/postgres | authenticated=X/postgres | service_role=X/postgres
+```
+
+`authenticated` **already holds an explicit grant** and **PUBLIC is already absent**, so
+the 42501 both models predicted **cannot occur on this database** — and
+`CREATE OR REPLACE` preserves an existing ACL, so the migration was never going to
+remove it either. The condition is, on production, already met.
+
+**It is added anyway, for a reason neither model could see.** On a FRESH database this
+migration runs as a plain `CREATE`, which picks up PostgreSQL's default `PUBLIC EXECUTE`.
+A migration that rebuilds a *different* ACL than production is a divergence that only
+shows up on a rebuild — the worst time to find it. So the grants are stated explicitly:
+
+```sql
+REVOKE ALL ON FUNCTION public.get_my_tenant_role(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_my_tenant_role(uuid) TO authenticated, service_role;
+```
+
+**This is reproducing the live ACL, NOT new hardening**, and the distinction is
+load-bearing. Revoking from `PUBLIC` is safe. **Revoking from `authenticated` is not**,
+and S308's B2 proved it on this exact database: an RLS policy predicate evaluates **as
+the querying role**, so a role without EXECUTE cannot evaluate a policy that calls the
+helper, and every such policy fails closed. `get_my_tenant_role` is called by S308b's
+`settings` policies. **Do not generalise this REVOKE** — the migration says so at the
+line itself, not only here.
+
+## BLOCKING 2 (Perplexity) — dependencies on the zero-arg function
+
+The evidence, not just the conclusion. Verified live 2026-09-01:
+
+| dependency probe | count |
+|---|---|
+| zero-arg `list_tenant_members()` exists | **1** (so the DROP is not a no-op) |
+| `pg_depend`, excluding `internal`/`pin` deptypes | **0** |
+| policies referencing it (`qual` / `with_check`) | **0** |
+| other functions referencing it (`prosrc`) | **0** |
+| views referencing it (`definition`) | **0** |
+| triggers referencing it (non-internal) | **0** |
+
+Combined with `UsersSection.tsx` being the only in-repo caller, the DROP is safe.
+
+**No `CASCADE`.** A bare `DROP` is correct *because* the dependency set is empty —
+`CASCADE` would convert "nothing depends on this" from a verified fact into an
+assumption, and silently destroy whatever a future dependency turned out to be.
+
+## Non-blocking — ACCEPTED
+
+**1. RAISE on NULL instead of returning zero rows** (Perplexity's form).
+
+```sql
+IF p_tenant_id IS NULL THEN
+  RAISE EXCEPTION 'tenant_id is required' USING ERRCODE = '22004';
+END IF;
+```
+
+Gemini preferred the empty return. **Both are fail-closed, so this is not a
+conservative-wins conflict** — picking either is a style call, and the reasoning is
+recorded rather than the preference. Taking the raise because an empty list is
+indistinguishable from "you are not an admin" and from "an old bundle called this
+without a tenant." This project has been burned repeatedly by real faults presenting as
+innocuous empty state — the S309 bug itself surfaced as an empty Users tab, and S311's
+blank testimonial cards were the same shape of problem. An error names the cause at the
+moment it happens. `22004` is `null_value_not_allowed`; PostgREST surfaces it as a 400,
+matching the edge function, which already 400s on this exact condition.
+
+The nine-shape matrix script previously expected zero rows here. It now carries a
+**shape 0** that asserts the raise, and the HTTP section records that
+`{"p_tenant_id": null}` moves from `200 []` to `400`.
+
+**2. `ORDER BY u.email, tu.user_id` on the member list.** S311's lesson applied
+directly: a query with no `ORDER BY` has no defined order, and an unspecified order is a
+defect waiting to be observed. `user_id` last makes the ordering total if two rows ever
+share an email.
+
+## Non-blocking — DECLINED, with reasons
+
+**1. Gemini: drop the "redundant" `u.email::text` cast. DECLINED.** It is not redundant.
+The `RETURNS TABLE` column is declared `text` and `auth.users.email` is `varchar`. The
+cast is what makes the declared return type and the actual column type agree; removing
+it invites an assignment-cast surprise at some future PostgreSQL version. **Keep it.**
+
+**2. Perplexity: keep the zero-arg function temporarily for a zero-downtime rollout.
+DECLINED — this is the rejected fallback arriving by another route.** A retained
+`list_tenant_members()` that derives the tenant from `current_tenant_id()` is
+functionally the `DEFAULT NULL` fallback that **gate round 1 rejected**, wearing a
+different signature. It reintroduces exactly what was removed: a second execution path
+inside a privileged function whose tenant source is the broken one, reachable by any
+caller that omits the parameter. The deploy window is **minutes** and affects **one
+admin tab**, against permanently retaining the defect the whole change exists to remove.
+**Recorded here so it is not proposed a third time.**
+
+**3. Rename `current_tenant_id()` → `legacy_profile_tenant_id()`. DECLINED — scope.**
+Still ROADMAP #8, still ~70 policies across ~25 tables. The rename is right and it is
+not this PR's.
+
+---
+
 # Appendix A — Gemini verdict (VERBATIM)
 
 > **SUPPLIED 2026-09-01. VERDICT: REJECT.** Recorded byte-exact between the markers
@@ -712,3 +820,28 @@ That said, this is a real **data-visibility behavior change**, not merely a reli
 **NON-BLOCKING — minimize returned identity data.** If the Users tab does not require raw email for every admin workflow, return a display name or masked email by default and expose full email only through a narrower permission. This is privacy minimization, not a substitute for the membership authorization gate.
 REJECT
 <!-- END APPENDIX B VERDICT -->
+
+# Appendix C — Gemini verdict, round 2 (VERBATIM)
+
+> ⚠️ **NOT YET SUPPLIED.** The round-2 arbitration above was provided by Scott in
+> summary form — the BLOCKING conditions, the accepted and declined non-blocking items,
+> and the APPROVE WITH CONDITIONS outcome — but the raw verdict TEXTS were not included
+> in that message.
+>
+> **Nothing here is reconstructed from the summary.** Paraphrasing a verdict into a slot
+> labelled VERBATIM would make the record worse than leaving it empty, because a future
+> reader cannot tell a reconstruction from a transcript. Replace this block with the raw
+> Gemini output, unedited, using the same non-fenced marker convention as Appendices A
+> and B — the verdicts contain their own code fences, so they must not be wrapped in one.
+
+<!-- BEGIN APPENDIX C VERDICT — BYTE-EXACT, DO NOT EDIT -->
+[PASTE GEMINI ROUND-2 VERDICT VERBATIM — NOT YET SUPPLIED]
+<!-- END APPENDIX C VERDICT -->
+
+# Appendix D — Perplexity verdict, round 2 (VERBATIM)
+
+> ⚠️ **NOT YET SUPPLIED.** Same convention and same reason as Appendix C.
+
+<!-- BEGIN APPENDIX D VERDICT — BYTE-EXACT, DO NOT EDIT -->
+[PASTE PERPLEXITY ROUND-2 VERDICT VERBATIM — NOT YET SUPPLIED]
+<!-- END APPENDIX D VERDICT -->

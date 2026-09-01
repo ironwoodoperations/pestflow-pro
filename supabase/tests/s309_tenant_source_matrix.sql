@@ -12,9 +12,10 @@
 --
 -- ============================================================================
 -- COVERS (exactly these, nothing else):
---     public.list_tenant_members(p_tenant_id uuid)   -- rows returned
+--     public.list_tenant_members(p_tenant_id uuid)   -- rows returned, and ordering
 --     public.get_my_tenant_role(p_tenant_id uuid)    -- the authorization test
---   across shapes 1-7 below, driven by REAL membership rows, not fixtures.
+--   across shapes 1-7 below, driven by REAL membership rows, not fixtures,
+--   plus shape 0 (explicit NULL must raise 22004).
 --
 -- DOES NOT COVER — and these are NOT optional, they are the other half:
 --   * Shape 8 (malformed uuid) and shape 9 (absent parameter) are PostgREST-level,
@@ -22,6 +23,11 @@
 --     parameter fails function resolution. Exercise them over HTTP:
 --         POST /rest/v1/rpc/list_tenant_members  {"p_tenant_id":"not-a-uuid"} -> 400
 --         POST /rest/v1/rpc/list_tenant_members  {}                           -> 404
+--         POST /rest/v1/rpc/list_tenant_members  {"p_tenant_id":null}         -> 400
+--           (gate round 2: an EXPLICIT null now RAISES 22004 rather than returning an
+--            empty array. Before that change this call returned 200 with [], which is
+--            indistinguishable from "not an admin". Shape 0 below asserts the raise
+--            in SQL; this line is the HTTP half.)
 --     and against the edge function:
 --         invoke invite-team-member {"tenant_id":"not-a-uuid",...}            -> 400
 --         invoke invite-team-member {email,role} with NO tenant_id            -> 400
@@ -126,6 +132,24 @@ END $$;
 
 \echo '=== S309 authorization matrix (shapes 1-7) ==='
 SELECT * FROM s309_result ORDER BY shape, actor, tenant;
+
+\echo '=== Shape 0 — an explicit NULL must RAISE 22004, not return zero rows ==='
+-- Gate round 2 took Perplexity's RAISE over Gemini's empty return. This asserts it,
+-- because the failure mode it guards against is silence: before the change, NULL
+-- returned an empty set that looked exactly like a legitimate non-admin result.
+DO $$
+DECLARE n int;
+BEGIN
+  BEGIN
+    SELECT count(*) INTO n FROM public.list_tenant_members(NULL);
+    RAISE EXCEPTION 'FAIL: NULL returned % rows instead of raising 22004', n;
+  EXCEPTION
+    WHEN sqlstate '22004' THEN
+      RAISE NOTICE 'pass: NULL raised 22004 (null_value_not_allowed) as required';
+    WHEN others THEN
+      RAISE EXCEPTION 'FAIL: NULL raised %, expected 22004', sqlstate;
+  END;
+END $$;
 
 \echo '=== SUMMARY — any non-zero failure count is a BLOCKING regression ==='
 SELECT count(*) FILTER (WHERE verdict = 'pass')      AS passed,
