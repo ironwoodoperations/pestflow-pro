@@ -20,3 +20,18 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   cutover pre-flight, and five working rules. Handoff written to
   docs/handoffs/pestflow-pro-handoff-S320-shipped.md. NEXT: Scott decides operator access —
   operators/is_operator() vs a tenant_users row per tenant. Validator gate when specced.
+
+---
+## Session — 2026-09-02 19:27 UTC
+- Branch: `chore/s320-session-close`
+- Commit: `2ca40fe` — docs: record the send_failed Resend-body leak as OPEN, attributed to the brief
+- Author: Claude
+- Files changed:
+  - docs/ROADMAP.md
+  - docs/handoffs/pestflow-pro-handoff-S320-shipped.md
+- Next recommended action: PR #325 is open as a DRAFT for Scott's manual merge. Nothing
+  further is pending on this branch. NEXT SESSION: the operator-access decision is the
+  blocking item — operators/is_operator() vs a tenant_users row per tenant — and it gates
+  Grandview and JW Customs because the answer is copied into every tenant built after it.
+  Second: close the S313 send_failed leak recorded in this PR (log an allowlisted
+  status/code, the way generate_link_failed already does).
