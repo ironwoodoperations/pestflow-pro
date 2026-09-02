@@ -324,6 +324,30 @@ Three items stand between a finished site and a site that can earn. None is cosm
 
 ## Open Follow-ups
 
+### S313 — OPEN LEAK: `send_failed` logs the raw Resend body, which echoes the recipient address
+
+**This is a real, known, open leak — not an observation, and not the gate's finding. It is
+Scott's defect and is recorded as his.**
+
+`sendEmail` throws `` Resend failed: ${await res.text()} `` — the **raw Resend response body**.
+S313's `runDetached` logs that message on the `send_failed` branch. **Resend echoes the
+recipient address in error payloads**, so a failed send can write a client's email address
+into `function_logs`.
+
+That is **the same leak class as S313 BLOCKING 1**, which both validators raised and which was
+closed on `generate_link_failed` — where the fix was to log only allowlisted structured fields
+(`status=`, `code=`) and never the raw provider string, precisely because an SDK error carries
+an unbounded upstream message that can contain the address, a URL, or anything a future version
+decides to put there.
+
+**The brief named one branch and stopped.** `generate_link_failed` was fixed; its sibling was
+not. Same hole, same reasoning, one branch away.
+
+**Not urgent — a send must fail first.** But it is an open leak against S313's own hard
+constraint (the email address is never logged), and it should be closed the way its sibling was:
+log an allowlisted status/code, never `e.message`, and never a sanitize-and-pass-through, which
+re-opens the same hole one upstream change later.
+
 ### S313 — from the validator gate (both items are the gate's, not mine)
 
 - **Public unauthenticated edge functions have no rate limiting — `password-reset-request` is the live example (from S313's gate, Perplexity, BLOCKING).** Accepted and deferred by Scott; recorded as **accepted risk, not as a condition met**. Supabase offers no per-function rate limiting, there is no CDN we control in front of the endpoint, and an in-function limiter is a database table and its own design — not satisfiable inside a logging-only PR. S313 did the two halves that *were* in scope: a non-POST scanner now produces **no log line at all** (letting one drive unbounded log writes is the amplification concern itself), and every payload is compact `key=value` with no headers, bodies, user agents, stack serialization or raw provider payloads. `password-reset-request` is the live example but **not the only one** — scope this across every function with `verify_jwt: false`.

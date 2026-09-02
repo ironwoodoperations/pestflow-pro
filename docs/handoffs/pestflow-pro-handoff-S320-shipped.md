@@ -184,12 +184,22 @@ ROADMAP with the reasoning intact.
 **`supabase/functions/` has zero static analysis.** `tsconfig.json` excludes `"supabase"`;
 eslint ignores `supabase/functions`. Nothing type-checks or lints any edge function.
 
-### One observation, not a re-report
-`password-reset-request`'s `send_failed` detail is `sendEmail`'s thrown message, which is
-`Resend failed: ${await res.text()}` — an **upstream provider body**. If Resend ever echoes the
-recipient in a validation error, that path writes the address to logs: the one remaining route
-to S313's hard constraint. `e.message` in thrown-exception catches was accepted, so it is left
-alone; bounding it to a fixed internal string is a one-line change.
+### OPEN LEAK — `send_failed` logs the raw Resend body (S313, Scott's defect)
+
+Recorded as a **known open leak, not an observation.** `sendEmail` throws
+`` Resend failed: ${await res.text()} `` — the **raw Resend response body** — and S313's
+`runDetached` logs that message on the `send_failed` branch. **Resend echoes the recipient
+address in error payloads**, so a failed send can write a client's email address into
+`function_logs`.
+
+**Same leak class as S313 BLOCKING 1**, which was closed on `generate_link_failed` by logging
+only allowlisted structured fields (`status=`, `code=`) and never the raw provider string. The
+brief named one branch and stopped; the sibling was left open.
+
+Not urgent — a send has to fail first — but it is live against S313's own hard constraint that
+the email address is never logged. Close it the way its sibling was closed: allowlisted
+status/code, never `e.message`, and **not** sanitize-and-pass-through, which re-opens the same
+hole one upstream change later.
 
 ### Not verified this session
 `invite-team-member` — third in the deploy order.
@@ -214,3 +224,9 @@ forgotten and the rules should not be.
 4. **`supabase/functions/` has zero static analysis.** Still open.
 5. **Resolve tenants by slug in a join, never a hand-typed UUID. Always `RETURNING`, always read
    it.** A typed UUID is a silent no-op when wrong.
+
+**And one that is not yet a rule but should be:** when a fix closes a leak on one branch, check
+its siblings in the same function before calling it closed. S313 fixed
+`generate_link_failed` and left `send_failed` open with the identical defect, because the brief
+named one branch. The pattern — an unbounded upstream string reaching a log line — is the thing
+to grep for, not the branch name.
