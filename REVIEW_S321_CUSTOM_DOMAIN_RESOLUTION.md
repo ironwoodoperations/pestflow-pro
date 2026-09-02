@@ -1,18 +1,42 @@
 # S321 — resolving a tenant's custom domain. Validator gate submission.
 
-**Status: RESUBMITTED 2026-09-02 after the owner narrowed scope. Awaiting both verdicts.
-NO IMPLEMENTATION HAS BEEN WRITTEN.**
+**Status: GATE CLOSED 2026-09-02. Gemini REJECT (5 conditions); Perplexity APPROVE WITH
+CONDITIONS (10 condition groups). Implementation shipped in #327 and #328.**
 
-**What changed since the first submission:** question (a) — the source of truth for a canonical
-host — is **closed by owner decision**, not by the gate. Dang is out of scope, the
-`CUSTOM_DOMAINS` map is retained and checked first, and the change is purely additive. Four
-questions remain live: (b) caching, (c) the DB lookup's placement relative to the rate limiter,
-(d) what the origin allowlist actually buys, (e) per-tenant robots/sitemap.
+## ⚠️ THE APPENDICES ARE STILL EMPTY, AND THAT IS A REAL GAP, NOT A FORMALITY
 
-⚠️ **The verdict TEXTS are not yet supplied.** Appendices A and B stay placeholders rather
-than be reconstructed from a summary — the S309/S313/S320 precedent. A reconstruction is
-indistinguishable from a transcript to a later reader, which is the entire value of a slot
-labelled VERBATIM.
+The implementation brief stated that both verdicts were "already byte-exact in the review
+document". **They are not.** This file still carries four NOT-YET-SUPPLIED markers; no verdict
+text was ever pasted into it. Everything below about the verdicts is a **SUMMARY RELAYED
+THROUGH THE BRIEF**, and it is labelled that way on purpose.
+
+It is not reconstructed here, and must not be. The whole value of a slot labelled VERBATIM is
+that a later reader can tell a transcript from a paraphrase; a reconstruction is
+indistinguishable from one and would quietly destroy that. This is the S309/S313/S320
+convention, and S309 round 1 was filed with the two models reversed — which is exactly the
+error the byte-exact appendices plus the programmatic attribution check exist to catch.
+
+**Outstanding, and only Scott can close it:** paste the two verdict texts between the markers
+below. The attribution assertion still applies and still runs first — the fill aborts if
+Appendix A carries a citation or Appendix B carries none.
+
+## The arbitration, as relayed (summary, not transcript)
+
+The models disagreed on one point. Gemini condition 1 required DELETING the `CUSTOM_DOMAINS`
+map and cleaning the underlying data. Perplexity required the OPPOSITE — the map must retain
+exact priority because it masks an invalid administrative value in `tenants.custom_domain`.
+
+**Resolved in favour of KEEPING the map**, on two binding grounds: the mapped tenant runs on
+its own repository, is mid-migration from Vite to Next.js, is live in production, and is out
+of scope; and the blast radius is asymmetric — keeping the map changes nothing for that
+tenant, removing it changes a live client's canonical resolution. Gemini did not have the
+migration context. Its other four conditions were adopted in full.
+
+That arbitration is now **executable rather than a comment**: `buildPageMetadata.test.ts`
+carries a fixture tenant with BOTH a map entry and a DIFFERENT `tenants.custom_domain`, so the
+map's priority is what is under test. Verified by mutation — swapping the two steps fails it.
+
+---
 
 ---
 
