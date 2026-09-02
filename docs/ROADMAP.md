@@ -108,6 +108,39 @@ Production-ready, **idle capacity**. Active leads out — **Capture, Blue Duck, 
 
 ## Recently Shipped
 
+- **S320 PR #324 — storage RLS: a published credential removed, all buckets gated on `tenant_users`, the `operators` ACL closed (merged `e61fabf`; migration APPLIED via MCP, VERIFIED LIVE 2026-09-02).** Three `logos` policies carried `OR (auth.uid() = '5181b30a-…'::uuid)` — `admin@pestflowpro.com`, whose password is published on the marketing homepage. S308 deleted its `operators` row as a security fix and **missed these**, so it kept INSERT, UPDATE and **DELETE** on every tenant's logo. Nine further policies gated on `current_tenant_id()`, which reads `profiles` — the table S273 retired — so any admin without a `profiles` row was denied their own uploads. The three `logos` policies carried **both** faults.
+
+  **Verified live after apply:**
+
+  | check | result |
+  |---|---|
+  | `storage.objects` policies | **14 total — unchanged**, not merely "zero bad ones" |
+  | policy expressions naming the published UUID | **0** |
+  | policy expressions calling `current_tenant_id()` | **0** |
+  | policies gated on `tenant_users` | **13** (12 rewritten + pre-existing `reports_admin_read`) |
+  | `public.operators` ACL for `authenticated` | `arwdDxtm` → **`rtm`** |
+  | malformed keys — `garbage/file.png`, root-level `logo.png`, traversal, empty | **all DENY, no exception raised** |
+  | Dathan (0 `profiles` rows) on pls | can now **upload AND delete** |
+  | `admin@pestflowpro.com` | **no operator status, no cross-tenant write anywhere** |
+
+  **The policy shape that shipped:** `INSERT`/`UPDATE` take `role IN ('admin','manager')`; **`DELETE` is `admin`-only** (plus `is_operator()` on logos); `SELECT` takes any membership. The DELETE split is the **one point the two validators disagreed on** — Gemini made manager-DELETE blocking (destructive, unversioned, breaks public pages); Perplexity argued explicitly against splitting (a manager who may edit a page but not remove its image has an incoherent privilege boundary; buy recoverability with versioning or an audit trail instead). **Conservative won.** It cost nothing: there are zero `manager` rows, so both choices granted the identical set on the day. Revisit **together with** Perplexity's remedy, not on its own. Verification check **2i** is that arbitration made executable — re-widening DELETE to manager fails there rather than shipping silently.
+
+  **The `operators` ACL was a third finding, surfaced by the gate and not in the brief.** `authenticated=arwdDxtm` included INSERT on the table that confers cross-tenant logo write. Nothing was exploitable — RLS on with zero policies denies everything — but **the table was protected by the absence of a policy, not by design**. One permissive policy added later and any logged-in user could self-enroll as operator. `SELECT` was deliberately kept (S308 B2: `is_operator()` is `SECURITY DEFINER` and does not need caller SELECT; casually revoking from `authenticated` is how policies fail closed).
+
+  Both verdicts recorded byte-exact in `REVIEW_S320_STORAGE_RLS.md`, attribution asserted **programmatically before either appendix was written** — the fill aborts if A carries a citation or B carries none, the discriminator that caught the S309 round-1 swap.
+
+- **S318 PR #322 — custom domain → tenant resolution in the Edge middleware (merged `c8c3506`).** Build-time projection: `tenant_domains` rows are emitted to `domain-map.json` by `prebuild`, and middleware does a synchronous in-memory lookup. **No DB call in middleware, zero new dependencies in the Edge import graph.** Guards skip unverified rows and `renderModel = 'standalone'`; apex and `www` aliases both emitted. Production build for `e61fabf` writes **2 hostnames from 4 `tenant_domains` rows**.
+
+- **S319 PR #323 HOTFIX — three edge functions referenced `PLATFORM_NAME` without importing it (merged `daf6e45`).** `notify-new-lead` was a **LIVE PRODUCTION OUTAGE**: a template literal, which does not short-circuit, evaluated `${PLATFORM_NAME}` unconditionally and **before** the try/catch, so every lead carrying a visitor email threw `ReferenceError`, returned 500, and lost the customer acknowledgement, the owner notification **and** the owner SMS. **No leads were lost — the table was empty for the entire window**, and that is timing at ~1–2/day, not resilience. Fixed and deployed: `notify-new-lead` **v67**, `password-reset-request` **v7**, both verified to carry the import in the deployed bundle.
+
+- **S317 PR #321 — `PLATFORM_NAME` reached the edge functions; the pest brand left client emails (merged `f044ce1`).** The auth-email footer is **flat text, no anchor** — until per-vertical landing pages exist there is no correct URL to point a lawn client at. Templates now name the tenant's business **only when there is one**, rather than substituting the platform's name for a missing business name.
+
+- **S313 — `password-reset-request` made observable (deployed v7, verified end to end by real email delivery and `outcome=send_dispatched`).** It was **structurally incapable of reporting failure**: three empty catch blocks and a `runDetached` that did `p.catch(() => {})`, so tenant-not-found, `generateLink` failure and a Resend rejection were indistinguishable from success **to us as well as to the caller**, with zero `function_logs` entries. The conflation that caused it: anti-enumeration requires the **response** to be uniform; it does not require the **server** to be blind. Every branch now logs a distinct reason code and **nothing about the response changed**. The hard constraint holds — the email address, the `token_hash` and the constructed link are never logged.
+
+- **S311 PR #313 — deterministic `modern-pro` review selection + per-tenant nav logo height (merged `d879f3c`).**
+
+- **S310 — docs corrections + the `artificial-turf` content-map entry**, which closed the S300 guard at state 3 of 3.
+
 - **S309 PR #312 — the caller names the tenant, `tenant_users` still authorizes it (merged `a4b01d3`; migration APPLIED, edge function DEPLOYED v5, VERIFIED LIVE 2026-09-01).** `list_tenant_members()` and `invite-team-member` both derived the caller's acting tenant from `profiles.tenant_id` — the table S273 retired as membership truth and S308 replaced as the RLS membership source. Neither consumer moved. **`profiles.tenant_id` was never the authorization step**: it supplied a *candidate*, and `get_my_tenant_role(...) = 'admin'` against `tenant_users` is what authorizes. The fix changes where the candidate comes from and leaves the authorization test byte-unchanged. **The split that hid it:** `provision-tenant` writes a `profiles` row, so *provisioned* admins worked; `invite-team-member` writes only `tenant_users`, so **every invited admin was broken and could not invite anyone** — the UI said "Invitation failed."
 
   **Verified live after deploy:**
@@ -198,12 +231,53 @@ Production-ready, **idle capacity**. Active leads out — **Capture, Blue Duck, 
 
 ## Next Up
 
+### ⚠️ DECISION REQUIRED — OPERATOR ACCESS TO CLIENT DASHBOARDS (HIGH — decide before Grandview and JW Customs)
+
+Scott needs guaranteed access to every tenant he builds, as builder, maintainer and
+troubleshooter. That requirement is real and is not in question. **How it is implemented is
+the platform's master-key design, and it gets copied into every tenant built after it** —
+which is why it is decided once, deliberately, before the next two builds rather than
+improvised during them.
+
+**THE PROPOSAL ON THE TABLE WAS A SINGLE SHARED ACCOUNT** — `admin@ironwoodopsgrp.com` with
+**one password reused on every site**. The objection is recorded because it is specific, not
+general:
+
+> **That is the exact shape of `admin@pestflowpro.com`, which this session spent two
+> migrations removing.** One credential, broad reach. A single leak — a screenshot, a support
+> call, a former contractor — exposes **every client at once**, with **no way to tell which
+> site it leaked from** and **no way to revoke it without locking Scott out everywhere**.
+> It is also **indistinguishable from a client in the audit trail**, and a client can **see it
+> in their Users tab and click "Resend invite" on it**.
+
+**The system already has the right mechanism.** `operators` + `is_operator()` was built in
+S308 and extended to the `logos` bucket in S320: one named identity, a locked-down ACL
+(`rtm` for `authenticated` as of S320), revocable by deleting one row, and visibly distinct
+from a tenant admin. What it lacks is **REACH** — it covers the `logos` bucket only, not the
+other storage buckets and not the admin surfaces.
+
+**THE DECISION:** does operator access flow through **`operators`/`is_operator()`**, or through
+**a `tenant_users` row per tenant**?
+
+- If `operators`/`is_operator()` — the work is extending its reach to the remaining buckets and
+  the admin surfaces, and deciding what an operator may and may not do inside a client's
+  dashboard.
+- If `tenant_users` per tenant — then **per-tenant passwords in 1Password, never one shared
+  secret.** The per-tenant row is defensible; the shared password is the part that reproduces
+  the defect.
+
+**Validator gate when it is specced.** This touches auth and tenant boundaries.
+
 ### pls — LAUNCH CHECKLIST (gates revenue, not polish)
 
 Three items stand between a finished site and a site that can earn. None is cosmetic.
 
 - [ ] **`settings.seo.noindex` is still `'true'` — pls is invisible to Google.** Everything this arc fixed about metadata, JSON-LD, service pages and the service-area map is being emitted to crawlers that are told not to look. Flipping this is the single highest-value action on the site.
 - [ ] **`tenants.custom_domain` is `NULL`** — serving on `pls.pestflowpro.ai`. Decide the domain and configure it. Doing this *after* de-noindexing means the indexed URLs are the ones being replaced.
+- [ ] **CUTOVER PRE-FLIGHT — before touching Webnode DNS, confirm the Vercel PRODUCTION build log for `e61fabf` shows `generate-domain-map` wrote 2 ENTRIES, not `{}`.** The build log is the only place this is observable.
+
+  **A Host-header probe does NOT test the domain map, and this was verified 2026-09-02 — do not repeat it and misread the result.** `curl -H "Host: precisionlawnsystems.com" pestflow-pro.vercel.app` **never reaches our middleware**: it resolves on real DNS and returns **Webnode's 404 — "404 - Page not found :: Precisionlawnsystems"**. That response is Webnode answering, not our routing failing. Anyone probing this way will conclude the domain map is broken when it is not.
+- [ ] **Re-confirm the Vercel apex/`www` direction for `precisionlawnsystems.com` AFTER cutover.** It must redirect in **one direction only**, and `tenants.custom_domain` should hold whichever host is canonical. Both directions configured at once is a loop; neither is a split index.
 - [x] ~~**`notifications.lead_email` is unset**~~ — **CLOSED.** Verified live 2026-08-31: `settings.notifications.lead_email` = `precisionlawnsystems@yahoo.com` (`cc_email` empty). A submitted quote form now reaches the owner. The other two gates below remain OPEN.
 
 ### pls — verified live state, 2026-08-26 (do not re-derive)
@@ -274,6 +348,52 @@ Recorded here so they are not re-derived from scratch next time.
 - **`authenticated` keeps TRIGGER and MAINTAIN on `public.operators` (S320, reported not fixed).** S320 revoked the write verbs (`a w d D x`) after the gate found the ACL was `authenticated=arwdDxtm` on the table that confers cross-tenant logo write. It deliberately stopped at the verbs the gate named. `t` (TRIGGER) remains: it permits attaching a trigger to `operators`, which additionally needs a trigger function and `CREATE` on the schema, so it is not exploitable on its own. `m` (MAINTAIN, PG17) is VACUUM/ANALYZE-class and not a data write. Close in a dedicated grants change, not bundled into a policy migration.
 
 - **A TEXT-taking `is_tenant_member()` overload would give both properties.** S320 ships the inline `EXISTS` because the existing `is_tenant_member(uuid)` requires casting an untrusted object key to `uuid`, and that cast **raises** rather than denies, erroring a whole listing query. The helper's real advantage — being `SECURITY DEFINER`, so immune to `tenant_users`' own grants and RLS — is genuine and was given up to avoid the cast. A `is_tenant_member(text)` overload would have both. Follow-up, not a blocker, and deliberately not invented mid-migration.
+
+### WORKING RULES — earned S309–S320. These are rules, not war stories.
+
+Each one below cost a real defect. They are written as rules because the incidents will be
+forgotten and the rules should not be.
+
+**1. VERIFY THE ARTIFACT, NOT THE STATUS.** An indicator is a claim about a thing; read the
+thing. This failed **five separate times in one arc**, each time with a green or reassuring
+signal sitting on top of a broken reality:
+
+  | the status said | the artifact was |
+  |---|---|
+  | CI green | shipping an undefined identifier — `supabase/functions/` has no static analysis |
+  | ten deploys succeeded | one of them was missing an import |
+  | `REVOKE … FROM PUBLIC` ran | the role-specific `anon` grant was still there — `PUBLIC` is a different grantee |
+  | connector "Connected" | its tools were never loaded |
+  | Host-header probe returned 404 | it measured **Webnode's server**, never reached our middleware |
+
+  For edge functions: `get_edge_function` and read the deployed bundle. For grants: re-read
+  `proacl` / `relacl`. For policies: read `pg_policy`, never migration text — **a file containing
+  the right SQL and a database carrying the right policy are different claims.**
+
+**2. A GUARD THAT CHECKS THE WRONG THING IS WORSE THAN NO GUARD.** It converts "untested" into
+"tested" in every reader's head. `toContain('platformBrand')` passed against a **comment**
+while three functions shipped broken — and the comment that satisfied it had been inserted by
+the very script meant to add the import. No guard would have left the risk visible; the wrong
+guard hid it. When writing a guard, ask what it passes on that it should fail on, and write
+that case as a decoy test.
+
+**3. BUILD-TIME ARTIFACTS ARE NOT LIVE ON WRITE.** `redirects-map.json` and `domain-map.json`
+are **projections**. Postgres is the source of truth; the JSON is derived. **Writing a row does
+nothing until a production build runs.** The redirect feature was silently dead for **months**
+because the build-time query failed, the script emitted `{}`, and **exited 0** — a failure with
+no failure signal anywhere. Any generator of this kind needs a strict mode that exits non-zero
+when it produces an empty projection (`REQUIRE_DOMAIN_MAP=1` is that for the domain map).
+
+**4. `supabase/functions/` HAS ZERO STATIC ANALYSIS — STILL OPEN.** `tsconfig.json` excludes
+`"supabase"`; eslint ignores `supabase/functions`. Nothing type-checks or lints any edge
+function. **This is the root cause of the S319 production outage** — an undefined identifier
+reached production with CI fully green, because CI never looked. Until it is fixed, an edge
+function is verified by reading the deployed bundle and by running it, and by nothing else.
+
+**5. RESOLVE TENANTS BY SLUG IN A JOIN, NEVER A HAND-TYPED UUID. ALWAYS `RETURNING`, ALWAYS
+READ IT.** A typed UUID is a silent no-op when wrong — the statement succeeds and touches zero
+rows. A join on `slug` fails loudly. `RETURNING` that nobody reads is the same failure wearing
+a seatbelt.
 
 ### Learnings — read before writing a migration
 
