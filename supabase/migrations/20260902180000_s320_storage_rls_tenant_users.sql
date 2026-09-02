@@ -45,19 +45,24 @@
 -- ALREADY uses the tenant_users shape below. Both patterns sit side by side today;
 -- this finishes the job.
 --
--- ── WRITE vs READ, stated rather than assumed ──────────────────────────────────
--- WRITES (INSERT/UPDATE/DELETE) require role IN ('admin', 'manager').
+-- ── THREE TIERS, stated rather than assumed ────────────────────────────────────
+-- CREATE/UPDATE  role IN ('admin', 'manager')
+-- DELETE         role = 'admin'   (plus is_operator() on logos)
+-- SELECT         any membership
 --
--- NOT admin-only. tenant_users_role_check admits 'admin', 'manager' and 'user', and this
--- project's content-table policies already let a manager write. Admin-only here would
--- mean a manager can edit a page's content row but cannot upload that page's image —
--- denied with the same opaque "violates row-level security policy" this migration exists
--- to remove. There are zero manager rows today, which is exactly why admin-only would
--- have shipped silently and surfaced on the first manager ever created.
+-- INSERT/UPDATE are NOT admin-only. tenant_users_role_check admits 'admin', 'manager'
+-- and 'user', and this project's content-table policies already let a manager write.
+-- Admin-only there would mean a manager can edit a page's content row but cannot upload
+-- that page's image — denied with the same opaque "violates row-level security policy"
+-- this migration exists to remove. There are zero manager rows today, which is exactly
+-- why admin-only would have shipped silently and surfaced on the first manager created.
 --
--- 'user' is excluded: these policies carry DELETE, and replacing or deleting a client's
--- logo is not something a plain member should do.
--- READS require any membership: a member who can see the admin UI needs to see the
+-- DELETE IS SPLIT OUT AND IS ADMIN-ONLY. See the gate arbitration below — this is the
+-- one point the two validators disagreed on, and the tighter grant was taken.
+-- Storage DELETE is destructive and unversioned: a deleted object is gone, and any
+-- public page still referencing it breaks. There is no undo here and no soft delete.
+--
+-- SELECT takes any membership: a member who can see the admin UI needs to see the
 -- images in it.
 --
 -- READ POLICIES ON THESE BUCKETS ARE NOT A CONFIDENTIALITY CONTROL. Verified 2026-09-02:
@@ -89,11 +94,12 @@
 --   * admin@demo.com GAINS the five demo tenants it is actually a member of.
 --
 -- OPERATORS ARE NOT GRANTED tenant-assets/social-uploads/videos here. is_operator()
--- is added to the logos bucket only, because that is where a hardcoded operator grant
--- already existed and is being replaced in kind. Widening operator reach to the other
--- buckets would be a privilege EXPANSION beyond this fix; if support needs it, that is
--- its own decision. Consequence: scott@homeflowpro.ai cannot upload to pls assets —
--- admin@ironwoodopsgrp.com is the pls admin and can.
+-- is added to the logos bucket only, because that is the single bucket where a
+-- hardcoded operator grant already existed and is being REPLACED (see the narrowing
+-- above — the principal changes, so this is not a substitution in kind). Widening
+-- operator reach to the other buckets would be a privilege EXPANSION beyond this fix;
+-- if support needs it, that is its own decision. Consequence: scott@homeflowpro.ai
+-- cannot upload to pls assets — admin@ironwoodopsgrp.com is the pls admin and can.
 
 -- ── WHY THE INLINE EXISTS AND NOT is_tenant_member() ───────────────────────────
 -- An earlier draft of this PR claimed the SECURITY DEFINER helper was "strictly more
@@ -117,7 +123,111 @@
 -- Having both properties would need a TEXT-taking definer helper. That is a follow-up,
 -- not a blocker, and is deliberately not invented here.
 
+-- ══ GATE ROUND 1 — both verdicts APPROVE WITH CONDITIONS ══════════════════════
+-- Full texts recorded byte-exact in REVIEW_S320_STORAGE_RLS.md, Appendices A and B.
+--
+-- THE MODELS DISAGREED ON ONE POINT, and it is recorded rather than smoothed over
+-- because both readings are defensible and the split is a judgement call, not one
+-- model being wrong:
+--
+--   Gemini      BLOCKING. Split DELETE to admin-only. Storage DELETE is destructive
+--               and unversioned; letting a manager purge assets risks unrecoverable
+--               loss and broken public page links.
+--   Perplexity  Explicitly do NOT split. An authorization model where a manager may
+--               edit a page but not remove its image is internally inconsistent, and
+--               that inconsistency is itself the hazard. If recoverability is the
+--               concern, buy it with versioning, soft-delete or an audit trail —
+--               not by making the privilege boundary incoherent.
+--
+--   ARBITRATION — CONSERVATIVE WINS. Gemini taken. DELETE is admin-only; INSERT and
+--   UPDATE keep IN ('admin', 'manager'). Perplexity's reasoning is sound and its
+--   remedy (versioning/audit) is the better long-run answer, but it is not built and
+--   this migration is not the place to build it. The practical cost of the tighter
+--   grant is ZERO TODAY — there are no manager rows — so the conservative choice is
+--   free right now and can be revisited with Perplexity's remedy in hand.
+--
+-- PERPLEXITY'S BLOCKING CONDITION ON operators WAS VERIFIED LIVE AND IS A REAL GAP.
+-- It asked whether any application principal can self-enroll into public.operators,
+-- since after this migration an operator row is cross-tenant write on every tenant's
+-- logo. Read from the catalog 2026-09-02:
+--
+--     public.operators   relacl: authenticated=arwdDxtm/postgres   <- INCLUDES INSERT
+--     RLS enabled: TRUE.   Policies: NONE.
+--
+-- Nothing is exploitable today: RLS on with zero policies denies everything. But the
+-- table is protected BY ACCIDENT — by the absence of a policy — not by design. One
+-- permissive policy added later for any reason and any authenticated user could insert
+-- themselves into operators and take cross-tenant write and DELETE on every logo.
+-- That is a latent privilege-escalation path sitting one migration away, and the ACL
+-- is the thing that should have been holding it shut.
+--
+-- FIXED BELOW: the write verbs are revoked from authenticated and anon. SELECT is
+-- deliberately KEPT — is_operator() is SECURITY DEFINER and does not need caller
+-- SELECT, so revoking it would be a separate decision, and S308's B2 finding is that
+-- casually revoking from authenticated is how policies get broken. Write verbs only.
+--
+-- ALREADY SATISFIED — verified against the catalog, changed nothing:
+--   is_operator()        prosecdef=true, search_path='', owner=postgres, EXECUTE to
+--                        authenticated. Covers Perplexity's is_operator hardening
+--                        blocker and Gemini (e).
+--   tenant_users         authenticated holds SELECT. Covers Gemini's non-blocking
+--                        grant condition — but the GRANT is written explicitly below
+--                        anyway, so a fresh database REPRODUCES it instead of relying
+--                        on a Supabase default. Same reasoning as the S309
+--                        get_my_tenant_role grant.
+--   storage.foldername   default PUBLIC EXECUTE. Covers Gemini (e) item 2.
+--
+-- NOT DONE HERE, recorded as ROADMAP items — all three are real, none belongs in an
+-- RLS migration: canonical object-key validation on the client, audit logging of
+-- operator-bypass writes, and reassessing whether tenant-assets and videos should be
+-- private buckets at all.
+
 BEGIN;
+
+-- ── PREREQUISITE GRANTS ────────────────────────────────────────────────────────
+-- Written explicitly so a fresh database reproduces the state these policies need,
+-- rather than inheriting it from a Supabase default that could change.
+
+-- The inline EXISTS below reads tenant_users AS THE QUERYING ROLE, so authenticated
+-- must hold SELECT on it. Already true in production; asserted here so it survives a
+-- rebuild. If this is ever revoked, every policy in this file fails CLOSED with
+-- `permission denied for table tenant_users` — a denial, not a data leak, but it
+-- reproduces exactly the outage this migration exists to end.
+GRANT SELECT ON public.tenant_users TO authenticated;
+
+-- public.operators is a PLATFORM-ADMINISTRATION BOUNDARY. After this migration, one
+-- row in it means cross-tenant INSERT/UPDATE/DELETE on every tenant's logo.
+--
+-- Its ACL granted authenticated the full arwdDxtm set — INSERT included. It was not
+-- exploitable, because RLS is enabled with zero policies and that denies everything.
+-- But that is protection by ABSENCE: add one permissive policy later, for any reason,
+-- and self-enrollment as an operator becomes available to every logged-in user.
+-- Raised as a BLOCKING condition by the round-1 gate; the ACL is closed here so the
+-- table is protected by design and not by an accident nobody documented.
+--
+-- SELECT is intentionally NOT revoked: is_operator() is SECURITY DEFINER and does not
+-- need caller SELECT, so removing it is a separate decision with its own blast radius
+-- (S308 B2 — a role that cannot evaluate a predicate makes every policy fail closed).
+--
+-- THE FULL ACL, read live 2026-09-02 rather than summarised:
+--     postgres=arwdDxtm/postgres
+--     anon=rtm/postgres
+--     authenticated=arwdDxtm/postgres      <- a = INSERT, w = UPDATE, d = DELETE
+--     service_role=arwdDxtm/postgres
+--
+-- So the gap is on `authenticated` alone. `anon` holds only r/t/m and never had a write
+-- verb — the second REVOKE below is a deliberate no-op, kept so a future GRANT to anon
+-- has to survive a line that visibly says otherwise. Do not read it as anon having had
+-- write access; it did not.
+--
+-- RESIDUAL, REPORTED NOT FIXED: authenticated keeps `t` (TRIGGER) and `m` (MAINTAIN),
+-- because the round-1 condition named the write verbs and widening the revoke past what
+-- was reviewed is how a fix acquires an unreviewed blast radius. TRIGGER is the one that
+-- is not merely housekeeping — it permits attaching a trigger to this table, which needs
+-- a trigger function and CREATE on the schema to be useful, so it is not reachable on
+-- its own. Worth closing in its own change; noted in ROADMAP.
+REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES ON public.operators FROM authenticated;
+REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES ON public.operators FROM anon;
 
 -- ── logos ──────────────────────────────────────────────────────────────────────
 DROP POLICY IF EXISTS logos_insert_tenant_or_operator ON storage.objects;
@@ -165,6 +275,8 @@ CREATE POLICY logos_update_tenant_or_operator ON storage.objects
   );
 
 DROP POLICY IF EXISTS logos_delete_tenant_or_operator ON storage.objects;
+-- DELETE is ADMIN-ONLY (gate arbitration, Gemini BLOCKING). is_operator() is retained:
+-- the operator branch is the platform-owner path this migration exists to make revocable.
 CREATE POLICY logos_delete_tenant_or_operator ON storage.objects
   FOR DELETE TO authenticated
   USING (
@@ -174,7 +286,7 @@ CREATE POLICY logos_delete_tenant_or_operator ON storage.objects
         SELECT 1 FROM public.tenant_users tu
         WHERE tu.tenant_id::text = (storage.foldername(name))[1]
           AND tu.user_id = auth.uid()
-          AND tu.role IN ('admin', 'manager')
+          AND tu.role = 'admin'
       )
       OR public.is_operator()
     )
@@ -217,6 +329,7 @@ CREATE POLICY tenant_update_assets ON storage.objects
   );
 
 DROP POLICY IF EXISTS tenant_delete_assets ON storage.objects;
+-- DELETE is ADMIN-ONLY (gate arbitration, Gemini BLOCKING).
 CREATE POLICY tenant_delete_assets ON storage.objects
   FOR DELETE TO authenticated
   USING (
@@ -225,7 +338,7 @@ CREATE POLICY tenant_delete_assets ON storage.objects
       SELECT 1 FROM public.tenant_users tu
       WHERE tu.tenant_id::text = (storage.foldername(name))[1]
         AND tu.user_id = auth.uid()
-        AND tu.role IN ('admin', 'manager')
+        AND tu.role = 'admin'
     )
   );
 
@@ -257,6 +370,7 @@ CREATE POLICY tenant_upload_social ON storage.objects
   );
 
 DROP POLICY IF EXISTS social_uploads_tenant_delete ON storage.objects;
+-- DELETE is ADMIN-ONLY (gate arbitration, Gemini BLOCKING).
 CREATE POLICY social_uploads_tenant_delete ON storage.objects
   FOR DELETE TO authenticated
   USING (
@@ -265,7 +379,7 @@ CREATE POLICY social_uploads_tenant_delete ON storage.objects
       SELECT 1 FROM public.tenant_users tu
       WHERE tu.tenant_id::text = (storage.foldername(name))[1]
         AND tu.user_id = auth.uid()
-        AND tu.role IN ('admin', 'manager')
+        AND tu.role = 'admin'
     )
   );
 

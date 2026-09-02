@@ -17,6 +17,27 @@
 -- THE LOGOS SECTION ALONE — the logos fix is a security fix and should outlive a
 -- functional revert.
 --
+-- ⚠️ THE GRANT CHANGES ARE DELIBERATELY NOT UNDONE. "Restores the prior state exactly"
+-- covers the twelve POLICIES and nothing else. The forward migration also:
+--
+--   REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES
+--     ON public.operators FROM authenticated, anon;
+--   GRANT SELECT ON public.tenant_users TO authenticated;
+--
+-- Neither is reversed here, and that is a decision, not an oversight:
+--
+--   * The operators REVOKE closes a latent privilege-escalation path (the ACL granted
+--     authenticated INSERT on the table that confers cross-tenant logo write; only
+--     RLS-with-no-policies was holding it shut). Restoring that ACL to undo a POLICY
+--     change would re-open a security hole to fix a functional one. Same reasoning as
+--     the logos section above — a security fix outlives a functional revert.
+--   * The tenant_users GRANT is additive, was already true in production before S320,
+--     and the pre-S320 policies did not depend on it either way. Undoing it could only
+--     break things.
+--
+-- If you genuinely need the old operators ACL back, do it as its own reviewed change
+-- and say why — do not smuggle it in as part of a rollback.
+--
 -- Expressions below are copied from pg_get_expr(pol.polqual/polwithcheck) as read live
 -- on 2026-09-02, not reconstructed from memory.
 
