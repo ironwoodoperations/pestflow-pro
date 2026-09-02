@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import redirectsMapJson from './redirects-map.json';
+import domainMapJson from './domain-map.json';
 import { canonicalizePath } from './redirects-normalize.mjs';
+import { resolveCustomHost } from './domain-normalize.mjs';
 
 // S253 / D1 — per-tenant redirect projection. Source of truth is
 // public.tenant_redirects; this JSON is a build-time derived artifact emitted by
@@ -9,6 +11,18 @@ import { canonicalizePath } from './redirects-normalize.mjs';
 // the only redirect imports here are this JSON and the tiny zero-dep normalizer.
 type RedirectEntry = { to: string; status: number };
 const redirectsMap = redirectsMapJson as Record<string, Record<string, RedirectEntry>>;
+
+// S318 — custom-domain projection. Source of truth is public.tenant_domains
+// (verified rows, non-standalone tenants); this JSON is a build-time derived
+// artifact emitted by scripts/generate-domain-map.mjs (prebuild), exactly as the
+// redirect map above. Same NO-DB-on-the-Edge rule, same zero-dep local helper.
+//
+// PURELY ADDITIVE: consulted only where extractSubdomain() would otherwise have
+// returned null, so every host that resolves today resolves identically, and a
+// miss falls through to the existing apex branch unchanged.
+//
+// A domain therefore goes live on the NEXT DEPLOY, not on the settings save.
+const domainMap = domainMapJson as Record<string, string>;
 
 const APEX_HOSTS = new Set([
   'pestflowpro.com',
@@ -59,7 +73,10 @@ function extractSubdomain(host: string): string | null {
     return sub || null;
   }
 
-  return null;
+  // S318 — a tenant's own domain (e.g. precisionlawnsystems.com). LAST, so it can
+  // never shadow an apex host or a *.pestflowpro.* subdomain: those returned
+  // above. A miss still returns null and lands in the apex branch, unchanged.
+  return resolveCustomHost(host, domainMap);
 }
 
 export function middleware(req: NextRequest) {
