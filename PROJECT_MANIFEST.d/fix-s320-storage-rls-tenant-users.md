@@ -45,3 +45,33 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   After merge, Claude.ai applies the migration, then runs
   `supabase/tests/s320_storage_policy_verification.sql` against `pg_policy` and performs
   the real upload test — check 3, which is the only one that proves uploads work.
+
+---
+## Session — 2026-09-02 18:37 UTC
+- Branch: `fix/s320-storage-rls-tenant-users`
+- Commit: `0c64c2f` — S320 round 1: split DELETE to admin-only, close the operators ACL
+- Author: Claude
+- Files changed:
+  - REVIEW_S320_STORAGE_RLS.md
+  - docs/ROADMAP.md
+  - supabase/migrations/20260902180000_s320_storage_rls_tenant_users.sql
+  - supabase/migrations/s320_storage_rls_tenant_users_rollback.sql
+  - supabase/tests/s320_storage_policy_verification.sql
+- Gate round 1 CLOSED. Both validators APPROVE WITH CONDITIONS; verdicts recorded
+  byte-exact in the appendices, attribution asserted programmatically before filling.
+  The models split on the write boundary — Gemini made manager-DELETE blocking,
+  Perplexity argued explicitly against splitting. Conservative won: DELETE is now
+  `role = 'admin'`, INSERT/UPDATE keep admin+manager. Recorded as a judgement split.
+  Perplexity's `operators` self-enrollment condition was a REAL gap — the ACL granted
+  `authenticated` INSERT on the table conferring cross-tenant logo write, held shut only
+  by RLS-with-no-policies. Write verbs revoked; SELECT deliberately kept.
+- Next recommended action: **Scott applies the migration** (it is still NOT applied —
+  nothing in S320 has touched the database). Order: merge #324, apply
+  `20260902180000_s320_storage_rls_tenant_users.sql`, then run
+  `supabase/tests/s320_storage_policy_verification.sql` against `pg_policy`, then work
+  check 3 — the ten-row end-to-end matrix, AS THE REAL AUTHENTICATED ROLE in a browser,
+  not as postgres in the SQL editor. Rows 3d (manager DELETE must now be DENIED) and 3i
+  (a malformed key like `garbage/file.png` must be excluded from a listing query WITHOUT
+  aborting it) are the two that will be skipped by accident, because both need state
+  nobody has today: a `manager` row, and a deliberately malformed object key. Everything
+  in section 2 can pass while uploads stay broken.
