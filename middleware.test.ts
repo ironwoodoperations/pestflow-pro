@@ -183,3 +183,64 @@ describe('an unmapped host — CURRENT behaviour, recorded not endorsed', () => 
     expect(middleware(req('some-unmapped-host.com', '/services')).status).toBe(404)
   })
 })
+
+// ── S321 B4 — old-subdomain 301 ────────────────────────────────────────────────
+describe('S321 B4 — pls.pestflowpro.ai 301s to the custom domain', () => {
+  it('B-e: root', () => {
+    const r = middleware(req('pls.pestflowpro.ai', '/'))
+    expect(r.status).toBe(301)
+    expect(r.target).toBe('https://precisionlawnsystems.com/')
+  })
+
+  it('B-e: a deep path is PRESERVED, not flattened to /', () => {
+    const r = middleware(req('pls.pestflowpro.ai', '/services/sprinkler-systems'))
+    expect(r.status).toBe(301)
+    expect(r.target).toBe('https://precisionlawnsystems.com/services/sprinkler-systems')
+  })
+
+  it('B-e: the query string survives — UTM parameters are the reason this matters', () => {
+    const r = middleware(req('pls.pestflowpro.ai', '/contact', '?utm_source=google&utm_medium=cpc'))
+    expect(r.status).toBe(301)
+    expect(r.target)
+      .toBe('https://precisionlawnsystems.com/contact?utm_source=google&utm_medium=cpc')
+  })
+
+  it('B-e: a trailing-slash variant keeps its shape', () => {
+    const r = middleware(req('pls.pestflowpro.ai', '/about/'))
+    expect(r.status).toBe(301)
+    expect(r.target).toBe('https://precisionlawnsystems.com/about/')
+  })
+
+  it('B-e: SINGLE HOP — the redirect fires before the per-tenant redirect map', () => {
+    // /services carries a tenant_redirects row (/services -> /). If that ran first the
+    // client would hop subdomain->subdomain then subdomain->apex: a chain, which bleeds
+    // link equity. One hop, to the custom domain, which then applies its own rule.
+    const r = middleware(req('pls.pestflowpro.ai', '/services'))
+    expect(r.status).toBe(301)
+    expect(r.target).toBe('https://precisionlawnsystems.com/services')
+  })
+
+  it('B-e: NO LOOP — a request already on the custom domain rewrites, never redirects', () => {
+    // The distinction is the whole test: a rewrite serves the page, a redirect would bounce
+    // the client back and forth between the two hosts. `.target` is populated for BOTH, so
+    // asserting it is absent would be asserting the wrong thing — `kind` is what separates
+    // them.
+    const r = middleware(req('precisionlawnsystems.com', '/'))
+    expect(r.kind).toBe('rewrite')
+    expect(r.status).not.toBe(301)
+    expect(r.target).toBe('https://precisionlawnsystems.com/tenant/pls')
+  })
+
+  it('B-e: NO LOOP — www is left to the Vercel apex/www rule, not duplicated here', () => {
+    // Vercel already 301s www -> apex. Emitting a second, competing redirect here is how
+    // loops get built, so this asserts the middleware stays out of it.
+    const r = middleware(req('www.precisionlawnsystems.com', '/'))
+    expect(r.kind).not.toBe('redirect')
+    expect(r.status).not.toBe(301)
+  })
+
+  it('B-f: a tenant with NO custom domain is completely unaffected', () => {
+    const r = middleware(req('urban-strike.pestflowpro.ai', '/services'))
+    expect(r.status).not.toBe(301)
+  })
+})

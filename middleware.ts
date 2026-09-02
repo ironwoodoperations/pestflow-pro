@@ -24,6 +24,35 @@ const redirectsMap = redirectsMapJson as Record<string, Record<string, RedirectE
 // A domain therefore goes live on the NEXT DEPLOY, not on the settings save.
 const domainMap = domainMapJson as Record<string, string>;
 
+// ── S321 B4 — the reverse projection: slug → its canonical public host. ─────────
+//
+// WHY THIS EXISTS. With a custom domain live, `<slug>.pestflowpro.ai` still serves 200 with
+// byte-identical content. That is duplicate content, and rel=canonical alone is NOT
+// sufficient for a site move — a 301 is what consolidates link equity and what tells Google
+// the move is real. This blocks the noindex flip: opening an indexable site that serves the
+// same pages on two hosts is worse than leaving it closed.
+//
+// Derived from the SAME build-time projection as domainMap, so it costs no DB call and no
+// new import. The projector emits apex AND www for each verified row; the APEX is canonical,
+// so a `www.` key is skipped when its apex sibling exists. If only a www row exists it is
+// used rather than dropped — a redirect to a working host beats no redirect.
+//
+// EMPTY UNTIL A PRODUCTION BUILD RUNS. domain-map.json is committed as `{}`; prebuild fills
+// it. So this is inert in the repo and in dev, and only takes effect on a deployed build —
+// the same build-time-projection rule the redirect map follows.
+const canonicalHostBySlug: Record<string, string> = (() => {
+  const out: Record<string, string> = {};
+  for (const [host, slug] of Object.entries(domainMap)) {
+    if (host.startsWith('www.')) continue;
+    out[slug] = host;
+  }
+  for (const [host, slug] of Object.entries(domainMap)) {
+    if (!host.startsWith('www.')) continue;
+    if (!out[slug]) out[slug] = host.slice(4);
+  }
+  return out;
+})();
+
 const APEX_HOSTS = new Set([
   'pestflowpro.com',
   'www.pestflowpro.com',
@@ -172,6 +201,38 @@ export function middleware(req: NextRequest) {
     }
 
     return new NextResponse(null, { status: 404 });
+  }
+
+  // ── S321 B4 — old-subdomain 301 to the tenant's canonical host. ──────────────
+  //
+  // Placed BEFORE the per-tenant redirect map on purpose: a request to
+  // pls.pestflowpro.ai/services must take ONE hop to precisionlawnsystems.com/services and
+  // let the custom domain apply /services→/ itself, rather than hopping subdomain→subdomain
+  // and then subdomain→apex. Chains bleed link equity and are what "single hop" rules out.
+  //
+  // PATH AND QUERY ARE PRESERVED. Redirecting everything to / is a common and costly
+  // mistake: it throws away every deep link the old host had accumulated.
+  //
+  // NO LOOP RISK. This fires only when the REQUEST host is the platform subdomain, and the
+  // target is always a different host (the custom domain). A request already on the custom
+  // domain resolves its slug through domainMap, and that host is not `<slug>.pestflowpro.ai`,
+  // so the guard below is false and the request falls through. The apex↔www direction is
+  // configured in Vercel and is deliberately NOT duplicated here — a second, competing
+  // redirect is how loops get built.
+  const canonicalHost = canonicalHostBySlug[slug];
+  if (canonicalHost) {
+    const requestHost = hostname.toLowerCase();
+    const platformSubdomainHosts = [
+      `${slug}.pestflowpro.ai`,
+      `${slug}.pestflowpro.com`,
+    ];
+    if (platformSubdomainHosts.includes(requestHost)) {
+      const target = new URL(req.url);
+      target.protocol = 'https:';
+      target.host = canonicalHost;
+      // pathname and search ride along untouched.
+      return NextResponse.redirect(target, { status: 301 });
+    }
   }
 
   // S253 / D1 — per-tenant 301/308 redirects (build-time bundled map; no DB on

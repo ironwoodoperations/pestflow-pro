@@ -9,6 +9,7 @@ const urbanStrike: Tenant = {
   id: 'b4f9c2d5-3e2a-4b8d-af7c-2a5e8b4d9c3f',
   slug: 'urban-strike',
   subdomain: 'urban-strike',
+  custom_domain: null,
   name: 'Urban Strike Pest Defense',
   template: 'modern-pro',
   primary_color: '#111111',
@@ -44,6 +45,63 @@ describe('resolveSiteUrl', () => {
 
   it('falls back to slug when subdomain is absent', () => {
     expect(resolveSiteUrl({ slug: 'coastal-pest', subdomain: null })).toBe('https://coastal-pest.pestflowpro.ai');
+  });
+});
+
+// ── S321 PR B ──────────────────────────────────────────────────────────────────
+describe('resolveSiteUrl — S321 step 2, tenants.custom_domain', () => {
+  it('B-a: a tenant with a custom domain resolves to it, not the platform subdomain', () => {
+    expect(resolveSiteUrl({ slug: 'pls', subdomain: 'pls', custom_domain: 'precisionlawnsystems.com' }))
+      .toBe('https://precisionlawnsystems.com');
+  });
+
+  it('B-f: a tenant with NO custom domain is byte-identical to before', () => {
+    expect(resolveSiteUrl({ slug: 'urban-strike', subdomain: 'urban-strike', custom_domain: null }))
+      .toBe('https://urban-strike.pestflowpro.ai');
+    // undefined and null must behave identically — one comes from a fixture, the other
+    // from a row where the column was never set.
+    expect(resolveSiteUrl({ slug: 'urban-strike', subdomain: 'urban-strike' }))
+      .toBe('https://urban-strike.pestflowpro.ai');
+  });
+
+  it('degrades to the platform host on a malformed stored value, never throws', () => {
+    for (const bad of ['', '   ', 'not a host', 'http://insecure.example', 'evil.example/path',
+                       'a@b.example', 'localhost', 'host:8443']) {
+      expect(() => resolveSiteUrl({ slug: 'x', subdomain: 'x', custom_domain: bad })).not.toThrow();
+      expect(resolveSiteUrl({ slug: 'x', subdomain: 'x', custom_domain: bad }),
+        `expected fallback for ${JSON.stringify(bad)}`).toBe('https://x.pestflowpro.ai');
+    }
+  });
+
+  it('accepts an operator-pasted https URL and reduces it to its host', () => {
+    expect(resolveSiteUrl({ slug: 'pls', subdomain: 'pls', custom_domain: 'https://precisionlawnsystems.com/' }))
+      .toBe('https://precisionlawnsystems.com');
+    expect(resolveSiteUrl({ slug: 'pls', subdomain: 'pls', custom_domain: 'PrecisionLawnSystems.COM.' }))
+      .toBe('https://precisionlawnsystems.com');
+  });
+});
+
+describe('resolveSiteUrl — S321 PRECEDENCE, the gate arbitration made executable', () => {
+  // B-c. THE TEST THAT MAKES THE ARBITRATION REAL. One validator required deleting the
+  // CUSTOM_DOMAINS map; the other required it keep exact priority because it masks an
+  // invalid administrative value. Conservative won, and this is what enforces it.
+  //
+  // A test that only checked the real mapped tenants would still pass if someone reordered
+  // the two steps, because dang has no *conflicting* column value in the fixture. This
+  // fixture makes them DISAGREE on purpose, so the ORDER is what is under test.
+  it('B-c: the MAP wins when a mapped tenant also has a different tenants.custom_domain', () => {
+    expect(resolveSiteUrl({ slug: 'dang', subdomain: null, custom_domain: 'admin.dangpestcontrol.com' }))
+      .toBe('https://dangpestcontrol.com');
+    expect(resolveSiteUrl({ slug: 'dang-pfp', subdomain: null, custom_domain: 'something-else.example' }))
+      .toBe('https://dangpestcontrol.com');
+  });
+
+  // The live value, spelled out. admin.dangpestcontrol.com does not resolve in DNS; if step 2
+  // ever ran first, a live client's canonical would point at a host that does not answer.
+  it('B-c: never emits the ADMIN host, which is what tenants.custom_domain actually holds', () => {
+    const url = resolveSiteUrl({ slug: 'dang', subdomain: null, custom_domain: 'admin.dangpestcontrol.com' });
+    expect(url).not.toContain('admin.');
+    expect(url).toBe('https://dangpestcontrol.com');
   });
 });
 
