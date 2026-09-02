@@ -60,6 +60,8 @@ export type Tenant = {
   id: string;
   slug: string;
   subdomain: string | null;
+  /** S321 — the tenant's own public host, or null. Consumed by resolveSiteUrl step 2. */
+  custom_domain: string | null;
   name: string;
 
   // branding (from settings.branding JSONB)

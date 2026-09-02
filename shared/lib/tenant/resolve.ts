@@ -2,7 +2,7 @@ import { cache } from 'react';
 import { getServerSupabaseForISR } from '../supabase/server';
 import { normalizeLogoHeightPx, type Tenant } from './types';
 
-async function resolveSettings(tenantBase: { id: string; slug: string; subdomain: string | null; name: string }): Promise<Tenant> {
+async function resolveSettings(tenantBase: { id: string; slug: string; subdomain: string | null; name: string; custom_domain: string | null }): Promise<Tenant> {
   const supabase = getServerSupabaseForISR();
   const { data: settings, error } = await supabase
     .from('settings')
@@ -26,6 +26,12 @@ async function resolveSettings(tenantBase: { id: string; slug: string; subdomain
     slug: tenantBase.slug,
     subdomain: tenantBase.subdomain ?? null,
     name: tenantBase.name,
+    // S321 — carried through EXPLICITLY, and that is the whole point of this line.
+    // This function CONSTRUCTS a new object; a column added to the SELECT but not listed
+    // here is silently dropped, resolveSiteUrl receives undefined, and the canonical falls
+    // back to the platform subdomain with nothing visibly broken. Same shape as the S311
+    // logo_height_px finding. Both validators flagged it independently.
+    custom_domain: tenantBase.custom_domain ?? null,
 
     template: branding.theme ?? 'modern-pro',
     primary_color: branding.primary_color ?? '#111111',
@@ -74,7 +80,7 @@ export const resolveTenantBySlug = cache(async (slug: string): Promise<Tenant | 
   const supabase = getServerSupabaseForISR();
   const { data: tenantBase, error } = await supabase
     .from('tenants')
-    .select('id, slug, subdomain, name')
+    .select('id, slug, subdomain, name, custom_domain')
     .or(`slug.eq.${slug},subdomain.eq.${slug}`)
     .maybeSingle();
 
