@@ -6,6 +6,7 @@
 //      { business_name, contact_name, plan, markdown_content }
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { PLATFORM_NAME } from '../../../shared/lib/platformBrand.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -25,28 +26,28 @@ serve(async (req) => {
       // Mode 1: Client welcome email — no credentials, team delivers them separately
       const { to, company_name, live_url } = body
       emailPayload = {
-        from: 'PestFlow Pro <noreply@pestflow.ai>',
+        from: `${PLATFORM_NAME} <noreply@pestflow.ai>`,
         reply_to: 'onboarding@homeflowpro.ai',
         to: [to],
-        subject: `Welcome to PestFlow Pro \u2014 ${company_name}`,
+        subject: `Welcome to ${PLATFORM_NAME} \u2014 ${company_name}`,
         html: `
           <div style="font-family:sans-serif;max-width:600px;margin:0 auto;color:#1a1f2e">
             <div style="background:#1a1f2e;padding:32px;border-radius:12px 12px 0 0;text-align:center">
-              <h1 style="color:#10b981;font-size:24px;margin:0">PestFlow Pro</h1>
+              <h1 style="color:#10b981;font-size:24px;margin:0">${PLATFORM_NAME}</h1>
               <p style="color:#9ca3af;font-size:14px;margin:8px 0 0">Your new website platform</p>
             </div>
             <div style="background:#fff;padding:32px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px">
-              <h2 style="font-size:20px;color:#111827;margin:0 0 16px">Thanks for choosing PestFlow Pro, ${company_name}!</h2>
+              <h2 style="font-size:20px;color:#111827;margin:0 0 16px">Thanks for choosing ${PLATFORM_NAME}, ${company_name}!</h2>
               <p style="color:#374151;line-height:1.6;margin:0 0 24px">
                 We've received your payment and our team is setting up your site.
                 You'll receive your login details by email within 1&#x2013;2 business days once everything is ready.
                 We're excited to work with you!
               </p>
-              ${live_url ? `<div style="margin-bottom:28px"><a href="${live_url}" style="display:inline-block;background:#10b981;color:#fff;font-weight:600;font-size:14px;padding:12px 20px;border-radius:8px;text-decoration:none">Explore PestFlow Pro</a></div>` : ''}
+              ${live_url ? `<div style="margin-bottom:28px"><a href="${live_url}" style="display:inline-block;background:#10b981;color:#fff;font-weight:600;font-size:14px;padding:12px 20px;border-radius:8px;text-decoration:none">Explore ${PLATFORM_NAME}</a></div>` : ''}
               <hr style="border:none;border-top:1px solid #e5e7eb;margin:28px 0" />
               <p style="color:#9ca3af;font-size:12px;margin:0">
                 Questions? Reply to this email or contact us at onboarding@homeflowpro.ai.<br />
-                Powered by PestFlow Pro &#x2014; built for home service businesses.
+                Powered by ${PLATFORM_NAME} &#x2014; built for home service businesses.
               </p>
             </div>
           </div>
@@ -56,12 +57,12 @@ serve(async (req) => {
       // Mode 2: Scott's setup notification (existing behavior)
       const { business_name, contact_name, plan, markdown_content } = body
       emailPayload = {
-        from: 'PestFlow Pro <noreply@pestflow.ai>',
+        from: `${PLATFORM_NAME} <noreply@pestflow.ai>`,
         reply_to: 'onboarding@homeflowpro.ai',
         to: ['scott@homeflowpro.ai'],
         subject: `New Client Setup \u2014 ${business_name} (${plan})`,
         html: `
-          <h2>New PestFlow Pro Client Setup</h2>
+          <h2>New ${PLATFORM_NAME} Client Setup</h2>
           <p><strong>Business:</strong> ${business_name}</p>
           <p><strong>Contact:</strong> ${contact_name}</p>
           <p><strong>Plan:</strong> ${plan}</p>
