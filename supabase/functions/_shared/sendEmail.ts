@@ -1,9 +1,16 @@
 /**
- * sendEmail — shared Resend helper for all PestFlow Pro edge functions.
+ * sendEmail — shared Resend helper for all HomeFlow Pro edge functions.
  *
  * fromName: REQUIRED. Customer-facing emails should pass the tenant's
- * business name. Platform/internal emails should pass 'PestFlow Pro'.
+ * business name. Platform/internal emails should pass PLATFORM_NAME from
+ * shared/lib/platformBrand.ts — import the constant, never retype the string.
  * Never default — the wrong choice has shipped to prod before.
+ *
+ * S317. This said "should pass 'PestFlow Pro'" until the platform/vertical
+ * split. That line was instructions to reproduce the bug: it is guidance, so a
+ * reader acting on it reintroduced the pest brand into a lawn client's inbox.
+ * The sending DOMAIN (@pestflow.ai) is deliberately untouched — platformBrand
+ * is user-visible copy only and must not rename domains.
  */
 export async function sendEmail({
   to,

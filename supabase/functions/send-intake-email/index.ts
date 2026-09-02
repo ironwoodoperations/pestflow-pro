@@ -5,6 +5,7 @@
 // Deploy: supabase functions deploy send-intake-email --project-ref biezzykcgzkrwdgqpsar --no-verify-jwt
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { PLATFORM_NAME } from '../../../shared/lib/platformBrand.ts'
 
 const SUPABASE_URL             = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
@@ -16,7 +17,7 @@ const CORS = {
 
 async function sendEmail({ to, subject, html, replyTo }: { to: string; subject: string; html: string; replyTo?: string }) {
   const key = Deno.env.get('RESEND_API_KEY') || ''
-  const payload: Record<string, unknown> = { from: 'PestFlow Pro <noreply@pestflow.ai>', to, subject, html }
+  const payload: Record<string, unknown> = { from: `${PLATFORM_NAME} <noreply@pestflow.ai>`, to, subject, html }
   if (replyTo) payload.reply_to = replyTo
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -69,9 +70,9 @@ export async function handler(req: Request): Promise<Response> {
     await sendEmail({
       to: prospectEmail,
       replyTo: 'onboarding@homeflowpro.ai',
-      subject: `${businessName || 'PestFlow Pro'} — Your website setup link is ready`,
+      subject: businessName ? `${businessName} — Your website setup link is ready` : 'Your website setup link is ready',
       html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
-  <h2 style="color:#16a34a">Your PestFlow Pro Website Setup</h2>
+  <h2 style="color:#16a34a">Your ${PLATFORM_NAME} Website Setup</h2>
   <p>Hi ${name},</p>
   <p>We're getting your new website ready! Please take a few minutes to fill
   out the setup form so we can personalize everything for your business.</p>
@@ -85,7 +86,7 @@ export async function handler(req: Request): Promise<Response> {
   <p style="color:#666;font-size:14px">This link expires in 14 days.
   If you have questions, reply to this email.</p>
   <p style="margin-top:32px;color:#888;font-size:12px">
-    Powered by <a href="https://pestflowpro.com" style="color:#888">PestFlow Pro</a>
+    Powered by ${PLATFORM_NAME}
   </p>
 </div>`,
     })

@@ -148,7 +148,16 @@ export async function handler(req: Request): Promise<Response> {
       if (tenant) {
         const { data: bizSetting } = await service
           .from('settings').select('value').eq('tenant_id', tenant.id).eq('key', 'business_info').maybeSingle()
-        const businessName: string = bizSetting?.value?.name || 'PestFlow Pro'
+        // S317. The tenant's OWN name, or nothing. There is no default: the platform's
+        // name is not a business name, and substituting it here is the category error
+        // platformBrand.ts exists to fix (see its header). Copy below names the business
+        // only when there is one.
+        //
+        // senderName is a DIFFERENT claim. A From display label is mandatory, and
+        // "${PLATFORM_NAME} is sending this" is true; "your business is called
+        // ${PLATFORM_NAME}" is the claim we refuse to make.
+        const businessName: string = bizSetting?.value?.name || ''
+        const senderName: string = businessName || PLATFORM_NAME
         const setPasswordBase = `https://${slug}.${APP_BASE_DOMAIN}/set-password`
 
         // generateLink throws fast for a nonexistent email — swallow so timing/shape don't leak.
@@ -162,7 +171,7 @@ export async function handler(req: Request): Promise<Response> {
             const { subject, html, text } = recoveryEmail(businessName, link)
             // Detached: the response must not wait on Resend, or send latency leaks as a
             // timing oracle distinguishing existing vs nonexistent emails (M3).
-            runDetached(sendEmail({ to: email, subject, html, text, fromName: businessName }), rid)
+            runDetached(sendEmail({ to: email, subject, html, text, fromName: senderName }), rid)
             // The send is detached, so this records only that the attempt was DISPATCHED.
             // Delivery success is not knowable here; a send_failed line above is.
             outcome = 'send_dispatched'

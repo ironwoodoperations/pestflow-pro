@@ -29,6 +29,7 @@ import {
 } from '../_shared/provisioningSeed.ts'
 import { timingSafeEqual } from 'node:crypto'
 import { normalizeAll, buildJsonbProjection } from '../_shared/service-areas.ts'
+import { PLATFORM_NAME } from '../../../shared/lib/platformBrand.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
@@ -631,7 +632,7 @@ export async function handler(req: Request): Promise<Response> {
           headers: { 'Authorization': `Bearer ${ZERNIO_API_KEY}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
             name: businessName || resolvedSlug,
-            description: `PestFlow Pro tenant: ${resolvedSlug}`,
+            description: `${PLATFORM_NAME} tenant: ${resolvedSlug}`,
           }),
         })
         const zernioData = await zernioRes.json()
@@ -1044,6 +1045,13 @@ export async function handler(req: Request): Promise<Response> {
               tenant_id: tenantId,
               page_slug: t.page_slug,
               title: t.title,
+              // S317 — DO NOT REPLACE THESE WITH PLATFORM_NAME. These are not
+              // copy; they are SEARCH PATTERNS matched against the seeded
+              // template rows, which literally contain "PestFlow Pro", the .com
+              // address and the old phone number. Swapping the needle for
+              // HomeFlow Pro stops it matching, and every newly provisioned
+              // tenant silently keeps the demo text. The sibling lines matching
+              // pestflowpro.com and (430) 367-5601 are the same kind of thing.
               intro: t.intro
                 .replaceAll('PestFlow Pro, LLC', `${newName}, LLC`)
                 .replaceAll('PESTFLOW PRO, LLC', `${newNameUpper}, LLC`)

@@ -14,6 +14,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { requireTenantUser, AuthError } from '../_shared/auth/requireTenantUser.ts'
+import { PLATFORM_NAME } from '../../../shared/lib/platformBrand.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
@@ -68,7 +69,7 @@ Deno.serve(async (req: Request) => {
     const body = `Tenant: ${tenantName}\nPriority: ${ticket.priority}\nSubject: ${ticket.subject}\n\n${ticket.body}\n\nView in Ironwood: https://pestflowpro.com/ironwood`
 
     const emailPayload: Record<string, unknown> = {
-      from: 'PestFlow Pro <noreply@pestflow.ai>',
+      from: `${PLATFORM_NAME} <noreply@pestflow.ai>`,
       to: ['support@homeflowpro.ai'],
       subject,
       text: body,

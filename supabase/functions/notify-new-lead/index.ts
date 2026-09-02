@@ -91,7 +91,16 @@ export async function handler(req: Request): Promise<Response> {
     const ccEmail: string = notifRes.data?.value?.cc_email || ''
     const primaryColor: string = brandRes.data?.value?.primary_color || '#10b981'
     const logoUrl: string = brandRes.data?.value?.logo_url || ''
-    const businessName: string = bizRes.data?.value?.name || 'PestFlow Pro'
+    // S317. The tenant's OWN name, or nothing. There is no default: the platform's
+    // name is not a business name, and substituting it here is the category error
+    // platformBrand.ts exists to fix (see its header). Copy below names the business
+    // only when there is one.
+    //
+    // senderName is a DIFFERENT claim. A From display label is mandatory, and
+    // "${PLATFORM_NAME} is sending this" is true; "your business is called
+    // ${PLATFORM_NAME}" is the claim we refuse to make.
+    const businessName: string = bizRes.data?.value?.name || ''
+    const senderName: string = businessName || PLATFORM_NAME
     const businessPhone: string = bizRes.data?.value?.phone || ''
     const businessEmail: string = bizRes.data?.value?.email || ''
     const businessAddress: string = bizRes.data?.value?.address || ''
@@ -114,7 +123,7 @@ export async function handler(req: Request): Promise<Response> {
       console.log('[notify-new-lead] sending Email A to visitor:', lead.email)
       const logoHtml = logoUrl
         ? `<img src="${logoUrl}" alt="${businessName}" style="max-height:60px;max-width:200px;object-fit:contain;margin-bottom:16px" />`
-        : `<h1 style="margin:0 0 16px;font-size:22px;color:${primaryColor}">${businessName}</h1>`
+        : businessName ? `<h1 style="margin:0 0 16px;font-size:22px;color:${primaryColor}">${businessName}</h1>` : ''
 
       const autoReplyHtml = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -128,7 +137,7 @@ export async function handler(req: Request): Promise<Response> {
   <tr><td style="padding:32px">
     <p style="margin:0 0 16px;font-size:16px;color:#111">Hi ${firstName},</p>
     <p style="margin:0 0 16px;font-size:16px;color:#333;line-height:1.6">
-      Thank you for reaching out to <strong>${businessName}</strong>!
+      Thank you for reaching out${businessName ? ` to <strong>${businessName}</strong>` : ''}!
       We've received your request and will be in touch within <strong>1 business day</strong>.
     </p>
     <table style="width:100%;background:#f9fafb;border-radius:6px;padding:16px;margin:24px 0;border-collapse:collapse">
@@ -154,16 +163,16 @@ export async function handler(req: Request): Promise<Response> {
 </td></tr></table>
 </body></html>`
 
-      const autoReplyText = `Hi ${firstName},\n\nThank you for contacting ${businessName}! We received your request and will be in touch within 1 business day.\n\nYour submitted information:\n- Name: ${lead.name}\n- Phone: ${lead.phone || '—'}\n${lead.services?.length ? `- Services: ${services}\n` : ''}\n${businessPhone ? `If you need immediate assistance, call us: ${businessPhone}\n\n` : ''}We look forward to speaking with you!\n\n${businessName}${businessAddress ? '\n' + businessAddress : ''}\n\n---\nPowered by HomeFlow Pro`
+      const autoReplyText = `Hi ${firstName},\n\nThank you for contacting${businessName ? ` ${businessName}` : ''}! We received your request and will be in touch within 1 business day.\n\nYour submitted information:\n- Name: ${lead.name}\n- Phone: ${lead.phone || '—'}\n${lead.services?.length ? `- Services: ${services}\n` : ''}\n${businessPhone ? `If you need immediate assistance, call us: ${businessPhone}\n\n` : ''}We look forward to speaking with you!\n\n${businessName}${businessAddress ? '\n' + businessAddress : ''}\n\n---\nPowered by ${PLATFORM_NAME}`
 
       try {
         await sendEmail({
           to: lead.email,
-          subject: `We received your request, ${firstName}! — ${businessName}`,
+          subject: `We received your request, ${firstName}!${businessName ? ` — ${businessName}` : ''}`,
           replyTo: businessEmail || notifyEmail || undefined,
           html: autoReplyHtml,
           text: autoReplyText,
-          fromName: businessName,
+          fromName: senderName,
         })
         results.emailA = 'sent'
         console.log('[notify-new-lead] Email A sent OK')
@@ -183,10 +192,10 @@ export async function handler(req: Request): Promise<Response> {
         await sendEmail({
           to: notifyEmail,
           cc: ccEmail || undefined,
-          subject: `New lead from ${lead.name} — ${businessName}`,
-          fromName: businessName,
+          subject: `New lead from ${lead.name}${businessName ? ` — ${businessName}` : ''}`,
+          fromName: senderName,
           html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
-  <h2 style="color:${primaryColor}">New Lead — ${businessName}</h2>
+  <h2 style="color:${primaryColor}">New Lead${businessName ? ` — ${businessName}` : ''}</h2>
   <table style="width:100%;border-collapse:collapse">
     <tr><td style="padding:8px;font-weight:bold">Name</td>
         <td style="padding:8px">${lead.name}</td></tr>

@@ -110,7 +110,16 @@ export async function handler(req: Request): Promise<Response> {
     ])
     const slug = tenant?.slug
     if (!slug) return json({ error: 'Tenant not found.' }, 404)
-    const businessName: string = bizSetting?.value?.name || 'PestFlow Pro'
+    // S317. The tenant's OWN name, or nothing. There is no default: the platform's
+    // name is not a business name, and substituting it here is the category error
+    // platformBrand.ts exists to fix (see its header). Copy below names the business
+    // only when there is one.
+    //
+    // senderName is a DIFFERENT claim. A From display label is mandatory, and
+    // "${PLATFORM_NAME} is sending this" is true; "your business is called
+    // ${PLATFORM_NAME}" is the claim we refuse to make.
+    const businessName: string = bizSetting?.value?.name || ''
+    const senderName: string = businessName || PLATFORM_NAME
     const origin = `https://${slug}.${APP_BASE_DOMAIN}`
     const setPasswordBase = `${origin}/set-password`
 
@@ -151,10 +160,10 @@ export async function handler(req: Request): Promise<Response> {
     if (isNew) {
       const link = `${setPasswordBase}?token_hash=${hashedToken}&type=invite`
       const { subject, html, text } = inviteEmail(businessName, link)
-      await sendEmail({ to: email, subject, html, text, fromName: businessName })
+      await sendEmail({ to: email, subject, html, text, fromName: senderName })
     } else {
       const { subject, html, text } = addedToTenantEmail(businessName, `${origin}/admin/login`)
-      await sendEmail({ to: email, subject, html, text, fromName: businessName })
+      await sendEmail({ to: email, subject, html, text, fromName: senderName })
     }
 
     return json({ status: isNew ? 'invited' : 'added' })

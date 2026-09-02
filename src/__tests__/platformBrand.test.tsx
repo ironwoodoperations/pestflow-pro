@@ -26,6 +26,11 @@ import { createElement } from 'react'
 import { readFileSync } from 'node:fs'
 import { PLATFORM_NAME, RETIRED_PLATFORM_NAME } from '../../shared/lib/platformBrand'
 import Login from '../pages/admin/Login'
+import {
+  recoveryEmail,
+  inviteEmail,
+  addedToTenantEmail,
+} from '../../supabase/functions/_shared/emailTemplates/authEmails.ts'
 
 // Word boundaries throughout. Substring over-match has produced five false
 // positives in this codebase — 'pest' inside "PestFlow Pro" twice, 'free'
@@ -34,6 +39,15 @@ import Login from '../pages/admin/Login'
 // exact product names, so they are matched as whole phrases.
 const RETIRED = new RegExp(`\\b${RETIRED_PLATFORM_NAME.replace(/ /g, '\\s')}\\b`, 'i')
 const CURRENT = new RegExp(`\\b${PLATFORM_NAME.replace(/ /g, '\\s')}\\b`, 'i')
+
+/** Comments out, code in — a comment naming what it replaced is not a claim. */
+function codeOnly(body: string): string {
+  return body
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .split('\n')
+    .filter((line) => !/^[ \t]*(\/\/|\*)/.test(line))
+    .join('\n')
+}
 
 describe('the constant is the only definition', () => {
   it('names the platform, and is not the retired vertical brand', () => {
@@ -147,15 +161,6 @@ describe('no platform-copy file reintroduces the retired name', () => {
   /** Outside src/, so it is read by an explicit relative path. */
   const NEXT_FILES = ['../app/set-password/page.tsx']
 
-  /** Comments out, code in — a comment naming what it replaced is not a claim. */
-  function codeOnly(body: string): string {
-    return body
-      .replace(/\/\*[\s\S]*?\*\//g, '')
-      .split('\n')
-      .filter((line) => !/^[ \t]*(\/\/|\*)/.test(line))
-      .join('\n')
-  }
-
   for (const rel of FILES) {
     it(`${rel} names no PestFlow Pro in code`, () => {
       const body = readFileSync(new URL(`../${rel}`, import.meta.url), 'utf8')
@@ -204,5 +209,192 @@ describe('no platform-copy file reintroduces the retired name', () => {
     expect(codeOnly(body).length).toBeGreaterThan(body.length / 3)
     // …and a planted offender in CODE is caught.
     expect(codeOnly(`${body}\nconst leak = 'Powered by PestFlow Pro'\n`)).toMatch(RETIRED)
+  })
+})
+
+// ── S317: the EDGE FUNCTIONS ───────────────────────────────────────────────
+//
+// S294 migrated the admin SPA, app/set-password and generate-monthly-report and
+// stopped there. The edge functions kept the pest brand, so the emails a tenant
+// actually RECEIVES still carried it: confirmed live 2026-09-02, an irrigation
+// client's password-reset footer read "Powered by PestFlow Pro" linked to
+// pestflowpro.ai.
+//
+// SCOPE OF THIS LIST — the platform-copy edge functions, and only those.
+// Deliberately EXCLUDED, each for a stated reason:
+//   - provision-tenant/index.ts keeps "PestFlow Pro" in CODE on purpose. Those
+//     are replaceAll SEARCH PATTERNS matched against seeded template rows that
+//     literally contain the string. Swapping the needle breaks provisioning
+//     silently. Guarded below by its own assertion instead.
+//   - _shared/sendEmail.ts, _shared/authorityPrompts.ts and
+//     lead-bridge-dispatch/index.ts name the brand only in COMMENTS and consume
+//     no platform copy, so they have nothing to import and nothing to rename.
+const EDGE_FILES = [
+  '_shared/emailTemplates/authEmails.ts',
+  'invite-team-member/index.ts',
+  'notify-new-lead/index.ts',
+  'notify-support-ticket/index.ts',
+  'notify-upgrade/index.ts',
+  'password-reset-request/index.ts',
+  'send-credentials-email/index.ts',
+  'send-intake-email/index.ts',
+  'send-onboarding-email/index.ts',
+  'send-reveal-ready/index.ts',
+]
+
+const edgeSrc = (rel: string) =>
+  readFileSync(new URL(`../../supabase/functions/${rel}`, import.meta.url), 'utf8')
+
+describe('S317: no edge function reintroduces the retired name', () => {
+  for (const rel of EDGE_FILES) {
+    it(`${rel} names no PestFlow Pro in code`, () => {
+      expect(codeOnly(edgeSrc(rel)), `${rel} still names the retired brand`).not.toMatch(RETIRED)
+    })
+  }
+
+  it('the edge list is NOT empty, and its length is asserted explicitly', () => {
+    // Third list in this file, third explicit count. The other two record why:
+    // an emptied list generates zero tests and every one of them passes. A list
+    // without a count is a guard that cannot detect its own deletion.
+    expect(EDGE_FILES.length).toBe(10)
+    expect(new Set(EDGE_FILES).size).toBe(EDGE_FILES.length)
+    // …and it is the email-sending set, not ten arbitrary paths.
+    expect(EDGE_FILES).toContain('password-reset-request/index.ts')
+    expect(EDGE_FILES).toContain('_shared/emailTemplates/authEmails.ts')
+  })
+
+  it('every listed function exists, is non-trivial, and imports the constant', () => {
+    // A path typo would make the loop above scan nothing. So would a function
+    // that stopped importing PLATFORM_NAME and hardcoded 'HomeFlow Pro' —
+    // right string, second definition, exactly what S294 exists to prevent.
+    for (const rel of EDGE_FILES) {
+      const body = edgeSrc(rel)
+      expect(body.length, `${rel} is empty`).toBeGreaterThan(200)
+      expect(body, `${rel} does not import the shared constant`).toContain('platformBrand')
+      expect(body, `${rel} does not use it`).toContain('PLATFORM_NAME')
+      expect(codeOnly(body), `${rel} hardcodes the platform name`).not.toContain(`'${PLATFORM_NAME}'`)
+    }
+  })
+
+  it('the guard can still fail — a planted offender in edge CODE is caught', () => {
+    const body = edgeSrc('password-reset-request/index.ts')
+    expect(codeOnly(`${body}\nconst leak = 'Powered by PestFlow Pro'\n`)).toMatch(RETIRED)
+  })
+})
+
+// ── RENDERED, not scanned ──────────────────────────────────────────────────
+//
+// authEmails.ts imports nothing but the shared constant, so unlike
+// generate-monthly-report it loads under vitest and these are REAL renders of
+// the exact strings a tenant receives. Labelled as such because the block above
+// is only a source scan, and S290 established the difference must be stated.
+describe('RENDERED: the auth emails a tenant actually receives', () => {
+  const link = 'https://acme.pestflowpro.ai/set-password?token_hash=x&type=recovery'
+
+  it('the footer names the platform, and is FLAT TEXT with no anchor', () => {
+    // The live defect: "Powered by PestFlow Pro" linked to pestflowpro.ai in an
+    // irrigation client's inbox. The link is gone on purpose — until the
+    // per-vertical landing pages exist there is no correct URL for a lawn or
+    // irrigation client, and the pest one is affirmatively wrong.
+    const html = recoveryEmail('Acme Irrigation', link).html
+    expect(html).toMatch(CURRENT)
+    expect(html).not.toMatch(RETIRED)
+    expect(html).toContain(`Powered by ${PLATFORM_NAME}`)
+    expect(html).not.toMatch(/Powered by\s*<a/i)
+
+    // Scoped to the FOOTER, deliberately. A repo-wide "no pestflowpro anchor"
+    // assertion fails on the set-password CTA, whose href is the tenant's own
+    // subdomain — that link is the entire point of the email and is correct.
+    const footer = html.slice(html.indexOf('Powered by'))
+    expect(footer).not.toMatch(/<a\b/i)
+    expect(footer.length, 'the footer slice is empty — the assertion is vacuous')
+      .toBeGreaterThan(20)
+  })
+
+  it('names the TENANT when it has a name', () => {
+    expect(recoveryEmail('Acme Irrigation', link).subject).toBe('Reset your Acme Irrigation password')
+    expect(inviteEmail('Acme Irrigation', link).subject).toBe("You've been invited to Acme Irrigation")
+  })
+
+  it('names NO business when the tenant has none — not the platform', () => {
+    // platformBrand.ts's header: the constant is NOT a tenant's business name,
+    // and substituting it where the tenant's own belongs is the same category
+    // error it exists to fix. So the copy drops the name rather than defaulting.
+    for (const parts of [recoveryEmail('', link), inviteEmail('', link), addedToTenantEmail('', link)]) {
+      expect(parts.subject).not.toMatch(RETIRED)
+      expect(parts.subject).not.toMatch(CURRENT)
+      expect(parts.text).not.toMatch(RETIRED)
+      expect(parts.subject.trim()).toBe(parts.subject)
+      expect(parts.subject).not.toMatch(/\s{2,}/)
+    }
+    expect(recoveryEmail('', link).subject).toBe('Reset your password')
+    expect(inviteEmail('', link).subject).toBe("You've been invited")
+    expect(addedToTenantEmail('', link).subject).toBe("You've been added")
+  })
+
+  it('the renders are real — not empty strings passing every assertion above', () => {
+    const parts = recoveryEmail('Acme Irrigation', link)
+    expect(parts.html.length).toBeGreaterThan(500)
+    expect(parts.html).toContain(link)
+    expect(parts.text).toContain(link)
+    expect(parts.subject.length).toBeGreaterThan(10)
+  })
+})
+
+// ── The four call sites that used to default to the pest brand ─────────────
+describe('SOURCE-level: no edge function defaults a BUSINESS name to a PLATFORM name', () => {
+  const CALL_SITES = [
+    'notify-new-lead/index.ts',
+    'invite-team-member/index.ts',
+    'password-reset-request/index.ts',
+  ]
+
+  it('the call-site list is NOT empty', () => {
+    expect(CALL_SITES.length).toBe(3)
+  })
+
+  for (const rel of CALL_SITES) {
+    it(`${rel} reads the tenant's name with no platform fallback`, () => {
+      const code = codeOnly(edgeSrc(rel))
+      // Verified live 2026-09-02: all nine tenants have a non-empty
+      // business_info.name, so this path is unreachable in production today.
+      // That is why it was cheap to fix now and would have been expensive the
+      // first time a tenant was provisioned without one.
+      expect(code).toMatch(/const businessName: string = [^\n]*\|\| ''/)
+      expect(code, `${rel} defaults a business name to a platform name`)
+        .not.toMatch(/const businessName: string = [^\n]*\|\|\s*(PLATFORM_NAME|'(Pest|Home)Flow Pro')/)
+      // The From label is the one place a platform name is a TRUE claim.
+      expect(code).toContain('const senderName: string = businessName || PLATFORM_NAME')
+      expect(code, `${rel} still passes the raw business name as the sender`)
+        .not.toMatch(/fromName: businessName\b/)
+    })
+  }
+
+  it('send-intake-email drops the name from the subject rather than defaulting', () => {
+    const code = codeOnly(edgeSrc('send-intake-email/index.ts'))
+    expect(code).toContain("'Your website setup link is ready'")
+    expect(code).not.toMatch(/businessName \|\| '(Pest|Home)Flow Pro'/)
+  })
+})
+
+// ── provision-tenant: the string that must NOT be renamed ──────────────────
+describe('SOURCE-level: provision-tenant keeps its seed-data search patterns', () => {
+  const src = edgeSrc('provision-tenant/index.ts')
+
+  it('the replaceAll NEEDLES still say PestFlow Pro', () => {
+    // These are not copy. They are matched against seeded template rows whose
+    // text literally contains "PestFlow Pro". Renaming the needle to
+    // PLATFORM_NAME stops it matching and every newly provisioned tenant
+    // silently keeps the demo company's text — a failure with no error.
+    expect(src).toContain(".replaceAll('PestFlow Pro, LLC'")
+    expect(src).toContain(".replaceAll('PestFlow Pro', newName)")
+    expect(src).toContain(".replaceAll('PESTFLOW PRO', newNameUpper)")
+  })
+
+  it('its user-visible copy DID move to the constant', () => {
+    // The exclusion above is scoped to the matchers, not a blanket pass.
+    expect(src).toContain('platformBrand')
+    expect(src).toContain('${PLATFORM_NAME} tenant:')
+    expect(src).not.toContain('`PestFlow Pro tenant:')
   })
 })

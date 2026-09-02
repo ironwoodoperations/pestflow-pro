@@ -12,6 +12,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { requireTenantAdmin, AuthError } from '../_shared/auth/requireTenantUser.ts'
+import { PLATFORM_NAME } from '../../../shared/lib/platformBrand.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -74,7 +75,7 @@ Deno.serve(async (req: Request) => {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          from: 'PestFlow Pro <onboarding@pestflow.ai>',
+          from: `${PLATFORM_NAME} <onboarding@pestflow.ai>`,
           to: 'sales@homeflowpro.ai',
           subject: `⬆️ Plan Upgrade: ${escapeHtml(tenantName)} → ${escapeHtml(newName)}`,
           html: `<p><strong>${escapeHtml(tenantName)}</strong> started a plan upgrade to <strong>${escapeHtml(newName)}</strong> (${escapeHtml(price)}).</p><p>They moved from ${escapeHtml(oldName)}. Call to confirm and check in.</p>${featureLine}<p>Slug: ${escapeHtml(tenantSlug)}</p>`,

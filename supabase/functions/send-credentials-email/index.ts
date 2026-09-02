@@ -7,6 +7,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { sendEmail } from '../_shared/sendEmail.ts'
+import { PLATFORM_NAME } from '../../../shared/lib/platformBrand.ts'
 
 const SUPABASE_URL              = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
@@ -36,12 +37,12 @@ function buildHtml(
 
       <!-- Header -->
       <div style="background:#1a3a2a;padding:24px 32px">
-        <span style="color:#ffffff;font-size:22px;font-weight:bold;letter-spacing:0.5px">PestFlow Pro</span>
+        <span style="color:#ffffff;font-size:22px;font-weight:bold;letter-spacing:0.5px">${PLATFORM_NAME}</span>
       </div>
 
       <!-- Body -->
       <div style="padding:36px 32px">
-        <h1 style="margin:0 0 16px;font-size:24px;color:#111827">Welcome to PestFlow Pro, ${firstName}!</h1>
+        <h1 style="margin:0 0 16px;font-size:24px;color:#111827">Welcome to ${PLATFORM_NAME}, ${firstName}!</h1>
 
         <p style="margin:0 0 24px;font-size:15px;color:#374151;line-height:1.6">
           Your <strong>${businessName}</strong> website is officially live.
@@ -83,7 +84,7 @@ function buildHtml(
       <!-- Footer -->
       <div style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:20px 32px;text-align:center">
         <p style="margin:0;font-size:12px;color:#9ca3af">
-          PestFlow Pro &nbsp;·&nbsp;
+          ${PLATFORM_NAME} &nbsp;·&nbsp;
           <a href="https://pestflowpro.com" style="color:#9ca3af;text-decoration:none">pestflowpro.com</a>
           &nbsp;·&nbsp; Powered by Ironwood Operations Group
         </p>
@@ -207,7 +208,7 @@ export async function handler(req: Request): Promise<Response> {
       await sendEmail({
         to,
         subject: `You're live! Here are your ${businessName} login credentials`,
-        fromName: 'PestFlow Pro',
+        fromName: PLATFORM_NAME,
         html: buildHtml(
           firstName,
           businessName,

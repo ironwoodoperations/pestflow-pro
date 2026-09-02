@@ -6,6 +6,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { sendEmail } from '../_shared/sendEmail.ts'
+import { PLATFORM_NAME } from '../../../shared/lib/platformBrand.ts'
 
 const SUPABASE_URL              = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
@@ -25,12 +26,12 @@ function buildHtml(companyName: string, siteUrl: string): string {
   <div style="max-width:600px;margin:0 auto;padding:40px 16px">
     <div style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08)">
       <div style="background:#1a3a2a;padding:24px 32px">
-        <span style="color:#ffffff;font-size:22px;font-weight:bold">PestFlow Pro</span>
+        <span style="color:#ffffff;font-size:22px;font-weight:bold">${PLATFORM_NAME}</span>
       </div>
       <div style="padding:36px 32px">
         <h1 style="margin:0 0 16px;font-size:24px;color:#111827">Hi ${companyName},</h1>
         <p style="margin:0 0 20px;font-size:15px;color:#374151;line-height:1.6">
-          Your new PestFlow Pro site is live and ready for your review.
+          Your new ${PLATFORM_NAME} site is live and ready for your review.
         </p>
         <p style="margin:0 0 20px;font-size:14px;color:#6b7280;line-height:1.6"><em>Want to talk it through? Reply to this email or call (430) 367-5601.</em></p>
         <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:20px 24px;margin:0 0 24px">
@@ -44,10 +45,10 @@ function buildHtml(companyName: string, siteUrl: string): string {
           <a href="${siteUrl}" style="color:#16a34a;text-decoration:none;font-weight:600">${siteUrl}</a>
         </p>
         <p style="margin:0 0 4px;font-size:13px;color:#6b7280">Questions? Reply to this email or call (430) 367-5601.</p>
-        <p style="margin:0;font-size:13px;color:#6b7280">— The PestFlow Pro Team</p>
+        <p style="margin:0;font-size:13px;color:#6b7280">— The ${PLATFORM_NAME} Team</p>
       </div>
       <div style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:20px 32px;text-align:center">
-        <p style="margin:0;font-size:12px;color:#9ca3af">PestFlow Pro &nbsp;·&nbsp; <a href="https://pestflowpro.com" style="color:#9ca3af;text-decoration:none">pestflowpro.com</a></p>
+        <p style="margin:0;font-size:12px;color:#9ca3af">${PLATFORM_NAME} &nbsp;·&nbsp; <a href="https://pestflowpro.com" style="color:#9ca3af;text-decoration:none">pestflowpro.com</a></p>
       </div>
     </div>
   </div>
@@ -81,7 +82,7 @@ Deno.serve(async (req: Request) => {
       subject: `Your site is ready — let's walk through it together`,
       html: buildHtml(recipientName, siteLink),
       replyTo: 'sales@homeflowpro.ai',
-      fromName: 'PestFlow Pro',
+      fromName: PLATFORM_NAME,
     })
     return json({ success: true })
   } catch (err: any) {
