@@ -276,6 +276,54 @@ describe('S317: no edge function reintroduces the retired name', () => {
     }
   })
 
+  it('S319: any file REFERENCING PLATFORM_NAME in code also IMPORTS it', () => {
+    // THE ASSERTION WHOSE ABSENCE SHIPPED A PRODUCTION OUTAGE.
+    //
+    // S317 left three functions with `businessName || PLATFORM_NAME` and no
+    // import. Nothing caught it: the bundler saw no missing file (for two of
+    // them platformBrand rides in via authEmails; notify-new-lead did not even
+    // have that, and its deployed bundle simply had no such module), eslint
+    // ignores supabase/functions entirely, and `||` short-circuits so the nine
+    // named tenants never evaluated the right-hand side.
+    //
+    // And the check above passed on ALL THREE, because `toContain('platformBrand')`
+    // was satisfied by the WORD appearing in an explanatory comment. Checking
+    // that a file mentions a module is not checking that it imports it. This
+    // asserts the import STATEMENT, in code, with the comments stripped.
+    for (const rel of EDGE_FILES) {
+      const code = codeOnly(edgeSrc(rel))
+      if (!code.includes('PLATFORM_NAME')) continue
+      expect(code, `${rel} references PLATFORM_NAME but never imports it`)
+        .toMatch(/import\s*\{[^}]*\bPLATFORM_NAME\b[^}]*\}\s*from\s*'[^']*platformBrand[^']*'/)
+    }
+  })
+
+  it('that import assertion is not vacuous — it is exercised by real files', () => {
+    // If EDGE_FILES ever stopped referencing PLATFORM_NAME in code, the loop
+    // above would `continue` past every entry and pass while asserting nothing.
+    const referencing = EDGE_FILES.filter((rel) => codeOnly(edgeSrc(rel)).includes('PLATFORM_NAME'))
+    expect(referencing.length).toBeGreaterThanOrEqual(8)
+    // The three S319 fixed, named so a regression points at itself.
+    expect(referencing).toContain('password-reset-request/index.ts')
+    expect(referencing).toContain('notify-new-lead/index.ts')
+    expect(referencing).toContain('invite-team-member/index.ts')
+  })
+
+  it('a comment mentioning platformBrand does NOT satisfy the import check', () => {
+    // The exact shape of the S317 slip, reproduced: the file that let it through
+    // had `// platformBrand.ts exists to fix (see its header)` and no import.
+    const decoy = [
+      '// platformBrand.ts exists to fix (see its header)',
+      'const senderName: string = businessName || PLATFORM_NAME',
+    ].join('\n')
+    const IMPORTS =
+      /import\s*\{[^}]*\bPLATFORM_NAME\b[^}]*\}\s*from\s*'[^']*platformBrand[^']*'/
+    expect(decoy).toContain('platformBrand')      // the OLD check passes…
+    expect(codeOnly(decoy)).not.toMatch(IMPORTS)  // …and the new one catches it.
+    const fixed = `import { PLATFORM_NAME } from '../../../shared/lib/platformBrand.ts'\n${decoy}`
+    expect(codeOnly(fixed)).toMatch(IMPORTS)
+  })
+
   it('the guard can still fail — a planted offender in edge CODE is caught', () => {
     const body = edgeSrc('password-reset-request/index.ts')
     expect(codeOnly(`${body}\nconst leak = 'Powered by PestFlow Pro'\n`)).toMatch(RETIRED)

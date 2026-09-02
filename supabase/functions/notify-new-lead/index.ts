@@ -11,6 +11,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { timingSafeEqual } from 'node:crypto'
 import { sendEmail } from '../_shared/sendEmail.ts'
+import { PLATFORM_NAME } from '../../../shared/lib/platformBrand.ts'
 
 function formatPhone(raw: string): string {
   const digits = raw.replace(/\D/g, '')
