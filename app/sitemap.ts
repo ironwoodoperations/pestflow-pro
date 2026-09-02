@@ -76,7 +76,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // another is worse than no sitemap: it tells a crawler the two disagree.
   const siteUrl = resolveSiteUrl(tenant);
   const now = new Date();
-  const url = (path: string) => `${siteUrl}${path}`;
+
+  // S322 — this MUST reproduce buildPageMetadata's rule exactly:
+  //     pathname && pathname !== '/' ? `${siteUrl}${pathname}` : siteUrl
+  // The naive `${siteUrl}${path}` emitted `https://host/` for the homepage while the page's
+  // own rel=canonical is `https://host` — a one-byte disagreement between the sitemap and
+  // the page it points at, which is worse than omitting the entry. Caught by comparing the
+  // two against the real helper rather than by eye.
+  const url = (path: string) => (path && path !== '/' ? `${siteUrl}${path}` : siteUrl);
 
   const entries: MetadataRoute.Sitemap = [
     { url: url('/'), lastModified: now, changeFrequency: 'weekly', priority: 1 },

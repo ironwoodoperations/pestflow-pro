@@ -1,12 +1,43 @@
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
+import { buildPageMetadata } from '../../../../shared/lib/buildPageMetadata';
 import { resolveTenantBySlug } from '../../../../shared/lib/tenant/resolve';
 
 export const revalidate = 300;
 
+// S322 — canonical self-reference. This route had NO generateMetadata, so in the App Router
+// it inherited the tenant LAYOUT's metadata, whose canonical is the bare site URL because it
+// describes the SITE rather than a page. Every such page told Google it was a duplicate of
+// the homepage and would not be indexed separately.
+//
+// buildPageMetadata was already correct — `pathname && pathname !== '/' ? siteUrl+pathname :
+// siteUrl` — it was simply never called here. S276 wired only four route groups ([service],
+// blog, blog/[post], home) and the rest were missed.
+//
+// The pathname is a LITERAL matching this route's own directory, never derived from a request
+// header. Host is an untrusted selector, not a URL source (established in S321 PR B).
+export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  const tenant = await resolveTenantBySlug(params.slug);
+  if (!tenant) return {};
+  const businessName = tenant.business_name || tenant.name;
+  // A seo_meta row supplies the TITLE when one exists; the ROUTE supplies the path. A correct
+  // canonical needs no row — that is why this is a code fix and not a per-tenant data fix.
+  const seoMeta = await getSeoMeta(tenant.id, 'contact');
+  return buildPageMetadata(tenant, {
+    pathname: '/contact',
+    seoMeta,
+    fallback: {
+      title: `Contact | ${businessName}`,
+      description: `Contact ${businessName} — get in touch about your property.`,
+    },
+  });
+}
+
+
 export async function generateStaticParams() {
   return [];
 }
-import { getPageContent, getSocialLinks, getIntegrations, getHeroMedia } from '../_lib/queries';
+import { getPageContent, getSocialLinks, getIntegrations, getHeroMedia, getSeoMeta } from '../_lib/queries';
 import { resolveHeroImage } from '../_lib/heroImage';
 import { ContactForm } from '../_components/forms/ContactForm';
 import { ModernProContactPage } from '../_shells/modern-pro/ModernProContactPage';

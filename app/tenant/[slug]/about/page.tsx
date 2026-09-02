@@ -1,4 +1,6 @@
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
+import { buildPageMetadata } from '../../../../shared/lib/buildPageMetadata';
 import { resolveTenantBySlug } from '../../../../shared/lib/tenant/resolve';
 import { resolveSiteUrl } from '../../../../shared/lib/resolveSiteUrl';
 import { JsonLdScript } from '../_components/JsonLdScripts';
@@ -6,10 +8,39 @@ import { generateAboutSchema, type BusinessInfo, type SeoSettings } from '../../
 
 export const revalidate = 300;
 
+// S322 — canonical self-reference. This route had NO generateMetadata, so in the App Router
+// it inherited the tenant LAYOUT's metadata, whose canonical is the bare site URL because it
+// describes the SITE rather than a page. Every such page told Google it was a duplicate of
+// the homepage and would not be indexed separately.
+//
+// buildPageMetadata was already correct — `pathname && pathname !== '/' ? siteUrl+pathname :
+// siteUrl` — it was simply never called here. S276 wired only four route groups ([service],
+// blog, blog/[post], home) and the rest were missed.
+//
+// The pathname is a LITERAL matching this route's own directory, never derived from a request
+// header. Host is an untrusted selector, not a URL source (established in S321 PR B).
+export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  const tenant = await resolveTenantBySlug(params.slug);
+  if (!tenant) return {};
+  const businessName = tenant.business_name || tenant.name;
+  // A seo_meta row supplies the TITLE when one exists; the ROUTE supplies the path. A correct
+  // canonical needs no row — that is why this is a code fix and not a per-tenant data fix.
+  const seoMeta = await getSeoMeta(tenant.id, 'about');
+  return buildPageMetadata(tenant, {
+    pathname: '/about',
+    seoMeta,
+    fallback: {
+      title: `About | ${businessName}`,
+      description: `About ${businessName} — who we are and how we work.`,
+    },
+  });
+}
+
+
 export async function generateStaticParams() {
   return [];
 }
-import { getPageContent, getTeamMembers, getHeroMedia, getIntegrations, getAboutSettings } from '../_lib/queries';
+import { getPageContent, getTeamMembers, getHeroMedia, getIntegrations, getAboutSettings, getSeoMeta } from '../_lib/queries';
 import { resolveAboutStats } from '../_lib/aboutStats';
 import { resolveVertical } from '../../../../shared/lib/verticals';
 import { getVerticalCopy } from '../../../../src/shells/_shared/verticalCopy';

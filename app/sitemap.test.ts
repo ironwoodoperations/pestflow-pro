@@ -99,7 +99,7 @@ describe('sitemap() -- B-g and B-h, the two the brief asks to be shown', () => {
     const entries = await sitemap()
     expect(entries.length).toBeGreaterThan(0)
     for (const e of entries) {
-      expect(e.url.startsWith('https://precisionlawnsystems.com/'), e.url).toBe(true)
+      expect(e.url.startsWith('https://precisionlawnsystems.com'), e.url).toBe(true)
       expect(e.url).not.toContain('pestflowpro.ai')
     }
   })
@@ -132,7 +132,7 @@ describe('sitemap() -- B-g and B-h, the two the brief asks to be shown', () => {
     const entries = await sitemap()
     expect(entries.length).toBeGreaterThan(0)
     for (const e of entries) {
-      expect(e.url.startsWith('https://precisionlawnsystems.com/'), e.url).toBe(true)
+      expect(e.url.startsWith('https://precisionlawnsystems.com'), e.url).toBe(true)
       expect(e.url, 'a Host-derived URL would leak the request host into <loc>')
         .not.toContain('pestflowpro.ai')
     }
@@ -146,5 +146,58 @@ describe('sitemap() -- B-g and B-h, the two the brief asks to be shown', () => {
   it('a host that resolves to no tenant publishes nothing', async () => {
     tenant = null
     expect(await sitemap()).toEqual([])
+  })
+})
+
+// S322 STEP 4 — every <loc> must BYTE-MATCH that page's rendered rel=canonical.
+//
+// Compared against the REAL buildPageMetadata rather than a re-implementation of its rule.
+// A test that re-states the rule drifts the moment the helper changes and then agrees with
+// itself forever; running the actual helper cannot.
+describe('S322 — sitemap <loc> matches the page canonical exactly', () => {
+  beforeEach(() => {
+    currentHost = 'precisionlawnsystems.com'
+    tenant = { ...tenantRow }
+  })
+
+  it('every entry equals buildPageMetadata(...).alternates.canonical for its own path', async () => {
+    const { buildPageMetadata } = await import('../shared/lib/buildPageMetadata')
+    const { resolveSiteUrl } = await import('../shared/lib/resolveSiteUrl')
+    const siteUrl = resolveSiteUrl(tenantRow)
+
+    const entries = await sitemap()
+    expect(entries.length).toBeGreaterThan(0)
+
+    for (const e of entries) {
+      // Derive the pathname the page route would receive, then ask the real helper.
+      const pathname = e.url.slice(siteUrl.length) || '/'
+      const meta = buildPageMetadata(tenantRow as never, {
+        pathname,
+        seoMeta: null,
+        fallback: { title: 't', description: 'd' },
+      })
+      expect(
+        meta.alternates?.canonical,
+        `sitemap <loc> ${e.url} disagrees with the canonical for ${pathname}`,
+      ).toBe(e.url)
+    }
+  })
+
+  it('the homepage entry carries NO trailing slash, matching its canonical', () => {
+    // The specific one-byte disagreement S322 found: `${siteUrl}${'/'}` produced
+    // https://host/ while the canonical is https://host.
+    return sitemap().then((entries) => {
+      const root = entries.find((e) => !e.url.slice('https://precisionlawnsystems.com'.length))
+      expect(root?.url).toBe('https://precisionlawnsystems.com')
+      expect(entries.map((e) => e.url)).not.toContain('https://precisionlawnsystems.com/')
+    })
+  })
+
+  it('lists every route S322 wired', async () => {
+    const urls = (await sitemap()).map((e) => e.url)
+    for (const p of ['/about', '/contact', '/faq', '/quote', '/reviews', '/service-area']) {
+      expect(urls, `sitemap omits ${p}, which now self-canonicalizes`)
+        .toContain(`https://precisionlawnsystems.com${p}`)
+    }
   })
 })
