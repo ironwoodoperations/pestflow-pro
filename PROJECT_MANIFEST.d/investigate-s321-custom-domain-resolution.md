@@ -52,3 +52,31 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   blocks code, not just merge. When implementing: the deployed `api-quote` v36 allows
   `pestflowpro\.(com|ai)` and the repo file allows only `\.com`; shipping the repo version
   would 403 every `.ai` tenant and kill lead capture platform-wide.
+
+---
+## Session — 2026-09-02 22:48 UTC
+- Branch: `investigate/s321-custom-domain-resolution`
+- Commit: `ab20f57` — S321: record the gate as CLOSED, and flag that the appendices are still empty
+- Author: Claude
+- Files changed:
+  - REVIEW_S321_CUSTOM_DOMAIN_RESOLUTION.md
+- PR: #326 (draft). Implementation shipped separately: #327 (PR A) and #328 (PR B), both green.
+- Next recommended action: PASTE THE TWO VERDICT TEXTS INTO APPENDICES A AND B. Only Scott
+  can do this and it is the one item this branch still owes.
+
+  The implementation brief stated both verdicts were "already byte-exact in the review
+  document". They are NOT — the file carries four NOT-YET-SUPPLIED markers and no verdict
+  text was ever pasted in. Everything recorded about the verdicts came through the brief as
+  a SUMMARY and is now labelled that way in the document.
+
+  DO NOT RECONSTRUCT THEM. A reconstruction is indistinguishable from a transcript to a
+  later reader, which destroys the only thing a VERBATIM slot is for. S309 round 1 was filed
+  with the two models reversed — that is the error the byte-exact appendices plus the
+  programmatic attribution check exist to catch. The fill aborts if Appendix A carries a
+  citation or Appendix B carries none; that assertion still runs first.
+
+  The gate itself is CLOSED (Gemini REJECT / 5 conditions; Perplexity APPROVE WITH
+  CONDITIONS / 10 groups) and the arbitration — keep the CUSTOM_DOMAINS map, conservative
+  wins — is already executable in buildPageMetadata.test.ts via a fixture whose map entry and
+  tenants.custom_domain disagree. Mutation-verified. So the code is not waiting on this; the
+  RECORD is.
