@@ -13,8 +13,25 @@
 -- homepage. S308 deleted its operators row as a security fix and missed these, so it
 -- retained INSERT/UPDATE/DELETE on EVERY tenant's logo, Dang's included.
 -- Replaced with public.is_operator(), the SECURITY DEFINER helper S308 built for this.
--- It follows the operators table, so removing an operator now removes them here too —
--- which is exactly what failed to happen last time.
+--
+-- THIS IS A NARROWING, NOT A SUBSTITUTION IN KIND. Do not read it as indirection over
+-- the same principal — the principal CHANGES, and that is the point:
+--
+--   before:  admin@pestflowpro.com    a shared account whose password is published on
+--                                     the marketing homepage. INSERT/UPDATE/DELETE on
+--                                     EVERY tenant's logo. Revocable only by editing
+--                                     three policy expressions.
+--   after:   scott@homeflowpro.ai     via is_operator(). The same reach, but a single
+--                                     NAMED identity, and revocable by deleting one row
+--                                     from public.operators.
+--
+-- So one account LOSES cross-tenant logo write (the fix) and a different account GAINS
+-- it (intended, and stated rather than smuggled in). operators holds exactly one row as
+-- of 2026-09-02: scott@homeflowpro.ai, the platform owner and sole operator.
+--
+-- This is what S308 built the operators table for. The failure it is fixing is that a
+-- policy carrying a literal cannot be revoked by removing an operator — which is exactly
+-- what S308 tried to do and did not achieve.
 --
 -- ── FINDING 2 — the tenant predicate read profiles ──────────────────────────────
 -- current_tenant_id() is `select tenant_id from profiles where id = auth.uid()`.
@@ -29,11 +46,30 @@
 -- this finishes the job.
 --
 -- ── WRITE vs READ, stated rather than assumed ──────────────────────────────────
--- WRITES (INSERT/UPDATE/DELETE) require role = 'admin', matching reports_admin_read.
--- Replacing or DELETING a client's logo or hero image is an administrative act, and
--- these policies carry DELETE. Least privilege for a destructive capability.
--- READS require any membership: a non-admin member who can see the admin UI needs to
--- see the images in it. Tightening reads would break viewing for no security gain.
+-- WRITES (INSERT/UPDATE/DELETE) require role IN ('admin', 'manager').
+--
+-- NOT admin-only. tenant_users_role_check admits 'admin', 'manager' and 'user', and this
+-- project's content-table policies already let a manager write. Admin-only here would
+-- mean a manager can edit a page's content row but cannot upload that page's image —
+-- denied with the same opaque "violates row-level security policy" this migration exists
+-- to remove. There are zero manager rows today, which is exactly why admin-only would
+-- have shipped silently and surfaced on the first manager ever created.
+--
+-- 'user' is excluded: these policies carry DELETE, and replacing or deleting a client's
+-- logo is not something a plain member should do.
+-- READS require any membership: a member who can see the admin UI needs to see the
+-- images in it.
+--
+-- READ POLICIES ON THESE BUCKETS ARE NOT A CONFIDENTIALITY CONTROL. Verified 2026-09-02:
+-- logos, tenant-assets, social-uploads and videos are all `public = true` in
+-- storage.buckets; only `reports` is private. Supabase serves a public bucket over
+-- /object/public/... WITHOUT evaluating RLS, so anyone holding a URL reads the object
+-- whatever these policies say. What they gate is the authenticated /object/ path and
+-- list operations.
+--
+-- That is why "any membership" is right, and it is NOT a security judgement: narrowing
+-- reads would buy nothing against a public URL while breaking listing in the admin UI.
+-- Anyone reading this later must not mistake these SELECT policies for privacy.
 --
 -- Effective-grant delta, computed against live data 2026-09-02 (not estimated):
 --   admin@dangpestcontrol.com      dang                  -> dang                  (same)
@@ -59,6 +95,28 @@
 -- its own decision. Consequence: scott@homeflowpro.ai cannot upload to pls assets —
 -- admin@ironwoodopsgrp.com is the pls admin and can.
 
+-- ── WHY THE INLINE EXISTS AND NOT is_tenant_member() ───────────────────────────
+-- An earlier draft of this PR claimed the SECURITY DEFINER helper was "strictly more
+-- robust". THAT WAS WRONG, and the inversion is the least obvious thing here.
+--
+-- is_tenant_member(p_tenant_id uuid) takes a uuid, so calling it requires
+--     (storage.foldername(name))[1]::uuid
+-- and that cast is applied to an OBJECT KEY — untrusted input. A key whose first path
+-- segment is not a valid uuid makes the cast RAISE `invalid input syntax for type uuid`.
+-- An RLS predicate that raises does not deny the row; it ERRORS the statement. On a
+-- SELECT scanning the bucket, one malformed key takes out the whole query.
+--
+-- The inline form compares the other direction — tu.tenant_id::text = <text> — casting
+-- uuid TO text, never text to uuid. It cannot raise. A malformed key simply fails to
+-- match and the row is denied, which is the correct direction.
+--
+-- The helper's real advantage stands and is secondary: as SECURITY DEFINER it is immune
+-- to tenant_users' own grants and RLS, where the inline form inherits both. If
+-- `authenticated` ever loses SELECT on tenant_users, or that table's policy narrows,
+-- every policy here fails CLOSED — a denial, not an error, so still the safe direction.
+-- Having both properties would need a TEXT-taking definer helper. That is a follow-up,
+-- not a blocker, and is deliberately not invented here.
+
 BEGIN;
 
 -- ── logos ──────────────────────────────────────────────────────────────────────
@@ -72,7 +130,7 @@ CREATE POLICY logos_insert_tenant_or_operator ON storage.objects
         SELECT 1 FROM public.tenant_users tu
         WHERE tu.tenant_id::text = (storage.foldername(name))[1]
           AND tu.user_id = auth.uid()
-          AND tu.role = 'admin'
+          AND tu.role IN ('admin', 'manager')
       )
       OR public.is_operator()
     )
@@ -88,7 +146,7 @@ CREATE POLICY logos_update_tenant_or_operator ON storage.objects
         SELECT 1 FROM public.tenant_users tu
         WHERE tu.tenant_id::text = (storage.foldername(name))[1]
           AND tu.user_id = auth.uid()
-          AND tu.role = 'admin'
+          AND tu.role IN ('admin', 'manager')
       )
       OR public.is_operator()
     )
@@ -100,7 +158,7 @@ CREATE POLICY logos_update_tenant_or_operator ON storage.objects
         SELECT 1 FROM public.tenant_users tu
         WHERE tu.tenant_id::text = (storage.foldername(name))[1]
           AND tu.user_id = auth.uid()
-          AND tu.role = 'admin'
+          AND tu.role IN ('admin', 'manager')
       )
       OR public.is_operator()
     )
@@ -116,7 +174,7 @@ CREATE POLICY logos_delete_tenant_or_operator ON storage.objects
         SELECT 1 FROM public.tenant_users tu
         WHERE tu.tenant_id::text = (storage.foldername(name))[1]
           AND tu.user_id = auth.uid()
-          AND tu.role = 'admin'
+          AND tu.role IN ('admin', 'manager')
       )
       OR public.is_operator()
     )
@@ -132,7 +190,7 @@ CREATE POLICY tenant_upload_assets ON storage.objects
       SELECT 1 FROM public.tenant_users tu
       WHERE tu.tenant_id::text = (storage.foldername(name))[1]
         AND tu.user_id = auth.uid()
-        AND tu.role = 'admin'
+        AND tu.role IN ('admin', 'manager')
     )
   );
 
@@ -145,7 +203,7 @@ CREATE POLICY tenant_update_assets ON storage.objects
       SELECT 1 FROM public.tenant_users tu
       WHERE tu.tenant_id::text = (storage.foldername(name))[1]
         AND tu.user_id = auth.uid()
-        AND tu.role = 'admin'
+        AND tu.role IN ('admin', 'manager')
     )
   )
   WITH CHECK (
@@ -154,7 +212,7 @@ CREATE POLICY tenant_update_assets ON storage.objects
       SELECT 1 FROM public.tenant_users tu
       WHERE tu.tenant_id::text = (storage.foldername(name))[1]
         AND tu.user_id = auth.uid()
-        AND tu.role = 'admin'
+        AND tu.role IN ('admin', 'manager')
     )
   );
 
@@ -167,7 +225,7 @@ CREATE POLICY tenant_delete_assets ON storage.objects
       SELECT 1 FROM public.tenant_users tu
       WHERE tu.tenant_id::text = (storage.foldername(name))[1]
         AND tu.user_id = auth.uid()
-        AND tu.role = 'admin'
+        AND tu.role IN ('admin', 'manager')
     )
   );
 
@@ -194,7 +252,7 @@ CREATE POLICY tenant_upload_social ON storage.objects
       SELECT 1 FROM public.tenant_users tu
       WHERE tu.tenant_id::text = (storage.foldername(name))[1]
         AND tu.user_id = auth.uid()
-        AND tu.role = 'admin'
+        AND tu.role IN ('admin', 'manager')
     )
   );
 
@@ -207,7 +265,7 @@ CREATE POLICY social_uploads_tenant_delete ON storage.objects
       SELECT 1 FROM public.tenant_users tu
       WHERE tu.tenant_id::text = (storage.foldername(name))[1]
         AND tu.user_id = auth.uid()
-        AND tu.role = 'admin'
+        AND tu.role IN ('admin', 'manager')
     )
   );
 
@@ -233,7 +291,7 @@ CREATE POLICY tenant_upload_videos ON storage.objects
       SELECT 1 FROM public.tenant_users tu
       WHERE tu.tenant_id::text = (storage.foldername(name))[1]
         AND tu.user_id = auth.uid()
-        AND tu.role = 'admin'
+        AND tu.role IN ('admin', 'manager')
     )
   );
 
@@ -252,8 +310,12 @@ CREATE POLICY tenant_read_videos ON storage.objects
 COMMIT;
 
 -- NOT TOUCHED, deliberately:
---   authenticated_read_logos  — bucket_id = 'logos' for any authenticated user. Out of
---     scope: it is a READ on a bucket served publicly anyway, and narrowing it is a
---     separate decision with its own blast radius.
+--   authenticated_read_logos  — bucket_id = 'logos' for any authenticated user.
+--     CONSIDERED FOR REMOVAL AND DELIBERATELY KEPT. It is the ONLY SELECT policy on the
+--     logos bucket, so deleting it leaves logos with no authenticated read path at all
+--     and breaks listing in the admin UI. The public object URL would still work (public
+--     bucket), which is exactly what would make the breakage confusing to diagnose.
+--     Removing it safely means REPLACING it with a tenant-scoped read — a scope
+--     expansion beyond this migration, and its own decision. Recorded, not done.
 --   reports_admin_read        — already the target shape. Left byte-identical so the
 --     diff shows only what changed.

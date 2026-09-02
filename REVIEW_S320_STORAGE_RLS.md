@@ -86,51 +86,88 @@ which the admin-vs-any-member choice differs.
 
 ## Decisions taken, for review
 
-1. **Writes require `role = 'admin'`; reads require any membership.** These policies
-   include DELETE. `reports_admin_read` on the same table already requires admin.
-   Reads are left open to any member so a non-admin who can see the admin UI can see the
-   images in it.
-2. **`is_operator()` is added to the logos bucket only.** A hardcoded operator grant
-   already existed there and is replaced in kind. The other three buckets get no operator
+1. **Writes require `role IN ('admin', 'manager')`; reads require any membership.**
+   `tenant_users_role_check` admits `admin`, `manager`, `user`, and this project's
+   content-table policies already let a manager write. Admin-only storage would mean a
+   manager can edit a page's content row but not upload that page's image — the same
+   opaque `violates row-level security policy` this change exists to remove. Zero
+   `manager` rows exist today, which is why it would have shipped silently.
+   Reads take any membership; see the note on public buckets below.
+2. **`is_operator()` is added to the logos bucket only, and this is a NARROWING rather
+   than a substitution in kind.** The principal changes:
+   `admin@pestflowpro.com` (shared, password published on the marketing homepage,
+   revocable only by editing three policy expressions) → `scott@homeflowpro.ai` via
+   `is_operator()` (single named identity, same reach, revocable by deleting one row from
+   `operators`). One account loses cross-tenant logo write; a different one gains it.
+   `operators` holds exactly one row. This is what the operators table was built for —
+   and the failure being fixed is that a policy carrying a literal cannot be revoked by
+   removing an operator, which is what the earlier fix attempted and did not achieve. The other three buckets get no operator
    clause, because adding one would be a privilege expansion beyond the defect. The
    consequence is that an operator who is not a member of a tenant cannot upload that
    tenant's assets.
-3. **The inline `EXISTS` is used rather than the `is_tenant_member()` helper**, following
-   `reports_admin_read`. The tradeoff is stated in question 3 below.
-4. **`authenticated_read_logos`** (`bucket_id = 'logos'` for any authenticated user) is
-   left untouched. Narrowing it is a separate decision with its own blast radius.
+3. **The inline `EXISTS` is used rather than the `is_tenant_member()` helper.** The
+   helper takes `uuid`, so calling it requires `(storage.foldername(name))[1]::uuid` — a
+   cast applied to an untrusted object key. A key whose first segment is not a valid uuid
+   makes that cast **raise**, and an RLS predicate that raises errors the statement
+   rather than denying the row; on a SELECT scanning the bucket one malformed key takes
+   out the whole query. The inline form casts `uuid → text` and cannot raise. The
+   helper's advantage — immunity to `tenant_users`' own grants and RLS — is real but
+   secondary, and its failure direction is a denial rather than an error.
+4. **`authenticated_read_logos`** — considered for removal and deliberately kept. It is
+   the only SELECT policy on `logos`, so deleting it leaves that bucket with no
+   authenticated read path and breaks listing in the admin UI, while the public object
+   URL keeps working — which is what would make the breakage confusing to diagnose.
+   Removing it safely means replacing it with a tenant-scoped read, a scope expansion
+   beyond this change.
+
+5. **Read policies on four of the five buckets are NOT a confidentiality control.**
+   `logos`, `tenant-assets`, `social-uploads` and `videos` are all `public = true`; only
+   `reports` is private. Supabase serves a public bucket over `/object/public/…` without
+   evaluating RLS, so anyone with a URL reads the object whatever these policies say.
+   They gate the authenticated `/object/` path and `list`. Any-membership reads are
+   therefore correct, but not as a privacy judgement, and this must not be read as one.
+
+6. **Re-upload was checked and is not broken.** `upsert: true` is used only against
+   `tenant-assets` and `logos`, both of which have UPDATE policies. `social-uploads` is
+   written without upsert from two call sites; `videos` is not written from client code
+   at all. No UPDATE policies are added.
 
 ## Questions for the validators
 
-1. Does replacing `auth.uid() = '5181b30a-…'::uuid` with `public.is_operator()` change
-   the effective grant **in any case**? Consider specifically: an account holding that
-   UUID but no `operators` row, an account with an `operators` row but a different UUID,
-   and any case where the two expressions disagree.
+**(a) The write boundary.** Writes require `role IN ('admin', 'manager')`. The role CHECK
+constraint admits `admin`, `manager`, `user`, and this project's content-table policies
+already permit a manager to write. Is admin+manager the right boundary for storage
+writes, which include DELETE? Consider that zero `manager` rows exist today, so either
+choice is invisible until the first one is created.
 
-2. Is the `EXISTS (SELECT 1 FROM public.tenant_users …)` predicate evaluable by the
-   `authenticated` role in a storage context? A prior finding on this project (S308 B2)
-   established that an RLS policy predicate evaluates **as the querying role**, so a
-   helper that role cannot execute makes every policy calling it fail closed. The grants
-   above were read from the catalog rather than assumed. Is there a case in which this
-   predicate is not evaluable, or evaluates to false, for a user who genuinely holds the
-   membership row — for example under `tenant_users`' own RLS, or when the storage API
-   evaluates policies under a role other than `authenticated`?
+**(b) The operator change.** Cross-tenant logo write moves from a hardcoded literal
+naming a shared account whose password is published on the company's marketing homepage,
+to a single named operator resolved by `is_operator()` — a `SECURITY DEFINER` helper
+reading an `operators` table that currently holds one row. Is that a narrowing? Does the
+helper introduce any path that widens it — for example if `operators` gains rows, if the
+helper's `search_path` or grants change, or if the table is empty?
 
-3. The inline `EXISTS` reads `public.tenant_users` as the querying role, and is therefore
-   subject to that table's grants and RLS. `is_tenant_member(uuid)` is `SECURITY DEFINER`
-   and subject to neither. Both are available and both grant EXECUTE to `authenticated`.
-   Which is the better choice here, and does the inline form introduce a failure mode the
-   helper does not have?
+**(c) Public buckets.** Four of the five buckets are `public = true`; only `reports` is
+private. Supabase serves a public bucket over `/object/public/…` without evaluating RLS,
+so the SELECT policies do not gate the public object URL. Does that change your view of
+the read/write split — specifically, is any-membership for reads correct given the read
+policies govern only the authenticated path and `list`?
 
-4. Is the write/read split defensible, or should reads also require `role = 'admin'` for
-   consistency with `reports_admin_read`, or should writes accept any membership?
+**(d) The predicate shape.** The inline `EXISTS (SELECT 1 FROM public.tenant_users …)`
+reads that table as the querying role, inheriting its grants and RLS. The alternative,
+`is_tenant_member(uuid)`, is `SECURITY DEFINER` and inherits neither — but taking a
+`uuid` means casting `(storage.foldername(name))[1]::uuid`, a cast on an untrusted object
+key that raises rather than denies on a malformed key. Which shape is correct here, and
+what is each one's failure mode if the underlying grants change later?
 
-5. `admin@demo.com` loses access to the `pestflow-pro` tenant's storage. Is that a
-   correct consequence of gating on membership, or a regression to be preserved against?
+**(e) The effective grant.** Does replacing the literal with `is_operator()`, and
+`current_tenant_id()` with the membership test, change the effective grant in any case
+beyond those in the delta table above? `admin@demo.com` loses `pestflow-pro`, a tenant it
+holds only through `profiles` while not being a member of it — fix or regression?
 
-6. Anything else in the migration or the rollback that would fail, or that grants more
-   than intended. The rollback deliberately restores the hardcoded UUID; is documenting
-   that sufficient, or should the rollback refuse to restore it?
+**(f) Anything else** in the migration or the rollback that would fail, or that grants
+more than intended. The rollback deliberately restores the hardcoded literal; is
+documenting that sufficient, or should it refuse to restore it?
 
 ### Falsification question, asked as written
 

@@ -97,6 +97,44 @@ JOIN pg_namespace n ON n.oid = c.relnamespace
 WHERE n.nspname = 'storage' AND c.relname = 'objects'
 ORDER BY pol.polname;
 
+-- ── 2g. The write boundary is admin+manager, not admin-only. tenant_users_role_check
+--        admits 'admin', 'manager' and 'user', and the S273 content-table policies let a
+--        manager write. Admin-only storage would mean a manager can edit a page's
+--        content row but not upload its image — the same opaque RLS denial S320 exists
+--        to remove, and invisible today because zero manager rows exist.
+--        Expect 9 write policies naming manager; 0 naming admin without it.
+SELECT
+  'CHECK 2g — write policies admit manager' AS check,
+  count(*) FILTER (WHERE expr LIKE '%manager%')                                AS admit_manager,
+  count(*) FILTER (WHERE expr LIKE '%admin%' AND expr NOT LIKE '%manager%')    AS admin_only,
+  CASE WHEN count(*) FILTER (WHERE expr LIKE '%admin%' AND expr NOT LIKE '%manager%') = 0
+       THEN 'PASS' ELSE 'FAIL — an admin-only write policy survives' END       AS result
+FROM (
+  SELECT coalesce(pg_get_expr(pol.polqual, pol.polrelid), '')
+         || ' ' || coalesce(pg_get_expr(pol.polwithcheck, pol.polrelid), '') AS expr
+  FROM pg_policy pol
+  JOIN pg_class c ON c.oid = pol.polrelid
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+  WHERE n.nspname = 'storage' AND c.relname = 'objects'
+    AND pol.polcmd IN ('a','w','d')          -- INSERT / UPDATE / DELETE only
+) w;
+
+-- ── 2h. READ policies must NOT carry a role clause. Reads are any-membership, and on
+--        four of five buckets they are not a confidentiality control at all (public
+--        buckets bypass RLS on the public object URL) — so a role test there would cost
+--        listing in the admin UI and buy nothing.
+SELECT
+  'CHECK 2h — read policies carry no role test' AS check,
+  count(*) AS read_policies_with_role,
+  CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END AS result
+FROM pg_policy pol
+JOIN pg_class c ON c.oid = pol.polrelid
+JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = 'storage' AND c.relname = 'objects'
+  AND pol.polcmd = 'r'
+  AND pol.polname <> 'reports_admin_read'   -- pre-existing, admin-only by design
+  AND coalesce(pg_get_expr(pol.polqual, pol.polrelid), '') LIKE '%tu.role%';
+
 -- ── 2d. The helpers must be EXECUTABLE BY `authenticated`. S308's finding B2: an RLS
 --        predicate evaluates AS THE QUERYING ROLE, so a helper that role cannot execute
 --        makes every policy calling it fail closed — silently, and looking like a
