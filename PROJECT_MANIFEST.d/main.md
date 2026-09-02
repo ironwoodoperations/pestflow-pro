@@ -185,3 +185,25 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   - supabase/functions/password-reset-request/index.ts
   - supabase/functions/password-reset-request/passwordResetLogging.test.ts
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-09-02 16:13 UTC
+- Branch: `main`
+- Commit: `f41c42f` — S317 — carry the platform brand into the edge functions (#320)
+- Author: csdevore2
+- Files changed:
+  - PROJECT_MANIFEST.d/fix-s317-platform-brand-edge-functions.md
+  - src/__tests__/platformBrand.test.tsx
+  - supabase/functions/_shared/emailTemplates/authEmails.ts
+  - supabase/functions/_shared/sendEmail.ts
+  - supabase/functions/invite-team-member/index.ts
+  - supabase/functions/notify-new-lead/index.ts
+  - supabase/functions/notify-support-ticket/index.ts
+  - supabase/functions/notify-upgrade/index.ts
+  - supabase/functions/password-reset-request/index.ts
+  - supabase/functions/provision-tenant/index.ts
+  - supabase/functions/send-credentials-email/index.ts
+  - supabase/functions/send-intake-email/index.ts
+  - supabase/functions/send-onboarding-email/index.ts
+  - supabase/functions/send-reveal-ready/index.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
