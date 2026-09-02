@@ -1,6 +1,13 @@
 # S321 — resolving a tenant's custom domain. Validator gate submission.
 
-**Status: SUBMITTED. Awaiting both verdicts. NO IMPLEMENTATION HAS BEEN WRITTEN.**
+**Status: RESUBMITTED 2026-09-02 after the owner narrowed scope. Awaiting both verdicts.
+NO IMPLEMENTATION HAS BEEN WRITTEN.**
+
+**What changed since the first submission:** question (a) — the source of truth for a canonical
+host — is **closed by owner decision**, not by the gate. Dang is out of scope, the
+`CUSTOM_DOMAINS` map is retained and checked first, and the change is purely additive. Four
+questions remain live: (b) caching, (c) the DB lookup's placement relative to the rate limiter,
+(d) what the origin allowlist actually buys, (e) per-tenant robots/sitemap.
 
 ⚠️ **The verdict TEXTS are not yet supplied.** Appendices A and B stay placeholders rather
 than be reconstructed from a summary — the S309/S313/S320 precedent. A reconstruction is
@@ -18,8 +25,20 @@ The change makes all three resolve a custom domain from the database.
 1. **`shared/lib/resolveSiteUrl.ts`** — supplies the canonical link, OG/Twitter URL and
    JSON-LD `@id` for every SSR tenant page. Its signature is
    `resolveSiteUrl(tenant: { slug: string; subdomain?: string | null })`, so it is
-   structurally incapable of seeing a custom domain; it holds a two-entry hardcoded map and a
-   `TODO: read from tenant_domains WHERE verified=true once that table is wired.`
+   structurally incapable of seeing a custom domain.
+
+   **The change is PURELY ADDITIVE — a third precedence step in the middle.** Neither existing
+   step is modified:
+
+   ```
+   1. CUSTOM_DOMAINS map                    UNCHANGED — checked FIRST
+   2. tenants.custom_domain                 NEW — only on a map miss
+   3. {subdomain ?? slug}.pestflowpro.ai    UNCHANGED fallback
+   ```
+
+   The map's two entries (`dang`, `dang-pfp`) stay. `dang-pfp` is **not** dead code — it is
+   pre-wired for an in-progress Vite→Next.js migration. The `TODO` comment about reading
+   `tenant_domains` is superseded by step 2 and should be rewritten, not acted on.
 2. **`supabase/functions/api-quote/index.ts`** — a public unauthenticated endpoint whose
    origin allowlist is a regex of literal hostnames. A request from a custom domain is
    rejected 403 before the insert.
@@ -101,11 +120,41 @@ works around it:
 The same two `verified=false` rows are why the S318 build-time projection emitted **2
 hostnames from 4 `tenant_domains` rows** — dang is already excluded from the domain map.
 
-**This is arguably a data defect, not a code one.** If dang's two `tenant_domains` rows were
-verified, `tenant_domains` would be a correct single source and no heuristic would be needed.
-The brief forbids writing to either table, so a code-only change cannot meet requirement 3
-without either the `admin.`-strip heuristic or retaining a dang special-case. **Put to the
-gate as question (a); not decided unilaterally.**
+### RESOLVED BY THE OWNER, 2026-09-02 — scope narrowed. This is no longer a gate question.
+
+**Dang is OUT OF SCOPE.** Dang Pest Control runs on its own repository with its own
+dashboard and is working in production. The `dang-pfp` entry in `CUSTOM_DOMAINS` is **not
+dead code** — it is pre-wired for an in-progress Vite→Next.js migration. Both map entries stay
+exactly as they are. Nothing on the dang path is touched.
+
+**The change is purely ADDITIVE.** `resolveSiteUrl` gains a third precedence step in the
+middle; neither existing step is modified:
+
+```
+1. CUSTOM_DOMAINS map                    UNCHANGED — checked FIRST, dang + dang-pfp preserved
+2. tenants.custom_domain                 NEW — consulted only when the map has no entry
+3. {subdomain ?? slug}.pestflowpro.ai    UNCHANGED fallback
+```
+
+**The ordering is load-bearing, not stylistic.** dang's `tenants.custom_domain` is
+`admin.dangpestcontrol.com`, a host that **does not resolve in DNS**. Consulting
+`custom_domain` before the map would point dang's public canonical at an admin login host
+that does not answer. The map taking precedence is precisely what prevents that. **Any
+implementation that reverses this order is incorrect**, and the verification below asserts the
+order, not just the outputs.
+
+Verification requirement 3 is therefore satisfied **by construction** — dang's resolution is
+byte-identical because nothing on its path executes differently. It is still asserted as deep
+equality rather than assumed.
+
+The earlier framing of this as a three-way choice between `tenants.custom_domain`, verified
+`tenant_domains` rows, and a data fix is **withdrawn**. Two of those three options are now
+prohibited: they would have removed the map or altered dang's `tenant_domains` rows.
+
+**What the finding still buys:** the reason the map must be consulted first is documented
+above rather than left as an accident of line order. A later reader who "cleans up" the map,
+or who reorders the two steps to look tidier, reintroduces the defect. That is a verification
+check, not a comment — see below.
 
 ---
 
@@ -178,14 +227,19 @@ invoked server-side. Lead *notification* is unaffected; only *capture* is.
 
 ## Questions for the validators
 
-**(a) Source of truth for a canonical host.** `tenants.custom_domain` holds the ADMIN host for
-one of the two tenants that have one (`admin.dangpestcontrol.com`); `tenant_domains` holds two
-rows per tenant (apex + `www`, a canonical needs one) and dang's are both `verified=false`.
-Neither alone yields the correct public host for both live tenants. Options: (i) strip a
-leading `admin.` from `tenants.custom_domain`, following the existing `seo-analytics`
-precedent; (ii) use `tenant_domains WHERE verified=true`, prefer the non-`www` row, and accept
-that dang regresses until its rows are verified; (iii) treat the unverified dang rows as the
-actual defect and fix the data. Which, and what does each fail at?
+Four live questions, (b) through (e), plus (f). **(a) is closed** — the owner narrowed scope
+after the first submission and decided it directly.
+
+
+**(a) WITHDRAWN — decided by the owner, not the gate.** The source-of-truth question is
+closed: the `CUSTOM_DOMAINS` map is retained and checked **first**, `tenants.custom_domain` is
+consulted only on a map miss, and the platform subdomain remains the fallback. Dang is out of
+scope. See *RESOLVED BY THE OWNER* above. **Do not answer this; it is listed only so the
+lettering matches the earlier submission.**
+
+What is still worth your view on that decision, if anything: the precedence order is
+load-bearing because `admin.dangpestcontrol.com` does not resolve in DNS. Is asserting the
+order in a test sufficient to keep it, or does the map deserve a stronger structural guard?
 
 **(b) Reading the host in `generateMetadata`.** The column can be added to an existing
 `cache()`-wrapped `SELECT` in `resolveTenantBySlug` rather than issuing a new query. Does that
@@ -210,6 +264,32 @@ resolved in those two route handlers, what are the caching implications, and how
 
 **(f) Anything else** in this plan that would fail, or that changes behaviour for the seven
 tenants with no custom domain. Their canonical must be byte-identical to today.
+
+## Verification the implementation will carry
+
+Written here so the gate can object to the checks, not only to the design.
+
+| # | check | asserts |
+|---|---|---|
+| 1 | pls canonical + `og:url` resolve to `https://precisionlawnsystems.com` | the fix works |
+| 2 | **deep equality** of the full metadata object for a non-custom-domain tenant, before vs after | the seven `NULL` tenants are byte-identical, not "look fine" |
+| 3 | dang and dang-pfp still resolve to `https://dangpestcontrol.com` | out-of-scope path untouched |
+| 4 | **precedence order** — a fixture tenant with BOTH a `CUSTOM_DOMAINS` entry and a *different* `tenants.custom_domain` resolves to the MAP value | the load-bearing order. Fails if the two steps are ever reordered, which is the failure mode a comment cannot prevent |
+| 5 | `api-quote` accepts `precisionlawnsystems.com` AND a `.ai` origin, rejects an unrelated origin | all three shown, per the brief |
+| 6 | `/sitemap.xml` 200 on the custom domain, URLs on that **same** host as the canonical | a sitemap on one host with canonicals on another is worse than none |
+| 7 | a `noindex=true` tenant gets no crawlable sitemap | `settings.seo.noindex` still governs |
+
+**Check 4 is the one that would not exist without the withdrawn question.** The investigation
+established *why* the order matters; this turns that into something that fails rather than
+something that is merely written down.
+
+**Honest limit on any `api-quote` guard.** `tsconfig.json` excludes `"supabase"` and eslint
+ignores `supabase/functions`, so nothing in CI type-checks or lints that file — this is the
+root cause of the S319 production outage. A unit test that imports the handler *can* run under
+vitest; a guard that merely greps the source cannot be trusted (S319 shipped past exactly such
+a guard, satisfied by a comment). If a runnable guard cannot be made to work for the origin
+allowlist, that will be **stated plainly** rather than papered over with one that only looks
+like coverage.
 
 ### Falsification question, asked as written
 
