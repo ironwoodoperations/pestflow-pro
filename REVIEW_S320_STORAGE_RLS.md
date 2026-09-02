@@ -49,7 +49,7 @@ same table:
 EXISTS (SELECT 1 FROM public.tenant_users tu
         WHERE tu.tenant_id::text = (storage.foldername(name))[1]
           AND tu.user_id = auth.uid()
-          AND tu.role = 'admin')      -- role clause on WRITES only; see below
+          AND tu.role IN ('admin', 'manager'))   -- role clause on WRITES only; see below
 ```
 
 ## Facts established against the live database, 2026-09-02
@@ -69,7 +69,7 @@ One policy, applying to all roles: `USING (auth.uid() = user_id)`.
 
 `now` = tenants reachable via `current_tenant_id()`. `after` = via the new predicate.
 
-| account | now | after (writes, admin) | after (reads, any member) |
+| account | now | after (writes, admin+manager) | after (reads, any member) |
 |---|---|---|---|
 | `admin@dangpestcontrol.com` | dang | dang | dang |
 | `admin@ironwoodopsgrp.com` | pls | pls | pls |
@@ -82,7 +82,10 @@ One policy, applying to all roles: `USING (auth.uid() = user_id)`.
 Two rows change in both directions. `admin@demo.com` **loses** `pestflow-pro`: it holds
 that tenant only through `profiles` and is not a `tenant_users` member of it.
 `scottdevore2@gmail.com` holds `role = 'user'` on `dang` and is the only account for
-which the admin-vs-any-member choice differs.
+which the write-role choice differs at all. The write column is identical whether the
+boundary is `admin` or `admin`+`manager`, because **zero `manager` rows exist today** —
+which is exactly why an admin-only boundary would have shipped invisibly and only
+surfaced the first time a manager was created.
 
 ## Decisions taken, for review
 
