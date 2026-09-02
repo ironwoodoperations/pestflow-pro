@@ -172,3 +172,16 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   `artificial-turf` in `IRRIGATION_CONTENT_MAP`, so the guard is at state 3 of 3 and closed; the
   pending ROADMAP draft corrects it. PR #312 (S309 gate) is untouched and still blocked on the
   Perplexity + Gemini verdicts.
+
+---
+## Session — 2026-09-02 14:50 UTC
+- Branch: `main`
+- Commit: `328664b` — S313 — make password-reset-request observable (logging only) (#318)
+- Author: csdevore2
+- Files changed:
+  - PROJECT_MANIFEST.d/fix-s313-password-reset-observability.md
+  - REVIEW_S313_PASSWORD_RESET_OBSERVABILITY.md
+  - docs/ROADMAP.md
+  - supabase/functions/password-reset-request/index.ts
+  - supabase/functions/password-reset-request/passwordResetLogging.test.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
