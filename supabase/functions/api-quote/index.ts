@@ -18,6 +18,7 @@
 // 2. Set SEND_SMS_INTERNAL_SECRET secret on this function (matches send-sms env var).
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { normalizeOriginHost, normalizeRefererHost, isPlatformHost } from '../_shared/originHost.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
@@ -26,6 +27,83 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey',
+}
+
+// ---- S321 unknown-origin probe throttle -------------------------------------
+// STEP 3 of the ordering. Deliberately IN-MEMORY: the whole point is to sit in front of the
+// database, so anything that queries to decide whether to query is self-defeating.
+//
+// HONEST LIMIT, stated rather than implied: edge isolate reuse is opportunistic, so this is
+// best-effort mitigation, NOT a guarantee. It raises the cost of cycling arbitrary Origin
+// values; it does not make it impossible. It is not authorization and nothing downstream
+// trusts it.
+const PROBE_WINDOW_MS = 60_000
+const PROBE_MAX_PER_HOST = 5
+const PROBE_MAX_KEYS = 500          // bounded: an attacker cycling hosts cannot grow this map
+const probeCounts = new Map<string, { count: number; resetAt: number }>()
+
+function allowUnknownOriginProbe(host: string): boolean {
+  const now = Date.now()
+  const hit = probeCounts.get(host)
+
+  if (!hit || now >= hit.resetAt) {
+    if (probeCounts.size >= PROBE_MAX_KEYS) {
+      // Evict expired entries first; if the map is still full, fail CLOSED. A full map means
+      // we are being cycled, which is exactly when refusing is the right answer.
+      for (const [k, v] of probeCounts) if (now >= v.resetAt) probeCounts.delete(k)
+      if (probeCounts.size >= PROBE_MAX_KEYS) return false
+    }
+    probeCounts.set(host, { count: 1, resetAt: now + PROBE_WINDOW_MS })
+    return true
+  }
+
+  hit.count += 1
+  return hit.count <= PROBE_MAX_PER_HOST
+}
+
+// ---- S321 verified-tenant-host lookup ---------------------------------------
+// STEP 4. One indexed exact-match query, with a short module-scope cache.
+//
+// THE CACHE IS AN OPTIMIZATION, NOT AUTHORIZATION TRUTH. It is bounded, has an explicit TTL,
+// and FAILS CLOSED on error -- a query that throws returns false (refuse), never true. A
+// revoked domain stays admitted for at most VERIFIED_TTL_MS, which is the accepted cost and
+// is why the TTL is short.
+const VERIFIED_TTL_MS = 60_000
+const VERIFIED_MAX_KEYS = 200
+const verifiedCache = new Map<string, { ok: boolean; expiresAt: number }>()
+
+async function isVerifiedTenantHost(host: string): Promise<boolean> {
+  const now = Date.now()
+  const cached = verifiedCache.get(host)
+  if (cached && now < cached.expiresAt) return cached.ok
+
+  let ok = false
+  try {
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    // Exact match on an indexed column. NOT ilike, NOT a wildcard, NOT select-all-then-filter.
+    const { data, error } = await supabase
+      .from('tenant_domains')
+      .select('tenant_id')
+      .eq('custom_domain', host)
+      .eq('verified', true)
+      .maybeSingle()
+    if (error) {
+      // Fail CLOSED. An unavailable database must not admit an unknown origin.
+      console.error('[api-quote] tenant_domains lookup failed:', error.code ?? 'unknown')
+      return false
+    }
+    ok = !!data
+  } catch (e) {
+    console.error('[api-quote] tenant_domains lookup threw:', e instanceof Error ? e.name : 'unknown')
+    return false
+  }
+
+  if (verifiedCache.size >= VERIFIED_MAX_KEYS) {
+    for (const [k, v] of verifiedCache) if (now >= v.expiresAt) verifiedCache.delete(k)
+    if (verifiedCache.size >= VERIFIED_MAX_KEYS) verifiedCache.clear()
+  }
+  verifiedCache.set(host, { ok, expiresAt: now + VERIFIED_TTL_MS })
+  return ok
 }
 
 export async function handler(req: Request): Promise<Response> {
@@ -40,17 +118,74 @@ export async function handler(req: Request): Promise<Response> {
     })
   }
 
-  // ── C1 GATE — anonymous-public, rate-limit + origin ─────────────────
-  const origin = req.headers.get('origin') ?? req.headers.get('referer') ?? ''
-  const allowedOriginPattern = /^https?:\/\/([a-z0-9-]+\.)?pestflowpro\.com(\/|$)|^https?:\/\/([a-z0-9-]+\.)?homeflowpro\.ai(\/|$)|^https?:\/\/([a-z0-9-]+\.)?dangpestcontrol\.com(\/|$)/i
+  // ---- S321 ORIGIN ADMISSION -------------------------------------------------
+  //
+  // WHAT THIS CONTROL IS, stated because it was previously unstated and therefore
+  // over-trusted: a BROWSER-ORIGIN ADMISSION POLICY and CSRF defence. It is NOT
+  // authentication, and it does NOT stop scripted submissions -- that is the rate
+  // limiter's job, below. A request carrying neither Origin nor Referer is not checked at
+  // all (see the `hadOriginSignal` branch); that bypass is PRE-EXISTING, is LEFT AS IS on
+  // purpose, and is documented rather than closed: shutting it would break non-browser
+  // integrations and is its own decision with its own blast radius.
+  //
+  // ORDER OF OPERATIONS IS LOAD-BEARING AND WAS THE GATE'S BLOCKING FINDING.
+  //   1. parse the header with URL()          -- never regex a raw Origin
+  //   2. platform host?  -> accept, ZERO DB   -- existing tenants gain no query
+  //   3. non-platform    -> in-memory throttle BEFORE any DB call
+  //   4. then ONE indexed exact-match lookup on tenant_domains
+  // Reversing 3 and 4 turns this into an unauthenticated L7 DoS: an attacker cycling
+  // arbitrary Origin values would force one Postgres query per request, in front of the
+  // rate limiter. Do not reorder.
 
-  if (origin && !allowedOriginPattern.test(origin)) {
-    console.warn('[api-quote] origin rejected:', origin)
-    return new Response(JSON.stringify({ error: 'Forbidden' }), {
-      status: 403,
-      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-    })
+  const rawOrigin = req.headers.get('origin')
+  const rawReferer = req.headers.get('referer')
+
+  // Origin and Referer are DIFFERENT GRAMMARS and are parsed independently. The old code
+  // did `origin ?? referer` and regexed whichever it got -- but a Referer is a full URL
+  // with a path, so it could never satisfy an origin-shaped pattern honestly. If Origin is
+  // present but unparseable we REJECT; we do not fall back to Referer, because falling back
+  // lets a caller sending a hostile Origin get a second, laxer attempt.
+  let originHost: string | null = null
+  let hadOriginSignal = false
+
+  if (rawOrigin) {
+    hadOriginSignal = true
+    originHost = normalizeOriginHost(rawOrigin)
+  } else if (rawReferer) {
+    hadOriginSignal = true
+    originHost = normalizeRefererHost(rawReferer)
   }
+
+  const forbidden = () => new Response(JSON.stringify({ error: 'Forbidden' }), {
+    status: 403,
+    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+  })
+
+  if (hadOriginSignal) {
+    if (!originHost) {
+      // Present but malformed, http, ported, path-bearing, or userinfo-smuggling.
+      console.warn('[api-quote] origin rejected: unparseable or disallowed shape')
+      return forbidden()
+    }
+
+    if (!isPlatformHost(originHost)) {
+      // STEP 3 -- cheap, in-memory, BEFORE the database. See the ordering note above.
+      if (!allowUnknownOriginProbe(originHost)) {
+        console.warn('[api-quote] origin rejected: unknown-origin probe throttled')
+        return forbidden()
+      }
+
+      // STEP 4 -- one indexed exact-match lookup. Never a scan, never a pattern match,
+      // never a fetch-all. custom_domain is stored as a bare host, which is why the
+      // normalizer returns a host and not a URL.
+      const verified = await isVerifiedTenantHost(originHost)
+      if (!verified) {
+        console.warn('[api-quote] origin rejected: not a verified tenant domain')
+        return forbidden()
+      }
+    }
+  }
+  // ---------------------------------------------------------------------------
 
   const clientIp = (req.headers.get('x-forwarded-for')?.split(',')[0]?.trim())
     || req.headers.get('cf-connecting-ip')
