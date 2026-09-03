@@ -31,12 +31,21 @@
 // description, vita-glow's is "Medical Aesthetics". Neither would ever match a
 // lookup key.
 //
-// NO THIRD KEY. vita-glow's pages (injectables, iv-infusions, weight-wellness)
-// are real, but settings_business_info_vertical_valid permits only the two
-// literals, so a 'medical_aesthetics' key would be unreachable dead code until
-// that constraint is widened. It resolves to NEUTRAL, which is correct.
+// NO 'medical_aesthetics' KEY. vita-glow's pages (injectables, iv-infusions,
+// weight-wellness) are real, but no preset has been written for that trade, so
+// the key would be a label with nothing behind it. It resolves to NEUTRAL,
+// which is correct.
+//
+// 'lawn' IS A KEY AND IS CURRENTLY UNREACHABLE (S323 PR A), which is different
+// and deliberate. settings_business_info_vertical_valid still rejects 'lawn'
+// with 23514, so no tenant can carry it yet; the preset lands FIRST and the
+// CHECK widens LAST (PR C), because the public-site copy accessor throws from
+// layout.tsx and a constraint widened ahead of the presets would let a JSONB
+// edit 500 a whole site. Note what is NOT here: 'lawn' is absent from
+// VERTICAL_OPTIONS at the foot of this file, so the wizard does not offer it
+// and provisioning cannot seed it until PR B builds selection.
 
-export type AdminVertical = 'pest' | 'irrigation';
+export type AdminVertical = 'pest' | 'irrigation' | 'lawn';
 
 export interface AdminEntityLabels {
   /** One service, as a noun phrase. Used in tooltips and button labels. */
@@ -147,6 +156,65 @@ export const ADMIN_PRESETS: Record<AdminVertical, AdminLabelPreset> = {
       serviceArea: 'service area',
     },
   },
+
+  // Lawn (S323 PR A). THE FULL CATALOG, not one tenant's list — which is the
+  // difference between this preset and the irrigation one above it.
+  //
+  // servicePageSlugs here answers "what could a lawn company have a page for?",
+  // and its 17 entries are exactly LAWN_CONTENT_MAP's keys, in catalog order
+  // (turf treatment, maintenance, landscape, boundary). It does NOT answer
+  // "what does this tenant sell" — page_content rows answer that, and tiles and
+  // nav already key on the row existing. So a tenant selecting three services
+  // gets three pages; the other fourteen are routable and unlisted.
+  //
+  // That is a real change of meaning for this field, and the two consumers cope
+  // with it differently: isServicePageSlug gets it right (any catalog slug IS a
+  // service page and takes the service-page content brief), while ContentTab's
+  // sidebar and SeoKeywordsTab will list all 17 whether or not a row exists.
+  // The sidebar has always listed standard slugs ahead of their rows — that is
+  // how a page gets created — so this is more of the same rather than new
+  // behaviour. It is noted here because a 17-entry sidebar for a tenant selling
+  // three services is the first thing a reader will question.
+  //
+  // S300's note on the irrigation preset applies here in reverse and is worth
+  // keeping in view: THAT list is one customer's services in a shared preset,
+  // and the second irrigation tenant makes it wrong. The catalog shape is the
+  // fix for that class, not a workaround for lawn.
+  lawn: {
+    // Organisational buckets, matching the catalog's own grouping. Not derived
+    // from servicePageSlugs — see the note above the presets on why the two
+    // lists merely overlap. Nothing here asserts a service is offered.
+    faqCategories: [
+      'General', 'Lawn Treatment', 'Weed & Insect Control',
+      'Mowing & Maintenance', 'Landscape & Hardscape', 'Irrigation',
+    ],
+    // === LAWN_CONTENT_MAP's keys, in catalog order. lawnCatalog.test.ts pins
+    // the two lists equal in BOTH directions, so a slug added to one and missed
+    // in the other fails rather than shipping a tile that 404s.
+    servicePageSlugs: [
+      // turf treatment
+      'lawn-fertilization', 'weed-control', 'lawn-aeration', 'overseeding',
+      'grub-control', 'lawn-disease-control', 'soil-health',
+      // maintenance
+      'mowing-maintenance', 'seasonal-cleanup', 'tree-shrub-trimming',
+      'mulch-bed-maintenance',
+      // landscape
+      'landscape-design', 'hardscape-stonework',
+      // boundary services — shared with another vertical's catalog, deliberately
+      'sprinkler-systems', 'artificial-turf', 'perimeter-pest-control',
+      'mosquito-control',
+    ],
+    placeholders: {
+      faqQuestion: 'e.g. How short should my grass be cut?',
+      seoKeyword: 'e.g. lawn fertilization',
+      contentPhotoHint: 'For service pages, choose a photo from the auto-loaded image search.',
+    },
+    entityLabels: {
+      service: 'lawn care service',
+      servicePages: 'Lawn Care Pages',
+      serviceArea: 'service area',
+    },
+  },
 };
 
 // The fallback names no trade. USABLE, not empty: a tenant with no recorded
@@ -193,10 +261,18 @@ export const NEUTRAL_ADMIN_PRESET: AdminLabelPreset = {
 export const ADMIN_VERTICAL_LABELS: Record<AdminVertical, string> = {
   pest: 'Pest Control',
   irrigation: 'Irrigation & Sprinklers',
+  lawn: 'Lawn Care & Landscape',
 };
 
 export interface VerticalOption { value: AdminVertical | ''; label: string }
 
+// 'lawn' IS DELIBERATELY ABSENT (S323 PR A), and its absence is load-bearing
+// rather than an oversight. This list is what the wizard renders and what
+// provisioning can seed; the CHECK constraint still rejects 'lawn' with 23514,
+// so offering it would hand a human an option that 400s at launch. It is added
+// in PR B, alongside the service picker that makes a lawn tenant seedable, and
+// PR C widens the constraint behind it. provisioningSeed.test.ts asserts this
+// list equals SEED_VERTICALS, so the three cannot drift apart silently.
 export const VERTICAL_OPTIONS: VerticalOption[] = [
   { value: '', label: 'Not listed / other — seeds no service pages' },
   { value: 'pest', label: ADMIN_VERTICAL_LABELS.pest },

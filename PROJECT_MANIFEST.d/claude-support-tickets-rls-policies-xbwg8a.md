@@ -317,3 +317,34 @@ it is recent.
 - Files changed:
   - REVIEW_S309_TENANT_SOURCE.md
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-09-03 00:14 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `ee7e79e` — S323 PR A: the lawn catalog — presets in code, deliberately inert
+- Author: Claude
+- Files changed:
+  - app/tenant/[slug]/[service]/page.tsx
+  - app/tenant/[slug]/_lib/serviceData.ts
+  - shared/lib/seoSchema.test.ts
+  - shared/lib/seoSchema.ts
+  - src/lib/__tests__/adminVerticalPreset.test.ts
+  - src/lib/__tests__/lawnCatalog.test.ts
+  - src/lib/adminVerticalPreset.ts
+  - src/shells/_shared/lawnContent.ts
+  - src/shells/_shared/serviceEntry.ts
+  - src/shells/_shared/verticalCopy.test.ts
+  - src/shells/_shared/verticalCopy.ts
+  - src/shells/_shared/verticalCopyPresets.test.ts
+  - supabase/functions/_shared/provisioningSeed.test.ts
+  - supabase/functions/_shared/verticalCopy.ts
+  - supabase/functions/generate-monthly-report/narrationPrompt.test.ts
+- PR: https://github.com/ironwoodoperations/pestflow-pro/pull/330 (draft)
+- Next recommended action: S323 PR B — service selection at provisioning, built as
+  a GENERAL mechanism rather than a lawn special case. BLOCKED on Scott: the S323
+  brief is truncated mid-sentence in the validator-gate section ("PR B touches
+  provisioning and a wizard write path — the S292 handleLaunch defect destroyed
+  fourteen"), and whether PR B needs a gate is the missing clause. PR C (widen
+  settings_business_info_vertical_valid to admit 'lawn', untimestamped migration
+  plus rollback) comes LAST, only after A and B are merged — widening the CHECK
+  ahead of the presets 500s a whole site.

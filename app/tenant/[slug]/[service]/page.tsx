@@ -13,7 +13,7 @@ export async function generateStaticParams() {
 import { getPageContent, getLocation, getAllLocations, getHeroMedia, getSeoMeta, getServiceFaqs, getIntegrations, getAboutSettings } from '../_lib/queries';
 import { resolveAboutStats } from '../_lib/aboutStats';
 import { resolveHeroImage } from '../_lib/heroImage';
-import { SERVICE_SLUGS, IRRIGATION_SERVICE_SLUGS } from '../_lib/serviceData';
+import { serviceSlugsFor } from '../_lib/serviceData';
 import { resolveVertical } from '../../../../src/shells/_shared/serviceEntry';
 import { getVerticalCopy, withCity } from '../../../../src/shells/_shared/verticalCopy';
 import { resolveLocationHeroTitle, resolveLocationIntro } from '../_lib/locationCopy';
@@ -80,11 +80,19 @@ export default async function ServicePage({ params }: Params) {
   // Vertical-resolved ACTIVE slug set (S-PLS-5 / D1), selected BEFORE the
   // location-page fallback. A union selection by vertical — SERVICE_SLUGS is
   // never mutated: pest tenants (industry lacks "irrigation") get the exact
-  // historical set and route as before; irrigation tenants get the four
+  // historical set and route as before; irrigation tenants get the five
   // irrigation slugs so /sprinkler-systems etc. no longer fall through to the
   // location branch and 404.
+  //
+  // S323 PR A: was `vertical === 'irrigation' ? IRRIGATION_SERVICE_SLUGS :
+  // SERVICE_SLUGS`. The ternary's else branch handed the PEST set to every
+  // vertical that was not irrigation, so registering 'lawn' would have routed a
+  // lawn tenant's /ant-control. serviceSlugsFor is a table lookup that returns
+  // an EMPTY set for a vertical with no catalog — no service pages, never
+  // another trade's — and it stays in step with getServiceEntry, which reads
+  // the matching content map.
   const vertical = resolveVertical(tenant);
-  const activeServiceSlugs = vertical === 'irrigation' ? IRRIGATION_SERVICE_SLUGS : SERVICE_SLUGS;
+  const activeServiceSlugs = serviceSlugsFor(vertical);
   // One preset read for the whole request. Every string below that used to be a
   // pest literal now comes from here; DB values still win over all of it.
   const copy = getVerticalCopy(vertical);

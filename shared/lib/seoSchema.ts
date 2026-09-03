@@ -135,6 +135,25 @@ export const IRRIGATION_VOCABULARY: SchemaVocabulary = Object.freeze({
   serviceType: 'Irrigation',
 })
 
+// Lawn vertical vocabulary (S323 PR A). Frozen for the same reason the other
+// two are: knowsAbout is emitted BY REFERENCE.
+//
+// EVERY TERM IS A SERVICE THE TRADE PERFORMS, not a claim about any tenant.
+// knowsAbout is read by a search engine as "this is what this business does",
+// so it stays at trade level exactly as the copy presets do — no licence, no
+// region, no rating. The boundary services in the lawn catalog (irrigation
+// repair, artificial turf, perimeter pest, mosquito and tick) are deliberately
+// NOT listed: a vocabulary is emitted for every tenant in the vertical, and
+// most lawn companies do not do them. A term here would assert them for all.
+export const LAWN_VOCABULARY: SchemaVocabulary = Object.freeze({
+  knowsAbout: Object.freeze([
+    'Lawn Care', 'Lawn Fertilization', 'Weed Control', 'Lawn Aeration',
+    'Overseeding', 'Turf Disease Control', 'Landscape Maintenance',
+    'Tree and Shrub Pruning',
+  ]),
+  serviceType: 'Lawn Care',
+})
+
 // Vertical → vocabulary. Kept in this file, alongside the constants it returns:
 // splitting the table from the resolver is how the two drift.
 //
@@ -146,7 +165,8 @@ export const IRRIGATION_VOCABULARY: SchemaVocabulary = Object.freeze({
 const VOCABULARY_BY_VERTICAL: Partial<Record<Vertical, SchemaVocabulary>> = Object.freeze({
   pest: PEST_CONTROL_VOCABULARY,
   irrigation: IRRIGATION_VOCABULARY,
-  // lawn, pool, hvac, roof, trailer: registered keys, no vocabulary yet.
+  lawn: LAWN_VOCABULARY,
+  // pool, hvac, roof, trailer: registered keys, no vocabulary yet.
   // Deliberately absent — add one before provisioning a tenant in that vertical.
 })
 
@@ -172,7 +192,7 @@ const VOCABULARY_BY_VERTICAL: Partial<Record<Vertical, SchemaVocabulary>> = Obje
  * key, so the only tenants reaching null are the ones that genuinely have no
  * recorded trade — which is the case that must emit nothing.
  *
- * Unregistered-but-valid keys (lawn, pool, hvac, roof, trailer) also return
+ * Unregistered-but-valid keys (pool, hvac, roof, trailer) also return
  * null rather than throwing, because a missing vocabulary must degrade to
  * "claim nothing" at render time, not take a live site down. getSchemaVocabulary
  * keeps throwing for callers that have already decided a trade is required.

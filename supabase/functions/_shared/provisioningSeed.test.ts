@@ -30,8 +30,28 @@ describe('seeded service pages match the admin preset exactly', () => {
     });
   }
 
-  it('covers every vertical the admin preset knows — neither list may grow alone', () => {
-    expect(SEED_VERTICALS.slice().sort()).toEqual(Object.keys(ADMIN_PRESETS).sort());
+  // S323 PR A SPLIT THE TWO LISTS, deliberately, and this assertion changed
+  // shape rather than being deleted.
+  //
+  // Equality was the right invariant while every vertical with a preset was
+  // also seedable. 'lawn' is not: its preset holds the FULL CATALOG of 17
+  // services, and provisioning must never seed a whole catalog — that is the
+  // S290 fabrication defect wearing a menu, giving a client a dozen service
+  // pages they do not sell. Lawn becomes seedable in PR B, when provisioning
+  // seeds the SELECTED services only.
+  //
+  // What still must hold, and what this now asserts: nothing seedable may lack
+  // a preset (that would seed a page the admin sidebar cannot show), and the
+  // gap is NAMED — a second admin-only vertical appearing by accident fails
+  // here rather than passing under a loose subset check.
+  it('every seedable vertical has an admin preset, and the gap is named', () => {
+    for (const v of SEED_VERTICALS) {
+      expect(Object.keys(ADMIN_PRESETS), `seedable vertical with no preset: ${v}`).toContain(v);
+    }
+    const adminOnly = Object.keys(ADMIN_PRESETS)
+      .filter((v) => (SEED_VERTICALS as string[]).indexOf(v) === -1)
+      .sort();
+    expect(adminOnly, 'admin-only verticals changed — is this deliberate?').toEqual(['lawn']);
   });
 
   it('every platform page the admin preset lists is known here', () => {

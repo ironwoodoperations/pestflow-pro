@@ -208,8 +208,12 @@ describe('prompt structure', () => {
 });
 
 describe('verticalCopy resolution', () => {
-  it('knows exactly the two verticals the CHECK constraint allows', () => {
-    expect(Object.keys(VERTICAL_COPY).sort()).toEqual(['irrigation', 'pest']);
+  // S323 PR A: 'lawn' joined the map. It is NOT yet allowed by the CHECK
+  // constraint — presets land first and the constraint widens last (PR C),
+  // because the public-site copy accessor throws from layout.tsx. So this
+  // asserts what the map knows, which is no longer the same list.
+  it('knows the three verticals a preset has been written for', () => {
+    expect(Object.keys(VERTICAL_COPY).sort()).toEqual(['irrigation', 'lawn', 'pest']);
   });
 
   it('resolves unknown, absent and mis-cased input to NEUTRAL', () => {

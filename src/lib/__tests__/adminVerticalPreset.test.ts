@@ -14,15 +14,23 @@ import {
 const PEST_WORDS = /\b(pest|termite|spider|roach|mosquito|scorpion|bed ?bug|flea|rodent|wasp|hornet|ants?)\b/i;
 
 describe('resolution', () => {
-  it('knows exactly the two verticals the CHECK constraint permits', () => {
-    expect(Object.keys(ADMIN_PRESETS).sort()).toEqual(['irrigation', 'pest']);
+  // S323 PR A. This assertion used to read "the two verticals the CHECK
+  // constraint permits", and that framing is now WRONG in a way worth stating:
+  // 'lawn' has a preset and the CHECK still rejects it. The two facts are
+  // deliberately out of step for the length of the A → B → C ordering, because
+  // the public-site copy accessor throws from layout.tsx — a constraint widened
+  // ahead of its presets lets a JSONB edit 500 a whole tenant site.
+  it('knows the three verticals a preset has been written for', () => {
+    expect(Object.keys(ADMIN_PRESETS).sort()).toEqual(['irrigation', 'lawn', 'pest']);
   });
 
-  it('resolves the two known verticals to their own presets', () => {
+  it('resolves the three known verticals to their own presets', () => {
     expect(getAdminPreset('pest')).toBe(ADMIN_PRESETS.pest);
     expect(getAdminPreset('irrigation')).toBe(ADMIN_PRESETS.irrigation);
+    expect(getAdminPreset('lawn')).toBe(ADMIN_PRESETS.lawn);
     expect(isAdminVertical('pest')).toBe(true);
     expect(isAdminVertical('irrigation')).toBe(true);
+    expect(isAdminVertical('lawn')).toBe(true);
   });
 
   // Rule (b). Every one of these must land on NEUTRAL, never on pest.

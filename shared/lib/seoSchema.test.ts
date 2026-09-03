@@ -6,6 +6,7 @@ import {
   generateBlogPostingSchema,
   PEST_CONTROL_VOCABULARY,
   IRRIGATION_VOCABULARY,
+  LAWN_VOCABULARY,
   getSchemaVocabulary,
   resolveSchemaVocabulary,
   DEFAULT_BUSINESS_TYPE,
@@ -288,9 +289,24 @@ describe('PR A — getSchemaVocabulary', () => {
   })
 
   it('THROWS for a registered vertical with no vocabulary — never emits pest for it', () => {
-    for (const v of ['lawn', 'pool', 'hvac', 'roof', 'trailer'] as const) {
+    // S323 PR A: 'lawn' left this list — it now HAS a vocabulary, asserted
+    // separately below. The four that remain still fail loudly.
+    for (const v of ['pool', 'hvac', 'roof', 'trailer'] as const) {
       expect(() => getSchemaVocabulary(v)).toThrow(new RegExp(v))
     }
+  })
+
+  it('resolves lawn to the lawn vocabulary, and claims no pest work in it', () => {
+    expect(getSchemaVocabulary('lawn')).toBe(LAWN_VOCABULARY)
+    expect(getSchemaVocabulary('lawn').serviceType).toBe('Lawn Care')
+    // knowsAbout is read as "this is what this business does", and it is
+    // emitted for EVERY tenant in the vertical — so the lawn catalog's boundary
+    // services (perimeter pest, mosquito and tick, irrigation repair,
+    // artificial turf) are deliberately absent. Most lawn companies do not do
+    // them, and a term here would assert them for all of them.
+    const terms = getSchemaVocabulary('lawn').knowsAbout.join(' | ')
+    expect(terms).not.toMatch(/pest|mosquito|tick|termite|rodent/i)
+    expect(terms).not.toMatch(/irrigation|sprinkler|artificial turf/i)
   })
 
   it('the layout wiring is byte-identical for pest: resolved vocabulary === no-arg default', () => {
@@ -335,10 +351,12 @@ describe('S293 — resolveSchemaVocabulary keys on the EXPLICIT vertical only', 
   it('returns NULL for a registered vertical with no vocabulary, rather than throwing', () => {
     // Differs from getSchemaVocabulary DELIBERATELY: a render path must degrade
     // to claiming nothing, not take a live site down.
-    for (const v of ['lawn', 'pool', 'hvac', 'roof', 'trailer']) {
+    for (const v of ['pool', 'hvac', 'roof', 'trailer']) {
       expect(resolveSchemaVocabulary(v), `for ${v}`).toBeNull()
       expect(() => getSchemaVocabulary(v as never)).toThrow()
     }
+    // S323 PR A: lawn moved from this list to the registered side.
+    expect(resolveSchemaVocabulary('lawn')).toBe(LAWN_VOCABULARY)
   })
 
   it('returns NULL for junk and for near-misses the CHECK constraint rejects', () => {
