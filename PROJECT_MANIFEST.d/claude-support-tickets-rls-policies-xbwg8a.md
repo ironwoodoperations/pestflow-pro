@@ -385,3 +385,41 @@ it is recent.
   - supabase/migrations/s326_ai_authority_prompts_unique.sql
   - supabase/migrations/s326_ai_authority_prompts_unique_rollback.sql
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-09-03 17:39 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `11ec6c4` — S327: a pre-deploy freshness guard, and the manifest-hook deadlock
+- Author: Claude
+- Files changed:
+  - .claude/hooks/session-end.sh
+  - .claude/hooks/session-end.test.sh
+  - .github/workflows/ci.yml
+  - .github/workflows/redeploy-edge-on-shared-change.yml
+  - scripts/deploy-function.sh
+  - scripts/deploy-function.test.sh
+  - supabase/functions/ai-proxy/index.ts
+  - supabase/functions/api-quote/index.ts
+  - supabase/functions/apply-finding-fix/index.ts
+  - supabase/functions/ga4-analytics/index.ts
+  - supabase/functions/gsc-analytics/index.ts
+  - supabase/functions/invite-team-member/index.ts
+  - supabase/functions/list-checkout-sessions/index.ts
+  - supabase/functions/notify-new-lead/index.ts
+  - supabase/functions/notify-support-ticket/index.ts
+  - supabase/functions/notify-upgrade/index.ts
+  - supabase/functions/password-reset-request/index.ts
+  - supabase/functions/places-reviews/index.ts
+  - supabase/functions/post-to-social/index.ts
+  - supabase/functions/process-sms-queue/index.ts
+  - supabase/functions/provision-tenant/index.ts
+  - supabase/functions/publish-scheduled-posts/index.ts
+  - supabase/functions/send-credentials-email/index.ts
+  - supabase/functions/send-intake-email/index.ts
+  - supabase/functions/send-reveal-ready/index.ts
+  - supabase/functions/send-review-request/index.ts
+  - supabase/functions/send-sms/index.ts
+  - supabase/functions/seo-analytics/index.ts
+  - supabase/functions/zernio-analytics/index.ts
+  - supabase/functions/zernio-connect/index.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
