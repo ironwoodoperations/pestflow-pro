@@ -231,3 +231,18 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   - supabase/functions/_shared/verticalCopy.ts
   - supabase/functions/generate-monthly-report/narrationPrompt.test.ts
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-09-03 13:10 UTC
+- Branch: `main`
+- Commit: `ba4d134` — S325 — gate demo affordances on the tenant's demo_mode row, not the hostname (#332)
+- Author: csdevore2
+- Files changed:
+  - PROJECT_MANIFEST.d/claude-support-tickets-rls-policies-xbwg8a.md
+  - src/components/admin/SocialTab.tsx
+  - src/components/admin/TierToggle.tsx
+  - src/components/admin/__tests__/demoAffordance.test.tsx
+  - src/components/ironwood/IronwoodSocial.tsx
+  - src/lib/demoAffordance.ts
+  - src/pages/admin/Dashboard.tsx
+- Next recommended action: [Fill in next session: read this line, write what comes next]
