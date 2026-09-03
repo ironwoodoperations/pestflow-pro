@@ -26,6 +26,23 @@ export default function BundleSocialSetup({ tenantId }: Props) {
   const [open, setOpen]         = useState(false)
   const [accounts, setAccounts] = useState<ZernioAccount[]>([])
   const [profileId, setProfileId] = useState('')
+  /**
+   * S326 ITEM 3b — "not configured" is a different state from "not created",
+   * and the operator needs to be able to tell them apart.
+   *
+   * Read from settings.integrations.zernio_last_error, which provision-tenant
+   * writes as the allowlisted literal 'not_configured' when ZERNIO_API_KEY is
+   * unset, and clears to null on a successful create. No new settings KEY was
+   * invented for this: it is a field inside the existing `integrations` row,
+   * matching the outscraper_last_error / outscraper_last_synced_at convention
+   * that places-reviews and outscraper-reviews already use in the same row.
+   *
+   * provisioning_status was the other candidate and is the wrong shape: it is
+   * per-run, keyed by correlation_id, written by ironwood-provision rather than
+   * provision-tenant, and this component does not read it. Whether a platform
+   * secret is set is a standing fact, not an attribute of one provisioning run.
+   */
+  const [zernioStatus, setZernioStatus] = useState<string | null>(null)
   const [loading, setLoading]   = useState(false)
 
   useEffect(() => {
@@ -40,6 +57,7 @@ export default function BundleSocialSetup({ tenantId }: Props) {
         .maybeSingle()
       if (integ?.value) {
         setProfileId(integ.value.zernio_profile_id ?? '')
+        setZernioStatus(integ.value.zernio_last_error ?? null)
         const accs: ZernioAccount[] = Object.entries(integ.value.zernio_accounts ?? {}).map(
           ([platform, accountId]) => ({ platform, accountId: accountId as string })
         )
@@ -83,9 +101,44 @@ export default function BundleSocialSetup({ tenantId }: Props) {
               {/* Profile ID */}
               <div className="space-y-1">
                 <p className="text-xs font-medium text-gray-400">Zernio Profile ID</p>
+                {/*
+                  S326 ITEM 1b — the previous text read:
+                    "No Zernio profile — re-provision this client to generate one."
+                  Re-provisioning was, until this same change, an operation that
+                  reset the client's admin password and killed their live sessions.
+                  So the UI recommended a destructive act as the remedy for a
+                  social-media task. It is replaced, not softened, and no button
+                  is wired here — lazy creation on first Connect is queued behind
+                  the RPC session.
+
+                  ITEM 3b — two distinct states, because the remedies differ: a
+                  missing platform secret is Scott's to fix once for the whole
+                  deployment, while a missing profile on a configured deployment
+                  is a per-tenant gap.
+                */}
                 {profileId
                   ? <p className="text-xs text-emerald-400 font-mono">{profileId}</p>
-                  : <p className="text-xs text-amber-400">No Zernio profile — re-provision this client to generate one.</p>
+                  : zernioStatus === 'not_configured'
+                    ? (
+                      <div className="space-y-1">
+                        <p className="text-xs text-amber-400">
+                          Zernio is not configured on this deployment — provisioning skipped profile creation.
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          The <span className="font-mono">ZERNIO_API_KEY</span> Edge Function secret is unset. Until it is set, no
+                          tenant gets a profile and Social → Connections will fail for all of them.
+                        </p>
+                      </div>
+                    )
+                    : (
+                      <div className="space-y-1">
+                        <p className="text-xs text-amber-400">No Zernio profile for this tenant yet.</p>
+                        <p className="text-xs text-gray-500">
+                          Social → Connections will report no profile until one exists. Nothing here creates it — ask
+                          engineering rather than re-provisioning, which is not a profile-creation route.
+                        </p>
+                      </div>
+                    )
                 }
               </div>
 
