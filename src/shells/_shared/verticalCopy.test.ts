@@ -60,8 +60,10 @@ describe('getVerticalCopy — registered but copyless verticals FAIL LOUDLY', ()
     expect(() => getVerticalCopy('pool')).toThrow(/pool/);
   });
 
+  // S323 PR A: 'lawn' left this list — it now HAS copy. Everything the list
+  // asserts is unchanged for the four that remain.
   it('throws rather than silently serving pest copy — the whole point', () => {
-    for (const v of ['lawn', 'pool', 'hvac', 'roof', 'trailer'] as const) {
+    for (const v of ['pool', 'hvac', 'roof', 'trailer'] as const) {
       expect(() => getVerticalCopy(v)).toThrow();
       // and specifically NOT by returning something pest-shaped
       let returned: unknown = 'did-not-throw';
@@ -93,7 +95,7 @@ describe('registry / copy coverage is deliberate, not accidental', () => {
     const withCopy = VERTICALS.filter((v) => {
       try { getVerticalCopy(v); return true; } catch { return false; }
     });
-    expect(withCopy).toEqual(['pest', 'irrigation']);
+    expect(withCopy).toEqual(['pest', 'irrigation', 'lawn']);
   });
 });
 
@@ -114,9 +116,18 @@ describe('S293 — the metadata description tail, same defect, same layout', () 
   })
 
   it('an unrecorded vertical resolves to NULL, so the caller omits the tail', () => {
-    for (const v of [null, undefined, '', 'Medical Aesthetics', 'lawn']) {
+    // S323 PR A: 'lawn' was the copyless example here and now has copy, so it
+    // is replaced by 'pool' rather than dropped — the case still needs a
+    // registered-but-copyless key alongside the unrecorded ones.
+    for (const v of [null, undefined, '', 'Medical Aesthetics', 'pool']) {
       expect(resolveVerticalCopy(v as string | null | undefined), `for ${JSON.stringify(v)}`).toBeNull()
     }
+  })
+
+  it('lawn resolves its OWN copy, and names lawn care rather than pest', () => {
+    // The S323 addition, asserted on the same helper the defect lived in.
+    expect(resolveVerticalCopy('lawn')?.metadataFallbackDesc)
+      .toBe('professional lawn care and landscape maintenance')
   })
 
   // The assembled string, not just the helper. A helper-only assertion passes

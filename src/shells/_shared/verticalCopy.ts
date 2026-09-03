@@ -230,8 +230,76 @@ const VERTICAL_COPY: Partial<Record<Vertical, VerticalCopy>> = Object.freeze({
     blogCardFallbackImage: null,
     aboutImageFallback: null,
   }) as unknown as VerticalCopy,
-  // lawn, pool, hvac, roof, trailer: registered in VERTICALS, deliberately
-  // ABSENT here. No placeholder copy — a pool tenant silently rendering pest
+
+  // Lawn vertical (S323 PR A). Trade-level only, held to the same bar as
+  // irrigation and then some: no licence, no region, no warranty term, no
+  // rating, no response time, and no offer. The two live examples this preset
+  // is written against sit in the IRRIGATION content map today — 'Licensed
+  // since 2017' and a 'free 2-year warranty' — both true of one company and of
+  // no other irrigation business. Nothing of that shape is here. Locked by
+  // tests in this directory and in src/lib/__tests__/lawnCatalog.test.ts.
+  //
+  // NOTE ON quoteHeroTitle / ctaPrimaryLabel: 'Request an Estimate', NOT
+  // 'Request a FREE Estimate'. Irrigation's says free; that is an OFFER, and an
+  // offer is a tenant fact. Deliberately not copied across.
+  lawn: Object.freeze({
+    locationHeroSuffix: 'Lawn Care',
+    locationSubtitleGeneric: 'Professional lawn care for',
+    locationH2Generic: 'Professional Lawn Care',
+    locationIntroFallback: Object.freeze([
+      'Our crews handle turf treatment, mowing and landscape maintenance throughout {city} — seasonal feeding and weed control, aeration and seeding, and the routine upkeep that keeps a property in shape between visits.',
+    ]) as unknown as string[],
+    locationPrimaryCta: 'Request a Quote',
+    cityFaqs: Object.freeze([
+      { q: 'Do you service the {city} area?', a: 'Yes. We provide lawn care and landscape maintenance throughout {city} and the surrounding communities. Call us for scheduling.' },
+      { q: 'What are the most common lawn problems in {city}?', a: 'Thin turf that weeds move into, compacted soil that sheds water instead of taking it in, grub and chinch bug damage mistaken for drought, and fungal patches after warm, humid weather. Local soil and grass type drive most of it.' },
+      { q: 'When should lawn treatments be applied in {city}?', a: 'Timing follows the growing season and the grass type rather than a fixed calendar — pre-emergent before soil temperatures bring weed seed up, feeding through active growth, and aeration and seeding while the turf can still recover. Call us to talk through the schedule for your lawn.' },
+      { q: 'Do you work year-round in {city}?', a: 'Yes. The work changes with the season — treatment and mowing through the growing months, cleanups and pruning outside them — but the schedule runs year-round.' },
+    ]) as unknown as CityFaq[],
+    whyChooseFeatures: Object.freeze([
+      { title: 'Treated to the Lawn, Not the Calendar', desc: 'Rates and timing set from grass type, soil conditions and what the turf is actually doing.' },
+      { title: 'Diagnosis Before Treatment', desc: 'Drought, grubs and turf disease look alike from the drive. We identify the cause before we treat it.' },
+      { title: 'Documented Visits', desc: 'What was applied, at what rate, and what comes next — recorded so the season reads as one plan.' },
+      { title: 'Clear Scheduling', desc: 'We give you a firm date, keep you posted if anything changes, and show up when we say we will.' },
+      { title: 'Local Knowledge', desc: 'We know the grass types, soils and seasonal pressures in this area.' },
+      { title: 'You Come First', desc: 'Our crews explain what the lawn needs, answer questions, and walk the property with you.' },
+    ]) as unknown as Feature[],
+    processHeading: 'How Our Lawn Care Process Works',
+    processSteps: Object.freeze([
+      { title: 'Assessment', desc: 'A walk of the property to identify grass type, soil condition, weed pressure, and anything already damaging the turf.' },
+      { title: 'Diagnosis', desc: 'Soil testing and identification of insects or disease, so treatment answers the cause rather than the symptom.' },
+      { title: 'Plan', desc: 'A seasonal schedule for feeding, weed control and cultural work, set to the grass type and the growing season.' },
+      { title: 'Service', desc: 'Applications and maintenance carried out on that schedule, at rates set for the conditions on the day.' },
+      { title: 'Follow-up', desc: 'Results read at the next visit and the schedule adjusted to what the lawn is doing.' },
+    ]) as unknown as ProcessStep[],
+    serviceProcessVerb: 'How we approach',
+    serviceSolutionLabel: 'The Work',
+    serviceSteps: Object.freeze([
+      { num: '01', title: 'Assess', desc: 'Property walk: grass type, soil condition, weed pressure, and the cause of any damage already showing.' },
+      { num: '02', title: 'Plan', desc: 'A seasonal schedule matched to the grass type, the soil, and the growing season.' },
+      { num: '03', title: 'Treat', desc: 'Applications and maintenance carried out on schedule, at rates set for the conditions.' },
+      { num: '04', title: 'Follow Up', desc: 'Results read at the next visit, and the schedule adjusted to what the turf is doing.' },
+    ]) as unknown as ServiceStep[],
+    serviceAreaStrapline: 'Professional lawn care and landscape maintenance in your community and surrounding areas.',
+    quoteHeroTitle: 'Request an Estimate',
+    metadataFallbackDesc: 'professional lawn care and landscape maintenance',
+    blogHeading: 'Lawn Care Blog',
+    blogSubtitle: 'Guides and updates on turf treatment, maintenance and landscape work.',
+    blogNewsletterCopy: 'Get seasonal lawn care tips delivered to your inbox.',
+    ctaGenericIntro: 'Professional lawn care, on a schedule that fits the season.',
+    // Conduct, not capacity: grounded in this preset's own processSteps, whose
+    // first step is Assessment. Promises no window and no turnaround.
+    ctaStrapline: 'Every plan starts with a look at the lawn.',
+    ctaPrimaryLabel: 'Request an Estimate',
+    // NULL, not a borrowed pest photo and not a path to a file that does not
+    // exist. There is no lawn photography in public/ — these render nothing
+    // until there is.
+    blogCardFallbackImage: null,
+    aboutImageFallback: null,
+  }) as unknown as VerticalCopy,
+
+  // pool, hvac, roof, trailer: registered in VERTICALS, deliberately ABSENT
+  // here. No placeholder copy — a pool tenant silently rendering pest
   // copy is the exact failure this architecture exists to prevent, so the
   // accessor throws instead. Fail at build/dev, not quietly in production.
 });

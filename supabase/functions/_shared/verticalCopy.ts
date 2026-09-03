@@ -17,7 +17,16 @@
 // KEYS: 'pest' and 'irrigation' are the only two literals the live CHECK
 // constraint settings_business_info_vertical_valid accepts (S281). Not
 // 'pest-control', not 'pest_control' — either is rejected at write time with
-// 23514. Widen this map in the same change that widens that constraint.
+// 23514.
+//
+// 'lawn' IS PRESENT AND CURRENTLY UNREACHABLE, deliberately (S323 PR A). The
+// ordering is load-bearing and runs the other way round from what this header
+// used to say: presets land in CODE first, the CHECK widens LAST. getVerticalCopy
+// on the public-site module and getSchemaVocabulary both THROW for a vertical
+// with no preset, and both are called from layout.tsx — so widening the CHECK
+// before the presets exist lets a JSONB edit 500 an entire tenant site with no
+// deploy. A key with no constraint behind it is inert; a constraint with no key
+// behind it is an outage. Add the key first.
 //
 // There is deliberately NO null-as-pest branch. NULL is a real, current state
 // with a deliberate consumer, and it means "not recorded", not "pest".
@@ -41,6 +50,15 @@ export const VERTICAL_COPY: Record<string, VerticalCopy> = {
     tradeNoun: 'irrigation',
     ownerNoun: 'an irrigation business owner',
     callNoun: 'irrigation phone calls',
+  },
+  // 'lawn care', not 'lawn maintenance' or 'landscaping': the noun has to be
+  // true of every tenant in the vertical, and the catalog spans turf treatment,
+  // maintenance and landscape work. 'lawn care' is the trade term that covers
+  // the whole of it without asserting any one company does all of it.
+  lawn: {
+    tradeNoun: 'lawn care',
+    ownerNoun: 'a lawn care business owner',
+    callNoun: 'lawn care phone calls',
   },
 };
 

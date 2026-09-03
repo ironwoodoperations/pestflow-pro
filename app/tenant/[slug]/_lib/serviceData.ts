@@ -1,4 +1,6 @@
 import { IRRIGATION_CONTENT_MAP } from '../../../../src/shells/_shared/irrigationContent'
+import { LAWN_CONTENT_MAP } from '../../../../src/shells/_shared/lawnContent'
+import type { Vertical } from '../../../../shared/lib/verticals'
 
 export type ServiceData = {
   heroTitle: string
@@ -287,3 +289,38 @@ export const SERVICE_SLUGS = new Set(Object.keys(SERVICE_DATA))
 // resolve for irrigation tenants while every pest tenant routes exactly as
 // before.
 export const IRRIGATION_SERVICE_SLUGS = new Set(Object.keys(IRRIGATION_CONTENT_MAP))
+
+// Lawn-vertical router set (S323 PR A). The lawn catalog is FULL — every
+// service the trade might offer — so this set is wide on purpose. Being in the
+// set makes a slug SERVEABLE, not offered: the tile and the nav link come from
+// a page_content row, and a tenant who sells three services has three rows.
+export const LAWN_SERVICE_SLUGS = new Set(Object.keys(LAWN_CONTENT_MAP))
+
+/**
+ * Vertical → active slug set. Replaces the `vertical === 'irrigation' ? … : …`
+ * ternary in [service]/page.tsx, whose ELSE branch handed the PEST slug set to
+ * every other vertical.
+ *
+ * The twin of CONTENT_MAP_BY_VERTICAL in src/shells/_shared/serviceEntry.ts,
+ * and the two MUST agree key for key. The route uses this set to choose the
+ * service-page branch over the location-page branch, and then renders from
+ * getServiceEntry — so a vertical present here but absent there renders a
+ * service page with no content entry. lawnCatalog.test.ts pins them equal.
+ *
+ * Partial with NO pest fallback, for the same reason: an unregistered vertical
+ * serves no service pages rather than another trade's. Unreachable in
+ * production today (the CHECK permits pest, irrigation and NULL), so pest and
+ * irrigation tenants route exactly as they did.
+ */
+export const SERVICE_SLUGS_BY_VERTICAL: Partial<Record<Vertical, Set<string>>> = {
+  pest: SERVICE_SLUGS,
+  irrigation: IRRIGATION_SERVICE_SLUGS,
+  lawn: LAWN_SERVICE_SLUGS,
+}
+
+/** The slug set for a vertical. Empty (never pest) when no catalog is registered. */
+export function serviceSlugsFor(vertical: Vertical): Set<string> {
+  return SERVICE_SLUGS_BY_VERTICAL[vertical] ?? EMPTY_SERVICE_SLUGS
+}
+
+const EMPTY_SERVICE_SLUGS: Set<string> = new Set()

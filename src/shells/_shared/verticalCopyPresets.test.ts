@@ -162,16 +162,16 @@ describe('city tokenization', () => {
 
 describe('registered-but-copyless verticals still fail loudly', () => {
   it('throws for each, naming the vertical', () => {
-    for (const v of ['lawn', 'pool', 'hvac', 'roof', 'trailer'] as const) {
+    for (const v of ['pool', 'hvac', 'roof', 'trailer'] as const) {
       expect(() => getVerticalCopy(v)).toThrow(new RegExp(v));
     }
   });
 
-  it('exactly pest and irrigation have copy', () => {
+  it('exactly pest, irrigation and lawn have copy', () => {
     const withCopy = VERTICALS.filter((v) => {
       try { getVerticalCopy(v); return true; } catch { return false; }
     });
-    expect(withCopy).toEqual(['pest', 'irrigation']);
+    expect(withCopy).toEqual(['pest', 'irrigation', 'lawn']);
   });
 });
 
