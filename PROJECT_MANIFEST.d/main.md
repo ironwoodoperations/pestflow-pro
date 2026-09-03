@@ -246,3 +246,14 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   - src/lib/demoAffordance.ts
   - src/pages/admin/Dashboard.tsx
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-09-03 13:18 UTC
+- Branch: `main`
+- Commit: `15dc873` — docs(S324): land the provisioning write-set investigation in the repo (#333)
+- Author: csdevore2
+- Files changed:
+  - PROJECT_MANIFEST.d/claude-support-tickets-rls-policies-xbwg8a.md
+  - PROJECT_MANIFEST.d/main.md
+  - docs/audits/INVESTIGATION_S324_PROVISIONING_WRITE_SET.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]

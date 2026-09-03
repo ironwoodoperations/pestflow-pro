@@ -29,6 +29,12 @@ import {
 } from '../_shared/provisioningSeed.ts'
 import { timingSafeEqual } from 'node:crypto'
 import { normalizeAll, buildJsonbProjection } from '../_shared/service-areas.ts'
+// S326 — used ONLY by the not_configured marker write added in this change, so a
+// NEW integrations writer cannot round-trip a Vault secret into anon-adjacent
+// JSONB. The pre-existing zernio_profile_id write below still does not use it;
+// that is a recorded, deliberately out-of-scope defect (no tenant currently
+// holds a Vault key in integrations), not an oversight here.
+import { stripVaultSecrets } from '../_shared/secrets/stripVaultSecrets.ts'
 import { PLATFORM_NAME } from '../../../shared/lib/platformBrand.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
@@ -130,6 +136,27 @@ interface RequestBody {
   slug?: string
   admin_email?: string
   admin_password?: string
+  /**
+   * S326 ITEM 1 — OPT IN TO RESETTING AN EXISTING ADMIN'S PASSWORD.
+   *
+   * Absent or false, a re-provision LEAVES THE EXISTING PASSWORD ALONE.
+   *
+   * This was unconditional. Any re-provision of a tenant whose admin email
+   * already had an auth user called updateUserById, which changes the password
+   * and — gotrue >=2.149 — kills that user's live sessions. It fired before any
+   * seed write, so it happened even on runs that then failed. Meanwhile
+   * BundleSocialSetup told the operator to re-provision a client to generate a
+   * Zernio profile: following that instruction logged a paying customer out and
+   * changed their password, as a side effect of a social-media task.
+   *
+   * DEFAULT FALSE, not "false unless it looks intentional". The caller has to
+   * say so. There is no inference from other fields — admin_password is still
+   * required to CREATE a user and must not double as consent to overwrite one.
+   *
+   * The NEW-tenant path is untouched: createUser sets the initial password at
+   * creation, which is not a reset and does not consult this flag.
+   */
+  reset_admin_password?: boolean
   prospect_id?: string
   onboarding_session_id?: string
   business_info: {
@@ -312,6 +339,11 @@ export async function handler(req: Request): Promise<Response> {
     }
 
     // Step 2: Create auth user
+    //
+    // S326 — reported back in the success response. Whether a re-provision
+    // touched a live customer's credentials is not something an operator should
+    // have to reconstruct from logs after the fact.
+    let adminPasswordReset = false
     if (resolvedAdminEmail && resolvedAdminPassword) {
       const { data: authData, error: createUserError } = await supabase.auth.admin.createUser({
         email:         resolvedAdminEmail,
@@ -376,10 +408,18 @@ export async function handler(req: Request): Promise<Response> {
           }
 
           // S220 B2b: Password sync. updateUserById writes the credentials-email
-          // password into auth.users. Without this, the customer receives credentials
-          // they can't use. gotrue v2.149+ kills active sessions on password change —
-          // desired behavior here (customer just got new credentials, fresh login is
-          // the goal). Admin route bypasses gotrue confirmation emails.
+          // password into auth.users. Without this, a customer being provisioned
+          // for the first time on an email that already has an auth user receives
+          // credentials they can't use. Admin route bypasses gotrue confirmation
+          // emails.
+          //
+          // S326 ITEM 1 — NOW OPT-IN. gotrue >=2.149 kills the user's live
+          // sessions on a password change, so this is destructive to anyone
+          // currently signed in. It ran on EVERY re-provision, before any seed
+          // write. `reset_admin_password` must be explicitly true; absent or
+          // false leaves the existing password and sessions alone.
+          if (body.reset_admin_password === true) {
+          console.log('[provision-tenant] password_reset: requested, applying to existing user')
           const { error: pwSyncErr } = await supabase.auth.admin.updateUserById(
             resolvedUserId,
             { password: resolvedAdminPassword }
@@ -404,6 +444,13 @@ export async function handler(req: Request): Promise<Response> {
             }), { status: 500, headers: { 'Content-Type': 'application/json', ...CORS } })
           }
           console.log('[provision-tenant] Password synced for existing user:', resolvedAdminEmail)
+          adminPasswordReset = true
+          } else {
+            // The default path. Say so at INFO: an operator reading the log for a
+            // re-provision should be able to see that the password was left alone,
+            // not have to infer it from the absence of a line.
+            console.log('[provision-tenant] password_reset: skipped (reset_admin_password not true) — existing password and sessions preserved')
+          }
         } else {
           console.error('[provision-tenant] createUser failed:', createUserError.message)
           return new Response(JSON.stringify({
@@ -626,6 +673,28 @@ export async function handler(req: Request): Promise<Response> {
     // Step 8: Create Zernio profile for social media posting (non-fatal)
     try {
       const ZERNIO_API_KEY = Deno.env.get('ZERNIO_API_KEY')
+      if (!ZERNIO_API_KEY) {
+        // S326 ITEM 3 — THE SILENT SKIP, MADE OBSERVABLE.
+        //
+        // This branch did nothing at all, with no log line. The Zernio step
+        // postdates every existing tenant by four days, so it has never run for
+        // anyone, and whether the secret is even set would first have been
+        // discovered by a client clicking Connect and getting
+        // "No Zernio profile found. Contact support."
+        //
+        // ALLOWLISTED STATUS ONLY. No key, no fragment of a key, no upstream
+        // body — S313's lesson, where a raw Resend error body echoed a
+        // recipient's address into function logs.
+        console.warn('[provision-tenant] zernio_profile: skipped — reason=not_configured step=create_profile tenant_id=' + tenantId)
+        const { data: intgForSkip } = await supabase
+          .from('settings').select('value')
+          .eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle()
+        const { error: skipMarkErr } = await supabase
+          .from('settings')
+          .update({ value: { ...stripVaultSecrets((intgForSkip?.value ?? {}) as Record<string, unknown>), zernio_last_error: 'not_configured' } })
+          .eq('tenant_id', tenantId).eq('key', 'integrations')
+        if (skipMarkErr) console.error('[provision-tenant] zernio_profile: failed to record not_configured marker:', skipMarkErr.message)
+      }
       if (ZERNIO_API_KEY) {
         const zernioRes = await fetch('https://zernio.com/api/v1/profiles', {
           method: 'POST',
@@ -652,7 +721,11 @@ export async function handler(req: Request): Promise<Response> {
           const currentIntg = existingIntg?.value ?? {}
           const { error: zernioSaveErr } = await supabase
             .from('settings')
-            .update({ value: { ...currentIntg, zernio_profile_id: zernioProfileId } })
+            // zernio_last_error cleared on success, mirroring how outscraper-reviews
+            // nulls outscraper_last_error when a sync succeeds. Without this, a
+            // tenant provisioned before the secret was set would keep reading
+            // "not configured" forever after it was.
+            .update({ value: { ...currentIntg, zernio_profile_id: zernioProfileId, zernio_last_error: null } })
             .eq('tenant_id', tenantId)
             .eq('key', 'integrations')
           if (zernioSaveErr) console.error('[provision-tenant] Failed to save zernio_profile_id:', zernioSaveErr.message)
@@ -964,8 +1037,22 @@ export async function handler(req: Request): Promise<Response> {
           })
 
           if (prompts.length > 0) {
+            // S326 ITEM 2 — UPSERT, not INSERT. This was a plain insert against a
+            // table whose only constraint is PRIMARY KEY (id), so a re-provision
+            // wrote a SECOND FULL COPY of every prompt for that tenant. No tenant
+            // carries duplicates today only because nothing has been re-provisioned
+            // since S289 added the insert — scheduling luck, not a guard.
+            //
+            // onConflict names ai_authority_prompts_tenant_prompt_key, added in the
+            // untimestamped migration shipped with this change. ignoreDuplicates:
+            // a prompt that already exists is left exactly as it is, including its
+            // `active` flag — re-provisioning must not silently re-enable a prompt
+            // the operator turned off.
             const { error: apErr } = await supabase.from('ai_authority_prompts')
-              .insert(prompts.map((prompt_text) => ({ tenant_id: tenantId, prompt_text, active: true })))
+              .upsert(
+                prompts.map((prompt_text) => ({ tenant_id: tenantId, prompt_text, active: true })),
+                { onConflict: 'tenant_id,prompt_text', ignoreDuplicates: true },
+              )
             if (apErr) console.error('[provision-tenant] ai_authority_prompts seed failed (non-fatal):', apErr.message)
             else console.log(`[provision-tenant] ai_authority_prompts seeded: ${prompts.length} (vertical: ${vertical ?? 'unrecorded'})`)
           } else {
@@ -1112,7 +1199,7 @@ export async function handler(req: Request): Promise<Response> {
     } catch (outscraperFireErr: any) {
       console.warn('[provision-tenant] Outscraper fire-and-forget setup failed (non-fatal):', outscraperFireErr?.message)
     }
-    return new Response(JSON.stringify({ success: true, tenant_id: tenantId, slug: resolvedSlug, url: liveUrl }), {
+    return new Response(JSON.stringify({ success: true, tenant_id: tenantId, slug: resolvedSlug, url: liveUrl, admin_password_reset: adminPasswordReset }), {
       headers: { 'Content-Type': 'application/json', ...CORS },
     })
   } catch (err: any) {

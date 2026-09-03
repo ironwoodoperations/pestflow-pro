@@ -371,3 +371,17 @@ it is recent.
 - Files changed:
   - docs/audits/INVESTIGATION_S324_PROVISIONING_WRITE_SET.md
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-09-03 13:36 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `1113d0b` — S326: three hardening fixes ahead of the provisioning RPC
+- Author: Claude
+- Files changed:
+  - src/components/ironwood/BundleSocialSetup.tsx
+  - src/components/ironwood/__tests__/bundleSocialSetupCopy.test.tsx
+  - supabase/functions/provision-tenant/index.ts
+  - supabase/functions/provision-tenant/s326Hardening.test.ts
+  - supabase/migrations/s326_ai_authority_prompts_unique.sql
+  - supabase/migrations/s326_ai_authority_prompts_unique_rollback.sql
+- Next recommended action: [Fill in next session: read this line, write what comes next]
