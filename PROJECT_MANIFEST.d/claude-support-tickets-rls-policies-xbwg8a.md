@@ -462,3 +462,14 @@ it is recent.
   - supabase/functions/zernio-analytics/index.ts
   - supabase/functions/zernio-connect/index.ts
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-09-03 18:50 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `f12c20a` — S328 Item 0 — the _shared consumer audit, and a runnable emergency-override line (#336)
+- Author: csdevore2
+- Files changed:
+  - PROJECT_MANIFEST.d/claude-support-tickets-rls-policies-xbwg8a.md
+  - scripts/deploy-function.sh
+  - scripts/deploy-function.test.sh
+- Next recommended action: [Fill in next session: read this line, write what comes next]
