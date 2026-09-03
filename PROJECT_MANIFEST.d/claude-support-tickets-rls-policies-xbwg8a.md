@@ -462,3 +462,31 @@ it is recent.
   - supabase/functions/zernio-analytics/index.ts
   - supabase/functions/zernio-connect/index.ts
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-09-03 18:50 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `f12c20a` — S328 Item 0 — the _shared consumer audit, and a runnable emergency-override line (#336)
+- Author: csdevore2
+- Files changed:
+  - PROJECT_MANIFEST.d/claude-support-tickets-rls-policies-xbwg8a.md
+  - scripts/deploy-function.sh
+  - scripts/deploy-function.test.sh
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-09-03 19:26 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `fa33901` — S329: self-service social connect — auth gate, lazy profile, tenant-correct return URL
+- Author: Claude
+- Files changed:
+  - shared/lib/resolveSiteUrl.ts
+  - src/components/admin/social/ConnectionsModal.tsx
+  - supabase/functions/post-to-social/index.ts
+  - supabase/functions/publish-scheduled-posts/index.ts
+  - supabase/functions/zernio-analytics/index.ts
+  - supabase/functions/zernio-connect/connectLogic.test.ts
+  - supabase/functions/zernio-connect/connectLogic.ts
+  - supabase/functions/zernio-connect/index.ts
+  - tsconfig.json
+- Next recommended action: [Fill in next session: read this line, write what comes next]

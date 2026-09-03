@@ -283,7 +283,12 @@ serve(async (req) => {
     console.log('[post-to-social] Zernio response:', JSON.stringify(data))
 
     if (!res.ok) {
-      const errMsg = data?.error || data?.message || `Zernio error: ${res.status}`
+      // S329 ITEM 4 — this string reaches the client twice: in the response body and via
+      // social_posts.error_msg, which PostCard.tsx:63 renders. Only the FALLBACK is ours,
+      // and it no longer names the vendor. The upstream message is deliberately still
+      // passed through: it is what tells an admin their own Facebook token expired, and
+      // suppressing that to hide a brand name would cost them the one actionable detail.
+      const errMsg = data?.error || data?.message || `Social publishing error: ${res.status}`
       console.error('[post-to-social] Zernio API error:', errMsg)
       if (postId) {
         await supabase.from('social_posts').update({ status: 'failed', error_msg: errMsg }).eq('id', postId).eq('tenant_id', tenantId)
