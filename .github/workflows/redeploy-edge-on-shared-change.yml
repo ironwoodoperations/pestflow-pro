@@ -76,6 +76,11 @@ jobs:
             fn="${raw%%#*}"; fn="$(echo "$fn" | xargs)"
             [ -z "$fn" ] && continue
             echo "::group::deploy $fn (verify_jwt from config.toml)"
+            # NOT scripts/deploy-function.sh, deliberately (S327). That wrapper guards
+            # the MANUAL path, where a Codespace tree can lag the merged remote — the
+            # cause of three stale deploys on 2026-09-02. Here the checkout IS the pushed
+            # main SHA, so it cannot lag; and Actions checks out a detached HEAD, so the
+            # wrapper's branch check would refuse every run.
             supabase functions deploy "$fn" --project-ref "$PROJECT_REF"
             echo "::endgroup::"
           done < .github/edge-shared-consumers.txt

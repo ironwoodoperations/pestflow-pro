@@ -12,7 +12,7 @@
 //     a raw string-equality against SUPABASE_SERVICE_ROLE_KEY — the vault copy
 //     of that key can legitimately differ from the edge runtime's injected env.
 //
-//   supabase functions deploy seo-analytics --project-ref biezzykcgzkrwdgqpsar
+//   ./scripts/deploy-function.sh seo-analytics --project-ref biezzykcgzkrwdgqpsar
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'

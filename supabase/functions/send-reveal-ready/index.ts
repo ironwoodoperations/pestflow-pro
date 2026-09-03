@@ -2,7 +2,7 @@
 // Triggered manually from Ironwood when Scott marks a site as reveal-ready.
 // Admin-only — verifies caller's user.email === admin@pestflowpro.com via Authorization Bearer.
 //
-// Deploy: supabase functions deploy send-reveal-ready --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
+// Deploy: ./scripts/deploy-function.sh send-reveal-ready --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { sendEmail } from '../_shared/sendEmail.ts'

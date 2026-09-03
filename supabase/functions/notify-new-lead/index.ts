@@ -6,7 +6,7 @@
 // Auth: verify_jwt:false at platform; in-source validation of `apikey` header
 //       against NOTIFY_NEW_LEAD_INTERNAL_SECRET env var. Sole legitimate caller:
 //       public.trigger_notify_new_lead DB trigger.
-// Deploy: supabase functions deploy notify-new-lead --project-ref biezzykcgzkrwdgqpsar --no-verify-jwt
+// Deploy: ./scripts/deploy-function.sh notify-new-lead --project-ref biezzykcgzkrwdgqpsar --no-verify-jwt
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { timingSafeEqual } from 'node:crypto'

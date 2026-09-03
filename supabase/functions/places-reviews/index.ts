@@ -2,7 +2,7 @@
 // Fetches Google Place details + reviews server-side, avoiding VITE_* key exposure.
 // Auth: C2 — requireTenantUser (JWT required, tenant ownership enforced).
 // DEPLOY:
-//   supabase functions deploy places-reviews --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
+//   ./scripts/deploy-function.sh places-reviews --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'

@@ -3,7 +3,7 @@
 // Auth: requireTenantUser + master-tenant gate (caller's tenant slug must be
 // 'pestflow-pro'). Stripe client setup mirrors create-checkout-session.
 //
-// Deploy: supabase functions deploy list-checkout-sessions --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
+// Deploy: ./scripts/deploy-function.sh list-checkout-sessions --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
 
 import Stripe from 'https://esm.sh/stripe@14?target=deno'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'

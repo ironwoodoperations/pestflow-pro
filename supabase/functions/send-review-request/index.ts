@@ -4,7 +4,7 @@
 // POST body: { lead_id, tenant_id } OR { tenant_id, email_override, name_override }
 // Returns: { sent: true } | { skipped: true, reason: string } | { error: string }
 //
-// Deploy: supabase functions deploy send-review-request --project-ref biezzykcgzkrwdgqpsar
+// Deploy: ./scripts/deploy-function.sh send-review-request --project-ref biezzykcgzkrwdgqpsar
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 

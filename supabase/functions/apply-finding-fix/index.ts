@@ -19,7 +19,7 @@
 // own check_tenant_access(t,4) is first. 5 user_edited=false + updated_at in the WHERE.
 //
 // DEPLOY (verify_jwt:true — do NOT pass --no-verify-jwt):
-//   supabase functions deploy apply-finding-fix --project-ref biezzykcgzkrwdgqpsar
+//   ./scripts/deploy-function.sh apply-finding-fix --project-ref biezzykcgzkrwdgqpsar
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'

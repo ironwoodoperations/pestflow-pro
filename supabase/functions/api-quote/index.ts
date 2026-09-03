@@ -14,7 +14,7 @@
 // Next.js public lead forms (ContactForm, QuoteForm).
 //
 // SETUP:
-// 1. Deploy: supabase functions deploy api-quote --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
+// 1. Deploy: ./scripts/deploy-function.sh api-quote --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
 // 2. Set SEND_SMS_INTERNAL_SECRET secret on this function (matches send-sms env var).
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'

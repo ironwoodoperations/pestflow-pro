@@ -10,7 +10,7 @@
 // resource-bound: tenant_id is derived from the ticket being acted on, so a
 // caller who belongs to tenant A cannot notify on tenant B's ticket.
 //
-// Deploy: supabase functions deploy notify-support-ticket --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
+// Deploy: ./scripts/deploy-function.sh notify-support-ticket --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { requireTenantUser, AuthError } from '../_shared/auth/requireTenantUser.ts'

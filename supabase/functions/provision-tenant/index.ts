@@ -19,7 +19,7 @@
 //   B2b — password sync via updateUserById in the existing-user branch
 //   B2c — lookup-fail hardening (was silently provisioning admin-less tenant)
 //
-// Deploy: supabase functions deploy provision-tenant --project-ref biezzykcgzkrwdgqpsar --no-verify-jwt
+// Deploy: ./scripts/deploy-function.sh provision-tenant --project-ref biezzykcgzkrwdgqpsar --no-verify-jwt
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { generateAuthorityPrompts, isDemoTenant, isOperatorTenant } from '../_shared/authorityPrompts.ts'

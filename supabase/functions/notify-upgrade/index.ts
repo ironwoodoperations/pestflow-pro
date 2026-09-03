@@ -8,7 +8,7 @@
 // runs through the same escapeHtml helper. featureLine remains a pre-built
 // HTML fragment (its content is escaped at construction); do NOT re-escape it.
 //
-// Deploy: supabase functions deploy notify-upgrade --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
+// Deploy: ./scripts/deploy-function.sh notify-upgrade --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { requireTenantAdmin, AuthError } from '../_shared/auth/requireTenantUser.ts'

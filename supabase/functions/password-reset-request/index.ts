@@ -32,7 +32,7 @@
 //
 // tenant is server-derived from the request Origin/Referer host — never from the body.
 //
-// Deploy: supabase functions deploy password-reset-request --project-ref biezzykcgzkrwdgqpsar --no-verify-jwt
+// Deploy: ./scripts/deploy-function.sh password-reset-request --project-ref biezzykcgzkrwdgqpsar --no-verify-jwt
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { sendEmail } from '../_shared/sendEmail.ts'
