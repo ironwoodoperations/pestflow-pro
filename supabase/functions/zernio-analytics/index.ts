@@ -93,10 +93,12 @@ serve(async (req) => {
       const run = await writeRun({
         status: 'error',
         api_error_code: 'no_profile',
-        api_error_msg: 'No Zernio profile connected for this tenant.',
+        // S329 ITEM 4 — client-rendered (SocialAnalyticsTile:103 prints api_error_msg
+        // verbatim), so it names the ACTION, not our publishing vendor.
+        api_error_msg: 'Social connections aren’t set up yet.',
       })
       return new Response(
-        JSON.stringify({ status: 'error', message: 'No Zernio profile connected.', run }),
+        JSON.stringify({ status: 'error', message: 'Social connections aren’t set up yet.', run }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
@@ -120,11 +122,15 @@ serve(async (req) => {
         data: null,
         data_raw: analyticsBody,
         api_error_code: String(analyticsRes.status),
+        // The FALLBACK is ours and must not name the vendor. The upstream body is
+        // passed through unchanged on purpose: it is the only thing that can tell an
+        // admin their own account needs reconnecting, and that is worth more than the
+        // chance it mentions a provider. Runtime text — no guard can promise its content.
         api_error_msg:
-          analyticsBody?.error || analyticsBody?.message || `Zernio API error: ${analyticsRes.status}`,
+          analyticsBody?.error || analyticsBody?.message || `Social analytics error: ${analyticsRes.status}`,
       })
       return new Response(
-        JSON.stringify({ status: 'error', message: 'Zernio analytics fetch failed.', run }),
+        JSON.stringify({ status: 'error', message: 'Social analytics fetch failed.', run }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }

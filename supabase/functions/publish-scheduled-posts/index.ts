@@ -192,7 +192,8 @@ export async function handler(req: Request): Promise<Response> {
 
       if (zernioPlatforms.length === 0) {
         await supabase.from('social_posts')
-          .update({ status: 'failed', error_msg: 'No connected Zernio accounts for this platform' })
+          // S329 ITEM 4 — PostCard.tsx:63 renders social_posts.error_msg to the client.
+          .update({ status: 'failed', error_msg: 'No social account connected for this platform' })
           .eq('id', post.id)
         failed++
         continue

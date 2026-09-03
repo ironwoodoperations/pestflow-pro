@@ -6,6 +6,7 @@ import { tierInfo } from '../../../lib/tierInfo'
 const CONNECT_TIER = 2
 import { useTenant } from '../../../context/TenantBootProvider'
 import { toast } from 'sonner'
+import { supabase } from '../../../lib/supabase'
 
 interface Props {
   onClose: () => void
@@ -56,15 +57,38 @@ export default function ConnectionsModal({ onClose, onNavigate, isDemoTenant = t
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
 
+  // S329 — zernio-connect now requires an authenticated tenant ADMIN (requireTenantAdmin).
+  // Both call sites below previously sent `Content-Type` and nothing else — no
+  // Authorization, no apikey — which is why the function had to accept anonymous callers
+  // to work at all. That is the hole this closes, so the two changes ship together:
+  // deploying the function without this 401s every Connect click.
+  //
+  // refreshSession(), NOT getSession() — the established rule in this repo (useZernioRuns,
+  // useGa4Runs, useSeoRuns, usePageSpeedRuns all do the same): getSession can hand back a
+  // token that expired while the modal sat open, and the function would reject it.
+  //
+  // useCallback, not a bare function: loadAccounts below is itself a useCallback that an
+  // effect depends on. A function recreated every render would make loadAccounts unstable,
+  // the effect would re-run every render, and the modal would refetch in a loop.
+  const callConnect = useCallback(async (payload: Record<string, unknown>): Promise<Response> => {
+    const { data: { session } } = await supabase.auth.refreshSession()
+    if (!session) throw new Error('Not authenticated')
+    return fetch(`${supabaseUrl}/functions/v1/zernio-connect`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY as string,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    })
+  }, [supabaseUrl])
+
   const loadAccounts = useCallback(async (opts?: { silent?: boolean }) => {
     if (!tenantId) return
     setState(s => ({ ...s, loading: !opts?.silent, refreshing: !!opts?.silent }))
     try {
-      const res = await fetch(`${supabaseUrl}/functions/v1/zernio-connect`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'list_accounts', tenantId }),
-      })
+      const res = await callConnect({ action: 'list_accounts', tenantId })
       const data = await res.json()
       if (!res.ok) {
         if (!opts?.silent) toast.error(data?.error || 'Failed to load social connections.')
@@ -76,7 +100,7 @@ export default function ConnectionsModal({ onClose, onNavigate, isDemoTenant = t
     } finally {
       setState(s => ({ ...s, loading: false, refreshing: false }))
     }
-  }, [tenantId, supabaseUrl])
+  }, [tenantId, callConnect])
 
   useEffect(() => {
     if (tier >= 2) loadAccounts()
@@ -86,11 +110,7 @@ export default function ConnectionsModal({ onClose, onNavigate, isDemoTenant = t
     if (!tenantId) return
     setState(s => ({ ...s, connectingKey: zernioKey }))
     try {
-      const res = await fetch(`${supabaseUrl}/functions/v1/zernio-connect`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'get_connect_url', tenantId, platform: zernioKey }),
-      })
+      const res = await callConnect({ action: 'get_connect_url', tenantId, platform: zernioKey })
       const data = await res.json()
       if (!res.ok || !data.authUrl) {
         toast.error(data?.error || `Could not get authorization URL for ${label}.`)

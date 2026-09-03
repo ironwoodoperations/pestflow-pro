@@ -1,4 +1,18 @@
-import { normalizeCanonicalHost } from './canonicalHost';
+// S329 — THE `.ts` IS LOAD-BEARING. DO NOT DROP IT BACK TO './canonicalHost'.
+//
+// This module is now imported by a Supabase edge function (zernio-connect, via
+// connectLogic.ts) so that the platform has ONE host resolver rather than a second copy
+// living in Deno-land. Deno requires an explicit extension on a relative specifier, and
+// the Supabase CLI ships source files VERBATIM — the deployed service-area-map bundle
+// carries `from '../../../shared/lib/serviceAreaMap.ts'` unrewritten — so the specifier
+// is resolved at RUNTIME, not inlined at build time. Extensionless, the edge function
+// would fail to resolve this import in production.
+//
+// The cost, paid deliberately: tsconfig.json now sets `allowImportingTsExtensions`,
+// without which tsc rejects this line as TS5097. Next, Vite and vitest all resolve the
+// explicit extension unchanged (build + 1565 tests verified). The 14 Next-side importers
+// of resolveSiteUrl are untouched — they still import it extensionlessly.
+import { normalizeCanonicalHost } from './canonicalHost.ts';
 
 /**
  * Resolve the canonical public origin (scheme + host, no trailing slash) for a
