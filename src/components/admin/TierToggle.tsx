@@ -1,4 +1,5 @@
 import { usePlan } from '../../hooks/usePlan'
+import { showDemoAffordances } from '../../lib/demoAffordance'
 
 const TIERS = [
   { value: 1, label: 'S', name: 'Starter' },
@@ -7,19 +8,31 @@ const TIERS = [
   { value: 4, label: 'E', name: 'Elite' },
 ]
 
-// Detect demo tenant by hostname slug
-function useIsDemoTenant() {
-  const parts = window.location.hostname.split('.')
-  const slug = parts.length >= 3 && window.location.hostname.endsWith('.pestflowpro.ai') ? parts[0] : ''
-  return slug === 'pestflow-pro' || slug === ''  // also show on localhost/dev
+interface Props {
+  /**
+   * settings.demo_mode.active for THIS tenant, read once in Dashboard.
+   * `undefined` means the tenant has no demo_mode row — a real, current state
+   * (vita-glow has none), and it must NOT show the control.
+   */
+  demoActive?: boolean | null
 }
 
-export default function TierToggle() {
+/**
+ * The demo tier switcher. Previews the dashboard at each tier during a sales
+ * demo; setTier writes LOCAL React state only and every gated action re-checks
+ * server-side via check_tenant_access, so this is a display control, not an
+ * entitlement one.
+ *
+ * S325 — it used to decide visibility from window.location.hostname, which
+ * resolved TRUE on every custom domain and FALSE on the five demo tenants it
+ * exists for. Visibility now comes from the tenant's own demo_mode row. See
+ * src/lib/demoAffordance.ts for why a hostname could never answer this.
+ */
+export default function TierToggle({ demoActive }: Props) {
   const { tier, setTier, loading } = usePlan()
-  const isDemo = useIsDemoTenant()
 
   if (loading) return null
-  if (!isDemo) return null  // hide on real client sites
+  if (!showDemoAffordances(demoActive)) return null  // hide on real client sites
 
   return (
     <div className="px-3 pb-4">

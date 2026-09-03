@@ -348,3 +348,17 @@ it is recent.
   settings_business_info_vertical_valid to admit 'lawn', untimestamped migration
   plus rollback) comes LAST, only after A and B are merged — widening the CHECK
   ahead of the presets 500s a whole site.
+
+---
+## Session — 2026-09-03 02:39 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `7452745` — S325: gate demo affordances on the tenant's demo_mode row, not the hostname
+- Author: Claude
+- Files changed:
+  - src/components/admin/SocialTab.tsx
+  - src/components/admin/TierToggle.tsx
+  - src/components/admin/__tests__/demoAffordance.test.tsx
+  - src/components/ironwood/IronwoodSocial.tsx
+  - src/lib/demoAffordance.ts
+  - src/pages/admin/Dashboard.tsx
+- Next recommended action: [Fill in next session: read this line, write what comes next]
