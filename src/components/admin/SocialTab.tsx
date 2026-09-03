@@ -13,15 +13,22 @@ import NewCampaignModal from './social/NewCampaignModal'
 import SocialUpgradeNudge from './social/SocialUpgradeNudge'
 import ZernioOnboardingBanner from './social/ZernioOnboardingBanner'
 import SocialAnalyticsTile from './reports/SocialAnalyticsTile'
-
-function useIsDemoTenant() {
-  const parts = window.location.hostname.split('.')
-  const slug = parts.length >= 3 && window.location.hostname.endsWith('.pestflowpro.ai') ? parts[0] : ''
-  return slug === 'pestflow-pro' || slug === ''
-}
+import { showDemoAffordances } from '../../lib/demoAffordance'
 
 interface Props {
   onNavigate?: (tab: string) => void
+  /**
+   * settings.demo_mode.active for THIS tenant, read once in Dashboard.
+   *
+   * S325 — this file carried a byte-identical copy of TierToggle's hostname
+   * check, and gated MORE than a control with it: the self-serve upgrade
+   * nudges below ("Upgrade to connect your accounts", SocialUpgradeNudge with
+   * its $349/$499 pricing) are demo-only copy, and the broken predicate was
+   * showing them to a concierge client on a custom domain. Clients on this
+   * platform never self-serve — Scott provisions and upgrades every site — so
+   * a real tenant sees the FeatureGate path instead.
+   */
+  demoActive?: boolean | null
 }
 
 type TabId = 'campaigns' | 'queue' | 'analytics'
@@ -33,7 +40,7 @@ const TABS: { id: TabId; label: string }[] = [
 
 type PostFlow = 'none' | 'choice' | 'single' | 'campaign'
 
-export default function SocialTab({ onNavigate }: Props) {
+export default function SocialTab({ onNavigate, demoActive }: Props) {
   const { posts, campaigns, integrations, loading, refresh } = useSocialData()
   const { canAccess, tier } = usePlan()
   const [activeTab, setActiveTab] = useState<TabId>('queue')
@@ -43,7 +50,7 @@ export default function SocialTab({ onNavigate }: Props) {
 
   const failedCount = posts.filter(p => p.status === 'failed').length
   const isStarter = tier === 1
-  const isDemoTenant = useIsDemoTenant()
+  const isDemoTenant = showDemoAffordances(demoActive)
 
   // Derived from useSocialData's integrations payload (S196 b66 dedup).
   const hasConnectedAccounts = tier < 2

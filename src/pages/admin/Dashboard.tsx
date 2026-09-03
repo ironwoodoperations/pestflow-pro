@@ -135,7 +135,7 @@ export default function Dashboard() {
             )
           })}
         </nav>
-        <TierToggle />
+        <TierToggle demoActive={demoActive} />
         <div className="px-2 py-4" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
           <p className="px-4 py-1 text-xs truncate mb-1" style={{ color: '#94a3b8' }}>{businessName}</p>
           <button onClick={handleSignOut} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-400 hover:text-red-400 hover:bg-red-400/10 transition-all">
@@ -211,7 +211,7 @@ export default function Dashboard() {
             {activeTab === 'social' && (
               <AdminTabErrorBoundary tabName="Social">
                 <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-gray-400 text-sm">Loading...</div></div>}>
-                  <SocialTab onNavigate={(t) => setActiveTab(t as TabKey)} />
+                  <SocialTab onNavigate={(t) => setActiveTab(t as TabKey)} demoActive={demoActive} />
                 </Suspense>
               </AdminTabErrorBoundary>
             )}
