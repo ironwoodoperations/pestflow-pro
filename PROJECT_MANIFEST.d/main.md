@@ -207,3 +207,27 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   - supabase/functions/send-onboarding-email/index.ts
   - supabase/functions/send-reveal-ready/index.ts
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-09-03 01:00 UTC
+- Branch: `main`
+- Commit: `195db2f` — S323 PR A — the lawn catalog: presets in code, deliberately inert (#330)
+- Author: csdevore2
+- Files changed:
+  - PROJECT_MANIFEST.d/claude-support-tickets-rls-policies-xbwg8a.md
+  - app/tenant/[slug]/[service]/page.tsx
+  - app/tenant/[slug]/_lib/serviceData.ts
+  - shared/lib/seoSchema.test.ts
+  - shared/lib/seoSchema.ts
+  - src/lib/__tests__/adminVerticalPreset.test.ts
+  - src/lib/__tests__/lawnCatalog.test.ts
+  - src/lib/adminVerticalPreset.ts
+  - src/shells/_shared/lawnContent.ts
+  - src/shells/_shared/serviceEntry.ts
+  - src/shells/_shared/verticalCopy.test.ts
+  - src/shells/_shared/verticalCopy.ts
+  - src/shells/_shared/verticalCopyPresets.test.ts
+  - supabase/functions/_shared/provisioningSeed.test.ts
+  - supabase/functions/_shared/verticalCopy.ts
+  - supabase/functions/generate-monthly-report/narrationPrompt.test.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]
