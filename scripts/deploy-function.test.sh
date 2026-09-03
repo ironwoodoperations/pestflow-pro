@@ -38,6 +38,10 @@ mkrepo() {
   cat > "$T/supabase-stub" <<'STUB'
 #!/usr/bin/env bash
 printf '%s\n' "$*" > "$STUB_ARGV_OUT"
+# ARGC as well as the joined string: "$*" flattens argv, so it CANNOT distinguish one
+# argument containing a space from two arguments. The %q-quoting case below needs that
+# distinction, and without it the quoting is untested (it was — a mutation proved it).
+printf '%s\n' "$#" > "$STUB_ARGV_OUT.n"
 exit 0
 STUB
   chmod +x "$T/supabase-stub"
@@ -126,6 +130,61 @@ mkrepo
 out=$(PESTFLOW_DEPLOY_FORCE=1 bash "$SCRIPT" demo-fn --project-ref abc 2>&1)
 if printf '%s' "$out" | grep -q "OVERRIDDEN"; then bad "FORCE on a clean tree stays quiet" "banner shown anyway"
 else ok "FORCE on a clean tree stays quiet" "no banner"; fi
+
+echo "=== the emergency-override line must be RUNNABLE, not merely present ==="
+# S328. The pre-existing escape-hatch cases asserted that a BANNER APPEARED. They passed
+# for months while the line someone actually copies was unusable: refuse() printed `$*`,
+# which inside a shell function is THAT FUNCTION's parameters — the reason and fix PROSE —
+# so the command named the prose instead of demo-fn. Worse, the fix text ends in
+# `git checkout main && git pull origin main`, so pasting it ran a checkout and a pull.
+#
+# The only assertion that can tell a runnable command from a plausible-looking one is to
+# EXECUTE it, so that is what this does.
+mkrepo; git checkout -q -b feature/x
+out=$(bash "$SCRIPT" demo-fn --project-ref abc --no-verify-jwt 2>&1)
+line=$(printf '%s\n' "$out" | grep -F 'PESTFLOW_DEPLOY_FORCE=1' | tail -1 | sed 's/^[[:space:]]*//')
+
+# 1. It names the function and every flag the caller passed.
+if printf '%s' "$line" | grep -qF 'demo-fn' \
+   && printf '%s' "$line" | grep -qF -- '--project-ref abc' \
+   && printf '%s' "$line" | grep -qF -- '--no-verify-jwt'; then
+  ok "override line names the function and its args" "demo-fn + both flags"
+else
+  bad "override line names the function and its args" "got: $line"
+fi
+
+# 2. It carries NO prose. This is the assertion that fails on the old `$*` bug, and it
+#    names the shell-metacharacter hazard specifically rather than just "looks wrong".
+if printf '%s' "$line" | grep -qE "not main|Production functions|git checkout|git pull|&&"; then
+  bad "override line carries no prose or stray shell operators" "got: $line"
+else
+  ok "override line carries no prose or stray shell operators" "command only"
+fi
+
+# 3. IT ACTUALLY RUNS, and the CLI receives the caller's argv intact. Nothing short of
+#    executing it distinguishes a correct line from a well-shaped wrong one.
+: > "$STUB_ARGV_OUT"
+if eval "$line" >/dev/null 2>&1 \
+   && [ "$(cat "$STUB_ARGV_OUT")" = "functions deploy demo-fn --project-ref abc --no-verify-jwt" ]; then
+  ok "override line executes and reaches the CLI" "$(cat "$STUB_ARGV_OUT")"
+else
+  bad "override line executes and reaches the CLI" "got: $(cat "$STUB_ARGV_OUT")"
+fi
+
+# 4. An argument containing a SPACE must survive as ONE argument. This is what makes the
+#    %q quoting load-bearing: without it the override line word-splits on paste and the CLI
+#    silently receives an extra argument. Asserted on ARGC, because the joined "$*" string
+#    is identical either way — a mutation dropping %q passed every other case here.
+mkrepo; git checkout -q -b feature/x
+out=$(bash "$SCRIPT" demo-fn --project-ref abc "--weird arg" 2>&1)
+line=$(printf '%s\n' "$out" | grep -F 'PESTFLOW_DEPLOY_FORCE=1' | tail -1 | sed 's/^[[:space:]]*//')
+: > "$STUB_ARGV_OUT"; : > "$STUB_ARGV_OUT.n"
+eval "$line" >/dev/null 2>&1
+if [ "$(cat "$STUB_ARGV_OUT.n" 2>/dev/null)" = "6" ]; then
+  ok "override line keeps a spaced argument intact" "argc=6"
+else
+  bad "override line keeps a spaced argument intact" "argc=$(cat "$STUB_ARGV_OUT.n" 2>/dev/null) (want 6, split=7)"
+fi
 
 echo "=== argument handling ==="
 mkrepo

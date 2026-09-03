@@ -53,6 +53,25 @@ SUPABASE_BIN="${PESTFLOW_SUPABASE_BIN:-supabase}"
 # copy-pasted out of a header the way a flag does.
 FORCE="${PESTFLOW_DEPLOY_FORCE:-0}"
 
+# ── S328: THE ORIGINAL ARGV, CAPTURED HERE AND NOWHERE ELSE. ────────────────────────────
+#
+# refuse() below prints the emergency-override command to copy. It used `$*`, which inside
+# a shell FUNCTION expands to THAT FUNCTION's positional parameters — refuse's own three
+# arguments, which are the reason and fix PROSE — not the script's argv. So the one line
+# someone copies under pressure came out as:
+#
+#   PESTFLOW_DEPLOY_FORCE=1 ./scripts/deploy-function.sh on branch 'x', not main Production
+#   functions deploy from main. ... git checkout main && git pull origin main
+#
+# That is not merely unusable. The fix text ends in `git checkout main && git pull origin
+# main`, so pasting the line runs a CHECKOUT AND PULL after the failed deploy — a shell
+# command nobody asked for, in the one situation where they are not reading carefully.
+#
+# %q-quoted so an argument containing a space, quote or glob survives the round trip as a
+# single argument rather than silently splitting on paste.
+ORIGINAL_ARGV=$(printf '%q ' "$@")
+ORIGINAL_ARGV="${ORIGINAL_ARGV% }"
+
 RED=''; YEL=''; BLD=''; RST=''
 if [ -t 2 ]; then RED=$'\033[31m'; YEL=$'\033[33m'; BLD=$'\033[1m'; RST=$'\033[0m'; fi
 
@@ -83,7 +102,9 @@ refuse() {
   printf '%s\n' "$3" | sed 's/^/    /' >&2
   printf '%s\n' "" >&2
   printf '%s\n' "  Deploying anyway (emergency only — you are shipping unreviewed bytes):" >&2
-  printf '%s\n' "    PESTFLOW_DEPLOY_FORCE=1 $0 $*" >&2
+  # $ORIGINAL_ARGV, never $* — see the capture above. A test asserts this line is a
+  # RUNNABLE command naming the function and its flags, not that a banner merely appeared.
+  printf '%s\n' "    PESTFLOW_DEPLOY_FORCE=1 $0 $ORIGINAL_ARGV" >&2
   exit 1
 }
 
