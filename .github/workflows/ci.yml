@@ -61,6 +61,28 @@ jobs:
       - name: Unit tests (vitest)
         run: npx vitest run
 
+      # S327 — the SHELL guards, which until now nothing ran.
+      #
+      # .claude/hooks/manifest-entry.test.sh has existed since the manifest-hook fix and
+      # was executed by no workflow, no npm script and no pre-commit step: a guard that
+      # cannot fail, which is the exact failure mode this repo has now been bitten by five
+      # times. Adding scripts/deploy-function.test.sh without wiring it would have made it
+      # the sixth on the day it was written.
+      #
+      # These are plain bash with no Node dependency, so they cost ~2s and cannot flake on
+      # a registry. `bash -n` first: a syntax error in the deploy wrapper would otherwise
+      # surface as a refusal-to-deploy during an incident, which is the worst possible
+      # moment to discover it.
+      - name: Shell guards (deploy freshness, manifest hooks)
+        run: |
+          set -euo pipefail
+          for f in scripts/deploy-function.sh .claude/hooks/*.sh; do
+            bash -n "$f" || { echo "::error::$f has a syntax error"; exit 1; }
+          done
+          bash scripts/deploy-function.test.sh
+          bash .claude/hooks/session-end.test.sh
+          bash .claude/hooks/manifest-entry.test.sh
+
   # S273 — TENANT-ISOLATION GATE (Principle 7). Spins up a real local Supabase stack
   # and runs the Deno cross-tenant isolation test against requireTenantUser — the SSOT
   # auth boundary all 18 tenant-context edge functions funnel through. This is the first

@@ -6,6 +6,10 @@
 # NOTE ON "session end": the Stop event fires at the end of every TURN, not once per
 # session. The dedup below is what kept that from producing an entry per turn.
 #
+# S327: it writes NOTHING while a protected branch is checked out — see the guard below.
+# On `main` its output was unpushable by construction and duplicated a record the feature
+# branch already carried.
+#
 # The primary writer is now .claude/hooks/manifest-entry.sh. This script only fires for
 # the paths that one skips. See the parent-sha check below.
 #
@@ -26,6 +30,33 @@ LAST_COMMIT_HASH=$(git log -1 --format="%H" 2>/dev/null)
 
 DATE=$(date +"%Y-%m-%d %H:%M %Z")
 BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+
+# ── S327: NEVER WRITE ON A BRANCH THAT CANNOT BE PUSHED. ─────────────────────────────
+#
+# THE DEADLOCK THIS REMOVES. The Stop event fires at the end of every TURN, not once per
+# session. So after a merge, the moment the next turn ends with `main` checked out, this
+# hook appended an entry describing the merge commit into PROJECT_MANIFEST.d/main.md and
+# left it uncommitted — while require-pr.sh blocks pushing `main` by design. The result
+# is a dirty tree in a branch nobody can push from: the stop-hook git check flags it every
+# turn, and clearing it costs a round-trip. It happened after two of the last three merges.
+#
+# NO RECORD IS LOST, and that is the reason this is a skip rather than a redirect.
+# manifest-entry.sh (PreToolUse) already wrote an entry for every commit on the FEATURE
+# branch, into that branch's own file, and staged it so it rode inside the commit. That
+# file merges into main with the PR. main.md was therefore always a SECOND, duplicate view
+# of commits already recorded — 15 `Commit:` entries in it today, and 0 `Parent:` entries,
+# i.e. every line of it was written here and none of it is unique.
+#
+# WHY NOT REDIRECT TO A GITIGNORED PATH: an entry nothing reads is not a record, it is
+# litter with a longer half-life. The branch file is the record, and it is in git.
+#
+# NOT LIMITED TO main: any branch require-pr.sh protects belongs here, so the two stay in
+# step if that list ever grows. Today that is exactly `main`.
+case "$BRANCH" in
+  main)
+    exit 0
+    ;;
+esac
 SHORT_SHA=$(git log -1 --format="%h" 2>/dev/null)
 
 # Per-branch log file. Sanitize the branch name (slashes etc.) into a safe slug.

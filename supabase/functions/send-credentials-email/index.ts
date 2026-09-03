@@ -3,7 +3,7 @@
 // Sends admin login credentials to the client.
 // Admin-only — verifies caller's user.email === admin@pestflowpro.com via Authorization Bearer.
 //
-// Deploy: supabase functions deploy send-credentials-email --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
+// Deploy: ./scripts/deploy-function.sh send-credentials-email --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { sendEmail } from '../_shared/sendEmail.ts'

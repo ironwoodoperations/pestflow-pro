@@ -2,7 +2,7 @@
 // Sends intake invitation email to a prospect via Resend.
 // Admin-only — verifies caller's user.email === admin@pestflowpro.com via Authorization Bearer.
 //
-// Deploy: supabase functions deploy send-intake-email --project-ref biezzykcgzkrwdgqpsar --no-verify-jwt
+// Deploy: ./scripts/deploy-function.sh send-intake-email --project-ref biezzykcgzkrwdgqpsar --no-verify-jwt
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { PLATFORM_NAME } from '../../../shared/lib/platformBrand.ts'

@@ -12,7 +12,7 @@
 //       caller: pg_cron 'publish-scheduled-posts' job.
 //
 // DEPLOY:
-//   supabase functions deploy publish-scheduled-posts --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
+//   ./scripts/deploy-function.sh publish-scheduled-posts --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { timingSafeEqual } from 'node:crypto'

@@ -4,7 +4,7 @@
 //   list_accounts   — lists connected accounts and syncs zernio_accounts in settings
 // JWT: OFF — called directly from client admin dashboard
 // DEPLOY:
-//   supabase functions deploy zernio-connect --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
+//   ./scripts/deploy-function.sh zernio-connect --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { stripVaultSecrets } from '../_shared/secrets/stripVaultSecrets.ts'

@@ -9,7 +9,7 @@
 //   - service_role JWT → cron/internal path: trust, tenant_id from body.
 //     verify_jwt:true guarantees signature. Detection reads the `role` claim.
 //
-//   supabase functions deploy ga4-analytics --project-ref biezzykcgzkrwdgqpsar
+//   ./scripts/deploy-function.sh ga4-analytics --project-ref biezzykcgzkrwdgqpsar
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'

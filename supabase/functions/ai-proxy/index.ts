@@ -10,7 +10,7 @@
 //   before forwarding to Anthropic. Logs the full actor chain (§11).
 //
 // DEPLOY (verify_jwt:true — do NOT pass --no-verify-jwt):
-//   supabase functions deploy ai-proxy --project-ref biezzykcgzkrwdgqpsar
+//   ./scripts/deploy-function.sh ai-proxy --project-ref biezzykcgzkrwdgqpsar
 // Env: ANTHROPIC_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
 //      INTERNAL_DELEGATION_SECRET (= vault internal_delegation_secret).
 // Migrations: s243 (ai_proxy_log + check_and_record_rate_limit) + s242

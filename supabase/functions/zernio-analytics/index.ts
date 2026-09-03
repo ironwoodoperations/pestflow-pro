@@ -5,7 +5,7 @@
 //
 // Deploy with verify_jwt: true (C2 pattern). tenant_id comes from the request
 // body and is validated against the caller's JWT-derived profile.tenant_id.
-//   supabase functions deploy zernio-analytics --project-ref biezzykcgzkrwdgqpsar
+//   ./scripts/deploy-function.sh zernio-analytics --project-ref biezzykcgzkrwdgqpsar
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'

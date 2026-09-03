@@ -5,7 +5,7 @@
 // pattern from S197 PR #47 (b65 cron race fix).
 //
 // DEPLOY:
-//   supabase functions deploy process-sms-queue --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
+//   ./scripts/deploy-function.sh process-sms-queue --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
 //
 // pg_cron schedule lives in supabase/migrations/<ts+1>_schedule_sms_queue_cron.sql.
 

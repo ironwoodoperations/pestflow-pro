@@ -11,7 +11,7 @@
 // rows queued in public.sms_queue, drained by process-sms-queue cron. Operator
 // alerts in BYPASS_GATE_TYPES bypass the gate.
 //
-// Deploy: supabase functions deploy send-sms --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
+// Deploy: ./scripts/deploy-function.sh send-sms --no-verify-jwt --project-ref biezzykcgzkrwdgqpsar
 // Required secrets on this function: TEXTBELT_API_KEY, SEND_SMS_INTERNAL_SECRET.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'

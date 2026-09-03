@@ -27,7 +27,7 @@
 //   ONE VARIABLE: the tenantId that is verified below is the same tenantId written to
 //   tenant_users and used for every lookup. The body field is read exactly once.
 //
-// Deploy: supabase functions deploy invite-team-member --project-ref biezzykcgzkrwdgqpsar
+// Deploy: ./scripts/deploy-function.sh invite-team-member --project-ref biezzykcgzkrwdgqpsar
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { sendEmail } from '../_shared/sendEmail.ts'
