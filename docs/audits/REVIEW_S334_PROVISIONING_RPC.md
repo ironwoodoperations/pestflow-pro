@@ -14,10 +14,11 @@ order in §7 is what the next sessions execute; nothing in it has been started.
 
 > ⚠️ **NOT SUPPLIED.**
 
-The submission put to the two validators was not provided to this session. The slot is left
-empty deliberately rather than reconstructed from the arbitration summary, because a
-reconstruction is indistinguishable from a transcript to a later reader — which destroys the
-only thing a verbatim slot is for.
+The submission put to the two validators has **not** been provided. Appendices A and B were
+supplied and are filled; this slot alone remains open. It is left empty deliberately rather
+than reconstructed from the arbitration summary or back-inferred from the verdicts' own
+restatements of questions A–F, because a reconstruction is indistinguishable from a
+transcript to a later reader — which destroys the only thing a verbatim slot is for.
 
 **To fill:** paste the submission text here, replacing this block.
 
@@ -25,42 +26,278 @@ only thing a verbatim slot is for.
 
 ## 2. Appendix A — PERPLEXITY verdict (VERBATIM)
 
-> ⚠️ **NOT SUPPLIED.**
+*Pasted byte-exact. Not reformatted, re-wrapped, or heading-normalised — the H1 below is the
+verdict's own. Attribution: **3 external links** (postgresql.org ×2, supabase.com ×1).*
 
-**To fill:** paste the Perplexity verdict here, byte-exact, replacing this block. Do not
-re-wrap, reformat, or clean it up.
+# APPROVE WITH CONDITIONS
+The core architecture is sound **only if** provisioning is reduced to: auth creation first, one database RPC that either commits all tenant state or none, and all non-transactional integrations moved out of the critical path. Your proposed A1, B, C2, D, E interpretation, and a database-side merge in F are directionally correct—but several conditions must be binding before implementation.
+## Numbered conditions
+1. **Use auth-first, then exactly one atomic database RPC; make no external network call inside the DB transaction or provisioning critical path.**  
+   The required order should be:
+   1. Edge function authenticates the operator request.
+   2. Edge function creates the GoTrue user.
+   3. Edge function calls `public.provision_tenant_atomic(...)` once.
+   4. The RPC validates inputs and performs every durable application-data write.
+   5. The RPC returns success only after the enclosing statement/transaction commits.
+   6. Only then may the edge function initiate Zernio and Outscraper work.
+   If GoTrue succeeds and the RPC fails, return a non-2xx response with a stable machine-readable error code and the created `auth_user_id`. That is an intentional compensable orphan—not a successful provision. The retry protocol must either:
+   - reuse that known `auth_user_id`, or
+   - detect and reuse a safe-to-reuse unbound auth account by immutable identity such as normalized email.
+   It must not blindly call GoTrue `createUser` again and turn an application-data failure into an “email already exists” dead end.
+2. **Approve A1 for Zernio, provided “Zernio unavailable” is explicitly modeled as a successful provision with a pending/incomplete integration state—not as a hidden post-commit failure.**  
+   A durable queue/outbox (A2) is stronger and will eventually be preferable if automatic provisioning volume, reliability expectations, or retries increase. But it is not required for this gate at your current concierge scale, because the baseline state—tenant exists with Zernio unconfigured—is already valid and downstream-supported.
+   However, A1 needs these protections:
+   - The tenant RPC must never write a fake or speculative Zernio profile ID.
+   - The post-commit Zernio routine must update `settings.integrations` only after receiving and validating the vendor profile identifier.
+   - A Zernio failure must yield an operationally visible result: structured log, alert/error record, or operator-visible “Zernio pending/failed” status tied to the tenant. A log line alone is not enough if it is not monitored.
+   - The operator must have an explicit, safe retry action for Zernio setup.
+   - The retry flow must establish whether Zernio can look up a profile by a stable tenant/external reference before issuing another create. If Zernio has no retrieve/search endpoint and no idempotency key, A1 necessarily retains a vendor-side duplicate risk after timeout/ambiguous-response failures. That risk is acceptable only if it is documented as a compensable vendor operation and the operational workflow can identify and retire duplicates.
+   - Do not place the Zernio call “after the response body is built” in a best-effort background continuation. Serverless/edge runtimes can stop work after sending the response. Either await the post-commit attempt and return a successful provisioning result that explicitly says `zernio: pending|failed`, or persist an outbox/job record and process it asynchronously.
+   The state after a committed tenant transaction and failed Zernio call is therefore: **a fully provisioned, internally consistent tenant with `integrations.zernio_profile_id` absent and integration status pending/failed.** That is not a partial tenant build and does satisfy Condition 1, but only if it is observable and retryable.
+3. **Move Outscraper out of the response-tail fire-and-forget path, and treat it as an independent post-provision side effect.**  
+   It must not affect the success of provisioning, and it must not be relied on to run after an HTTP response has been sent. The minimum acceptable implementation is an awaited, bounded post-commit dispatch whose failure is recorded against the tenant and can be retried manually. A transactional outbox is preferable if the lead/SEO enrichment is important enough to promise eventual execution.
+   Outscraper failure after commit leaves a complete tenant with enrichment/outbound scraping unstarted or unknown. That is acceptable only when:
+   - no core page, dashboard, or onboarding flow assumes the result exists;
+   - its status is visible to the operator; and
+   - a retry does not corrupt or duplicate critical application data.
+   There is no distributed transaction spanning Postgres, GoTrue, Zernio, or Outscraper. The correct target is not impossible global atomicity; it is strict atomicity for your internal database state plus explicit compensating/retry semantics for every external action.
+4. **Decouple baseline tenant seeding from `prospect_id`; implement Question B in this change.**  
+   Do not preserve the current CRM foreign-key coupling. It is not merely a product-policy difference; it is an existing correctness defect that causes a prospect-less tenant to be provisioned in an incomplete state while reporting success.
+   The RPC input must make baseline seed data explicit and tenant provisioning must seed, unconditionally:
+   - required `settings`, including baseline SEO;
+   - vertical-derived `page_content`;
+   - selected `service_areas`;
+   - applicable authority prompts;
+   - starter content where that is product policy;
+   - legal pages;
+   - all data required for a coherent public site and admin experience.
+   `prospect_id` may be accepted as an optional relation and source of **overlay** data. It must not decide whether mandatory tenant state is created. The prospect stage update and its `prospect_stage_change_log` trigger belong in the transaction when `prospect_id` is supplied and valid.
+   This broadens the write set, but it does not broaden the atomicity goal improperly. It makes the actual contractual provisioning result coherent for both CRM-originated and non-CRM-originated clients. Shipping atomicity while preserving a known deterministic path to a functionally incomplete tenant would not satisfy the intent of the closed gate.
+5. **Use C2 only if the RPC’s exposure is actually limited to the edge-function trust boundary and the catalog check remains server-side; otherwise use C1.**  
+   C2 is acceptable in this deployment model, but condition 3 should be restated precisely:
+   > Catalog membership is validated server-side by the sole authorized caller using the canonical shared catalog; the database RPC validates structural invariants and is executable only by `service_role`.
+   That meets the real security objective: a browser cannot manufacture arbitrary service slugs by bypassing the picker. Moving the shared catalog into `shared/lib/` is preferable to another edge-local copy, because it lets the Next.js app and the Deno function consume the same source artifact rather than pinning two copies through a drift test.
+   C2 is approved only if all of the following are true:
+   - `shared/lib/` becomes the sole canonical home of catalog data and the public-listing predicate inputs needed by both application and provisioning code.
+   - The edge function imports the actual shared catalog and validates membership itself; it does not accept a frontend “validated” flag or trust client-provided service metadata.
+   - The RPC takes a normalized selection payload and independently rejects malformed slugs, duplicate slugs, unsupported verticals, selections inconsistent with the declared vertical, and empty selection for service-based verticals.
+   - `provision_tenant_atomic` has no `anon`, `authenticated`, or `PUBLIC` execution path, including indirect exposed wrappers.
+   - No other service-role-capable routine can call this RPC with arbitrary user-controlled payloads without performing the same catalog validation.
+   If the last point cannot be demonstrated, C1 becomes required. “Only the edge function calls it” must be enforced by grants and actual deployment architecture, not merely intended by convention.
+6. **Do not claim that C2 satisfies a literal reading of Condition 3 unless the condition is amended.**  
+   As currently worded—“A selection table, with catalog validation SERVER-SIDE”—C2 may satisfy the server-side validation intent, but it does **not** use a selection table unless you create one. Also, C2 does not make Postgres the catalog authority.
+   Resolve this explicitly in the implementation specification in one of two ways:
+   - **Preferred:** revise the condition to require a canonical shared catalog plus server-side validation at the sole privileged edge caller, with database structural validation and privileged RPC grants; or
+   - Create a transactional `tenant_services` / selected-services relation as the actual selection table and define its role clearly. If service selections presently exist only as a JSON blob or implicit page seeds, add this table only if it is already part of your intended domain model—not merely to satisfy wording.
+   Do not create a catalog projection table merely as a second authoritative copy without a compelling database-native use case. That would reintroduce the drift problem condition 5 was designed to eliminate.
+7. **Reject empty selected services for service-based verticals at both server validation and RPC validation; separately make zero-service rendering total and non-throwing.**  
+   Your interpretation of Conditions 4 and 6 is correct. They govern different state transitions:
+   - **Creation invariant:** a service-based tenant cannot be provisioned with an empty service selection.
+   - **Rendering resilience:** any existing tenant state, including one that later has zero active/publicly listed services, must return HTTP 200 on every required public surface.
+   The implementation must define the rendering behavior, not only suppress an exception:
+   - Navigation omits or safely degrades service links.
+   - Home-page service tiles render an empty state or omit the section.
+   - Sitemap emits no service URLs but remains valid.
+   - JSON-LD omits service-specific entities/properties that require a service rather than emitting invalid empty values.
+   - Service-list and service-detail routes do not crash because an expected first service is absent.
+   - ISR/cache behavior must not preserve a prior service list in a way that causes broken links after deletion.
+   A constructed test fixture is adequate evidence. A real temporary production tenant is not required and is a worse validation mechanism because it can contaminate operational data and caches. The fixture should exercise the same rendering/data-fetching path as production, including the ISR route handlers or equivalent integration tests—not merely a component snapshot with mocked arrays.
+8. **Implement the settings merge inside the database transaction; do not precompute a merged JSON document in TypeScript.**  
+   Passing a pre-merged JSON parameter would preserve the read-before-write race. It narrows neither the race sufficiently nor fulfills the explicit deferred requirement to close it at the database layer. A bare shallow `jsonb ||` merge is also not acceptable because it violates the current non-empty overwrite semantics and may violate grouped-field invariants.
+   Use one database-owned merge implementation, preferably a helper such as `public.merge_setting_value(existing jsonb, incoming jsonb, setting_key text) returns jsonb`, called from the `INSERT ... ON CONFLICT ... DO UPDATE` expression. Its behavior must be specified and tested for:
+   - A missing incoming property does not erase an existing property.
+   - JSON `null`, `''`, and any other declared “empty overlay” values do not overwrite a non-empty existing value.
+   - `false` and `0` remain valid overwrite values and are never treated as empty.
+   - Nested-object behavior is explicit per settings key: either shallow replacement, recursive merge, or field-specific policy. Do not accidentally change semantic behavior by using a generic operator.
+   - Arrays have explicit behavior—normally replace-whole-array unless existing product semantics say otherwise.
+   - `business_info` groups are evaluated as groups before the final row write, so an otherwise-invalid partial four-field address, latitude/longitude pair, or time-without-timezone does not reach the table.
+   - Constraint failures such as SQLSTATE `23514` propagate out of the RPC and abort the entire transaction.
+   - The secret-stripping trigger remains authoritative: callers cannot use this merge helper to persist any of the four Vault secret keys.
+   A PL/pgSQL helper is not an undesirable “second copy” in the same sense as C1/C3 catalog duplication. It is the required authoritative write-side concurrency rule. The TypeScript helper can remain as UI/preflight behavior, but it must not be presented as the authoritative persistence implementation. Test both implementations against the same fixture corpus until the TypeScript path no longer performs persistence merges.
+9. **Make the RPC transaction behavior explicit and preserve error propagation.**  
+   An RPC invoked as one SQL statement normally executes atomically with its caller’s transaction context; a `ROLLBACK` discards updates made in that transaction. Do not attempt `COMMIT` or `ROLLBACK` inside a PL/pgSQL function. Let unhandled exceptions escape so Postgres aborts the statement/transaction. [postgresql](https://www.postgresql.org/docs/current/sql-rollback.html)
+   In particular:
+   - Do not wrap individual writes in `EXCEPTION WHEN OTHERS THEN log-and-continue` blocks.
+   - If you must catch a narrow, expected exception to annotate it, re-raise after preserving an appropriate SQLSTATE/message.
+   - The edge function must map any database/RPC error to non-2xx and must never return `{ success: true }` in the presence of a failed required write.
+   - Validate all required inputs before writing where practical. Database constraints remain the final authority.
+   - Ensure the client call uses a single RPC invocation rather than reconstructing “atomic” behavior from separate REST writes.
+10. **Account for trigger behavior as part of the transaction contract.**  
+    The listed triggers are compatible with atomic execution, but their practical behavior changes in ways you must test:
+    - `trg_strip_settings_secrets` runs per `settings` row before insert/update. If it inserts an observation row in the same database transaction, that observation rolls back together with the provisioning transaction on later failure. That is normally desirable for internal consistency, but it means it cannot be your durable audit evidence of rejected/rolled-back secret-write attempts. If such evidence is security-required, it needs an intentionally independent audit path.
+    - `settings_bump_updated_at` and `page_content_bump_updated_at` run for every conflict-update during the seed. That is expected, but it means re-provisioning mutates timestamps even where the logical merge preserves values. Decide whether that is acceptable and test it.
+    - `trg_enforce_location_cap` can raise mid-seed. In the proposed RPC it correctly aborts the full tenant transaction; it will no longer leave earlier `service_areas`, settings, or page rows behind. This is a principal benefit of the redesign.
+    - `prospect_stage_change_log` runs after the `prospects` update but inside the same transaction. If a later statement fails, both the prospect stage change and its log record roll back. This is correct for transactional consistency, but it differs from the current multi-round-trip behavior where a previously committed prospect update can survive a subsequent failure.
+    Test a failure injected at each trigger-bearing write position, not only a happy path and one late-stage failure.
+11. **Use the proposed restrictive grants and retain `SECURITY DEFINER`, but harden deployment-time verification.**  
+    `SECURITY DEFINER` is justified because this is a privileged, narrowly exposed provisioning capability and because you want its database permissions to be independent of the invoking API role. `SECURITY INVOKER` is not inherently wrong when the caller is `service_role`, but it makes the privilege model depend on the broad service role and provides no meaningful safety improvement here. With a fixed empty `search_path`, schema-qualified references, and restricted execute grants, `SECURITY DEFINER` provides a better-defined privilege boundary.
+    Your grant plan is required:
+    ```sql
+    CREATE FUNCTION public.provision_tenant_atomic(...)
+    SECURITY DEFINER
+    SET search_path = '';
+    REVOKE ALL ON FUNCTION public.provision_tenant_atomic(...) FROM PUBLIC;
+    REVOKE ALL ON FUNCTION public.provision_tenant_atomic(...) FROM anon, authenticated;
+    GRANT EXECUTE ON FUNCTION public.provision_tenant_atomic(...) TO service_role;
+    ```
+    PostgreSQL grants `EXECUTE` to `PUBLIC` by default for newly created functions, and both PostgreSQL and Supabase documentation recommend explicitly revoking it before selectively granting access. `SECURITY DEFINER` routines should set a safe search path; an empty path requires schema qualification of every referenced relation and function. [postgresql](https://www.postgresql.org/docs/current/sql-createfunction.html)
+    D1: the explicit revoke in the same migration is sufficient for that exact create/replace operation **if the migration is atomic and no client can invoke the transient function between statements**. But it is not sufficient as the only long-term control because a future drop-and-recreate can restore default `PUBLIC` execution. Require:
+    - a live-catalog privilege test in CI and deployment verification, as proposed;
+    - a migration/lint rule requiring restrictive function grants for privileged routines;
+    - preferably `ALTER DEFAULT PRIVILEGES ... REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC` for the owning migration role/schema, followed by explicit grants per routine. Supabase documents this default-privilege pattern. [supabase](https://supabase.com/docs/guides/database/functions)
+    A periodic production check is recommended but not a substitute for deploy-time enforcement. It can be low-frequency and alert-only; it need not block this implementation if CI and deployment verification are binding.
+12. **Define idempotency and retry behavior for the internal RPC before rollout.**  
+    Atomicity prevents partial commits; it does not make retries safe by itself. The internal RPC needs a deterministic idempotency model.
+    At minimum:
+    - A retry for the same intended tenant must resolve to the same tenant identity rather than accidentally updating a tenant found only by a reused slug.
+    - If `tenant_id` is accepted, it must be validated against the expected immutable identity and caller intent. Do not let a provisioning request mutate an unrelated tenant just because its UUID is supplied.
+    - If provisioning by slug is allowed, normalize it once and make collision semantics explicit: conflict/error, idempotent match, or controlled re-provision. Never silently overwrite an existing tenant with divergent source payload.
+    - The RPC should return the durable tenant ID and a provision state/version sufficient for the caller to decide whether post-commit setup may run.
+    - Re-provisioning must not create duplicate `service_areas`, prompts, posts, or tenant-user rows; existing unique constraints help, but behavior for removed catalog items/content must be explicitly defined as preserve, reconcile, or reject.
+    - The auth user must be created before the transaction as required, but any auth-user rollback cleanup must be a separate best-effort compensating action and must never mask the original RPC failure.
+## Answers A–F
+| Question | Verdict | Required interpretation |
+|---|---|---|
+| A — Zernio | A1 approved conditionally | Post-commit Zernio is acceptable because its absence is a valid supported tenant state. Make failure visible, retryable, and protected against ambiguous-response duplicates. Do not fire-and-forget after response completion. |
+| B — Prospect coupling | Decouple now | Baseline tenant seed must be unconditional. Prospect data is an optional overlay plus optional CRM-stage update, not a prerequisite for legal, SEO, service-area, prompt, or baseline page state. |
+| C — Catalog/predicate | C2 approved with an amendment | Put canonical catalog source in `shared/lib/`; validate server-side in the privileged edge function; make RPC enforce structural invariants and restrict it to service role. Amend condition 3 if it literally requires DB catalog membership/table validation. |
+| D — Grants/security | Proposed design approved | Keep `SECURITY DEFINER`, `SET search_path = ''`, qualified object names, explicit revokes, service-role-only grant, and live-catalog test. Add default privilege hardening and deploy-time enforcement. |
+| E — Empty vs zero services | Your reading is correct | Reject zero selections at creation for service-based verticals; render any later zero-service tenant with 200. A constructed integration fixture is adequate. |
+| F — Merge | DB helper required | Do not use bare `jsonb ||`; do not premerge in TypeScript. Implement the authoritative merge and group validation in database-side code under the transaction. |
+## Residual failure states
+After these conditions, the partial-failure surface is substantially closed for the tenant’s durable Postgres state:
+| Failure point | Required resulting state | HTTP result |
+|---|---|---|
+| GoTrue user creation fails | No tenant database writes; no auth user | Non-2xx |
+| GoTrue succeeds, RPC fails | Auth-only orphan; no tenant/application rows from the failed attempt | Non-2xx |
+| Any required DB statement or listed trigger fails | Entire RPC transaction rolls back, including all transactional trigger side effects | Non-2xx |
+| RPC commits, Zernio fails | Complete tenant; Zernio ID absent; explicit failed/pending integration state | Provisioning success only if that state is returned/recorded visibly |
+| RPC commits, Outscraper dispatch fails | Complete tenant; scrape/enrichment pending/failed and retryable | Provisioning success only if visibly recorded |
+| Response transport fails after commit | Tenant may be committed though caller did not receive success; retry must be idempotent | Client sees failure/timeout; server state is safely recoverable |
+The last row is important: no design can guarantee that an HTTP client receives the response after the database commits. Your retry contract—not transaction handling—must make that ambiguity safe.
+## Gate assessment
+Your proposal meets the prior conditions only after the adjustments above:
+- **Condition 1:** Met once all mandatory database writes, including unconditional baseline seed and applicable prospect transition, occur within one error-propagating RPC transaction.
+- **Condition 2:** Met if auth runs first and the orphan/retry workflow is implemented.
+- **Condition 3:** Met in intent through C2, but the written condition needs clarification if “selection table” and database catalog enforcement are mandatory literal requirements.
+- **Condition 4:** Met only if both edge validation and RPC validation reject empty selections for applicable verticals.
+- **Condition 5:** Met only if the shared catalog/predicate source becomes truly canonical and the edge function consumes it rather than carrying another copied catalog.
+- **Condition 6:** Met only with end-to-end/route-level zero-service fixtures covering navigation, home, sitemap, and JSON-LD.
 
 ---
 
 ## 3. Appendix B — GEMINI verdict (VERBATIM)
 
-> ⚠️ **NOT SUPPLIED.**
+*Pasted byte-exact. Not reformatted or re-wrapped. Attribution: **zero external links**, as
+expected for this model.*
 
-**To fill:** paste the Gemini verdict here, byte-exact, replacing this block. Do not re-wrap,
-reformat, or clean it up.
+VERDICT: APPROVE WITH CONDITIONS
+
+The proposed architecture correctly addresses the severe defect in the legacy provisioning path (partial writes returning `200 OK`). Below are the explicit resolutions for Questions A through F, accompanied by binding engineering conditions.
+
+Direct Resolving Answers to Questions A–F
+Question A — External Call Failure Surface (Zernio)
+Resolution: A2 is MANDATORY (Durable Queue inside Transaction).
+
+Option A1 introduces a "silent partial success" state where the tenant database state commits, but the vendor integration fails post-commit. Because this leaves the system with non-atomic side effects, A1 violates the core principle of Gate Condition 1. Enqueueing an integration task inside the atomic Postgres transaction guarantees that if the transaction commits, the side effect is guaranteed to be attempted by an asynchronous worker with exponential backoff.
+
+Question B — Sales CRM (`prospects`) Decoupling
+Resolution: Decouple completely within this change.
+
+Conditioning core tenant infrastructure (SEO, legal pages, service areas) on `prospect_id` is an architectural debt that causes broken tenants when provisioning non-prospect clients. The RPC input schema must explicitly accept base tenant seeding parameters. Prospect data must serve strictly as an optional input overlay. The scope expansion is necessary to ensure every provisioned tenant is structural and functional upon execution.
+
+Question C — Catalog Validation & Predicate Sharing
+Resolution: C2 is ACCEPTABLE, subject to strict DB-level structural invariant checks.
+
+Moving catalog definitions to `shared/lib/` and performing strict catalog verification inside the Deno Edge function prior to database invocation satisfies Condition 3. Because the RPC is restricted to `service_role` (see Question D), the edge function serves as the trusted API boundary. However, the RPC must independently enforce structural bounds (e.g., array non-emptiness for service verticals, string format checks, and duplicate detection).
+
+Question D — Permissions and Grants
+Resolution: Strict RPC isolation model approved.
+
+* D1 (Grants & Drift): A periodic CI guard or schema assertion test is required alongside the migration `REVOKE`. Schema migrations and reset scripts can re-grant standard schema permissions if standard Postgres defaults execute without explicit overrides.
+
+* D2 (Security Model): `SECURITY DEFINER` with `SET search_path = ''` is the correct posture. Even though the primary caller is `service_role`, using `SECURITY DEFINER` locks the function's execution environment against search path hijacking attacks and enforces strict schema qualification (`public.table_name`).
+
+Question E — Provisioning vs. Rendering Constraints
+Resolution: Interpretation is correct.
+
+Condition 4 governs the input payload boundary during tenant provisioning (rejecting initial zero-service creations for service-based verticals). Condition 6 governs the runtime application boundary (ensuring existing tenants rendered with zero active services do not trigger application exceptions/500s). For testing Condition 6, an isolated database-backed integration test (creating, stripping, rendering, and rolling back a fixture tenant) is sufficient and preferred over creating a permanent production fixture.
+
+Question F — Database-Side Settings Merge Strategy
+Resolution: Reimplement merge rules in PL/pgSQL.
+
+Computing the merge in TypeScript before passing it into the database retains a race condition during concurrent operations. The merge semantics (preserving non-empty strings over empty overlays while respecting boolean `false` and integer `0`, along with validating composite objects) must be encapsulated in a pure PL/pgSQL utility function (e.g., `public.jsonb_deep_merge_non_empty(base jsonb, overlay jsonb)`) executed strictly inside the RPC transaction.
+
+Binding Conditions for Implementation
+
+1. Transactional Enqueueing for Outbound Integrations (A2):
+
+   * The RPC must insert an integration payload row into an outbound jobs/queue table (`outbound_integration_queue`) within the main database transaction.
+
+   * Post-commit, an edge function or cron worker must process this queue with exponential backoff retries for the Zernio integration.
+
+2. Decoupled Base Provisioning Schema:
+
+   * The PL/pgSQL function signature must accept a complete jsonb config object defining: settings, SEO metadata, base legal page inputs, and service selections.
+
+   * The execution path for generating page content, legal pages, service areas, and default settings must run independently of whether `prospect_id` is present.
+
+3. Database-Level Invariant Enforcement:
+
+   * The RPC must raise an explicit exception (`RAISE EXCEPTION USING ERRCODE = '22023'`) if a service-based vertical is submitted with an empty service array, bypassing any caller logic.
+
+4. Pure PL/pgSQL JSONB Merge Utility:
+
+   * Implement a dedicated helper function in Postgres to perform the non-empty string overlay logic (`public.jsonb_merge_settings(existing jsonb, overlay jsonb)`).
+
+   * All 11 setting key updates within the RPC must use this function in their `ON CONFLICT DO UPDATE SET value = public.jsonb_merge_settings(...)` clauses.
+
+5. Trigger Isolation & Abort Handling:
+
+   * The existing `trg_enforce_location_cap` trigger on `service_areas` must be tested to ensure that throwing a location cap exception correctly triggers a full rollback of the RPC transaction without leaving persistent state in any of the 10 target tables.
+
+6. Revoke Assertions in CI:
+
+   * An integration test targeting the database metadata (`information_schema.routine_privileges`) must run on every CI build to assert that `public.provision_tenant_atomic` grants `EXECUTE` strictly to `service_role`, and explicitly denies `anon`, `authenticated`, and `PUBLIC`.
 
 ---
 
-### Attribution check — NOT RUN
+### Attribution check — RAN, **PASSED**
 
-The S309 round-1 discriminator (Perplexity output carries inline source citations; Gemini
-output carries none) **could not be executed**, because neither appendix text exists to check.
+The S309 round-1 discriminator (Perplexity output carries inline source citations; Gemini output
+carries none) was **executed against both texts before either was written into this file.**
 
-The check is a precondition on writing the appendices, and it has not been satisfied. It must
-be run at the moment the texts are pasted in, and the write aborted if it fails:
+| condition | required | observed | |
+|---|---|---|---|
+| **Appendix A** | ≥ 1 external markdown link | **3** — `postgresql.org` ×2, `supabase.com` ×1 | ✅ |
+| **Appendix B** | zero external markdown links | **0** | ✅ |
+| **A ≠ B** | not byte-identical | sha256 `e6f4273e…` vs `6f8ba842…` | ✅ |
 
-| | requirement | expected evidence |
-|---|---|---|
-| **Appendix A** | **at least one** markdown link to an external source | `postgresql.org`, `supabase.com` |
-| **Appendix B** | **zero** such links | — |
+The links found in A, in order of appearance:
 
-If A has no citations, or B has citations, the two are swapped or duplicated. **Stop and say
-so. Do not guess and do not reorder them.**
+- `[postgresql](https://www.postgresql.org/docs/current/sql-rollback.html)`
+- `[postgresql](https://www.postgresql.org/docs/current/sql-createfunction.html)`
+- `[supabase](https://supabase.com/docs/guides/database/functions)`
 
-Neither a Perplexity nor a Gemini connector is wired into this execution environment, so the
-texts cannot be regenerated here — they must come from the operator. This matches the
-disclosure precedent set by `s234-validator-gate.md` and `s267-validator-gate.md`, both of
-which recorded validator unavailability rather than fabricating model quotes.
+**The check is not vacuous.** Four mutations were run, and every one of them **failed** the check,
+as it must:
+
+| mutation | result |
+|---|---|
+| **M1** — strip the citations from A | ❌ fails (A link count → 0) |
+| **M2** — inject one citation into B | ❌ fails (B link count → 1) |
+| **M3** — **the same document pasted twice** | ❌ fails (byte-identity **and** B link count) |
+| **M4** — the two swapped | ❌ fails (both link conditions) |
+
+M3 is the live failure mode this check exists for: an earlier attempt at this gate returned the
+same document twice. Byte-identity catches it independently of the citation counts, so a duplicate
+is detected even if both copies were the *citation-free* one.
+
+Those digests are sha256 of each appendix **exactly as embedded below** (23788 and 5822
+characters, trailing newline stripped), so they are reproducible from this file.
+
+Only external markdown links of the form `[text](http…)` count. Inline code, bare URLs, and
+reference-style text do not, so a code sample mentioning a URL cannot forge a citation.
 
 ---
 
@@ -221,4 +458,5 @@ read by importing the catalog modules directly, and the constraint and queue tab
 from the live database. Nothing in §5–§7 was transcribed from the brief on trust — which is the
 same rule (*verify the artifact, not the status*) that the S331/S333 correction exists to record.
 
-**§1–§3 remain unverified and unfilled, because their source texts were never supplied.**
+**§2 and §3 are filled, byte-exact, and passed the attribution check above. §1 remains unfilled
+because the submission text was never supplied** — it is the one outstanding item in this record.
