@@ -38,6 +38,7 @@ export async function generateStaticParams() {
   return [];
 }
 import { getIntegrations, getAllServicePages, getSeoMeta } from '../_lib/queries';
+import { publiclyListedServices } from '../_lib/publiclyListedServices';
 import { resolveVertical } from '../../../../src/shells/_shared/serviceEntry';
 import { getVerticalCopy } from '../../../../src/shells/_shared/verticalCopy';
 import { QuoteForm } from '../_components/forms/QuoteForm';
@@ -56,8 +57,9 @@ export default async function QuotePage({ params }: Params) {
   // Service options come from the tenant's OWN service page_content rows — the
   // same signal the homepage tiles and the navbar use. slice() first: the query
   // is React-cached, so the array must not be sorted in place.
-  const serviceOptions = (servicePages as { page_slug: string; title: string | null }[])
-    .slice()
+  // S331 — canonical list. publiclyListedServices returns a NEW array, so the sort below
+  // no longer needs its own slice() to avoid mutating the React-cached query result.
+  const serviceOptions = publiclyListedServices(tenant, servicePages as { page_slug: string; title: string | null }[])
     .sort((a, b) => a.page_slug.localeCompare(b.page_slug))
     .map(p => p.title)
     .filter((t): t is string => !!t);

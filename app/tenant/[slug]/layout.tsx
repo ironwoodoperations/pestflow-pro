@@ -7,6 +7,7 @@ import { resolveTenantBySlug } from '../../../shared/lib/tenant/resolve';
 import { resolveSiteUrl } from '../../../shared/lib/resolveSiteUrl';
 import { tenantSeoMetadata } from '../../../shared/lib/tenantSeoMetadata';
 import { getAllServicePages, getSocialLinks, getSeoSettings, getBusinessInfo, getIntegrations, getAllBlogPosts } from './_lib/queries';
+import { publiclyListedServices } from './_lib/publiclyListedServices';
 import { JsonLdScript } from './_components/JsonLdScripts';
 import { generateLocalBusinessSchema, resolveSchemaVocabulary, type BusinessInfo, type SeoSettings, type SocialLinks } from '../../../shared/lib/seoSchema';
 import { resolveVerticalCopy } from '../../../src/shells/_shared/verticalCopy';
@@ -84,7 +85,7 @@ export default async function TenantLayout({
   const tenant = await resolveTenantBySlug(params.slug);
   if (!tenant) notFound();
 
-  const [servicePages, social, seoRaw, businessInfoRaw, integrations, blogPosts] = await Promise.all([
+  const [servicePagesRaw, social, seoRaw, businessInfoRaw, integrations, blogPosts] = await Promise.all([
     getAllServicePages(tenant.id),
     getSocialLinks(tenant.id),
     getSeoSettings(tenant.id),
@@ -92,6 +93,14 @@ export default async function TenantLayout({
     getIntegrations(tenant.id),
     getAllBlogPosts(tenant.id),
   ]);
+
+  // S331 — the ONE canonical list. Every navbar below receives this and only formats it;
+  // none of the six shells decides membership for itself. A page_content row the router
+  // would not serve is no longer a nav link to a 404.
+  const servicePages = publiclyListedServices(
+    tenant,
+    servicePagesRaw as { page_slug: string; title: string | null }[],
+  );
 
   // PR C: a tenant with no published posts should not advertise a Blog link.
   // The query is React-cache()d, so the blog page's own call in the same request

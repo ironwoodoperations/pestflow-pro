@@ -13,6 +13,7 @@ export async function generateStaticParams() {
   return [];
 }
 import { getPageContent, getTestimonials, getAllBlogPosts, getHeroMedia, getAllLocations, getSeoMeta, getIntegrations, getAllServicePages } from './_lib/queries';
+import { publiclyListedServices } from './_lib/publiclyListedServices';
 import { resolveHeroImage } from './_lib/heroImage';
 import { MetroHero } from './_components/MetroHero';
 import { ServicesGrid } from './_components/sections/ServicesGrid';
@@ -185,7 +186,12 @@ export default async function TenantHome({ params }: Params) {
       ...(MODERN_PRO_VERTICAL[resolveVertical(tenant)] ?? MODERN_PRO_VERTICAL.pest),
       ...(tenantHome?.copy ?? {}),
     };
-    const pages = servicePages as { page_slug: string; title: string | null; image_url?: string | null }[];
+    // S331 — the canonical list, same as nav and the sitemap. The tile config below still
+    // only filters and orders; titleBySlug keeps it a subset either way.
+    const pages = publiclyListedServices(
+      tenant,
+      servicePages as { page_slug: string; title: string | null; image_url?: string | null }[],
+    );
     const titleBySlug = new Map(pages.map((p) => [p.page_slug, p.title]));
     // Tile names always come from the tenant's own page_content titles; the
     // config (when present) only fixes order and supplies static images.

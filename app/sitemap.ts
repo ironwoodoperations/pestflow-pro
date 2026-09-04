@@ -4,6 +4,7 @@ import domainMapJson from '../domain-map.json';
 import { resolveTenantBySlug } from '../shared/lib/tenant/resolve';
 import { resolveSiteUrl } from '../shared/lib/resolveSiteUrl';
 import { getAllServicePages, getAllBlogPosts } from './tenant/[slug]/_lib/queries';
+import { publiclyListedServices } from './tenant/[slug]/_lib/publiclyListedServices';
 
 // S321 B5 — the per-tenant sitemap.
 //
@@ -99,10 +100,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Service and blog pages come from the SAME queries the routes themselves use, so a page
   // that renders is a page that is listed and vice versa. Deriving a second list would let
   // the two drift.
-  const [services, posts] = await Promise.all([
+  //
+  // S331 — THAT SENTENCE WAS AN INTENTION, NOT A FACT. getAllServicePages returns
+  // page_content rows minus a fixed exclusion list; the route serves a slug only if the
+  // vertical's catalog carries it. A row outside the catalog was therefore advertised to
+  // Google and then 404'd — the worst possible combination, and exactly the 2026-08-26
+  // artificial-turf incident. publiclyListedServices is the intersection, so the comment
+  // above is now true.
+  const [servicesRaw, posts] = await Promise.all([
     getAllServicePages(tenant.id),
     getAllBlogPosts(tenant.id),
   ]);
+  const services = publiclyListedServices(tenant, servicesRaw as { page_slug: string }[]);
 
   for (const s of services) {
     if (s?.page_slug) {
