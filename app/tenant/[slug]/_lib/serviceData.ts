@@ -1,5 +1,4 @@
-import { IRRIGATION_CONTENT_MAP } from '../../../../src/shells/_shared/irrigationContent'
-import { LAWN_CONTENT_MAP } from '../../../../src/shells/_shared/lawnContent'
+import { CATALOG_SLUGS } from '../../../../shared/lib/serviceCatalog'
 import type { Vertical } from '../../../../shared/lib/verticals'
 
 export type ServiceData = {
@@ -280,7 +279,14 @@ export const SERVICE_DATA: Record<string, ServiceData> = {
   },
 }
 
-export const SERVICE_SLUGS = new Set(Object.keys(SERVICE_DATA))
+// S335 — the ROUTER's pest set now comes from THE catalog, not from this
+// file's own content map. The two hold the same twelve slugs but in DIFFERENT
+// ORDER, which is what makes serviceCatalog.test.ts's order-sensitive
+// assertion able to catch a revert to `Object.keys(SERVICE_DATA)`.
+//
+// SERVICE_DATA itself is untouched and still renders every pest service page.
+// Catalog decides WHAT ROUTES; SERVICE_DATA decides WHAT IT SAYS.
+export const SERVICE_SLUGS = new Set(CATALOG_SLUGS.pest)
 
 // Irrigation-vertical router set (S-PLS-5 / D1). A UNION-by-vertical selection
 // alongside SERVICE_SLUGS — never a mutation of it and never an edit to any
@@ -288,13 +294,13 @@ export const SERVICE_SLUGS = new Set(Object.keys(SERVICE_DATA))
 // tenant's vertical before the location-page fallback, so irrigation slugs
 // resolve for irrigation tenants while every pest tenant routes exactly as
 // before.
-export const IRRIGATION_SERVICE_SLUGS = new Set(Object.keys(IRRIGATION_CONTENT_MAP))
+export const IRRIGATION_SERVICE_SLUGS = new Set(CATALOG_SLUGS.irrigation)
 
 // Lawn-vertical router set (S323 PR A). The lawn catalog is FULL — every
 // service the trade might offer — so this set is wide on purpose. Being in the
 // set makes a slug SERVEABLE, not offered: the tile and the nav link come from
 // a page_content row, and a tenant who sells three services has three rows.
-export const LAWN_SERVICE_SLUGS = new Set(Object.keys(LAWN_CONTENT_MAP))
+export const LAWN_SERVICE_SLUGS = new Set(CATALOG_SLUGS.lawn)
 
 /**
  * Vertical → active slug set. Replaces the `vertical === 'irrigation' ? … : …`

@@ -45,6 +45,8 @@
 // VERTICAL_OPTIONS at the foot of this file, so the wizard does not offer it
 // and provisioning cannot seed it until PR B builds selection.
 
+import { CATALOG_SLUGS } from '../../shared/lib/serviceCatalog';
+
 export type AdminVertical = 'pest' | 'irrigation' | 'lawn';
 
 export interface AdminEntityLabels {
@@ -67,7 +69,10 @@ export interface AdminPlaceholders {
 
 export interface AdminLabelPreset {
   faqCategories: string[];
-  servicePageSlugs: string[];
+  /** THE catalog's slugs for this vertical. Shared frozen reference from
+   *  shared/lib/serviceCatalog — never a local copy. See servicePageSlugs
+   *  assertions in adminVerticalPreset.test.ts. */
+  servicePageSlugs: readonly string[];
   placeholders: AdminPlaceholders;
   entityLabels: AdminEntityLabels;
 }
@@ -111,11 +116,7 @@ export const ADMIN_PRESETS: Record<AdminVertical, AdminLabelPreset> = {
     ],
     // Live page_content, identical across all seven pest tenants — 12/12 match
     // with the PEST_SLUGS array this replaces.
-    servicePageSlugs: [
-      'pest-control', 'termite-control', 'termite-inspections', 'spider-control',
-      'roach-control', 'ant-control', 'mosquito-control', 'scorpion-control',
-      'bed-bug-control', 'flea-tick-control', 'rodent-control', 'wasp-hornet-control',
-    ],
+    servicePageSlugs: CATALOG_SLUGS.pest,
     placeholders: {
       faqQuestion: 'e.g. Are your treatments safe for pets?',
       seoKeyword: 'e.g. spider control',
@@ -142,9 +143,7 @@ export const ADMIN_PRESETS: Record<AdminVertical, AdminLabelPreset> = {
     // SHARED vertical preset, tolerable only because pls is the sole irrigation
     // tenant. The second irrigation tenant makes this wrong; the real fix is a
     // tenant-level service list.
-    servicePageSlugs: [
-      'sprinkler-systems', 'drainage', 'pump-systems', 'sod-dirt-work', 'artificial-turf',
-    ],
+    servicePageSlugs: CATALOG_SLUGS.irrigation,
     placeholders: {
       faqQuestion: 'e.g. How often should I run my sprinklers?',
       seoKeyword: 'e.g. sprinkler repair',
@@ -191,19 +190,7 @@ export const ADMIN_PRESETS: Record<AdminVertical, AdminLabelPreset> = {
     // === LAWN_CONTENT_MAP's keys, in catalog order. lawnCatalog.test.ts pins
     // the two lists equal in BOTH directions, so a slug added to one and missed
     // in the other fails rather than shipping a tile that 404s.
-    servicePageSlugs: [
-      // turf treatment
-      'lawn-fertilization', 'weed-control', 'lawn-aeration', 'overseeding',
-      'grub-control', 'lawn-disease-control', 'soil-health',
-      // maintenance
-      'mowing-maintenance', 'seasonal-cleanup', 'tree-shrub-trimming',
-      'mulch-bed-maintenance',
-      // landscape
-      'landscape-design', 'hardscape-stonework',
-      // boundary services — shared with another vertical's catalog, deliberately
-      'sprinkler-systems', 'artificial-turf', 'perimeter-pest-control',
-      'mosquito-control',
-    ],
+    servicePageSlugs: CATALOG_SLUGS.lawn,
     placeholders: {
       faqQuestion: 'e.g. How short should my grass be cut?',
       seoKeyword: 'e.g. lawn fertilization',
