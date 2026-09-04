@@ -392,6 +392,35 @@ this file's own working rules say a confidently-worded stale line is the failure
 
 ## Open Follow-ups
 
+### ⚠️ S337 — MAIN-BRANCH WORKFLOW FAILURES ARE INVISIBLE. Recorded, deliberately NOT fixed.
+
+**Ten consecutive failures went unseen for ten weeks.** `redeploy-edge-on-shared-change.yml`
+failed every run from its creation on 2026-06-24 until 2026-09-04, at its deploy-token guard.
+Nobody saw it, and the reason is structural rather than anyone's oversight:
+
+**The workflow fires only on `push` to `main` and on `workflow_dispatch`. Push-event runs on
+`main` appear in NO pull-request check list.** Every PR in that window was green, because the
+PR checks are a different set of workflows. The failing one ran *after* merge, where nothing
+surfaces it — the S273 stale-bundle protection was inert the entire time and the repo had no
+way to notice.
+
+**Why this is not fixed here.** Making post-merge failures visible is a real decision with
+several shapes — a notification, a status badge, a scheduled re-check, or a job that fails a
+later PR when `main`'s last run was red — and each has different noise and ownership
+tradeoffs. Picking one is Scott's call, not a drive-by inside a script fix.
+
+**What S337 did do:** the verifier's pure logic (comparison, config.toml pin rule, error
+diagnosis) now runs in the ordinary `validate` job on every PR
+(`.github/scripts/verify_verify_jwt_test.py`), so at least the *logic* is exercised where
+contributors can see it. The live Management API call still only runs on main — deliberately
+not faked, because a fixture asserting the platform agrees with config.toml would make the
+guard vacuous.
+
+**Related, still open:** `supabase/setup-cli@v1` is named in the Node-20 deprecation warning
+but was NOT bumped in S337 — the available majors could not be established from that session's
+environment, and a wrong guess would break `ci.yml`'s auth-isolation job as well. It is
+advisory only (GitHub already forces the action onto Node 24). Verify, then bump.
+
 ### RECORDED, NOT BUILT — carried into the RPC session
 
 - **21 of 37 `_shared` consumers are missing from `.github/edge-shared-consumers.txt`.** That is the

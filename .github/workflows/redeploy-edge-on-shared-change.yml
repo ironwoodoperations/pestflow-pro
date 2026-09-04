@@ -53,7 +53,7 @@ jobs:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       PROJECT_REF: biezzykcgzkrwdgqpsar
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Guard — require deploy token
         run: |
@@ -63,6 +63,14 @@ jobs:
           fi
 
       - name: Install Supabase CLI (pinned)
+        # S337 — deliberately NOT bumped. The Node-20 deprecation warning names
+        # this action alongside actions/checkout, but I could not establish from
+        # this environment that a newer major exists: api.supabase.com is blocked
+        # here and checking the action's own repo is outside this session's repo
+        # scope. Guessing @v2 would break BOTH this workflow and ci.yml's
+        # currently-green auth-isolation job if it does not resolve. The warning is
+        # advisory — GitHub already forces the action onto Node 24 — so leaving it
+        # costs a log line and risks nothing. Verify the available majors, then bump.
         uses: supabase/setup-cli@v1
         with:
           version: ${{ env.SUPABASE_CLI_VERSION }}
