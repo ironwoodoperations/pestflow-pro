@@ -1,4 +1,5 @@
 import type { Prospect } from './types'
+import { verticalDecided, serviceSelectionOk, readVerticalChoice, selectedServices } from './provisionInputs'
 
 interface Props {
   prospect: Partial<Prospect>
@@ -7,6 +8,18 @@ interface Props {
 }
 
 const isValidEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)
+
+/** Reads back the decision so the operator can confirm it, not just pass it. */
+function verticalSummary(bi: Record<string, unknown>): string {
+  const { vertical } = readVerticalChoice(bi)
+  return vertical ?? 'not listed / other'
+}
+function servicesSummary(bi: Record<string, unknown>): string {
+  const { vertical } = readVerticalChoice(bi)
+  const n = selectedServices(bi).length
+  if (!vertical) return 'none needed'
+  return n === 0 ? 'none' : `${n} selected`
+}
 
 function Check({ label, pass }: { label: string; pass: boolean }) {
   return (
@@ -52,6 +65,17 @@ export default function PreProvisionChecklist({ prospect, onConfirm, onCancel }:
     { label: 'Palette selected',       pass: !!br.primary_color },
     { label: 'CTA Button Text',        pass: !!br.cta_text?.trim() },
     { label: 'At least one service area', pass: !!prospect.service_areas?.trim() },
+    // S342 — MIRRORS THE BACKEND rather than inventing a rule.
+    // provision_tenant_atomic raises 22023 for a recorded vertical with an empty
+    // selection and buildPayload returns a 400; this turns that into a readable
+    // sentence in front of the operator instead of a failed request afterwards.
+    //
+    // "Decided" includes explicitly choosing "Not listed / other" — that is a
+    // real answer. What it excludes is never having opened the select.
+    { label: verticalDecided(bi) ? `Trade: ${verticalSummary(bi)}` : 'Trade chosen (or explicitly "not listed")',
+      pass: verticalDecided(bi) },
+    { label: serviceSelectionOk(bi) ? `Services selected: ${servicesSummary(bi)}` : 'At least one service selected for this trade',
+      pass: serviceSelectionOk(bi) },
     { label: 'Admin Email',            pass: !!prospect.admin_email?.trim() && isValidEmail(prospect.admin_email.trim()) },
     { label: 'Admin Password',         pass: !!prospect.admin_password?.trim() },
   ]

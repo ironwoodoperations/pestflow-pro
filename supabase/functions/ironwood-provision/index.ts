@@ -60,6 +60,14 @@ Deno.serve(async (req: Request) => {
     const {
       prospect_id, slug, admin_email, admin_password,
       business_info, branding, customization, social, subscription,
+      // S342 — the operator's per-service selection. THIS DESTRUCTURE IS THE
+      // REASON it needs adding here: the payload below is rebuilt explicitly
+      // from named fields, so a top-level `services` that is not named is
+      // silently dropped rather than forwarded.
+      //
+      // `vertical` needs no equivalent — it travels INSIDE business_info, which
+      // is passed through wholesale, and provision-tenant reads it there.
+      services,
     } = body
 
     if (!slug || !admin_email) return json({ error: 'slug and admin_email are required' }, 400)
@@ -84,6 +92,11 @@ Deno.serve(async (req: Request) => {
       admin_password: admin_password || '',
       prospect_id: prospect_id || null,
       business_info: business_info || {},
+      // Forwarded ONLY when present. `undefined` disappears in JSON.stringify,
+      // which is exactly right: absent means "not stated" to buildPayload and
+      // falls back to the whole catalog, while an empty array would be a
+      // statement of nothing and a 400.
+      ...(Array.isArray(services) && services.length > 0 ? { services } : {}),
       branding: branding || {},
       customization: customization || {},
       social_links: {
