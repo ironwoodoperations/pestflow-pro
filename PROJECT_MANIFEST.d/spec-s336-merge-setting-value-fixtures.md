@@ -38,3 +38,18 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   - Still open from S335: SUPABASE_ACCESS_TOKEN is unset, so redeploy-edge-on-shared-change.yml
     has NEVER succeeded — the S273 stale-bundle protection is inert.
   - Still LAST: S323 PR C. The vertical CHECK still rejects 'lawn'.
+
+---
+## Session — 2026-09-04 17:45 UTC
+- Branch: `spec/s336-merge-setting-value-fixtures`
+- Commit: `0d1be74` — fix(ci): rescue the S336 migration before the staging step wipes migrations
+- Author: Claude
+- Files changed:
+  - .github/workflows/ci.yml
+- Next recommended action: **See the previous entry** — it carries the real next action
+  (build-order step 3, `provision_tenant_atomic`) and the S336 facts not to re-derive.
+  This commit is only the CI fix: the "Stage focused test schema" step does
+  `rm -rf supabase/migrations`, which deleted the S336 migration before the step that
+  applies it. It is now rescued to /tmp before the wipe. If you add another file under
+  supabase/migrations that a later CI step needs, it will hit the SAME trap — rescue it
+  in that staging step or the file will not exist when your step runs.
