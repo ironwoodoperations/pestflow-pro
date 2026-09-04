@@ -1,10 +1,13 @@
 import { describe, it, expect } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import {
   classifyStatus,
   classifyResponse,
   classifyThrownError,
   extractZernioProfileId,
   needsReconcileBeforeCreate,
+  resolveZernioCreate,
   hasGoogleId,
   buildZernioIntegrationsValue,
   DUPLICATE_SENSITIVE,
@@ -239,5 +242,130 @@ describe('logging is allowlisted (S313)', () => {
     // body in because there is nowhere to put one.
     const line = logLine('handled', job, 'succeeded')
     expect(line).not.toMatch(/Bearer|api[_-]?key|token/i)
+  })
+})
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// S340 — THE DUPLICATE-CREATE PATH THAT WAS LIVE IN THE DEPLOYED WORKER.
+//
+// Zernio create succeeds, our own settings write then throws. The throw used to
+// escape to the loop's catch, which returned `retryable` with NO vendorRef. The
+// id we already held was discarded, vendor_ref stayed NULL, and the next claim
+// created a SECOND profile.
+//
+// These tests walk the whole chain, not just the return value: decision ->
+// what outbound_queue_complete persists -> what the next claim then decides.
+// ════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Mirrors `outbound_queue_complete`'s vendor_ref write. Kept in the test rather
+ * than in dispatch.ts because production has no use for it — the DB does this.
+ * The SQL it mirrors is pinned by a test below, so this cannot drift silently.
+ */
+const persistVendorRef = (existing: string | null, incoming?: string) => incoming ?? existing
+
+describe('S340: a failed settings write must not lose the vendor ref', () => {
+  const ok = { id: 'prof_abc123' }
+
+  it('carries the ref out WITH the retryable outcome', () => {
+    const r = resolveZernioCreate(201, ok, true)
+    expect(r.outcome).toBe('retryable')
+    expect(r.vendorRef).toBe('prof_abc123')
+    expect(r.reason).toBe('settings_write_failed')
+  })
+
+  it('is retryable, NOT unknown — the vendor state is not in doubt here', () => {
+    // The POST completed and we read its body. Nothing is unobserved, so this
+    // must not dead-end the job the way a timeout does.
+    expect(resolveZernioCreate(201, ok, true).outcome).toBe('retryable')
+  })
+
+  it('the happy path is unchanged', () => {
+    const r = resolveZernioCreate(201, ok, false)
+    expect(r.outcome).toBe('succeeded')
+    expect(r.vendorRef).toBe('prof_abc123')
+    expect(r.reason).toBeUndefined()
+  })
+
+  it('THE CHAIN: settings-write failure leaves vendor_ref SET, so the next claim reconciles instead of creating', () => {
+    const failed = resolveZernioCreate(201, ok, true)
+
+    // What the DB stores: vendor_ref = coalesce(p_vendor_ref, q.vendor_ref).
+    const stored = persistVendorRef(null, failed.vendorRef)
+    expect(stored).toBe('prof_abc123')
+
+    // What the next claim decides, given that stored ref.
+    expect(needsReconcileBeforeCreate({
+      kind: 'zernio_profile',
+      vendor_ref: stored,
+      prior_status: 'retryable_failed',
+    })).toBe(true)
+  })
+
+  it('DROPPING THE REF IS THE BUG: without it the next claim creates a duplicate', () => {
+    // This is the pre-S340 behaviour, asserted explicitly so the failure mode is
+    // documented rather than merely avoided.
+    const stored = persistVendorRef(null, undefined)
+    expect(stored).toBeNull()
+    expect(needsReconcileBeforeCreate({
+      kind: 'zernio_profile',
+      vendor_ref: stored,
+      prior_status: 'retryable_failed',
+    })).toBe(false) // <- FALSE means "go create one", i.e. a second POST
+  })
+
+  it('a non-2xx is unaffected by the settings-write flag', () => {
+    // The flag only matters on the path where a profile actually exists.
+    for (const flag of [true, false]) {
+      expect(resolveZernioCreate(500, null, flag).outcome).toBe('retryable')
+      expect(resolveZernioCreate(400, null, flag).outcome).toBe('terminal')
+      expect(resolveZernioCreate(200, {}, flag).outcome).toBe('unknown')
+      expect(resolveZernioCreate(500, null, flag).vendorRef).toBeUndefined()
+    }
+  })
+})
+
+// ── The two things the pure tests above CANNOT catch ────────────────────────
+//
+// resolveZernioCreate is pure and testable, but reverting the S340 fix happens in
+// index.ts (drop the try/catch) and in the SQL (drop the coalesce). Neither would
+// fail a single assertion above. index.ts imports from esm.sh so vitest cannot
+// execute it — these are SOURCE SCANS, and calling them that is deliberate.
+
+const INDEX_SRC = readFileSync(join(__dirname, 'index.ts'), 'utf8')
+const COMPLETE_SQL = readFileSync(
+  join(__dirname, '..', '..', 'migrations', 's338_outbound_queue_state_machine.sql'), 'utf8')
+
+describe('S340 wiring guard (source scan — index.ts cannot be executed here)', () => {
+  it('the settings write is inside a try/catch that re-resolves with the failure flag', () => {
+    // The exact mutation this exists to catch: reverting to a bare
+    // `await writeZernioSettings(...)` whose throw escapes to the loop.
+    expect(INDEX_SRC).toMatch(/try\s*\{\s*\n\s*await writeZernioSettings\(/)
+    expect(INDEX_SRC).toContain('return resolveZernioCreate(res.status, body, true)')
+  })
+
+  it('handleZernio routes its create decision through the pure function', () => {
+    expect(INDEX_SRC).toContain('resolveZernioCreate(res.status, body, false)')
+  })
+
+  it('exactly two call sites, and the create-path one is the protected one', () => {
+    const calls = INDEX_SRC.match(/await writeZernioSettings\(/g) ?? []
+    expect(calls).toHaveLength(2)
+
+    // The reconcile call is deliberately UNPROTECTED: its ref came from the DB
+    // (job.vendor_ref) and is already durable, so a throw there cannot lose an
+    // id. Only the create path, which holds the sole copy, needs the catch.
+    expect(INDEX_SRC).toContain('await writeZernioSettings(admin, job.tenant_id, known)')
+    expect(INDEX_SRC).toMatch(
+      /try \{\s*\n\s*await writeZernioSettings\(admin, job\.tenant_id, planned\.vendorRef\)/)
+  })
+})
+
+describe('S340 depends on the DB never unsetting a known ref', () => {
+  it('outbound_queue_complete still coalesces vendor_ref', () => {
+    // If this ever becomes a plain assignment, carrying the ref out of a failed
+    // settings write stops working and the duplicate path reopens.
+    expect(COMPLETE_SQL).toContain('coalesce(p_vendor_ref, q.vendor_ref)')
   })
 })

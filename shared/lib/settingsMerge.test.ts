@@ -204,51 +204,57 @@ describe('mergeSettingsRead — the read happens here, and a failed read ABORTS'
   });
 });
 
-describe('the call sites in provision-tenant are actually wired', () => {
+describe('S330\'s invariant, after S340 moved the merge into the database', () => {
   const code = codeOnly(PROVISION);
 
-  it('anti-vacuity: the file was read and contains the seed loop', () => {
+  // S330 pinned that provision-tenant's settings writes MERGE rather than
+  // replace. S340 rewrote the function onto provision_tenant_atomic, so the edge
+  // no longer writes settings AT ALL — the RPC does, through
+  // public.merge_setting_value (S336). The invariant is unchanged and still
+  // load-bearing; only its home moved, so these guards follow it rather than
+  // being deleted. A deleted guard is a lapsed protection.
+  const RPC_SQL = readFileSync(
+    join(__dirname, '..', '..', 'supabase', 'migrations', 's338_provision_tenant_atomic.sql'),
+    'utf8',
+  );
+
+  it('anti-vacuity: both files were actually read', () => {
     expect(code.length).toBeGreaterThan(1000);
-    expect(code).toContain('for (const row of settingsRows)');
+    expect(RPC_SQL.length).toBeGreaterThan(1000);
   });
 
-  it('SITE 1 reads INSIDE the loop, not from a value hoisted above it', () => {
-    const loopAt = code.indexOf('for (const row of settingsRows)');
-    const loopBody = code.slice(loopAt, code.indexOf('// Step 4', loopAt));
-    // The read must appear between the loop header and the upsert.
-    expect(loopBody).toContain("eq('key', row.key)");
-    expect(loopBody).toContain('mergeSettingsRead');
-    expect(loopBody).toContain('mergeBusinessInfo');
-    const readAt = loopBody.indexOf("eq('key', row.key)");
-    const writeAt = loopBody.indexOf('.upsert(');
-    expect(readAt).toBeGreaterThan(-1);
-    expect(writeAt).toBeGreaterThan(readAt);
+  it('the edge performs NO settings write of its own any more', () => {
+    // Any direct write here would bypass merge_setting_value entirely — the
+    // exact replace-instead-of-merge regression S330 exists to prevent.
+    expect(code).not.toMatch(/from\('settings'\)\s*\n?\s*\.(upsert|update|insert)\(/);
+    expect(code).not.toContain('for (const row of settingsRows)');
   });
 
-  it('NO settings write in the file upserts a freshly built value with no merge', () => {
-    // The seed loop is the one that regressed. Assert its upsert takes the merged
-    // variable rather than row.value.
-    expect(code).toContain("upsert({ tenant_id: tenantId, key: row.key, value }");
-    expect(code).not.toContain("upsert(row, { onConflict: 'tenant_id,key' })");
+  it('THE MERGE: the RPC upserts settings through merge_setting_value', () => {
+    const stmt = RPC_SQL.slice(RPC_SQL.indexOf('INSERT INTO public.settings'));
+    expect(stmt.slice(0, 400)).toContain('ON CONFLICT (tenant_id, key) DO UPDATE');
+    expect(stmt.slice(0, 400)).toContain('public.merge_setting_value(');
   });
 
-  it('SITE 2 routes the seo write through mergeSettingsRead', () => {
-    const seoAt = code.indexOf("key: 'seo'");
-    expect(seoAt).toBeGreaterThan(-1);
-    const before = code.slice(Math.max(0, seoAt - 900), seoAt);
-    expect(before).toContain("mergeSettingsRead(\n            'seo'");
+  it('it is a MERGE, not a replace: EXCLUDED.value is never assigned bare', () => {
+    // `SET value = EXCLUDED.value` is precisely the S292/S330 defect, in SQL.
+    const stmt = RPC_SQL.slice(RPC_SQL.indexOf('INSERT INTO public.settings'), );
+    expect(stmt.slice(0, 400)).not.toMatch(/SET value = EXCLUDED\.value/);
   });
 
-  it('SITE 3 routes the integrations write through stripVaultSecrets', () => {
-    const at = code.indexOf('zernio_profile_id: zernioProfileId');
-    expect(at).toBeGreaterThan(-1);
-    const line = code.slice(code.lastIndexOf('\n', at) + 1, code.indexOf('\n', at));
-    expect(line).toContain('stripVaultSecrets(');
+  it('the seo projection comes from PERSISTED rows, never the payload', () => {
+    expect(RPC_SQL).toMatch(/FROM public\.service_areas sa WHERE sa\.tenant_id = v_tenant AND sa\.is_live/);
   });
 
-  it('anti-vacuity: every settings write that spreads a blob strips vault secrets', () => {
-    const spreads = code.match(/\.update\(\{ value: \{ \.\.\.[^\n]*/g) ?? [];
-    expect(spreads.length).toBeGreaterThanOrEqual(2);
-    for (const w of spreads) expect(w, w).toContain('stripVaultSecrets(');
+  it('SITE 3 — the integrations writer still strips vault secrets, now in the worker', () => {
+    // The inline Zernio write moved to process-outbound-queue with the rest of
+    // the outbound work. Its merge is buildZernioIntegrationsValue, which takes
+    // the strip function as an argument and is unit-tested in dispatch.test.ts.
+    const worker = readFileSync(
+      join(__dirname, '..', '..', 'supabase', 'functions', 'process-outbound-queue', 'index.ts'),
+      'utf8',
+    );
+    expect(worker).toContain("from '../_shared/secrets/stripVaultSecrets.ts'");
+    expect(codeOnly(worker)).toContain('buildZernioIntegrationsValue(row?.value, profileId, stripVaultSecrets)');
   });
 });

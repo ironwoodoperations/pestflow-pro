@@ -1,8 +1,33 @@
 // Supabase Edge Function: provision-tenant
-// Reads onboarding_sessions for wizard data (name, colors, shell, etc.) when available.
-// Falls back to direct body fields for legacy/manual calls.
-// Creates auth user, seeds tenant_users, and provisions all 11 required settings keys.
-// S164: service_areas seeded via normalizer; settings.seo.service_areas derived from table.
+//
+// ═══ S340 — REWRITTEN ONTO public.provision_tenant_atomic ═══
+//
+// THE LIVE PATH: this function creates every tenant. It used to be ~1300 lines
+// of sequential, individually-committing writes across eleven tables, most of
+// them wrapped in `catch { log and continue }` — so a half-provisioned tenant
+// returned HTTP 200 and nobody knew. Two of those swallowed failures had been
+// live for months: a write to page_content.meta_title/meta_description (COLUMNS
+// THAT DO NOT EXIST, so per-page SEO had never been seeded for anyone), and a
+// RAISE from the zip-prefix draft cities that silently skipped the seo
+// projection, the authority prompts, the prospect stage AND the four legal pages.
+//
+// The order below is the S334 gate's, not a preference:
+//   1. authenticate the caller (x-pfp-internal-key — UNCHANGED)
+//   2. build and validate the payload   <- BEFORE the user exists, so a doomed
+//                                          payload cannot mint an orphan
+//   3. create the gotrue user           <- OUTSIDE the transaction, forced by
+//                                          the FK chain (profiles.id IS the
+//                                          auth user id)
+//   4. ONE rpc('provision_tenant_atomic')
+//   5. post-commit: nothing. The queue rows committed with everything else.
+//   6. return the RPC's counts
+//
+// THE RPC GENERATES NOTHING (gate answer C2 — projecting the service catalog
+// into Postgres was rejected), so every seed row is built in buildPayload.ts,
+// which is pure and unit-tested. This file is the I/O around it.
+//
+// Reads onboarding_sessions for wizard data when available; falls back to direct
+// body fields for legacy/manual calls.
 //
 // Auth (S211a): verify_jwt:false at platform; in-source validation of
 //   `x-pfp-internal-key` header against PROVISION_TENANT_INTERNAL_SECRET env var.
@@ -22,22 +47,14 @@
 // Deploy: ./scripts/deploy-function.sh provision-tenant --project-ref biezzykcgzkrwdgqpsar --no-verify-jwt
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { generateAuthorityPrompts, isDemoTenant, isOperatorTenant } from '../_shared/authorityPrompts.ts'
-import {
-  validateVertical, buildPageContentRows, buildSeoSettings, buildPageSeoMeta,
-  buildServiceAreaHeroTitle, buildServiceAreaSeo, SEED_PLATFORM_SLUGS,
-} from '../_shared/provisioningSeed.ts'
+import { isDemoTenant, isOperatorTenant } from '../_shared/authorityPrompts.ts'
+import { validateVertical } from '../_shared/provisioningSeed.ts'
 import { timingSafeEqual } from 'node:crypto'
-import { normalizeAll, buildJsonbProjection } from '../_shared/service-areas.ts'
-// S326 — used ONLY by the not_configured marker write added in this change, so a
-// NEW integrations writer cannot round-trip a Vault secret into anon-adjacent
-// JSONB. The pre-existing zernio_profile_id write below still does not use it;
-// that is a recorded, deliberately out-of-scope defect (no tenant currently
-// holds a Vault key in integrations), not an oversight here.
-import { stripVaultSecrets } from '../_shared/secrets/stripVaultSecrets.ts'
-import { PLATFORM_NAME } from '../../../shared/lib/platformBrand.ts'
-import { mergeSettingsRead, dropEmptyOverwrites } from '../../../shared/lib/settingsMerge.ts'
-import { mergeBusinessInfo } from '../../../shared/lib/businessInfoMerge.ts'
+import { buildProvisionPayload } from './buildPayload.ts'
+
+/** CLAUDE.md constant. The legal page templates are read from this tenant. */
+const DEMO_TENANT_ID = '9215b06b-3eb5-49a1-a16e-7ff214bf6783'
+const LEGAL_SLUGS = ['terms', 'privacy', 'sms-terms', 'accessibility']
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
@@ -135,6 +152,13 @@ function resolveTimezoneFromState(state: string | null | undefined): string {
 
 interface RequestBody {
   tenant_id?: string
+  /**
+   * S340 — THE RETRY HANDLE. When the RPC fails after the gotrue user was
+   * created, the response carries the new auth_user_id. Passing it back on a
+   * retry makes provisioning REUSE that user instead of calling createUser
+   * again, which would dead-end on "email already registered".
+   */
+  auth_user_id?: string
   slug?: string
   admin_email?: string
   admin_password?: string
@@ -185,1112 +209,452 @@ interface RequestBody {
   subscription: { tier: number; plan_name: string; monthly_price: number }
 }
 
+// ── the gotrue orphan contract (S340) ───────────────────────────────────────
+//
+// createUser runs OUTSIDE the transaction — it must, because profiles.id IS the
+// auth user id and both reference auth.users, so the row cannot exist until the
+// user does. If createUser succeeds and the RPC then fails, THE AUTH USER IS
+// LEFT BEHIND. That orphan is intentional: it is the cheapest failure to detect
+// (a sweep for auth users with no tenant_users row currently returns zero) and
+// the response carries the id and a stable code so a retry can reuse it.
+//
+// ON RETRY, NEVER BLINDLY CALL createUser AGAIN — that turns a data failure into
+// an "email already registered" dead end. Either the caller passes back the
+// auth_user_id we returned, or we look the user up by normalised email and reuse
+// it when it is unbound.
+interface AuthResolution {
+  userId: string
+  created: boolean
+  passwordReset: boolean
+}
+
+const norm = (e: string) => e.trim().toLowerCase()
+
+function fail(status: number, code: string, error: string, extra: Record<string, unknown> = {}) {
+  return new Response(JSON.stringify({ success: false, code, error, ...extra }), {
+    status, headers: { 'Content-Type': 'application/json', ...CORS },
+  })
+}
+
 export async function handler(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS })
 
-  // ── AUTH (must run before anything else) ────────────────────────────
+  // ── 1. AUTH (must run before anything else) — UNCHANGED (S211a) ───────────
   const expectedSecret = Deno.env.get('PROVISION_TENANT_INTERNAL_SECRET') || ''
   const presentedSecret = req.headers.get('x-pfp-internal-key') || ''
 
   if (!expectedSecret) {
     console.error('[provision-tenant] PROVISION_TENANT_INTERNAL_SECRET env var not set; rejecting all requests')
     return new Response(JSON.stringify({ error: 'Server misconfigured' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json', ...CORS },
+      status: 500, headers: { 'Content-Type': 'application/json', ...CORS },
     })
   }
 
-  // node:crypto.timingSafeEqual — constant-time compare. Throws on length mismatch,
-  // so length-equality pre-check is required. (crypto.subtle has no timingSafeEqual
-  // in Deno/Web Crypto; node:crypto is the supported primitive in Supabase Edge Runtime.)
+  // node:crypto.timingSafeEqual — constant-time compare. Throws on length
+  // mismatch, so the length-equality pre-check is required.
   const enc = new TextEncoder()
   const a = enc.encode(expectedSecret)
   const b = enc.encode(presentedSecret)
   const authOk = a.length === b.length && timingSafeEqual(a, b)
 
   if (!authOk) {
-    console.warn('[provision-tenant] auth failed — x_pfp_internal_key_present:', !!presentedSecret, 'x_pfp_internal_key_length_match:', a.length === b.length)
+    console.warn('[provision-tenant] auth failed — x_pfp_internal_key_present:', !!presentedSecret,
+      'x_pfp_internal_key_length_match:', a.length === b.length)
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json', ...CORS },
+      status: 401, headers: { 'Content-Type': 'application/json', ...CORS },
     })
   }
 
   try {
     const body: RequestBody = await req.json()
-    const { slug, admin_email, admin_password, prospect_id, onboarding_session_id,
-            business_info: bi, branding, customization: bodyCustomization,
-            social_links: social, integrations, subscription } = body
-
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
-    // --- Fetch onboarding session wizard data (preferred path) ---
+    const suppliedTenantId = body.tenant_id?.trim() || ''
+    const mode: 'create' | 'reprovision' = suppliedTenantId ? 'reprovision' : 'create'
+
+    // ── wizard data (preferred) with body fallback ──────────────────────────
     let wd: Record<string, any> | null = null
-    if (onboarding_session_id) {
+    if (body.onboarding_session_id) {
       const { data: sessionRow } = await supabase
         .from('onboarding_sessions')
         .select('wizard_data')
-        .eq('id', onboarding_session_id)
+        .eq('id', body.onboarding_session_id)
         .eq('consumed', false)
         .maybeSingle()
       if (sessionRow?.wizard_data) {
         wd = sessionRow.wizard_data
-        console.log(`Loaded wizard data from onboarding_session ${onboarding_session_id}`)
+        console.log(`[provision-tenant] loaded wizard data from onboarding_session ${body.onboarding_session_id}`)
       } else {
-        console.warn(`onboarding_session ${onboarding_session_id} not found or already consumed — falling back to body fields`)
+        console.warn(`[provision-tenant] onboarding_session ${body.onboarding_session_id} not found or already consumed — falling back to body fields`)
       }
     }
+    const wbi = wd?.business_info || {}
+    const wsub = wd?.subscription || {}
 
-    // Helper: prefer wizard data field, fall back to direct body field
-    const wbi  = wd?.business_info  || {}
-    const wbr  = wd?.branding       || {}
-    const wcu  = wd?.customization  || {}
-    const wsl  = wd?.social_links   || {}
-    const wsub = wd?.subscription   || {}
-
-    // S262 — numeric access entitlement (1=Starter…4=Elite) for tenants.entitlement,
-    // set EXPLICITLY at provisioning. The column has NO database default; absence
-    // must fail loud, never silently default to Starter. Derived from the SOLD plan,
-    // never from a payment record (entitlement ≠ price is a permanent business rule).
-    const _entToNum = (raw: string | number | undefined | null): number => {
+    // S262 — entitlement is set EXPLICITLY. The column has no default; absence
+    // must fail loud rather than silently default to Starter. Derived from the
+    // SOLD plan, never from a payment record.
+    const entToNum = (raw: string | number | undefined | null): number => {
       if (typeof raw === 'number') return raw >= 1 && raw <= 4 ? raw : 1
       const sl = typeof raw === 'string' ? raw.toLowerCase().trim() : ''
       return sl === 'elite' ? 4 : sl === 'pro' ? 3 : (sl === 'growth' || sl === 'grow') ? 2 : 1
     }
-    const entitlement = _entToNum(
-      wsub.tier ?? subscription?.tier ?? wsub.plan_name ?? subscription?.plan_name ?? body.plan,
+    const entitlement = entToNum(
+      wsub.tier ?? body.subscription?.tier ?? wsub.plan_name ?? body.subscription?.plan_name ?? body.plan,
     )
 
-    // S290 — RESOLVE THE VERTICAL ONCE, HERE, before a single row is seeded.
-    //
-    // One source: the wizard (where a human picks it from a selector) or the
-    // request body. Deliberately NOT intake_data — that overlay runs after
-    // page_content is already written, so honouring a vertical there would seed
-    // one trade's pages and record another's name.
-    //
-    // FAIL LOUDLY. settings_business_info_vertical_valid takes the two literals
-    // or NULL; anything else is rejected with 23514 inside a settings upsert
-    // that logs the error and carries on, leaving a tenant provisioned with no
-    // vertical and no one aware. A 400 here is the whole point.
-    const _verticalCheck = validateVertical(wbi.vertical ?? (bi as { vertical?: unknown })?.vertical)
-    if (_verticalCheck.error) {
-      console.error('[provision-tenant] REJECTED —', _verticalCheck.error)
-      return new Response(JSON.stringify({ success: false, error: _verticalCheck.error }), {
-        status: 400, headers: { 'Content-Type': 'application/json', ...CORS },
-      })
+    // S290 — the vertical is resolved ONCE, before a single row is built.
+    // Deliberately NOT from intake_data: that overlay used to run after
+    // page_content was written, so honouring a vertical there seeded one trade's
+    // pages and recorded another's name.
+    const verticalCheck = validateVertical(wbi.vertical ?? (body.business_info as { vertical?: unknown })?.vertical)
+    if (verticalCheck.error) {
+      console.error('[provision-tenant] REJECTED —', verticalCheck.error)
+      return fail(400, 'vertical_invalid', verticalCheck.error)
     }
-    const resolvedVertical = _verticalCheck.vertical
+    const resolvedVertical = verticalCheck.vertical
     console.log(`[provision-tenant] vertical: ${resolvedVertical ?? 'NOT RECORDED (neutral seed)'}`)
 
-    // Resolve slug
-    const resolvedSlug = (wd?.slug || slug || bi.name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20)).trim()
+    // ── slug ────────────────────────────────────────────────────────────────
+    const resolvedSlug = (wd?.slug || body.slug
+      || (body.business_info?.name || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20)).trim()
     if (!resolvedSlug) {
-      return new Response(JSON.stringify({ error: 'slug or business_info.name is required' }), {
-        status: 400, headers: { 'Content-Type': 'application/json', ...CORS },
-      })
+      return fail(400, 'slug_required', 'slug or business_info.name is required')
     }
 
-    // Resolve admin credentials — wizard data takes priority
-    const resolvedAdminEmail    = (wd ? (wbi.email || admin_email) : admin_email) || ''
-    const resolvedAdminPassword = (wd ? (wd.admin_password || admin_password) : admin_password) || ''
+    const resolvedAdminEmail = (wd ? (wbi.email || body.admin_email) : body.admin_email) || ''
+    const resolvedAdminPassword = (wd ? (wd.admin_password || body.admin_password) : body.admin_password) || ''
 
-    // BUG C: Validate admin email has a dot after @
+    // Admin email must contain a dot after @ before createUser is called.
     if (resolvedAdminEmail) {
       const atIdx = resolvedAdminEmail.indexOf('@')
       const afterAt = atIdx >= 0 ? resolvedAdminEmail.slice(atIdx + 1) : ''
       if (atIdx < 0 || !afterAt.includes('.')) {
-        return new Response(JSON.stringify({ success: false, error: 'Admin email must be a valid address (e.g. admin@company.com)' }), {
-          status: 400, headers: { 'Content-Type': 'application/json', ...CORS },
+        return fail(400, 'admin_email_invalid',
+          'Admin email must be a valid address (e.g. admin@company.com)')
+      }
+    }
+    if (!resolvedAdminEmail || !resolvedAdminPassword) {
+      // The RPC requires an auth_user_id, so this is no longer a "warn and seed
+      // an admin-less tenant" path — it is a rejection.
+      return fail(400, 'admin_credentials_required',
+        'admin_email and admin_password are required — provisioning creates the tenant admin')
+    }
+
+    // Cheap slug pre-check so a duplicate does not cost an orphaned auth user.
+    // The RPC re-checks under the transaction and remains the authority.
+    if (mode === 'create') {
+      const { data: existingTenant } = await supabase
+        .from('tenants').select('id').eq('slug', resolvedSlug).maybeSingle()
+      if (existingTenant) {
+        console.warn(`[provision-tenant] BLOCKED — slug "${resolvedSlug}" already exists (tenant ${existingTenant.id})`)
+        return fail(409, 'slug_exists', 'Tenant slug already exists', {
+          existingSlug: resolvedSlug, suggestion: resolvedSlug + '2',
         })
       }
     }
 
-    // Step 1: Resolve or create tenant row
-    let tenantId = body.tenant_id?.trim() || ''
-    if (!tenantId) {
-      // SAFEGUARD: Refuse to provision if slug already exists — never overwrite an existing tenant
-      const { data: existing } = await supabase
-        .from('tenants')
-        .select('id')
-        .eq('slug', resolvedSlug)
+    // ── prospect-derived inputs, read BEFORE the payload is built ───────────
+    let intake: Record<string, any> | null = null
+    let scrapedContent: Record<string, any> | null = null
+    let rawServiceAreas: string | null = null
+    if (body.prospect_id) {
+      const { data: prosp, error: prospErr } = await supabase
+        .from('prospects')
+        .select('intake_data, scraped_content, service_areas')
+        .eq('id', body.prospect_id)
         .maybeSingle()
-      if (existing) {
-        console.warn(`[provision-tenant] BLOCKED — slug "${resolvedSlug}" already exists (tenant ${existing.id})`)
-        return new Response(JSON.stringify({
-          error: 'Tenant slug already exists',
-          existingSlug: resolvedSlug,
-          suggestion: resolvedSlug + '2',
-        }), { status: 409, headers: { 'Content-Type': 'application/json', ...CORS } })
-      } else {
-        const name = wbi.name || bi.name || resolvedSlug
-        const { data: newTenant, error: tenantError } = await supabase
-          .from('tenants')
-          .insert({ slug: resolvedSlug, name, entitlement })
-          .select('id')
-          .single()
-        if (tenantError || !newTenant) {
-          return new Response(JSON.stringify({ error: 'Failed to create tenant: ' + (tenantError?.message || 'unknown') }), {
-            status: 500, headers: { 'Content-Type': 'application/json', ...CORS },
-          })
-        }
-        tenantId = newTenant.id
+      if (prospErr) {
+        // NOT a catch-and-continue. Seeding from a half-read prospect writes a
+        // tenant that silently lacks its intake data.
+        return fail(500, 'prospect_read_failed', `prospect read failed: ${prospErr.message}`)
       }
-    } else {
-      const name = wbi.name || bi.name || resolvedSlug
-      await supabase.from('tenants').update({ slug: resolvedSlug, name, entitlement }).eq('id', tenantId)
+      intake = (prosp?.intake_data ?? null) as Record<string, any> | null
+      scrapedContent = (prosp?.scraped_content ?? null) as Record<string, any> | null
+      rawServiceAreas = ((prosp as any)?.service_areas ?? null) as string | null
     }
 
-    // Step 2: Create auth user
-    //
-    // S326 — reported back in the success response. Whether a re-provision
-    // touched a live customer's credentials is not something an operator should
-    // have to reconstruct from logs after the fact.
-    let adminPasswordReset = false
-    if (resolvedAdminEmail && resolvedAdminPassword) {
-      const { data: authData, error: createUserError } = await supabase.auth.admin.createUser({
-        email:         resolvedAdminEmail,
-        password:      resolvedAdminPassword,
-        email_confirm: true,
-      })
-
-      // Resolve the user ID — from fresh creation or existing user lookup
-      let resolvedUserId: string | null = authData?.user?.id || null
-      if (createUserError) {
-        if (createUserError.message?.includes('already been registered') || createUserError.message?.includes('already exists')) {
-          console.warn('[provision-tenant] Auth user already exists for email:', resolvedAdminEmail, '— looking up existing user ID')
-          // TODO(S220-backlog): Replace listUsers() with a SECURITY DEFINER RPC
-          // (find_auth_user_id_by_email) when user count exceeds ~100. Current
-          // implementation is O(n). At current scale (<50 users) acceptable.
-          const { data: { users } } = await supabase.auth.admin.listUsers()
-          const existing = users.find((u: any) => u.email === resolvedAdminEmail)
-          resolvedUserId = existing?.id || null
-
-          // S220 B2c: lookup-failed hardening. Previously this only console.error'd
-          // and fell through to provision a tenant with no admin user — silently broken.
-          if (!resolvedUserId) {
-            console.error('[provision-tenant] BLOCKED — gotrue reported user exists but lookup returned no record. Inconsistent auth state.')
-            return new Response(JSON.stringify({
-              success: false,
-              error: `Email ${resolvedAdminEmail} reported as already registered, but lookup returned no user record. Inconsistent auth state — investigate manually before retrying.`,
-            }), { status: 500, headers: { 'Content-Type': 'application/json', ...CORS } })
-          }
-
-          // S220 B2a: Tenant-collision guard. Before mutating an existing user, confirm
-          // they aren't currently admin on a DIFFERENT tenant. If they are, refuse.
-          // Re-provisioning would yank them from their current tenant, invalidate their
-          // active sessions, and change their password without consent — a hijacking
-          // failure mode the validator gate flagged as the highest risk on this fix.
-          const { data: existingProfile, error: profileLookupErr } = await supabase
-            .from('profiles')
-            .select('tenant_id')
-            .eq('id', resolvedUserId)
-            .maybeSingle()
-
-          if (profileLookupErr) {
-            console.error('[provision-tenant] Profile lookup failed during collision check:', profileLookupErr.message)
-            return new Response(JSON.stringify({
-              success: false,
-              error: `Profile lookup failed during collision check: ${profileLookupErr.message}`,
-            }), { status: 500, headers: { 'Content-Type': 'application/json', ...CORS } })
-          }
-
-          if (existingProfile?.tenant_id && existingProfile.tenant_id !== tenantId) {
-            console.error(
-              '[provision-tenant] BLOCKED — tenant collision on existing user:',
-              resolvedAdminEmail,
-              'current_tenant:', existingProfile.tenant_id,
-              'requested_tenant:', tenantId,
-            )
-            return new Response(JSON.stringify({
-              success: false,
-              error: `Email ${resolvedAdminEmail} is already admin on a different tenant (${existingProfile.tenant_id}). Cannot re-provision to ${tenantId}. Use a different admin email, or detach the user from their current tenant first.`,
-              existing_tenant_id: existingProfile.tenant_id,
-              requested_tenant_id: tenantId,
-            }), { status: 409, headers: { 'Content-Type': 'application/json', ...CORS } })
-          }
-
-          // S220 B2b: Password sync. updateUserById writes the credentials-email
-          // password into auth.users. Without this, a customer being provisioned
-          // for the first time on an email that already has an auth user receives
-          // credentials they can't use. Admin route bypasses gotrue confirmation
-          // emails.
-          //
-          // S326 ITEM 1 — NOW OPT-IN. gotrue >=2.149 kills the user's live
-          // sessions on a password change, so this is destructive to anyone
-          // currently signed in. It ran on EVERY re-provision, before any seed
-          // write. `reset_admin_password` must be explicitly true; absent or
-          // false leaves the existing password and sessions alone.
-          if (body.reset_admin_password === true) {
-          console.log('[provision-tenant] password_reset: requested, applying to existing user')
-          const { error: pwSyncErr } = await supabase.auth.admin.updateUserById(
-            resolvedUserId,
-            { password: resolvedAdminPassword }
-          )
-          if (pwSyncErr) {
-            // Differentiate transient (gotrue 5xx) from logic (4xx) errors so
-            // operator knows whether retry is safe. Avoids the retry-loop trap.
-            const status = (pwSyncErr as any).status || 500
-            const isTransient = status >= 500
-            console.error(
-              '[provision-tenant] Password sync failed for existing user:',
-              resolvedAdminEmail,
-              '| status:', status,
-              '| msg:', pwSyncErr.message,
-              '| transient:', isTransient,
-            )
-            return new Response(JSON.stringify({
-              success: false,
-              error: `Password sync failed for existing user: ${pwSyncErr.message}`,
-              transient: isTransient,
-              retry_safe: isTransient,
-            }), { status: 500, headers: { 'Content-Type': 'application/json', ...CORS } })
-          }
-          console.log('[provision-tenant] Password synced for existing user:', resolvedAdminEmail)
-          adminPasswordReset = true
-          } else {
-            // The default path. Say so at INFO: an operator reading the log for a
-            // re-provision should be able to see that the password was left alone,
-            // not have to infer it from the absence of a line.
-            console.log('[provision-tenant] password_reset: skipped (reset_admin_password not true) — existing password and sessions preserved')
-          }
-        } else {
-          console.error('[provision-tenant] createUser failed:', createUserError.message)
-          return new Response(JSON.stringify({
-            success: false,
-            error: `Failed to create admin user: ${createUserError.message}`,
-          }), { status: 500, headers: { 'Content-Type': 'application/json', ...CORS } })
-        }
-      }
-
-      if (resolvedUserId) {
-        const companyName = wbi.name || bi?.name || resolvedSlug
-        // tenant_users — the SSOT for tenant membership + role (S273).
-        const { error: tuError } = await supabase
-          .from('tenant_users')
-          .insert({ tenant_id: tenantId, user_id: resolvedUserId, role: 'admin' })
-        if (tuError && tuError.code !== '23505') {
-          console.error('Failed to insert tenant_users:', tuError.message)
-        }
-        // profiles — display/full_name only. S273: `role` removed (retired column,
-        // dropped in the S273 migration); privilege lives solely in tenant_users.role.
-        // The `user_roles` write is also gone (dead table dropped in S273).
-        const { error: profError } = await supabase
-          .from('profiles')
-          .upsert({ id: resolvedUserId, tenant_id: tenantId, full_name: companyName + ' Admin' }, { onConflict: 'id' })
-        if (profError) console.error('Failed to upsert profiles:', profError.message)
-      }
-    } else {
-      console.warn('Skipping auth user creation — missing email or password')
+    // Legal page templates from the demo tenant. Missing templates are a real
+    // failure now: the old code warned and carried on, which is how four legal
+    // pages could silently not exist.
+    const { data: legalRows, error: legalErr } = await supabase
+      .from('page_content')
+      .select('page_slug, title, intro')
+      .eq('tenant_id', DEMO_TENANT_ID)
+      .in('page_slug', LEGAL_SLUGS)
+    if (legalErr) {
+      return fail(500, 'legal_template_read_failed', `legal template read failed: ${legalErr.message}`)
     }
 
-    // Step 3: Seed all 11 required settings keys using wizard data where available
-    const email = wbi.email || bi.email || ''
-
-    // Resolve subscription tier — store as lowercase string: starter|growth|pro|elite
-    const _toTierStr = (raw: string | number | undefined): string => {
-      if (typeof raw === 'number') {
-        return raw === 4 ? 'elite' : raw === 3 ? 'pro' : raw === 2 ? 'growth' : 'starter'
-      }
-      if (typeof raw === 'string' && raw) {
-        const sl = raw.toLowerCase().trim()
-        if (sl === 'elite') return 'elite'
-        if (sl === 'pro') return 'pro'
-        if (sl === 'growth' || sl === 'grow') return 'growth'
-        if (sl === 'starter') return 'starter'
-      }
-      return 'starter'
-    }
-    const _rawTier = wsub.tier ?? subscription?.tier
-    const _planStr  = wsub.plan_name || subscription?.plan_name || body.plan || ''
-    const tierStr: string = _rawTier != null ? _toTierStr(_rawTier) : (_planStr ? _toTierStr(_planStr) : 'starter')
-    const _tierPrices: Record<string, number> = { starter: 149, growth: 249, pro: 349, elite: 499 }
-    const resolvedPlanName  = tierStr.charAt(0).toUpperCase() + tierStr.slice(1)
-    const resolvedMonthlyPrice = wsub.monthly_price || subscription?.monthly_price || _tierPrices[tierStr] || 149
-
-    // S168.3.2: atomicity helpers — mirror CHECK constraints in settings.business_info
-    const _addrFilled = [wbi.street_address, wbi.address_locality, wbi.address_region, wbi.postal_code]
-      .filter((v: unknown) => v && String(v).trim()).length
-    const _bizAddrKeys = _addrFilled === 4
-      ? { street_address: wbi.street_address, address_locality: wbi.address_locality, address_region: wbi.address_region, postal_code: wbi.postal_code }
-      : {}
-    const _bizGeoKeys = (typeof wbi.latitude === 'number' && typeof wbi.longitude === 'number')
-      ? { latitude: wbi.latitude, longitude: wbi.longitude }
-      : {}
-
-    // S220 B1: Always seed a non-empty timezone. CHECK constraint requires it
-    // whenever hours_structured is later added by customer's admin save.
-    // Resolution priority: explicit wizard tz → wizard/body state → Chicago fallback.
-    const _explicitTz = wbi.timezone
-    const resolvedTimezone: string =
-      (typeof _explicitTz === 'string' && _explicitTz.trim().length > 0)
-        ? _explicitTz.trim()
-        : resolveTimezoneFromState(wbi.address_region || (bi as any).address_region)
-
-    const _bizHoursKeys: Record<string, unknown> =
-      (Array.isArray(wbi.hours_structured) && wbi.hours_structured.length > 0)
-        ? { hours_structured: wbi.hours_structured, timezone: resolvedTimezone }
-        : { timezone: resolvedTimezone }
-
-    const settingsRows = [
-      { tenant_id: tenantId, key: 'business_info', value: {
-        name:            wbi.name            || bi.name    || '',
-        phone:           wbi.phone           || bi.phone   || '',
-        email,
-        address:         wbi.address         || bi.address || '',
-        hours:           wbi.hours           || '',
-        tagline:         wbi.tagline         || bi.tagline || '',
-        // Free text, and it stays free text — but it no longer DEFAULTS to a
-        // trade. An unrecorded industry is '', not 'Pest Control'.
-        industry:          wbi.industry                    || '',
-        // Omitted entirely when not recorded, so the row matches the existing
-        // tenants whose vertical is a real NULL rather than a JSON null.
-        ...(resolvedVertical ? { vertical: resolvedVertical } : {}),
-        license:           wbi.license                    || '',
-        certifications:    wbi.certifications             || '',
-        founded_year:      wbi.founded_year || wbi.year_founded || '',
-        num_technicians:   wbi.num_technicians            || '',
-        owner_name:        wbi.owner_name || bi?.owner_name || '',
-        after_hours_phone: wbi.after_hours_phone          || '',
-        ..._bizAddrKeys,
-        ...(wbi.address_country ? { address_country: wbi.address_country } : {}),
-        ..._bizGeoKeys,
-        ...(wbi.geocode_source ? { geocode_source: wbi.geocode_source } : {}),
-        ..._bizHoursKeys,
-      }},
-      { tenant_id: tenantId, key: 'branding', value: {
-        logo_url:      wbr.logo_url      || branding?.logo_url      || '',
-        favicon_url:   wbr.favicon_url   || branding?.favicon_url   || '',
-        primary_color: wbr.primary_color || branding?.primary_color || '#E87800',
-        accent_color:  wbr.accent_color  || branding?.accent_color  || '#1a1a1a',
-        theme:         wbr.template      || branding?.template      || 'modern-pro',
-        cta_text:      wbr.cta_text      || branding?.cta_text      || 'Get a Free Quote',
-      }},
-      { tenant_id: tenantId, key: 'customization', value: {
-        hero_headline:        wcu.hero_headline        ?? bodyCustomization?.hero_headline ?? (wbi.tagline || bi?.tagline || ''),
-        show_license:         wcu.show_license         ?? bodyCustomization?.show_license         ?? true,
-        show_years:           wcu.show_years           ?? bodyCustomization?.show_years           ?? true,
-        show_technicians:     wcu.show_technicians     ?? bodyCustomization?.show_technicians     ?? true,
-        show_certifications:  wcu.show_certifications  ?? bodyCustomization?.show_certifications  ?? true,
-      }},
-      { tenant_id: tenantId, key: 'social_links', value: {
-        facebook:  wsl.facebook  || social?.facebook  || (body as any).social_facebook  || '',
-        instagram: wsl.instagram || social?.instagram || (body as any).social_instagram || '',
-        google:    wsl.google    || social?.google    || (body as any).social_google    || '',
-        youtube:   wsl.youtube   || social?.youtube   || (body as any).social_youtube   || '',
-      }},
-      // S255: facebook_access_token and textbelt_api_key are Vault secrets — no
-      // longer seeded as empty placeholders here. Until set via set-tenant-secret
-      // they simply don't exist in Vault; the read-path helper raises
-      // VaultSecretMissingError, handled per function as "not configured".
-      // google_maps_api_key is a client-side browser key and intentionally stays
-      // in settings (out of scope for the Vault migration).
-      { tenant_id: tenantId, key: 'integrations', value: {
-        google_place_id:     integrations?.google_place_id || '',
-        google_analytics_id: integrations?.ga4_id          || '',
-        google_maps_api_key: '',
-        owner_sms_number:    (wbi.phone || bi.phone || '').replace(/\D/g, ''),
-        facebook_page_id:    '',
-      }},
-      { tenant_id: tenantId, key: 'onboarding_complete', value: { complete: false } },
-      { tenant_id: tenantId, key: 'hero_media',           value: { master_hero_image_url: '', image_url: '', mode: 'image', url: '', thumbnail_url: '', video_url: '', youtube_id: '' } },
-      { tenant_id: tenantId, key: 'holiday_mode',         value: { enabled: false, holiday: '', message: '', auto_schedule: '' } },
-      { tenant_id: tenantId, key: 'notifications',        value: { cc_email: '', lead_email: resolvedAdminEmail || email } },
-      { tenant_id: tenantId, key: 'demo_mode',            value: { active: false, seeded_at: '' } },
-      { tenant_id: tenantId, key: 'subscription', value: {
-        tier:          tierStr,
-        plan:          tierStr,
-        plan_name:     resolvedPlanName,
-        monthly_price: resolvedMonthlyPrice,
-        status:        'active',
-      }},
-    ]
-
-    // ── S330 SITE 1 — THE SEED MERGES INSTEAD OF REPLACING. ──────────────────────────
+    // ── AI Authority prompt gates (S289/S290), preserved ────────────────────
     //
-    // Every row here was upserted with a FRESHLY BUILT object, which on a re-provision
-    // replaced whatever the owner had since edited. That is the S292 shape, in the
-    // function that runs first, and the re-provision path is reachable: Step 1 supports
-    // `body.tenant_id`, stripe-webhook passes one, and BundleSocialSetup actively told
-    // the operator to use it.
+    // DEMO TENANTS ARE SKIPPED: they are invented businesses with no domain, so
+    // AI Authority pays engines to search the live web for a company that does
+    // not exist and writes confirmed-zero rows that skew any cross-tenant
+    // average. Provisioning creates demo tenants too, so the gate has to live
+    // here rather than in a one-off cleanup.
     //
-    // THE READ IS INSIDE THIS LOOP, not hoisted above it. A value captured before the
-    // read resolves is a whole replacement again with nothing visibly wrong — the same
-    // race businessInfoMerge's resolveBusinessInfoValue exists to remove. mergeSettingsRead
-    // also THROWS on a read error rather than merging into `{}`, because a merge built on
-    // a failed read is a replacement arrived at through the error path.
+    // THE OPERATOR TENANT IS SKIPPED: it is the PestFlow Pro product itself.
+    // The id is NOT hardcoded — public.operator_tenant_id() is the platform's
+    // single declared answer, so a future change of operator tenant is a
+    // one-place change and this follows.
     //
-    // business_info takes the S292 rule ON TOP of the generic one: dropEmptyOverwrites
-    // first (so a blank wizard field cannot blank a real value), then mergeBusinessInfo,
-    // which owns the grouped-key constraints — a partial address quad or a lone latitude
-    // violates business_info_structured_shape and 23514s the whole write.
-    for (const row of settingsRows) {
-      let value: Record<string, unknown>
-      try {
-        if (row.key === 'business_info') {
-          const { data, error: readErr } = await supabase
-            .from('settings').select('value')
-            .eq('tenant_id', tenantId).eq('key', row.key).maybeSingle()
-          if (readErr) throw new Error(`business_info: settings read failed, refusing to write (a merge built on a failed read is a whole replacement) — ${readErr.message}`)
-          const existing = data?.value ?? null
-          value = mergeBusinessInfo(existing, dropEmptyOverwrites(existing, row.value as Record<string, unknown>))
-        } else {
-          value = await mergeSettingsRead(
-            row.key,
-            () => supabase.from('settings').select('value')
-              .eq('tenant_id', tenantId).eq('key', row.key).maybeSingle(),
-            row.value as Record<string, unknown>,
-          )
-        }
-      } catch (mergeErr) {
-        console.error(`Failed to merge ${row.key}:`, (mergeErr as Error)?.message)
-        continue
+    // Only reachable in reprovision mode: a create has no tenant yet, its
+    // demo_mode is seeded { active: false }, and a brand-new id cannot be the
+    // operator tenant.
+    let skipAuthorityPrompts = false
+    if (mode === 'reprovision' && suppliedTenantId) {
+      const { data: demoRow } = await supabase.from('settings').select('value')
+        .eq('tenant_id', suppliedTenantId).eq('key', 'demo_mode').maybeSingle()
+      // `isDemoTenant`, not `=== false`: one live tenant's demo_mode row has
+      // active = NULL, and testing for false would skip a REAL tenant silently.
+      if (isDemoTenant(demoRow?.value)) skipAuthorityPrompts = true
+
+      const { data: operatorId } = await supabase.rpc('operator_tenant_id')
+      if (isOperatorTenant(suppliedTenantId, operatorId)) skipAuthorityPrompts = true
+
+      if (skipAuthorityPrompts) {
+        console.log('[provision-tenant] ai_authority_prompts: skipped (demo or operator tenant)')
       }
-      const { error } = await supabase.from('settings')
-        .upsert({ tenant_id: tenantId, key: row.key, value }, { onConflict: 'tenant_id,key' })
-      if (error) console.error(`Failed to upsert ${row.key}:`, error.message)
     }
 
-    // Step 4: Seed page_content rows — FROM THE VERTICAL, not from a pest block.
+    const resolvedTimezone = (typeof wbi.timezone === 'string' && wbi.timezone.trim())
+      ? wbi.timezone.trim()
+      : resolveTimezoneFromState(wbi.address_region || (body.business_info as any)?.address_region)
+
+    // ── 2. BUILD AND VALIDATE THE PAYLOAD — BEFORE the auth user exists ─────
     //
-    // This used to write a home title of "{name} — Professional Pest Control"
-    // and twelve pest service pages for every tenant on the platform, plus
-    // subtitles asserting things nobody had said: "Licensed & insured
-    // professionals", "Locally owned and operated", "Fast, effective results",
-    // "Comprehensive pest management solutions". All deleted, not reworded —
-    // see supabase/functions/_shared/provisioningSeed.ts.
-    //
-    // An unrecorded vertical seeds the five platform pages and NO service
-    // pages. That is the correct output, and it is what makes an unknown trade
-    // yield nothing rather than yield pest.
-    const businessName = wbi.name || bi?.name || resolvedSlug
-    const heroHeadline = wcu.hero_headline || bodyCustomization?.hero_headline || businessName
-    const pageContentRows = buildPageContentRows({
+    // Order matters and it is the gate's, not a preference: a payload that is
+    // going to be rejected must be rejected BEFORE createUser mints an orphan.
+    // auth_user_id is filled in after, which is why it is passed as '' here and
+    // the built payload is re-stamped below.
+    const built = buildProvisionPayload({
+      mode,
+      slug: resolvedSlug,
+      tenantId: suppliedTenantId || null,
+      authUserId: '',
+      entitlement,
       vertical: resolvedVertical,
-      businessName,
-      heroHeadline,
-    }).map((row) => ({ tenant_id: tenantId, ...row }))
-    for (const row of pageContentRows) {
-      const { error: pcErr } = await supabase.from('page_content').upsert(row, { onConflict: 'tenant_id,page_slug' })
-      if (pcErr) console.error(`Failed to upsert page_content ${row.page_slug}:`, pcErr.message)
-    }
-    console.log(`[provision-tenant] page_content seeded: ${pageContentRows.length} rows (vertical: ${resolvedVertical ?? 'none'})`)
-
-    // Step 5: Overlay page_content with real scraped data (if available on the prospect)
-    if (prospect_id) {
-      try {
-        const { data: prospect } = await supabase
-          .from('prospects')
-          .select('scraped_content')
-          .eq('id', prospect_id)
-          .maybeSingle()
-
-        const sc = prospect?.scraped_content as Record<string, { title?: string; subtitle?: string; intro?: string }> | null
-        if (sc && Object.keys(sc).length > 0) {
-          for (const [slug, pc] of Object.entries(sc)) {
-            if (!pc.title && !pc.intro) continue
-            const { error: scErr } = await supabase.from('page_content').upsert({
-              tenant_id: tenantId,
-              page_slug: slug,
-              title:    pc.title    || undefined,
-              subtitle: pc.subtitle || undefined,
-              intro:    pc.intro    || undefined,
-            }, { onConflict: 'tenant_id,page_slug' })
-            if (scErr) console.error(`scraped page_content upsert failed for ${slug}:`, scErr.message)
-          }
-          console.log(`Seeded ${Object.keys(sc).length} page_content rows from scraped_content`)
-        }
-      } catch (scrapedErr: any) {
-        console.error('scraped_content seeding failed (non-fatal):', scrapedErr?.message)
-      }
-    }
-
-    // Step 7: Mark onboarding session as consumed
-    if (onboarding_session_id && wd) {
-      await supabase
-        .from('onboarding_sessions')
-        .update({ consumed: true })
-        .eq('id', onboarding_session_id)
-    }
-
-    // Step 8: Create Zernio profile for social media posting (non-fatal)
-    try {
-      const ZERNIO_API_KEY = Deno.env.get('ZERNIO_API_KEY')
-      if (!ZERNIO_API_KEY) {
-        // S326 ITEM 3 — THE SILENT SKIP, MADE OBSERVABLE.
-        //
-        // This branch did nothing at all, with no log line. The Zernio step
-        // postdates every existing tenant by four days, so it has never run for
-        // anyone, and whether the secret is even set would first have been
-        // discovered by a client clicking Connect and getting
-        // "No Zernio profile found. Contact support."
-        //
-        // ALLOWLISTED STATUS ONLY. No key, no fragment of a key, no upstream
-        // body — S313's lesson, where a raw Resend error body echoed a
-        // recipient's address into function logs.
-        console.warn('[provision-tenant] zernio_profile: skipped — reason=not_configured step=create_profile tenant_id=' + tenantId)
-        const { data: intgForSkip } = await supabase
-          .from('settings').select('value')
-          .eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle()
-        const { error: skipMarkErr } = await supabase
-          .from('settings')
-          .update({ value: { ...stripVaultSecrets((intgForSkip?.value ?? {}) as Record<string, unknown>), zernio_last_error: 'not_configured' } })
-          .eq('tenant_id', tenantId).eq('key', 'integrations')
-        if (skipMarkErr) console.error('[provision-tenant] zernio_profile: failed to record not_configured marker:', skipMarkErr.message)
-      }
-      if (ZERNIO_API_KEY) {
-        const zernioRes = await fetch('https://zernio.com/api/v1/profiles', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${ZERNIO_API_KEY}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: businessName || resolvedSlug,
-            description: `${PLATFORM_NAME} tenant: ${resolvedSlug}`,
-          }),
-        })
-        const zernioData = await zernioRes.json()
-        console.log('[provision-tenant] Zernio raw response:', JSON.stringify(zernioData))
-        // Zernio may return profile._id, profile.id, or id at root
-        const zernioProfileId: string | undefined =
-          zernioData?.profile?._id || zernioData?.profile?.id || zernioData?.id || zernioData?._id
-
-        if (zernioProfileId) {
-          console.log(`[provision-tenant] Zernio profile created: ${zernioProfileId}`)
-          const { data: existingIntg } = await supabase
-            .from('settings')
-            .select('value')
-            .eq('tenant_id', tenantId)
-            .eq('key', 'integrations')
-            .maybeSingle()
-          const currentIntg = existingIntg?.value ?? {}
-          const { error: zernioSaveErr } = await supabase
-            .from('settings')
-            // zernio_last_error cleared on success, mirroring how outscraper-reviews
-            // nulls outscraper_last_error when a sync succeeds. Without this, a
-            // tenant provisioned before the secret was set would keep reading
-            // "not configured" forever after it was.
-            // S330 SITE 3 — through stripVaultSecrets, like every sibling writer.
-            // This was the ONLY integrations writer that skipped it. The database's
-            // trg_strip_settings_secrets trigger already removes the same four Vault keys
-            // on every INSERT and UPDATE, so this is defence in depth rather than a live
-            // hole — but relying on the trigger alone means a write that DOES carry a
-            // secret raises a WARNING and files a settings_secret_leak_obs row on every
-            // provision, and the next writer added here would inherit the omission.
-            //
-            // A PLAIN SPREAD, NOT mergeSettingsValue — and that is deliberate.
-            // `zernio_last_error: null` is a DELIBERATE CLEAR: it exists so a tenant
-            // provisioned before the secret was set stops reading "not configured" once
-            // it is. mergeSettingsValue treats null as an empty overlay value and would
-            // refuse to let it overwrite a non-empty existing error, which would break
-            // exactly the clearing this line is for. That helper is for SEED overlays,
-            // where empty means "the operator left it blank"; it is not a clear channel.
-            .update({ value: { ...stripVaultSecrets(currentIntg as Record<string, unknown>), zernio_profile_id: zernioProfileId, zernio_last_error: null } })
-            .eq('tenant_id', tenantId)
-            .eq('key', 'integrations')
-          if (zernioSaveErr) console.error('[provision-tenant] Failed to save zernio_profile_id:', zernioSaveErr.message)
-        } else {
-          console.warn('[provision-tenant] Zernio profile creation returned no ID:', JSON.stringify(zernioData))
-        }
-      }
-    } catch (zernioErr: any) {
-      console.error('Zernio profile creation failed (non-fatal):', zernioErr?.message)
-    }
-
-    // Step 9: Seed from intake_data (non-fatal)
-    if (prospect_id) {
-      try {
-        const { data: prosp } = await supabase
-          .from('prospects')
-          .select('intake_data, company_name, service_areas')
-          .eq('id', prospect_id)
-          .maybeSingle()
-
-        const intake = prosp?.intake_data as Record<string, any> | null
-        const ib = intake?.business || {}
-        const city  = (ib.city  || '').trim()
-        const state = (ib.state || '').trim()
-        const bizForSeo = ib.business_name || businessName
-
-        // 9a: Overlay business_info with intake data
-        // S168.3.2 note: 10 structured keys flow through via ...currentBi spread.
-        // No explicit mapping needed here — primary seed at ~line 208 handles them.
-        if (city || state || ib.zip || ib.address || ib.business_name || ib.phone || ib.email || ib.hours || ib.tagline || ib.owner_name || ib.founded_year || ib.license_number || ib.num_technicians) {
-          const { data: existingBiRow } = await supabase.from('settings').select('value')
-            .eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle()
-          const currentBi = existingBiRow?.value ?? {}
-          const fullAddress = [ib.address, city, state, ib.zip].filter(Boolean).join(', ')
-          await supabase.from('settings').update({
-            value: {
-              ...currentBi,
-              ...(ib.business_name    ? { name:            ib.business_name }    : {}),
-              ...(ib.phone            ? { phone:           ib.phone }            : {}),
-              ...(ib.email            ? { email:           ib.email }            : {}),
-              ...(fullAddress         ? { address:         fullAddress }         : {}),
-              ...(ib.hours            ? { hours:           ib.hours }            : {}),
-              ...(ib.tagline          ? { tagline:         ib.tagline }          : {}),
-              ...(ib.owner_name       ? { owner_name:      ib.owner_name }       : {}),
-              ...(ib.founded_year     ? { founded_year:    ib.founded_year }     : {}),
-              ...(ib.license_number   ? { license:         ib.license_number }   : {}),
-              ...(ib.num_technicians  ? { num_technicians: ib.num_technicians }  : {}),
-            }
-          }).eq('tenant_id', tenantId).eq('key', 'business_info')
-          console.log('[provision-tenant] business_info overlaid from intake_data')
-        }
-
-        // 9a-br: Overlay branding with intake_data.branding (logo, colors, template)
-        const ib_br = (intake?.branding || {}) as Record<string, any>
-        if (ib_br.logo_url || ib_br.primary_color || ib_br.accent_color || ib_br.template || ib_br.cta_text) {
-          const { data: existingBrRow } = await supabase.from('settings').select('value')
-            .eq('tenant_id', tenantId).eq('key', 'branding').maybeSingle()
-          const currentBr = existingBrRow?.value ?? {}
-          await supabase.from('settings').update({
-            value: {
-              ...currentBr,
-              ...(ib_br.logo_url      ? { logo_url:      ib_br.logo_url }      : {}),
-              ...(ib_br.primary_color ? { primary_color: ib_br.primary_color } : {}),
-              ...(ib_br.accent_color  ? { accent_color:  ib_br.accent_color }  : {}),
-              ...(ib_br.template      ? { theme:         ib_br.template }      : {}),
-              ...(ib_br.cta_text      ? { cta_text:      ib_br.cta_text }      : {}),
-            }
-          }).eq('tenant_id', tenantId).eq('key', 'branding')
-          console.log('[provision-tenant] branding overlaid from intake_data')
-        }
-
-        // 9b: Seed SEO settings key — service_areas written as [] placeholder;
-        // will be overwritten by the projection step (9f) after table rows are seeded.
-        //
-        // The old fallback read "Professional pest control services by X.
-        // Serving {area} and surrounding areas." — a trade nobody recorded and
-        // a coverage claim nobody made. Both are now derived or omitted.
-        const seoSeed = buildSeoSettings({
-          vertical: resolvedVertical,
-          businessName: bizForSeo,
-          city, state,
-          tagline: ib.tagline ?? '',
-        })
-        // ── S330 SITE 2 — `seo` MERGES. ────────────────────────────────────────────
-        //
-        // This dropped every seo key that was not one of these three. `seo.noindex` is
-        // LIVE AND LOAD-BEARING right now — pls carries `false`, and that boolean is what
-        // makes a paying client's site indexable. A replace that drops it, or re-adds it
-        // with the wrong value, changes their search visibility silently.
-        //
-        // A shallow merge is exactly right here and nothing deeper is needed: noindex
-        // survives because the overlay never names it, and it is NOT invented when absent
-        // because a merge only writes keys the overlay carries.
-        //
-        // `service_areas: []` is a placeholder this function expects step 9f to repair
-        // from the table. dropEmptyOverwrites treats an empty array as empty, so on a
-        // re-provision it will not wipe a populated list if 9f is skipped or fails — and
-        // 9f is the ONLY hard abort in this function, so "it will always run" is not an
-        // assumption worth making.
-        try {
-          const seoValue = await mergeSettingsRead(
-            'seo',
-            () => supabase.from('settings').select('value')
-              .eq('tenant_id', tenantId).eq('key', 'seo').maybeSingle(),
-            {
-              meta_description: seoSeed.meta_description,
-              service_areas: [],
-              focus_keyword: seoSeed.focus_keyword,
-            },
-          )
-          await supabase.from('settings').upsert(
-            { tenant_id: tenantId, key: 'seo', value: seoValue },
-            { onConflict: 'tenant_id,key' }
-          )
-        } catch (seoMergeErr) {
-          console.error('[provision-tenant] seo merge skipped:', (seoMergeErr as Error)?.message)
-        }
-
-        // 9b-seo: Per-page SEO meta on page_content rows.
-        //
-        // Every string this used to write asserted something invented:
-        // "Licensed technicians, fast response, guaranteed results. Call for a
-        // free quote.", "Family-owned, fully licensed and insured.", "Fast,
-        // effective, guaranteed.", "Free inspections available." Gone.
-        const pageSeoMap = buildPageSeoMeta({
-          vertical: resolvedVertical,
-          businessName: bizForSeo,
-          city, state,
-          phone: ib.phone || '',
-        })
-        for (const pageSlug of Object.keys(pageSeoMap)) {
-          const seo = pageSeoMap[pageSlug]
-          await supabase.from('page_content').update({ meta_title: seo.meta_title, meta_description: seo.meta_description })
-            .eq('tenant_id', tenantId).eq('page_slug', pageSlug)
-        }
-        console.log(`[provision-tenant] per-page SEO meta seeded: ${Object.keys(pageSeoMap).length} pages`)
-
-        // 9c: Seed service_areas from normalized prospect.service_areas (is_live=true),
-        // then supplement with zip-prefix nearby cities (is_live=false).
-
-        // 9c-sa: Normalize the CRM service_areas field and upsert accepted rows as live
-        const rawServiceAreas = (prosp as any)?.service_areas as string | null ?? null
-        const { accepted: saAccepted, rejected: saRejected } = normalizeAll(rawServiceAreas)
-        if (saRejected.length > 0) {
-          console.warn('[provision-tenant] rejected service_areas tokens:', JSON.stringify(saRejected))
-        }
-        for (const norm of saAccepted) {
-          const { error: saErr } = await supabase.from('service_areas').upsert({
-            tenant_id:  tenantId,
-            city:       norm.city,
-            slug:       norm.slug,
-            state:      norm.state,
-            hero_title: buildServiceAreaHeroTitle(resolvedVertical, norm.city),
-            is_live:    true,
-          }, { onConflict: 'tenant_id,slug' })
-          if (saErr) console.error(`[provision-tenant] service_areas upsert failed (${norm.city}):`, saErr.message)
-        }
-        console.log(`[provision-tenant] service_areas seeded: ${saAccepted.length} live cities from CRM field`)
-
-        // 9c-zip: Supplement with zip-prefix nearby cities (is_live=false) so the
-        // client has draft pages ready to activate after reveal call.
-        if (city) {
-          const ZIP_CITIES: Record<string, string[]> = {
-            '787': ['Austin', 'Round Rock', 'Cedar Park', 'Georgetown', 'Pflugerville', 'Kyle', 'Buda'],
-            '786': ['Austin', 'Round Rock', 'Cedar Park', 'Georgetown', 'Pflugerville', 'Kyle', 'Buda'],
-            '756': ['Tyler', 'Longview', 'Jacksonville', 'Lindale', 'Bullard', 'Whitehouse'],
-            '757': ['Tyler', 'Longview', 'Jacksonville', 'Lindale', 'Bullard', 'Whitehouse'],
-            '770': ['Houston', 'Sugar Land', 'Pearland', 'Pasadena', 'League City', 'Friendswood', 'Missouri City'],
-            '771': ['Houston', 'Sugar Land', 'Pearland', 'Pasadena', 'League City', 'Friendswood', 'Missouri City'],
-            '752': ['Dallas', 'Plano', 'Richardson', 'Garland', 'Irving', 'Mesquite', 'Arlington'],
-            '750': ['Dallas', 'Plano', 'Richardson', 'Garland', 'Irving', 'Mesquite', 'Arlington'],
-            '760': ['Fort Worth', 'Arlington', 'Hurst', 'Euless', 'Bedford', 'Keller', 'Grapevine'],
-            '761': ['Fort Worth', 'Arlington', 'Hurst', 'Euless', 'Bedford', 'Keller', 'Grapevine'],
-            '782': ['San Antonio', 'Schertz', 'Seguin', 'New Braunfels', 'Boerne', 'Converse', 'Universal City'],
-            '783': ['San Antonio', 'Schertz', 'Seguin', 'New Braunfels', 'Boerne', 'Converse', 'Universal City'],
-            '850': ['Phoenix', 'Scottsdale', 'Tempe', 'Mesa', 'Chandler', 'Gilbert', 'Glendale'],
-            '852': ['Phoenix', 'Scottsdale', 'Tempe', 'Mesa', 'Chandler', 'Gilbert', 'Glendale'],
-          }
-          const zipRaw = (ib.zip || '').toString().trim()
-          const zipPrefix = zipRaw.length >= 3 ? zipRaw.slice(0, 3) : ''
-          const citiesForArea: string[] = zipPrefix && ZIP_CITIES[zipPrefix]
-            ? ZIP_CITIES[zipPrefix]
-            : [city]
-          const allZipCities = citiesForArea.includes(city) ? citiesForArea : [city, ...citiesForArea]
-
-          // Draft cities carried the worst of it: "Professional pest control
-          // services in {c}. Licensed, insured, and locally trusted." — a trade,
-          // a licence, insurance and a reputation, for a city the tenant has not
-          // even confirmed they serve. All three now come from the vertical, and
-          // an unrecorded vertical yields the city name alone.
-          for (const c of allZipCities) {
-            const cSlug = c.toLowerCase().replace(/[^a-z0-9]+/g, '-') + (state ? '-' + state.toLowerCase() : '-tx')
-            const cState = (state || 'TX').toUpperCase()
-            const cSeo = buildServiceAreaSeo(resolvedVertical, c, cState, bizForSeo)
-            await supabase.from('service_areas').upsert({
-              tenant_id:        tenantId,
-              city:             c,
-              slug:             cSlug,
-              state:            cState,
-              hero_title:       buildServiceAreaHeroTitle(resolvedVertical, c),
-              is_live:          false,
-              meta_title:       cSeo.meta_title,
-              meta_description: cSeo.meta_description,
-              focus_keyword:    cSeo.focus_keyword,
-            }, { onConflict: 'tenant_id,slug', ignoreDuplicates: true })
-          }
-          console.log(`[provision-tenant] zip-prefix draft cities seeded: ${allZipCities.length} (zip prefix: ${zipPrefix || 'none'})`)
-        }
-
-        // 9d–9f: Derive JSONB projection from all live rows and update settings.seo.service_areas
-        const { data: allSaRows } = await supabase
-          .from('service_areas')
-          .select('city, is_live')
-          .eq('tenant_id', tenantId)
-        const saProjection = buildJsonbProjection(allSaRows ?? [])
-        const { data: seoRow } = await supabase.from('settings').select('value')
-          .eq('tenant_id', tenantId).eq('key', 'seo').maybeSingle()
-        const currentSeoValue = (seoRow?.value ?? {}) as Record<string, unknown>
-        const { error: seoUpdateErr } = await supabase.from('settings').update({
-          value: { ...currentSeoValue, service_areas: saProjection },
-        }).eq('tenant_id', tenantId).eq('key', 'seo')
-        if (seoUpdateErr) {
-          console.error('[provision-tenant] CRITICAL: seo.service_areas update failed:', seoUpdateErr.message)
-          return new Response(JSON.stringify({ success: false, error: `seo.service_areas update failed: ${seoUpdateErr.message}` }), {
-            status: 500, headers: { 'Content-Type': 'application/json', ...CORS },
-          })
-        }
-        console.log(`[provision-tenant] seo.service_areas JSONB updated: ${saProjection.length} cities`)
-
-        // ── 9g: AI Authority prompts (S289) ──────────────────────────────────
-        // ai_authority_prompts had rows for ONE tenant. Nothing ever created
-        // them, so every other tenant's AI Authority ran and produced nothing.
-        //
-        // UN-GATED IN S290. This was written behind `if (vertical)` because
-        // provisioning could not be trusted to know the trade: it wrote no
-        // vertical at all and seeded pest page_content for everyone, so
-        // deriving service phrases from those rows would have handed an
-        // irrigation tenant a set of pest search queries. Both halves are now
-        // fixed above — the vertical is recorded at Step 3 and page_content is
-        // seeded from it — so the derivation is sound and the branch is live
-        // rather than permanently false.
-        //
-        // The vertical check REMAINS, and still does real work: an unrecorded
-        // vertical seeds no service pages, so there is nothing to derive from
-        // and the branded query is the whole correct output.
-        //
-        // Failure here NEVER fails provisioning: a tenant without prompts is the
-        // status quo for all nine existing tenants.
-        try {
-          // DEMO TENANTS ARE SKIPPED. Five of the nine live tenants are invented
-          // businesses with no domain; AI Authority for them pays engines to
-          // search the live web for a company that does not exist, and writes
-          // confirmed-zero snapshot rows that would skew any cross-tenant
-          // average. Provisioning creates demo tenants too, so without this gate
-          // the next demo set recreates the problem.
-          //
-          // `!== true`, NOT `=== false`: one live tenant's demo_mode row has
-          // active = NULL. Testing for false would skip a REAL tenant silently —
-          // the same NULL trap as `vertical`.
-          const { data: demoRow } = await supabase.from('settings').select('value')
-            .eq('tenant_id', tenantId).eq('key', 'demo_mode').maybeSingle()
-          const isDemo = isDemoTenant(demoRow?.value)
-
-          // OPERATOR GATE. This function is reachable with an existing
-          // body.tenant_id (Step 1's else-branch updates rather than creates),
-          // so re-provisioning the operator tenant is a real path, not a
-          // hypothetical one. The operator tenant is the PestFlow Pro product
-          // itself; its page_content is pest demo scaffolding, so seeding from
-          // it would have the platform tracking whether a SaaS product is the
-          // best pest control company in Tyler.
-          //
-          // The id is NOT hardcoded here. public.operator_tenant_id() (S273) is
-          // the platform's single declared answer, already gating
-          // provisioning_status RLS; deferring to it means a future change of
-          // operator tenant is a one-place change and this follows.
-          const { data: opId, error: opErr } = await supabase.rpc('operator_tenant_id')
-          const operatorTenantId = typeof opId === 'string' ? opId : null
-          const isOperator = isOperatorTenant(tenantId, operatorTenantId)
-
-          if (opErr || !operatorTenantId) {
-            // Unknown operator => cannot prove this tenant is not it. Skipping
-            // leaves the tenant in the state it is already in (no prompts);
-            // seeding anyway could write trade queries for the product itself.
-            console.error('[provision-tenant] ai_authority_prompts: SKIPPED — operator_tenant_id() unresolved:', opErr?.message ?? 'null')
-          } else if (isDemo) {
-            console.log('[provision-tenant] ai_authority_prompts: skipped (demo tenant)')
-          } else if (isOperator) {
-            console.log('[provision-tenant] ai_authority_prompts: skipped (operator tenant)')
-          } else {
-
-          const { data: biForPrompts } = await supabase.from('settings').select('value')
-            .eq('tenant_id', tenantId).eq('key', 'business_info').maybeSingle()
-          const biVal = (biForPrompts?.value ?? {}) as Record<string, unknown>
-          const vertical = typeof biVal.vertical === 'string' ? biVal.vertical : null
-          const addr = typeof biVal.address === 'string' ? biVal.address : ''
-          const cityMatch = addr.match(/,\s*([^,]+),?\s*([A-Z]{2})\b/)
-
-          // Service slugs come from the tenant's OWN page_content rows, not from
-          // a hardcoded list — but only once a vertical says those rows are the
-          // right ones. Empty vertical => empty slugs => branded query only.
-          let serviceSlugs: string[] = []
-          if (vertical) {
-            const { data: pcRows } = await supabase.from('page_content')
-              .select('page_slug').eq('tenant_id', tenantId)
-            // SEED_PLATFORM_SLUGS, not a fourth local copy of the same list.
-            // Step 4 seeds from that module, so what counts as a service page
-            // here cannot drift from what was actually written.
-            serviceSlugs = (pcRows ?? []).map((r: { page_slug: string }) => r.page_slug)
-              .filter((sl: string) => SEED_PLATFORM_SLUGS.indexOf(sl) === -1)
-          }
-
-          // LIVE ROWS ONLY, and in a stable order.
-          //
-          // is_live: 9c-zip above seeds up to seven DRAFT cities (is_live=false)
-          // guessed from the zip prefix — a Tyler tenant gets Longview,
-          // Jacksonville, Lindale, Bullard and Whitehouse whether or not it
-          // works there. They exist so the client has pages ready to activate
-          // after the reveal call; they are not confirmed service areas, and
-          // paying live engines to track a tenant's ranking in a city it may
-          // not serve is the same defect as drawing the wrong cities for pls.
-          //
-          // order: PostgREST returns rows in no guaranteed order without one, so
-          // without this the generator's determinism (which the tests pin) would
-          // hold for its inputs while the inputs themselves varied per run.
-          const { data: saForPrompts } = await supabase.from('service_areas')
-            .select('city, state').eq('tenant_id', tenantId).eq('is_live', true)
-            .order('city', { ascending: true })
-
-          const prompts = generateAuthorityPrompts({
-            businessName: businessName || '',
-            city: cityMatch ? cityMatch[1].trim() : '',
-            state: cityMatch ? cityMatch[2].trim() : '',
-            serviceAreas: (saForPrompts ?? []) as Array<{ city: string; state: string | null }>,
-            serviceSlugs,
-          })
-
-          if (prompts.length > 0) {
-            // S326 ITEM 2 — UPSERT, not INSERT. This was a plain insert against a
-            // table whose only constraint is PRIMARY KEY (id), so a re-provision
-            // wrote a SECOND FULL COPY of every prompt for that tenant. No tenant
-            // carries duplicates today only because nothing has been re-provisioned
-            // since S289 added the insert — scheduling luck, not a guard.
-            //
-            // onConflict names ai_authority_prompts_tenant_prompt_key, added in the
-            // untimestamped migration shipped with this change. ignoreDuplicates:
-            // a prompt that already exists is left exactly as it is, including its
-            // `active` flag — re-provisioning must not silently re-enable a prompt
-            // the operator turned off.
-            const { error: apErr } = await supabase.from('ai_authority_prompts')
-              .upsert(
-                prompts.map((prompt_text) => ({ tenant_id: tenantId, prompt_text, active: true })),
-                { onConflict: 'tenant_id,prompt_text', ignoreDuplicates: true },
-              )
-            if (apErr) console.error('[provision-tenant] ai_authority_prompts seed failed (non-fatal):', apErr.message)
-            else console.log(`[provision-tenant] ai_authority_prompts seeded: ${prompts.length} (vertical: ${vertical ?? 'unrecorded'})`)
-          } else {
-            console.log('[provision-tenant] ai_authority_prompts: nothing to seed (no name, no vertical, no locations)')
-          }
-
-          } // end gates: operator resolved, not demo, not operator
-        } catch (e) {
-          console.error('[provision-tenant] ai_authority_prompts seed threw (non-fatal):', (e as Error)?.message)
-        }
-
-        // 9d: Seed 3 starter blog posts — PEST ONLY.
-        //
-        // The fifth pest block in this function, and the one that cannot be
-        // fixed by a preset: these are authored articles, not labels. "Top 5
-        // Signs You Have a Pest Problem" published under a pool company's byline
-        // is the same defect as the pest page titles, but writing irrigation
-        // equivalents means writing content, which is a brief of its own.
-        //
-        // So they are gated on the trade they are actually about. A tenant of
-        // any other vertical gets NO starter posts, which is the honest state —
-        // an empty blog, not someone else's blog. Reported in the PR.
-        if (resolvedVertical === 'pest') {
-        const postNow = new Date().toISOString()
-        const day7ago = new Date(Date.now() - 7  * 86400000).toISOString()
-        const day14ago= new Date(Date.now() - 14 * 86400000).toISOString()
-        const starterPosts = [
-          { tenant_id: tenantId, title: 'Top 5 Signs You Have a Pest Problem', slug: 'top-5-signs-pest-problem',
-            excerpt: 'Early detection is the key to stopping a pest problem before it becomes a full infestation.',
-            content: '<p>Early detection is the key to stopping a pest problem before it becomes a full infestation. Here are the top signs to watch for in your home...</p>',
-            published_at: postNow },
-          { tenant_id: tenantId, title: 'How to Prevent Pests This Season', slug: 'seasonal-pest-prevention-tips',
-            excerpt: 'Seasonal changes bring new pest activity. These simple steps can keep your home protected year-round.',
-            content: '<p>Every season brings different pest pressures. Here\'s how to stay ahead of them with simple preventive measures around your home...</p>',
-            published_at: day7ago },
-          { tenant_id: tenantId, title: 'Why Professional Pest Control Beats DIY', slug: 'professional-vs-diy-pest-control',
-            excerpt: 'DIY products can reduce pest activity temporarily — but rarely eliminate the root cause.',
-            content: '<p>Store-bought sprays and traps can temporarily reduce pest activity, but they rarely eliminate the root cause. Professional pest control delivers better, longer-lasting results...</p>',
-            published_at: day14ago },
-        ]
-        for (const post of starterPosts) {
-          const { error: blogErr } = await supabase.from('blog_posts').upsert(post, { onConflict: 'tenant_id,slug' })
-          if (blogErr) console.error(`[provision-tenant] blog_posts upsert failed (${post.slug}):`, blogErr.message)
-        }
-        console.log('[provision-tenant] 3 starter blog posts seeded (pest)')
-        } else {
-          console.log(`[provision-tenant] starter blog posts skipped — no articles exist for vertical '${resolvedVertical ?? 'unrecorded'}'`)
-        }
-
-        // 9e: Advance prospect stage to it_in_progress
-        await supabase.from('prospects').update({ pipeline_stage: 'it_in_progress' }).eq('id', prospect_id)
-        console.log('[provision-tenant] prospect stage → it_in_progress')
-
-        // Step 9g — Seed legal page_content from master template (non-blocking)
-        try {
-          const MASTER_TENANT_ID = '9215b06b-3eb5-49a1-a16e-7ff214bf6783'
-          const LEGAL_SLUGS = ['terms', 'privacy', 'sms-terms', 'accessibility']
-          const { data: templates, error: templateErr } = await supabase
-            .from('page_content')
-            .select('page_slug, title, intro')
-            .eq('tenant_id', MASTER_TENANT_ID)
-            .in('page_slug', LEGAL_SLUGS)
-
-          if (templateErr || !templates || templates.length === 0) {
-            console.warn('[provision-tenant] Step 9g: master legal templates missing, skipping legal seed')
-          } else {
-            const newDomain = `${resolvedSlug}.pestflowpro.com`
-            const newName = ib.business_name || 'Your Business'
-            const newNameUpper = newName.toUpperCase()
-            const newEmail = ib.email || `info@${newDomain}`
-            const phoneDigits = (ib.phone || '').replace(/\D/g, '')
-            const newPhone = phoneDigits.length === 10
-              ? `(${phoneDigits.slice(0, 3)}) ${phoneDigits.slice(3, 6)}-${phoneDigits.slice(6)}`
-              : (ib.phone || '')
-
-            const seedRows = templates.map((t: { page_slug: string; title: string; intro: string }) => ({
-              tenant_id: tenantId,
-              page_slug: t.page_slug,
-              title: t.title,
-              // S317 — DO NOT REPLACE THESE WITH PLATFORM_NAME. These are not
-              // copy; they are SEARCH PATTERNS matched against the seeded
-              // template rows, which literally contain "PestFlow Pro", the .com
-              // address and the old phone number. Swapping the needle for
-              // HomeFlow Pro stops it matching, and every newly provisioned
-              // tenant silently keeps the demo text. The sibling lines matching
-              // pestflowpro.com and (430) 367-5601 are the same kind of thing.
-              intro: t.intro
-                .replaceAll('PestFlow Pro, LLC', `${newName}, LLC`)
-                .replaceAll('PESTFLOW PRO, LLC', `${newNameUpper}, LLC`)
-                .replaceAll('PestFlow Pro', newName)
-                .replaceAll('PESTFLOW PRO', newNameUpper)
-                .replaceAll('sales@pestflowpro.com', newEmail)
-                .replaceAll('https://pestflowpro.com/', `https://${newDomain}/`)
-                .replaceAll('https://pestflowpro.com', `https://${newDomain}`)
-                .replaceAll('pestflowpro.com', newDomain)
-                .replaceAll('(430) 367-5601', newPhone),
-            }))
-
-            const { error: insertErr } = await supabase
-              .from('page_content')
-              .upsert(seedRows, { onConflict: 'tenant_id,page_slug' })
-
-            if (insertErr) {
-              console.warn('[provision-tenant] Step 9g: legal seed insert failed:', insertErr.message)
-            } else {
-              console.log(`[provision-tenant] Step 9g: ${seedRows.length} legal page_content rows seeded`)
-            }
-          }
-        } catch (err: any) {
-          console.warn('[provision-tenant] Step 9g: unexpected error during legal seed:', err?.message)
-        }
-
-      } catch (intakeErr: any) {
-        console.error('[provision-tenant] intake seeding failed (non-fatal):', intakeErr?.message)
-      }
-    }
-
-    const liveUrl = `https://${resolvedSlug}.pestflowpro.com`
-    // Step 10: Fire-and-forget initial Outscraper sync (non-blocking)
-    try {
-      const { data: intgRow } = await supabase
-        .from('settings').select('value').eq('tenant_id', tenantId).eq('key', 'integrations').maybeSingle()
-      const intg = intgRow?.value ?? {}
-      const hasGoogleId = !!(
-        (intg.google_cid      && String(intg.google_cid).trim())      ||
-        (intg.google_fid      && String(intg.google_fid).trim())      ||
-        (intg.google_place_id && String(intg.google_place_id).trim())
-      )
-      if (hasGoogleId) {
-        const { data: vaultRow } = await supabase.schema('vault').from('decrypted_secrets')
-          .select('decrypted_secret').eq('name', 'outscraper_cron_internal_secret').maybeSingle()
-        const cronSecret = (vaultRow as any)?.decrypted_secret
-        if (cronSecret) {
-          fetch(`${SUPABASE_URL}/functions/v1/outscraper-reviews`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'apikey': cronSecret },
-            body: JSON.stringify({ tenant_id: tenantId, mode: 'initial' }),
-          }).catch((err: Error) =>
-            console.warn('[provision-tenant] Outscraper fire-and-forget failed (non-fatal):', err?.message),
-          )
-          console.log('[provision-tenant] Outscraper initial sync fired for tenant:', tenantId)
-        }
-      }
-    } catch (outscraperFireErr: any) {
-      console.warn('[provision-tenant] Outscraper fire-and-forget setup failed (non-fatal):', outscraperFireErr?.message)
-    }
-    return new Response(JSON.stringify({ success: true, tenant_id: tenantId, slug: resolvedSlug, url: liveUrl, admin_password_reset: adminPasswordReset }), {
-      headers: { 'Content-Type': 'application/json', ...CORS },
+      wizard: {
+        business_info: wd?.business_info, branding: wd?.branding,
+        customization: wd?.customization, social_links: wd?.social_links,
+        subscription: wd?.subscription,
+      },
+      body: {
+        business_info: body.business_info, branding: body.branding,
+        customization: body.customization, social_links: body.social_links,
+        integrations: body.integrations, subscription: body.subscription,
+        plan: body.plan,
+        social_facebook: (body as any).social_facebook,
+        social_instagram: (body as any).social_instagram,
+        social_google: (body as any).social_google,
+        social_youtube: (body as any).social_youtube,
+      },
+      adminEmail: resolvedAdminEmail,
+      resolvedTimezone,
+      intake,
+      scrapedContent,
+      rawServiceAreas,
+      legalTemplates: (legalRows ?? []) as Array<{ page_slug: string; title: string; intro: string }>,
+      prospectId: body.prospect_id ?? null,
+      onboardingSessionId: body.onboarding_session_id ?? null,
+      skipAuthorityPrompts,
+      queueZernio: true,
+      // Mirrors old step 10's precondition: outscraper-reviews needs a Google
+      // identifier to sync against. google_place_id is the only one provisioning
+      // seeds; cid/fid arrive later via the admin.
+      queueOutscraper: String(body.integrations?.google_place_id ?? '').trim() !== '',
     })
+
+    if (!built.ok) {
+      console.error(`[provision-tenant] REJECTED — ${built.code}: ${built.error}`)
+      return fail(built.status, built.code, built.error)
+    }
+    if (built.rejectedAreaTokens.length > 0) {
+      console.warn('[provision-tenant] rejected service_areas tokens:', JSON.stringify(built.rejectedAreaTokens))
+    }
+
+    // ── 3. CREATE THE GOTRUE USER — outside the transaction, forced by the FK ─
+    const authRes = await resolveAuthUser(supabase, {
+      email: resolvedAdminEmail,
+      password: resolvedAdminPassword,
+      suppliedUserId: body.auth_user_id?.trim() || '',
+      resetPassword: body.reset_admin_password === true,
+      mode,
+      tenantId: suppliedTenantId || null,
+    })
+    if ('response' in authRes) return authRes.response
+    const { userId, passwordReset } = authRes
+
+    // ── 4. ONE RPC. The transaction is the database's, not ours. ────────────
+    const payload = { ...built.payload, auth_user_id: userId }
+    const { data: rpcData, error: rpcErr } = await supabase.rpc('provision_tenant_atomic', {
+      p_payload: payload,
+    })
+
+    if (rpcErr) {
+      // THE ORPHAN CONTRACT. Non-2xx, carrying the auth_user_id we created and a
+      // stable code, so a retry reuses the user instead of dead-ending on
+      // "email already registered". NOTHING was written: the RPC is one
+      // transaction and it rolled back.
+      const pgCode = (rpcErr as any).code ?? ''
+      const status = pgCode === '23505' ? 409 : pgCode === '22023' ? 400 : 500
+      console.error(`[provision-tenant] RPC FAILED (${pgCode || 'no code'}) — tenant NOT provisioned:`, rpcErr.message)
+      return fail(status, 'provision_rpc_failed', rpcErr.message, {
+        auth_user_id: userId,
+        auth_user_orphaned: authRes.created,
+        pg_code: pgCode,
+        retry_hint: 'Pass auth_user_id back on retry — do not let createUser run again.',
+      })
+    }
+
+    // ── 5. POST-COMMIT ──────────────────────────────────────────────────────
+    // Nothing external runs before the RPC returns, and nothing needs to run
+    // after it: the queue rows are already durable, committed in the same
+    // transaction. process-outbound-queue (*/15) owns Zernio and Outscraper now.
+    // The inline Zernio call and the Outscraper fire-and-forget are DELETED.
+    const result = (rpcData ?? {}) as Record<string, unknown>
+    const tenantId = String(result.tenant_id ?? '')
+    console.log(`[provision-tenant] provisioned tenant=${tenantId} slug=${resolvedSlug} `
+      + `counts=${JSON.stringify(result.counts ?? {})} queued=${JSON.stringify(result.queued ?? [])}`)
+
+    // ── 6. RETURN THE RPC'S COUNTS — not a boolean ─────────────────────────
+    return new Response(JSON.stringify({
+      success: true,
+      tenant_id: tenantId,
+      slug: resolvedSlug,
+      url: `https://${resolvedSlug}.pestflowpro.com`,
+      created: result.created ?? false,
+      counts: result.counts ?? {},
+      queued: result.queued ?? [],
+      admin_password_reset: passwordReset,
+      ...(built.rejectedAreaTokens.length > 0
+        ? { rejected_service_area_tokens: built.rejectedAreaTokens }
+        : {}),
+    }), { headers: { 'Content-Type': 'application/json', ...CORS } })
   } catch (err: any) {
-    console.error('provision-tenant error:', err?.message)
-    return new Response(JSON.stringify({ success: false, error: err?.message || 'Internal server error' }), {
-      status: 500, headers: { 'Content-Type': 'application/json', ...CORS },
-    })
+    console.error('[provision-tenant] error:', err?.message)
+    return fail(500, 'unhandled', err?.message || 'Internal server error')
   }
+}
+
+/**
+ * Resolve the tenant admin's auth user, creating one only when necessary.
+ *
+ * Returns either the resolved user or a ready-to-send error Response — the
+ * collision and lookup failures are hard stops, not warnings.
+ */
+async function resolveAuthUser(
+  supabase: any,
+  opts: {
+    email: string; password: string; suppliedUserId: string
+    resetPassword: boolean; mode: 'create' | 'reprovision'; tenantId: string | null
+  },
+): Promise<AuthResolution | { response: Response }> {
+  // (a) An id handed back to us by a previous failed attempt. Reuse it and do
+  // NOT call createUser — that is the retry dead-end this exists to avoid.
+  if (opts.suppliedUserId) {
+    const { data: got, error } = await supabase.auth.admin.getUserById(opts.suppliedUserId)
+    if (error || !got?.user) {
+      return { response: fail(400, 'auth_user_id_not_found',
+        `auth_user_id ${opts.suppliedUserId} was supplied but no such auth user exists.`) }
+    }
+    if (norm(got.user.email ?? '') !== norm(opts.email)) {
+      return { response: fail(409, 'auth_user_email_mismatch',
+        `auth_user_id ${opts.suppliedUserId} belongs to a different email than ${opts.email}.`) }
+    }
+    const guard = await collisionGuard(supabase, opts.suppliedUserId, opts)
+    if (guard) return { response: guard }
+    console.log('[provision-tenant] reusing supplied auth_user_id — createUser not called')
+    return { userId: opts.suppliedUserId, created: false, passwordReset: false }
+  }
+
+  const { data: authData, error: createErr } = await supabase.auth.admin.createUser({
+    email: opts.email, password: opts.password, email_confirm: true,
+  })
+
+  if (!createErr) {
+    return { userId: authData!.user!.id, created: true, passwordReset: false }
+  }
+
+  const alreadyExists = createErr.message?.includes('already been registered')
+    || createErr.message?.includes('already exists')
+  if (!alreadyExists) {
+    console.error('[provision-tenant] createUser failed:', createErr.message)
+    return { response: fail(500, 'create_user_failed',
+      `Failed to create admin user: ${createErr.message}`) }
+  }
+
+  // (b) Look the user up by NORMALISED email and reuse it if it is unbound.
+  //
+  // TODO(S220-backlog): replace listUsers() with a SECURITY DEFINER RPC
+  // (find_auth_user_id_by_email) when user count exceeds ~100. O(n), kept
+  // deliberately — widening it is not this change's job.
+  console.warn('[provision-tenant] auth user already exists for', opts.email, '— looking up existing id')
+  const { data: listed } = await supabase.auth.admin.listUsers()
+  const existing = (listed?.users ?? []).find((u: any) => norm(u.email ?? '') === norm(opts.email))
+  if (!existing?.id) {
+    // S220 B2c: gotrue said the user exists but the lookup found nothing.
+    return { response: fail(500, 'auth_state_inconsistent',
+      `Email ${opts.email} reported as already registered, but lookup returned no user record. `
+      + 'Inconsistent auth state — investigate manually before retrying.') }
+  }
+
+  const guard = await collisionGuard(supabase, existing.id, opts)
+  if (guard) return { response: guard }
+
+  // S326 ITEM 1 — password reset is OPT-IN and stays exactly as it was.
+  // gotrue >=2.149 kills the user's live sessions on a password change, so
+  // absent or false must leave an existing password and its sessions alone.
+  if (!opts.resetPassword) {
+    console.log('[provision-tenant] password_reset: skipped (reset_admin_password not true) — existing password and sessions preserved')
+    return { userId: existing.id, created: false, passwordReset: false }
+  }
+
+  console.log('[provision-tenant] password_reset: requested, applying to existing user')
+  const { error: pwErr } = await supabase.auth.admin.updateUserById(existing.id, { password: opts.password })
+  if (pwErr) {
+    const status = (pwErr as any).status || 500
+    const isTransient = status >= 500
+    console.error('[provision-tenant] password sync failed for', opts.email, '| status:', status,
+      '| transient:', isTransient)
+    return { response: fail(500, 'password_sync_failed',
+      `Password sync failed for existing user: ${pwErr.message}`,
+      { transient: isTransient, retry_safe: isTransient }) }
+  }
+  return { userId: existing.id, created: false, passwordReset: true }
+}
+
+/**
+ * S220 B2a — refuse to move an admin off a tenant they already belong to.
+ *
+ * Re-provisioning would yank them from their current tenant, invalidate their
+ * sessions and change their password without consent. In `create` mode there is
+ * no tenant yet, so ANY existing binding is a collision.
+ */
+async function collisionGuard(
+  supabase: any,
+  userId: string,
+  opts: { mode: 'create' | 'reprovision'; tenantId: string | null; email: string },
+): Promise<Response | null> {
+  const { data: profile, error } = await supabase
+    .from('profiles').select('tenant_id').eq('id', userId).maybeSingle()
+  if (error) {
+    console.error('[provision-tenant] profile lookup failed during collision check:', error.message)
+    return fail(500, 'profile_lookup_failed',
+      `Profile lookup failed during collision check: ${error.message}`)
+  }
+  const boundTo = profile?.tenant_id ?? null
+  if (!boundTo) return null
+  if (opts.mode === 'reprovision' && boundTo === opts.tenantId) return null
+
+  console.error('[provision-tenant] BLOCKED — tenant collision on existing user:', opts.email,
+    'current_tenant:', boundTo, 'requested_tenant:', opts.tenantId ?? '(new)')
+  return fail(409, 'tenant_collision',
+    `Email ${opts.email} is already admin on a different tenant (${boundTo}). `
+    + `Cannot provision to ${opts.tenantId ?? 'a new tenant'}. `
+    + 'Use a different admin email, or detach the user from their current tenant first.',
+    { existing_tenant_id: boundTo, requested_tenant_id: opts.tenantId })
 }
 
 if (import.meta.main) {
