@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   buildProvisionPayload,
+  normalizeSelection,
   validateServiceSlugs,
   validateServiceAreaCap,
   capForEntitlement,
@@ -299,5 +300,157 @@ describe('the builder is deterministic and surfaces what it dropped', () => {
     const r = ok(buildProvisionPayload(mk({ rawServiceAreas: 'Tyler, 75701, Longview' })))
     expect(r.rejectedAreaTokens).toEqual([{ raw: '75701', reason: 'numeric' }])
     expect(r.payload.service_areas.map((a) => a.city)).toEqual(['Tyler', 'Longview'])
+  })
+})
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// S341 — THE PER-SERVICE PICKER.
+//
+// `services` used to be derived: `[...catalogSlugsFor(vertical)]`, the WHOLE
+// catalog. That was invisible because it was always true — every pest tenant
+// sells all 12, pls sells all 5 — so "the catalog" and "their list" were the
+// same list for every tenant ever provisioned.
+//
+// Lawn breaks it. 17 in the catalog, 7 sold. THE SCENARIO BELOW IS THE REAL ONE:
+// a maintenance-and-landscape company that does not do turf treatment.
+// ════════════════════════════════════════════════════════════════════════════
+
+/** What the first lawn client actually sells. */
+const LAWN_SELECTED = [
+  'mowing-maintenance', 'seasonal-cleanup', 'tree-shrub-trimming',
+  'landscape-design', 'hardscape-stonework', 'sprinkler-systems', 'artificial-turf',
+]
+/** The ten provisioning would otherwise have asserted he offers. */
+const LAWN_NOT_SELECTED = [
+  'lawn-fertilization', 'weed-control', 'lawn-aeration', 'overseeding',
+  'grub-control', 'lawn-disease-control', 'soil-health',
+  'mulch-bed-maintenance', 'perimeter-pest-control', 'mosquito-control',
+]
+
+describe('a lawn tenant gets THEIR seven services, not the catalog\'s seventeen', () => {
+  const p = ok(buildProvisionPayload(mk({
+    vertical: 'lawn', slug: 'greenacre', services: LAWN_SELECTED,
+    wizard: { business_info: { name: 'Greenacre Lawn & Landscape' } },
+  }))).payload
+
+  it('the split is real: 7 selected, 10 not, 17 in the catalog', () => {
+    expect(LAWN_SELECTED).toHaveLength(7)
+    expect(LAWN_NOT_SELECTED).toHaveLength(10)
+    expect(CATALOG_SLUGS.lawn).toHaveLength(17)
+    expect([...LAWN_SELECTED, ...LAWN_NOT_SELECTED].sort())
+      .toEqual([...CATALOG_SLUGS.lawn].sort())
+  })
+
+  it('SEVEN tenant_services', () => {
+    expect(p.services).toHaveLength(7)
+    expect([...p.services].sort()).toEqual([...LAWN_SELECTED].sort())
+  })
+
+  it('SEVEN service page_content rows', () => {
+    const servicePages = p.page_content.filter((r) => LAWN_SELECTED.includes(r.page_slug))
+    expect(servicePages).toHaveLength(7)
+    // The platform pages are still there — this counts SERVICE pages only.
+    expect(p.page_content.length).toBeGreaterThan(7)
+  })
+
+  it('SEVEN service seo_meta rows', () => {
+    const serviceMeta = p.seo_meta.filter((m) => LAWN_SELECTED.includes(m.page_slug))
+    expect(serviceMeta).toHaveLength(7)
+  })
+
+  it('THE TEN UNSELECTED SLUGS APPEAR NOWHERE IN THE PAYLOAD', () => {
+    // The whole point. Each of these would otherwise be a page, a title and SEO
+    // asserting he offers a service he does not.
+    const blob = JSON.stringify(p)
+    for (const slug of LAWN_NOT_SELECTED) {
+      expect(p.services, `${slug} in tenant_services`).not.toContain(slug)
+      expect(p.page_content.map((r) => r.page_slug), `${slug} has a page`).not.toContain(slug)
+      expect(p.seo_meta.map((m) => m.page_slug), `${slug} has SEO`).not.toContain(slug)
+      expect(blob, `${slug} leaked into the payload somewhere`).not.toContain(slug)
+    }
+  })
+
+  it('seeded pages keep CATALOG order, not the order the selection was typed in', () => {
+    // Catalog order drives the admin sidebar and the order pages are seeded in,
+    // so it must not vary with however a selection happened to be written.
+    const shuffled = ok(buildProvisionPayload(mk({
+      vertical: 'lawn', slug: 'greenacre', services: [...LAWN_SELECTED].reverse(),
+      wizard: { business_info: { name: 'Greenacre Lawn & Landscape' } },
+    }))).payload
+    expect(shuffled.page_content.map((r) => r.page_slug))
+      .toEqual(p.page_content.map((r) => r.page_slug))
+  })
+})
+
+describe('the no-selection fallback leaves every existing caller alone', () => {
+  it('pest with no selection still seeds all 12', () => {
+    const p = ok(buildProvisionPayload(mk({ vertical: 'pest' }))).payload
+    expect(p.services).toEqual([...CATALOG_SLUGS.pest])
+    expect(p.page_content.filter((r) => CATALOG_SLUGS.pest.includes(r.page_slug))).toHaveLength(12)
+  })
+
+  it('IRRIGATION — pls sells all five, and must stay byte-identical', () => {
+    // pls is live. The fallback must not move his rendered service list, sitemap
+    // or nav, so his five services and their pages are pinned exactly.
+    const p = ok(buildProvisionPayload(mk({ vertical: 'irrigation' }))).payload
+    expect(p.services).toEqual([...CATALOG_SLUGS.irrigation])
+    expect(p.services).toHaveLength(5)
+    const pages = p.page_content.filter((r) => CATALOG_SLUGS.irrigation.includes(r.page_slug))
+    expect(pages.map((r) => r.page_slug)).toEqual([...CATALOG_SLUGS.irrigation])
+  })
+
+  it('omitting `services` is IDENTICAL to passing the whole catalog', () => {
+    // Absent means "not stated" — the fallback, not a different code path.
+    const absent = ok(buildProvisionPayload(mk({ vertical: 'irrigation' }))).payload
+    const explicit = ok(buildProvisionPayload(mk({
+      vertical: 'irrigation', services: [...CATALOG_SLUGS.irrigation],
+    }))).payload
+    expect(JSON.stringify(absent)).toBe(JSON.stringify(explicit))
+  })
+})
+
+describe('the catalog check is now a REAL gate, not a defensive one', () => {
+  it('rejects a slug outside the vertical\'s catalog', () => {
+    const r = buildProvisionPayload(mk({ vertical: 'lawn', services: ['mowing-maintenance', 'unicorn-grooming'] }))
+    expect(r.ok).toBe(false)
+    if (!r.ok) {
+      expect(r.code).toBe('service_not_in_catalog')
+      expect(r.error).toContain('unicorn-grooming')
+    }
+  })
+
+  it('rejects a slug valid for ANOTHER vertical — shape alone is not enough', () => {
+    // 'termite-control' is well-formed and passes both the tenant_services CHECK
+    // and the RPC's regex. Only the catalog knows it is not a lawn service.
+    const r = buildProvisionPayload(mk({ vertical: 'lawn', services: ['termite-control'] }))
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.code).toBe('service_not_in_catalog')
+  })
+
+  it('a boundary slug shared with another catalog IS accepted', () => {
+    // sprinkler-systems and artificial-turf are in both lawn and irrigation,
+    // deliberately. Sharing is legal; the gate must not reject it.
+    const r = buildProvisionPayload(mk({ vertical: 'lawn', services: ['sprinkler-systems', 'artificial-turf'] }))
+    expect(r.ok).toBe(true)
+  })
+
+  it('an EMPTY supplied selection is an error, and absent is not', () => {
+    const empty = buildProvisionPayload(mk({ vertical: 'lawn', services: [] }))
+    expect(empty.ok).toBe(false)
+    if (!empty.ok) expect(empty.code).toBe('empty_service_selection')
+    expect(buildProvisionPayload(mk({ vertical: 'lawn' })).ok).toBe(true)
+  })
+})
+
+describe('normalizeSelection', () => {
+  it('trims, drops blanks, dedupes, preserves first-seen order', () => {
+    expect(normalizeSelection([' weed-control ', 'overseeding', '', 'weed-control', '   ']))
+      .toEqual(['weed-control', 'overseeding'])
+  })
+
+  it('distinguishes ABSENT from EMPTY — they mean different things', () => {
+    expect(normalizeSelection(undefined)).toBeUndefined()
+    expect(normalizeSelection([])).toEqual([])
   })
 })

@@ -196,7 +196,7 @@ export function checkBusinessInfoShape(value: unknown): string[] {
     if (typeof tz !== 'string' || tz.length === 0) problems.push('structured_shape: timezone must be a non-empty string');
   }
   const vert = value['vertical'];
-  if (vert !== undefined && vert !== null && ['pest', 'irrigation'].indexOf(String(vert)) === -1) {
+  if (vert !== undefined && vert !== null && ['pest', 'irrigation', 'lawn'].indexOf(String(vert)) === -1) {
     problems.push('vertical_valid: vertical must be pest or irrigation');
   }
   return problems;
@@ -213,7 +213,7 @@ export interface OnboardingBusinessInfoOverlay {
   license: string;
   industry: string;
   /** Omitted entirely when the tenant's trade is not recorded — never written as ''. */
-  vertical?: 'pest' | 'irrigation';
+  vertical?: 'pest' | 'irrigation' | 'lawn';
 }
 
 /**

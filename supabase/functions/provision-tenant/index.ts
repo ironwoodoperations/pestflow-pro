@@ -185,6 +185,18 @@ interface RequestBody {
   reset_admin_password?: boolean
   prospect_id?: string
   onboarding_session_id?: string
+  /**
+   * S341 — THE TENANT'S SELECTED SERVICES.
+   *
+   * Absent means "not stated" and seeds the whole catalog for the vertical,
+   * which is what every caller did before this field existed and what they all
+   * still do. Present is obeyed verbatim: the tenant gets pages, SEO and
+   * tenant_services rows for exactly these slugs and nothing else.
+   *
+   * There is NO picker UI. Scott provisions by hand and passes the field; the
+   * wizard is a separate change.
+   */
+  services?: string[]
   business_info: {
     name: string; phone: string; email: string; address: string; tagline: string; industry: string
     /**
@@ -435,6 +447,7 @@ export async function handler(req: Request): Promise<Response> {
       authUserId: '',
       entitlement,
       vertical: resolvedVertical,
+      services: body.services,
       wizard: {
         business_info: wd?.business_info, branding: wd?.branding,
         customization: wd?.customization, social_links: wd?.social_links,
