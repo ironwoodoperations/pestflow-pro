@@ -36,3 +36,16 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
     guess breaks ci.yml's auth-isolation job too. Verify first, then bump.
   - Main-branch workflow failures appear in NO PR check list — that is why 10 failures hid for
     10 weeks. Visibility mechanism is Scott's decision; options recorded in docs/ROADMAP.md.
+
+---
+## Session — 2026-09-04 18:33 UTC
+- Branch: `chore/s337-verify-jwt-script-fix`
+- Commit: `be2b79a` — docs: record actions/setup-node@v4 as the remaining Node-20 action
+- Author: Claude
+- Files changed:
+  - docs/ROADMAP.md
+- Next recommended action: **unchanged — see the 18:28 entry above**, which carries the full
+  S337 carry-forward. This commit only records a finding from reading the post-change CI log:
+  with actions/checkout on v5 the Node-20 warning now names ONLY actions/setup-node@v4, so
+  the checkout bump is PROVEN and setup-node is the remaining one. Recorded, not bumped —
+  it was never in the redeploy workflow's warning and so was outside S337's scope.
