@@ -58,6 +58,13 @@ verify_jwt = false
 verify_jwt = true
 [functions.process-offboard-queue]
 verify_jwt = false
+# S339 — cron/internal caller (pg_cron POSTs it); no user JWT is present, so the
+# gateway must not demand one. Auth is in-source: a constant-time compare of
+# x-pfp-internal-key against PROCESS_OUTBOUND_QUEUE_INTERNAL_SECRET, mirroring
+# process-sms-queue. An explicit pin here is required — verify_verify_jwt.py
+# fails any consumer that relies on the CLI default.
+[functions.process-outbound-queue]
+verify_jwt = false
 
 # S253/A1 — AI Authority Score. Worker + two sibling proxies authenticate via the
 # X-Internal-Secret header (== AI_AUTHORITY_INTERNAL_SECRET edge secret), NOT a
