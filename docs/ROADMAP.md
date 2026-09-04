@@ -416,10 +416,19 @@ contributors can see it. The live Management API call still only runs on main �
 not faked, because a fixture asserting the platform agrees with config.toml would make the
 guard vacuous.
 
-**Related, still open:** `supabase/setup-cli@v1` is named in the Node-20 deprecation warning
-but was NOT bumped in S337 — the available majors could not be established from that session's
-environment, and a wrong guess would break `ci.yml`'s auth-isolation job as well. It is
-advisory only (GitHub already forces the action onto Node 24). Verify, then bump.
+**Related, still open — two Node-20 actions remain.** `actions/checkout` went v4 → v5 in S337
+and is PROVEN: the post-S337 warning no longer names it. Still on Node 20:
+
+- **`supabase/setup-cli@v1`** — not bumped because the available majors could not be
+  established from that session's environment (api.supabase.com blocked, action repo out of
+  scope), and a wrong guess breaks `ci.yml`'s auth-isolation job too.
+- **`actions/setup-node@v4`** — found only AFTER the checkout bump, when it became the sole
+  remaining name in the warning. Out of S337's scope (it was never in the redeploy workflow's
+  warning), so it was recorded rather than bumped. `actions/checkout@v5` resolving is good
+  evidence the `actions/*` v5 generation is available to these runners.
+
+Both are advisory only — GitHub already forces them onto Node 24. Verify the majors, then bump
+together.
 
 ### RECORDED, NOT BUILT — carried into the RPC session
 
