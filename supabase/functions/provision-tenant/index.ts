@@ -36,6 +36,8 @@ import { normalizeAll, buildJsonbProjection } from '../_shared/service-areas.ts'
 // holds a Vault key in integrations), not an oversight here.
 import { stripVaultSecrets } from '../_shared/secrets/stripVaultSecrets.ts'
 import { PLATFORM_NAME } from '../../../shared/lib/platformBrand.ts'
+import { mergeSettingsRead, dropEmptyOverwrites } from '../../../shared/lib/settingsMerge.ts'
+import { mergeBusinessInfo } from '../../../shared/lib/businessInfoMerge.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
@@ -603,8 +605,48 @@ export async function handler(req: Request): Promise<Response> {
       }},
     ]
 
+    // ── S330 SITE 1 — THE SEED MERGES INSTEAD OF REPLACING. ──────────────────────────
+    //
+    // Every row here was upserted with a FRESHLY BUILT object, which on a re-provision
+    // replaced whatever the owner had since edited. That is the S292 shape, in the
+    // function that runs first, and the re-provision path is reachable: Step 1 supports
+    // `body.tenant_id`, stripe-webhook passes one, and BundleSocialSetup actively told
+    // the operator to use it.
+    //
+    // THE READ IS INSIDE THIS LOOP, not hoisted above it. A value captured before the
+    // read resolves is a whole replacement again with nothing visibly wrong — the same
+    // race businessInfoMerge's resolveBusinessInfoValue exists to remove. mergeSettingsRead
+    // also THROWS on a read error rather than merging into `{}`, because a merge built on
+    // a failed read is a replacement arrived at through the error path.
+    //
+    // business_info takes the S292 rule ON TOP of the generic one: dropEmptyOverwrites
+    // first (so a blank wizard field cannot blank a real value), then mergeBusinessInfo,
+    // which owns the grouped-key constraints — a partial address quad or a lone latitude
+    // violates business_info_structured_shape and 23514s the whole write.
     for (const row of settingsRows) {
-      const { error } = await supabase.from('settings').upsert(row, { onConflict: 'tenant_id,key' })
+      let value: Record<string, unknown>
+      try {
+        if (row.key === 'business_info') {
+          const { data, error: readErr } = await supabase
+            .from('settings').select('value')
+            .eq('tenant_id', tenantId).eq('key', row.key).maybeSingle()
+          if (readErr) throw new Error(`business_info: settings read failed, refusing to write (a merge built on a failed read is a whole replacement) — ${readErr.message}`)
+          const existing = data?.value ?? null
+          value = mergeBusinessInfo(existing, dropEmptyOverwrites(existing, row.value as Record<string, unknown>))
+        } else {
+          value = await mergeSettingsRead(
+            row.key,
+            () => supabase.from('settings').select('value')
+              .eq('tenant_id', tenantId).eq('key', row.key).maybeSingle(),
+            row.value as Record<string, unknown>,
+          )
+        }
+      } catch (mergeErr) {
+        console.error(`Failed to merge ${row.key}:`, (mergeErr as Error)?.message)
+        continue
+      }
+      const { error } = await supabase.from('settings')
+        .upsert({ tenant_id: tenantId, key: row.key, value }, { onConflict: 'tenant_id,key' })
       if (error) console.error(`Failed to upsert ${row.key}:`, error.message)
     }
 
@@ -725,7 +767,22 @@ export async function handler(req: Request): Promise<Response> {
             // nulls outscraper_last_error when a sync succeeds. Without this, a
             // tenant provisioned before the secret was set would keep reading
             // "not configured" forever after it was.
-            .update({ value: { ...currentIntg, zernio_profile_id: zernioProfileId, zernio_last_error: null } })
+            // S330 SITE 3 — through stripVaultSecrets, like every sibling writer.
+            // This was the ONLY integrations writer that skipped it. The database's
+            // trg_strip_settings_secrets trigger already removes the same four Vault keys
+            // on every INSERT and UPDATE, so this is defence in depth rather than a live
+            // hole — but relying on the trigger alone means a write that DOES carry a
+            // secret raises a WARNING and files a settings_secret_leak_obs row on every
+            // provision, and the next writer added here would inherit the omission.
+            //
+            // A PLAIN SPREAD, NOT mergeSettingsValue — and that is deliberate.
+            // `zernio_last_error: null` is a DELIBERATE CLEAR: it exists so a tenant
+            // provisioned before the secret was set stops reading "not configured" once
+            // it is. mergeSettingsValue treats null as an empty overlay value and would
+            // refuse to let it overwrite a non-empty existing error, which would break
+            // exactly the clearing this line is for. That helper is for SEED overlays,
+            // where empty means "the operator left it blank"; it is not a clear channel.
+            .update({ value: { ...stripVaultSecrets(currentIntg as Record<string, unknown>), zernio_profile_id: zernioProfileId, zernio_last_error: null } })
             .eq('tenant_id', tenantId)
             .eq('key', 'integrations')
           if (zernioSaveErr) console.error('[provision-tenant] Failed to save zernio_profile_id:', zernioSaveErr.message)
@@ -809,14 +866,40 @@ export async function handler(req: Request): Promise<Response> {
           city, state,
           tagline: ib.tagline ?? '',
         })
-        await supabase.from('settings').upsert(
-          { tenant_id: tenantId, key: 'seo', value: {
-            meta_description: seoSeed.meta_description,
-            service_areas: [],
-            focus_keyword: seoSeed.focus_keyword,
-          }},
-          { onConflict: 'tenant_id,key' }
-        )
+        // ── S330 SITE 2 — `seo` MERGES. ────────────────────────────────────────────
+        //
+        // This dropped every seo key that was not one of these three. `seo.noindex` is
+        // LIVE AND LOAD-BEARING right now — pls carries `false`, and that boolean is what
+        // makes a paying client's site indexable. A replace that drops it, or re-adds it
+        // with the wrong value, changes their search visibility silently.
+        //
+        // A shallow merge is exactly right here and nothing deeper is needed: noindex
+        // survives because the overlay never names it, and it is NOT invented when absent
+        // because a merge only writes keys the overlay carries.
+        //
+        // `service_areas: []` is a placeholder this function expects step 9f to repair
+        // from the table. dropEmptyOverwrites treats an empty array as empty, so on a
+        // re-provision it will not wipe a populated list if 9f is skipped or fails — and
+        // 9f is the ONLY hard abort in this function, so "it will always run" is not an
+        // assumption worth making.
+        try {
+          const seoValue = await mergeSettingsRead(
+            'seo',
+            () => supabase.from('settings').select('value')
+              .eq('tenant_id', tenantId).eq('key', 'seo').maybeSingle(),
+            {
+              meta_description: seoSeed.meta_description,
+              service_areas: [],
+              focus_keyword: seoSeed.focus_keyword,
+            },
+          )
+          await supabase.from('settings').upsert(
+            { tenant_id: tenantId, key: 'seo', value: seoValue },
+            { onConflict: 'tenant_id,key' }
+          )
+        } catch (seoMergeErr) {
+          console.error('[provision-tenant] seo merge skipped:', (seoMergeErr as Error)?.message)
+        }
 
         // 9b-seo: Per-page SEO meta on page_content rows.
         //

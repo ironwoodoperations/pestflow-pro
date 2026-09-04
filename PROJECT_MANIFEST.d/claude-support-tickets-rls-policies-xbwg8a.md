@@ -508,3 +508,17 @@ it is recent.
   - supabase/functions/zernio-connect/index.ts
   - tsconfig.json
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-09-04 14:10 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `61ed927` — S330: the settings write path merges instead of replacing
+- Author: Claude
+- Files changed:
+  - shared/lib/businessInfoMerge.test.ts
+  - shared/lib/businessInfoMerge.ts
+  - shared/lib/settingsMerge.test.ts
+  - shared/lib/settingsMerge.ts
+  - src/pages/admin/Onboarding.tsx
+  - supabase/functions/provision-tenant/index.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]

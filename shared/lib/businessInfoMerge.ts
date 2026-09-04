@@ -1,5 +1,18 @@
 // S292 — merging into settings.business_info instead of replacing it.
 //
+// S330 — MOVED FROM src/lib/ TO shared/lib/, so there is ONE implementation.
+// The S324 report recorded that this guard "exists on one write path and the other
+// one was never brought under it": provision-tenant seeds business_info as a whole
+// replacement and could not import this, because src/ is not reachable from an edge
+// function's relative path. shared/lib IS reachable — the deployed service-area-map
+// bundle carries `from '../../../shared/lib/serviceAreaMap.ts'` unrewritten, and Deno
+// resolves it at runtime given an explicit .ts extension. Moving the module was
+// therefore preferred over copying the rule, which is how the two paths drifted apart
+// in the first place.
+//
+// Still pure: no I/O, no Supabase, no React, and no import of any kind — which is what
+// lets it live here without tripping the shared/lib-must-not-import-src guard.
+//
 // THE DEFECT. Onboarding's handleLaunch upserted business_info as a WHOLE
 // REPLACEMENT VALUE. It wrote nine keys; every other key in the row was deleted.
 // A client finishing onboarding silently destroyed their own structured address,
