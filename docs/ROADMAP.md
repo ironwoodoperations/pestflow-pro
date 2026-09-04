@@ -1,6 +1,6 @@
 # PestFlow Pro — Roadmap
 
-*State as of S331 (2026-09-04). **pls is LIVE and INDEXABLE on precisionlawnsystems.com** — the platform's first custom-domain client. S321–S330 are merged AND deployed, verified by reading deployed bundles rather than trusting deploy status. S331 is merged-pending in #340. The RPC is next.). Update at end of each session; retire the versioned pestflow-pro-todo-vNNN.html snapshots.*
+*State as of S331 (2026-09-04). **pls is LIVE and INDEXABLE on precisionlawnsystems.com** — the platform's first custom-domain client. S321–S330 are merged AND deployed, verified by reading deployed bundles rather than trusting deploy status. S331 merged as `0c2f01f` (#340). The RPC is next.). Update at end of each session; retire the versioned pestflow-pro-todo-vNNN.html snapshots.*
 
 ---
 
@@ -125,14 +125,16 @@ version number or a green deploy** — the rule this arc earned the hard way.
 | **S327** | `scripts/deploy-function.sh` freshness guard; `session-end.sh` skips protected branches | merged, live |
 | **S329** | `zernio-connect` **auth hole CLOSED** (`requireTenantAdmin`; the frontend now sends the JWT); lazy Zernio profile creation; return URL resolves the tenant's canonical host; vendor name removed from client-facing strings | merged, **deployed v39 2026-09-03 19:50 UTC — `requireTenantAdmin` confirmed present in the deployed bundle** |
 | **S330** | `provision-tenant` settings writes MERGE instead of replace at all three sites; `businessInfoMerge` moved to `shared/lib` so `provision-tenant` is finally under the S292 guard | merged, deployed with S326 in v105 |
-| **S331** | one canonical publicly-listed-service predicate across nav, tiles, sitemap and quote form | ⚠️ **MERGED-PENDING — [#340](https://github.com/ironwoodoperations/pestflow-pro/pull/340) is open and green, NOT merged** |
+| **S331** | one canonical publicly-listed-service predicate across nav, tiles, sitemap and quote form | merged `0c2f01f` ([#340](https://github.com/ironwoodoperations/pestflow-pro/pull/340)) |
 
 `post-to-social` v68, `publish-scheduled-posts` v70 and `zernio-analytics` v28 were deployed
 alongside S329 on 2026-09-03 19:52–19:53 UTC (client-facing vendor-name strings).
 
-**⚠️ THE ONE CORRECTION TO THE S332 BRIEF.** It listed S331 under "SHIPPED AND LIVE (all merged AND
-deployed)" and said "MERGED, NOT YET DEPLOYED: nothing". S331 is **not merged** — `main` is at
-`18e4205` (S330) and #340 is open. Everything else in that list checks out.
+**THE ONE CORRECTION TO THE S332 BRIEF — RESOLVED ON MERGE, KEPT AS A RECORD.** It listed S331 under
+"SHIPPED AND LIVE (all merged AND deployed)" and said "MERGED, NOT YET DEPLOYED: nothing". **At the
+time that was false**: `main` was at `18e4205` (S330) and #340 was open. #340 merged as `0c2f01f`
+shortly afterwards, so the claim is now true — but it was not true when written, and everything else in
+that list checked out.
 
 **A PREMISE PROVEN IN PRODUCTION.** The deployed `zernio-connect` bundle carries
 `shared/lib/resolveSiteUrl.ts` **and its non-leaf dependency `shared/lib/canonicalHost.ts`**, both
