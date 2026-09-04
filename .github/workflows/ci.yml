@@ -156,6 +156,36 @@ jobs:
           echo '--- pgTAP output ---'; cat pgtap.out
           if grep -qE '^not ok' pgtap.out; then echo '::error::pgTAP role-RLS assertions failed'; exit 1; fi
 
+      # S336 — the settings-merge corpus. Applies the UNTIMESTAMPED s336 migration
+      # with psql rather than staging it into supabase/migrations: the CLI expects
+      # a <timestamp>_name.sql filename, and the file is deliberately not
+      # timestamped (it records DDL already applied to production). Running the
+      # migration FILE here also proves the file itself works — not merely that
+      # the functions exist somewhere.
+      - name: Install S336 merge functions (from the migration file)
+        run: psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/s336_merge_setting_value.sql
+
+      # Reads shared/fixtures/settingsMergeCorpus.json — the SAME file
+      # shared/lib/settingsMerge.corpus.test.ts asserts against in vitest. One
+      # corpus, two implementations; a case that passes one and fails the other
+      # is the finding the S334 gate asked for.
+      - name: Run settings-merge corpus (pgTAP)
+        run: |
+          psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/tests/s336_merge_setting_value.pgtap.sql > s336.out 2>&1 || { echo '--- pgTAP output ---'; cat s336.out; exit 1; }
+          echo '--- pgTAP output ---'; cat s336.out
+          if grep -qE '^not ok' s336.out; then echo '::error::S336 settings-merge corpus assertions failed'; exit 1; fi
+
+      # A guard that cannot fail is worthless. Each mutant removes exactly ONE
+      # rule from the merge and must fail at least one corpus case; the real
+      # function is re-asserted clean in the same run, which is what makes
+      # "the mutant fails" mean anything. Mutants live in pg_temp inside a
+      # rolled-back transaction, so nothing persists even if the run aborts.
+      - name: Run settings-merge MUTATION test (pgTAP)
+        run: |
+          psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/tests/s336_merge_mutations.pgtap.sql > s336mut.out 2>&1 || { echo '--- pgTAP output ---'; cat s336mut.out; exit 1; }
+          echo '--- pgTAP output ---'; cat s336mut.out
+          if grep -qE '^not ok' s336mut.out; then echo '::error::S336 mutation assertions failed — a merge rule can be deleted without the corpus noticing'; exit 1; fi
+
       - name: Stop local Supabase
         if: always()
         run: supabase stop --no-backup || true

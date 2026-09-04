@@ -1,0 +1,295 @@
+{
+  "$comment": [
+    "S336 — THE settings-merge fixture corpus. ONE file, TWO consumers.",
+    "",
+    "The S334 gate (Perplexity condition 8) requires the TypeScript merge and the PL/pgSQL",
+    "merge to be tested against the SAME corpus until the TS path no longer performs",
+    "persistence merges. Two corpora would drift, and drift is the defect this arc removes.",
+    "",
+    "  shared/lib/settingsMerge.corpus.test.ts   asserts the TypeScript side",
+    "  supabase/tests/s336_merge_setting_value.pgtap.sql   asserts public.merge_setting_value",
+    "",
+    "A case that passes one side and fails the other IS THE FINDING, not a nuisance to be",
+    "smoothed over by editing the expectation.",
+    "",
+    "TS EVALUATION for key='business_info' is mergeBusinessInfo(existing, dropEmptyOverwrites(",
+    "existing, overlay)) — the exact composition provision-tenant uses. For every other key it",
+    "is mergeSettingsValue(existing, overlay).",
+    "",
+    "'existing': null means NO ROW YET (a first provision), not an empty object."
+  ],
+  "cases": [
+    {
+      "id": "empty-string-does-not-overwrite",
+      "description": "'' must not blank a real value — the re-provision defect: the seed writes wizard.x || body.x || '', so every field the operator left blank arrives as ''",
+      "key": "business_info",
+      "existing": { "name": "Apex Pest", "phone": "555-0100" },
+      "overlay": { "name": "", "phone": "555-0100" },
+      "expected": { "name": "Apex Pest", "phone": "555-0100" }
+    },
+    {
+      "id": "empty-string-writes-when-key-absent",
+      "description": "'' IS written when the key does not exist — that is not destruction",
+      "key": "branding",
+      "existing": { "primary_color": "#f60" },
+      "overlay": { "cta_text": "" },
+      "expected": { "primary_color": "#f60", "cta_text": "" }
+    },
+    {
+      "id": "empty-string-writes-when-existing-empty",
+      "description": "'' over an already-empty value is a no-op write, not a drop",
+      "key": "branding",
+      "existing": { "cta_text": "" },
+      "overlay": { "cta_text": "" },
+      "expected": { "cta_text": "" }
+    },
+    {
+      "id": "json-null-does-not-overwrite",
+      "description": "JSON null is an empty overlay value and must not blank a real one",
+      "key": "integrations",
+      "existing": { "facebook_page_id": "123" },
+      "overlay": { "facebook_page_id": null },
+      "expected": { "facebook_page_id": "123" }
+    },
+    {
+      "id": "json-null-writes-when-absent",
+      "description": "null IS written when the key is absent — provisioning seeds null placeholders",
+      "key": "integrations",
+      "existing": { "facebook_page_id": "123" },
+      "overlay": { "google_business_token": null },
+      "expected": { "facebook_page_id": "123", "google_business_token": null }
+    },
+    {
+      "id": "false-is-a-real-overwrite",
+      "description": "S325 FALSY BUG. false is a meaningful value (demo_mode.active, seo.noindex) and MUST overwrite true",
+      "key": "demo_mode",
+      "existing": { "active": true },
+      "overlay": { "active": false },
+      "expected": { "active": false }
+    },
+    {
+      "id": "zero-is-a-real-overwrite",
+      "description": "S325 FALSY BUG. 0 is a meaningful value and MUST overwrite a non-zero one",
+      "key": "subscription",
+      "existing": { "tier": 3, "monthly_price": 349 },
+      "overlay": { "monthly_price": 0 },
+      "expected": { "tier": 3, "monthly_price": 0 }
+    },
+    {
+      "id": "false-is-not-treated-as-empty-even-over-string",
+      "description": "false must not be dropped merely because the existing value is non-empty",
+      "key": "seo",
+      "existing": { "noindex": true, "title": "Apex" },
+      "overlay": { "noindex": false },
+      "expected": { "noindex": false, "title": "Apex" }
+    },
+    {
+      "id": "empty-array-does-not-wipe-populated-list",
+      "description": "seo.service_areas: [] is a PLACEHOLDER provisioning writes for a later step to repair. It must not wipe a populated list when that step is skipped or fails",
+      "key": "seo",
+      "existing": { "service_areas": ["dallas", "plano"] },
+      "overlay": { "service_areas": [] },
+      "expected": { "service_areas": ["dallas", "plano"] }
+    },
+    {
+      "id": "empty-array-writes-when-absent",
+      "description": "[] IS written on a key that does not exist yet",
+      "key": "seo",
+      "existing": { "title": "Apex" },
+      "overlay": { "service_areas": [] },
+      "expected": { "title": "Apex", "service_areas": [] }
+    },
+    {
+      "id": "populated-array-replaces-whole",
+      "description": "Arrays are OWNED values: replaced entire, never concatenated or element-merged",
+      "key": "seo",
+      "existing": { "service_areas": ["dallas", "plano", "frisco"] },
+      "overlay": { "service_areas": ["austin"] },
+      "expected": { "service_areas": ["austin"] }
+    },
+    {
+      "id": "nested-object-replaces-whole",
+      "description": "integrations.zernio_accounts — a nested object is REPLACED, never deep-merged. A deep merge would invent a hybrid object that was never written",
+      "key": "integrations",
+      "existing": { "zernio_accounts": { "facebook": "fb-1", "instagram": "ig-1" } },
+      "overlay": { "zernio_accounts": { "facebook": "fb-2" } },
+      "expected": { "zernio_accounts": { "facebook": "fb-2" } }
+    },
+    {
+      "id": "nested-object-replace-is-not-deep-merge-business-info",
+      "description": "The same rule inside business_info: hours_structured is replaced whole",
+      "key": "business_info",
+      "existing": { "timezone": "America/Chicago", "hours_structured": [{ "day": "Mon", "open": "08:00" }, { "day": "Tue", "open": "08:00" }] },
+      "overlay": { "hours_structured": [{ "day": "Mon", "open": "09:00" }] },
+      "expected": { "timezone": "America/Chicago", "hours_structured": [{ "day": "Mon", "open": "09:00" }] }
+    },
+    {
+      "id": "first-provision-existing-null",
+      "description": "No row yet: the result is the overlay verbatim. Nothing to destroy",
+      "key": "branding",
+      "existing": null,
+      "overlay": { "primary_color": "#f60", "template": "modern-pro" },
+      "expected": { "primary_color": "#f60", "template": "modern-pro" }
+    },
+    {
+      "id": "first-provision-business-info-null",
+      "description": "First provision of business_info still applies the group rules — a complete quad lands",
+      "key": "business_info",
+      "existing": null,
+      "overlay": { "name": "Apex", "street_address": "1 Main", "address_locality": "Dallas", "address_region": "TX", "postal_code": "75001" },
+      "expected": { "name": "Apex", "street_address": "1 Main", "address_locality": "Dallas", "address_region": "TX", "postal_code": "75001" }
+    },
+    {
+      "id": "unnamed-existing-keys-survive",
+      "description": "THE CATASTROPHIC CASE (S292): keys the overlay never mentions must survive. Fourteen were destroyed once",
+      "key": "business_info",
+      "existing": { "name": "Apex", "phone": "555", "email": "a@b.co", "license": "TX-1", "tagline": "t", "industry": "Pest Control" },
+      "overlay": { "phone": "556" },
+      "expected": { "name": "Apex", "phone": "556", "email": "a@b.co", "license": "TX-1", "tagline": "t", "industry": "Pest Control" }
+    },
+    {
+      "id": "empty-overlay-changes-nothing",
+      "description": "An empty overlay is a no-op, not a wipe",
+      "key": "seo",
+      "existing": { "title": "Apex", "noindex": false },
+      "overlay": {},
+      "expected": { "title": "Apex", "noindex": false }
+    },
+    {
+      "id": "quad-partial-dropped",
+      "description": "A PARTIAL address quad is dropped entirely. business_info_structured_shape is a CHECK — a 3-of-4 quad raises 23514 and fails the WHOLE upsert",
+      "key": "business_info",
+      "existing": { "name": "Apex" },
+      "overlay": { "street_address": "1 Main", "address_locality": "Dallas", "address_region": "TX" },
+      "expected": { "name": "Apex" }
+    },
+    {
+      "id": "quad-complete-written",
+      "description": "A COMPLETE quad is written — the group check drops nothing when all four are present",
+      "key": "business_info",
+      "existing": { "name": "Apex" },
+      "overlay": { "street_address": "1 Main", "address_locality": "Dallas", "address_region": "TX", "postal_code": "75001" },
+      "expected": { "name": "Apex", "street_address": "1 Main", "address_locality": "Dallas", "address_region": "TX", "postal_code": "75001" }
+    },
+    {
+      "id": "quad-blanking-one-member-preserves-whole-old-address",
+      "description": "THE NON-OBVIOUS ONE. Blanking ONE member preserves the WHOLE OLD ADDRESS. dropEmptyOverwrites removes the blank street_address, leaving THREE of four; the group check then drops all three. NOT three updated and one kept — that would ship an old street with a new ZIP",
+      "key": "business_info",
+      "existing": { "street_address": "1 Old St", "address_locality": "Dallas", "address_region": "TX", "postal_code": "75001" },
+      "overlay": { "street_address": "", "address_locality": "Plano", "address_region": "TX", "postal_code": "75024" },
+      "expected": { "street_address": "1 Old St", "address_locality": "Dallas", "address_region": "TX", "postal_code": "75001" }
+    },
+    {
+      "id": "quad-blanking-one-member-does-not-touch-other-keys",
+      "description": "The quad is dropped as a group, but unrelated overlay keys in the same write still land",
+      "key": "business_info",
+      "existing": { "name": "Apex", "street_address": "1 Old St", "address_locality": "Dallas", "address_region": "TX", "postal_code": "75001" },
+      "overlay": { "name": "Apex Pest", "street_address": "", "address_locality": "Plano", "address_region": "TX", "postal_code": "75024" },
+      "expected": { "name": "Apex Pest", "street_address": "1 Old St", "address_locality": "Dallas", "address_region": "TX", "postal_code": "75001" }
+    },
+    {
+      "id": "lone-latitude-dropped",
+      "description": "A lone latitude is dropped — latitude and longitude must both be present or both absent",
+      "key": "business_info",
+      "existing": { "name": "Apex" },
+      "overlay": { "latitude": 32.78 },
+      "expected": { "name": "Apex" }
+    },
+    {
+      "id": "lat-lng-pair-written",
+      "description": "The complete lat/lng pair is written",
+      "key": "business_info",
+      "existing": { "name": "Apex" },
+      "overlay": { "latitude": 32.78, "longitude": -96.8 },
+      "expected": { "name": "Apex", "latitude": 32.78, "longitude": -96.8 }
+    },
+    {
+      "id": "lone-longitude-dropped",
+      "description": "The mirror case — a lone longitude is dropped too, so the rule is not one-sided",
+      "key": "business_info",
+      "existing": { "name": "Apex", "latitude": 32.78, "longitude": -96.8 },
+      "overlay": { "longitude": -97.0 },
+      "expected": { "name": "Apex", "latitude": 32.78, "longitude": -96.8 }
+    },
+    {
+      "id": "hours-dropped-without-timezone",
+      "description": "hours_structured with no timezone anywhere is dropped — the CHECK requires timezone",
+      "key": "business_info",
+      "existing": { "name": "Apex" },
+      "overlay": { "hours_structured": [{ "day": "Mon", "open": "08:00" }] },
+      "expected": { "name": "Apex" }
+    },
+    {
+      "id": "hours-written-with-timezone-in-overlay",
+      "description": "timezone supplied in the SAME overlay makes hours_structured legal",
+      "key": "business_info",
+      "existing": { "name": "Apex" },
+      "overlay": { "hours_structured": [{ "day": "Mon", "open": "08:00" }], "timezone": "America/Chicago" },
+      "expected": { "name": "Apex", "hours_structured": [{ "day": "Mon", "open": "08:00" }], "timezone": "America/Chicago" }
+    },
+    {
+      "id": "hours-written-with-timezone-in-existing",
+      "description": "timezone already on the row also makes it legal — the check is on the RESULT, not the overlay",
+      "key": "business_info",
+      "existing": { "name": "Apex", "timezone": "America/Chicago" },
+      "overlay": { "hours_structured": [{ "day": "Tue", "open": "09:00" }] },
+      "expected": { "name": "Apex", "timezone": "America/Chicago", "hours_structured": [{ "day": "Tue", "open": "09:00" }] }
+    },
+    {
+      "id": "timezone-alone-is-legal",
+      "description": "NOT SYMMETRIC. timezone without hours_structured is fine and must not be dropped",
+      "key": "business_info",
+      "existing": { "name": "Apex" },
+      "overlay": { "timezone": "America/Chicago" },
+      "expected": { "name": "Apex", "timezone": "America/Chicago" }
+    },
+    {
+      "id": "year-founded-never-lands",
+      "description": "business_info_no_year_founded forbids the key outright — it can never arrive from an overlay",
+      "key": "business_info",
+      "existing": { "name": "Apex" },
+      "overlay": { "year_founded": 2017, "founded_year": 2017 },
+      "expected": { "name": "Apex", "founded_year": 2017 }
+    },
+    {
+      "id": "year-founded-stripped-from-existing-too",
+      "description": "Stripped from BOTH sides: a row that somehow carries year_founded is cleaned on write, not preserved",
+      "key": "business_info",
+      "existing": { "name": "Apex", "year_founded": 2017 },
+      "overlay": { "phone": "555" },
+      "expected": { "name": "Apex", "phone": "555" }
+    },
+    {
+      "id": "year-founded-not-stripped-from-other-keys",
+      "description": "The strip is business_info ONLY — another key carrying that name is untouched, so the rule is scoped and not global",
+      "key": "seo",
+      "existing": { "year_founded": 2017 },
+      "overlay": { "title": "Apex" },
+      "expected": { "year_founded": 2017, "title": "Apex" }
+    },
+    {
+      "id": "anti-vacuity-merge-is-not-identity",
+      "description": "ANTI-VACUITY. A non-empty overlay DOES win. If the merge returned 'existing' unchanged, most cases above would still pass",
+      "key": "business_info",
+      "existing": { "name": "Old Name", "phone": "555" },
+      "overlay": { "name": "New Name" },
+      "expected": { "name": "New Name", "phone": "555" }
+    },
+    {
+      "id": "anti-vacuity-merge-is-not-replacement",
+      "description": "ANTI-VACUITY, the other direction. If the merge returned the overlay, the surviving-keys cases would fail — this pins both bounds",
+      "key": "branding",
+      "existing": { "primary_color": "#f60", "template": "modern-pro" },
+      "overlay": { "primary_color": "#0af" },
+      "expected": { "primary_color": "#0af", "template": "modern-pro" }
+    },
+    {
+      "id": "business-info-generic-keys-still-shallow-merge",
+      "description": "The group rules do not disable ordinary merging: ungrouped keys behave exactly as they do for any other settings key",
+      "key": "business_info",
+      "existing": { "name": "Apex", "phone": "555", "license": "TX-1" },
+      "overlay": { "phone": "556", "email": "a@b.co", "license": "" },
+      "expected": { "name": "Apex", "phone": "556", "email": "a@b.co", "license": "TX-1" }
+    }
+  ]
+}
