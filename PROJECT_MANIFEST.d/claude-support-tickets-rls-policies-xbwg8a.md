@@ -635,3 +635,24 @@ it is recent.
   Still open after this: S323 PR C — widen `settings_business_info_vertical_valid` to
   admit `'lawn'`. LAST, as always. And `strip_settings_secrets` still has no migration
   file (the fifth fileless batch, still unrecorded).
+
+---
+## Session — 2026-09-04 22:36 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `24b6b2d` — S341: the per-service picker, and lawn becomes reachable
+- Author: Claude
+- Files changed:
+  - docs/audits/s282-rendered/client-setup.ClientSetupWizard.html
+  - docs/audits/s282-rendered/client-setup.Step1BusinessInfo.html
+  - docs/audits/s282-rendered/onboarding.StepBusinessInfo.html
+  - shared/lib/businessInfoMerge.ts
+  - src/lib/__tests__/lawnCatalog.test.ts
+  - src/lib/adminVerticalPreset.ts
+  - supabase/functions/_shared/provisioningSeed.test.ts
+  - supabase/functions/_shared/provisioningSeed.ts
+  - supabase/functions/provision-tenant/buildPayload.test.ts
+  - supabase/functions/provision-tenant/buildPayload.ts
+  - supabase/functions/provision-tenant/index.ts
+  - supabase/migrations/s341_settings_vertical_allow_lawn.sql
+  - supabase/migrations/s341_settings_vertical_allow_lawn_rollback.sql
+- Next recommended action: [Fill in next session: read this line, write what comes next]
