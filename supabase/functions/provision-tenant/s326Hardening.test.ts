@@ -2,34 +2,65 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-// S326 — THREE HARDENING GUARDS FOR provision-tenant.
+// S326 — THREE HARDENING GUARDS, REPOINTED IN S340.
 //
-// A SOURCE SCAN, AND SAYING SO IS THE POINT. index.ts imports from
-// https://esm.sh, which Node's ESM loader rejects, so the handler cannot be
-// executed under vitest — the same wall S313 and S321 hit. What can be asserted
-// is STRUCTURE: that the destructive call sits inside the opt-in guard, that the
-// prompt write names the new constraint, and that the unset-secret branch says
-// something. Structure is exactly what a later well-meaning edit would break.
+// S340 rewrote provision-tenant onto provision_tenant_atomic. All three S326
+// protections still hold, but TWO OF THEM MOVED HOUSE, so this file follows
+// them rather than being deleted — a deleted guard is a lapsed protection:
+//
+//   item 1  password reset opt-in    STILL provision-tenant, new shape
+//                                    (an early-return guard in resolveAuthUser
+//                                    rather than an `if` wrapping the call).
+//   item 2  prompt de-duplication    MOVED TO THE RPC. provision-tenant no
+//                                    longer writes ai_authority_prompts at all;
+//                                    provision_tenant_atomic does, with
+//                                    ON CONFLICT DO NOTHING. The unique
+//                                    constraint S326 added is what makes that
+//                                    conflict target exist, so it is still
+//                                    load-bearing and still pinned.
+//   item 3  unset ZERNIO_API_KEY     MOVED TO THE WORKER. The inline Zernio call
+//                                    is deleted; process-outbound-queue owns it.
+//
+// ONE BEHAVIOUR GENUINELY CHANGED, and it is asserted in its new form rather
+// than papered over: the operator-visible marker for a missing key was
+// settings.integrations.zernio_last_error = 'not_configured', written inline.
+// The worker instead completes the job `terminal` with that reason recorded on
+// the queue row. Durable, queryable and per-attempt — but it is NOT the same
+// write, so the old assertion is replaced, not retargeted.
+//
+// A SOURCE SCAN, AND SAYING SO IS THE POINT. Both index.ts files import from
+// https://esm.sh, which Node's ESM loader rejects, so neither handler can be
+// executed under vitest. What can be asserted is STRUCTURE — exactly what a
+// later well-meaning edit would break.
 //
 // NOT named index.test.ts. vitest.config.ts excludes
 // `supabase/functions/*/index.test.ts`, so that name is SILENTLY SKIPPED —
 // provision-tenant/index.ts already has one and it is collected by nothing.
 //
-// Every assertion runs against CODE, not the raw file: this file's own header and
-// index.ts's own comments quote the patterns they forbid, and a raw scan flags
-// the documentation as if it were live code. S313 hit that on its first run.
+// Every assertion runs against CODE, not the raw file: this file's own header
+// and the sources' own comments quote the patterns they forbid, and a raw scan
+// flags documentation as if it were live code. S313 hit that on its first run.
 
-const SRC = readFileSync(join(__dirname, 'index.ts'), 'utf8')
-const CODE = SRC
+const strip = (src: string) => src
   .replace(/\/\*[\s\S]*?\*\//g, '')
   .replace(/^[ \t]*\/\/.*$/gm, '')
   .replace(/([^:])\/\/.*$/gm, '$1')
 
-/** The lexical block opened by `if (<cond>) {`, brace-matched from the header. */
+const SRC = readFileSync(join(__dirname, 'index.ts'), 'utf8')
+const CODE = strip(SRC)
+
+const WORKER_SRC = readFileSync(
+  join(__dirname, '..', 'process-outbound-queue', 'index.ts'), 'utf8')
+const WORKER = strip(WORKER_SRC)
+
+const MIGRATIONS = join(__dirname, '..', '..', 'migrations')
+const RPC_SQL = readFileSync(join(MIGRATIONS, 's338_provision_tenant_atomic.sql'), 'utf8')
+
+/** The lexical block opened by `<header> {`, brace-matched from the header. */
 function blockAfter(code: string, header: string): string {
   const start = code.indexOf(header)
   if (start === -1) throw new Error(`header not found: ${header}`)
-  let i = code.indexOf('{', start)
+  const i = code.indexOf('{', start)
   if (i === -1) throw new Error(`no block opens after: ${header}`)
   let depth = 0
   for (let j = i; j < code.length; j++) {
@@ -42,38 +73,53 @@ function blockAfter(code: string, header: string): string {
   throw new Error(`unbalanced block after: ${header}`)
 }
 
-// ── ITEM 1 — the password reset ─────────────────────────────────────────────
+// ── ITEM 1 — the password reset, still here ─────────────────────────────────
 describe('S326 item 1 — the password reset is opt-in', () => {
-  const GUARD = 'if (body.reset_admin_password === true)'
+  // NOT blockAfter(): the first `{` after the signature opens the `opts:` object
+  // TYPE in the parameter list, not the body. Slice between declarations instead.
+  const RESOLVER = (() => {
+    const a = CODE.indexOf('async function resolveAuthUser(')
+    const b = CODE.indexOf('async function collisionGuard(')
+    if (a === -1 || b === -1 || b <= a) throw new Error('resolveAuthUser not found')
+    return CODE.slice(a, b)
+  })()
 
   it('the request body declares the flag', () => {
     expect(CODE).toMatch(/reset_admin_password\?:\s*boolean/)
   })
 
-  it('the guard tests for LITERAL true, not truthiness', () => {
-    // `if (body.reset_admin_password)` would let any truthy junk through — a
-    // string "false" from a form field being the obvious one.
-    expect(CODE).toContain(GUARD)
+  it('the flag is read as LITERAL true, not truthiness', () => {
+    // `body.reset_admin_password` alone would let any truthy junk through — a
+    // string "false" from a form field being the obvious one. S325's falsy bug.
+    expect(CODE).toContain('body.reset_admin_password === true')
     expect(CODE).not.toMatch(/if\s*\(\s*body\.reset_admin_password\s*\)/)
     expect(CODE).not.toMatch(/reset_admin_password\s*!==\s*false/)
   })
 
-  it('THE ASSERTION WITH TEETH: updateUserById sits INSIDE that guard', () => {
-    // Presence of the guard proves nothing on its own — it could sit anywhere.
-    // This brace-matches the block and requires the destructive call to be in it.
-    const guarded = blockAfter(CODE, GUARD)
-    expect(guarded).toContain('auth.admin.updateUserById')
-    // …and it is the ONLY updateUserById in the file, so there is no second,
-    // ungated path to the same operation.
+  it('THE ASSERTION WITH TEETH: the skip guard RETURNS before updateUserById', () => {
+    // The shape changed from `if (flag) { destructive }` to an early return, so
+    // "inside the block" no longer expresses it. What must hold is the ordering:
+    // the not-requested branch has to exit before the destructive call is
+    // reachable. Deleting the guard, or moving updateUserById above it, fails.
+    const guardAt = RESOLVER.indexOf('if (!opts.resetPassword)')
+    const callAt = RESOLVER.indexOf('auth.admin.updateUserById')
+    expect(guardAt, 'skip guard missing from resolveAuthUser').toBeGreaterThan(-1)
+    expect(callAt, 'updateUserById missing from resolveAuthUser').toBeGreaterThan(-1)
+    expect(guardAt).toBeLessThan(callAt)
+    expect(blockAfter(RESOLVER, 'if (!opts.resetPassword)')).toContain('return')
+
+    // …and it is the ONLY updateUserById anywhere in the file, so there is no
+    // second, ungated path to the same operation.
     expect(CODE.match(/auth\.admin\.updateUserById/g) ?? []).toHaveLength(1)
   })
 
-  it('the NEW-tenant path is untouched — createUser is NOT inside the guard', () => {
-    // Verification requirement 2. createUser sets the initial password at
-    // creation; that is not a reset and must not start depending on the flag.
-    const guarded = blockAfter(CODE, GUARD)
-    expect(guarded).not.toContain('auth.admin.createUser')
-    expect(CODE).toMatch(/auth\.admin\.createUser\(\{/)
+  it('the NEW-tenant path is untouched — createUser does not consult the flag', () => {
+    // createUser sets the initial password at creation; that is not a reset and
+    // must not start depending on the flag.
+    const createAt = RESOLVER.indexOf('auth.admin.createUser')
+    const guardAt = RESOLVER.indexOf('if (!opts.resetPassword)')
+    expect(createAt).toBeGreaterThan(-1)
+    expect(createAt).toBeLessThan(guardAt)
     expect(CODE).toContain('email_confirm: true')
   })
 
@@ -83,67 +129,49 @@ describe('S326 item 1 — the password reset is opt-in', () => {
   })
 
   it('the response reports whether credentials were touched', () => {
-    expect(CODE).toContain('admin_password_reset: adminPasswordReset')
-    expect(CODE).toMatch(/let adminPasswordReset = false/)
+    expect(CODE).toContain('admin_password_reset: passwordReset')
   })
 
   it('no log line carries the password itself', () => {
-    // The value is in scope right there as resolvedAdminPassword.
     const logs = CODE.match(/console\.(log|warn|error)\([^)]*\)/g) ?? []
     for (const line of logs) {
       expect(line, `password in a log line: ${line}`).not.toContain('resolvedAdminPassword')
+      expect(line, `password in a log line: ${line}`).not.toContain('opts.password')
     }
     expect(logs.length, 'no log lines found — scan is broken').toBeGreaterThan(5)
   })
 })
 
-// ── ITEM 2 — the prompt upsert ──────────────────────────────────────────────
+// ── ITEM 2 — the prompt write, now the RPC's ────────────────────────────────
 describe('S326 item 2 — ai_authority_prompts cannot duplicate', () => {
-  // SCOPED TO THE PROMPT WRITE, not the whole file. The first version of this
-  // block asserted CODE.toContain('ignoreDuplicates: true') globally, and passed
-  // while the prompt upsert had lost that flag — because the service_areas
-  // draft-cities upsert elsewhere in the file also sets it. A mutation dropping
-  // ignoreDuplicates from the prompt write was invisible. That is the S319
-  // failure mode, found by mutation-testing this very guard.
-  const PROMPT_WRITE = (() => {
-    const i = CODE.indexOf("from('ai_authority_prompts')")
-    if (i === -1) throw new Error("ai_authority_prompts write not found")
-    return CODE.slice(i, i + 400)
-  })()
+  it('provision-tenant no longer writes the table at all', () => {
+    // The whole point of S340: one RPC owns every seed write. A direct write
+    // reappearing here would be outside the transaction AND outside the
+    // conflict handling below.
+    expect(CODE).not.toContain("from('ai_authority_prompts')")
+  })
 
-  it('writes with upsert naming the new unique key, not a plain insert', () => {
-    expect(PROMPT_WRITE).toMatch(/^from\('ai_authority_prompts'\)\s*\n?\s*\.upsert\(/)
-    expect(PROMPT_WRITE).toContain("onConflict: 'tenant_id,prompt_text'")
+  it('the RPC inserts if-missing and cannot duplicate', () => {
+    const stmt = RPC_SQL.slice(RPC_SQL.indexOf('INSERT INTO public.ai_authority_prompts'))
+    expect(stmt.slice(0, 500)).toMatch(/ON CONFLICT \(tenant_id, prompt_text\) DO NOTHING/)
   })
 
   it('does NOT re-enable a prompt the operator disabled', () => {
-    // ignoreDuplicates, not a merge: an existing row keeps its `active` value.
+    // DO NOTHING, not DO UPDATE: an existing row keeps its `active` value.
     // Without this a re-provision would flip every disabled prompt back on.
-    expect(PROMPT_WRITE).toContain('ignoreDuplicates: true')
+    const stmt = RPC_SQL.slice(RPC_SQL.indexOf('INSERT INTO public.ai_authority_prompts'), )
+    expect(stmt.slice(0, 500)).not.toMatch(/DO UPDATE/)
   })
 
-  it('no plain .insert( remains on that table', () => {
-    expect(PROMPT_WRITE).not.toMatch(/\.insert\(/)
-  })
-
-  it('the scope really is narrow — it excludes the service_areas upsert', () => {
-    // Anti-vacuity for the scoping itself: if PROMPT_WRITE ever widened to
-    // swallow the neighbouring writes, the assertions above go back to being
-    // satisfiable by the wrong code.
-    expect(PROMPT_WRITE).not.toContain("onConflict: 'tenant_id,slug'")
-    expect(CODE, 'the file really does contain another ignoreDuplicates').toMatch(
-      /onConflict: 'tenant_id,slug', ignoreDuplicates: true/,
-    )
-  })
-
-  it('the migration and its rollback both exist, and both are untimestamped', () => {
-    const dir = join(__dirname, '..', '..', 'migrations')
+  it('the unique constraint the conflict target needs still exists', () => {
+    // ON CONFLICT (tenant_id, prompt_text) is only legal because S326 added
+    // this constraint. Drop it and the RPC starts erroring at runtime.
+    const dir = MIGRATIONS
     for (const f of ['s326_ai_authority_prompts_unique.sql', 's326_ai_authority_prompts_unique_rollback.sql']) {
       const body = readFileSync(join(dir, f), 'utf8')
       expect(body.length, `${f} is empty`).toBeGreaterThan(200)
       // A <timestamp>_*.sql name is one the CLI APPLIES. These were applied via
-      // apply_migration, which stamps schema_migrations without writing a file,
-      // so a timestamped name here would apply the same DDL a second time.
+      // apply_migration, which stamps schema_migrations without writing a file.
       expect(/^\d{14}_/.test(f), `${f} is timestamped — the CLI would re-apply it`).toBe(false)
     }
     const fwd = readFileSync(join(dir, 's326_ai_authority_prompts_unique.sql'), 'utf8')
@@ -153,46 +181,41 @@ describe('S326 item 2 — ai_authority_prompts cannot duplicate', () => {
   })
 })
 
-// ── ITEM 3 — the silent Zernio skip ─────────────────────────────────────────
+// ── ITEM 3 — the silent Zernio skip, now the worker's ───────────────────────
 describe('S326 item 3 — an unset ZERNIO_API_KEY is observable', () => {
-  const SKIP = blockAfter(CODE, 'if (!ZERNIO_API_KEY)')
+  it('provision-tenant no longer calls Zernio at all', () => {
+    expect(CODE).not.toContain('ZERNIO_API_KEY')
+    expect(CODE).not.toContain('zernio.com')
+  })
 
-  it('the unset branch exists and logs a structured, allowlisted reason', () => {
-    expect(SKIP).toMatch(/zernio_profile: skipped/)
-    expect(SKIP).toContain('reason=not_configured')
-    expect(SKIP).toContain('step=create_profile')
+  const SKIP = blockAfter(WORKER, 'if (!key)')
+
+  it('the unset branch is TERMINAL, not a retry', () => {
+    // Retrying a missing secret every 15 minutes forever is the failure mode
+    // this branch exists to avoid. It is a permanent state until an operator
+    // acts, and the queue row says so.
+    expect(SKIP).toContain("outcome: 'terminal'")
+    expect(SKIP).toContain("reason: 'not_configured'")
   })
 
   it('NEVER logs the key, or any part of it', () => {
-    // The whole point of the branch is that the key is absent — but a later edit
-    // "helpfully" logging what it looked for is the S313 shape.
-    expect(SKIP).not.toMatch(/\$\{ZERNIO_API_KEY\}/)
-    expect(SKIP).not.toMatch(/console\.[a-z]+\([^)]*ZERNIO_API_KEY/)
+    expect(SKIP).not.toMatch(/\$\{key\}/)
+    expect(SKIP).not.toMatch(/console\.[a-z]+\([^)]*\bkey\b/)
   })
 
-  it('records an operator-visible marker, and only an allowlisted literal', () => {
-    expect(SKIP).toContain("zernio_last_error: 'not_configured'")
-    // No upstream body, no error object, no template interpolation in the value.
-    expect(SKIP).not.toMatch(/zernio_last_error:\s*`/)
-    expect(SKIP).not.toMatch(/zernio_last_error:\s*JSON\.stringify/)
+  it('the reason reaches the queue row, so it is operator-visible', () => {
+    // This REPLACES the old settings.integrations.zernio_last_error marker: the
+    // worker records the reason on the job via outbound_queue_complete's p_error.
+    expect(WORKER).toContain('p_error: handled.reason ?? null')
   })
 
-  it('the NEW marker write runs through stripVaultSecrets', () => {
-    // Not a fix for the pre-existing zernio_profile_id write, which is recorded
-    // and out of scope — this is about not ADDING a second integrations writer
-    // that could round-trip a Vault secret into anon-adjacent JSONB.
-    expect(SKIP).toContain('stripVaultSecrets(')
-    expect(CODE).toContain("from '../_shared/secrets/stripVaultSecrets.ts'")
+  it('a successful create still CLEARS the stale error marker', () => {
+    expect(readFileSync(join(__dirname, '..', 'process-outbound-queue', 'dispatch.ts'), 'utf8'))
+      .toContain('zernio_last_error: null')
   })
 
-  it('a successful create CLEARS the marker, so it cannot go stale', () => {
-    expect(CODE).toContain('zernio_last_error: null')
-  })
-
-  it('no raw upstream body reaches a log line', () => {
-    // provision-tenant already logs `Zernio raw response` — pre-existing and
-    // out of scope for this item, but it must not spread into the new branch.
-    expect(SKIP).not.toContain('JSON.stringify(zernioData)')
+  it('no raw upstream body reaches a log line (S313)', () => {
+    expect(WORKER).not.toMatch(/console\.[a-z]+\([^)]*\bbody\b/)
   })
 })
 

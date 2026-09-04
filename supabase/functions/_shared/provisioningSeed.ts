@@ -176,7 +176,11 @@ export function tradeNounFor(vertical: string | null | undefined): string {
  * choice NEUTRAL_ADMIN_PRESET makes, and for the same reason: naming service
  * pages for a tenant whose trade we do not know means inventing their trade.
  */
-export function servicePagesFor(vertical: string | null | undefined): SeedPage[] {
+// S340 — `readonly`, matching what it actually returns. VERTICAL_SEED.servicePages
+// is the frozen catalog array from shared/lib, so declaring a mutable SeedPage[]
+// was a lie the compiler never caught: the root tsconfig EXCLUDES supabase/, so
+// nothing typechecked this file. All three callers only read it.
+export function servicePagesFor(vertical: string | null | undefined): readonly SeedPage[] {
   return isSeedVertical(vertical) ? VERTICAL_SEED[vertical].servicePages : [];
 }
 

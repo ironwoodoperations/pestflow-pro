@@ -426,8 +426,11 @@ describe('SOURCE-level: no edge function defaults a BUSINESS name to a PLATFORM 
 })
 
 // ── provision-tenant: the string that must NOT be renamed ──────────────────
-describe('SOURCE-level: provision-tenant keeps its seed-data search patterns', () => {
-  const src = edgeSrc('provision-tenant/index.ts')
+describe('SOURCE-level: provisioning keeps its seed-data search patterns', () => {
+  // S340 MOVED THESE. The legal-page templating left index.ts for the pure
+  // buildPayload.ts, so this guard follows it — the needles are what matter, not
+  // which file they sit in.
+  const src = edgeSrc('provision-tenant/buildPayload.ts')
 
   it('the replaceAll NEEDLES still say PestFlow Pro', () => {
     // These are not copy. They are matched against seeded template rows whose
@@ -435,14 +438,25 @@ describe('SOURCE-level: provision-tenant keeps its seed-data search patterns', (
     // PLATFORM_NAME stops it matching and every newly provisioned tenant
     // silently keeps the demo company's text — a failure with no error.
     expect(src).toContain(".replaceAll('PestFlow Pro, LLC'")
-    expect(src).toContain(".replaceAll('PestFlow Pro', newName)")
-    expect(src).toContain(".replaceAll('PESTFLOW PRO', newNameUpper)")
+    expect(src).toContain(".replaceAll('PestFlow Pro', legalName)")
+    expect(src).toContain(".replaceAll('PESTFLOW PRO', legalName.toUpperCase())")
   })
 
-  it('its user-visible copy DID move to the constant', () => {
-    // The exclusion above is scoped to the matchers, not a blanket pass.
-    expect(src).toContain('platformBrand')
-    expect(src).toContain('${PLATFORM_NAME} tenant:')
-    expect(src).not.toContain('`PestFlow Pro tenant:')
+  it('the needles are matchers, not copy — nothing renders the retired name', () => {
+    // The exclusion is scoped to the replaceAll arguments. Anything else in the
+    // file naming the retired brand would be user-visible copy.
+    const nonNeedle = codeOnly(src).replace(/\.replaceAll\('[^']*'[^)]*\)/g, '')
+    expect(nonNeedle).not.toMatch(/PestFlow Pro/)
+  })
+
+  it('provision-tenant no longer carries platform-name copy at all', () => {
+    // RECORDED, NOT A REGRESSION IN THIS GUARD: index.ts used to build a Zernio
+    // profile description reading `${PLATFORM_NAME} tenant: …`. S340 deleted the
+    // inline Zernio call — process-outbound-queue owns it now, and the RPC
+    // enqueues { name, slug } with no description field. So that copy is gone
+    // rather than moved, and the import with it.
+    const idx = edgeSrc('provision-tenant/index.ts')
+    expect(idx).not.toContain('PLATFORM_NAME')
+    expect(codeOnly(idx)).not.toMatch(/PestFlow Pro/)
   })
 })
