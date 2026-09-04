@@ -9,6 +9,10 @@ import { getSchemaVocabulary } from '../../../shared/lib/seoSchema.ts';
 import { VERTICALS } from '../../../shared/lib/verticals.ts';
 import { serviceSlugsFor } from '../../../app/tenant/[slug]/_lib/serviceData.ts';
 import { SEED_VERTICALS } from '../../../supabase/functions/_shared/provisioningSeed.ts';
+import { checkBusinessInfoShape } from '../../../shared/lib/businessInfoMerge.ts';
+import { SERVICE_CATALOG } from '../../../shared/lib/serviceCatalog.ts';
+import { readFileSync, existsSync } from 'node:fs';
+import { join } from 'node:path';
 
 // S323 PR A — THE LAWN CATALOG, and the guard that keeps its surfaces in step.
 //
@@ -202,20 +206,96 @@ describe('VERIFICATION 1 — pest and irrigation are untouched', () => {
   });
 });
 
-describe('PR A is INERT — nothing can provision a lawn tenant yet', () => {
-  // The A → B → C ordering is load-bearing: getVerticalCopy and
-  // getSchemaVocabulary throw from layout.tsx, so a CHECK widened ahead of the
-  // presets lets a JSONB edit 500 an entire site. These assertions are the
-  // ordering, stated. PR B deletes the first two; PR C widens the constraint.
-  it('the wizard does not offer lawn', () => {
-    expect(VERTICAL_OPTIONS.map((o) => o.value)).not.toContain('lawn');
+// ── S341 — the lawn titles, REVIEWED rather than silently inherited ─────────
+//
+// serviceCatalog.ts borrowed every lawn title from LAWN_CONTENT_MAP's
+// displayName and flagged that they should be REVIEWED as page titles when lawn
+// became seedable. That is now. Sixteen of seventeen read correctly as page
+// titles. ONE DOES NOT, and it is pinned here rather than quietly changed —
+// changing a title moves a live page heading and is a content decision, not a
+// refactor.
+describe('S341 — the one lawn title that reads wrong as a page title', () => {
+  const titleOf = (v: 'lawn' | 'irrigation', slug: string) =>
+    SERVICE_CATALOG[v].find((x) => x.slug === slug)?.title;
+
+  it('sprinkler-systems carries a DIFFERENT title in lawn than in irrigation', () => {
+    // The same slug, and therefore the same URL, titled two ways depending on
+    // which vertical the tenant is. A lawn tenant selecting `sprinkler-systems`
+    // gets a page titled "Irrigation Repair" at /sprinkler-systems, while an
+    // irrigation tenant gets "Sprinkler Systems" at the same path.
+    //
+    // This is exactly the trap serviceCatalog.ts named — a displayName and a
+    // page title are related but not the same field. FLAGGED, NOT CHANGED:
+    // 'Irrigation Repair' may well be the right lawn-side title (a lawn company
+    // repairs sprinklers rather than installing systems), and picking is Scott's
+    // call. This test exists so the divergence cannot drift back to unnoticed.
+    expect(titleOf('lawn', 'sprinkler-systems')).toBe('Irrigation Repair');
+    expect(titleOf('irrigation', 'sprinkler-systems')).toBe('Sprinkler Systems');
+    expect(titleOf('lawn', 'sprinkler-systems')).not.toBe(titleOf('irrigation', 'sprinkler-systems'));
   });
 
-  it('provisioning cannot seed lawn', () => {
-    expect(SEED_VERTICALS as string[]).not.toContain('lawn');
+  it('the OTHER shared slug does NOT diverge — so the above is specific, not systemic', () => {
+    expect(titleOf('lawn', 'artificial-turf')).toBe(titleOf('irrigation', 'artificial-turf'));
   });
 
-  it('but the preset IS reachable, so PR B has something to select from', () => {
+  it('no lawn title is empty or merely the slug echoed back', () => {
+    for (const { slug, title } of SERVICE_CATALOG.lawn) {
+      expect(title.trim(), `${slug} has no title`).not.toBe('');
+      expect(title, `${slug} title is just the slug`).not.toBe(slug);
+    }
+  });
+});
+
+describe('S341 — lawn is reachable in CODE; the CHECK is the one step left', () => {
+  // THE ORDERING, RESTATED FOR ITS NEW POSITION rather than deleted.
+  //
+  // It is still load-bearing: getVerticalCopy and getSchemaVocabulary throw from
+  // layout.tsx, so a CHECK widened ahead of the presets lets a JSONB edit 500 an
+  // entire site. This block used to assert lawn was inert (PR A). S341 lands the
+  // three CODE steps, so the same ordering now reads the other way round — the
+  // keys are in place, and the constraint is the last thing to move.
+  //
+  // A key with no constraint behind it is inert. A constraint with no key behind
+  // it is an outage. That is why these three pass and the fourth is a file.
+  it('STEP 1 — provisioning can seed lawn', () => {
+    expect(SEED_VERTICALS as string[]).toContain('lawn');
+  });
+
+  it('STEP 2 — the read-time mirror of the CHECK admits lawn', () => {
+    // checkBusinessInfoShape hardcodes the vertical list. It is a MIRROR of the
+    // constraint, so it has to widen with it or a legal value reads as invalid.
+    // Returns the list of VIOLATIONS — empty means the value would be accepted.
+    expect(checkBusinessInfoShape({ vertical: 'lawn' })).toEqual([]);
+    // Anti-vacuity: an unregistered vertical is still rejected.
+    expect(checkBusinessInfoShape({ vertical: 'pool' }).join(' ')).toMatch(/vertical/);
+  });
+
+  it('STEP 3 — the wizard offers lawn', () => {
+    expect(VERTICAL_OPTIONS.map((o) => o.value)).toContain('lawn');
+  });
+
+  it('STEP 4 — the CHECK migration EXISTS but is NOT applied by this PR', () => {
+    // CC Web cannot apply migrations. Claude.ai applies this via MCP after merge,
+    // once steps 1-3 are on main. The file existing is the deliverable; the
+    // constraint still rejects lawn in the live database until it is run.
+    const dir = join(__dirname, '..', '..', '..', 'supabase', 'migrations');
+    for (const f of ['s341_settings_vertical_allow_lawn.sql',
+      's341_settings_vertical_allow_lawn_rollback.sql']) {
+      expect(existsSync(join(dir, f)), `${f} missing`).toBe(true);
+      // Untimestamped: a <timestamp>_*.sql name is one the CLI applies in the
+      // normal order, which would re-run DDL applied out of band via MCP.
+      expect(/^\d{14}_/.test(f), `${f} is timestamped`).toBe(false);
+    }
+    const fwd = readFileSync(join(dir, 's341_settings_vertical_allow_lawn.sql'), 'utf8');
+    expect(fwd).toMatch(/array\['pest', 'irrigation', 'lawn'\]/);
+    // The two escapes that keep existing rows legal must survive the rewrite.
+    expect(fwd).toContain("key <> 'business_info'");
+    expect(fwd).toMatch(/\(value ->> 'vertical'\) is null/);
+    const back = readFileSync(join(dir, 's341_settings_vertical_allow_lawn_rollback.sql'), 'utf8');
+    expect(back).toMatch(/array\['pest', 'irrigation'\]/);
+  });
+
+  it('the preset IS reachable, so the picker has something to select from', () => {
     expect(isAdminVertical('lawn')).toBe(true);
     expect(ADMIN_VERTICAL_LABELS.lawn).toBe('Lawn Care & Landscape');
   });

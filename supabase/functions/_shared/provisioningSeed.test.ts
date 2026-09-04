@@ -43,29 +43,38 @@ describe('seeded service pages resolve to THE catalog, not a copy of it', () => 
     });
 
     // Anti-vacuity: identity above would be worthless if the arrays were empty
-    // or the two verticals shared one array.
+    // or two verticals shared one array.
+    //
+    // S341 — this compared against CATALOG_SLUGS.lawn as a fixed sentinel, which
+    // worked only while lawn was NOT seedable. Now that it is, that comparison
+    // asks whether lawn is lawn. Comparing against every OTHER seedable vertical
+    // is what the assertion always meant and no longer depends on which vertical
+    // happens to be excluded.
     it(`${v}: the catalog is non-trivial and vertical-specific`, () => {
       expect(SERVICE_CATALOG[v].length).toBeGreaterThan(4);
-      expect(CATALOG_SLUGS[v]).not.toBe(CATALOG_SLUGS.lawn);
+      for (const other of SEED_VERTICALS) {
+        if (other === v) continue;
+        expect(CATALOG_SLUGS[v], `${v} and ${other} share one array`).not.toBe(CATALOG_SLUGS[other]);
+      }
       expect(VERTICAL_SEED[v].servicePages.map((p) => p.slug))
         .toEqual(ADMIN_PRESETS[v].servicePageSlugs);
     });
   }
 
-  // S323 PR A SPLIT THE TWO LISTS, deliberately, and this assertion changed
-  // shape rather than being deleted.
+  // S323 PR A split these two lists; S341 CLOSED THE GAP AGAIN, and this
+  // assertion has now changed shape twice rather than ever being deleted.
   //
-  // Equality was the right invariant while every vertical with a preset was
-  // also seedable. 'lawn' is not: its preset holds the FULL CATALOG of 17
-  // services, and provisioning must never seed a whole catalog — that is the
-  // S290 fabrication defect wearing a menu, giving a client a dozen service
-  // pages they do not sell. Lawn becomes seedable in PR B, when provisioning
-  // seeds the SELECTED services only.
+  // The gap existed because lawn had a preset but was not seedable: its preset
+  // holds the FULL CATALOG of 17 services, and provisioning could only ever seed
+  // a whole catalog — which for lawn is the S290 fabrication defect wearing a
+  // menu, handing a client ten service pages they do not sell. S341 removed the
+  // cause rather than the symptom: provisioning now seeds the SELECTED services
+  // only, so lawn is seedable and the admin-only set is empty.
   //
-  // What still must hold, and what this now asserts: nothing seedable may lack
-  // a preset (that would seed a page the admin sidebar cannot show), and the
-  // gap is NAMED — a second admin-only vertical appearing by accident fails
-  // here rather than passing under a loose subset check.
+  // What must hold is unchanged: nothing seedable may lack a preset (that would
+  // seed a page the admin sidebar cannot show), and the gap stays NAMED — a new
+  // admin-only vertical appearing by accident fails here rather than passing
+  // under a loose subset check.
   it('every seedable vertical has an admin preset, and the gap is named', () => {
     for (const v of SEED_VERTICALS) {
       expect(Object.keys(ADMIN_PRESETS), `seedable vertical with no preset: ${v}`).toContain(v);
@@ -73,7 +82,7 @@ describe('seeded service pages resolve to THE catalog, not a copy of it', () => 
     const adminOnly = Object.keys(ADMIN_PRESETS)
       .filter((v) => (SEED_VERTICALS as string[]).indexOf(v) === -1)
       .sort();
-    expect(adminOnly, 'admin-only verticals changed — is this deliberate?').toEqual(['lawn']);
+    expect(adminOnly, 'admin-only verticals changed — is this deliberate?').toEqual([]);
   });
 
   it('every platform page the admin preset lists is known here', () => {

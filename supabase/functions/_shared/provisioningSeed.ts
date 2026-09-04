@@ -62,8 +62,8 @@ import { SERVICE_CATALOG } from '../../../shared/lib/serviceCatalog.ts';
  * write time with 23514, which is why validateVertical() exists — a bad value
  * must fail loudly at the edge rather than be silently dropped on the floor.
  */
-export type SeedVertical = 'pest' | 'irrigation';
-export const SEED_VERTICALS: SeedVertical[] = ['pest', 'irrigation'];
+export type SeedVertical = 'pest' | 'irrigation' | 'lawn';
+export const SEED_VERTICALS: SeedVertical[] = ['pest', 'irrigation', 'lawn'];
 
 export interface SeedPage {
   slug: string;
@@ -95,6 +95,18 @@ export const VERTICAL_SEED: Record<SeedVertical, VerticalSeed> = {
   irrigation: {
     tradeTitle: 'Irrigation',
     servicePages: SERVICE_CATALOG.irrigation,
+  },
+  // S341 — lawn becomes seedable. 'Lawn Care' matches VERTICAL_COPY.lawn's
+  // tradeNoun ('lawn care'), which was chosen because the noun has to be true of
+  // every tenant in the vertical: the catalog spans turf treatment, maintenance
+  // and landscape work, and 'lawn care' covers all of it without asserting any
+  // one company does all of it. Not 'Lawn Maintenance', not 'Landscaping'.
+  //
+  // The 17-service catalog is now REACHABLE but no tenant gets all 17 unless
+  // they select all 17 — see the `services` selection below.
+  lawn: {
+    tradeTitle: 'Lawn Care',
+    servicePages: SERVICE_CATALOG.lawn,
   },
 };
 
@@ -184,6 +196,34 @@ export function servicePagesFor(vertical: string | null | undefined): readonly S
   return isSeedVertical(vertical) ? VERTICAL_SEED[vertical].servicePages : [];
 }
 
+/**
+ * THE SELECTED service pages — S341, and the distinction this function exists
+ * to make.
+ *
+ * `servicePagesFor` answers "what CAN this vertical sell?". This answers "what
+ * does THIS TENANT sell?", and those are not the same question. They only ever
+ * looked the same because every tenant provisioned so far happened to sell the
+ * whole catalog: all 12 pest services, all 5 irrigation services. Lawn breaks
+ * the coincidence — its catalog is 17 and the first lawn client sells 7.
+ *
+ * `services` ABSENT means "not stated", and falls back to the whole catalog so
+ * that every existing caller provisions exactly what it provisioned before.
+ * `services` PRESENT — including an empty array — is a statement, and is obeyed.
+ *
+ * Order comes from the CATALOG, not the caller: catalog order drives the admin
+ * sidebar and the order pages are seeded in, so it must not vary with however a
+ * selection happened to be typed. Filtering preserves it for free.
+ */
+export function selectedServicePages(
+  vertical: string | null | undefined,
+  services?: readonly string[],
+): readonly SeedPage[] {
+  const all = servicePagesFor(vertical);
+  if (services === undefined) return all;
+  const want = new Set(services);
+  return all.filter((p) => want.has(p.slug));
+}
+
 export interface PageContentSeedRow {
   page_slug: string;
   title: string;
@@ -197,6 +237,8 @@ export interface PageContentSeedInput {
   businessName: string;
   /** The tenant's own hero line, from the wizard. Falls back to the name. */
   heroHeadline?: string;
+  /** The tenant's SELECTED service slugs. Absent = the whole catalog (S341). */
+  services?: readonly string[];
 }
 
 /**
@@ -231,7 +273,7 @@ export function buildPageContentRows(input: PageContentSeedInput): PageContentSe
   push('home', tradeTitle ? name + ' — Professional ' + tradeTitle : name, hero);
   push('about', name ? 'About ' + name : 'About Us', name ? 'About ' + name : 'About Us');
 
-  const services = servicePagesFor(input.vertical);
+  const services = selectedServicePages(input.vertical, input.services);
   for (let i = 0; i < services.length; i += 1) {
     push(services[i].slug, services[i].title, services[i].title);
   }
@@ -306,6 +348,8 @@ export interface PageSeoMeta {
 export interface PageSeoSeedInput extends SeoSeedInput {
   /** The tenant's phone, verbatim. Omitted from copy when absent. */
   phone?: string;
+  /** The tenant's SELECTED service slugs. Absent = the whole catalog (S341). */
+  services?: readonly string[];
 }
 
 /**
@@ -344,7 +388,7 @@ export function buildPageSeoMeta(input: PageSeoSeedInput): Record<string, PageSe
       : '',
   };
 
-  const services = servicePagesFor(input.vertical);
+  const services = selectedServicePages(input.vertical, input.services);
   for (let i = 0; i < services.length; i += 1) {
     out[services[i].slug] = {
       meta_title: services[i].title + titleTail,

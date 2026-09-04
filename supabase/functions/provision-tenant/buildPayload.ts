@@ -139,6 +139,13 @@ export interface BuildPayloadInput {
   entitlement: number
   /** Already validated by validateVertical in index.ts; re-checked here. */
   vertical: string | null
+  /**
+   * THE TENANT'S SELECTED SERVICES (S341). Absent means "not stated" and falls
+   * back to the whole catalog for the vertical; present is obeyed verbatim.
+   * An empty array is a statement, not an absence, and is rejected for a
+   * recorded vertical.
+   */
+  services?: readonly string[]
   /** onboarding_sessions.wizard_data sub-objects, or {} when absent. */
   wizard: {
     business_info?: Record<string, any>
@@ -211,6 +218,26 @@ export function validateServiceSlugs(
   return null
 }
 
+/**
+ * Trim, drop blanks, dedupe — preserving first-seen order.
+ *
+ * Returns undefined for an absent selection so the caller can tell "not stated"
+ * from "stated as nothing"; those mean different things and only one of them is
+ * an error.
+ */
+export function normalizeSelection(services?: readonly string[]): string[] | undefined {
+  if (services === undefined || services === null) return undefined
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const raw of services) {
+    const slug = String(raw ?? '').trim()
+    if (slug === '' || seen.has(slug)) continue
+    seen.add(slug)
+    out.push(slug)
+  }
+  return out
+}
+
 /** "7 cities selected, Growth allows 5" — a readable 400, not a constraint name. */
 export function validateServiceAreaCap(
   entitlement: number,
@@ -267,21 +294,48 @@ export function buildProvisionPayload(input: BuildPayloadInput): BuildResult {
     }
   }
 
-  // ── the service selection ─────────────────────────────────────────────────
-  // Provisioning has no per-service picker: a recorded vertical means the whole
-  // catalog for that trade, which is exactly the set buildPageContentRows seeds
-  // pages for. Read from the canonical module, never restated.
-  const services = [...catalogSlugsFor(vertical)]
+  // ── THE SERVICE SELECTION (S341) ──────────────────────────────────────────
+  //
+  // This used to be `[...catalogSlugsFor(vertical)]` — the WHOLE CATALOG — and
+  // that was invisible because it was always TRUE: every pest tenant sells all
+  // 12 pest services and pls sells all 5 irrigation services, so "the catalog"
+  // and "their list" were the same list for every tenant ever provisioned.
+  //
+  // Lawn breaks the coincidence. The lawn catalog is 17 services and the first
+  // lawn client sells 7. Seeding the catalog would assert he offers ten services
+  // he does not — each with a page, a title and SEO claiming he does — which is
+  // exactly what the standing rule forbids: nothing is written that did not come
+  // from the client. public.tenant_services exists for this distinction.
+  //
+  // ABSENT vs EMPTY is the whole contract:
+  //   absent  -> "not stated". Falls back to the full catalog, so every existing
+  //              caller provisions byte-for-byte what it provisioned before.
+  //              Silently changing what they seed is not this change's job.
+  //   present -> a statement, obeyed verbatim (trimmed, deduped, order kept).
+  const suppliedServices = normalizeSelection(input.services)
+  const services = suppliedServices ?? [...catalogSlugsFor(vertical)]
+  console.log(`[provision-tenant] services: ${suppliedServices ? 'SELECTED' : 'catalog fallback'}`
+    + ` (${services.length} of ${catalogSlugsFor(vertical).length} for vertical '${vertical ?? 'none'}')`)
 
-  // NOTE, honestly: this list is DERIVED from the catalog one line above, so
-  // today the check below cannot fire. It is not theatre and it is not a claim
-  // that untrusted input is being filtered — it is the guard for the moment
-  // `services` becomes caller-supplied (a per-service picker is the obvious next
-  // step), and validateServiceSlugs is unit-tested directly against slugs that
-  // DO violate it. Nothing in the database enforces catalog membership, so when
-  // that day comes this is the only check there is.
+  // NOW A REAL GATE, not a defensive one. `services` is caller-supplied, and
+  // NOTHING IN THE DATABASE ENFORCES CATALOG MEMBERSHIP — tenant_services carries
+  // only a slug-SHAPE CHECK and provision_tenant_atomic checks shape and
+  // duplicates; neither knows the catalog. This is the only thing standing
+  // between a typo and a tenant_services row for a service with no page, no
+  // title and no admin entry.
   const slugErr = validateServiceSlugs(vertical, services)
   if (slugErr) return slugErr
+
+  // A recorded vertical with an EMPTY SUPPLIED selection is a caller error, and
+  // a different one from "not stated". The RPC also raises 22023; this exists
+  // for the message.
+  if (vertical && suppliedServices !== undefined && suppliedServices.length === 0) {
+    return {
+      ok: false, status: 400, code: 'empty_service_selection',
+      error: `vertical '${vertical}' was recorded but the service selection is empty. `
+        + 'Omit `services` entirely to seed the whole catalog, or name at least one service.',
+    }
+  }
 
   // The RPC rejects a recorded vertical with an empty selection. Catch it here
   // with a message that names the cause.
@@ -332,7 +386,7 @@ export function buildProvisionPayload(input: BuildPayloadInput): BuildResult {
   // folded in HERE. As two rows for the same slug it would simply be dropped.
   const scraped = input.scrapedContent ?? {}
   const page_content: PageContentRow[] = buildPageContentRows({
-    vertical, businessName, heroHeadline,
+    vertical, businessName, heroHeadline, services,
   }).map((row) => {
     const sc = scraped[row.page_slug]
     if (!sc || (!sc.title && !sc.intro)) return row
@@ -384,11 +438,12 @@ export function buildProvisionPayload(input: BuildPayloadInput): BuildResult {
   // first two are URLs provisioning itself creates, so only those are seeded.
   // No meta is invented for /pricing, /reviews or blog.
   //
-  // buildPageSeoMeta covers home, about, the service pages, contact and quote —
+  // buildPageSeoMeta covers home, about, THE SELECTED service pages, contact and
+  // quote —
   // it has no entry for faq, and none is invented here. focus_keyword is left
   // empty for these: the generator produces one per AREA, not per page, and a
   // guessed keyword is the kind of assertion this seed exists to avoid.
-  const pageSeo = buildPageSeoMeta({ vertical, businessName, city, state, phone })
+  const pageSeo = buildPageSeoMeta({ vertical, businessName, city, state, phone, services })
   const seo_meta: SeoMetaRow[] = Object.keys(pageSeo).map((page_slug) => ({
     page_slug,
     meta_title: pageSeo[page_slug].meta_title,

@@ -36,14 +36,22 @@
 // the key would be a label with nothing behind it. It resolves to NEUTRAL,
 // which is correct.
 //
-// 'lawn' IS A KEY AND IS CURRENTLY UNREACHABLE (S323 PR A), which is different
-// and deliberate. settings_business_info_vertical_valid still rejects 'lawn'
-// with 23514, so no tenant can carry it yet; the preset lands FIRST and the
-// CHECK widens LAST (PR C), because the public-site copy accessor throws from
-// layout.tsx and a constraint widened ahead of the presets would let a JSONB
-// edit 500 a whole site. Note what is NOT here: 'lawn' is absent from
-// VERTICAL_OPTIONS at the foot of this file, so the wizard does not offer it
-// and provisioning cannot seed it until PR B builds selection.
+// 'lawn' IS NOW OFFERED (S341). It is in VERTICAL_OPTIONS at the foot of this
+// file, in SEED_VERTICALS, and in checkBusinessInfoShape.
+//
+// ONE STEP REMAINS AND IT IS DELIBERATELY LAST: settings_business_info_vertical_valid
+// still rejects 'lawn' with 23514, so no tenant can carry it until that
+// migration is applied. The order is load-bearing and runs this way round on
+// purpose — the presets land in CODE first, the CHECK widens LAST — because
+// getVerticalCopy and getSchemaVocabulary both THROW for a vertical with no
+// preset and both are called from layout.tsx. A constraint widened ahead of the
+// presets would let a JSONB edit 500 a whole tenant site with no deploy. A key
+// with no constraint behind it is inert; a constraint with no key behind it is
+// an outage.
+//
+// So until that migration is applied, choosing lawn in the wizard produces a
+// 23514 at write time rather than a broken site. That is the safe failure and
+// it is the intended state between merge and apply.
 
 import { CATALOG_SLUGS } from '../../shared/lib/serviceCatalog';
 
@@ -264,6 +272,9 @@ export const VERTICAL_OPTIONS: VerticalOption[] = [
   { value: '', label: 'Not listed / other — seeds no service pages' },
   { value: 'pest', label: ADMIN_VERTICAL_LABELS.pest },
   { value: 'irrigation', label: ADMIN_VERTICAL_LABELS.irrigation },
+  // S341 — lawn is offered now. This list is pinned equal to SEED_VERTICALS by
+  // provisioningSeed.test.ts, so the two move together or the test fails.
+  { value: 'lawn', label: ADMIN_VERTICAL_LABELS.lawn },
 ];
 
 /** True only for a vertical this module has a preset for. */
