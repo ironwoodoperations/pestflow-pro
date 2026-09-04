@@ -155,6 +155,50 @@ export function extractZernioProfileId(body: unknown): string | null {
   return trimmed === '' ? null : trimmed;
 }
 
+/** What a handler hands back to the loop, and what `complete` is called with. */
+export interface HandledResult {
+  outcome: Outcome;
+  vendorRef?: string;
+  reason?: string;
+}
+
+/**
+ * THE DECISION AFTER A ZERNIO CREATE POST RETURNS — including the case where
+ * the vendor succeeded but OUR OWN settings write then failed (S340).
+ *
+ * `settingsWriteFailed` is the caller's answer to "did persisting the id throw?".
+ * When it did, the outcome is `retryable` — nothing about the vendor state is in
+ * doubt, so this is not `unknown` — BUT THE REF STILL COMES OUT WITH IT.
+ *
+ * That is the entire point. outbound_queue_complete stores
+ *   vendor_ref = coalesce(p_vendor_ref, q.vendor_ref)
+ * so returning the id here persists it even on the failure path. Drop it and the
+ * row keeps vendor_ref = NULL, the next claim sees prior_status='retryable_failed'
+ * with no ref, needsReconcileBeforeCreate answers FALSE, and the worker issues a
+ * SECOND POST /api/v1/profiles against a profile it had already created and knew
+ * the id of.
+ *
+ * Kept pure and here rather than inline in index.ts precisely so this can be
+ * tested: index.ts imports from esm.sh and vitest cannot load it.
+ */
+export function resolveZernioCreate(
+  status: number,
+  body: unknown,
+  settingsWriteFailed: boolean,
+): HandledResult {
+  const profileId = extractZernioProfileId(body);
+  const outcome = classifyResponse(status, profileId !== null, 'zernio_profile');
+
+  if (outcome === 'succeeded' && profileId) {
+    if (settingsWriteFailed) {
+      return { outcome: 'retryable', vendorRef: profileId, reason: 'settings_write_failed' };
+    }
+    return { outcome: 'succeeded', vendorRef: profileId };
+  }
+  // Status only — never the upstream body (S313).
+  return { outcome, reason: `http_${status}` };
+}
+
 export interface ClaimedJob {
   id: string;
   tenant_id: string;

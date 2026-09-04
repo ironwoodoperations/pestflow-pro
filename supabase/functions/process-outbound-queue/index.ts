@@ -43,9 +43,10 @@ import { stripVaultSecrets } from '../_shared/secrets/stripVaultSecrets.ts'
 import {
   type ClaimedJob,
   type Outcome,
+  type HandledResult,
   classifyResponse,
   classifyThrownError,
-  extractZernioProfileId,
+  resolveZernioCreate,
   needsReconcileBeforeCreate,
   hasGoogleId,
   buildZernioIntegrationsValue,
@@ -81,7 +82,8 @@ async function fetchWithTimeout(url: string, init: RequestInit): Promise<Respons
   }
 }
 
-interface Handled { outcome: Outcome; vendorRef?: string; reason?: string }
+// Shape lives in dispatch.ts with the function that produces it — one definition.
+type Handled = HandledResult
 
 // ── zernio_profile ──────────────────────────────────────────────────────────
 async function handleZernio(admin: any, job: ClaimedJob): Promise<Handled> {
@@ -131,15 +133,32 @@ async function handleZernio(admin: any, job: ClaimedJob): Promise<Handled> {
 
   let body: unknown = null
   try { body = await res.json() } catch { body = null }
-  const profileId = extractZernioProfileId(body)
-  const outcome = classifyResponse(res.status, profileId !== null, 'zernio_profile')
 
-  if (outcome === 'succeeded' && profileId) {
-    await writeZernioSettings(admin, job.tenant_id, profileId)
-    return { outcome, vendorRef: profileId }
+  // Decide first (pure), then do only the I/O the decision implies.
+  const planned = resolveZernioCreate(res.status, body, false)
+  if (planned.outcome !== 'succeeded' || !planned.vendorRef) return planned
+
+  // S340 — CARRY THE REF OUT EVEN WHEN THE SETTINGS WRITE FAILS.
+  //
+  // Zernio has already created the profile and we are holding the only copy of
+  // its id. Letting this throw escape to the loop's catch returned `retryable`
+  // with NO vendorRef, so outbound_queue_complete stored
+  // vendor_ref = coalesce(null, null) = NULL. The next claim then saw
+  // prior_status='retryable_failed' with a null vendor_ref, which
+  // needsReconcileBeforeCreate answers FALSE — and the worker issued a SECOND
+  // POST /api/v1/profiles. We knew the id, discarded it, and minted a duplicate.
+  //
+  // Returning the ref alongside the failure persists it (complete does
+  // vendor_ref = coalesce(p_vendor_ref, q.vendor_ref)), so the retry takes the
+  // reconcile path instead of creating again.
+  try {
+    await writeZernioSettings(admin, job.tenant_id, planned.vendorRef)
+  } catch {
+    // Same pure function, told the write failed — so the ref comes back out
+    // WITH the retryable outcome instead of being dropped on the floor.
+    return resolveZernioCreate(res.status, body, true)
   }
-  // Status only — never the upstream body (S313).
-  return { outcome, reason: `http_${res.status}` }
+  return planned
 }
 
 /**
@@ -235,9 +254,15 @@ serve(async (req) => {
             ? await handleOutscraper(admin, job)
             : { outcome: 'terminal', reason: 'unsupported_kind' }
       } catch (err) {
-        // A throw from OUR OWN code (a failed settings read/write), not from the
-        // vendor call — those are caught inside the handlers and classified
-        // there. Retryable: nothing was sent that could duplicate.
+        // A throw from OUR OWN code, not from the vendor call — those are caught
+        // inside the handlers and classified there.
+        //
+        // `retryable` is only safe here because a handler that has ALREADY made a
+        // duplicate-sensitive vendor call must not reach this catch holding an
+        // unsaved ref: handleZernio catches its own settings-write failure and
+        // returns the ref with it (S340). Do not weaken that — a bare throw after
+        // a successful POST lands here, loses the id, and the retry creates a
+        // second profile.
         handled = { outcome: 'retryable', reason: 'worker_error' }
         console.error(logLine('worker_error', job, 'retryable', (err as Error)?.message?.slice(0, 200)))
       }
