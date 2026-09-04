@@ -48,3 +48,9 @@ supabase/.temp/
 
 # Prospect Teardown Engine artifacts (scored prospect output/videos/frames)
 tools/teardown/output/
+
+# S337 — the repo's first Python test lives in .github/scripts/. Running it
+# locally writes bytecode next to the source; that is build output, not a
+# change, and leaving it untracked trips the session git check.
+__pycache__/
+*.pyc

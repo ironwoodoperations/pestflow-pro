@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -73,6 +73,16 @@ jobs:
       # a registry. `bash -n` first: a syntax error in the deploy wrapper would otherwise
       # surface as a refusal-to-deploy during an incident, which is the worst possible
       # moment to discover it.
+      # S337 — the redeploy workflow's verifier only ever ran on push-to-main, so
+      # its logic was never exercised where a contributor could see it: it failed
+      # ten consecutive runs over ten weeks unnoticed. These tests run its PURE
+      # parts (the comparison, the config.toml pin rule, the error diagnosis)
+      # against fixture data on every PR. The live Management API call is NOT
+      # faked — a fixture asserting the platform agrees with config.toml would
+      # make the guard vacuous, which is the exact S319 defect class.
+      - name: Verifier unit tests (verify_verify_jwt)
+        run: python3 .github/scripts/verify_verify_jwt_test.py
+
       - name: Shell guards (deploy freshness, manifest hooks)
         run: |
           set -euo pipefail
@@ -94,7 +104,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Deno
         uses: denoland/setup-deno@v2
