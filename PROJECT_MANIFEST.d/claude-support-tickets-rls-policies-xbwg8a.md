@@ -537,3 +537,19 @@ it is recent.
   - src/pages/admin/Onboarding.tsx
   - supabase/functions/provision-tenant/index.ts
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-09-04 14:55 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `0f71e1c` — S331: one definition of "publicly listed service"
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.d/claude-support-tickets-rls-policies-xbwg8a.md
+  - app/sitemap.test.ts
+  - app/sitemap.ts
+  - app/tenant/[slug]/_lib/publiclyListedServices.test.ts
+  - app/tenant/[slug]/_lib/publiclyListedServices.ts
+  - app/tenant/[slug]/layout.tsx
+  - app/tenant/[slug]/page.tsx
+  - app/tenant/[slug]/quote/page.tsx
+- Next recommended action: [Fill in next session: read this line, write what comes next]
