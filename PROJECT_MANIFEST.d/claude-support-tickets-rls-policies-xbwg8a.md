@@ -563,3 +563,32 @@ it is recent.
   - docs/ROADMAP.md
   - docs/handoffs/pestflow-pro-handoff-S331-shipped.md
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-09-04 15:20 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `0c2f01f` — S331 — one definition of "publicly listed service" (#340)
+- Author: csdevore2
+- Files changed:
+  - PROJECT_MANIFEST.d/claude-support-tickets-rls-policies-xbwg8a.md
+  - app/sitemap.test.ts
+  - app/sitemap.ts
+  - app/tenant/[slug]/_lib/publiclyListedServices.test.ts
+  - app/tenant/[slug]/_lib/publiclyListedServices.ts
+  - app/tenant/[slug]/layout.tsx
+  - app/tenant/[slug]/page.tsx
+  - app/tenant/[slug]/quote/page.tsx
+  - docs/ROADMAP.md
+  - docs/handoffs/pestflow-pro-handoff-S331-shipped.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-09-04 15:29 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `939bb47` — S333: correct the S331 merge status in the handoff and ROADMAP
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.d/claude-support-tickets-rls-policies-xbwg8a.md
+  - docs/ROADMAP.md
+  - docs/handoffs/pestflow-pro-handoff-S331-shipped.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]

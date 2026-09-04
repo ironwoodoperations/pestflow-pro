@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-04
 **Arc:** S321 → S331.
-**Deploy state:** S321–S330 merged AND deployed. **S331 is merged-pending** — [#340](https://github.com/ironwoodoperations/pestflow-pro/pull/340) is open and green.
+**Deploy state:** S321–S331 all merged. S321–S330 are deployed; **S331 merged as `0c2f01f`** ([#340](https://github.com/ironwoodoperations/pestflow-pro/pull/340)) and is Next.js code, so it goes live with the production build that merge triggers.
 
 This is for orientation, not archaeology. If you are picking this up cold, read the production state
 first, then the open list. The session log is in `PROJECT_MANIFEST.d/`.
@@ -43,7 +43,7 @@ Deploy timestamps are from the platform, and the bundles were read — not infer
 | **S327** | `scripts/deploy-function.sh` freshness guard; `session-end.sh` skips protected branches. | live |
 | **S329** | `zernio-connect`'s **auth hole CLOSED** — it had no caller authentication at all and queried with the service-role key from a body-supplied `tenantId`. Now `requireTenantAdmin`, with the frontend sending the JWT. Plus lazy Zernio profile creation, a tenant-correct return URL, and the vendor's name out of client-facing strings. | v39, 2026-09-03 19:50 UTC — **`requireTenantAdmin` confirmed present in the deployed bundle** |
 | **S330** | `provision-tenant` settings writes **MERGE instead of replace** at all three sites. `businessInfoMerge` moved to `shared/lib` so `provision-tenant` is finally under the S292 guard it had never been under. | with S326 in v105 |
-| **S331** | ONE canonical publicly-listed-service predicate across nav, tiles, sitemap and quote form. | ⚠️ **not merged** |
+| **S331** | ONE canonical publicly-listed-service predicate across nav, tiles, sitemap and quote form. | merged `0c2f01f` |
 
 `post-to-social` v68, `publish-scheduled-posts` v70 and `zernio-analytics` v28 went out alongside S329.
 
@@ -150,8 +150,14 @@ rendered by this app. Read it, cite it, leave it alone.
 
 ## ONE CORRECTION TO THE S332 BRIEF
 
-It listed S331 as shipped and live, and said "MERGED, NOT YET DEPLOYED: nothing." **S331 is not merged**
-— `main` is at `18e4205` (S330) and #340 is open, green and mergeable. Everything else in that list was
-checked and holds.
+**RESOLVED ON MERGE — #340 merged as `0c2f01f` shortly after this was written. Kept, because the
+point it makes does not depend on the outcome.**
 
-That is rule 1 applied to the brief itself.
+It listed S331 as shipped and live, and said "MERGED, NOT YET DEPLOYED: nothing." **When this handoff
+was written that was false** — `main` was at `18e4205` (S330) and #340 was still open. The local suite
+reporting 1593 tests rather than S331's 1614 surfaced it before the PR state was even checked.
+Everything else in that list was checked and holds.
+
+That is rule 1 applied to the brief itself, and the reason to keep it: the brief was confidently wrong
+for about twenty minutes, and a document written from it during that window would have been wrong for
+much longer.
