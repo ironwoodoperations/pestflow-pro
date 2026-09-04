@@ -124,6 +124,12 @@ jobs:
           mkdir -p /tmp/stage
           cp supabase/tests/fixtures/00000000000001_iso_min_schema.sql /tmp/stage/
           cp supabase/migrations/20260618000000_s273_pr2a_permission_foundation.sql /tmp/stage/
+          # S336 — rescue the merge-function migration BEFORE this step deletes
+          # supabase/migrations. It is applied later with psql, deliberately NOT
+          # staged into supabase/migrations: the CLI expects a
+          # <timestamp>_name.sql filename and this file is untimestamped on
+          # purpose (it records DDL already applied to production).
+          cp supabase/migrations/s336_merge_setting_value.sql /tmp/s336_merge_setting_value.sql
           rm -rf supabase/migrations
           mkdir -p supabase/migrations
           cp /tmp/stage/* supabase/migrations/
@@ -163,7 +169,7 @@ jobs:
       # migration FILE here also proves the file itself works — not merely that
       # the functions exist somewhere.
       - name: Install S336 merge functions (from the migration file)
-        run: psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/s336_merge_setting_value.sql
+        run: psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f /tmp/s336_merge_setting_value.sql
 
       # Reads shared/fixtures/settingsMergeCorpus.json — the SAME file
       # shared/lib/settingsMerge.corpus.test.ts asserts against in vitest. One
