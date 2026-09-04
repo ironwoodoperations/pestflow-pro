@@ -592,3 +592,46 @@ it is recent.
   - docs/ROADMAP.md
   - docs/handoffs/pestflow-pro-handoff-S331-shipped.md
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-09-04 21:15 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `6150375` — S340 task2: rewrite provision-tenant onto provision_tenant_atomic
+- Author: Claude
+- Files changed:
+  - shared/lib/settingsMerge.test.ts
+  - src/__tests__/platformBrand.test.tsx
+  - supabase/functions/_shared/provisioningSeed.ts
+  - supabase/functions/provision-tenant/buildPayload.test.ts
+  - supabase/functions/provision-tenant/buildPayload.ts
+  - supabase/functions/provision-tenant/index.ts
+  - supabase/functions/provision-tenant/provisionFlow.test.ts
+  - supabase/functions/provision-tenant/s326Hardening.test.ts
+- Also in this branch, commit `ad44136` (S340 task 1, logged separately by the hook):
+  supabase/functions/process-outbound-queue/{index.ts,dispatch.ts,dispatch.test.ts}
+- Next recommended action: **DEPLOY AND PROVE IT BEFORE ANY REAL CLIENT.** S340 is the
+  live provisioning path and PR #347 is code-only — nothing is deployed. In order:
+  (1) Scott deploys `provision-tenant` with `scripts/deploy-function.sh --no-verify-jwt`;
+  (2) Claude.ai reads the deployed bundle with `get_edge_function`; (3) a COMMITTED create
+  against a throwaway tenant, asserted across all eleven tables. CI cannot prove the
+  rollback property — it is a database property, and what the tests pin is only its
+  precondition (provisioning performs no write outside the one RPC).
+
+  Carry these forward so they are not re-derived:
+  * The RPC reads `tenants.name` from a TOP-LEVEL `business_info.name`, NOT from
+    `settings.business_info`. Omitting it names every tenant after its slug.
+  * NOTHING in the database enforces service-catalog membership — `tenant_services` has
+    only a slug-SHAPE check and the RPC checks shape and duplicates. The edge check in
+    `buildPayload.ts` is the only one that exists, and today its input is derived from
+    the catalog so it cannot fire; it becomes load-bearing the moment a per-service
+    picker makes `services` caller-supplied.
+  * The root tsconfig EXCLUDES `supabase/`, so `tsc --noEmit` typechecks NONE of the edge
+    functions. That is how `servicePagesFor`'s readonly defect survived. Open question
+    worth a decision: add a targeted strict typecheck of the pure edge modules to CI.
+  * Two deliberate behaviour changes: missing admin credentials is now a 400 (was a
+    warning that provisioned an admin-less tenant), and the Zernio profile description is
+    now empty (the RPC enqueues `{name, slug}` with no description field).
+
+  Still open after this: S323 PR C — widen `settings_business_info_vertical_valid` to
+  admit `'lawn'`. LAST, as always. And `strip_settings_secrets` still has no migration
+  file (the fifth fileless batch, still unrecorded).
