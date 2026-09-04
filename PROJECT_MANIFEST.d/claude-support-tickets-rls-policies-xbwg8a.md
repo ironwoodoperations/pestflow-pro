@@ -522,3 +522,18 @@ it is recent.
   - src/pages/admin/Onboarding.tsx
   - supabase/functions/provision-tenant/index.ts
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-09-04 14:27 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `18e4205` — S330 — the settings write path merges instead of replacing (#339)
+- Author: csdevore2
+- Files changed:
+  - PROJECT_MANIFEST.d/claude-support-tickets-rls-policies-xbwg8a.md
+  - shared/lib/businessInfoMerge.test.ts
+  - shared/lib/businessInfoMerge.ts
+  - shared/lib/settingsMerge.test.ts
+  - shared/lib/settingsMerge.ts
+  - src/pages/admin/Onboarding.tsx
+  - supabase/functions/provision-tenant/index.ts
+- Next recommended action: [Fill in next session: read this line, write what comes next]

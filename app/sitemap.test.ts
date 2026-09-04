@@ -9,13 +9,22 @@ vi.mock('next/headers', () => ({
 const tenantRow = {
   id: 'tenant-pls', slug: 'pls', subdomain: 'pls',
   custom_domain: 'precisionlawnsystems.com', noindex: false,
+  // S331 — vertical and template are now LOAD-BEARING here, and the live pls row carries
+  // both (settings.business_info.vertical = 'irrigation', branding.theme = 'modern-pro',
+  // read from the database, not assumed). The sitemap emits a service URL only for a slug
+  // the ROUTER would serve, and the router resolves that from the tenant's vertical. This
+  // fixture previously omitted them, which made resolveVertical fall back to 'pest' and
+  // silently dropped every irrigation slug — see the B-g' case below, which pins it.
+  vertical: 'irrigation', template: 'modern-pro',
 }
 let tenant: Record<string, unknown> | null = { ...tenantRow }
 vi.mock('../shared/lib/tenant/resolve', () => ({
   resolveTenantBySlug: async () => tenant,
 }))
 vi.mock('./tenant/[slug]/_lib/queries', () => ({
-  getAllServicePages: async () => [{ page_slug: 'sprinkler-systems' }],
+  // 'wasp-control' is a PEST-catalog miss AND an irrigation-catalog miss: dang carries
+  // exactly this row in production, and it is the live proof the two predicates disagreed.
+  getAllServicePages: async () => [{ page_slug: 'sprinkler-systems' }, { page_slug: 'wasp-control' }],
   getAllBlogPosts: async () => [{ slug: 'spring-tips', published_at: '2026-04-01T00:00:00Z' }],
 }))
 vi.mock('../domain-map.json', () => ({
@@ -108,6 +117,22 @@ describe('sitemap() -- B-g and B-h, the two the brief asks to be shown', () => {
     const urls = (await sitemap()).map((e) => e.url)
     expect(urls).toContain('https://precisionlawnsystems.com/sprinkler-systems')
     expect(urls).toContain('https://precisionlawnsystems.com/blog/spring-tips')
+  })
+
+  // ── S331 ────────────────────────────────────────────────────────────────────────────
+  it("B-g': a page_content row OUTSIDE the tenant's catalog is NOT advertised", async () => {
+    // The route would notFound() this slug, so listing it in the sitemap invites Google to
+    // crawl a 404. Advertised-then-404 is strictly worse than never listing it.
+    const urls = (await sitemap()).map((e) => e.url)
+    expect(urls).not.toContain('https://precisionlawnsystems.com/wasp-control')
+  })
+
+  it("B-g'': the sitemap and the router agree — anti-vacuity for the case above", async () => {
+    // Without this, B-g' would also pass if the sitemap emitted NO service URLs at all,
+    // which is exactly what an incomplete tenant fixture caused while this was being written.
+    const urls = (await sitemap()).map((e) => e.url)
+    const serviceUrls = urls.filter((u) => /\/(sprinkler-systems|wasp-control)$/.test(u))
+    expect(serviceUrls).toStrictEqual(['https://precisionlawnsystems.com/sprinkler-systems'])
   })
 
   it('B-g: the sitemap host matches the canonical host -- disagreement is worse than no sitemap', async () => {
