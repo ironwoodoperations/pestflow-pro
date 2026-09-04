@@ -655,4 +655,28 @@ it is recent.
   - supabase/functions/provision-tenant/index.ts
   - supabase/migrations/s341_settings_vertical_allow_lawn.sql
   - supabase/migrations/s341_settings_vertical_allow_lawn_rollback.sql
-- Next recommended action: [Fill in next session: read this line, write what comes next]
+- Next recommended action: **APPLY THE CHECK MIGRATION** —
+  `supabase/migrations/s341_settings_vertical_allow_lawn.sql`, via MCP, AFTER #348 merges.
+  CC Web cannot apply migrations. Until it is applied lawn is reachable in code but
+  rejected at write time with 23514, which is the intended safe state, not a bug: the
+  order is deliberate because getVerticalCopy and getSchemaVocabulary throw for a
+  vertical with no preset and both are called from layout.tsx, so a CHECK widened ahead
+  of the presets lets a JSONB edit 500 a whole tenant site. Presets first, constraint last.
+
+  Then the first lawn tenant can be provisioned — pass `services` with their real list
+  (7 of 17). There is NO picker UI; Scott passes the field by hand.
+
+  STILL PENDING FROM S340, unchanged: deploy `provision-tenant` via
+  `scripts/deploy-function.sh --no-verify-jwt`, then have Claude.ai read the deployed
+  bundle and run a committed create against a throwaway tenant across all eleven tables.
+  The merged rewrite is NOT live until that happens.
+
+  FLAGGED FOR A CONTENT DECISION, not a code fix: `SERVICE_CATALOG.lawn` titles
+  `sprinkler-systems` as 'Irrigation Repair' while irrigation titles the SAME SLUG
+  'Sprinkler Systems' — same URL, two headings depending on the tenant's vertical.
+  Pinned by a test in `lawnCatalog.test.ts`. `artificial-turf` does not diverge.
+
+  Recorded, not built: the root tsconfig EXCLUDES `supabase/`, so no edge-function code
+  is typechecked by `npm run tsc` — S340 and S341 both used a targeted strict config
+  instead, and S340 found a real defect that way. `strip_settings_secrets` still has no
+  migration file (the fifth fileless batch).
