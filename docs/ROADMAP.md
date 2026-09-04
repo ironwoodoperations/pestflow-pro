@@ -1,6 +1,6 @@
 # PestFlow Pro — Roadmap
 
-*State as of S293 (the vertical arc now reaches the PUBLIC SITE and is **DEPLOYED AND VERIFIED IN PRODUCTION** — an unrecorded vertical claims nothing in JSON-LD, in generated copy, or on a map. Second consecutive close with nothing left inert.). Update at end of each session; retire the versioned pestflow-pro-todo-vNNN.html snapshots.*
+*State as of S331 (2026-09-04). **pls is LIVE and INDEXABLE on precisionlawnsystems.com** — the platform's first custom-domain client. S321–S330 are merged AND deployed, verified by reading deployed bundles rather than trusting deploy status. S331 is merged-pending in #340. The RPC is next.). Update at end of each session; retire the versioned pestflow-pro-todo-vNNN.html snapshots.*
 
 ---
 
@@ -60,6 +60,8 @@ Detail: `docs/handoffs/pestflow-pro-handoff-S279-vertical-architecture.md`, and 
 
 ## Platform status (S275)
 
+**S331 UPDATE (2026-09-04): no longer idle capacity — pls is live on its own domain and earning.** The line below is the S275 state, kept for continuity.
+
 Production-ready, **idle capacity**. Active leads out — **Capture, Blue Duck, TOPS** — awaiting responses; **no new tenant onboarding in flight.** **Dang** is the only live customer (separate-repo Vite SPA → dangpestcontrol.com, reads shared PFP Supabase `biezzykcgzkrwdgqpsar`, tenant `1611b16f-381b-4d4f-ba3a-fbde56ad425b`). The `dang-pfp` migration is now baselined with all 8 build decisions locked (Phase 0 complete; Phase 1 next) — baseline spec `docs/audits/dang-pfp-teardown-baseline.md`, handoff `docs/handoffs/pestflow-pro-handoff-S275-dang-pfp-baseline.md`. Prior Dang revalidation arc (resolved incidents, SEO mechanism finding): `docs/handoffs/pestflow-pro-handoff-S274-dang-revalidation.md`.
 
 ---
@@ -107,6 +109,36 @@ Production-ready, **idle capacity**. Active leads out — **Capture, Blue Duck, 
 ---
 
 ## Recently Shipped
+
+### S321 → S331 — the custom-domain arc. ALL DEPLOYED except S331.
+
+**Deploy state verified by reading the deployed bundles and the live database, not by trusting a
+version number or a green deploy** — the rule this arc earned the hard way.
+
+| session | change | state |
+|---|---|---|
+| **S321** | `api-quote` origin admission rebuilt: URL parsing, not regex. A verified `tenant_domains` lookup sits BEHIND the platform check and BEHIND a throttle. Custom domains admitted. | merged, **deployed v38 2026-09-02 23:03 UTC** |
+| **S321B** | canonical host resolution; old-subdomain 301 preserving path AND query; per-tenant sitemap | merged, live |
+| **S322** | six tenant routes gained `generateMetadata`; every route self-canonicalizes; a route-walking guard fails when a new route regresses | merged, live |
+| **S325** | demo tier switcher + SocialTab upgrade nudges gated on `settings.demo_mode.active === true`, not hostname. It had been rendering on **every custom domain** | merged, live |
+| **S326** | `provision-tenant`: password reset opt-in (`reset_admin_password`, default false); `ai_authority_prompts` unique constraint + upsert; `ZERNIO_API_KEY` absence observable | merged, **deployed v105 2026-09-04 14:32 UTC** |
+| **S327** | `scripts/deploy-function.sh` freshness guard; `session-end.sh` skips protected branches | merged, live |
+| **S329** | `zernio-connect` **auth hole CLOSED** (`requireTenantAdmin`; the frontend now sends the JWT); lazy Zernio profile creation; return URL resolves the tenant's canonical host; vendor name removed from client-facing strings | merged, **deployed v39 2026-09-03 19:50 UTC — `requireTenantAdmin` confirmed present in the deployed bundle** |
+| **S330** | `provision-tenant` settings writes MERGE instead of replace at all three sites; `businessInfoMerge` moved to `shared/lib` so `provision-tenant` is finally under the S292 guard | merged, deployed with S326 in v105 |
+| **S331** | one canonical publicly-listed-service predicate across nav, tiles, sitemap and quote form | ⚠️ **MERGED-PENDING — [#340](https://github.com/ironwoodoperations/pestflow-pro/pull/340) is open and green, NOT merged** |
+
+`post-to-social` v68, `publish-scheduled-posts` v70 and `zernio-analytics` v28 were deployed
+alongside S329 on 2026-09-03 19:52–19:53 UTC (client-facing vendor-name strings).
+
+**⚠️ THE ONE CORRECTION TO THE S332 BRIEF.** It listed S331 under "SHIPPED AND LIVE (all merged AND
+deployed)" and said "MERGED, NOT YET DEPLOYED: nothing". S331 is **not merged** — `main` is at
+`18e4205` (S330) and #340 is open. Everything else in that list checks out.
+
+**A PREMISE PROVEN IN PRODUCTION.** The deployed `zernio-connect` bundle carries
+`shared/lib/resolveSiteUrl.ts` **and its non-leaf dependency `shared/lib/canonicalHost.ts`**, both
+verbatim. Until now only LEAF cross-tree modules had been shown to bundle; this is the first proof
+that a cross-tree module with its OWN relative import resolves at runtime under Deno, which is what
+S329 gambled on.
 
 - **S320 PR #324 — storage RLS: a published credential removed, all buckets gated on `tenant_users`, the `operators` ACL closed (merged `e61fabf`; migration APPLIED via MCP, VERIFIED LIVE 2026-09-02).** Three `logos` policies carried `OR (auth.uid() = '5181b30a-…'::uuid)` — `admin@pestflowpro.com`, whose password is published on the marketing homepage. S308 deleted its `operators` row as a security fix and **missed these**, so it kept INSERT, UPDATE and **DELETE** on every tenant's logo. Nine further policies gated on `current_tenant_id()`, which reads `profiles` — the table S273 retired — so any admin without a `profiles` row was denied their own uploads. The three `logos` policies carried **both** faults.
 
@@ -231,6 +263,20 @@ Production-ready, **idle capacity**. Active leads out — **Capture, Blue Duck, 
 
 ## Next Up
 
+### THE PRIORITY ORDER AS OF S331
+
+1. **THE RPC — next session.** Atomic provisioning via ONE Postgres function. **Auth FIRST, then the
+   transaction** — forced by the FK chain: `profiles.id` **IS** the auth user id, so there is no id to
+   write until gotrue answers. A selection table with **server-side catalog validation**. The backend
+   **rejects an empty selection**. A zero-services tenant renders **200**. **The DB-side
+   single-statement settings merge deferred from S330 belongs inside this function** — S330 shipped the
+   closest safe alternative and explicitly did not claim the validators' race guarantee.
+2. **S323 PR C — widen `settings_business_info_vertical_valid` to admit `'lawn'`. LAST**, and the
+   ordering is not stylistic: `getVerticalCopy` **throws** for a vertical with no preset and is called
+   from `layout.tsx`, so a tenant set to `'lawn'` before the presets land 500s its ENTIRE SITE via a
+   JSONB edit, with no deploy involved.
+3. **Grandview provisions.**
+
 ### ⚠️ DECISION REQUIRED — OPERATOR ACCESS TO CLIENT DASHBOARDS (HIGH — decide before Grandview and JW Customs)
 
 Scott needs guaranteed access to every tenant he builds, as builder, maintainer and
@@ -268,7 +314,17 @@ other storage buckets and not the admin surfaces.
 
 **Validator gate when it is specced.** This touches auth and tenant boundaries.
 
-### pls — LAUNCH CHECKLIST (gates revenue, not polish)
+### pls — LAUNCH CHECKLIST — ✅ **CLOSED 2026-09-04. THE SITE IS LIVE AND EARNING.**
+
+**Live state, verified:** `precisionlawnsystems.com` is the apex canonical, `www` 301s to it, the old
+platform subdomain 301s **preserving path and query**, the sitemap carries 14 URLs, lead capture is
+verified end to end, and the Zernio profile `6a9acaa74c4070ad859de8e4` was created **by the platform**
+(the S329 lazy-create path — it was NULL before). **Email never went down**: MX, SPF and all three DKIM
+records were untouched throughout. Both pls admins now have `profiles` rows, and
+`scott@homeflowpro.ai` resolves to `pestflow-pro`.
+
+**The checklist below is kept unedited as the record of what the gates were.** Every one is now closed;
+do not re-derive them.
 
 Three items stand between a finished site and a site that can earn. None is cosmetic.
 
@@ -279,6 +335,16 @@ Three items stand between a finished site and a site that can earn. None is cosm
   **A Host-header probe does NOT test the domain map, and this was verified 2026-09-02 — do not repeat it and misread the result.** `curl -H "Host: precisionlawnsystems.com" pestflow-pro.vercel.app` **never reaches our middleware**: it resolves on real DNS and returns **Webnode's 404 — "404 - Page not found :: Precisionlawnsystems"**. That response is Webnode answering, not our routing failing. Anyone probing this way will conclude the domain map is broken when it is not.
 - [ ] **Re-confirm the Vercel apex/`www` direction for `precisionlawnsystems.com` AFTER cutover.** It must redirect in **one direction only**, and `tenants.custom_domain` should hold whichever host is canonical. Both directions configured at once is a loop; neither is a split index.
 - [x] ~~**`notifications.lead_email` is unset**~~ — **CLOSED.** Verified live 2026-08-31: `settings.notifications.lead_email` = `precisionlawnsystems@yahoo.com` (`cc_email` empty). A submitted quote form now reaches the owner. The other two gates below remain OPEN.
+
+### pls — verified live state, 2026-08-26 — ⚠️ **SUPERSEDED 2026-09-02, KEPT IN PLACE**
+
+**THE ORDERING IN THIS SECTION AND IN THE 2026-08-26 MANIFEST ENTRY IS BACKWARDS.** It says flip
+`noindex` BEFORE deciding `custom_domain`. The correct order, established on 2026-09-02 and executed:
+**`custom_domain` FIRST, then `noindex`**, plus a path-preserving 301 from the platform subdomain.
+De-indexing first would have handed Google a set of URLs that were about to be replaced.
+
+The original text is left below unedited — a superseded record is more useful than a deleted one, and
+this file's own working rules say a confidently-worded stale line is the failure mode to avoid.
 
 ### pls — verified live state, 2026-08-26 (do not re-derive)
 
@@ -323,6 +389,59 @@ Three items stand between a finished site and a site that can earn. None is cosm
 ---
 
 ## Open Follow-ups
+
+### RECORDED, NOT BUILT — carried into the RPC session
+
+- **21 of 37 `_shared` consumers are missing from `.github/edge-shared-consumers.txt`.** That is the
+  S273 stale-bundle failure, still open: a `_shared` edit does not redeploy them, so production keeps
+  running the old bundle. **`provision-tenant` is one of the 21**, so adding it to that list ships
+  whatever is unreleased at that moment as a side effect. Fix deliberately, not as a drive-by.
+- **Six consumers are unpinned in `config.toml`** — `api-quote`, `zernio-connect`, `send-sms`,
+  `send-credentials-email`, `send-reveal-ready`, `scrape-prospect`. **All six are deployed `false` and
+  all six are correct at `false`.** `config.toml` is itself a workflow trigger path, so editing it
+  redeploys the 16 listed functions.
+- **`provision-tenant`'s `liveUrl` and legal-page seeding still build `.com` hosts**, as do
+  `send-reveal-ready:76` and `send-credentials-email:215`.
+- **The legal-page host should resolve at RENDER time, not be persisted at write time.** Persisting it
+  bakes today's domain into a page that outlives the domain decision.
+- **`page_content` has NO `published`/`active`/`status` column** — read from `information_schema`, not
+  assumed. A per-page visibility flag is a future need and was **deliberately not invented** in S331.
+- **`invite-salesperson`: DEPLOYED v52 ACTIVE, and there is NO SOURCE IN THE REPO.** It is gated on
+  `admin@pestflowpro.com`, whose credentials are published on the marketing site. The owner has decided
+  the marketing login stays, **so the FUNCTION is what must change.**
+- **MULTI-TENANT PROFILE LIMIT.** `profiles.id` is the primary key and **IS** the auth user id, so
+  `current_tenant_id()` resolves one user to exactly ONE tenant — while `tenant_users` is many-to-many.
+  Consequences today: `scott@homeflowpro.ai` **cannot reach vita-glow**; `admin@demo.com` is admin on all
+  five demo tenants but resolves to one, so **four demo dashboards cannot be logged into**. Fixing
+  `current_tenant_id()` to read `tenant_users` with an active-tenant selector **is the same problem as
+  the operator-access decision above.** Gated session.
+- **Zernio account hygiene.** The team is **SHARED with Ritual and Texas Pro Trailer Rentals** —
+  separate businesses, separate repos — and account IDs validate **team-wide**. Scoped API keys are
+  worth doing before more clients connect. Billing is **per CONNECTED ACCOUNT, not per profile**;
+  profiles are free. $6/account/month at 1–10, $3 at 11–100, first $12 per period free.
+- **Idempotency keys, optimistic locking, `verify_jwt` hardening** — all deferred by the S323 gate.
+- **`REVIEW_S321` appendices are still empty.** The verdicts were summarised, never pasted. Same defect
+  the S320 gate rule exists to prevent.
+
+### ⚠️ FOUR COMMENTS IN THE TREE STATE A FALSEHOOD
+
+Every one says the Supabase CLI bundles **only** `supabase/functions/**`. **That is false.** The
+deployed `service-area-map` bundle carries `shared/lib/serviceAreaMap.ts` verbatim, and the deployed
+`zernio-connect` bundle carries `shared/lib/canonicalHost.ts` — a NON-leaf module — the same way. Deno
+resolves them at runtime. **Cross-tree imports work, WITH AN EXPLICIT `.ts` EXTENSION.**
+
+Locations: `_shared/provisioningSeed.ts`, `_shared/provisioningSeed.test.ts`,
+`_shared/authorityPrompts.ts`, and `docs/audits/INVESTIGATION_S324_PROVISIONING_WRITE_SET.md`.
+
+**THREE OF THE FOUR ARE INSIDE `supabase/functions/_shared/`, so editing them fires
+`redeploy-edge-on-shared-change.yml` and republishes 16 functions.** Correcting these comments is its
+own small task with its own deploy consequence — **not a drive-by.**
+
+### S324 report line numbers have drifted — the REPORT IS NOT TO BE EDITED
+
+§5 cites `560` / `739` / `654`. They are now **`607` / `812` / `723`** (S326, S329 and S330 all moved
+code in that file). The report is a **point-in-time record**; the drift is noted here instead. Confirm
+by reading before trusting any line number in a document older than a session or two.
 
 ### S313 — OPEN LEAK: `send_failed` logs the raw Resend body, which echoes the recipient address
 
