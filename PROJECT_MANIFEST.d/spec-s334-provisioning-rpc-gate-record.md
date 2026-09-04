@@ -33,3 +33,18 @@ independent branches never conflict on a shared log (S261-3). Index: ../PROJECT_
   check against A/B or back-infer §1 from the verdicts' restatements of questions A-F.
   Then build order step 1: tenant_services + catalog extraction to shared/lib (independent
   of step 2; neither can affect the live pls tenant).
+
+---
+## Session — 2026-09-04 16:34 UTC
+- Branch: `spec/s334-provisioning-rpc-gate-record`
+- Commit: `dcfa470` — S334: fill section 1 with the submission text; record now complete
+- Author: Claude
+- Files changed:
+  - docs/audits/REVIEW_S334_PROVISIONING_RPC.md
+- Next recommended action: **REVIEW_S334 is COMPLETE — all three verbatim slots filled
+  byte-exact, no NOT SUPPLIED markers remain.** Do not re-run the S309 attribution check
+  (appendices only; already passed) and do not re-paste or "tidy" any of the three texts.
+  Next is build order step 1: `tenant_services` + catalog extraction to `shared/lib`.
+  Independent of step 2, and neither can affect the live pls tenant — that is why they are
+  first. Catalog stays in code; the per-tenant SELECTION is the new table; no catalog
+  projection table. Reminder: the vertical CHECK still rejects 'lawn' (S323 PR C is LAST).
