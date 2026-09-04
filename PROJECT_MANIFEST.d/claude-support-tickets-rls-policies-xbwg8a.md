@@ -581,3 +581,14 @@ it is recent.
   - docs/ROADMAP.md
   - docs/handoffs/pestflow-pro-handoff-S331-shipped.md
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-09-04 15:29 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `939bb47` — S333: correct the S331 merge status in the handoff and ROADMAP
+- Author: Claude
+- Files changed:
+  - PROJECT_MANIFEST.d/claude-support-tickets-rls-policies-xbwg8a.md
+  - docs/ROADMAP.md
+  - docs/handoffs/pestflow-pro-handoff-S331-shipped.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
