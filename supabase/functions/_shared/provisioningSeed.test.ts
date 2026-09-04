@@ -6,6 +6,7 @@ import {
   buildServiceAreaHeroTitle, buildServiceAreaSeo,
 } from './provisioningSeed.ts';
 import { ADMIN_PRESETS, PLATFORM_PAGE_SLUGS, VERTICAL_OPTIONS } from '../../../src/lib/adminVerticalPreset.ts';
+import { SERVICE_CATALOG, CATALOG_SLUGS } from '../../../shared/lib/serviceCatalog.ts';
 import { INITIAL_FORM as CLIENT_SETUP_FORM } from '../../../src/components/admin/client-setup/types.ts';
 import { INITIAL_FORM as ONBOARDING_FORM } from '../../../src/components/admin/onboarding/types.ts';
 
@@ -18,15 +19,36 @@ import { INITIAL_FORM as ONBOARDING_FORM } from '../../../src/components/admin/o
 
 // ── The vocabulary that must not drift ──────────────────────────────────────
 //
-// provisioningSeed cannot import src/lib/adminVerticalPreset (the Supabase CLI
-// bundles only supabase/functions/**), so the slug lists are stated twice. This
-// is the anti-drift check: seeding a page the admin sidebar does not know about
-// drops it into "Custom Pages"; knowing a page nobody seeds leaves a dead entry.
-describe('seeded service pages match the admin preset exactly', () => {
+// S335 — THIS ASSERTION CHANGED SHAPE RATHER THAN BEING DELETED.
+//
+// It used to compare two hand-maintained copies of the slug list, because
+// provisioningSeed was believed unable to import across trees. Both lists now
+// come from shared/lib/serviceCatalog, so comparing their VALUES would be
+// tautological — true by construction, and passing just as happily on the day
+// someone pastes a literal back in.
+//
+// What is asserted instead is IDENTITY: each consumer must hand back the very
+// array the catalog exports. A re-copied list is necessarily a different array
+// object, so it fails here however carefully its contents were typed — which is
+// the regression the extraction exists to prevent, and the one a value check
+// cannot see.
+describe('seeded service pages resolve to THE catalog, not a copy of it', () => {
   for (const v of SEED_VERTICALS) {
-    it(`${v}: seed slugs === ADMIN_PRESETS.${v}.servicePageSlugs`, () => {
-      const seeded = VERTICAL_SEED[v].servicePages.map((p) => p.slug);
-      expect(seeded).toEqual(ADMIN_PRESETS[v].servicePageSlugs);
+    it(`${v}: VERTICAL_SEED.servicePages IS SERVICE_CATALOG.${v}`, () => {
+      expect(VERTICAL_SEED[v].servicePages).toBe(SERVICE_CATALOG[v]);
+    });
+
+    it(`${v}: the admin preset IS the same catalog's slug array`, () => {
+      expect(ADMIN_PRESETS[v].servicePageSlugs).toBe(CATALOG_SLUGS[v]);
+    });
+
+    // Anti-vacuity: identity above would be worthless if the arrays were empty
+    // or the two verticals shared one array.
+    it(`${v}: the catalog is non-trivial and vertical-specific`, () => {
+      expect(SERVICE_CATALOG[v].length).toBeGreaterThan(4);
+      expect(CATALOG_SLUGS[v]).not.toBe(CATALOG_SLUGS.lawn);
+      expect(VERTICAL_SEED[v].servicePages.map((p) => p.slug))
+        .toEqual(ADMIN_PRESETS[v].servicePageSlugs);
     });
   }
 

@@ -225,11 +225,16 @@ describe('one source of truth for service slugs (admin surfaces)', () => {
     expect(FILES.length).toBeGreaterThan(60);
   });
 
-  it('no file outside the preset hardcodes a pest slug list', () => {
+  // S335 — THE EXEMPTION IS GONE, and that is the point. The pest list used to
+  // live in the preset, so the preset had to be skipped here. It now lives in
+  // shared/lib/serviceCatalog.ts, outside these roots, so NO file under
+  // src/components/admin, src/hooks or src/lib may carry the list — the preset
+  // included. Re-copying it back into the preset now FAILS this test, which is
+  // exactly the regression the extraction exists to prevent.
+  it('no admin file hardcodes a pest slug list — the preset included', () => {
     const offenders: string[] = [];
     for (const file of FILES) {
       const rel = relative(REPO_ROOT, file).split(sep).join('/');
-      if (rel === PRESET_REL) continue;
       const lines = readFileSync(file, 'utf8').split('\n');
       for (let n = 0; n < lines.length; n += 1) {
         const hits = lines[n].match(PEST_SLUG);
@@ -239,10 +244,21 @@ describe('one source of truth for service slugs (admin surfaces)', () => {
     expect(offenders, `\n${offenders.join('\n')}\n`).toEqual([]);
   });
 
-  it('the preset file itself still contains the pest list, so the guard is not vacuous', () => {
-    const body = readFileSync(join(REPO_ROOT, PRESET_REL), 'utf8');
+  // Anti-vacuity, repointed at the catalog. If PEST_SLUG stopped matching
+  // anything the scan above would pass trivially, so this pins that the regex
+  // still recognises the real list — now in its one canonical home.
+  it('the CATALOG contains the pest list, so the guard is not vacuous', () => {
+    const body = readFileSync(join(REPO_ROOT, 'shared/lib/serviceCatalog.ts'), 'utf8');
     const total = body.split('\n').reduce((n, l) => n + (l.match(PEST_SLUG) || []).length, 0);
     expect(total).toBeGreaterThanOrEqual(10);
+  });
+
+  // And the preset specifically no longer carries it — the assertion the old
+  // exemption made impossible to state.
+  it('the preset carries NO pest slug literals at all', () => {
+    const body = readFileSync(join(REPO_ROOT, PRESET_REL), 'utf8');
+    const total = body.split('\n').reduce((n, l) => n + (l.match(PEST_SLUG) || []).length, 0);
+    expect(total).toBe(0);
   });
 });
 

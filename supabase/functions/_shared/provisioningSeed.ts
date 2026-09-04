@@ -29,16 +29,28 @@
 // dashboard is where they fill it in. S286 settled this: with the field empty
 // the template cannot be used, no default, no placeholder that reads as an offer.
 //
-// WHERE THIS LIVES. supabase/functions/_shared/ because the Supabase CLI bundles
-// only supabase/functions/**, so provision-tenant cannot import from src/ or
-// shared/ without deploying broken. That is also why the service-page slugs are
-// restated here rather than imported from src/lib/adminVerticalPreset.ts — and
-// why provisioningSeed.test.ts asserts the two lists are identical, so the copy
-// cannot drift from the admin sidebar that reads the same pages back.
+// WHERE THIS LIVES. supabase/functions/_shared/, because this module is
+// provisioning policy and belongs beside the function that applies it.
+//
+// S335 — THE OLD REASON FOR THE SLUG COPY WAS FALSE, and this header used to
+// state it: "the Supabase CLI bundles only supabase/functions/**, so
+// provision-tenant cannot import from src/ or shared/ without deploying
+// broken". Production disproved it — the deployed zernio-connect bundle
+// carries shared/lib/resolveSiteUrl.ts AND its non-leaf dependency
+// canonicalHost.ts, both verbatim. The CLI ships source files as written and
+// Deno resolves specifiers at RUNTIME, so a cross-tree import works given an
+// explicit `.ts` extension. The service-page slugs are therefore IMPORTED from
+// shared/lib/serviceCatalog.ts, not restated, and the drift test that pinned
+// the two copies equal is replaced by one asserting this module resolves to
+// the canonical array itself.
+//
+// src/ remains off limits: it is React and Vite-resolved, and importing it
+// here WOULD deploy broken. shared/lib is the seam that is safe from both trees.
 //
 // Pure: no I/O, no Deno APIs, ES5-safe (the root tsconfig sets no target).
 
 import { getVerticalCopy, isKnownVertical } from './verticalCopy.ts';
+import { SERVICE_CATALOG } from '../../../shared/lib/serviceCatalog.ts';
 
 /**
  * The only two values settings_business_info_vertical_valid accepts:
@@ -62,40 +74,27 @@ export interface SeedPage {
 export interface VerticalSeed {
   /** Title-case trade, for a page title: "Pest Control", "Irrigation". */
   tradeTitle: string;
-  /** The tenant's service pages, in sidebar order. */
-  servicePages: SeedPage[];
+  /** The tenant's service pages, in sidebar order. THE canonical catalog
+   *  array from shared/lib/serviceCatalog — a shared frozen reference, never
+   *  a local copy. */
+  servicePages: readonly SeedPage[];
 }
 
-// Slugs are identical to src/lib/adminVerticalPreset.ts ADMIN_PRESETS[v]
-// .servicePageSlugs, and a test pins that. Titles are the service name only:
-// "Termite Control", not "Termite Control — Guaranteed Results".
+// Slugs AND titles come from shared/lib/serviceCatalog — the same arrays the
+// admin sidebar reads, so the two cannot drift because there is only one.
+// Titles name the service only: "Termite Control", not "Termite Control —
+// Guaranteed Results".
+//
+// tradeTitle stays here: it is provisioning vocabulary ("{city} Pest Control"
+// on a service area), not a catalog fact, and lawn has no seed entry at all.
 export const VERTICAL_SEED: Record<SeedVertical, VerticalSeed> = {
   pest: {
     tradeTitle: 'Pest Control',
-    servicePages: [
-      { slug: 'pest-control', title: 'Pest Control Services' },
-      { slug: 'termite-control', title: 'Termite Control' },
-      { slug: 'termite-inspections', title: 'Termite Inspections' },
-      { slug: 'spider-control', title: 'Spider Control' },
-      { slug: 'roach-control', title: 'Roach Control' },
-      { slug: 'ant-control', title: 'Ant Control' },
-      { slug: 'mosquito-control', title: 'Mosquito Control' },
-      { slug: 'scorpion-control', title: 'Scorpion Control' },
-      { slug: 'bed-bug-control', title: 'Bed Bug Treatment' },
-      { slug: 'flea-tick-control', title: 'Flea & Tick Control' },
-      { slug: 'rodent-control', title: 'Rodent Control' },
-      { slug: 'wasp-hornet-control', title: 'Wasp & Hornet Control' },
-    ],
+    servicePages: SERVICE_CATALOG.pest,
   },
   irrigation: {
     tradeTitle: 'Irrigation',
-    servicePages: [
-      { slug: 'sprinkler-systems', title: 'Sprinkler Systems' },
-      { slug: 'drainage', title: 'Drainage' },
-      { slug: 'pump-systems', title: 'Pump Systems' },
-      { slug: 'sod-dirt-work', title: 'Sod & Dirt Work' },
-      { slug: 'artificial-turf', title: 'Artificial Turf' },
-    ],
+    servicePages: SERVICE_CATALOG.irrigation,
   },
 };
 
