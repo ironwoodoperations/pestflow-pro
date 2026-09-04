@@ -553,3 +553,13 @@ it is recent.
   - app/tenant/[slug]/page.tsx
   - app/tenant/[slug]/quote/page.tsx
 - Next recommended action: [Fill in next session: read this line, write what comes next]
+
+---
+## Session — 2026-09-04 15:13 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `d352d64` — S332: session close — ROADMAP through S331, and the S331 handoff
+- Author: Claude
+- Files changed:
+  - docs/ROADMAP.md
+  - docs/handoffs/pestflow-pro-handoff-S331-shipped.md
+- Next recommended action: [Fill in next session: read this line, write what comes next]
