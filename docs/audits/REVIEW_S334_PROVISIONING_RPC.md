@@ -12,15 +12,309 @@ order in §7 is what the next sessions execute; nothing in it has been started.
 
 ## 1. Submission text
 
-> ⚠️ **NOT SUPPLIED.**
+*Pasted byte-exact. Unlike the two verdicts, this is plain text with box-drawing rules and
+layout-significant indentation, so it is kept inside a fence to preserve that layout as
+written. **The fence belongs to this record, not to the submission** — the text between the
+fence markers is the submission, unaltered and not re-wrapped.*
 
-The submission put to the two validators has **not** been provided. Appendices A and B were
-supplied and are filled; this slot alone remains open. It is left empty deliberately rather
-than reconstructed from the arbitration summary or back-inferred from the verdicts' own
-restatements of questions A–F, because a reconstruction is indistinguishable from a
-transcript to a later reader — which destroys the only thing a verbatim slot is for.
+```text
+VALIDATOR GATE SUBMISSION — PestFlow Pro S334
+Atomic tenant-provisioning RPC: design review before implementation
 
-**To fill:** paste the submission text here, replacing this block.
+You are one of two independent reviewers (the other is a different frontier
+model). We take the more conservative verdict where you disagree. Please return
+one of APPROVE / APPROVE WITH CONDITIONS / REJECT, with numbered conditions.
+Do not assume repository access — everything needed is below. Where I state a
+fact as "verified", it was read from the live database or the deployed function
+bundle today, not from documentation.
+
+════════════════════════════════════════════════════════════════════════
+1. SYSTEM
+════════════════════════════════════════════════════════════════════════
+
+Multi-tenant SaaS: marketing websites + admin dashboards for local home-services
+businesses (pest control, irrigation, lawn care). Postgres via Supabase. Public
+sites are Next.js App Router with ISR; the admin is a Vite SPA; server-side work
+runs in Deno edge functions. ~9 tenants today, 2 paying, target 40-60. Delivery
+is concierge: one operator provisions every client by hand.
+
+Tenant provisioning is a single Deno edge function, `provision-tenant`:
+  - gateway verify_jwt = false
+  - in-source auth: constant-time compare of an `x-pfp-internal-key` header
+    against a server-side env secret (node:crypto timingSafeEqual, with a
+    length-equality pre-check)
+  - uses the Postgres service-role key for all database work
+
+════════════════════════════════════════════════════════════════════════
+2. WHAT THE FUNCTION DOES TODAY (verified against the deployed bundle)
+════════════════════════════════════════════════════════════════════════
+
+Roughly 23 durable writes across TEN tables, executed sequentially over separate
+network round trips, with no transaction:
+
+  tenants, tenant_users, profiles, settings, page_content, onboarding_sessions,
+  service_areas, ai_authority_prompts, blog_posts, prospects
+
+Ordering, abbreviated:
+
+  Step 1  tenants insert (or update when a tenant_id is supplied)
+  Step 2  EXTERNAL: gotrue createUser  -> then tenant_users insert, profiles upsert
+  Step 3  settings x11 upserts, each preceded by its own read-then-merge
+  Step 4  page_content xN upserts (seeded from the tenant's vertical)
+  Step 5  page_content overlay from scraped prospect content
+  Step 7  onboarding_sessions update (consumed = true)
+  Step 8  EXTERNAL: Zernio POST /api/v1/profiles -> then settings.integrations update
+  Step 9  (entire block gated on `if (prospect_id)`)
+          9a  settings.business_info overlay      9b   settings.seo upsert
+          9b-seo page_content meta updates        9c   service_areas upserts
+          9f  settings.seo.service_areas update  <-- THE ONLY HARD ABORT
+          9g  ai_authority_prompts upsert         9d   blog_posts x3 (pest only)
+          9e  prospects stage update              9g-legal page_content x4
+  Step 10 EXTERNAL: Outscraper fire-and-forget
+
+FAILURE BEHAVIOUR IS THE DEFECT. Exactly ONE of those operations aborts on
+error (9f). The rest log and continue, and several discard the error entirely.
+A failed run therefore returns HTTP 200 with `{success: true}` while the tenant
+is partially built, and nobody is told.
+
+RELEVANT SCHEMA FACTS (verified):
+  - profiles.id IS the auth user id (PK, and FK to auth.users.id).
+    tenant_users.user_id also references it. There is no id to write until
+    gotrue answers.
+  - Unique constraints available as ON CONFLICT targets:
+      settings(tenant_id, key)            page_content(tenant_id, page_slug)
+      service_areas(tenant_id, slug)      ai_authority_prompts(tenant_id, prompt_text)
+      blog_posts(tenant_id, slug)         tenant_users(tenant_id, user_id)
+      profiles(id)                        tenants(slug)
+  - Triggers that fire INSIDE the write path:
+      trg_strip_settings_secrets   BEFORE INSERT OR UPDATE ON settings
+        (strips four Vault secret keys, files an observation row)
+      settings_bump_updated_at     BEFORE UPDATE ON settings
+      page_content_bump_updated_at BEFORE UPDATE ON page_content
+      trg_enforce_location_cap     BEFORE INSERT ON service_areas
+        (can RAISE, aborting a seed part-way through)
+      prospect_stage_change_log    AFTER UPDATE ON prospects
+  - EXECUTE-grant convention for privileged functions, verified:
+      admin_delete_tenant, get_tenant_secret, insert_report_and_findings,
+      check_and_record_rate_limit  ->  service_role EXECUTE only
+      (the Postgres default of EXECUTE TO PUBLIC was explicitly revoked)
+
+════════════════════════════════════════════════════════════════════════
+3. THE SIX CONDITIONS ALREADY BINDING (from a prior, closed gate)
+════════════════════════════════════════════════════════════════════════
+
+  1. Atomic provisioning through ONE Postgres function. A failure returns
+     non-2xx, never a success payload with warnings.
+  2. Auth user creation happens FIRST, OUTSIDE the transaction. Forced by the
+     FK chain above. The accepted orphan on failure is an auth user with no
+     tenant — cheap to detect and clean. A sweep for that condition currently
+     returns zero rows.
+  3. A selection table, with catalog validation SERVER-SIDE. The wizard picker
+     is not a security boundary.
+  4. The backend rejects an empty selection for a service-based vertical even
+     if the UI is bypassed.
+  5. The canonical "publicly listed service" predicate is CONSUMED, not
+     reimplemented.
+  6. A tenant with zero services renders HTTP 200 everywhere — navigation,
+     home tiles, sitemap, JSON-LD.
+
+Additionally deferred into this work: the settings merge must happen DATABASE-
+SIDE in a single statement. A prior session narrowed a lost-update race to a
+single request and explicitly did NOT claim to have closed it; closing it needs
+a DB function, which is what this session builds.
+
+════════════════════════════════════════════════════════════════════════
+4. QUESTIONS — where the conditions do not resolve against the real code
+════════════════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────────────────
+QUESTION A — THERE ARE THREE EXTERNAL CALLS, NOT ONE
+────────────────────────────────────────────────────────────────────────
+Condition 2 names only auth. Verified, there are three:
+
+  gotrue      before all DB writes. Condition 2 covers it.
+  Zernio      BETWEEN Postgres writes. Creates a social-media profile for the
+              tenant, then writes the returned id into settings.integrations.
+              No idempotency key on the vendor's create endpoint.
+  Outscraper  after the response body is built; fire-and-forget.
+
+A Zernio failure or a retry leaves an orphaned vendor-side profile that nothing
+in our database points at. The auth-orphan sweep cannot find it, because it is
+not in our database at all.
+
+Options considered:
+  A1. Move the Zernio call after COMMIT. The tenant is complete and correct;
+      settings.integrations.zernio_profile_id is filled by a second, small
+      transaction. Failure leaves a tenant with no social profile, which is the
+      current state of every existing tenant and is already handled downstream
+      as "not configured".
+  A2. Enqueue it. A durable queue row is written inside the transaction; a
+      worker drains it. This pattern already exists in the system for outbound
+      lead delivery. Costs a table and a cron.
+  A3. Keep it inline before the transaction, alongside auth. Makes an orphaned
+      vendor profile the price of any later failure, and adds an external
+      dependency to the critical path of every provision.
+
+We propose A1, with A2 recorded as the upgrade if the failure rate justifies it.
+Is A1 acceptable, or does the un-retryable vendor call require a durable record
+written inside the transaction (A2) to be defensible?
+
+────────────────────────────────────────────────────────────────────────
+QUESTION B — HALF THE SEED IS GATED ON A CRM FOREIGN KEY
+────────────────────────────────────────────────────────────────────────
+Steps 9a-9g run only `if (prospect_id)`. That block contains settings.seo, all
+per-page SEO metadata, ALL service_areas rows, ai_authority_prompts, the starter
+blog posts, and the four legal pages (terms, privacy, sms-terms, accessibility).
+
+`prospects` is a sales CRM table. The next client to be provisioned has no
+prospect row. Provisioning them today yields a tenant with an admin login and
+page content, and with no sitemap-relevant SEO, no service areas and no legal
+pages — silently, because every step in that block swallows its own error.
+
+We propose the RPC take an explicit, fully-specified input payload and seed
+unconditionally, with prospect-derived data as an OPTIONAL overlay rather than
+the switch that decides whether the tenant is seeded at all.
+
+Is there a reason to preserve the current coupling that we are not seeing? Our
+concern is that decoupling widens the change beyond "make the existing writes
+atomic" — we would be changing WHAT is written for a prospect-less tenant, not
+only its failure semantics. Is that acceptable inside this change, or should it
+be a separate one, accepting that a prospect-less tenant stays broken meanwhile?
+
+────────────────────────────────────────────────────────────────────────
+QUESTION C — CONDITIONS 1, 3 AND 5 ARE NOT JOINTLY SATISFIABLE AS WRITTEN
+────────────────────────────────────────────────────────────────────────
+The canonical predicate from condition 5 is a TypeScript module in the Next.js
+application tree. It imports two further modules from that tree, and the service
+catalogs themselves (12 pest slugs, 5 irrigation, 17 lawn) are TypeScript
+objects in a third location. Postgres cannot import any of it.
+
+So "the RPC validates the selection against the catalog" cannot simultaneously
+happen in Postgres (condition 1) and consume the existing predicate (condition
+5).
+
+Constraints that bear on the fix:
+  - A `shared/lib/` directory IS reachable from both the Next.js/Vite tree
+    (extensionless imports) and from Deno edge functions (explicit .ts). This
+    is established and in production: a merge helper was moved there for
+    exactly this reason and the deployed bundle carries it verbatim.
+  - The edge-function `_shared/` directory is NOT a good home: a CI workflow
+    republishes sixteen edge functions whenever anything under it changes. A
+    catalog edit should not redeploy sixteen functions.
+  - A copy-plus-equality-test pattern ALREADY EXISTS for these slugs: the edge
+    tree restates them and a test pins the two lists equal. It is a copy with a
+    drift guard, not consumption.
+
+Options:
+  C1. Project the catalog into a Postgres table, generated from the TypeScript
+      source, with a drift guard. Satisfies 1 and 3 literally. Creates a second
+      copy of the catalog — which is the exact defect the predicate work just
+      removed — and makes the guard permanently load-bearing.
+  C2. Extract the slug/title sets to shared/lib. The Deno edge function
+      validates the selection against the real catalog before calling the RPC;
+      the RPC performs all writes atomically. The edge function is server-side
+      and is the only caller (see Question D), so condition 3's stated intent —
+      "the wizard picker is not a security boundary" — is met. The RPC still
+      enforces structural invariants (non-empty for a service-based vertical,
+      well-formed slugs, no duplicates) as defence in depth.
+  C3. Status quo pattern: another copy in the edge tree with an equality test.
+
+We propose C2. The objection we anticipate is that the RPC then trusts its
+caller for catalog membership. Our answer is that the RPC is not reachable by
+any other caller. Is that sufficient, or does condition 3 require the catalog to
+be enforced in Postgres itself (C1) regardless of who can call the function?
+
+────────────────────────────────────────────────────────────────────────
+QUESTION D — EXECUTE GRANTS AND THE TRUST BOUNDARY
+────────────────────────────────────────────────────────────────────────
+We propose:
+
+  CREATE FUNCTION public.provision_tenant_atomic(...) SECURITY DEFINER
+    SET search_path = '';
+  REVOKE ALL ON FUNCTION public.provision_tenant_atomic(...) FROM PUBLIC;
+  REVOKE ALL ON FUNCTION public.provision_tenant_atomic(...) FROM anon, authenticated;
+  GRANT EXECUTE ON FUNCTION public.provision_tenant_atomic(...) TO service_role;
+
+matching the verified convention for admin_delete_tenant. A test asserts, against
+the live catalog rather than migration text, that no anon / authenticated /
+PUBLIC EXECUTE grant exists.
+
+Two sub-questions:
+  D1. Postgres grants EXECUTE to PUBLIC by default on function creation. Is an
+      explicit REVOKE in the same migration sufficient, or should the guard also
+      run as a periodic check, given that a later CREATE OR REPLACE does not
+      reset grants but a DROP-and-recreate does?
+  D2. SECURITY DEFINER with `SET search_path = ''` requires every object to be
+      schema-qualified. Is there a reason to prefer SECURITY INVOKER here, given
+      the caller is already service_role and therefore already bypasses RLS?
+
+────────────────────────────────────────────────────────────────────────
+QUESTION E — CONDITIONS 4 AND 6 TOGETHER
+────────────────────────────────────────────────────────────────────────
+Condition 4 requires the backend to reject an EMPTY selection for a
+service-based vertical. Condition 6 requires a tenant with ZERO services to
+render 200 on every surface.
+
+These describe different moments — 4 governs provisioning input, 6 governs
+rendering an existing tenant — but a reviewer could read them as contradictory.
+Our reading: a tenant may not be CREATED with zero services, but a tenant may
+COME TO HAVE zero services (every page deleted by an admin, or a vertical
+changed), and that state must render rather than 500. No tenant is in that state
+today, so condition 6 needs a constructed test rather than an observed one.
+
+Is that reading correct? And is a constructed fixture adequate evidence for
+condition 6, or is a real temporary tenant required?
+
+────────────────────────────────────────────────────────────────────────
+QUESTION F — THE DB-SIDE SETTINGS MERGE
+────────────────────────────────────────────────────────────────────────
+Eleven settings keys are seeded. Today each is read, merged in TypeScript, and
+upserted — three round trips per key, and a lost-update window between the read
+and the upsert.
+
+We propose a single statement per key inside the transaction:
+
+  INSERT INTO public.settings (tenant_id, key, value)
+  VALUES ($1, $2, $3)
+  ON CONFLICT (tenant_id, key)
+  DO UPDATE SET value = public.settings.value || EXCLUDED.value
+
+with the caveat that `||` is a SHALLOW jsonb merge and the existing TypeScript
+helper additionally enforces two rules the operator relies on:
+  (i)  an EMPTY overlay value must not overwrite a NON-EMPTY existing one
+       (the seed writes `wizard.x || body.x || ''`, so blank fields arrive as
+       '' on a re-provision and would otherwise blank real data). Note that 0
+       and false are meaningful values here, not empty.
+  (ii) business_info has grouped keys that are all-or-nothing under a CHECK
+       constraint (a four-part address, a lat/lng pair, hours-requires-timezone).
+       A partial group raises 23514 and fails the whole write.
+
+So a bare `||` is NOT equivalent to the current behaviour. Should those two
+rules be reimplemented in PL/pgSQL (one definition, in the transaction, but a
+second copy of logic that already exists and is tested in TypeScript), or should
+the merged value continue to be computed in TypeScript and passed in as a single
+already-merged jsonb parameter (one definition, but the read is then outside the
+transaction and the race is narrowed rather than closed)?
+
+════════════════════════════════════════════════════════════════════════
+5. WHAT WE ARE ASKING FOR
+════════════════════════════════════════════════════════════════════════
+
+A verdict of APPROVE / APPROVE WITH CONDITIONS / REJECT, with numbered
+conditions, addressing A through F. Please flag explicitly:
+
+  - any failure mode in the proposed ordering (auth outside, writes inside,
+    Zernio after commit) that we have not named;
+  - anything in the trigger set that behaves differently inside an explicit
+    transaction than it does today across separate statements;
+  - whether the partial-failure surface actually closes, or merely moves —
+    specifically, what state the system is in if the transaction commits and
+    the post-commit steps then fail;
+  - any condition among the six that our proposal fails to meet, including one
+    we believe we are meeting.
+
+Assume we will implement exactly what is approved and nothing more.
+```
 
 ---
 
@@ -458,5 +752,8 @@ read by importing the catalog modules directly, and the constraint and queue tab
 from the live database. Nothing in §5–§7 was transcribed from the brief on trust — which is the
 same rule (*verify the artifact, not the status*) that the S331/S333 correction exists to record.
 
-**§2 and §3 are filled, byte-exact, and passed the attribution check above. §1 remains unfilled
-because the submission text was never supplied** — it is the one outstanding item in this record.
+**All three verbatim slots are now filled, byte-exact.** Each was checked programmatically after
+writing: present exactly once, byte-identical to the supplied text, with a mutation test
+confirming the comparison is not vacuous. Digests of the embedded text: submission
+`a8c1a3e0…`, Appendix A `e6f4273e…`, Appendix B `6f8ba842…`. Nothing in this record is
+reconstructed, summarised or re-wrapped.
