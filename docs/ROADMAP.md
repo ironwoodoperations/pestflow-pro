@@ -1,6 +1,6 @@
 # PestFlow Pro — Roadmap
 
-*State as of S345 (2026-09-05). **pls is LIVE and INDEXABLE on precisionlawnsystems.com.** **The S332–S345 atomic-provisioning arc is SHIPPED AND LIVE** — every edge function deployed, every migration applied, and the chain exercised end to end against production, including **the first successful tenant deletion in this platform's history**. Deploy state verified by querying production, never inferred from a merge. Next: **S346, the operator allowlist** — four disagreeing sources of operator truth. Update at end of each session; retire the versioned pestflow-pro-todo-vNNN.html snapshots.*
+*State as of S348 (2026-09-05). **pls is LIVE and INDEXABLE on precisionlawnsystems.com.** **The S346–S348 operator-identity arc is SHIPPED AND LIVE, and the deploy/apply queue is EMPTY** — `scrape-prospect` v58, `offboard-tenant` v15 and `ai-proxy` v25 all carry it, and `faqs_tenant_question_key` is applied. Operator truth now has **one** source (`public.operators`) with one reader per side of the boundary. Deploy state verified by querying production and reading deployed bundles, never inferred from a merge. Next: **wire FAQ seeding** — the seeds are built and tested, the unique key that blocked them is now applied. Update at end of each session; retire the versioned pestflow-pro-todo-vNNN.html snapshots.*
 
 ---
 
@@ -109,6 +109,66 @@ Production-ready, **idle capacity**. Active leads out — **Capture, Blue Duck, 
 ---
 
 ## Recently Shipped
+
+### S346 → S348 — the operator-identity arc. ✅ SHIPPED, DEPLOYED AND APPLIED. Queue EMPTY.
+
+Deploy state read from production and from the deployed bundles. Times UTC, 2026-09-05.
+
+| session | change | state |
+|---|---|---|
+| **S346** | one operator identity + a vertical-aware scrape (#353) — `44c768c` | **LIVE** — `ai-proxy` **v25** 13:07:09 |
+| **S347** | the scrape wrote ten 404s to a lawn prospect (#354) — `fb5ab0b` | **LIVE** in `scrape-prospect` v58 |
+| **S346C** | one operator identity in the frontend, and three live defects (#355) — `161cffb` | **LIVE** — `offboard-tenant` **v15** 14:43:11 |
+| **S348** | discard means discard, two migration files, FAQ seeds (#356) — `aa1d537` | **LIVE** — `scrape-prospect` **v58** 15:10:54; unique key **applied** |
+
+**OPERATOR TRUTH HAD DRIFTED INTO BEING ITS OWN OPPOSITE.** `IRONWOOD_OPERATOR_USER_IDS` held **only**
+`admin@pestflowpro.com`; `public.operators` held **only** `scott@homeflowpro.ai`. Whichever identity
+the operator signed in as, something 403'd — `scrape-prospect` returned Forbidden twice and Firecrawl
+was never called. **Six copies** existed in all, including one in `offboard-tenant` that was already
+broken and denied the only real operator **on the path that deletes tenants**. There is now one table
+and one reader per side: `_shared/operatorLookup.ts` (service_role) and `src/lib/isOperator.ts`
+(browser, via `is_operator()`). Both fail closed.
+
+**`public.operators` has RLS ENABLED with ZERO POLICIES** — every `anon`/`authenticated` SELECT returns
+zero rows whatever the grants. Checked before being relied on; no policy invented.
+
+**THE SCRAPE WAS WRITING FICTION TO PROSPECTS.** Nine of ten "pages found" on the first live run were
+the same 404: `scrapeOne` checked `res.ok` — the status of the *Firecrawl call*, which succeeds because
+Firecrawl successfully fetched a 404 — and never the page's own `metadata.statusCode`. The site's
+og:title made each error page look like a real one. `provision-tenant` overlays `scraped_content` onto
+`page_content` at create time, so those rows were **one Create Site away from a client's public
+website**. S348 removed the write from the function entirely: the overlay is now persisted by the
+operator clicking **Apply**, and Discard clears what earlier runs left behind.
+
+**`_shared/` BLAST RADIUS, RESOLVED BY IMPORT GRAPH:** `aiAuth.ts` has exactly one importer
+(`ai-proxy`); `operatorLookup.ts` has two (`offboard-tenant`, `scrape-prospect`). All three are
+deployed. The other **15** consumers still show 2026-09-04 timestamps, which is **correct** — they
+import neither module, so the CLI skipped the upload.
+
+**S346C also closed three defects beyond the allowlists:** the sidebar footer rendered a hardcoded
+address while a different identity held the session; **`SiteSetupSection` was HIDDEN on the
+`firecrawl_migration` build path** — the path Grandview came in on — so a migration prospect could not
+reach the slug or admin-email inputs at all; and the scrape counters did not reconcile (13 paths
+unaccounted for), now closed by `unreachable`, so **`tried = unreachable + discarded + kept`**.
+
+### 🌱 GRANDVIEW — THE FIRST LAWN CLIENT. Provisioned and verified 2026-09-05.
+
+`grandview` / **Grandview Lawn and Landscape**, `95f1f4f1-484d-4a9c-bcb2-cc4e8cb97a00`,
+`vertical = 'lawn'` — **the first tenant provisioned in a vertical other than pest or irrigation**, so
+the whole S332→S341 lawn chain ran for real.
+
+**Eleven tenant-scoped tables were written in ONE transaction** at `13:58:11.887463` — `settings` (12),
+`seo_meta` (18), `page_content` (16), `ai_authority_prompts` (10), `tenant_services` (**7**),
+`service_areas` (7), and `profiles` / `tenant_users` / `prospects` / `provisioning_status` /
+`outbound_integration_queue` at 1 each. `settings`, `page_content` and `tenant_services` all carry the
+tenant's own creation timestamp to the microsecond, which is `provision_tenant_atomic` committing as a
+unit. **`tenant_services = 7` is the S341/S342 picker working end to end** — seven selected out of a
+17-entry lawn catalog.
+
+**`faqs` is the TWELFTH table, and provisioning has NEVER written it.** Grandview's 35 rows were a
+one-off backfill by Claude.ai over MCP, 14 minutes after the transaction committed. See Next Up item 1.
+
+Handoff: `docs/handoffs/pestflow-pro-handoff-S348-shipped.md`.
 
 ### S332 → S345 — the atomic-provisioning arc. ✅ SHIPPED, DEPLOYED AND APPLIED.
 
@@ -298,29 +358,27 @@ S329 gambled on.
 
 ## Next Up
 
-### THE PRIORITY ORDER AS OF S345
+### THE PRIORITY ORDER AS OF S348
 
-**The deploy/apply queue is EMPTY.** The only carry-forward from the deploy side is item 4.
+**The deploy/apply queue is EMPTY.** Nothing from S346–S348 is waiting on a deploy or a migration.
 
-1. **S346 — THE OPERATOR ALLOWLIST.** Kickoff already written.
-   `IRONWOOD_OPERATOR_USER_IDS` in `_shared/aiAuth.ts` holds **only `admin@pestflowpro.com`**
-   (`5181b30a-…`); `public.operators` holds **only `scott@homeflowpro.ai`** (`32b8fbf4-…`). **Exact
-   opposites, verified by id.** `scrape-prospect` 403'd twice on 2026-09-05 because of it, and the same
-   set gates `ai-proxy`'s `redirect_map`.
-2. **S346 part B — `scrape-prospect` is pest-only:** `CANDIDATE_PATHS`, `pathToSlug`, and both prompts.
-3. **S346C — THE FOURTH ALLOWLIST, AND THE SIDEBAR THAT LIES. Its own PR, NOT part of S346.**
-   `IRONWOOD_ALLOWED` is hardcoded in `src/pages/admin/IronwoodLogin.tsx:9` **and again** in
-   `src/pages/IronwoodOps.tsx:48` (three emails each), and the sidebar footer at
-   `src/pages/IronwoodOps.tsx:108` renders the literal `admin@pestflowpro.com` rather than
-   `session.user.email` — **it misled a real login check on 2026-09-05.** So operator truth lives in
-   **four places that disagree**, two of them copies.
-   **⚠️ ASK SCOTT FIRST.** `murphygurl92@gmail.com` is in **neither** `public.operators` **nor**
-   `aiAuth.ts`, and has **no `auth.users` row at all**, so it cannot sign in. Whether to create it or
-   remove it is a decision about operator access, not a cleanup.
-4. **`s343b` needs a migration file.** Applied live mid-test, so the repo has no record. `user_roles`
-   DELETE removed, everything else **verbatim** from `pg_get_functiondef`, md5-verified as in S336/S339.
-   Anchor: md5 `54937fa95988c4cc7ec401b2b10be307`, length 4730.
-5. **Grandview provisions.**
+1. **WIRE FAQ SEEDING — the last step of S348 Part C.** `shared/lib/faqSeeds.ts` is built and tested;
+   the blocker is gone. **`faqs_tenant_question_key UNIQUE (tenant_id, question)` is APPLIED**, so
+   `buildFaqRows` can go into `provision_tenant_atomic` / `buildPayload` with a real
+   `ON CONFLICT (tenant_id, question)` target. Mechanical.
+   **Grandview is the proof it is needed.** **Provisioning writes ELEVEN tenant-scoped tables** — one
+   transaction at `13:58:11.887463` — and **`faqs` is the TWELFTH, which provisioning has NEVER
+   written.** Grandview's 35 rows share a single timestamp 14 minutes later: a **one-off backfill
+   applied by hand by Claude.ai over MCP.** **No tenant has ever received FAQs from provisioning** —
+   the three that have any (dang 55, grandview 35, pls 10) were each loaded outside that path, and the
+   seven that got provisioning and nothing else have **zero**.
+2. **`s348_faqs_tenant_question_unique` HAS NO MIGRATION FILE.** Applied live, so the repo has no
+   record — same class as `strip_settings_secrets`. **It is the conflict target item 1 depends on**, so
+   a fresh database would fail to seed without it. Do it with item 1, not after.
+3. **Termite FAQs need authoring.** `termite-control` and `termite-inspections` are deliberately
+   unseeded — dang has no termite rows to ground them in, and inventing inspection copy is the exact
+   fabrication `faqSeeds.ts` exists to prevent. This needs a source, not a generation pass.
+4. **The operator-access decision below is still open** and still gates JW Customs.
 
 ### ⚠️ DECISION REQUIRED — OPERATOR ACCESS TO CLIENT DASHBOARDS (HIGH — decide before Grandview and JW Customs)
 
@@ -482,8 +540,9 @@ together.
 - **15 consumers are unpinned in `config.toml`** (S343 audit — the earlier count of six had drifted).
   **Reported, not fixed: an unreviewed pin is a silent setting change.** `ironwood-provision` **IS** now
   pinned `verify_jwt = false` — a deploy lacking `--no-verify-jwt` flips it on, which happened at v62
-  and was corrected at v63 (live is v64, still false). `config.toml` is itself a workflow trigger path,
-  so editing it redeploys the 16 listed functions.
+  and was corrected at v63 (live is v64, still false). **`scrape-prospect` is also pinned
+  `verify_jwt = false` as of S347**, so a flag-less deploy can no longer flip it on. `config.toml` is
+  itself a workflow trigger path, so editing it redeploys the 16 listed functions.
 - **`provision-tenant`'s `liveUrl` and legal-page seeding still build `.com` hosts**, as do
   `send-reveal-ready:76` and `send-credentials-email:215`.
 - **The legal-page host should resolve at RENDER time, not be persisted at write time.** Persisting it
@@ -508,9 +567,10 @@ together.
   **identical on re-claim after a retryable failure**; grants after DROP+CREATE are
   `service_role:EXECUTE, postgres:EXECUTE` and nothing else. **`verify_jwt` hardening** is partly
   delivered (S343 pinned `ironwood-provision`). **Optimistic locking** remains deferred by the S323 gate.
-- **`s343b` has NO migration file.** Applied live, mid-test. Same class as `strip_settings_secrets`.
-- **The Ironwood sidebar footer is a HARDCODED email.** `src/pages/IronwoodOps.tsx:108` renders the
-  literal `admin@pestflowpro.com` instead of `session.user.email`. Tracked as S346C above.
+- **TWO objects are applied live with no migration file:** `strip_settings_secrets`, and
+  **`s348_faqs_tenant_question_unique`** (see Next Up item 2 — it is the conflict target FAQ seeding
+  needs). `s343b` and `s345` were both backfilled in S348 and md5-verified against
+  `pg_get_functiondef()`, so the class is shrinking rather than growing.
 - **Eight files are still tracked under `supabase/.temp/`.** S343 removed only the churning `cli-latest`.
 - **The root `tsconfig.json` EXCLUDES `supabase/`,** so `npx tsc --noEmit` says nothing about
   edge-function code. A targeted strict config found real defects in both S340 and S341 — without one,
@@ -590,6 +650,35 @@ Recorded here so they are not re-derived from scratch next time.
 - **`authenticated` keeps TRIGGER and MAINTAIN on `public.operators` (S320, reported not fixed).** S320 revoked the write verbs (`a w d D x`) after the gate found the ACL was `authenticated=arwdDxtm` on the table that confers cross-tenant logo write. It deliberately stopped at the verbs the gate named. `t` (TRIGGER) remains: it permits attaching a trigger to `operators`, which additionally needs a trigger function and `CREATE` on the schema, so it is not exploitable on its own. `m` (MAINTAIN, PG17) is VACUUM/ANALYZE-class and not a data write. Close in a dedicated grants change, not bundled into a policy migration.
 
 - **A TEXT-taking `is_tenant_member()` overload would give both properties.** S320 ships the inline `EXISTS` because the existing `is_tenant_member(uuid)` requires casting an untrusted object key to `uuid`, and that cast **raises** rather than denies, erroring a whole listing query. The helper's real advantage — being `SECURITY DEFINER`, so immune to `tenant_users`' own grants and RLS — is genuine and was given up to avoid the cast. A `is_tenant_member(text)` overload would have both. Follow-up, not a blocker, and deliberately not invented mid-migration.
+
+### WORKING RULES — earned S346–S348.
+
+**1. `is_operator()` GIVES OPPOSITE VERDICTS BY CALLER, AND UNIFYING THE TWO CALL SITES IS AN OUTAGE.**
+It resolves the caller as `auth.uid()`. In the **browser** that is the signed-in user, and the function
+is exactly right — a bare boolean that never ships the operator list. Under **service_role**
+`auth.uid()` is **NULL**, so the identical call denies **everyone**, a failure that looks like working
+code. Edge reads `public.operators` directly; the browser calls the function. **These are not
+duplication to be tidied up** — whoever unifies them breaks one side, and which side depends on which
+way they unify.
+
+**2. NARROW-SCOPING A SEARCH BEFORE IT HAS FOUND ANYTHING IS HOW THE FIFTH ALLOWLIST SURVIVED S346.**
+Six operator allowlists existed. The sixth — `_shared/offboardDrain.ts`, gating **tenant deletion**, and
+already broken — was found only because the S346C scan was **deliberately too broad first**: it failed
+on ten files, nine legitimately, and was narrowed *afterwards*. Scope the search to the answer, never to
+the guess.
+
+**3. THREE NEW VACUOUS-GUARD SHAPES, all caught by mutation.** *Import-line satisfaction* — an "X before
+Y" scan satisfied by the symbol in the `import` statement (S347). *Comment self-trip* — the explanatory
+comment naming the banned literal made "the literal is gone" fail on a correct edit; asserts now strip
+comments and assemble needles from fragments (S346C). *Property guaranteed by a different function than
+the one the defect lives in* — a planted fallback in `faqSeedsFor` passed because the assertion ran
+through `buildFaqRows`, which calls `catalogFor` first (S348). Assert against the function the defect
+would live in.
+
+**4. A SUBSTRING TEST IS NOT A PROOF OF ABSENCE.** `user_roles` still appears in `admin_delete_tenant`
+— in the **comment recording its removal**. Anchor on `md5(pg_get_functiondef(...))`. Same shape,
+different costume, this arc: grepping `aiAuth` matched `_shared/aiAuthority/` and nearly recorded a
+function as an undeployed carrier of the old operator set. **Anchor on the full import specifier.**
 
 ### WORKING RULES — earned S309–S320. These are rules, not war stories.
 
