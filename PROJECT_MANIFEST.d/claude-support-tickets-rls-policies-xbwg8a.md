@@ -799,3 +799,30 @@ it is recent.
   `supabase/.temp/`; the root tsconfig excludes `supabase/` so no edge code is typechecked
   by `npm run tsc`; `strip_settings_secrets` still has no migration file; the
   `sprinkler-systems` lawn title is a pending content decision.
+
+---
+## Session — 2026-09-05 12:27 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `483482d` — S345: session close — handoff and ROADMAP, written against production
+- Author: Claude
+- Files changed:
+  - docs/ROADMAP.md
+  - docs/handoffs/pestflow-pro-handoff-S345-shipped.md
+- Next recommended action: **S346 — the operator allowlist.** `IRONWOOD_OPERATOR_USER_IDS` in
+  `_shared/aiAuth.ts` holds ONLY `admin@pestflowpro.com` (`5181b30a-…`); `public.operators` holds ONLY
+  `scott@homeflowpro.ai` (`32b8fbf4-…`) — **exact opposites, verified by id.** `scrape-prospect` 403'd
+  twice on 2026-09-05 because of it, and the same set gates `ai-proxy`'s `redirect_map`. Then **S346B**
+  (`scrape-prospect` is pest-only: `CANDIDATE_PATHS`, `pathToSlug`, both prompts), then **S346C — ITS
+  OWN PR, not part of S346** (a FOURTH operator list: `IRONWOOD_ALLOWED` hardcoded in
+  `IronwoodLogin.tsx:9` AND again in `IronwoodOps.tsx:48`, plus the sidebar footer at
+  `IronwoodOps.tsx:108` rendering a literal email instead of `session.user.email` — it misled a real
+  login check. ⚠️ `murphygurl92@gmail.com` is in neither source AND has no `auth.users` row at all, so
+  it cannot sign in: ASK SCOTT before reconciling, it decides who gets operator access). Then
+  **`s343b`'s missing migration file** (applied live mid-test; `user_roles` DELETE removed, everything
+  else verbatim from `pg_get_functiondef`, anchor md5 `54937fa95988c4cc7ec401b2b10be307`, length 4730).
+  Then Grandview.
+- ⛔ **THE DEPLOY/APPLY QUEUE IS EMPTY.** S332–S345 are all deployed and applied; the delete is PROVEN
+  (zero orphans across 11 tables, the first successful tenant deletion in this platform's history).
+  **DO NOT re-derive deploy state from `git log` — deploys and `apply_migration` leave no commit.** The
+  first draft of the S345 handoff claimed "almost none of it is live" and was flatly false. Query
+  production before writing any carry-forward.
