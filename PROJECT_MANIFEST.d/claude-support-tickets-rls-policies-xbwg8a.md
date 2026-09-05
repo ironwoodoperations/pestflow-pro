@@ -757,3 +757,45 @@ it is recent.
   so no edge code is typechecked by `npm run tsc`; `strip_settings_secrets` still has no
   migration file; the `sprinkler-systems` lawn title ('Irrigation Repair' vs irrigation's
   'Sprinkler Systems') is a pending content decision.
+
+---
+## Session — 2026-09-05 03:12 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `69cbefa` — S345: Zernio idempotency, and two safety nets that were narrower than they looked
+- Author: Claude
+- Files changed:
+  - .github/workflows/ci.yml
+  - CLAUDE.md
+  - SKILL.md
+  - src/__tests__/anthropicGuardScope.test.ts
+  - supabase/functions/process-outbound-queue/dispatch.test.ts
+  - supabase/functions/process-outbound-queue/dispatch.ts
+  - supabase/functions/process-outbound-queue/index.ts
+- Next recommended action: **THE DEPLOY/APPLY QUEUE IS THE CRITICAL PATH — six merged
+  sessions (S339-S345) sit on main and almost none of it is live.** In order:
+  (1) deploy `process-outbound-queue` (carries all of S345 Part A) — it is CRON-SCHEDULED
+  EVERY 15 MINUTES, so a bad bundle runs unattended; (2) deploy `ironwood-provision`
+  with `--no-verify-jwt`, SIGNED IN AS scott@homeflowpro.ai — `operators` holds only that
+  row and admin@pestflowpro.com is NOT in it, so the form 403s otherwise; (3) Claude.ai
+  applies `s343_tenant_users_block_last_admin_cascade_aware.sql` and
+  `s343_profiles_tenant_fk.sql`, then PROVES the delete fix by actually deleting a
+  throwaway tenant (zero rows across all eleven tables — `admin_delete_tenant` has never
+  successfully deleted anything); (4) apply `s341_settings_vertical_allow_lawn.sql`;
+  (5) deploy `provision-tenant` with `--no-verify-jwt`, then the committed create.
+- DECISION OWED (S345 Part A item 1, BLOCKED): `outbound_queue_claim` does NOT return
+  `idempotency_key` — signature verified as TABLE(id, tenant_id, kind, payload, attempts,
+  vendor_ref, prior_status). The column IS live on the table. Either widen that RPC, or
+  have the worker read the column by job id (an extra round-trip and a new per-job failure
+  mode). Until one is chosen the STRONGEST Zernio recovery path is inert, though the
+  plumbing is in place and a test pins that no key ships today.
+- Facts a later session should NOT re-derive: a 409 from Zernio is now SUCCESS when it
+  carries `details.existingProfileId` and `unknown` when it does not; `unknown` remains
+  reachable and must not be removed; the CI Anthropic guard now covers src/ app/ shared/
+  supabase/functions/ (shared/ was the S344 gap, and shared code reaches the
+  unauthenticated `/_admin/assets/*` bundle); a test that asserts about a forbidden
+  literal must ASSEMBLE it from fragments or it trips the guard it protects.
+- Still recorded, not built: 15 edge functions have no verify_jwt pin and the redeploy
+  verifier covers only the 16 shared-auth consumers; 8 files remain tracked under
+  `supabase/.temp/`; the root tsconfig excludes `supabase/` so no edge code is typechecked
+  by `npm run tsc`; `strip_settings_secrets` still has no migration file; the
+  `sprinkler-systems` lawn title is a pending content decision.
