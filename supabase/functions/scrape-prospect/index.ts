@@ -205,14 +205,19 @@ Deno.serve(async (req: Request) => {
       try { prospectFields = JSON.parse(cleaned) } catch { /* non-fatal */ }
     }
 
-    // Save scraped_content + source_url to prospect record
-    if (prospectId && Object.keys(scrapedContent).length > 0) {
-      const { error: dbErr } = await supabase
-        .from('prospects')
-        .update({ scraped_content: scrapedContent, source_url: url })
-        .eq('id', prospectId)
-      if (dbErr) console.error('Failed to save scraped_content:', dbErr.message)
-    }
+    // ── S348: THIS FUNCTION NO LONGER WRITES scraped_content ──────────────
+    // It used to save the overlay to the prospect row the moment the scrape
+    // finished — before the operator had seen a single result, and whether or
+    // not they ever accepted it. A run against a real lawn prospect left ten
+    // pest-slug pages sitting on the row; Discard was never clicked, because
+    // the results were never accepted. provision-tenant reads scraped_content
+    // at create time, so those pages were one Create Site away from a client's
+    // public website, and had to be cleared by hand.
+    //
+    // Clearing on Discard alone would NOT have prevented that: nothing was
+    // clicked. So the write moves to the point of acceptance — the caller
+    // persists it when the operator clicks Apply. The content is returned
+    // either way, so nothing the operator can SEE changes.
 
     return json({
       success: true,
