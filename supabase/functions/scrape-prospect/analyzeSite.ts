@@ -1,5 +1,11 @@
 // Helper: Claude site analysis for site recreation
 // Returns shell recommendation, extracted colors, hero headline, and CTA text
+//
+// S346 — the prompt moved to ./prompts.ts and is built per vertical. It lives
+// there rather than here so vitest can assert on it without loading this file's
+// fetch path, and so both scrape prompts are edited in one place.
+
+import { siteAnalysisPromptFor } from './prompts.ts'
 
 export interface SiteRecreation {
   shell: string
@@ -9,32 +15,6 @@ export interface SiteRecreation {
   heroHeadline: string
   ctaText: string
 }
-
-const SITE_ANALYSIS_PROMPT = `You are a web design analyst for a pest control SaaS platform. Analyze the provided
-homepage content from a pest control company's existing website and return a JSON
-object with exactly these keys:
-
-{
-  "shell": "modern-pro" | "clean-friendly" | "bold-local" | "rustic-rugged",
-  "shellReason": "one sentence explaining why this shell matches their site style",
-  "primaryColor": "#hexcode — the dominant brand color from their site (buttons, nav, headings)",
-  "accentColor": "#hexcode — the secondary/highlight color from their site (CTAs, accents)",
-  "heroHeadline": "rewritten version of their hero headline, max 8 words, punchy",
-  "ctaText": "short CTA button text, max 4 words, action-oriented"
-}
-
-Shell selection rules:
-- modern-pro: dark navbar, strong contrast, professional/corporate tone, navy/dark blues
-- clean-friendly: light or white backgrounds, soft tones, family-safe language, approachable
-- bold-local: high energy, bold saturated colors, local pride language, impact-focused
-- rustic-rugged: earthy/warm tones (browns, oranges, greens), established trust language, heritage
-
-For colors: if you cannot determine exact hex values from the content, use the most
-likely color based on the brand name, tone, and any color descriptions in the markdown.
-Always return valid hex codes. Default primary to #1e3a5f and accent to #f59e0b if
-truly unable to determine.
-
-Return ONLY the JSON object. No explanation, no markdown, no backticks.`
 
 const DEFAULT: SiteRecreation = {
   shell: 'modern-pro',
@@ -52,6 +32,7 @@ export async function analyzeSite(
   markdown: string,
   aiProxyUrl: string,
   authHeader: string,
+  vertical?: string | null,
 ): Promise<SiteRecreation> {
   try {
     const res = await fetch(aiProxyUrl, {
@@ -64,7 +45,7 @@ export async function analyzeSite(
         feature: 'scrape_prospect_analyze',
         tenant_id: null,
         max_tokens: 500,
-        system: SITE_ANALYSIS_PROMPT,
+        system: siteAnalysisPromptFor(vertical),
         messages: [{ role: 'user', content: markdown.slice(0, 15000) }],
       }),
     })

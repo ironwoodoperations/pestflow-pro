@@ -826,3 +826,57 @@ it is recent.
   **DO NOT re-derive deploy state from `git log` — deploys and `apply_migration` leave no commit.** The
   first draft of the S345 handoff claimed "almost none of it is live" and was flatly false. Query
   production before writing any carry-forward.
+
+---
+## Session — 2026-09-05 13:00 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `9698014` — S346: one operator identity, and a vertical-aware scrape
+- Author: Claude
+- Files changed:
+  - src/components/ironwood/ScrapePanel.tsx
+  - src/components/ironwood/__tests__/s346ScrapeCaller.test.ts
+  - supabase/functions/_shared/aiAuth.ts
+  - supabase/functions/_shared/operatorLookup.test.ts
+  - supabase/functions/_shared/operatorLookup.ts
+  - supabase/functions/scrape-prospect/analyzeSite.ts
+  - supabase/functions/scrape-prospect/index.ts
+  - supabase/functions/scrape-prospect/mapContent.ts
+  - supabase/functions/scrape-prospect/prompts.ts
+  - supabase/functions/scrape-prospect/scrapeTargets.test.ts
+- Next recommended action: **S346 is in [PR #353](https://github.com/ironwoodoperations/pestflow-pro/pull/353), draft, NOT merged.**
+  Two allowlists that were EXACT OPPOSITES — `IRONWOOD_OPERATOR_USER_IDS` held only
+  admin@pestflowpro.com, `public.operators` only scott@homeflowpro.ai — so whichever identity signed
+  in, something 403'd. The Set is DELETED, not extended: adding the second uuid would have made a
+  fourth hardcoded list. `public.operators` is read through the new `_shared/operatorLookup.ts`.
+
+  **TWO THINGS THE BRIEF DID NOT COVER, both handled and both worth not re-deriving:**
+  * `aiAuth.ts` used the same Set on the TENANT branch for R3 hard separation, and built its
+    service-role client AFTER that check. Both branches changed; the client is hoisted and reused.
+    Every tenant AI call now does one extra `operators` lookup — fails closed, so an outage denies.
+  * The fail-closed test was VACUOUS on first writing. Error and not-an-operator both deny, so a
+    `{data:null,error:X}` mock cannot tell them apart and deleting the branch still passes. The test
+    now supplies a ROW ALONGSIDE THE ERROR, so without the branch the code authorizes off a failed
+    query. Same S319 shape as S343's; that makes ten found across S326–S346.
+
+  **`deno check` COULD NOT BE RUN** — Deno is not installed and the egress proxy blocks deno.land.
+  Instead a targeted strict tsconfig stubs the esm.sh specifier and the `Deno` global, which typechecks
+  ALL SIX changed edge modules including `aiAuth.ts` and `index.ts` (root tsc excludes `supabase/`
+  entirely). That covers control flow and scoping, NOT the supabase-js API surface — the stub is `any`.
+
+  **I ALMOST SHIPPED A PROMPT WRITTEN FROM MEMORY.** The site-analysis prompt is far longer than it
+  looks (shell rules, colour fallbacks); the committed version is the original VERBATIM with only the
+  trade noun swapped. Never regenerate a working prompt while generalising it.
+
+  **ON MERGE:** `_shared/` is a trigger path, so `redeploy-edge-on-shared-change.yml` republishes the
+  16 listed consumers — INTENDED, `ai-proxy` is one of them. **`scrape-prospect` is NOT on that list
+  and needs Scott's separate deploy; until then Part B is inert.**
+
+  **OPEN, AWAITING SCOTT — do not start either without him:**
+  1. **S346C** — the FOURTH allowlist: `IRONWOOD_ALLOWED` hardcoded in `IronwoodLogin.tsx:9` AND
+     `IronwoodOps.tsx:48`, plus the hardcoded sidebar footer at `IronwoodOps.tsx:108`. Blocked because
+     `murphygurl92@gmail.com` is in neither `operators` nor `aiAuth.ts` **and has NO `auth.users` row
+     at all** — it cannot sign in. Create or remove is an operator-access decision, not a cleanup.
+  2. **`s343b`'s missing migration file** — applied live mid-test. `user_roles` DELETE removed,
+     everything else verbatim from `pg_get_functiondef`, md5-verified as in S336/S339. Anchor:
+     md5 `54937fa95988c4cc7ec401b2b10be307`, length 4730.
+  3. Grandview provisions.

@@ -6,16 +6,16 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { requireTenantUser, AuthError } from './auth/requireTenantUser.ts'
+import { isIronwoodOperator } from './operatorLookup.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 
-// R3: identity is email; AUTHORIZATION is UUID. Operator allowlist by user.id.
-// Exported as the single source of truth — operator additions land here only
-// (scrape-prospect imports this Set rather than redeclaring it).
-export const IRONWOOD_OPERATOR_USER_IDS = new Set<string>([
-  '5181b30a-265f-4a70-a323-bf6e3c53641b', // admin@pestflowpro.com (operator)
-])
+// R3: identity is email; AUTHORIZATION is UUID — unchanged. What changed in
+// S346 is WHERE the authorized UUIDs come from: public.operators, via
+// ./operatorLookup.ts, instead of a hardcoded Set that had drifted into being
+// the exact opposite of the table. There is deliberately NO constant here to
+// add a uuid to; a test asserts one has not come back.
 
 export type AiFeature =
   | 'content_page' | 'composer_captions' | 'composer_schedule'
@@ -67,7 +67,7 @@ export async function requireAiCaller(
     const svc = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
     const { data: { user }, error } = await svc.auth.getUser(token)
     if (error || !user) throw new AuthError(401, { error: 'Unauthorized' })
-    if (!IRONWOOD_OPERATOR_USER_IDS.has(user.id)) {
+    if (!(await isIronwoodOperator(svc, user.id))) {
       console.warn('[aiAuth] operator-feature denied — non-operator user:', user.email)
       throw new AuthError(403, { error: 'Forbidden' })
     }
@@ -78,8 +78,14 @@ export async function requireAiCaller(
   if (!requestedTenantId) throw new AuthError(400, { error: 'tenant_id required' })
   const { user, tenantId } = await requireTenantUser(req, requestedTenantId)
 
+  // The service-role client is built HERE rather than just before the tier RPC
+  // below, because the hard-separation check now reads public.operators and
+  // needs it first. One client, two uses — the tenant path gains one indexed
+  // lookup on a tiny table, on a path that already does an auth call and an RPC.
+  const svc = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+
   // hard separation: an operator identity may not invoke tenant features
-  if (IRONWOOD_OPERATOR_USER_IDS.has(user.id)) {
+  if (await isIronwoodOperator(svc, user.id)) {
     console.warn('[aiAuth] tenant-feature denied — operator identity:', user.email)
     throw new AuthError(403, { error: 'Forbidden' })
   }
@@ -88,7 +94,6 @@ export async function requireAiCaller(
   // edge anymore: check_tenant_access(p_tenant_id, p_required_tier) reads
   // tenants.entitlement in the DB (the one place that can't desync across
   // runtimes/deploys). Fail-closed on RPC error OR a non-true result.
-  const svc = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
   const { data: allowed, error } = await svc.rpc('check_tenant_access', {
     p_tenant_id: tenantId,
     p_required_tier: required as number,
