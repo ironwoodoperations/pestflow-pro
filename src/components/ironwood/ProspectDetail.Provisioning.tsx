@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import type { Prospect } from './types'
 import PreProvisionChecklist from './PreProvisionChecklist'
+import { buildProvisionRequestBody } from './provisionInputs'
 
 const isValidEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)
 
@@ -216,9 +217,16 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
       const cid = crypto.randomUUID()
       setCorrelationId(cid)
 
-      const bi = (form.business_info || {}) as Record<string, any>
-      const br = (form.branding || {}) as Record<string, any>
-      const cu = (form.customization || {}) as Record<string, any>
+      // S342 — the body is built by a PURE function so it can be unit-tested.
+      // It now carries `vertical` (inside business_info, where provision-tenant
+      // reads it) and top-level `services` (the operator's selection), and the
+      // hardcoded industry fallback is gone (see provisionInputs.ts).
+      const requestBody = buildProvisionRequestBody({
+        form,
+        prospectId,
+        resolvedAdminEmail,
+        tierData: TIER_PROVISION[form.tier || 'growth'] ?? TIER_PROVISION.growth,
+      })
 
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ironwood-provision`, {
         method: 'POST',
@@ -228,54 +236,7 @@ export default function ProvisioningSection({ form, prospectId, onProvisioned }:
           'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
           'X-Correlation-ID': cid,
         },
-        body: JSON.stringify({
-          prospect_id:  prospectId,
-          slug:         form.slug,
-          admin_email:  resolvedAdminEmail,
-          admin_password: form.admin_password,
-          business_info: {
-            name:    bi.name    || form.company_name || '',
-            phone:   bi.phone   || form.phone        || '',
-            email:   bi.email   || form.admin_email  || '',
-            address: bi.address || '',
-            tagline: bi.tagline || '',
-            hours:   bi.hours   || '',
-            industry:        bi.industry        || 'Pest Control',
-            license:         bi.license         || '',
-            certifications:  bi.certifications  || '',
-            founded_year:    bi.founded_year    || '',
-            num_technicians: bi.num_technicians || '',
-          },
-          branding: {
-            primary_color: br.primary_color || '#E87800',
-            accent_color:  br.accent_color  || '#1a1a1a',
-            template:      br.template      || 'modern-pro',
-            cta_text:      br.cta_text      || 'Get a Free Quote',
-            logo_url:      br.logo_url      || null,
-            favicon_url:   br.favicon_url   || null,
-          },
-          customization: {
-            hero_headline:       cu.hero_headline       || form.company_name || '',
-            show_license:        cu.show_license        ?? true,
-            show_years:          cu.show_years          ?? true,
-            show_technicians:    cu.show_technicians    ?? true,
-            show_certifications: cu.show_certifications ?? true,
-          },
-          social: {
-            facebook: form.social_facebook, instagram: form.social_instagram,
-            google: form.social_google, youtube: form.social_youtube,
-          },
-          subscription: (() => {
-            // Always derive subscription from form.tier (tier selector) — the source of truth.
-            // form.plan_tier/plan_name/monthly_price may be stale from a prior plan selection.
-            const td = TIER_PROVISION[form.tier || 'growth'] ?? TIER_PROVISION.growth
-            return {
-              tier:          td.tier,
-              plan_name:     td.plan_name,
-              monthly_price: td.monthly_price,
-            }
-          })(),
-        }),
+        body: JSON.stringify(requestBody),
       })
       if (res.status === 401) {
         setError('Session expired — please refresh the page and try again.')

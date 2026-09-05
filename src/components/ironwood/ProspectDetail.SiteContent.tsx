@@ -1,5 +1,15 @@
 import { useEffect } from 'react'
 import type { Prospect } from './types'
+import { VERTICAL_OPTIONS } from '../../lib/adminVerticalPreset'
+import {
+  VERTICAL_UNCHOSEN,
+  readVerticalChoice,
+  verticalSelectValue,
+  verticalFromSelectValue,
+  selectedServices,
+  servicesForPicker,
+  toggleService,
+} from './provisionInputs'
 
 const BI_FIELDS: [string, string][] = [
   ['address','Address'],['hours','Hours'],['tagline','Tagline'],
@@ -18,6 +28,13 @@ interface Props {
 export default function SiteContentSection({ form, setField, onBlur }: Props) {
   const bi = (form.business_info || {}) as Record<string, any>
   const setBi = (k: string, v: any) => setField('business_info', { ...bi, [k]: v })
+
+  // S342 — both persist inside prospects.business_info, the JSONB column this
+  // section already writes. No migration, and it survives a reload the same way
+  // every other field here does.
+  const { decided } = readVerticalChoice(bi)
+  const pickerServices = servicesForPicker(bi)
+  const chosen = selectedServices(bi)
 
   // Auto-populate business_info from intake_data after intake submission
   useEffect(() => {
@@ -69,6 +86,70 @@ export default function SiteContentSection({ form, setField, onBlur }: Props) {
               onChange={e => setBi(k, e.target.value)} onBlur={onBlur} />
           </div>
         ))}
+      </div>
+
+      {/* ── S342: THE TRADE, and the services this client actually sells ──────
+          Without these two the form posted no vertical and no services, so
+          provisioning seeded ZERO service pages for every client. */}
+      <div className="border-t border-gray-700 pt-3 space-y-3">
+        <div>
+          <label className="text-xs text-gray-400">Vertical (trade)</label>
+          <select
+            className={`${inp} ${!decided ? 'border-red-500' : ''}`}
+            value={verticalSelectValue(bi)}
+            onChange={e => {
+              // CHANGING VERTICAL CLEARS THE SELECTION. sprinkler-systems and
+              // artificial-turf are in two catalogs, so a naive filter would let
+              // a stale tick survive a switch and silently seed the wrong trade's
+              // page.
+              setField('business_info', {
+                ...bi,
+                vertical: verticalFromSelectValue(e.target.value),
+                services: [],
+              })
+              onBlur()
+            }}
+          >
+            {!decided && <option value={VERTICAL_UNCHOSEN} disabled>— Choose a trade —</option>}
+            {VERTICAL_OPTIONS.map(o => (
+              <option key={o.value || 'none'} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+          {!decided
+            ? <p className="text-red-500 text-xs mt-1">Required before provisioning — choose one, or &ldquo;Not listed / other&rdquo;</p>
+            : <p className="text-xs text-gray-600 mt-0.5">Drives which service pages are seeded. Changing it clears the selection below.</p>
+          }
+        </div>
+
+        {pickerServices.length > 0 && (
+          <div>
+            <label className="text-xs text-gray-400">
+              Services this client sells ({chosen.length} of {pickerServices.length})
+            </label>
+            <div className="grid grid-cols-2 gap-x-3 gap-y-1 mt-1 max-h-64 overflow-y-auto bg-gray-800/50 border border-gray-700 rounded p-2">
+              {pickerServices.map(svc => (
+                <label key={svc.slug} className="flex items-start gap-2 text-sm text-gray-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 accent-emerald-500"
+                    checked={chosen.includes(svc.slug)}
+                    onChange={() => {
+                      setField('business_info', { ...bi, services: toggleService(bi, svc.slug) })
+                      onBlur()
+                    }}
+                  />
+                  {/* The TITLE, not the slug: the operator is matching this
+                      against the client's own website. */}
+                  <span>{svc.title}</span>
+                </label>
+              ))}
+            </div>
+            {chosen.length === 0
+              ? <p className="text-red-500 text-xs mt-1">Tick at least one — only these get a page, SEO and a service row</p>
+              : <p className="text-xs text-gray-600 mt-0.5">Only the ticked services are provisioned. Nothing else is claimed on their behalf.</p>
+            }
+          </div>
+        )}
       </div>
 
       <div>

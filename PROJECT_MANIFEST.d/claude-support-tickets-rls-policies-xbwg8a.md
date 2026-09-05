@@ -680,3 +680,38 @@ it is recent.
   is typechecked by `npm run tsc` — S340 and S341 both used a targeted strict config
   instead, and S340 found a real defect that way. `strip_settings_secrets` still has no
   migration file (the fifth fileless batch).
+
+---
+## Session — 2026-09-04 23:02 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `c3e18a6` — S342: collect the vertical and the service selection in the Ironwood form
+- Author: Claude
+- Files changed:
+  - src/components/ironwood/PreProvisionChecklist.tsx
+  - src/components/ironwood/ProspectDetail.Provisioning.tsx
+  - src/components/ironwood/ProspectDetail.SiteContent.tsx
+  - src/components/ironwood/__tests__/provisionInputs.test.ts
+  - src/components/ironwood/provisionInputs.ts
+  - supabase/functions/ironwood-provision/index.ts
+- Next recommended action: **THREE DEPLOY/APPLY STEPS, and nothing in the repo is
+  live until they run.** In order: (1) deploy `ironwood-provision` via
+  `scripts/deploy-function.sh` — without it the top-level `services` field is
+  dropped by the destructure and the new picker silently does nothing; its
+  deployed v61 source was read from the Management API and diffed against main
+  and is IDENTICAL, so the deploy ships only S342; (2) Claude.ai applies
+  `supabase/migrations/s341_settings_vertical_allow_lawn.sql` via MCP — until
+  then lawn is code-reachable but 23514s at write time, which is the intended
+  safe state, not a bug; (3) deploy `provision-tenant` with `--no-verify-jwt`,
+  then run the committed create against a throwaway tenant across all eleven
+  tables. S340's rewrite and S341's picker do not reach a real client until (3).
+
+  CARRY THESE, they should not be re-derived: `ironwood-provision`'s operator
+  gate is a hardcoded `user.email !== 'admin@pestflowpro.com'` and Scott's
+  recorded identity is scott@homeflowpro.ai — that gate WILL 403 him; reported,
+  not changed, and it belongs on the ROADMAP. `SERVICE_CATALOG.lawn` titles
+  `sprinkler-systems` as 'Irrigation Repair' while irrigation titles the same
+  slug 'Sprinkler Systems' — same URL, two headings; pinned by a test, and
+  picking is a content decision. The root tsconfig EXCLUDES `supabase/`, so no
+  edge-function code is typechecked by `npm run tsc`; S340-S342 each used a
+  targeted strict config instead and S340 found a real defect that way.
+  `strip_settings_secrets` still has no migration file.
