@@ -8,6 +8,9 @@ import {
   extractZernioProfileId,
   needsReconcileBeforeCreate,
   resolveZernioCreate,
+  buildZernioCreateHeaders,
+  extractZernioConflictId,
+  extractProfileIdByExactName,
   hasGoogleId,
   buildZernioIntegrationsValue,
   DUPLICATE_SENSITIVE,
@@ -367,5 +370,181 @@ describe('S340 depends on the DB never unsetting a known ref', () => {
     // If this ever becomes a plain assignment, carrying the ref out of a failed
     // settings write stops working and the duplicate path reopens.
     expect(COMPLETE_SQL).toContain('coalesce(p_vendor_ref, q.vendor_ref)')
+  })
+})
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// S345 — ZERNIO IDEMPOTENCY. The S334 gate reasoned from a fact set saying the
+// create endpoint had no idempotency key. It has one, plus two further recovery
+// paths. Order, strongest first: idempotency key -> 409 body -> name lookup.
+// ════════════════════════════════════════════════════════════════════════════
+
+describe('S345: the Idempotency-Key header', () => {
+  it('is sent when a key is available', () => {
+    const h = buildZernioCreateHeaders('k', '11111111-1111-1111-1111-111111111111')
+    expect(h['Idempotency-Key']).toBe('11111111-1111-1111-1111-111111111111')
+    expect(h.Authorization).toBe('Bearer k')
+  })
+
+  it('IS IDENTICAL ACROSS RETRIES of the same job — the whole point', () => {
+    // A per-attempt key defeats the feature entirely: every retry becomes a
+    // fresh request and the vendor has no way to recognise the replay. The key
+    // is a stable column on the row, so the header must be a pure function of
+    // it and of nothing else.
+    const job = '22222222-2222-2222-2222-222222222222'
+    expect(buildZernioCreateHeaders('k', job)['Idempotency-Key'])
+      .toBe(buildZernioCreateHeaders('k', job)['Idempotency-Key'])
+  })
+
+  it('is OMITTED rather than invented when no key is available', () => {
+    // Sending a fresh uuid per attempt would be worse than sending none.
+    for (const missing of [undefined, null, '', '   ']) {
+      expect(buildZernioCreateHeaders('k', missing)).not.toHaveProperty('Idempotency-Key')
+    }
+  })
+
+  it('DOCUMENTS THE LIVE GAP: claim() does not return the column, so no key ships today', () => {
+    // outbound_queue_claim's signature, read from pg_get_function_result:
+    //   TABLE(id, tenant_id, kind, payload, attempts, vendor_ref, prior_status)
+    // The column EXISTS on the table (uuid NOT NULL DEFAULT gen_random_uuid())
+    // but is not selected, so job.idempotency_key is undefined at runtime.
+    // Widening the RPC is a migration and is not this surface's to apply.
+    // This test is the tripwire: when claim() starts returning the key, a job
+    // object carrying it produces the header and this stays green — but if
+    // someone "fixes" the header by inventing a key, the test above fails.
+    const jobAsClaimReturnsIt = {
+      id: 'j1', tenant_id: 't1', kind: 'zernio_profile' as const,
+      payload: {}, attempts: 1, vendor_ref: null, prior_status: 'pending',
+    }
+    expect((jobAsClaimReturnsIt as { idempotency_key?: string }).idempotency_key).toBeUndefined()
+    expect(buildZernioCreateHeaders('k', (jobAsClaimReturnsIt as { idempotency_key?: string }).idempotency_key))
+      .not.toHaveProperty('Idempotency-Key')
+  })
+})
+
+describe('S345: 409 stops meaning failure', () => {
+  const withId = { error: 'duplicate_name', details: { existingProfileId: 'prof_existing_1' } }
+
+  it('a 409 WITH an existing id is SUCCESS carrying that id', () => {
+    const r = resolveZernioCreate(409, withId, false)
+    expect(r.outcome).toBe('succeeded')
+    expect(r.vendorRef).toBe('prof_existing_1')
+    expect(r.reason).toBe('conflict_existing_profile')
+  })
+
+  it('THE REGRESSION THIS PREVENTS: 409 used to be terminal and burn the job', () => {
+    // classifyStatus still maps a generic 4xx to terminal — that is correct for
+    // every other 4xx and must not change. 409 is special-cased ahead of it.
+    expect(classifyStatus(409)).toBe('terminal')
+    expect(resolveZernioCreate(409, withId, false).outcome).not.toBe('terminal')
+  })
+
+  it('a 409 WITHOUT an id is `unknown`, never success', () => {
+    for (const body of [
+      { error: 'duplicate_name' },
+      { error: 'duplicate_name', details: {} },
+      { error: 'duplicate_name', details: { existingProfileId: '' } },
+      null,
+    ]) {
+      const r = resolveZernioCreate(409, body, false)
+      expect(r.outcome, JSON.stringify(body)).toBe('unknown')
+      expect(r.vendorRef).toBeUndefined()
+    }
+  })
+
+  it('the conflict extractor is STRICT — no guessing from other id-shaped fields', () => {
+    // On a 409 the body is an ERROR object. A wrong vendor_ref is worse than
+    // none: it points every future reconcile at something that is not the
+    // tenant's profile.
+    expect(extractZernioConflictId({ id: 'req_abc', _id: 'err_xyz' })).toBeNull()
+    expect(extractZernioConflictId({ details: { id: 'nope' } })).toBeNull()
+
+    // THE DOCUMENTED CONTRACT IS `details.existingProfileId` AND ONLY THAT.
+    // Mutation-testing found this missing: loosening the reader to
+    // `?.details ?? body` — accepting a TOP-LEVEL existingProfileId — passed
+    // every other assertion here, because none of them supplied one. The
+    // strictness claim in the doc comment was unpinned.
+    expect(extractZernioConflictId({ existingProfileId: 'top_level' })).toBeNull()
+    expect(extractZernioConflictId({ profile: { existingProfileId: 'nested_elsewhere' } })).toBeNull()
+
+    expect(extractZernioConflictId(withId)).toBe('prof_existing_1')
+  })
+
+  it('a 409 with an id still carries it out when the settings write fails (S340)', () => {
+    const r = resolveZernioCreate(409, withId, true)
+    expect(r.outcome).toBe('retryable')
+    expect(r.vendorRef).toBe('prof_existing_1')
+  })
+})
+
+describe('S345: 422 stays terminal', () => {
+  it('same key + different body is OUR bug, and retrying cannot fix it', () => {
+    const r = resolveZernioCreate(422, { error: 'idempotency_key_reuse_with_different_body' }, false)
+    expect(r.outcome).toBe('terminal')
+    expect(r.reason).toBe('http_422')
+  })
+
+  it('the 409 branch does not swallow neighbouring 4xx codes', () => {
+    for (const s of [400, 401, 403, 404, 410, 422]) {
+      expect(resolveZernioCreate(s, { details: { existingProfileId: 'x' } }, false).outcome,
+        `status ${s}`).toBe('terminal')
+    }
+  })
+})
+
+describe('S345: name lookup, the third fallback', () => {
+  const list = { profiles: [{ _id: 'p1', name: 'Acme Pest' }, { _id: 'p2', name: 'Other Co' }] }
+
+  it('resolves an exact, unambiguous match', () => {
+    expect(extractProfileIdByExactName(list, 'Acme Pest')).toBe('p1')
+    expect(extractProfileIdByExactName(list, ' Acme Pest ')).toBe('p1')
+  })
+
+  it('accepts the shapes the endpoint may return', () => {
+    expect(extractProfileIdByExactName([{ id: 'p9', name: 'Solo' }], 'Solo')).toBe('p9')
+    expect(extractProfileIdByExactName({ data: [{ id: 'p8', name: 'Solo' }] }, 'Solo')).toBe('p8')
+  })
+
+  it('returns null on no match, and NEVER guesses on a near match', () => {
+    expect(extractProfileIdByExactName(list, 'Acme')).toBeNull()
+    expect(extractProfileIdByExactName(list, 'acme pest')).toBeNull()
+    expect(extractProfileIdByExactName(list, '')).toBeNull()
+    expect(extractProfileIdByExactName(null, 'Acme Pest')).toBeNull()
+  })
+
+  it('returns null when MORE THAN ONE profile matches', () => {
+    // Names are documented unique per workspace. This does not trust that: if
+    // uniqueness ever fails, guessing which profile is the tenant's is exactly
+    // how a wrong vendor_ref gets minted.
+    const dupes = { profiles: [{ _id: 'a', name: 'Same' }, { _id: 'b', name: 'Same' }] }
+    expect(extractProfileIdByExactName(dupes, 'Same')).toBeNull()
+  })
+})
+
+describe('S345: `unknown` stays in the state machine', () => {
+  it('is still reachable — every reconcile path can still fail', () => {
+    // Far harder to reach now, but "sent, unobserved, and the 409 body and name
+    // lookup both failed to name it" remains real. Deleting a state because the
+    // common case is covered is how the uncommon case bites.
+    expect(resolveZernioCreate(409, { error: 'dup' }, false).outcome).toBe('unknown')
+    expect(resolveZernioCreate(200, {}, false).outcome).toBe('unknown')
+    expect(classifyThrownError(new Error('operation timed out'), 'zernio_profile')).toBe('unknown')
+  })
+
+  it('the worker only spends a lookup request on `unknown`', () => {
+    const src = readFileSync(join(__dirname, 'index.ts'), 'utf8')
+    expect(src).toContain("if (planned.outcome === 'unknown')")
+    // succeeded already has an id; terminal cannot be helped; retryable returns.
+    expect(src).toMatch(/profiles\?name=\$\{encodeURIComponent\(name\)\}/)
+  })
+
+  it('a failed name lookup leaves the job dead-ended, never creating', () => {
+    const src = readFileSync(join(__dirname, 'index.ts'), 'utf8')
+    const at = src.indexOf('name_lookup_failed')
+    expect(at).toBeGreaterThan(-1)
+    // The catch must not mutate `planned` into anything that creates.
+    const block = src.slice(src.lastIndexOf('} catch {', at), at)
+    expect(block).not.toMatch(/planned\s*=/)
   })
 })

@@ -29,6 +29,18 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # S345 — SCOPE WIDENED TO app/ AND shared/. S344 mutation-tested this guard:
+      # violations in src/ and supabase/functions/ were caught, but the SAME
+      # violation in shared/lib/ was NOT — and shared code reaches the shipped
+      # client bundle (PLATFORM_NAME's value appears in the built admin JS).
+      # That bundle is served UNAUTHENTICATED at /_admin/assets/*, which is why
+      # the original leak was a P0 rather than a tidy-up. This session's own arc
+      # has been moving code INTO shared/lib (serviceCatalog, settingsMerge,
+      # businessInfoMerge), so the blind spot sat exactly where new shared
+      # helpers now land. app/ is the Next.js tree: import.meta.env is a Vite
+      # substitution and would not inline there, but a direct api.anthropic.com
+      # call from a client component would ship just the same.
+      #
       # S243 W1 (widened) — fail the build if any direct Anthropic reference
       # reappears in frontend OR edge functions. All AI calls must route through
       # ai-proxy (frontend via callAi(); server via ai-proxy public/internal).
@@ -39,11 +51,11 @@ jobs:
       # live in functions outside the authorized edit set.
       - name: Guard — no direct Anthropic calls
         run: |
-          if grep -rEn "https://api\.anthropic\.com|VITE_ANTHROPIC" src/ supabase/functions/ --exclude-dir=ai-proxy; then
+          if grep -rEn "https://api\.anthropic\.com|VITE_ANTHROPIC" src/ app/ shared/ supabase/functions/ --exclude-dir=ai-proxy; then
             echo "::error::Forbidden Anthropic-direct reference. Route AI calls through ai-proxy (frontend: src/lib/ai/callAi.ts; server: ai-proxy public/internal route)."
             exit 1
           fi
-          echo "ai-proxy guard passed: no direct api.anthropic.com / VITE_ANTHROPIC in src/ or supabase/functions/ (excluding ai-proxy)"
+          echo "ai-proxy guard passed: no direct api.anthropic.com / VITE_ANTHROPIC in src/, app/, shared/ or supabase/functions/ (excluding ai-proxy)"
 
       # S284 — the vitest suite, which until now had never gated a single PR.
       # 535 tests ran exactly once, locally, on the machine that wrote them.

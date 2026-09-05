@@ -47,6 +47,8 @@ import {
   classifyResponse,
   classifyThrownError,
   resolveZernioCreate,
+  buildZernioCreateHeaders,
+  extractProfileIdByExactName,
   needsReconcileBeforeCreate,
   hasGoogleId,
   buildZernioIntegrationsValue,
@@ -122,7 +124,10 @@ async function handleZernio(admin: any, job: ClaimedJob): Promise<Handled> {
   try {
     res = await fetchWithTimeout('https://zernio.com/api/v1/profiles', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+      // S345 — carries Idempotency-Key WHEN ONE IS AVAILABLE. It is not today:
+      // outbound_queue_claim does not return the column. See
+      // ClaimedJob.idempotency_key for why that is a stop, not a workaround.
+      headers: buildZernioCreateHeaders(key, job.idempotency_key),
       body: JSON.stringify({ name, description }),
     })
   } catch (err) {
@@ -135,7 +140,39 @@ async function handleZernio(admin: any, job: ClaimedJob): Promise<Handled> {
   try { body = await res.json() } catch { body = null }
 
   // Decide first (pure), then do only the I/O the decision implies.
-  const planned = resolveZernioCreate(res.status, body, false)
+  let planned = resolveZernioCreate(res.status, body, false)
+
+  // ── S345: THE THIRD FALLBACK — resolve by exact name ──────────────────────
+  //
+  // Order, strongest first: idempotency key -> 409 body -> name lookup. This is
+  // the last one, attempted ONLY when the first two have failed to produce an
+  // id and the profile may nonetheless exist. `unknown` is what we are trying
+  // to climb back out of, and it is the only outcome worth spending a request
+  // on: succeeded already has an id, terminal cannot be helped, and retryable
+  // will come round again.
+  if (planned.outcome === 'unknown') {
+    try {
+      const lookup = await fetchWithTimeout(
+        `https://zernio.com/api/v1/profiles?name=${encodeURIComponent(name)}`,
+        { method: 'GET', headers: { Authorization: `Bearer ${key}` } },
+      )
+      if (lookup.ok) {
+        let lookupBody: unknown = null
+        try { lookupBody = await lookup.json() } catch { lookupBody = null }
+        const found = extractProfileIdByExactName(lookupBody, name)
+        if (found !== null) {
+          console.log(logLine('recovered_by_name', job, 'succeeded', 'name_lookup'))
+          planned = { outcome: 'succeeded', vendorRef: found, reason: 'recovered_by_name_lookup' }
+        }
+      }
+    } catch {
+      // The lookup is a BEST-EFFORT CLIMB OUT of `unknown`. If it fails, the
+      // job stays exactly as it was — dead-ended for an operator, which is the
+      // safe state. Never let a failed reconcile turn into a create.
+      console.warn(logLine('name_lookup_failed', job, planned.outcome, 'lookup_error'))
+    }
+  }
+
   if (planned.outcome !== 'succeeded' || !planned.vendorRef) return planned
 
   // S340 — CARRY THE REF OUT EVEN WHEN THE SETTINGS WRITE FAILS.

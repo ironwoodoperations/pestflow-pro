@@ -41,22 +41,41 @@ keyword_placements, page_snapshots, social_posts
 branding.template values: bold | clean | modern
 All page components read this and apply the correct variant.
 
-## ANTHROPIC API PATTERN (browser)
-fetch('https://api.anthropic.com/v1/messages', {
-  method: 'POST',
-  headers: {
-    'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY,
-    'anthropic-version': '2023-06-01',
-    'anthropic-dangerous-direct-browser-access': 'true',
-    'content-type': 'application/json',
-  },
-  body: JSON.stringify({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 1000,
-    messages: [{ role: 'user', content: prompt }]
-  })
+## AI PATTERN — ALWAYS THROUGH ai-proxy
+
+Every Anthropic request goes through the `ai-proxy` edge function. The key lives
+ONLY in Edge Function Secrets; there is no VITE_-prefixed AI key and none may be
+introduced. See CLAUDE.md non-negotiable #3.
+
+import { callAi } from '@/lib/ai/callAi'
+
+const data = await callAi('blog_draft', {   // feature name gates tier + rate limit
+  tenant_id,
+  max_tokens: 1000,
+  system: systemPrompt,                      // optional
+  messages: [{ role: 'user', content: prompt }],
 })
-const text = data.content[0].text
+const text = data.content[0].text            // strip ``` fences before JSON.parse
+
+The proxy pins the model, enforces per-feature tier gating, rate-limits per
+tenant and logs every call. `callAi` throws with the proxy's message on failure.
+
+Server side, an internal worker calls the `ai-proxy/internal` route with a signed
+delegation envelope (`_shared/delegationEnvelope.ts`) — never a forwarded user JWT.
+
+### The pattern this replaced, and why it is forbidden
+
+A browser-direct `fetch('https://api.anthropic.com/v1/messages')` with
+`x-api-key: import.meta.env.VITE_ANTHROPIC_API_KEY` and the
+`anthropic-dangerous-direct-browser-access` header was the house pattern until
+S243. Vite INLINES any VITE_-prefixed value into the bundle at build time, and
+the admin SPA is served as unauthenticated static JS at `/_admin/assets/*` — so
+the key was fetchable by anyone, not merely by logged-in admins. That is why
+S242 was paused mid-design and S243 migrated all 10 call sites.
+
+CI enforces it: `.github/workflows/ci.yml` fails the build on
+`api.anthropic.com` or `VITE_ANTHROPIC` anywhere in `src/`, `app/`, `shared/` or
+`supabase/functions/` (excluding ai-proxy itself).
 
 ## RULES (NEVER VIOLATE)
 1. Routes in App.tsx MUST appear BEFORE /:slug catch-all
