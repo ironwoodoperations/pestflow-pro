@@ -934,3 +934,67 @@ it is recent.
      is an operator-access decision, not a cleanup.
   3. `s343b` still has no migration file. Anchor: md5 `54937fa95988c4cc7ec401b2b10be307`, length 4730.
   4. Grandview provisions.
+
+---
+## Session — 2026-09-05 14:23 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `e750df6` — S346C: one operator identity in the frontend, and three live defects
+- Author: Claude
+- Files changed:
+  - src/__tests__/s346cOneOperatorList.test.ts
+  - src/components/ironwood/ProspectDetail.Sections.tsx
+  - src/components/ironwood/ScrapePanel.tsx
+  - src/components/ironwood/__tests__/s346cProvisioningReachable.test.ts
+  - src/lib/__tests__/isOperator.test.ts
+  - src/lib/isOperator.ts
+  - src/pages/IronwoodOps.tsx
+  - src/pages/admin/IronwoodLogin.tsx
+  - supabase/functions/_shared/offboardDrain.ts
+  - supabase/functions/offboard-tenant/index.ts
+  - supabase/functions/scrape-prospect/counters.test.ts
+  - supabase/functions/scrape-prospect/index.ts
+- Next recommended action: **Two edge deploys, then the Grandview re-scrape.**
+
+  DEPLOYS OWED (neither is in `.github/edge-shared-consumers.txt`, so merging #355
+  does NOT cover them):
+  1. `scrape-prospect` — **needs `--no-verify-jwt`**. Carries S347's 404 filter and
+     S346C's `unreachable` counter.
+  2. `offboard-tenant` — S346C fixed a SIXTH hardcoded operator identity there.
+     Until it deploys, the function that DELETES TENANTS still 403s the only real
+     operator.
+
+  Editing `_shared/offboardDrain.ts` fires the 16-consumer redeploy, which will
+  legitimately no-op for all sixteen — none of them import it.
+
+  FACTS A LATER SESSION MUST NOT RE-DERIVE WRONGLY:
+
+  * **`public.operators` has RLS ENABLED and ZERO POLICIES.** Any `select` against
+    it from `anon`/`authenticated` returns zero rows, whatever the grant says. The
+    frontend gate therefore CANNOT be a select. It uses `public.is_operator()` —
+    `SECURITY DEFINER`, `search_path` pinned, `EXECUTE` to `authenticated`, returns
+    a bare boolean. Do not "unify" this with the edge-side reader: edge functions
+    run under service_role where `auth.uid()` is NULL and the RPC denies everyone,
+    which is exactly why S343/S346 read the table directly. Same function, opposite
+    verdict, because the caller differs.
+  * **The redeploy workflow's speed is NOT a signal.** The CLI logs
+    `No change found in Function: X` and skips the upload when a bundle is
+    identical, so 16 "deploys" in 19s is healthy, not hollow. Verify by checking
+    whether the specific function's `updated_at` moved.
+  * **A scan for operator email literals must be SCOPED.** Asserting "none anywhere"
+    fails on nine legitimate uses (support mailtos, the published demo login on the
+    marketing page, transactional email senders, legal contact text). Assert instead:
+    no allowlist-shaped CONSTANT in non-test code, and no identity literal in the
+    eight authorization-decision files.
+  * **Comment-strip every source scan, and assemble needles from fragments.** In
+    S346C my own explanatory comment naming `IRONWOOD_ALLOWED` failed my own assert
+    on a correct edit (the S343 shape), while S345's lesson is that spelling a
+    forbidden literal in the test makes the test a hit. Both apply at once.
+
+  STILL AWAITING SCOTT, do not start without him:
+  * the `scraped_content` / Discard gap — written unconditionally before Apply,
+    `handleDiscard` only clears React state, and `provision-tenant/index.ts:376`
+    reads it at create time.
+  * `s343b` still has no migration file. Anchor: md5
+    `54937fa95988c4cc7ec401b2b10be307`, length 4730.
+  * Grandview provisions — and the re-scrape is the live proof of S347 + S346C:
+    expect the counters to reconcile (`tried = unreachable + discarded + kept`).
