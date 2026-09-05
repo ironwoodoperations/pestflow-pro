@@ -4,6 +4,7 @@ import ScrapeResultsTable from './ScrapeResultsTable'
 import SiteRecreationCard from './SiteRecreationCard'
 import type { SiteRecreation } from './SiteRecreationCard'
 import type { Prospect } from './types'
+import { readVerticalChoice } from './provisionInputs'
 
 export interface ScrapedData {
   business_name:       string | null
@@ -56,6 +57,12 @@ export default function ScrapePanel({ sourceUrl, onSourceUrlChange, prospectId, 
     scraping: false, error: '', result: null, pages: [], pagesFound: 0, applied: false, siteRecreation: null,
   })
 
+  // null when the operator has not chosen a trade yet — the edge function reads
+  // that as "not stated" and falls back, rather than assuming pest.
+  const { vertical: scrapeVertical } = readVerticalChoice(
+    (form?.business_info || null) as Parameters<typeof readVerticalChoice>[0],
+  )
+
   const handleScrape = async () => {
     if (!sourceUrl) return
     setState(s => ({ ...s, scraping: true, error: '', result: null, pages: [], pagesFound: 0, applied: false, siteRecreation: null }))
@@ -73,7 +80,12 @@ export default function ScrapePanel({ sourceUrl, onSourceUrlChange, prospectId, 
           'Authorization': `Bearer ${session.access_token}`,
           'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
         },
-        body: JSON.stringify({ url: sourceUrl, prospectId }),
+        // S346 — send the vertical so the scrape looks for THIS trade's pages.
+        // Without it the function falls back to the historical pest path list
+        // and a lawn company's mowing, stonework and turf pages are never
+        // fetched. The form already holds it (set by the S342 picker); reading
+        // it here is what makes the vertical-aware scrape actually do anything.
+        body: JSON.stringify({ url: sourceUrl, prospectId, vertical: scrapeVertical }),
       })
 
       const data = await res.json()
