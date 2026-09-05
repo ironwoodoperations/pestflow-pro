@@ -1,5 +1,6 @@
 // Edge Function: ironwood-provision
-// JWT-verified wrapper: verifies caller is admin@pestflowpro.com, then calls provision-tenant.
+// JWT-verified wrapper: verifies the caller is a recorded operator (public.operators,
+// S308 — S343 replaced a hardcoded email here), then calls provision-tenant.
 // Also updates the prospect record with tenant_id + provisioned_at.
 // S221: writes a durable provisioning_status row keyed by X-Correlation-ID
 // so a dropped client can recover state on dashboard reload (Ghost Success).
@@ -52,7 +53,33 @@ Deno.serve(async (req: Request) => {
 
     const { data: { user }, error: authError } = await supabase.auth.getUser(token)
     console.log('ironwood-provision | user:', user?.email, '| cid:', correlationId, '| error:', authError?.message)
-    if (authError || !user || user.email !== 'admin@pestflowpro.com') {
+    if (authError || !user) {
+      return json({ error: 'Forbidden' }, 403)
+    }
+
+    // ── S343 ITEM 1 — OPERATOR STATUS COMES FROM public.operators, NOT AN EMAIL ──
+    //
+    // This was `user.email !== 'admin@pestflowpro.com'`. S308 already replaced
+    // that pattern with an `operators` table plus is_operator(); this gate was a
+    // survivor of that migration, and it rejects the recorded operator identity
+    // (scott@homeflowpro.ai). It worked only because of who happened to be
+    // signed in.
+    //
+    // NOT rpc('is_operator'). That function is `SELECT EXISTS (... WHERE
+    // o.user_id = auth.uid())`, and auth.uid() is NULL under this service-role
+    // client — so calling it here would deny EVERYONE. Read the table directly:
+    // service_role bypasses the RLS on it, and the id comes from getUser(token),
+    // which is the verified JWT subject rather than anything the caller asserts.
+    //
+    // FAILS CLOSED. A lookup error is 403, never an allow.
+    const { data: operatorRow, error: operatorErr } = await supabase
+      .from('operators').select('user_id').eq('user_id', user.id).maybeSingle()
+    if (operatorErr) {
+      console.error('[ironwood-provision] operator lookup failed:', operatorErr.message)
+      return json({ error: 'Forbidden' }, 403)
+    }
+    if (!operatorRow) {
+      console.warn('[ironwood-provision] non-operator rejected | cid:', correlationId)
       return json({ error: 'Forbidden' }, 403)
     }
 
@@ -92,11 +119,20 @@ Deno.serve(async (req: Request) => {
       admin_password: admin_password || '',
       prospect_id: prospect_id || null,
       business_info: business_info || {},
-      // Forwarded ONLY when present. `undefined` disappears in JSON.stringify,
-      // which is exactly right: absent means "not stated" to buildPayload and
-      // falls back to the whole catalog, while an empty array would be a
-      // statement of nothing and a 400.
-      ...(Array.isArray(services) && services.length > 0 ? { services } : {}),
+      // S343 ITEM 3 — AN EMPTY ARRAY IS FORWARDED, NOT SWALLOWED.
+      //
+      // This read `services.length > 0`, which collapsed [] into absent — and
+      // those mean opposite things. S341 made the distinction a contract:
+      // ABSENT is "not stated" and falls back to the WHOLE CATALOG; [] is a
+      // statement of nothing and must 400.
+      //
+      // So the length check silently turned "this client sells nothing I ticked"
+      // into "give them all 17 lawn services". The checklist that prevents an
+      // empty selection is client-side; the contract has to hold here too, where
+      // a bypassed or stale UI cannot reach.
+      //
+      // Still conditional on Array.isArray: a MISSING key must stay missing.
+      ...(Array.isArray(services) ? { services } : {}),
       branding: branding || {},
       customization: customization || {},
       social_links: {

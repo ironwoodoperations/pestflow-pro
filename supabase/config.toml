@@ -1,6 +1,14 @@
 [functions.provision-tenant]
 verify_jwt = false
 
+# S343 ITEM 2 — ironwood-provision had NO pin, so any deploy without an explicit
+# --no-verify-jwt flipped the gateway check ON. That happened for real at v62 and
+# was corrected at v63. It verifies the caller's JWT IN-SOURCE (getUser(token),
+# then an operators lookup), so gateway verification is redundant and was never
+# intended — and with it on, the JWT-less internal call path 401s at the edge.
+[functions.ironwood-provision]
+verify_jwt = false
+
 # S255 — secret WRITE path → Vault. verify_jwt=true so the gateway rejects
 # anonymous calls; the function then re-derives the user and calls
 # set_tenant_secret with the USER's JWT so auth.uid() drives the in-RPC
