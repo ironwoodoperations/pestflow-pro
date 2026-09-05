@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { isOperator } from '../../lib/isOperator'
 
-// Client-side UI gate for /ironwood, applied after signInWithPassword. This is NOT
-// the security boundary — that is RLS via public.is_operator() (S308), which reads
-// the `operators` table. Two independent lists is a known wart; collapsing them is a
-// separate session (see the S308 follow-ups) because it changes the failure mode.
-const IRONWOOD_ALLOWED = ['admin@pestflowpro.com', 'murphygurl92@gmail.com', 'scott@homeflowpro.ai']
+// S346C — the hardcoded operator email list that stood here is GONE. It was the
+// fourth of five copies found in two days, and it had drifted from the database
+// in both directions: it named a dead address with no auth.users row, and it
+// named the demo admin, who is not an operator. The gate now asks the database
+// whether THIS user is an operator and never learns who the others are. See
+// src/lib/isOperator.ts for why that is an RPC and not a select.
 
 export default function IronwoodLogin() {
   const [form, setForm] = useState({ email: '', password: '' })
@@ -19,7 +21,7 @@ export default function IronwoodLogin() {
     setLoading(true)
     setError('')
 
-    const { data, error: authError } = await supabase.auth.signInWithPassword({
+    const { error: authError } = await supabase.auth.signInWithPassword({
       email: form.email,
       password: form.password
     })
@@ -30,7 +32,8 @@ export default function IronwoodLogin() {
       return
     }
 
-    if (!IRONWOOD_ALLOWED.includes(data.user?.email ?? '')) {
+    // Fails closed: a lookup error denies rather than admitting.
+    if (!(await isOperator(supabase))) {
       await supabase.auth.signOut()
       setError('Not authorized for Ironwood access.')
       setLoading(false)

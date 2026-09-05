@@ -12,8 +12,10 @@
 
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-export const OPERATOR_ID = '5181b30a-265f-4a70-a323-bf6e3c53641b'
-export const OPERATOR_EMAIL = 'admin@pestflowpro.com'
+// S346C — OPERATOR_ID / OPERATOR_EMAIL removed. They were a hardcoded operator
+// identity used by offboard-tenant's gate, and they named the demo admin, who is
+// not in public.operators. The gate reads the table now; there is deliberately
+// no constant here to put an identity back into.
 
 const ZERNIO_API_KEY = Deno.env.get('ZERNIO_API_KEY') || ''
 

@@ -39,6 +39,8 @@ interface ScrapeState {
   pagesFound:     number
   pathsTried:     number
   discardedCount: number
+  unreachable:    number
+  pagesKept:      number
   applied:        boolean
   siteRecreation: SiteRecreation | null
 }
@@ -62,7 +64,7 @@ export default function ScrapePanel({ sourceUrl, onSourceUrlChange, prospectId, 
   const isProElite = tier === 'pro' || tier === 'elite'
   const [state, setState] = useState<ScrapeState>({
     scraping: false, error: '', result: null, pages: [], pagesFound: 0,
-    pathsTried: 0, discardedCount: 0, applied: false, siteRecreation: null,
+    pathsTried: 0, discardedCount: 0, unreachable: 0, pagesKept: 0, applied: false, siteRecreation: null,
   })
 
   // null when the operator has not chosen a trade yet — the edge function reads
@@ -73,7 +75,7 @@ export default function ScrapePanel({ sourceUrl, onSourceUrlChange, prospectId, 
 
   const handleScrape = async () => {
     if (!sourceUrl) return
-    setState(s => ({ ...s, scraping: true, error: '', result: null, pages: [], pagesFound: 0, pathsTried: 0, discardedCount: 0, applied: false, siteRecreation: null }))
+    setState(s => ({ ...s, scraping: true, error: '', result: null, pages: [], pagesFound: 0, pathsTried: 0, discardedCount: 0, unreachable: 0, pagesKept: 0, applied: false, siteRecreation: null }))
     try {
       const { data: { session }, error: sessionError } = await supabase.auth.refreshSession()
       if (!session || sessionError) {
@@ -110,6 +112,8 @@ export default function ScrapePanel({ sourceUrl, onSourceUrlChange, prospectId, 
         pagesFound: data.pagesFound ?? 0,
         pathsTried: data.paths_tried ?? 0,
         discardedCount: data.discarded_count ?? 0,
+        unreachable: data.unreachable ?? 0,
+        pagesKept: data.pages_kept ?? 0,
         siteRecreation: data.siteRecreation ?? null,
       }))
     } catch {
@@ -131,7 +135,7 @@ export default function ScrapePanel({ sourceUrl, onSourceUrlChange, prospectId, 
   }
 
   const handleDiscard = () => {
-    setState(s => ({ ...s, result: null, pages: [], pagesFound: 0, pathsTried: 0, discardedCount: 0, applied: false, siteRecreation: null }))
+    setState(s => ({ ...s, result: null, pages: [], pagesFound: 0, pathsTried: 0, discardedCount: 0, unreachable: 0, pagesKept: 0, applied: false, siteRecreation: null }))
   }
 
   return (
@@ -172,13 +176,15 @@ export default function ScrapePanel({ sourceUrl, onSourceUrlChange, prospectId, 
             onApply={handleApply}
             onDiscard={handleDiscard}
           />
-          {/* S347 — count what SURVIVED the filter. This used to read "10 pages
-              of content found and saved" for a site where nine of the ten were
-              404s carrying the site's og:title. */}
+          {/* S347 — count what SURVIVED the filter, not what was fetched.
+              S346C — and make the arithmetic RECONCILE: the first live run said
+              "23 tried, 1 saved (9 skipped)" and left 13 unexplained. Those were
+              paths Firecrawl could not reach at all. tried = unreachable +
+              discarded + kept, and a test asserts the identity. */}
           <p className="text-blue-400 text-xs mt-2">
-            {state.pagesFound > 0
-              ? `${state.pathsTried || state.pagesFound} path${(state.pathsTried || state.pagesFound) === 1 ? '' : 's'} tried, ${state.pagesFound} real page${state.pagesFound === 1 ? '' : 's'} saved${state.discardedCount > 0 ? ` (${state.discardedCount} skipped — missing or duplicate of the homepage)` : ''} — will be used to seed this client's site.`
-              : `No additional page content found${state.pathsTried > 0 ? ` (${state.pathsTried} paths tried)` : ''}.`}
+            {state.pathsTried > 0
+              ? `${state.pathsTried} path${state.pathsTried === 1 ? '' : 's'} tried · ${state.unreachable} unreachable · ${state.discardedCount} discarded · ${state.pagesKept} real page${state.pagesKept === 1 ? '' : 's'}${state.pagesFound !== state.pagesKept ? ` (${state.pagesFound} mapped to a page slug)` : ''} — will be used to seed this client's site.`
+              : 'No additional page content found.'}
           </p>
           {state.siteRecreation && (
             <SiteRecreationCard

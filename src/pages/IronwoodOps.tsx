@@ -1,6 +1,7 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { isOperator } from '../lib/isOperator'
 
 const TeamTab         = lazy(() => import('../components/ironwood/TeamTab'))
 const PipelineBoard   = lazy(() => import('../components/ironwood/PipelineBoard'))
@@ -37,20 +38,23 @@ const SPIN = <div className="p-8 text-gray-500 text-sm">Loading...</div>
 export default function IronwoodOps() {
   const [tab, setTab] = useState<Tab>('pipeline')
   const [checking, setChecking] = useState(true)
+  // S346C — the sidebar footer used to render a hardcoded address. That is not
+  // cosmetic: signed in correctly as one identity it displayed another, and the
+  // reasonable conclusion was that the login had failed. It had not. The footer
+  // now shows who is actually signed in.
+  const [operatorEmail, setOperatorEmail] = useState<string>('')
   const navigate = useNavigate()
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      // Second copy of the /ironwood/login allowlist (IronwoodLogin.tsx). Both must
-      // list an operator or they bounce between the two pages. Neither is the security
-      // boundary — that is RLS via public.is_operator() (S308). Collapsing the two
-      // copies is a follow-up; see the S308 notes.
-      const IRONWOOD_ALLOWED = ['admin@pestflowpro.com', 'murphygurl92@gmail.com', 'scott@homeflowpro.ai']
-      if (!IRONWOOD_ALLOWED.includes(data.user?.email ?? '')) {
+    // S346C — was the fifth copy of a hardcoded operator email list. Gone; the
+    // database answers whether THIS user is an operator, and fails closed.
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (!data.user || !(await isOperator(supabase))) {
         navigate('/ironwood/login', { replace: true })
-      } else {
-        setChecking(false)
+        return
       }
+      setOperatorEmail(data.user.email ?? '')
+      setChecking(false)
     })
   }, [navigate])
 
@@ -105,7 +109,7 @@ export default function IronwoodOps() {
           </a>
         </div>
         <div className="px-4 py-3 border-t border-gray-800">
-          <div className="text-xs text-gray-600">admin@pestflowpro.com</div>
+          <div className="text-xs text-gray-600">{operatorEmail || '—'}</div>
         </div>
       </aside>
 
