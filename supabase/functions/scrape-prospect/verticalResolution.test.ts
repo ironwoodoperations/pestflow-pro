@@ -59,12 +59,18 @@ describe('the response reports what survived', () => {
     expect(body).toMatch(/for\s*\(const\s+s\s+of\s+successful\)/);
   });
 
-  it('nothing is written before the filter runs', () => {
+  // S347 asserted "the filter runs BEFORE the write". S348 removed the write
+  // from this function altogether — the overlay is now persisted by the caller
+  // at the point the operator accepts it — so that ordering assertion could no
+  // longer find its anchor and failed on a correct change. The invariant it
+  // guarded is subsumed by a stronger one: there is no write here to order.
+  it('this function does not persist scraped_content at all (S348)', () => {
     const body = CODE.slice(CODE.indexOf('Deno.serve'));
-    const callAt = body.search(/=\s*partitionScrapedPages\(/);
-    const writeAt = body.indexOf('scraped_content: scrapedContent');
-    expect(callAt).toBeGreaterThan(-1);
-    expect(writeAt).toBeGreaterThan(callAt);
+    expect(body).not.toMatch(/scraped_content\s*:/);
+    expect(body).not.toMatch(/\.update\(/);
+    // and it still runs the filter and returns the content
+    expect(body).toMatch(/=\s*partitionScrapedPages\(/);
+    expect(body).toMatch(/scrapedContent,/);
   });
 });
 

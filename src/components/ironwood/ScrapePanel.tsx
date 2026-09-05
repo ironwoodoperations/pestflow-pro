@@ -37,6 +37,7 @@ interface ScrapeState {
   result:         ScrapedData | null
   pages:          string[]
   pagesFound:     number
+  scrapedContent: Record<string, unknown> | null
   pathsTried:     number
   discardedCount: number
   unreachable:    number
@@ -63,7 +64,7 @@ interface Props {
 export default function ScrapePanel({ sourceUrl, onSourceUrlChange, prospectId, onApplyScraped, onApplyRecreation, tier, form }: Props) {
   const isProElite = tier === 'pro' || tier === 'elite'
   const [state, setState] = useState<ScrapeState>({
-    scraping: false, error: '', result: null, pages: [], pagesFound: 0,
+    scraping: false, error: '', result: null, pages: [], pagesFound: 0, scrapedContent: null,
     pathsTried: 0, discardedCount: 0, unreachable: 0, pagesKept: 0, applied: false, siteRecreation: null,
   })
 
@@ -75,7 +76,7 @@ export default function ScrapePanel({ sourceUrl, onSourceUrlChange, prospectId, 
 
   const handleScrape = async () => {
     if (!sourceUrl) return
-    setState(s => ({ ...s, scraping: true, error: '', result: null, pages: [], pagesFound: 0, pathsTried: 0, discardedCount: 0, unreachable: 0, pagesKept: 0, applied: false, siteRecreation: null }))
+    setState(s => ({ ...s, scraping: true, error: '', result: null, pages: [], pagesFound: 0, scrapedContent: null, pathsTried: 0, discardedCount: 0, unreachable: 0, pagesKept: 0, applied: false, siteRecreation: null }))
     try {
       const { data: { session }, error: sessionError } = await supabase.auth.refreshSession()
       if (!session || sessionError) {
@@ -110,6 +111,7 @@ export default function ScrapePanel({ sourceUrl, onSourceUrlChange, prospectId, 
         result: data.scraped,
         pages: data.pages_scraped || [],
         pagesFound: data.pagesFound ?? 0,
+        scrapedContent: data.scrapedContent ?? null,
         pathsTried: data.paths_tried ?? 0,
         discardedCount: data.discarded_count ?? 0,
         unreachable: data.unreachable ?? 0,
@@ -121,7 +123,11 @@ export default function ScrapePanel({ sourceUrl, onSourceUrlChange, prospectId, 
     }
   }
 
-  const handleApply = () => {
+  // S348 — the page overlay is PERSISTED HERE, at the point of acceptance.
+  // scrape-prospect no longer writes it (see that function's S348 note): it used
+  // to save the moment the scrape finished, so a run nobody accepted still left
+  // rows on the prospect that provision-tenant would overlay onto a live site.
+  const handleApply = async () => {
     if (!state.result) return
     // Only pass fields that are non-null, non-empty, and not in the protected list
     const safe: Partial<ScrapedData> = {}
@@ -131,11 +137,39 @@ export default function ScrapePanel({ sourceUrl, onSourceUrlChange, prospectId, 
       ;(safe as Record<string, unknown>)[k] = v
     }
     onApplyScraped(safe)
+
+    if (prospectId && state.scrapedContent && Object.keys(state.scrapedContent).length > 0) {
+      const { error } = await supabase
+        .from('prospects')
+        .update({ scraped_content: state.scrapedContent, source_url: sourceUrl })
+        .eq('id', prospectId)
+      if (error) {
+        // Visible, not swallowed: the operator must not believe the page
+        // content was kept when it was not.
+        setState(s => ({ ...s, error: `Fields applied, but saving the page content failed: ${error.message}` }))
+        return
+      }
+    }
     setState(s => ({ ...s, applied: true }))
   }
 
-  const handleDiscard = () => {
-    setState(s => ({ ...s, result: null, pages: [], pagesFound: 0, pathsTried: 0, discardedCount: 0, unreachable: 0, pagesKept: 0, applied: false, siteRecreation: null }))
+  // S348 — DISCARD MUST ACTUALLY DISCARD. This used to clear React state only,
+  // while the row kept whatever a previous run had saved. It now clears the
+  // stored overlay too, so a prospect that has been discarded carries nothing
+  // for provision-tenant to pick up. A failure here is SURFACED — a Discard
+  // that silently leaves the row is worse than no button at all.
+  const handleDiscard = async () => {
+    if (prospectId) {
+      const { error } = await supabase
+        .from('prospects')
+        .update({ scraped_content: null, source_url: null })
+        .eq('id', prospectId)
+      if (error) {
+        setState(s => ({ ...s, error: `Could not clear the saved page content: ${error.message}. It is still on the prospect.` }))
+        return
+      }
+    }
+    setState(s => ({ ...s, result: null, pages: [], pagesFound: 0, pathsTried: 0, discardedCount: 0, unreachable: 0, pagesKept: 0, applied: false, siteRecreation: null, scrapedContent: null, error: '' }))
   }
 
   return (
