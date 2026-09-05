@@ -12,7 +12,8 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { getCorsHeaders } from '../_shared/cors.ts'
-import { processQueueRow, finalizeAudit, OPERATOR_ID, OPERATOR_EMAIL, type QueueRow, type ItemResult } from '../_shared/offboardDrain.ts'
+import { processQueueRow, finalizeAudit, type QueueRow, type ItemResult } from '../_shared/offboardDrain.ts'
+import { isIronwoodOperator } from '../_shared/operatorLookup.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || ''
@@ -32,7 +33,15 @@ serve(async (req) => {
   const anon = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   const { data: { user }, error: authErr } = await anon.auth.getUser(token)
   if (authErr || !user) return json(401, { error: 'Unauthorized' })
-  if (user.id !== OPERATOR_ID || user.email !== OPERATOR_EMAIL) {
+  // S346C — was a hardcoded id+email pair, the SIXTH copy of an operator list
+  // and the third to be found already broken: the id it required is the demo
+  // admin, who is NOT in public.operators, so this function denied the only
+  // real operator. It gates tenant DELETION, so a wrong answer here is not
+  // cosmetic. Now reads the table, through the same reader as every other gate.
+  // The lookup needs service_role — the anon client above cannot see the table
+  // under its RLS (enabled, zero policies).
+  const svc = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+  if (!(await isIronwoodOperator(svc, user.id))) {
     console.warn('[offboard-tenant] non-operator denied:', user.email)
     return json(403, { error: 'Forbidden' })
   }

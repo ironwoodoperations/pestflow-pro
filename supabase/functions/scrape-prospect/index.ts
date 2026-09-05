@@ -128,6 +128,13 @@ Deno.serve(async (req: Request) => {
       .filter((r): r is PromiseFulfilledResult<ScrapeResult | null> => r.status === 'fulfilled' && r.value !== null)
       .map(r => r.value as ScrapeResult)
 
+    // S346C — THE COUNTERS MUST RECONCILE. The live run reported "23 paths
+    // tried, 1 real page saved (9 skipped)" and 13 were unaccounted for: paths
+    // where scrapeOne returned null because the Firecrawl call itself failed or
+    // came back with empty markdown. Those never reach partitionScrapedPages, so
+    // they appeared in neither counter. tried = unreachable + discarded + kept.
+    const unreachable = candidatePaths.length - fetched.length
+
     // S347 — drop what is not a page: 404s carrying the site's og:title, and
     // soft-404s that render the homepage at HTTP 200. Nine of ten "pages found"
     // on the first live run were one of these.
@@ -138,7 +145,10 @@ Deno.serve(async (req: Request) => {
         success: false,
         error: 'Could not scrape any real pages from that URL',
         paths_tried: candidatePaths.length,
+        unreachable,
         discarded,
+        discarded_count: discarded.length,
+        pages_kept: 0,
       })
     }
 
@@ -212,6 +222,7 @@ Deno.serve(async (req: Request) => {
       // S347 — the operator must be able to see "17 tried, 1 real" rather than
       // "10 pages found". Everything below is reported, not inferred.
       paths_tried: candidatePaths.length,
+      unreachable,
       pages_kept: successful.length,
       discarded,
       discarded_count: discarded.length,

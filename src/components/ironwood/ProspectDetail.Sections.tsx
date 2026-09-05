@@ -130,9 +130,18 @@ export default function ProspectSections({ id, form, openSection, setOpenSection
         <div className="flex justify-end mb-2">
           <RepGuideButton section={form.provisioned_at ? 'post-launch' : 'pre-provision'} label={form.provisioned_at ? '? Post-Launch Guide' : undefined} onOpen={setGuideSection} />
         </div>
-        {(!form.build_path || form.build_path !== 'firecrawl_migration') && (
-          <div className="mb-4"><SiteSetupSection form={form} setField={wrappedSetField} onBlur={onBlur} /></div>
-        )}
+        {/* S346C — this was hidden for 'firecrawl_migration', the build path the
+            guide itself calls "Most common", with no recorded rationale (the
+            pickaxe finds only a refactor). ProvisionSection below resolves the
+            admin email through four fallbacks, so intake can supply THAT — but
+            `canCreate` also requires `form.slug`, which has NO fallback and NO
+            other editor anywhere in the UI. A firecrawl_migration prospect
+            therefore had no path to provisioning at all; the last client was
+            only created by writing slug and admin_email to the database by hand.
+            Rendering the section is the fix rather than duplicating its three
+            fields into ProvisionSection, which would make a second editor for
+            the same columns — the duplication class this arc keeps removing. */}
+        <div className="mb-4"><SiteSetupSection form={form} setField={wrappedSetField} onBlur={onBlur} /></div>
         <ProvisionSection form={form} prospectId={id} onProvisioned={onProvisioned} />
         {form.tenant_id && form.slug && (
           <div className="mt-4 space-y-3">
