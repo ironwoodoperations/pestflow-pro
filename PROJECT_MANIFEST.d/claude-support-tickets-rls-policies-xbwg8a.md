@@ -715,3 +715,45 @@ it is recent.
   edge-function code is typechecked by `npm run tsc`; S340-S342 each used a
   targeted strict config instead and S340 found a real defect that way.
   `strip_settings_secrets` still has no migration file.
+
+---
+## Session — 2026-09-05 01:54 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `0e16702` — S343: six cleanups found by live verification
+- Author: Claude
+- Files changed:
+  - src/components/ironwood/__tests__/s343Cleanups.test.ts
+  - supabase/.temp/cli-latest
+  - supabase/config.toml
+  - supabase/functions/ironwood-provision/index.ts
+  - supabase/migrations/s343_profiles_tenant_fk.sql
+  - supabase/migrations/s343_profiles_tenant_fk_rollback.sql
+  - supabase/migrations/s343_tenant_users_block_last_admin_cascade_aware.sql
+  - supabase/migrations/s343_tenant_users_block_last_admin_cascade_aware_rollback.sql
+- Next recommended action: **THE DEPLOY/APPLY QUEUE IS NOW THE CRITICAL PATH — five
+  merged sessions (S339-S343) are on main and almost none of it is live.** In order:
+  (1) deploy `ironwood-provision` with `--no-verify-jwt` (carries S343 items 1/2/3) —
+  and SIGN IN AS scott@homeflowpro.ai first: `public.operators` holds exactly one row
+  (scott@homeflowpro.ai, verified 2026-09-05) and admin@pestflowpro.com is NOT in it,
+  so the Ironwood form 403s otherwise. Recommended NOT to add the demo admin to
+  operators — it is a tenant-level account and S308 recorded Scott as sole operator.
+  (2) Claude.ai applies `s343_tenant_users_block_last_admin_cascade_aware.sql` and
+  `s343_profiles_tenant_fk.sql`, then PROVES item 4 by actually deleting a throwaway
+  tenant and confirming zero rows across all eleven tables — admin_delete_tenant has
+  never successfully deleted anything, so an unexercised fix is not a fix.
+  (3) apply `s341_settings_vertical_allow_lawn.sql` (lawn is code-reachable but 23514s
+  at write time until then). (4) deploy `provision-tenant` with `--no-verify-jwt`, then
+  the committed create against a throwaway tenant.
+
+  FACTS THE NEXT SESSION SHOULD NOT RE-DERIVE: `is_operator()` reads `auth.uid()`, which
+  is NULL under a service-role client — never call it as an RPC from an edge function;
+  read `public.operators` directly. A cascade DELETE fires child triggers AFTER the
+  parent row is already gone from the snapshot (verified empirically), which is why the
+  cascade-aware guard works. `tenant_users_block_last_admin` cannot be satisfied by any
+  deletion ORDER — the last admin always has zero others by construction.
+
+  OPEN, NOT BUILT: 15 edge functions still have no verify_jwt pin (listed in PR #350);
+  8 files remain tracked under `supabase/.temp/`; the root tsconfig excludes `supabase/`
+  so no edge code is typechecked by `npm run tsc`; `strip_settings_secrets` still has no
+  migration file; the `sprinkler-systems` lawn title ('Irrigation Repair' vs irrigation's
+  'Sprinkler Systems') is a pending content decision.
