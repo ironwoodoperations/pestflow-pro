@@ -1,6 +1,6 @@
 # PestFlow Pro — Roadmap
 
-*State as of S331 (2026-09-04). **pls is LIVE and INDEXABLE on precisionlawnsystems.com** — the platform's first custom-domain client. S321–S330 are merged AND deployed, verified by reading deployed bundles rather than trusting deploy status. S331 merged as `0c2f01f` (#340). The RPC is next.). Update at end of each session; retire the versioned pestflow-pro-todo-vNNN.html snapshots.*
+*State as of S345 (2026-09-05). **pls is LIVE and INDEXABLE on precisionlawnsystems.com.** **The S332–S345 atomic-provisioning arc is SHIPPED AND LIVE** — every edge function deployed, every migration applied, and the chain exercised end to end against production, including **the first successful tenant deletion in this platform's history**. Deploy state verified by querying production, never inferred from a merge. Next: **S346, the operator allowlist** — four disagreeing sources of operator truth. Update at end of each session; retire the versioned pestflow-pro-todo-vNNN.html snapshots.*
 
 ---
 
@@ -109,6 +109,39 @@ Production-ready, **idle capacity**. Active leads out — **Capture, Blue Duck, 
 ---
 
 ## Recently Shipped
+
+### S332 → S345 — the atomic-provisioning arc. ✅ SHIPPED, DEPLOYED AND APPLIED.
+
+Deploy state read from production. Times UTC, 2026-09-05 unless noted.
+
+| session | change | state |
+|---|---|---|
+| **S333** | corrected the S331 merge status in handoff + ROADMAP (#341) | docs |
+| **S334** | gate record for the atomic provisioning RPC — record only (#342) | record |
+| **S335** | catalog extraction to `shared/lib` + the `tenant_services` migration file (#343) | merged |
+| **S336** | migration file + shared fixture corpus for `merge_setting_value` (#344) | merged |
+| **S337** | made the redeploy verifier report the truth (#345) | merged |
+| **S339** | the outbound queue worker (#346) — `7ef029d` | **LIVE** — `process-outbound-queue` **v3** 03:17:32, cron **jobid 18 `*/15 * * * *` active**, invoked `200 {"claimed":0,…}` |
+| **S340** | `provision-tenant` onto `provision_tenant_atomic` (#347) — `d960c5e` | **LIVE** — v108 |
+| **S341** | the per-service picker, and the lawn vertical chain (#348) — `72136b4` | **LIVE** — v108 2026-09-04 22:44:19; a lawn payload probe returned **400 `service_not_in_catalog`**, proving the picker live. CHECK **applied**, both escapes preserved. |
+| **S342** | vertical selector + service picker in the Ironwood UI (#349) — `743e8e1` | **LIVE** |
+| **S343** | six cleanups found by live verification (#350) — `20d692d` | **LIVE** — `ironwood-provision` **v64** 02:02:49, `verify_jwt=false`; trigger + `profiles_tenant_id_fkey` **applied** |
+| **S343b** | a SECOND `admin_delete_tenant` defect, found only by running it | **APPLIED LIVE — needs a migration file** |
+| **S345** | Zernio idempotency + two guard gaps (#351) — `254be00` | **LIVE**; `outbound_queue_claim` widened to return `idempotency_key` |
+
+`ironwood-provision` is at **v64** because it was deployed twice: **v62** flipped `verify_jwt` true,
+**v63** corrected it, **v64** carried the S343 operator gate. `verify_jwt=false` throughout the
+corrected state.
+
+**THE DELETE IS PROVEN.** `admin_delete_tenant` had **two** blockers and had **never completed a single
+run**: S343's trigger defect, and beneath it a `DELETE FROM public.user_roles` against **a table S273
+dropped** — unreachable while the trigger raised first. That is why the deleted **CityShield** tenant
+left **17 orphan rows**. A throwaway tenant was provisioned, verified across 11 tables, then deleted:
+`ok=true`, **zero orphans in 11 tables**, audit + offboard queue rows written.
+
+**S338 has no merge commit. S344 was investigation-only by design.**
+
+Handoff: `docs/handoffs/pestflow-pro-handoff-S345-shipped.md`.
 
 ### S321 → S331 — the custom-domain arc. ALL DEPLOYED except S331.
 
@@ -265,19 +298,29 @@ S329 gambled on.
 
 ## Next Up
 
-### THE PRIORITY ORDER AS OF S331
+### THE PRIORITY ORDER AS OF S345
 
-1. **THE RPC — next session.** Atomic provisioning via ONE Postgres function. **Auth FIRST, then the
-   transaction** — forced by the FK chain: `profiles.id` **IS** the auth user id, so there is no id to
-   write until gotrue answers. A selection table with **server-side catalog validation**. The backend
-   **rejects an empty selection**. A zero-services tenant renders **200**. **The DB-side
-   single-statement settings merge deferred from S330 belongs inside this function** — S330 shipped the
-   closest safe alternative and explicitly did not claim the validators' race guarantee.
-2. **S323 PR C — widen `settings_business_info_vertical_valid` to admit `'lawn'`. LAST**, and the
-   ordering is not stylistic: `getVerticalCopy` **throws** for a vertical with no preset and is called
-   from `layout.tsx`, so a tenant set to `'lawn'` before the presets land 500s its ENTIRE SITE via a
-   JSONB edit, with no deploy involved.
-3. **Grandview provisions.**
+**The deploy/apply queue is EMPTY.** The only carry-forward from the deploy side is item 4.
+
+1. **S346 — THE OPERATOR ALLOWLIST.** Kickoff already written.
+   `IRONWOOD_OPERATOR_USER_IDS` in `_shared/aiAuth.ts` holds **only `admin@pestflowpro.com`**
+   (`5181b30a-…`); `public.operators` holds **only `scott@homeflowpro.ai`** (`32b8fbf4-…`). **Exact
+   opposites, verified by id.** `scrape-prospect` 403'd twice on 2026-09-05 because of it, and the same
+   set gates `ai-proxy`'s `redirect_map`.
+2. **S346 part B — `scrape-prospect` is pest-only:** `CANDIDATE_PATHS`, `pathToSlug`, and both prompts.
+3. **S346C — THE FOURTH ALLOWLIST, AND THE SIDEBAR THAT LIES. Its own PR, NOT part of S346.**
+   `IRONWOOD_ALLOWED` is hardcoded in `src/pages/admin/IronwoodLogin.tsx:9` **and again** in
+   `src/pages/IronwoodOps.tsx:48` (three emails each), and the sidebar footer at
+   `src/pages/IronwoodOps.tsx:108` renders the literal `admin@pestflowpro.com` rather than
+   `session.user.email` — **it misled a real login check on 2026-09-05.** So operator truth lives in
+   **four places that disagree**, two of them copies.
+   **⚠️ ASK SCOTT FIRST.** `murphygurl92@gmail.com` is in **neither** `public.operators` **nor**
+   `aiAuth.ts`, and has **no `auth.users` row at all**, so it cannot sign in. Whether to create it or
+   remove it is a decision about operator access, not a cleanup.
+4. **`s343b` needs a migration file.** Applied live mid-test, so the repo has no record. `user_roles`
+   DELETE removed, everything else **verbatim** from `pg_get_functiondef`, md5-verified as in S336/S339.
+   Anchor: md5 `54937fa95988c4cc7ec401b2b10be307`, length 4730.
+5. **Grandview provisions.**
 
 ### ⚠️ DECISION REQUIRED — OPERATOR ACCESS TO CLIENT DASHBOARDS (HIGH — decide before Grandview and JW Customs)
 
@@ -430,16 +473,17 @@ and is PROVEN: the post-S337 warning no longer names it. Still on Node 20:
 Both are advisory only — GitHub already forces them onto Node 24. Verify the majors, then bump
 together.
 
-### RECORDED, NOT BUILT — carried into the RPC session
+### RECORDED, NOT BUILT
 
 - **21 of 37 `_shared` consumers are missing from `.github/edge-shared-consumers.txt`.** That is the
   S273 stale-bundle failure, still open: a `_shared` edit does not redeploy them, so production keeps
   running the old bundle. **`provision-tenant` is one of the 21**, so adding it to that list ships
   whatever is unreleased at that moment as a side effect. Fix deliberately, not as a drive-by.
-- **Six consumers are unpinned in `config.toml`** — `api-quote`, `zernio-connect`, `send-sms`,
-  `send-credentials-email`, `send-reveal-ready`, `scrape-prospect`. **All six are deployed `false` and
-  all six are correct at `false`.** `config.toml` is itself a workflow trigger path, so editing it
-  redeploys the 16 listed functions.
+- **15 consumers are unpinned in `config.toml`** (S343 audit — the earlier count of six had drifted).
+  **Reported, not fixed: an unreviewed pin is a silent setting change.** `ironwood-provision` **IS** now
+  pinned `verify_jwt = false` — a deploy lacking `--no-verify-jwt` flips it on, which happened at v62
+  and was corrected at v63 (live is v64, still false). `config.toml` is itself a workflow trigger path,
+  so editing it redeploys the 16 listed functions.
 - **`provision-tenant`'s `liveUrl` and legal-page seeding still build `.com` hosts**, as do
   `send-reveal-ready:76` and `send-credentials-email:215`.
 - **The legal-page host should resolve at RENDER time, not be persisted at write time.** Persisting it
@@ -459,7 +503,22 @@ together.
   separate businesses, separate repos — and account IDs validate **team-wide**. Scoped API keys are
   worth doing before more clients connect. Billing is **per CONNECTED ACCOUNT, not per profile**;
   profiles are free. $6/account/month at 1–10, $3 at 11–100, first $12 per period free.
-- **Idempotency keys, optimistic locking, `verify_jwt` hardening** — all deferred by the S323 gate.
+- **Idempotency keys — FULLY DELIVERED** (S345 + the claim-RPC migration): the column, the widened
+  `outbound_queue_claim`, and the request header all ship. Verified live — the key is returned and is
+  **identical on re-claim after a retryable failure**; grants after DROP+CREATE are
+  `service_role:EXECUTE, postgres:EXECUTE` and nothing else. **`verify_jwt` hardening** is partly
+  delivered (S343 pinned `ironwood-provision`). **Optimistic locking** remains deferred by the S323 gate.
+- **`s343b` has NO migration file.** Applied live, mid-test. Same class as `strip_settings_secrets`.
+- **The Ironwood sidebar footer is a HARDCODED email.** `src/pages/IronwoodOps.tsx:108` renders the
+  literal `admin@pestflowpro.com` instead of `session.user.email`. Tracked as S346C above.
+- **Eight files are still tracked under `supabase/.temp/`.** S343 removed only the churning `cli-latest`.
+- **The root `tsconfig.json` EXCLUDES `supabase/`,** so `npx tsc --noEmit` says nothing about
+  edge-function code. A targeted strict config found real defects in both S340 and S341 — without one,
+  "tsc clean" is a false green for every edge change.
+- **`sprinkler-systems` reads wrong as a lawn page title.** A content decision, flagged rather than
+  silently changed, and pinned by a test so it cannot drift unnoticed.
+- **Vercel's `VITE_ANTHROPIC_API_KEY` pair is SAFE TO DELETE** (S344). Nothing reads it; the
+  `.env.example` cleanup landed in #132. **Deleting it in Vercel is Scott's call.**
 - **`REVIEW_S321` appendices are still empty.** The verdicts were summarised, never pasted. Same defect
   the S320 gate rule exists to prevent.
 
