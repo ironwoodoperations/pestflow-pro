@@ -1028,3 +1028,62 @@ it is recent.
     is a separate, mechanical step. Seeds are built and tested; nothing is wired.
   * Termite FAQs remain unauthored on purpose — dang has no termite rows to ground
     `termite-control` or `termite-inspections` in. A test pins the absence.
+
+---
+## Session — 2026-09-05 15:16 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `aa1d537` — S348 — discard means discard, two missing migration files, FAQ seeds (#356)
+- Author: csdevore2
+- Files changed:
+  - PROJECT_MANIFEST.d/claude-support-tickets-rls-policies-xbwg8a.md
+  - shared/lib/faqSeeds.test.ts
+  - shared/lib/faqSeeds.ts
+  - src/components/ironwood/ScrapePanel.tsx
+  - src/components/ironwood/__tests__/s348DiscardClearsRow.test.ts
+  - supabase/functions/scrape-prospect/index.ts
+  - supabase/functions/scrape-prospect/verticalResolution.test.ts
+  - supabase/migrations/s343b_admin_delete_tenant_drop_dead_user_roles_ref.sql
+  - supabase/migrations/s343b_admin_delete_tenant_drop_dead_user_roles_ref_rollback.sql
+  - supabase/migrations/s345_outbound_queue_claim_returns_idempotency_key.sql
+  - supabase/migrations/s345_outbound_queue_claim_returns_idempotency_key_rollback.sql
+- Note: this entry records the SQUASH MERGE of #356, not new work. The session
+  entry for the work itself is the `d05866f` entry above.
+- Next recommended action:
+  * **Both deploys owed are DONE and the queue is EMPTY** — verified by reading the
+    deployed bundles, not the version numbers: `offboard-tenant` **v15** (14:43:11 UTC,
+    gates on `isIronwoodOperator`, hardcoded pair gone) and `scrape-prospect` **v58**
+    (15:10:54 UTC, `verify_jwt=false`, carries S348's removed write + S347's filter +
+    S346C's `unreachable`). `ai-proxy` **v25** (13:07:09) carries the S346 `aiAuth` change.
+  * **`faqs_tenant_question_key UNIQUE (tenant_id, question)` is APPLIED.** The S348 Part C
+    stop condition has CLEARED, so wiring `buildFaqRows` into `provision_tenant_atomic` /
+    `buildPayload` with a real `ON CONFLICT` target is unblocked and is the top item.
+    Live coverage is the case for it: dang 55, grandview 35, pls 10, and **every
+    platform-provisioned tenant 0**.
+  * The S348 session-close drafts (ROADMAP + `docs/handoffs/pestflow-pro-handoff-S348-shipped.md`)
+    are written and awaiting Scott's confirmation before they are committed, per CLAUDE.md.
+
+---
+## Session — 2026-09-05 15:28 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `50a069a` — docs: S349 session close — S334–S348 handoff and ROADMAP
+- Author: Claude
+- Files changed:
+  - docs/ROADMAP.md
+  - docs/handoffs/pestflow-pro-handoff-S348-shipped.md
+- Supersedes the note in the previous entry: the drafts were APPROVED by Scott and
+  shipped in PR #357 (draft). They are no longer awaiting confirmation.
+- Next recommended action:
+  * **WIRE FAQ SEEDING** — `faqs_tenant_question_key UNIQUE (tenant_id, question)` is
+    applied, so `buildFaqRows` goes into `provision_tenant_atomic` / `buildPayload`
+    with a real `ON CONFLICT (tenant_id, question)` target.
+    **Ship the missing migration file `s348_faqs_tenant_question_unique` WITH it**, not
+    after: it is applied live with no file, and a fresh database would fail to seed
+    without the conflict target.
+    Why it matters, from production: provisioning writes **eleven** tenant-scoped
+    tables in one transaction; `faqs` is the **twelfth** and provisioning has **never**
+    written it. Grandview's 35 rows were a one-off backfill by Claude.ai over MCP,
+    14 minutes after the tenant was created. **No tenant has ever received FAQs from
+    provisioning.**
+  * Termite FAQs still need authoring — a source, not a generation pass.
+  * The deploy/apply queue is EMPTY: `scrape-prospect` v58, `offboard-tenant` v15 and
+    `ai-proxy` v25 all verified by reading the deployed bundles.
