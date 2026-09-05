@@ -7,6 +7,7 @@ import { pathToSlug, extractPageContent, candidatePathsFor, PageContent } from '
 import { analyzeSite } from './analyzeSite.ts'
 import { extractionPromptFor } from './prompts.ts'
 import { isIronwoodOperator } from '../_shared/operatorLookup.ts'
+import { partitionScrapedPages } from './pageFilter.ts'
 
 const SUPABASE_URL              = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
@@ -23,6 +24,13 @@ interface ScrapeResult {
   markdown: string
   metadata: Record<string, any>
 }
+
+/**
+ * S347 — `res.ok` is the status of the FIRECRAWL CALL, not of the page it
+ * fetched. Firecrawl happily returns 200 carrying a 404 page, and this function
+ * used to accept that as content. The page's own status rides in
+ * data.data.metadata.statusCode and is checked in pageFilter.
+ */
 
 async function scrapeOne(url: string, path: string): Promise<ScrapeResult | null> {
   try {
@@ -73,29 +81,71 @@ Deno.serve(async (req: Request) => {
 
     const baseUrl = url.replace(/\/$/, '')
 
+    // ── S347: RESOLVE THE VERTICAL SERVER-SIDE ────────────────────────────
+    // S346 trusted the caller to send it. The first live run against a lawn
+    // prospect scraped pest paths anyway, and the client is the one link in
+    // that chain this function cannot verify — a browser holding a stale SPA
+    // bundle sends the old body and nothing here can tell.
+    //
+    // The prospect row is authoritative because it is THE SAME RECORD
+    // provision-tenant reads at create time: resolving from it means the
+    // scrape and the provision cannot disagree about the trade. A supplied
+    // `vertical` is used only when the row has none.
+    let resolvedVertical: string | null =
+      typeof vertical === 'string' && vertical ? vertical : null
+    let verticalSource: 'prospect' | 'request' | 'none' = resolvedVertical ? 'request' : 'none'
+
+    if (prospectId) {
+      const { data: prospectRow, error: prospectErr } = await supabase
+        .from('prospects')
+        .select('business_info')
+        .eq('id', prospectId)
+        .maybeSingle()
+      if (prospectErr) {
+        console.warn('[scrape-prospect] prospect lookup failed:', prospectErr.message)
+      } else {
+        const stored = (prospectRow?.business_info as Record<string, unknown> | null)?.vertical
+        if (typeof stored === 'string' && stored) {
+          resolvedVertical = stored
+          verticalSource = 'prospect'
+        }
+      }
+    }
+
     // S346 — the paths to try come from the vertical's catalog, not from 18
-    // hardcoded pest paths. The caller has the vertical: the prospect row
-    // carries business_info.vertical, set by the S342 picker. Absent or
-    // unregistered falls back to the historical pest list (see mapContent).
-    const candidatePaths = candidatePathsFor(vertical)
+    // hardcoded pest paths. Absent or unregistered falls back to the historical
+    // pest list (see mapContent); with the S347 status check those paths now
+    // 404 and are discarded rather than written.
+    const candidatePaths = candidatePathsFor(resolvedVertical)
+    console.log(`[scrape-prospect] vertical: ${resolvedVertical ?? 'none'} (source: ${verticalSource}), ${candidatePaths.length} paths`)
 
     // Scrape all candidate URLs in parallel
     const results = await Promise.allSettled(
       candidatePaths.map(path => scrapeOne(`${baseUrl}${path}`, path))
     )
 
-    const successful: ScrapeResult[] = results
+    const fetched: ScrapeResult[] = results
       .filter((r): r is PromiseFulfilledResult<ScrapeResult | null> => r.status === 'fulfilled' && r.value !== null)
       .map(r => r.value as ScrapeResult)
 
+    // S347 — drop what is not a page: 404s carrying the site's og:title, and
+    // soft-404s that render the homepage at HTTP 200. Nine of ten "pages found"
+    // on the first live run were one of these.
+    const { kept: successful, discarded } = partitionScrapedPages(fetched)
+
     if (successful.length === 0) {
-      return json({ success: false, error: 'Could not scrape any content from that URL' })
+      return json({
+        success: false,
+        error: 'Could not scrape any real pages from that URL',
+        paths_tried: candidatePaths.length,
+        discarded,
+      })
     }
 
     // Map results to page slugs
     const scrapedContent: Record<string, PageContent> = {}
     for (const s of successful) {
-      const slug = pathToSlug(s.path, vertical)
+      const slug = pathToSlug(s.path, resolvedVertical)
       if (!slug) continue
       if (scrapedContent[slug]) continue // first match wins
       const pc = extractPageContent(s.markdown, s.metadata)
@@ -131,10 +181,10 @@ Deno.serve(async (req: Request) => {
           feature: 'scrape_prospect_analyze',
           tenant_id: null,
           max_tokens: 1000,
-          messages: [{ role: 'user', content: extractionPromptFor(vertical) + combinedForClaude }],
+          messages: [{ role: 'user', content: extractionPromptFor(resolvedVertical) + combinedForClaude }],
         }),
       }),
-      analyzeSite(homepage.markdown, aiProxyUrl, authHeader, vertical),
+      analyzeSite(homepage.markdown, aiProxyUrl, authHeader, resolvedVertical),
     ])
 
     let prospectFields: Record<string, any> = {}
@@ -159,7 +209,14 @@ Deno.serve(async (req: Request) => {
       scraped: prospectFields,
       source_url: url,
       pages_scraped: successful.map(s => s.path),
-      vertical: vertical ?? null,
+      // S347 — the operator must be able to see "17 tried, 1 real" rather than
+      // "10 pages found". Everything below is reported, not inferred.
+      paths_tried: candidatePaths.length,
+      pages_kept: successful.length,
+      discarded,
+      discarded_count: discarded.length,
+      vertical: resolvedVertical,
+      vertical_source: verticalSource,
       scrapedContent,
       pagesFound: Object.keys(scrapedContent).length,
       siteRecreation,

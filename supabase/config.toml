@@ -9,6 +9,15 @@ verify_jwt = false
 [functions.ironwood-provision]
 verify_jwt = false
 
+# S347 — THIRD function this has bitten today. scrape-prospect had no pin, so a
+# deploy without --no-verify-jwt flipped the gateway check ON: that happened for
+# real at v54 and was corrected at v55. It authenticates the caller IN-SOURCE
+# (getUser(token), then an operators lookup via _shared/operatorLookup.ts), so
+# gateway verification is redundant, and the ROADMAP already recorded this
+# function as correct at false.
+[functions.scrape-prospect]
+verify_jwt = false
+
 # S255 — secret WRITE path → Vault. verify_jwt=true so the gateway rejects
 # anonymous calls; the function then re-derives the user and calls
 # set_tenant_secret with the USER's JWT so auth.uid() drives the in-RPC

@@ -37,6 +37,8 @@ interface ScrapeState {
   result:         ScrapedData | null
   pages:          string[]
   pagesFound:     number
+  pathsTried:     number
+  discardedCount: number
   applied:        boolean
   siteRecreation: SiteRecreation | null
 }
@@ -48,24 +50,30 @@ interface Props {
   onApplyScraped:     (data: Partial<ScrapedData>) => void
   onApplyRecreation:  (data: SiteRecreation) => void
   tier?:              string | null
-  form?:              Partial<Prospect>
+  // S347 — REQUIRED, not optional. As an optional prop this silently degraded
+  // to "no vertical", which the edge function read as "not stated" and answered
+  // with pest paths. An optional prop whose absence means WRONG TRADE is a bad
+  // default; required makes a missing wiring a compile error instead of ten
+  // pest pages on a lawn prospect.
+  form:               Partial<Prospect>
 }
 
 export default function ScrapePanel({ sourceUrl, onSourceUrlChange, prospectId, onApplyScraped, onApplyRecreation, tier, form }: Props) {
   const isProElite = tier === 'pro' || tier === 'elite'
   const [state, setState] = useState<ScrapeState>({
-    scraping: false, error: '', result: null, pages: [], pagesFound: 0, applied: false, siteRecreation: null,
+    scraping: false, error: '', result: null, pages: [], pagesFound: 0,
+    pathsTried: 0, discardedCount: 0, applied: false, siteRecreation: null,
   })
 
   // null when the operator has not chosen a trade yet — the edge function reads
   // that as "not stated" and falls back, rather than assuming pest.
   const { vertical: scrapeVertical } = readVerticalChoice(
-    (form?.business_info || null) as Parameters<typeof readVerticalChoice>[0],
+    (form.business_info || null) as Parameters<typeof readVerticalChoice>[0],
   )
 
   const handleScrape = async () => {
     if (!sourceUrl) return
-    setState(s => ({ ...s, scraping: true, error: '', result: null, pages: [], pagesFound: 0, applied: false, siteRecreation: null }))
+    setState(s => ({ ...s, scraping: true, error: '', result: null, pages: [], pagesFound: 0, pathsTried: 0, discardedCount: 0, applied: false, siteRecreation: null }))
     try {
       const { data: { session }, error: sessionError } = await supabase.auth.refreshSession()
       if (!session || sessionError) {
@@ -100,6 +108,8 @@ export default function ScrapePanel({ sourceUrl, onSourceUrlChange, prospectId, 
         result: data.scraped,
         pages: data.pages_scraped || [],
         pagesFound: data.pagesFound ?? 0,
+        pathsTried: data.paths_tried ?? 0,
+        discardedCount: data.discarded_count ?? 0,
         siteRecreation: data.siteRecreation ?? null,
       }))
     } catch {
@@ -121,7 +131,7 @@ export default function ScrapePanel({ sourceUrl, onSourceUrlChange, prospectId, 
   }
 
   const handleDiscard = () => {
-    setState(s => ({ ...s, result: null, pages: [], pagesFound: 0, applied: false, siteRecreation: null }))
+    setState(s => ({ ...s, result: null, pages: [], pagesFound: 0, pathsTried: 0, discardedCount: 0, applied: false, siteRecreation: null }))
   }
 
   return (
@@ -162,10 +172,13 @@ export default function ScrapePanel({ sourceUrl, onSourceUrlChange, prospectId, 
             onApply={handleApply}
             onDiscard={handleDiscard}
           />
+          {/* S347 — count what SURVIVED the filter. This used to read "10 pages
+              of content found and saved" for a site where nine of the ten were
+              404s carrying the site's og:title. */}
           <p className="text-blue-400 text-xs mt-2">
             {state.pagesFound > 0
-              ? `${state.pagesFound} page${state.pagesFound === 1 ? '' : 's'} of content found and saved — will be used to seed this client's site.`
-              : 'No additional page content found.'}
+              ? `${state.pathsTried || state.pagesFound} path${(state.pathsTried || state.pagesFound) === 1 ? '' : 's'} tried, ${state.pagesFound} real page${state.pagesFound === 1 ? '' : 's'} saved${state.discardedCount > 0 ? ` (${state.discardedCount} skipped — missing or duplicate of the homepage)` : ''} — will be used to seed this client's site.`
+              : `No additional page content found${state.pathsTried > 0 ? ` (${state.pathsTried} paths tried)` : ''}.`}
           </p>
           {state.siteRecreation && (
             <SiteRecreationCard
