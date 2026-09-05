@@ -880,3 +880,57 @@ it is recent.
      everything else verbatim from `pg_get_functiondef`, md5-verified as in S336/S339. Anchor:
      md5 `54937fa95988c4cc7ec401b2b10be307`, length 4730.
   3. Grandview provisions.
+
+---
+## Session — 2026-09-05 13:38 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `1d82b5f` — S347: the scrape wrote ten 404s to a lawn prospect
+- Author: Claude
+- Files changed:
+  - src/components/ironwood/ScrapePanel.tsx
+  - src/components/ironwood/__tests__/s347ScrapeWiring.test.ts
+  - supabase/config.toml
+  - supabase/functions/scrape-prospect/__fixtures__/grandview.ts
+  - supabase/functions/scrape-prospect/index.ts
+  - supabase/functions/scrape-prospect/pageFilter.test.ts
+  - supabase/functions/scrape-prospect/pageFilter.ts
+  - supabase/functions/scrape-prospect/verticalResolution.test.ts
+- Next recommended action: **Scott deploys `scrape-prospect` WITH `--no-verify-jwt`** once #354
+  merges (config.toml now pins it, but the pin only helps deploys that read it). Merging #354 also
+  fires the 16-consumer redeploy, because config.toml is a trigger path. The live proof of S347 is a
+  real scrape against gviewlawnandlandscape.com: expect "17 paths tried, 2 real pages saved
+  (15 skipped)" rather than ten pest rows.
+
+  **BOTH S347 ROOT CAUSES DIFFERED FROM THE BRIEF — do not re-derive them wrongly.**
+  * Bug 1 was NOT a missing `form` prop. `ScrapePanel` has ONE render site
+    (`ProspectDetail.Sections.tsx:89`) and it does pass `form={form}`; the row really carries
+    `vertical='lawn'`; `readVerticalChoice` is correct. Dated from `ai_proxy_log`, the scrape ran
+    13:16:37, AFTER ai-proxy v25 (13:07:09) and scrape-prospect v55 (13:13:47) — and the deployed
+    bundle was read and is the S346 code. The only uninspected link is the browser (a stale SPA tab
+    sends the pre-S346 body). **THAT WAS NEVER VERIFIED** — pestflowpro.ai is proxy-blocked from CC
+    Web and the Vercel preview is SSO-gated — so do not write it up as the cause. The fix does not
+    depend on it: the vertical is now resolved SERVER-SIDE from the prospects row, the same record
+    provision-tenant reads at create time.
+  * Bug 2 was NOT a soft-404. `/ant-control` returns a REAL `metadata.statusCode: 404` carrying the
+    site-wide `og:title`; `scrapeOne` only checked `res.ok` on the FIRECRAWL call, which succeeds
+    because Firecrawl successfully fetched a 404. The signal is `metadata.statusCode`, exact and
+    false-positive-free. Absent status is deliberately NOT an error. The homepage-duplicate check is
+    the SECONDARY net for sites that really serve 200s. Real fixtures are committed under
+    `scrape-prospect/__fixtures__/grandview.ts` — re-fetched, not invented.
+
+  **NEW VACUOUS-GUARD SHAPE, the eleventh found in CC Web's own work (S326-S347).** A mutation that
+  deleted the filter CALL passed, because the assertion searched for `partitionScrapedPages`
+  appearing before the write — and the symbol appears in the IMPORT LINE. When asserting "X happens
+  before Y" in a source scan, slice from the function body (`CODE.slice(CODE.indexOf('Deno.serve'))`)
+  and pin the CALL, not the identifier.
+
+  **AWAITING SCOTT — do not start any of these without him:**
+  1. `scraped_content` is written UNCONDITIONALLY, before Apply, and `handleDiscard` only clears
+     React state; `provision-tenant/index.ts:376` reads it at create time. Reported in #354,
+     deliberately not changed. His call whether to close it.
+  2. S346C — the fourth allowlist (`IRONWOOD_ALLOWED` hardcoded in `IronwoodLogin.tsx:9` AND
+     `IronwoodOps.tsx:48`) plus the hardcoded sidebar footer at `IronwoodOps.tsx:108`. Blocked:
+     `murphygurl92@gmail.com` sits in both copies but has NO `auth.users` row at all, so reconciling
+     is an operator-access decision, not a cleanup.
+  3. `s343b` still has no migration file. Anchor: md5 `54937fa95988c4cc7ec401b2b10be307`, length 4730.
+  4. Grandview provisions.
