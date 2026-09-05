@@ -998,3 +998,33 @@ it is recent.
     `54937fa95988c4cc7ec401b2b10be307`, length 4730.
   * Grandview provisions — and the re-scrape is the live proof of S347 + S346C:
     expect the counters to reconcile (`tried = unreachable + discarded + kept`).
+
+---
+## Session — 2026-09-05 15:03 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `d05866f` — S348: discard means discard, two missing migration files, FAQ seeds
+- Author: Claude
+- Files changed:
+  - shared/lib/faqSeeds.test.ts
+  - shared/lib/faqSeeds.ts
+  - src/components/ironwood/ScrapePanel.tsx
+  - src/components/ironwood/__tests__/s348DiscardClearsRow.test.ts
+  - supabase/functions/scrape-prospect/index.ts
+  - supabase/functions/scrape-prospect/verticalResolution.test.ts
+  - supabase/migrations/s343b_admin_delete_tenant_drop_dead_user_roles_ref.sql
+  - supabase/migrations/s343b_admin_delete_tenant_drop_dead_user_roles_ref_rollback.sql
+  - supabase/migrations/s345_outbound_queue_claim_returns_idempotency_key.sql
+  - supabase/migrations/s345_outbound_queue_claim_returns_idempotency_key_rollback.sql
+- Next recommended action:
+  * Scott deploys two edge functions — neither is covered by the redeploy workflow:
+    `offboard-tenant` (S346C fix merged in #355, still denying Scott live), then
+    `scrape-prospect` **with `--no-verify-jwt`** (carries S347's page filter,
+    S346C's `unreachable` count, and S348's removed `scraped_content` write).
+    Until scrape-prospect lands, the old unconditional write is still live.
+  * Claude.ai applies the `faqs` unique key on `(tenant_id, question)` — the S348
+    stop condition. `public.faqs` has only `faqs_pkey (id)` and the tenant FK, so the
+    seeding RPC has no `ON CONFLICT` target and a re-provision would duplicate rows.
+    Once applied, wiring `buildFaqRows` into `provision_tenant_atomic`/`buildPayload`
+    is a separate, mechanical step. Seeds are built and tested; nothing is wired.
+  * Termite FAQs remain unauthored on purpose — dang has no termite rows to ground
+    `termite-control` or `termite-inspections` in. A test pins the absence.
