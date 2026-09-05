@@ -163,6 +163,75 @@ export interface HandledResult {
 }
 
 /**
+ * Headers for the Zernio create POST.
+ *
+ * `Idempotency-Key` is sent ONLY when a key is available. Same key + same body
+ * replays the original 201 with the SAME _id, which recovers a timeout with no
+ * lookup at all — the strongest of the three recovery paths.
+ *
+ * It is absent in production today because outbound_queue_claim does not return
+ * the column (see ClaimedJob.idempotency_key). Sending an invented key would be
+ * worse than sending none: a per-attempt value defeats the entire feature by
+ * making every retry a fresh request.
+ */
+export function buildZernioCreateHeaders(
+  apiKey: string,
+  idempotencyKey?: string | null,
+): Record<string, string> {
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${apiKey}`,
+    'Content-Type': 'application/json',
+  };
+  const key = String(idempotencyKey ?? '').trim();
+  if (key !== '') headers['Idempotency-Key'] = key;
+  return headers;
+}
+
+/**
+ * The id carried by a 409 CONFLICT body — STRICTLY `details.existingProfileId`.
+ *
+ * Deliberately NOT falling back to the generic id shapes. On a 409 the body is
+ * an ERROR object, and anything else id-shaped in it is more likely to be an
+ * error or request id than a profile. Storing the wrong value as vendor_ref is
+ * worse than storing none: it would make every future reconcile point at
+ * something that is not the tenant's profile. Absent means `unknown`, which is
+ * recoverable; wrong is not.
+ */
+export function extractZernioConflictId(body: unknown): string | null {
+  const details = (body as { details?: unknown } | null | undefined)?.details;
+  const raw = (details as { existingProfileId?: unknown } | null | undefined)?.existingProfileId;
+  if (typeof raw !== 'string') return null;
+  const trimmed = raw.trim();
+  return trimmed === '' ? null : trimmed;
+}
+
+/**
+ * The third fallback: resolve an id from GET /api/v1/profiles?name=<exact>.
+ *
+ * Profile names are unique per workspace, so a match is unambiguous by
+ * construction — but this does NOT trust that. Zero matches yields null, and so
+ * does more than one: if the vendor's uniqueness ever fails to hold, guessing
+ * which profile is the tenant's is exactly the mistake that mints a wrong
+ * vendor_ref. The comparison is exact after trimming, never fuzzy.
+ */
+export function extractProfileIdByExactName(body: unknown, expectedName: string): string | null {
+  const want = String(expectedName ?? '').trim();
+  if (want === '') return null;
+  const list = Array.isArray(body)
+    ? body
+    : (body as { profiles?: unknown; data?: unknown } | null | undefined)?.profiles
+      ?? (body as { data?: unknown } | null | undefined)?.data;
+  if (!Array.isArray(list)) return null;
+
+  const matches = list.filter((p) => {
+    const n = (p as { name?: unknown } | null | undefined)?.name;
+    return typeof n === 'string' && n.trim() === want;
+  });
+  if (matches.length !== 1) return null;
+  return extractZernioProfileId(matches[0]);
+}
+
+/**
  * THE DECISION AFTER A ZERNIO CREATE POST RETURNS — including the case where
  * the vendor succeeded but OUR OWN settings write then failed (S340).
  *
@@ -186,6 +255,35 @@ export function resolveZernioCreate(
   body: unknown,
   settingsWriteFailed: boolean,
 ): HandledResult {
+  // ── S345: 409 STOPS MEANING FAILURE ────────────────────────────────────
+  //
+  // A BEHAVIOUR CHANGE, not an addition. classifyStatus maps every 4xx to
+  // `terminal`, so a duplicate-name 409 used to BURN THE JOB — the one case
+  // where the vendor is telling us the profile already exists and naming it.
+  //
+  // With an idempotency key a replay returns the original 201, so this path is
+  // for the cases the key cannot cover: a create that raced, or a job whose key
+  // was never sent (which is every job today — see ClaimedJob.idempotency_key).
+  //
+  // A 409 WITHOUT an id is NOT success. The profile may well exist, but we
+  // cannot name it, and that is the definition of an unobserved outcome.
+  // Handled BEFORE classifyResponse so the generic 4xx rule cannot claim it.
+  if (status === 409) {
+    const existing = extractZernioConflictId(body);
+    if (existing !== null) {
+      if (settingsWriteFailed) {
+        return { outcome: 'retryable', vendorRef: existing, reason: 'settings_write_failed' };
+      }
+      return { outcome: 'succeeded', vendorRef: existing, reason: 'conflict_existing_profile' };
+    }
+    return { outcome: 'unknown', reason: 'conflict_no_id' };
+  }
+
+  // 422 STAYS TERMINAL, and that is deliberate rather than incidental. Same key
+  // + a DIFFERENT body means the payload changed between attempts — our bug,
+  // not the vendor's, and no number of retries fixes it. It falls through to
+  // classifyStatus's 4xx rule below; the test pins it so a future widening of
+  // the 409 branch cannot quietly swallow it.
   const profileId = extractZernioProfileId(body);
   const outcome = classifyResponse(status, profileId !== null, 'zernio_profile');
 
@@ -207,6 +305,24 @@ export interface ClaimedJob {
   attempts: number;
   vendor_ref: string | null;
   prior_status: string;
+  /**
+   * S345 — THE STRONGEST RECOVERY PATH, AND IT IS NOT WIRED YET.
+   *
+   * outbound_integration_queue.idempotency_key is LIVE (uuid NOT NULL DEFAULT
+   * gen_random_uuid(), verified via information_schema), but
+   * outbound_queue_claim DOES NOT RETURN IT. Its signature, read from
+   * pg_get_function_result, is:
+   *
+   *   TABLE(id, tenant_id, kind, payload, attempts, vendor_ref, prior_status)
+   *
+   * Widening that RPC is a migration and migrations are not this surface's to
+   * apply, so the field is optional here and every consumer treats its absence
+   * as "no idempotency protection available". The moment claim() returns it,
+   * the header below starts flowing with no code change — and
+   * s345NoKeyToday() in the tests pins the current gap so it cannot go
+   * unnoticed.
+   */
+  idempotency_key?: string | null;
 }
 
 /**
