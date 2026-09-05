@@ -1061,3 +1061,29 @@ it is recent.
     platform-provisioned tenant 0**.
   * The S348 session-close drafts (ROADMAP + `docs/handoffs/pestflow-pro-handoff-S348-shipped.md`)
     are written and awaiting Scott's confirmation before they are committed, per CLAUDE.md.
+
+---
+## Session — 2026-09-05 15:28 UTC
+- Branch: `claude/support-tickets-rls-policies-xbwg8a`
+- Commit: `50a069a` — docs: S349 session close — S334–S348 handoff and ROADMAP
+- Author: Claude
+- Files changed:
+  - docs/ROADMAP.md
+  - docs/handoffs/pestflow-pro-handoff-S348-shipped.md
+- Supersedes the note in the previous entry: the drafts were APPROVED by Scott and
+  shipped in PR #357 (draft). They are no longer awaiting confirmation.
+- Next recommended action:
+  * **WIRE FAQ SEEDING** — `faqs_tenant_question_key UNIQUE (tenant_id, question)` is
+    applied, so `buildFaqRows` goes into `provision_tenant_atomic` / `buildPayload`
+    with a real `ON CONFLICT (tenant_id, question)` target.
+    **Ship the missing migration file `s348_faqs_tenant_question_unique` WITH it**, not
+    after: it is applied live with no file, and a fresh database would fail to seed
+    without the conflict target.
+    Why it matters, from production: provisioning writes **eleven** tenant-scoped
+    tables in one transaction; `faqs` is the **twelfth** and provisioning has **never**
+    written it. Grandview's 35 rows were a one-off backfill by Claude.ai over MCP,
+    14 minutes after the tenant was created. **No tenant has ever received FAQs from
+    provisioning.**
+  * Termite FAQs still need authoring — a source, not a generation pass.
+  * The deploy/apply queue is EMPTY: `scrape-prospect` v58, `offboard-tenant` v15 and
+    `ai-proxy` v25 all verified by reading the deployed bundles.
